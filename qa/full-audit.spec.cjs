@@ -209,8 +209,9 @@ test('Live n8n AI chat loads and accepts an inquiry without real orders',async({
   await input.fill('Tôi bán thời trang online, bạn gợi ý bắt đầu từ tính năng AI nào?');
   await input.press('Enter');
   await expect.poll(async()=>await chat.locator('.chat-message-from-bot').count(),{timeout:45000,intervals:[1000,2000,3000]}).toBeGreaterThan(before);
+  await expect.poll(async()=>(await chat.locator('.chat-message-from-bot').last().innerText()).trim().length,{timeout:45000,intervals:[1000,2000,3000]}).toBeGreaterThan(50);
   const reply=await chat.locator('.chat-message-from-bot').last().innerText();
   console.log('AI_REAL_RESPONSE '+reply.slice(0,700));
-  expect(reply.trim().length).toBeGreaterThan(50);
+  expect(reply).not.toContain('Rất tiếc, trợ lý đang bận');
   expect(reply).toMatch(/shop|AI|giải pháp|thời trang|bán hàng|tư vấn/i);
 });
