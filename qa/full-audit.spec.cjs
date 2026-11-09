@@ -304,6 +304,26 @@ test('Critical homepage content remains visible in reduced-motion browsers',asyn
   expect(result.values.filter(x=>Number(x.opacity)<0.95||x.visibility!=='visible'||x.display==='none')).toEqual([]);
 });
 
+
+test('Homepage key sections paint correctly during real desktop scrolling',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/index.html',{waitUntil:'load'});
+  for(const [id,name] of [['#loi-ich','benefits'],['#studio','workflow-studio'],['#san-pham','solutions']]){
+    const section=page.locator(id);
+    await section.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    const metrics=await section.evaluate(el=>{
+      const h=el.querySelector('h2');
+      const rect=h?.getBoundingClientRect();
+      return {name:h?.textContent?.trim().slice(0,80),rect:rect?{top:rect.top,left:rect.left,width:rect.width,height:rect.height}:null,opacity:h?getComputedStyle(h).opacity:null};
+    });
+    console.log('SCROLLED_SECTION '+name+' '+JSON.stringify(metrics));
+    expect(metrics.rect?.height||0).toBeGreaterThan(20);
+    await page.screenshot({path:'qa-results/screenshots/viewport-'+name+'.png',fullPage:false,animations:'disabled'});
+  }
+});
+
 test('Public pages expose correct canonical SEO links and internal demos stay noindex',async({page})=>{
   const publicPages = ['index.html','about.html','solutions.html','demo.html','pricing.html','faq.html','industries.html','industry-fashion.html','industry-beauty.html','industry-accessories.html','industry-ecommerce.html','industry-services.html','onboarding.html','lab.html','impact.html','privacy.html','terms.html','refund.html'];
   const hiddenPages = ['login.html','register.html','dashboard.html','checkout.html','billing.html','invoice.html','contact.html','404.html'];
