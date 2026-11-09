@@ -1,0 +1,15 @@
+{
+  "name": "tien404-ai-website",
+  "version": "1.1.0",
+  "private": true,
+  "description": "TIEN404 AI marketing SaaS site (static GitHub Pages edition + optional Python lead API)",
+  "scripts": {
+    "build:css": "sass --no-source-map --style=compressed site/assets/scss/main.scss site/assets/style.css",
+    "dev:css": "sass --watch site/assets/scss/main.scss site/assets/style.css",
+    "test": "python -m pytest -q",
+    "qa:static": "python qa_static.py"
+  },
+  "devDependencies": {
+    "sass": "^1.93.0"
+  }
+}

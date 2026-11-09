@@ -1,0 +1,46 @@
+/* TIEN404 AI / demo */
+.sim-shell{border:1px solid #423c68;background:#111326;border-radius:23px;display:grid;grid-template-columns:290px minmax(0,1fr);overflow:hidden;min-height:610px;box-shadow:0 26px 70px #0006}
+
+.sim-sidebar{background:#0d0e20;padding:23px;border-right:1px solid #2c2b4b}
+
+.sim-sidebar h3{font-size:16px;margin:6px 0}
+
+.sim-sidebar p{font-size:12px;color:#9397b4;margin:0 0 21px}
+
+.scenario{width:100%;display:flex;align-items:center;gap:11px;background:transparent;color:#aaaec5;border:1px solid transparent;border-radius:12px;padding:12px 11px;text-align:left;margin-bottom:6px;font-size:12px}
+
+.scenario b{font-size:16px;font-weight:400}
+
+.scenario:hover,.scenario.active{background:#2b2050;border-color:#51417b;color:#efddff}
+
+.sim-area{display:flex;flex-direction:column;min-width:0}
+
+.sim-head{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #2d2f4e}
+
+.sim-head .avatar-ai{width:41px;height:41px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#5a49dd,#ad45e5);font-weight:900}
+
+.sim-head strong{display:block;font-size:14px}
+
+.sim-head small{display:block;color:#9da2b9;font-size:11px}
+
+.sim-tag{margin-left:auto;border:1px solid #5a496e;padding:5px 9px;color:#c9adf4;border-radius:20px;font-size:10px}
+
+.sim-feed{flex:1;overflow:auto;max-height:420px;min-height:280px;padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+
+.sim-message{max-width:min(82%,470px);font-size:13px;padding:13px 16px;border:1px solid #3c3c56;background:#22243a;border-radius:15px 15px 15px 3px;align-self:flex-start;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.sim-message.mine{background:linear-gradient(130deg,#7150d3,#3c56ae);border-color:#7559d5;align-self:flex-end;border-radius:15px 15px 3px 15px}
+
+.sim-message .msg-meta{display:block;margin-top:7px;color:#b9b5cc;font-size:10px}
+
+.suggestions{padding:0 23px 13px;display:flex;gap:8px;flex-wrap:wrap}
+
+.suggestion{border:1px solid #464167;border-radius:25px;background:#24213f;color:#beb5de;padding:7px 12px;font-size:11px}
+
+.suggestion:hover{border-color:#a782ff;color:white}
+
+.sim-compose{margin:0 20px 20px;border:1px solid #44415f;border-radius:13px;display:flex;gap:8px;padding:7px;background:#1d1f35}
+
+.sim-compose input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:white;padding:8px;font-size:13px}
+
+.sim-compose button{border:0;background:linear-gradient(110deg,#6351e5,#a044e5);color:white;border-radius:9px;min-height:38px;padding:8px 16px;font-weight:750}

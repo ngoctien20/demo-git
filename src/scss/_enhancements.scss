@@ -1,0 +1,39 @@
+
+/* TIEN404 1.1 — design, a11y and responsive quality pass */
+:root{--focus:#62d7ed;--accent-gradient:linear-gradient(115deg,#536dff 0%,#9f43eb 65%,#ce61ef 100%);--ease:cubic-bezier(.22,1,.36,1)}
+html{scroll-padding-top:92px}
+body{overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a,button,input,select,textarea{ -webkit-tap-highlight-color:transparent }
+:is(a,button,input,select,textarea,summary):focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.nav-links a{position:relative;transition:color .2s ease}
+.nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-10px;height:2px;border-radius:3px;background:var(--accent-gradient)}
+.hero-copy{animation:reveal-up .72s var(--ease) both}
+.dash-shell{animation:reveal-up .9s .12s var(--ease) both;isolation:isolate}
+.hero-copy .pill{box-shadow:0 8px 35px #32205a38}
+.hero-actions .btn-primary{position:relative;overflow:hidden}
+.hero-actions .btn-primary::before{content:'';position:absolute;inset:0;transform:translateX(-120%) skewX(-20deg);background:linear-gradient(90deg,transparent,#fff3,transparent);transition:transform .65s ease}
+.hero-actions .btn-primary:hover::before{transform:translateX(130%) skewX(-20deg)}
+.feature-card,.solution-card,.price-card,.industry-card{will-change:transform;transition:transform .3s var(--ease),border-color .25s ease,box-shadow .3s ease}
+.feature-card:focus-within,.solution-card:focus-within,.price-card:focus-within,.industry-card:focus-within{border-color:#9680f3;box-shadow:0 0 0 1px #9680f35c}
+.section-header h2,.page-hero h1{max-width:24ch;text-wrap:balance}
+.section-header.center h2{margin-inline:auto}
+.btn{transition:transform .25s var(--ease),box-shadow .25s ease,border-color .25s ease,background .25s ease}
+.btn:active{transform:translateY(1px) scale(.99)}
+.sim-message{white-space:pre-wrap;overflow-wrap:anywhere}
+.sim-feed{overscroll-behavior:contain}
+.scenario.active{box-shadow:inset 3px 0 #ab70fc}
+.form-alert{scroll-margin-top:100px}
+.form-alert:empty{display:none}
+.site-environment-banner{display:flex;gap:11px;align-items:flex-start;margin:0 0 22px;padding:16px 18px;border:1px solid #68558b;border-radius:14px;background:linear-gradient(130deg,#241b3f,#11172d);color:#c8c8e5;font-size:13px;line-height:1.6}
+.site-environment-banner strong{color:#f3e6ff}
+.site-environment-banner .status-dot{width:9px;height:9px;flex:0 0 9px;margin-top:6px;border-radius:100%;background:#dfbd76;box-shadow:0 0 0 4px #dfbd761a}
+.footer a:hover{text-decoration:underline;text-underline-offset:3px}
+@keyframes reveal-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:850px){.nav-links a.active::after{left:9px;bottom:3px;right:auto;width:30px}.topbar{backdrop-filter:blur(12px)}.hero-layout{gap:45px}}
+@media(max-width:610px){.hero h1{font-size:clamp(39px,11vw,55px)}.hero .lede{font-size:15px;line-height:1.75}.hero-actions .btn{flex:1;min-width:152px}.section-header h2,.page-hero h1{letter-spacing:-1px}.nav-links{max-height:calc(100dvh - 69px);overflow:auto}.dash-shell{max-width:100%}.cta-banner .btn{width:100%}.footer-bottom{flex-direction:column;align-items:flex-start;gap:9px}.page-hero{padding-top:52px}}
+@media(max-width:380px){.container{width:calc(100% - 26px)}.hero-actions .btn{min-width:100%}.dash-side{display:none}.dash-body{grid-template-columns:1fr}.dash-shell{min-height:375px}}
+@media(prefers-reduced-motion:reduce){.hero-copy,.dash-shell{animation:none}.feature-card,.solution-card,.price-card,.industry-card{will-change:auto}}
+/* Prevent nested workflow diagrams from forcing horizontal overflow on compact phones. */
+.split-layout > *, .hero-layout > *, .form-layout > *, .grid2 > *, .grid3 > *, .grid4 > * { min-width: 0; }
+@media(max-width:850px) { .split-layout, .hero-layout, .form-layout { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:380px) { .flow-track { gap: 3px; } .flow-box { min-width: 0; padding: 9px 5px; } .workflow-visual { padding: 17px 10px; } }

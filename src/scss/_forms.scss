@@ -1,0 +1,40 @@
+/* TIEN404 AI / forms */
+.form-layout{display:grid;grid-template-columns:.73fr 1.27fr;gap:49px}
+
+.contact-aside{padding:34px;background:linear-gradient(145deg,#201a43,#111629);border:1px solid #4a4079;border-radius:21px;align-self:start}
+
+.contact-aside h2{font-size:26px}
+
+.contact-aside p{color:#c0bbdb;font-size:14px}
+
+.contact-aside .check-list li{color:#c5c4da}
+
+.contact-card{border:1px solid #343750;background:#121528;border-radius:21px;padding:29px}
+
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+
+.field{margin-bottom:18px}
+
+.field label{display:block;font-size:13px;font-weight:650;color:#d8d7eb;margin-bottom:7px}
+
+.field input,.field select,.field textarea{width:100%;color:#f8f7ff;background:#0a0d1d;border:1px solid #393d5d;border-radius:11px;padding:13px 14px;outline:none;min-height:48px}
+
+.field textarea{min-height:126px;resize:vertical}
+
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#9b79ff;box-shadow:0 0 0 3px #8458fe1e}
+
+.field input::placeholder,.field textarea::placeholder{color:#797e98}
+
+.checkbox-field{display:flex;gap:11px;font-size:13px;color:#b7b9cc;margin-bottom:19px;align-items:flex-start}
+
+.checkbox-field input{margin-top:5px;accent-color:#9864e9}
+
+.form-alert{display:none;padding:13px;border:1px solid #705572;background:#262038;color:#d4d2e4;border-radius:10px;font-size:13px;margin-bottom:15px}
+
+.form-alert.visible{display:block}
+
+.form-alert.success{border-color:#226e62;background:#11352f;color:#a8efdb}
+
+.form-alert.error{border-color:#9c5068;background:#421c2c;color:#facbd4}
+
+.honeypot{position:absolute;left:-10000px;opacity:0;pointer-events:none}
