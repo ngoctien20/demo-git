@@ -196,7 +196,7 @@
       '.motion-lab', '.sim-shell', '.contact-card', '.table-wrap'
     ];
     const elements=[...new Set(document.querySelectorAll(selectors.join(',')))].filter(el=>
-      !el.closest('.hero') && !el.closest('.motion-lab') && !el.closest('.dash-scene')
+      !el.closest('.hero') && !el.closest('.dash-scene') && (el.classList.contains('motion-lab') || !el.closest('.motion-lab'))
     );
     const io=new IntersectionObserver((entries)=>{
       entries.forEach(entry=>{
