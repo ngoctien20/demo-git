@@ -316,6 +316,7 @@ test('Public pages expose correct canonical SEO links and internal demos stay no
   }
   for(const path of hiddenPages){
     await page.goto('/'+path,{waitUntil:'domcontentloaded'});
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(1);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content',/noindex/);
   }
   const sitemap=await page.request.get('/sitemap.xml');
