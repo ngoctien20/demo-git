@@ -118,8 +118,10 @@
 
   // GitHub Pages can only serve static files. Explicitly surface backend status.
   const isStaticHost = location.protocol === 'file:' || location.protocol === 'about:' || /(^|\.)github\.io$/.test(location.hostname);
+  const apiBase=typeof window.TIEN404_CONFIG?.apiBase==='string'?window.TIEN404_CONFIG.apiBase.replace(/\/$/,''):'';
+  const leadBackendAvailable=!isStaticHost || Boolean(apiBase);
   const staticNotice=document.getElementById('static-form-notice');
-  if (staticNotice && isStaticHost) staticNotice.hidden=false;
+  if (staticNotice) staticNotice.hidden=leadBackendAvailable;
   document.querySelectorAll('.nav-links a').forEach(link=>{
     if(link.classList.contains('active')) link.setAttribute('aria-current','page');
     link.addEventListener('click',()=>{if(menu){menu.classList.remove('open');navButton?.setAttribute('aria-expanded','false');}});
@@ -148,12 +150,12 @@
       const looksPhone=/^\+?\d{9,15}$/.test(phone);
       if(!looksEmail&&!looksPhone){alertMessage('Email hoặc số điện thoại chưa hợp lệ. Vui lòng kiểm tra lại.','error');return;}
       if(!form.get('industry')||!leadForm.elements.namedItem('consent').checked){alertMessage('Vui lòng chọn ngành hàng và đồng ý với chính sách quyền riêng tư.','error');return;}
-      if(isStaticHost){alertMessage('GitHub Pages chỉ lưu trữ trang tĩnh. Chưa có backend nhận biểu mẫu: thông tin của bạn KHÔNG được gửi hoặc lưu.','error');return;}
+      if(!leadBackendAvailable){alertMessage('Chưa kết nối máy chủ tiếp nhận. Yêu cầu KHÔNG được gửi hay lưu.','error');return;}
       const body={name,business,contact,industry:String(form.get('industry')||''),channel:String(form.get('channel')||''),product:String(form.get('product')||''),budget:String(form.get('budget')||''),message:String(form.get('message')||''),website:String(form.get('website')||''),consent:true};
       submit.disabled=true;submit.textContent='Đang gửi yêu cầu...';
       const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
       try{
-        const res=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal,credentials:'same-origin'});
+        const res=await fetch(`${apiBase}/api/leads`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal,credentials:'omit'});
         const data=await res.json().catch(()=>null);
         if(!res.ok)throw new Error(data?.detail && typeof data.detail==='string' ? data.detail : res.status===404?'Máy chủ nhận yêu cầu chưa được kết nối.':'Không thể gửi yêu cầu lúc này.');
         if(data?.status==='accepted'){alertMessage('Đã ghi nhận yêu cầu trên máy chủ thử nghiệm. Mã tham chiếu: '+data.id+'. Chúng tôi cần cấu hình thông báo quản trị để xử lý yêu cầu đúng quy trình.','success');leadForm.reset();}

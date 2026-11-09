@@ -21,7 +21,7 @@ jobs:
       - name: Build stylesheet from SCSS
         run: npm run build:css
       - name: Validate JavaScript syntax
-        run: node --check assets/app.js && node --check assets/saas.js
+        run: node --check assets/app.js && node --check assets/saas.js && node --check assets/v4.js && node --check assets/site-config.js
       - name: Static QA
         run: python qa_static.py
       - name: Verify motion contracts
@@ -30,3 +30,5 @@ jobs:
         run: python -m pip install beautifulsoup4
       - name: Verify SaaS experience
         run: python -m unittest discover -s tests -p test_saas_contract.py -v
+      - name: Verify v4 conversion and sandbox frontend
+        run: python -m unittest discover -s tests -p test_v4_frontend.py -v
