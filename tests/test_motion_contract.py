@@ -32,7 +32,8 @@ class MotionContract(unittest.TestCase):
         self.assertIn("matchMedia('(prefers-reduced-motion: reduce)')",script)
         self.assertIn('data-reveal',script)
     def test_motion_source_and_bundle(self):
-        sass=(SITE/'assets/scss/main.scss').read_text(encoding='utf-8')
+        sass_path=(SITE/'assets/scss/main.scss') if (SITE/'assets/scss/main.scss').exists() else (ROOT/'src/scss/main.scss')
+        sass=sass_path.read_text(encoding='utf-8')
         css=(SITE/'assets/style.css').read_text(encoding='utf-8')
         self.assertIn("@use 'motion';",sass)
         self.assertIn('TIEN404 AI 2.0 | cinematic interaction system',css)
