@@ -36,7 +36,8 @@ class MotionContract(unittest.TestCase):
         sass=sass_path.read_text(encoding='utf-8')
         css=(SITE/'assets/style.css').read_text(encoding='utf-8')
         self.assertIn("@use 'motion';",sass)
-        self.assertIn('TIEN404 AI 2.0 | cinematic interaction system',css)
+        self.assertIn('.lab-stage',css)
+        self.assertIn('.dash-scene',css)
     def test_client_side_demo_does_not_call_real_n8n(self):
         js=(SITE/'assets/app.js').read_text(encoding='utf-8')
         self.assertNotIn('ngoctien20.app.n8n.cloud',js)
