@@ -162,4 +162,139 @@
       finally{clearTimeout(timer);submit.disabled=false;submit.textContent='Gửi yêu cầu tư vấn ↗';}
     });
   }
+
+  // Motion system V2: progressive enhancement; reduced-motion, touch & low-power aware.
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const saveData = Boolean(navigator.connection && navigator.connection.saveData);
+  const motionAllowed = !motionQuery.matches && !saveData;
+
+  // Reading progress indicator. No extra scroll listeners per component.
+  if (motionAllowed) {
+    const progress = document.createElement('div');
+    progress.className='reading-progress';
+    progress.setAttribute('aria-hidden','true');
+    document.body.append(progress);
+    let scrollQueued = false;
+    const updateProgress=()=>{
+      const max=Math.max(1,document.documentElement.scrollHeight-innerHeight);
+      progress.style.transform='scaleX('+Math.min(1,Math.max(0,scrollY/max))+')';
+      scrollQueued=false;
+    };
+    const scheduleProgress=()=>{if(!scrollQueued){scrollQueued=true;requestAnimationFrame(updateProgress);}};
+    window.addEventListener('scroll',scheduleProgress,{passive:true});
+    window.addEventListener('resize',scheduleProgress,{passive:true});
+    scheduleProgress();
+  }
+
+  // IntersectionObserver: animate visible content only, never hide content when JS is disabled.
+  if (motionAllowed && 'IntersectionObserver' in window) {
+    const selectors=[
+      '.section-header', '.section .split-layout > *', '.section .grid3 > *',
+      '.section .grid4 > *', '.section .timeline > *', '.faq-stack > details',
+      '.cta-banner', '.page-hero > .container', '.solution-detail',
+      '.motion-lab', '.sim-shell', '.contact-card', '.table-wrap'
+    ];
+    const elements=[...new Set(document.querySelectorAll(selectors.join(',')))].filter(el=>
+      !el.closest('.hero') && !el.closest('.motion-lab') && !el.closest('.dash-scene')
+    );
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting)return;
+        entry.target.classList.add('is-revealed');
+        entry.target.classList.remove('motion-pending');
+        io.unobserve(entry.target);
+      });
+    },{threshold:0.08,rootMargin:'0px 0px -28px 0px'});
+    elements.forEach((el)=>{
+      const rect=el.getBoundingClientRect();
+      if(rect.bottom<0 || rect.top>innerHeight*0.88){
+        const parent=el.parentElement;
+        const siblings=parent ? [...parent.children].filter(x=>x.matches('.feature-card,.solution-card,.price-card,.industry-card,.step')):[];
+        const order=siblings.indexOf(el);
+        if(order>=0)el.style.setProperty('--reveal-delay',Math.min(order,5)*85+'ms');
+        el.setAttribute('data-reveal','');
+        el.classList.add('motion-pending');io.observe(el);
+      }
+    });
+  }
+
+  // Spotlight: one pointer listener per active card, no repaint while idle.
+  if (motionAllowed && finePointer.matches) {
+    const cards=document.querySelectorAll('.feature-card,.solution-card,.price-card,.industry-card,.workflow-visual');
+    cards.forEach(card=>{
+      let frame=0, px=0, py=0;
+      card.classList.add('spotlight-ready');
+      card.addEventListener('pointermove',(event)=>{
+        const rect=card.getBoundingClientRect();
+        px=event.clientX-rect.left;py=event.clientY-rect.top;
+        if(!frame)frame=requestAnimationFrame(()=>{
+          card.style.setProperty('--pointer-x',px+'px');
+          card.style.setProperty('--pointer-y',py+'px');
+          frame=0;
+        });
+      },{passive:true});
+    });
+
+    // Small, capped parallax tilt on the dashboard illustration only.
+    const scene=document.querySelector('[data-tilt-scene]');
+    if(scene){
+      let frame=0, rx=0, ry=0;
+      scene.addEventListener('pointermove',(event)=>{
+        const bounds=scene.getBoundingClientRect();
+        const x=(event.clientX-bounds.left)/bounds.width-.5;
+        const y=(event.clientY-bounds.top)/bounds.height-.5;
+        rx=(-y*4).toFixed(2);ry=(x*5).toFixed(2);
+        if(!frame)frame=requestAnimationFrame(()=>{
+          scene.style.setProperty('--tilt-x',rx+'deg');
+          scene.style.setProperty('--tilt-y',ry+'deg');
+          frame=0;
+        });
+      },{passive:true});
+      scene.addEventListener('pointerleave',()=>{
+        scene.style.removeProperty('--tilt-x');scene.style.removeProperty('--tilt-y');
+      });
+    }
+  }
+
+  // Actual interactive story: only fake examples; no network access.
+  const lab=document.querySelector('[data-motion-lab]');
+  if(lab){
+    const buttons=[...lab.querySelectorAll('[data-lab-step]')];
+    const panel=lab.querySelector('#lab-stage');
+    const stages=[
+      {status:'01 · INPUT RECEIVED',title:'Tiếp nhận câu hỏi của khách',text:'Khách gửi câu hỏi về sản phẩm, giá hoặc trạng thái yêu cầu. Luồng ghi nhận thông tin cần thiết để xử lý bước tiếp theo.',sample:'“Shop có mẫu giày nào dưới 800.000đ?”'},
+      {status:'02 · INTENT DETECTED',title:'Phân loại nhu cầu và dữ liệu',text:'Quy trình xác định đây là yêu cầu tìm sản phẩm theo ngân sách. Chỉ truy vấn nguồn dữ liệu được cấp quyền và kiểm tra thông tin còn thiếu.',sample:'Ý định mẫu: TÌM SẢN PHẨM · Ngân sách: 800.000đ'},
+      {status:'03 · RULES VERIFIED',title:'Đề xuất theo quy tắc đã thiết lập',text:'Trong bản triển khai thật, các điều kiện về giá, tồn kho và quyền thao tác phải được kiểm tra trước khi trả lời hoặc thực hiện hành động.',sample:'Kết quả ví dụ: sản phẩm phù hợp → hỏi thêm sở thích'},
+      {status:'04 · HUMAN HANDOFF',title:'Chuyển người phụ trách khi cần',text:'Khi yêu cầu vượt phạm vi được phép hoặc cần xác nhận, hệ thống dừng thao tác và chuyển thông tin phù hợp để nhân viên xem xét.',sample:'Trạng thái mẫu: CHỜ NHÂN VIÊN XÁC NHẬN'}
+    ];
+    const setStep=(index,focus=false)=>{
+      buttons.forEach((button,i)=>{
+        button.classList.toggle('is-active',i===index);
+        button.setAttribute('aria-selected',String(i===index));
+        button.tabIndex=i===index?0:-1;
+      });
+      const item=stages[index];
+      lab.querySelector('[data-lab-counter]').textContent=String(index+1).padStart(2,'0')+' / 04';
+      lab.querySelector('[data-lab-status]').textContent=item.status;
+      lab.querySelector('[data-lab-heading]').textContent=item.title;
+      lab.querySelector('[data-lab-description]').textContent=item.text;
+      lab.querySelector('[data-lab-sample]').textContent=item.sample;
+      lab.style.setProperty('--current-step',String(index));
+      panel.setAttribute('aria-labelledby',buttons[index].id);
+      panel.classList.remove('stage-updated');
+      if(motionAllowed){void panel.offsetWidth;panel.classList.add('stage-updated');}
+      if(focus)buttons[index].focus();
+    };
+    buttons.forEach((button,i)=>{
+      button.addEventListener('click',()=>setStep(i));
+      button.addEventListener('keydown',e=>{
+        const delta=(e.key==='ArrowDown'||e.key==='ArrowRight')?1:(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:0;
+        if(delta){e.preventDefault();setStep((i+delta+buttons.length)%buttons.length,true);}
+        if(e.key==='Home'){e.preventDefault();setStep(0,true);}
+        if(e.key==='End'){e.preventDefault();setStep(buttons.length-1,true);}
+      });
+    });
+    setStep(0);
+  }
 })();
