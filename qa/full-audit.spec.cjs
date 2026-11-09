@@ -324,6 +324,20 @@ test('Homepage key sections paint correctly during real desktop scrolling',async
   }
 });
 
+
+test('FAQ, terms and privacy accurately disclose live AI versus local simulations',async({page})=>{
+  await page.goto('/privacy.html');
+  await expect(page.locator('main')).toContainText('AI Consultant Beta');
+  await expect(page.locator('main')).toContainText('n8n Cloud');
+  await expect(page.locator('main')).toContainText('Không gửi dữ liệu cá nhân');
+  await page.goto('/faq.html');
+  await expect(page.locator('main')).toContainText('AI Consultant Beta');
+  await expect(page.locator('main')).toContainText('mô hình AI thật');
+  await page.goto('/terms.html');
+  await expect(page.locator('main')).toContainText('AI Consultant Beta');
+  await expect(page.locator('main')).toContainText('không có quyền tạo đơn');
+});
+
 test('Public pages expose correct canonical SEO links and internal demos stay noindex',async({page})=>{
   const publicPages = ['index.html','about.html','solutions.html','demo.html','pricing.html','faq.html','industries.html','industry-fashion.html','industry-beauty.html','industry-accessories.html','industry-ecommerce.html','industry-services.html','onboarding.html','lab.html','impact.html','privacy.html','terms.html','refund.html'];
   const hiddenPages = ['login.html','register.html','dashboard.html','checkout.html','billing.html','invoice.html','contact.html','404.html'];
