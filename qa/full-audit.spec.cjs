@@ -277,6 +277,33 @@ test('Motion reveal becomes visible after user scroll and honors reduced-motion 
 });
 
 
+
+test('Critical homepage content remains visible in reduced-motion browsers',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('/index.html',{waitUntil:'load'});
+  await page.waitForTimeout(250);
+  const result=await page.evaluate(()=>{
+    const elements=[...document.querySelectorAll('.section-header,.feature-card,.solution-card,.motion-lab,.timeline > *')];
+    return {
+      reduced:window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      pending:document.querySelectorAll('.motion-pending').length,
+      values:elements.slice(0,30).map(x=>({
+        name:x.className,
+        content:x.textContent.slice(0,55).replace(/\s+/g,' '),
+        y:Math.round(x.getBoundingClientRect().top+scrollY),
+        opacity:getComputedStyle(x).opacity,
+        visibility:getComputedStyle(x).visibility,
+        display:getComputedStyle(x).display,
+        rect:x.getBoundingClientRect().height
+      }))
+    };
+  });
+  console.log('HOME_VISIBILITY_DIAGNOSTIC '+JSON.stringify(result));
+  expect(result.reduced).toBe(true);
+  expect(result.pending).toBe(0);
+  expect(result.values.filter(x=>Number(x.opacity)<0.95||x.visibility!=='visible'||x.display==='none')).toEqual([]);
+});
+
 test('Public pages expose correct canonical SEO links and internal demos stay noindex',async({page})=>{
   const publicPages = ['index.html','about.html','solutions.html','demo.html','pricing.html','faq.html','industries.html','industry-fashion.html','industry-beauty.html','industry-accessories.html','industry-ecommerce.html','industry-services.html','onboarding.html','lab.html','impact.html','privacy.html','terms.html','refund.html'];
   const hiddenPages = ['login.html','register.html','dashboard.html','checkout.html','billing.html','invoice.html','contact.html','404.html'];
