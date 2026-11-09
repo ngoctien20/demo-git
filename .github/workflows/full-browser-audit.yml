@@ -1,10 +1,7 @@
 name: TIEN404 independent full-browser QA
 on:
   push:
-    branches: [qa/tien404-full-audit-20261109]
-    paths:
-      - 'qa/**'
-      - '.github/workflows/full-browser-audit.yml'
+    branches: [qa/tien404-full-audit-20261109, gh-pages]
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,6 +24,9 @@ jobs:
           sleep 2
       - name: Run independent desktop, mobile, workflow and accessibility audit
         run: npx playwright test -c qa/playwright.config.cjs
+      - name: Publish plain-language QA summary
+        if: always()
+        run: node qa/summary.cjs >> "$GITHUB_STEP_SUMMARY" || true
       - name: Locate browser report files
         if: always()
         run: find . -maxdepth 5 -type f \( -name 'results.json' -o -name 'index.html' \) | grep -E '(qa-results|test-results)' | head -n 30 || true
