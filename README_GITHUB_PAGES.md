@@ -1,64 +1,67 @@
-# TIEN404 AI — GitHub Pages & Sass Edition
+# TIEN404 AI — Developer and deployment guide
 
-**Frontend:** 17 static HTML pages, Vanilla JS, SCSS modules, a compiled CSS release, six offline chat demo scenarios. No credentials or actual customer data bundled.
+## Current deployment
 
-## Local preview
+- **Project:** https://github.com/ngoctien20/demo-git
+- **Public branch:** `gh-pages` (repository's unrelated `main` is not the deployed site).
+- **Public URL:** https://ngoctien20.github.io/demo-git/
+- **Hosting:** GitHub Pages, static HTML/CSS/JavaScript only.
+- **QA development branch:** `qa/tien404-full-audit-20261109` for test-driven fixes.
+
+## Included features
+
+1. Homepage, solutions, industries, pricing, FAQ and policy pages.
+2. AI Sales Demo with six deterministic local scenarios.
+3. AI Sales Lab: configurable sample catalogue, budget and stock enquiries, simulated purchase requests.
+4. Guided onboarding and a manual-workload estimator.
+5. Sample dashboard with date filters and staff handoff queue.
+6. Simulated registration/login, selection of a service plan, checkout, invoice and billing. The state is kept in browser `sessionStorage`; it is **not authentication**. Signing out or changing demo identity discards demo subscription/receipt.
+7. **AI Consultant Beta:** a real model connected through an isolated n8n chat workflow, only for guidance about TIEN404 products and relevant pages. It cannot inspect or change actual orders, leads or user records.
+
+## Data boundaries
+
+- GitHub Pages **cannot run Python, Node or a database backend**. Consequently the public contact form cannot save or deliver lead submissions. It visibly fails closed.
+- Payment and billing pages are demonstrations and do not request credit cards or process money.
+- AI Sales Lab is offline on GitHub Pages; the separate AI Consultant Beta sends chat input to n8n/model infrastructure. Never provide real customer data, passwords, API keys or payment details. Consult `privacy.html` and `terms.html`.
+- Rate limits in n8n are preliminary and do not stop all external scripted abuse. For a public production service use a gateway with IP/session throttling and abuse/credit alerts.
+
+## Run, build, test
 
 ```bash
-python -m http.server 8000 --directory site
-# open http://localhost:8000/
-```
-
-## Sass authoring
-
-The **source of truth for CSS is `site/assets/scss/main.scss`** and its Sass partials. The already built `site/assets/style.css` is included for immediate preview.
-
-```bash
+python -m http.server 8000            # website root
 npm install
-npm run build:css
-npm run dev:css # while designing
+npm run build:css                       # src/scss/main.scss -> assets/style.css
+node --check assets/app.js
+node --check assets/saas.js
+node --check assets/v4.js
+python qa_static.py
+python -m unittest discover -s tests
 ```
 
-## Test
+Full browser QA is run by GitHub Actions with Chromium and `@playwright/test`, `@axe-core/playwright`:
 
 ```bash
-python -m pip install pytest
-python -m pytest -q
-python qa_static.py
+npm install --no-save @playwright/test@1.58.2 @axe-core/playwright@4.11.0
+npx playwright install chromium
+python -m http.server 4173
+npx playwright test -c qa/playwright.config.cjs
 ```
 
-## GitHub Pages
+CI artifacts include an HTML report, JSON results, screenshots of the key viewports and trace/screenshot evidence on failures. Some Chromium full-page captures omit offscreen content under animated scenes; use the included **viewport** captures for accurate visual inspection.
 
-1. Create a dedicated GitHub repository named `tien404-ai-website` (public repo is required for Pages on some plans).
-2. Push **the contents of this directory** to `main`.
-3. Go to Repository → Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-4. The workflow `.github/workflows/pages.yml` runs Python tests and SCSS build and uploads **only `site/`**, leaving backend / `.env` out of the public site.
-5. Check Actions → Build, test & deploy → `deploy` for the live URL.
+## GitHub Actions
 
-## Feature status (do not misrepresent)
+- `.github/workflows/quality.yml` rebuilds Sass and verifies static/source contracts.
+- `.github/workflows/full-browser-audit.yml` runs the end-to-end suite and posts a plain-language summary; it triggers on updates to `gh-pages`.
+- GitHub Pages is built from `gh-pages` root. Check the Pages workflow in Actions after each release.
 
-- The demo chat is a deterministic browser simulation; it does not connect to n8n or an AI model.
-- GitHub Pages does **not** run the Python API, so the contact form is **not a working intake service there** and explicitly reports this; deploy `server.py` privately to a separate backend to activate it.
-- Notifications, payments, accounts, multi-tenancy, and live n8n are not implemented.
-- Don't publish real customer data, API keys, real order datasets, or private n8n workflow exports.
+## Steps needed before accepting real customers
 
-## Project structure
+1. Establish who operates the service, their official contact address and approved privacy/terms.
+2. Host a secure backend for lead intake with CAPTCHA, rate limits, persistent storage, deletion procedures and administrative notifications.
+3. Implement real authentication, secure cookies, per-shop tenancy/authorization and audited access.
+4. Integrate a compliant hosted payment provider, verify webhooks server-side, handle idempotency and generate lawful invoices.
+5. Add a hardened gateway, usage budgets, alerting, retention policies and security/pentest review.
+6. Roll out production order workflow integrations only after owner approval and end-to-end QA.
 
-- `site/` — static frontend served by GitHub Pages
-- `site/assets/scss/` — modular Sass source
-- `site/assets/style.css` — prebuilt CSS output
-- `site/assets/app.js` — client-side interactions
-- `server.py` — optional self-hosted demo/lead API (not deployed on Pages)
-- `qa_static.py` — internal link + baseline SEO checks
-- `tests/` — existing Python API tests
-- `.github/workflows/pages.yml` — automated build/test/deploy pipeline
-
-## Release gate
-
-Never enable live customer forms, payment capture or production n8n workflows without a tested server-side integration and owner approval.
-
-## SaaS Experience v3 — browser-only sandbox
-
-Six new sample pages: `register.html`, `login.html`, `dashboard.html`, `checkout.html`, `billing.html`, `invoice.html`. A local-only `assets/saas.js` manages a simulated session using `sessionStorage`. It stores a display name, demo email, selected fake plan, and sample receipt in the current browser tab, with no API requests and no real passwords/cards. Clearing the tab/session removes the data. No authentication, payment, subscription, invoice, or customer data processing is active on the server. Never treat this browser state as trustworthy or sufficient for access control.
-
-**Production deployment requires** a backend with verified user identities, secure cookies, CSRF protection, role-based authorization, per-tenant isolation, webhook verification, idempotency keys, hosted payment checkout (not raw card collection), legally compliant invoices, monitoring, and a privacy review. This prototype must not be used for real transactions.
+The website is intentionally not described as production-ready before these controls exist.
