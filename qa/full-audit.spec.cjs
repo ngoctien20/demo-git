@@ -65,7 +65,7 @@ test('Deep-linked protected page restores destination after login',async({page})
   await expect(page).toHaveURL(/login.html\?next=invoice.html/);
   await page.locator('#email').fill('qa+deep@example.test');
   await page.locator('#saas-auth button[type="submit"]').click();
-  await expect(page).toHaveURL(/invoice.html/);
+  await expect.poll(async()=>new URL(page.url()).pathname,{timeout:6000}).toMatch(/\/invoice\.html$/);
 });
 
 test('Checkout is simulation and invoice/billing state works',async({page})=>{
@@ -203,7 +203,14 @@ test('Live n8n AI chat loads and accepts an inquiry without real orders',async({
   await expect(chat).toBeVisible();
   const input=chat.locator('textarea,input[type="text"]').first();
   await expect(input).toBeVisible({timeout:18000});
-  await input.fill('Shop nhỏ nên bắt đầu thử tính năng nào của TIEN404 AI?');
+  const before=await chat.locator('.chat-message-from-bot').count();
+  console.log('CHAT_INITIAL_BOT_COUNT '+before);
+  console.log('CHAT_DOM '+(await chat.innerHTML()).slice(0,1700).replace(/\s+/g,' '));
+  await input.fill('Tôi bán thời trang online, bạn gợi ý bắt đầu từ tính năng AI nào?');
   await input.press('Enter');
-  await expect(chat).toContainText(/TIEN404|AI Sales|demo|giải pháp|thử/i,{timeout:40000});
+  await expect.poll(async()=>await chat.locator('.chat-message-from-bot').count(),{timeout:45000,intervals:[1000,2000,3000]}).toBeGreaterThan(before);
+  const reply=await chat.locator('.chat-message-from-bot').last().innerText();
+  console.log('AI_REAL_RESPONSE '+reply.slice(0,700));
+  expect(reply.trim().length).toBeGreaterThan(50);
+  expect(reply).toMatch(/shop|AI|giải pháp|thời trang|bán hàng|tư vấn/i);
 });
