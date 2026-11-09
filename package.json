@@ -4,8 +4,8 @@
   "private": true,
   "description": "TIEN404 AI marketing SaaS site (static GitHub Pages edition + optional Python lead API)",
   "scripts": {
-    "build:css": "sass --no-source-map --style=compressed site/assets/scss/main.scss site/assets/style.css",
-    "dev:css": "sass --watch site/assets/scss/main.scss site/assets/style.css",
+    "build:css": "sass --no-source-map --style=compressed src/scss/main.scss assets/style.css",
+    "dev:css": "sass --watch src/scss/main.scss assets/style.css",
     "test": "python -m pytest -q",
     "qa:static": "python qa_static.py"
   },

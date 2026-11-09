@@ -3,7 +3,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlparse, unquote
 import sys
 
-ROOT=Path(__file__).resolve().parent/'site'
+ROOT=Path(__file__).resolve().parent
 class Page(HTMLParser):
     def __init__(self):
         super().__init__(); self.links=[]; self.title=False; self.description=False; self.viewport=False; self.lang=False; self.headings=[]
