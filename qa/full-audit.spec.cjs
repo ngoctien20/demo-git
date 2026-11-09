@@ -251,8 +251,29 @@ test('Sample dashboard and homepage capture visual QA screenshots',async({page})
     }else{
       await page.goto('/'+route,{waitUntil:'domcontentloaded'});
     }
+    // IntersectionObserver motion reveals only after scroll; capture the experienced page, not offscreen pending states.
+    const max=await page.evaluate(()=>document.documentElement.scrollHeight-window.innerHeight);
+    for(let y=0;y<=max;y+=Math.max(480,Math.round(850*0.72))){
+      await page.evaluate(pos=>window.scrollTo(0,pos),y);
+      await page.waitForTimeout(25);
+    }
+    await page.evaluate(()=>window.scrollTo(0,0));
+    await page.waitForTimeout(120);
     await page.screenshot({path:'qa-results/screenshots/'+name+'.png',fullPage:true,animations:'disabled'});
   }
+});
+
+
+test('Motion reveal becomes visible after user scroll and honors reduced-motion settings',async({page})=>{
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.goto('/index.html');
+  const node=page.locator('#loi-ich .section-header').first();
+  await node.scrollIntoViewIfNeeded();
+  await expect.poll(()=>node.evaluate(el=>Number(getComputedStyle(el).opacity)),{timeout:9000}).toBeGreaterThan(0.9);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.reload();
+  const hidden=await page.locator('main .motion-pending').count();
+  expect(hidden,'Reduced motion must not leave content hidden').toBe(0);
 });
 
 test('Live GitHub Pages public URL renders the latest AI panel', async({page})=>{
