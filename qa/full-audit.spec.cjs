@@ -360,9 +360,19 @@ test('Public pages expose correct canonical SEO links and internal demos stay no
 });
 
 test('Live GitHub Pages public URL renders the latest AI panel', async({page})=>{
-  const response=await page.goto(live+'demo.html',{waitUntil:'domcontentloaded',timeout:20000});
-  expect(response.status()).toBe(200);
-  await expect(page.locator('#ai-live')).toBeVisible();
+  let lastStatus=null;
+  for(let attempt=0;attempt<3;attempt++){
+    const response=await page.goto(live+'demo.html',{waitUntil:'domcontentloaded',timeout:20000});
+    lastStatus=response.status();
+    if(lastStatus===200){
+      await expect(page.locator('#ai-live')).toBeVisible();
+      return;
+    }
+    if(![429,502,503,504].includes(lastStatus))break;
+    console.log('TEMPORARY_PAGES_RESPONSE '+lastStatus+' RETRY '+(attempt+1));
+    await page.waitForTimeout(800*(attempt+1));
+  }
+  expect(lastStatus,'Persistent public-site HTTP failure').toBe(200);
 });
 
 test('Live n8n AI chat loads and accepts an inquiry without real orders',async({page})=>{
