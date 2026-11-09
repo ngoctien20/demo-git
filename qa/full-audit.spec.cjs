@@ -276,6 +276,27 @@ test('Motion reveal becomes visible after user scroll and honors reduced-motion 
   expect(hidden,'Reduced motion must not leave content hidden').toBe(0);
 });
 
+
+test('Public pages expose correct canonical SEO links and internal demos stay noindex',async({page})=>{
+  const publicPages = ['index.html','about.html','solutions.html','demo.html','pricing.html','faq.html','industries.html','industry-fashion.html','industry-beauty.html','industry-accessories.html','industry-ecommerce.html','industry-services.html','onboarding.html','lab.html','impact.html','privacy.html','terms.html','refund.html'];
+  const hiddenPages = ['login.html','register.html','dashboard.html','checkout.html','billing.html','invoice.html','contact.html','404.html'];
+  for(const path of publicPages){
+    await page.goto('/'+path,{waitUntil:'domcontentloaded'});
+    const expected='https://ngoctien20.github.io/demo-git/'+(path==='index.html'?'':path);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href',expected);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content',expected);
+    await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
+  }
+  for(const path of hiddenPages){
+    await page.goto('/'+path,{waitUntil:'domcontentloaded'});
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content',/noindex/);
+  }
+  const sitemap=await page.request.get('/sitemap.xml');
+  expect(sitemap.ok()).toBe(true);
+  const xml=await sitemap.text();
+  expect((xml.match(/<url>/g)||[]).length).toBe(publicPages.length);
+});
+
 test('Live GitHub Pages public URL renders the latest AI panel', async({page})=>{
   const response=await page.goto(live+'demo.html',{waitUntil:'domcontentloaded',timeout:20000});
   expect(response.status()).toBe(200);
