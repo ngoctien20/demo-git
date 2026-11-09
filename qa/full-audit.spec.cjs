@@ -221,7 +221,7 @@ test('Contact request cannot falsely claim success without backend',async({page}
   await expect(page.locator('#form-alert')).not.toContainText(/Đã ghi nhận yêu cầu/);
 });
 
-for (const p of ['index.html','demo.html','register.html','checkout.html','onboarding.html','lab.html','impact.html']) {
+for (const p of routes) {
   test('Accessibility serious/critical check: ' + p, async({page})=>{
     await page.goto('/'+p,{waitUntil:'domcontentloaded'});
     const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','best-practice']).analyze();
@@ -230,6 +230,30 @@ for (const p of ['index.html','demo.html','register.html','checkout.html','onboa
     expect(serious,'serious accessibility violations: '+p).toEqual([]);
   });
 }
+
+
+test('AI widget displays usable fallback when external chat script is unavailable',async({page})=>{
+  await page.route('**/cdn.jsdelivr.net/npm/@n8n/chat/**', route=>route.abort());
+  await page.goto('/demo.html',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#n8n-chat-fallback')).toBeVisible({timeout:10000});
+  await expect(page.locator('#n8n-chat-fallback a[href="lab.html"]')).toBeVisible();
+  await expect(page.locator('html')).not.toHaveClass(/tien404-chat-ready/);
+});
+
+test('Sample dashboard and homepage capture visual QA screenshots',async({page})=>{
+  for(const [route,width,name] of [['index.html',1440,'home-desktop'],['index.html',390,'home-mobile'],['dashboard.html',1440,'dashboard'],['demo.html',390,'chat-mobile']]){
+    await page.setViewportSize({width,height:850});
+    if(route==='dashboard.html'){
+      await page.goto('/login.html');
+      await page.locator('#email').fill('visual-qa@example.test');
+      await page.locator('#saas-auth button[type=submit]').click();
+      await expect(page).toHaveURL(/dashboard.html$/);
+    }else{
+      await page.goto('/'+route,{waitUntil:'domcontentloaded'});
+    }
+    await page.screenshot({path:'qa-results/screenshots/'+name+'.png',fullPage:true,animations:'disabled'});
+  }
+});
 
 test('Live GitHub Pages public URL renders the latest AI panel', async({page})=>{
   const response=await page.goto(live+'demo.html',{waitUntil:'domcontentloaded',timeout:20000});
