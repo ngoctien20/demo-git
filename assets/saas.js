@@ -9,15 +9,28 @@ const moneyNote='Liên hệ báo giá · chưa có thanh toán thật';
 const page=document.body.dataset.saasPage;
 const out=$('[data-saas-output]');
 function notify(text,success=false){if(!out)return;out.className=success?'saas-success':'saas-form-error';out.textContent=text;out.setAttribute('role','status')}
-function saveSession(email,name){let user={email,name:name||email.split('@')[0],joined:new Date().toISOString(),role:'demo'};storage.set('session',user);return user}
-function redirectHome(){location.href='dashboard.html'}
+function clearAccountDemoData(){storage.del('subscription');storage.del('invoice')}
+// Demo data must never bleed across different email identities, even on a shared device.
+function saveSession(email,name){
+ const existing=session();
+ if(existing?.email && existing.email!==email)clearAccountDemoData();
+ const user={email,name:name||email.split('@')[0],joined:new Date().toISOString(),role:'demo'};
+ storage.set('session',user);return user;
+}
+const returnPages=new Set(['dashboard.html','billing.html','invoice.html']);
+function redirectHome(){
+ const requested=new URLSearchParams(location.search).get('next');
+ // Exact filename allowlist: no external redirects, traversal, query or hash.
+ const target=returnPages.has(requested)?requested:'dashboard.html';
+ location.assign(target);
+}
 if(page==='login'||page==='register'){
  const form=$('#saas-auth');form?.addEventListener('submit',ev=>{ev.preventDefault();const data=new FormData(form),email=String(data.get('email')||'').trim().toLowerCase(),name=String(data.get('name')||'').trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){notify('Vui lòng nhập email đúng định dạng.');return}if(page==='register'&&name.length<2){notify('Vui lòng nhập tên từ 2 ký tự.');return}saveSession(email,name);notify('Đã tạo phiên truy cập demo. Không có tài khoản thực được đăng ký.',true);setTimeout(redirectHome,220)});
 }
 if(page==='dashboard'||page==='billing'||page==='invoice'){
  const user=session();if(!user){location.replace('login.html?next='+encodeURIComponent(location.pathname.split('/').pop()));}else{document.querySelectorAll('[data-user-name]').forEach(el=>safeText(el,user.name));document.querySelectorAll('[data-user-email]').forEach(el=>safeText(el,user.email));const sub=storage.get('subscription');document.querySelectorAll('[data-user-plan]').forEach(el=>safeText(el,sub?.name||'Chưa chọn gói'));document.querySelectorAll('[data-user-status]').forEach(el=>safeText(el,sub?'Đang trải nghiệm mô phỏng':'Chưa có hợp đồng'));if(page==='invoice'){const inv=storage.get('invoice');safeText($('#invoice-id'),inv?.id||'Chưa có hóa đơn demo');safeText($('#invoice-plan'),inv?.plan||'Chưa chọn gói');safeText($('#invoice-date'),inv?.date||'—');safeText($('#invoice-status'),inv?'Mô phỏng – chưa thanh toán':'Chưa phát sinh');}if(page==='billing'){$('#cancel-demo')?.addEventListener('click',()=>{storage.del('subscription');storage.del('invoice');location.reload()})}}
 }
-$('#sign-out')?.addEventListener('click',()=>{storage.del('session');location.href='login.html'});
+$('#sign-out')?.addEventListener('click',()=>{storage.del('session');clearAccountDemoData();location.href='login.html'});
 if(page==='checkout'){
  let p=new URLSearchParams(location.search).get('plan');if(!plans[p])p='starter';
  function render(){const el=$('#checkout-plan');let plan=plans[p];safeText(el,plan.name);safeText($('#checkout-features'),plan.features.join(' · '));const radio=$(`input[name="plan"][value="${p}"]`);if(radio)radio.checked=true;}

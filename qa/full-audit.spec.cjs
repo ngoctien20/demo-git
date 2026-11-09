@@ -68,6 +68,47 @@ test('Deep-linked protected page restores destination after login',async({page})
   await expect.poll(async()=>new URL(page.url()).pathname,{timeout:6000}).toMatch(/\/invoice\.html$/);
 });
 
+
+test('Deep-linked billing returns to billing after login',async({page})=>{
+  await page.goto('/billing.html');
+  await expect(page).toHaveURL(/login.html\?next=billing.html/);
+  await page.locator('#email').fill('qa+billing@example.test');
+  await page.locator('#saas-auth button[type=submit]').click();
+  await expect(page).toHaveURL(/\/billing.html$/);
+});
+
+for(const unsafe of ['https://example.test/', '//example.test/', '../about.html', '%2F%2Fexample.test', 'invoice.html?bad=1']) {
+  test('Login ignores unsafe post-auth redirect: '+unsafe,async({page})=>{
+    await page.goto('/login.html?next='+encodeURIComponent(unsafe));
+    await page.locator('#email').fill('qa+redirect@example.test');
+    await page.locator('#saas-auth button[type=submit]').click();
+    await expect(page).toHaveURL(/\/dashboard.html$/);
+    expect(page.url()).not.toContain('example.test/');
+  });
+}
+
+test('Sign-out purges demo invoice/subscription so another visitor cannot see them',async({page})=>{
+  await page.goto('/login.html');
+  await page.locator('#email').fill('first-qa@example.test');
+  await page.locator('#saas-auth button[type=submit]').click();
+  await expect(page).toHaveURL(/dashboard.html$/);
+  await page.goto('/checkout.html?plan=business');
+  await page.locator('#checkout-name').fill('First Account');
+  await page.locator('[name=terms]').check();
+  await page.locator('#checkout-form button[type=submit]').click();
+  await expect(page).toHaveURL(/invoice.html$/);
+  await expect(page.locator('#invoice-plan')).toContainText('AI Business');
+  await page.goto('/dashboard.html');
+  await page.locator('#sign-out').click();
+  await expect(page).toHaveURL(/login.html$/);
+  await page.locator('#email').fill('second-qa@example.test');
+  await page.locator('#saas-auth button[type=submit]').click();
+  await expect(page).toHaveURL(/dashboard.html$/);
+  await page.goto('/invoice.html');
+  await expect(page.locator('#invoice-plan')).toContainText('Chưa chọn gói');
+  await expect(page.locator('#invoice-id')).toContainText('Chưa có hóa đơn demo');
+});
+
 test('Checkout is simulation and invoice/billing state works',async({page})=>{
   await page.goto('/login.html');
   await page.locator('#email').fill('qa+checkout@example.test');
