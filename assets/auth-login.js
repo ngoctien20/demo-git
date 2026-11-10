@@ -14,6 +14,8 @@ const goAccount = document.getElementById('auth-go-account');
 
 let client = null;
 let inRecovery = containsRecoverySignal(location.search, location.hash);
+// A URL flag is untrusted; only Supabase's recovery event may authorize a password change.
+let recoveryVerified = false;
 let busy = false;
 
 const put = (message, kind = 'info') => {
@@ -56,7 +58,8 @@ try {
   put('Đang kiểm tra phiên đăng nhập...');
   // Register before reading the session: a recovery callback may otherwise be missed.
   client.auth.onAuthStateChange((event) => {
-    if (event === 'PASSWORD_RECOVERY') {
+    if (event === 'PASSWORD_RECOVERY' && inRecovery) {
+      recoveryVerified = true;
       showMode('update');
       put('Liên kết khôi phục hợp lệ. Hãy đặt mật khẩu mới.','ok');
     }
@@ -144,7 +147,7 @@ requestForm.addEventListener('submit', event=>{
 });
 updateForm.addEventListener('submit',event=>{
   event.preventDefault();
-  if (!client || !inRecovery) {
+  if (!client || !inRecovery || !recoveryVerified) {
     put('Phiên khôi phục không hợp lệ. Hãy yêu cầu liên kết mới.','error');return;
   }
   const password = String(updateForm.elements.password.value||'');
@@ -163,6 +166,7 @@ updateForm.addEventListener('submit',event=>{
       updateForm.reset();
       await withDeadline(client.auth.signOut(),13000);
       inRecovery = false;
+      recoveryVerified = false;
       // Clear any code or recovery tokens from browser URL without persisting them.
       history.replaceState(null,'',location.pathname);
       showMode('login');
