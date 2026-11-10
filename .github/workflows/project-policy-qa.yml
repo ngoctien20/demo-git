@@ -11,6 +11,8 @@ on:
       - 'scripts/check-site-navigation.mjs'
       - 'index.html'
       - 'demo.html'
+      - 'assets/website-chat-loader.js'
+      - 'assets/website-chat-loader.js'
       - 'assets/ai-consultant.js'
       - 'assets/live-chat.css'
       - '.github/workflows/project-policy-qa.yml'
@@ -39,7 +41,7 @@ jobs:
         with:
           node-version: '22'
       - name: JavaScript widget syntax
-        run: node --check assets/ai-consultant.js
+        run: node --check assets/ai-consultant.js && node --check assets/website-chat-loader.js
       - name: Public navigation and legacy page compatibility
         run: node scripts/check-site-navigation.mjs
       - name: V5 governance, registry and widget safety contracts
