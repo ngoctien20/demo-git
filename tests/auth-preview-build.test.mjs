@@ -28,7 +28,8 @@ test('staging pages show safe UX and use relative auth routes',()=>{
   }
   assert.match(login,/id="auth-login"/);
   assert.match(login,/id="auth-forgot-password" disabled/);
-  assert.match(login,/Cần thêm Render preview URL/);
+  assert.match(login,/<span id="auth-recovery-note">Khôi phục qua email đang tạm khóa/);
+  assert.doesNotMatch(login,/qua email đã cấu hình/);
   assert.match(account,/id="account-protected" hidden/);
   assert.match(account,/href="login\.html"/);
   assert.doesNotMatch(login,/assets\/saas\.js/);

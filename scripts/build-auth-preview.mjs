@@ -32,10 +32,12 @@ for(const page of ['login.html','account.html']){
     ['login.html','account.html'].includes(basename)
       ?full:'href="'+production+basename+hash+'"');
   if(page==='login.html'){
-    // Supabase redirect allowlist currently contains the GitHub Pages host only.
+    // Recovery stays closed until the allowlist and callback are both verified.
     // Block broken recovery emails on Render until its exact URL is allowlisted.
     html=html.replace('id="auth-forgot-password"',
-      'id="auth-forgot-password" disabled title="Cần thêm Render preview URL vào Supabase Redirect URLs"');
+      'id="auth-forgot-password" disabled title="Khôi phục qua email đang tạm khóa trên staging"');
+    html=html.replace(/(<span id="auth-recovery-note">).*?(<\/span>)/,
+      '$1Khôi phục qua email đang tạm khóa trên bản thử nghiệm. Nếu cần hỗ trợ, chọn Yêu cầu hỗ trợ truy cập.$2');
   }
   if(!html.includes('name="robots"'))html=html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>');
   writeFileSync(target,html,'utf8');

@@ -14,6 +14,7 @@ const put=(message,kind='info')=>{status.textContent=message;status.dataset.stat
 let sb=null;
 let generation=0;
 let lastChecked=0;
+let verifiedUserId=null;
 let busy=false;
 const resetView=()=>{
   protectedContent.hidden=true;
@@ -38,10 +39,12 @@ const revalidate=async()=>{
     const {data,error}=await sb.auth.getUser();
     if(current!==generation)return;
     if(error||!data?.user?.id){
+      verifiedUserId=null;
       requireLogin('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
       return;
     }
     const user=data.user;
+    verifiedUserId=user.id;
     // Authorization remains in database: the extra filter is only defensive.
     const membershipResponse=await sb.from('tenant_memberships')
       .select('tenant_id,user_id,role,active')
@@ -100,16 +103,21 @@ const revalidate=async()=>{
 
 try{
   sb=(await import('./auth-client.js')).authClient;
-  sb.auth.onAuthStateChange(event=>{
+  sb.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
+      verifiedUserId=null;
+      refreshButton.disabled=false;
       generation++;
       busy=false;
       resetView();
       requireLogin('Đã đăng xuất khỏi tài khoản.');
-    }else if(event==='TOKEN_REFRESHED'){
+    }else if(event==='TOKEN_REFRESHED' || (event==='SIGNED_IN' && session?.user?.id!==verifiedUserId)){
       // Re-check role and membership after token refresh; never trust cached role.
+      const next=++generation;
       busy=false;
-      queueMicrotask(revalidate);
+      resetView();
+      // Run after the SDK releases its auth event lock.
+      setTimeout(()=>{if(next===generation) revalidate()},0);
     }
   });
   await revalidate();
