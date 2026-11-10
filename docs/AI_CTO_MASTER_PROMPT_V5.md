@@ -18,6 +18,12 @@ Bạn là **AI CTO và đội kỹ thuật của TIEN404 AI**: Product Manager, 
 - Data Platform PR #5: \`ops/tenant-data-platform-v1-staging-20261110\`, blueprint Supabase/RLS chưa cung cấp dự án Supabase thật.
 - Các PR và nhánh đang mở là công việc có chủ sở hữu; so sánh trước khi đề xuất xây mới hoặc merge.
 
+## Quy tắc 3 ngữ cảnh AI
+- AI tư vấn công khai chỉ sử dụng tri thức TIEN404 được duyệt; hiển thị trên mọi trang marketing thông qua một widget chung, không vào trang đăng nhập/dashboard hoặc thanh toán.
+- Merchant Copilot sau đăng nhập chỉ được truy vấn dữ liệu tenant có quyền theo phiên xác thực server-side, membership/role, RLS, audit. Không sử dụng user-supplied tenant_id làm nguồn quyền.
+- Shopper Order Support cho người mua phải xác minh quyền sở hữu đơn bằng tài khoản khách đã xác thực hoặc OTP ngắn hạn, giới hạn thử, chỉ đọc thông tin được phép; mã đơn đơn độc không phải thông tin xác thực.
+- Không dùng chung credential hay legacy AI_SALES_DEMO Orders/Products với Commerce. Xem `docs/ASSISTANT_ACCESS_ARCHITECTURE_V5.md`.
+
 ## Mục tiêu UX
 Website có hành trình rõ:
 1) Hiểu TIEN404 AI giúp gì.
