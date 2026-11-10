@@ -2,7 +2,7 @@
 // TIEN404 Supabase staging Auth: static security / route contract, no network, no user creation.
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
-const files={login:read('login.html'),account:read('account.html'),config:read('assets/auth-config.js'),client:read('assets/auth-client.js'),loginJs:read('assets/auth-login.js'),accountJs:read('assets/auth-account.js'),css:read('assets/auth.css')};
+const files={login:read('login.html'),account:read('account.html'),config:read('assets/auth-config.js'),client:read('assets/auth-client.js'),loginJs:read('assets/auth-login.js'),accountJs:read('assets/auth-account.js'),css:read('assets/auth.css'),helpers:read('assets/auth-helpers.mjs')};
 const issues=[];
 const assert=(value,msg)=>{if(!value)issues.push(msg)};
 assert(files.config.includes('sb_publishable_'),'Public publishable key not found');
@@ -19,9 +19,21 @@ assert(files.accountJs.includes("eq('user_id',user.id)"),'Missing explicit auth 
 assert(files.accountJs.includes("from('tenants')"),'Missing scoped tenant lookup');
 assert(files.accountJs.includes('auth.signOut()'),'Missing logout handler');
 assert(files.loginJs.includes('auth.signInWithPassword'),'No password Auth flow');
+assert(files.loginJs.includes('auth.resetPasswordForEmail'),'Recovery email function missing');
+assert(files.loginJs.includes('auth.updateUser'),'Password update missing');
+assert(files.login.includes('id="auth-recovery-request" hidden'),'Recovery request form must be hidden by default');
+assert(files.login.includes('id="auth-password-update" hidden'),'Password update form must be hidden by default');
+assert(files.css.includes('.auth-panel [hidden]'),'Form display override missing: hidden forms could show');
+assert(files.account.includes('id="account-refresh"'),'Revalidate membership action missing');
+assert(files.accountJs.includes('approvedMemberships('),'Missing membership safe filter');
+assert(files.accountJs.includes('scopedTenantDisplay('),'Missing tenant intersection filter');
+assert(files.accountJs.includes('protectedContent.hidden=false'),'No positive authorization UI transition');
+assert(files.accountJs.includes('protectedContent.hidden=true'),'Auth fail-closed state missing');
+assert(!files.accountJs.includes("from('orders')"),'Staging account must not query real orders');
+assert(!files.accountJs.includes("from('customers')"),'Staging account must not query customer PII');
 assert(files.client.includes('@supabase/supabase-js@2.119.0/+esm'),'SDK not pinned');
 assert(files.client.includes("flowType: 'pkce'"),'PKCE disabled');
-assert(!files.login.includes('type="password"')===false,'Missing password input');
+assert(files.login.includes('type="password"'),'Missing password input');
 for(const [path,body] of Object.entries(files)){
  if(/(?:sb_secret_|service_role_key)\S{12,}/.test(body))issues.push(path+' appears to contain secret material');
 }
