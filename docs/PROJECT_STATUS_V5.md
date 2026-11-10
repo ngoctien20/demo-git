@@ -3,7 +3,7 @@
 **Snapshot:** 2026-11-10 JST. **Evidence:** live n8n connector and GitHub API in the same session. This is a point-in-time audit, not ongoing live health.
 
 ## Executive status
-- Public website: GitHub Pages on \`gh-pages\`; simplified six-link menu and floating AI widget code exists. Some visual Android dark-mode chat defects were reported and repeatedly patched; **no verified real-device E2E proof of resolution**. Public site could not be fetched from the browser tool in this session.
+- Public website: GitHub Pages on \`gh-pages\`; simplified six-link menu and floating AI widget code exists. Some visual Android dark-mode chat defects were reported and repeatedly patched; **no verified real-device E2E proof of resolution**. V5 feature branch now uses a shared widget loader across 15 public marketing HTML pages, but `gh-pages` live site still has the widget only in index/demo until separately reviewed, tested and released. Public site could not be fetched from the browser tool in this session.
 - n8n Cloud: **29 workflows**, **16 Active**. Active ≠ production ready. Current workflow topology and error history require reviews.
 - Historical executions: **19 error/crashed records since 2026-11-09T00:00:00Z** returned by connector (not necessarily unresolved, and not the daily count for every workflow). See Error Registry.
 - Website AI: \`wgkkmT7q4lm4HyuA\` active; intent knowledge router V4.3 appears in previous implementation, published. No real conversation memory or live product-price knowledge confirmed. Chat CTA code exists; end-to-end browser send not verified.
@@ -38,6 +38,7 @@
 | P2 | Add Customer Dashboard/Lead/Plans only after real backend and policy approval | SaaS product | Backend-ready and legal/privacy checks |
 
 ## Change ledger in this initiative
+- Assistant access decision: anonymous marketing chat on public pages only; merchant copilot and buyer order support require verified backend identity and per-tenant/per-order authorization. Design in `docs/ASSISTANT_ACCESS_ARCHITECTURE_V5.md`. No private-data AI tools implemented.
 - Autonomous CTO V5 branch \`ops/cto-autonomous-v5-20261110\` holds governance prompt, registry, QA guards and release criteria. It does not deploy production by itself.
 - Last checkpoint remains in GitHub; re-read source before acting from this file.
 
