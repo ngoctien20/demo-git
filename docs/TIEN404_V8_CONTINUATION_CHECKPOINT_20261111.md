@@ -47,3 +47,9 @@ Continued prior Work V7.1/V8 on existing Supabase Auth staging branch; did not r
 - Latest observed Render Auth staging deployment remains `dep-dbppc3ek1f9s73ci4al0` at `4c13ea5`; later branch changes require careful reconciliation before deploying.
 - Priority gate: provision two authorized isolated staging users and perform real JWT-context RLS negative tests before marking tenant isolation VERIFIED_DONE. Do not manufacture test results or promote to production.
 - Remaining V8.1: Auth real E2E, staging deploy reconciliation, merchant write API design, Bot Registry/Training Lab, Super Admin and pilot readiness NOT VERIFIED.
+
+## Shop B onboarding — 2026-11-11
+- User-supplied Shop B Auth UID `2b12df31-b275-41f4-a4fa-d17308b22d38` verified to exist in Supabase Auth with confirmed email.
+- Existing Shop B tenant `4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5` (`qa-staging-shop-b-20261110`) reused; no new tenant created.
+- Inserted active `owner` membership for Shop B UID only. Read-back shows exactly two active owner memberships: Shop A user `9f8a880f-aaf1-4481-8d0d-f46c863964a7` → Shop A `9c8c524c-88db-4771-8ab0-a4316298494c`; Shop B user `2b12df31-b275-41f4-a4fa-d17308b22d38` → Shop B `4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5`.
+- Status: membership provisioning VERIFIED_DONE. Real browser login and JWT-context RLS negative tests remain NOT VERIFIED; do not claim complete tenant isolation yet. No secret, password, production or n8n changes.
