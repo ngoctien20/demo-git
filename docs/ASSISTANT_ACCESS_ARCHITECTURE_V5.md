@@ -1,6 +1,6 @@
 # TIEN404 AI V5 — Unified Public Chat & Secure Assistant Architecture
 
-**Status:** DESIGN APPROVED FOR STAGING PROTOTYPE ONLY; no customer order permission or production backend was created. 2026-11-10 JST.
+**Status:** PROPOSED ARCHITECTURE AND BRANCH-ONLY STAGING PROTOTYPE; no customer order permission or production backend was created. 2026-11-10 JST.
 
 ## Product decision
 
