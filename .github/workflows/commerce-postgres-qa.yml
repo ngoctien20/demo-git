@@ -1,0 +1,42 @@
+name: Isolated Commerce PostgreSQL QA
+on:
+  push:
+    branches: [ops/tenant-data-platform-v1-staging-20261110]
+    paths: ['ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tien404_qa
+          POSTGRES_PASSWORD: isolated-ci-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 4s --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGDATABASE: tien404_qa
+      PGUSER: postgres
+      PGPASSWORD: isolated-ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'psycopg[binary]==3.2.9'
+      - name: Install schema in disposable Postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon;
+          CREATE ROLE authenticated;
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users(id uuid PRIMARY KEY);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS 'SELECT NULL::uuid';
+          SQL
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/schema.staging.sql
+      - run: python ops/data-platform/qa/commerce_postgres.py
