@@ -13,3 +13,13 @@ GitHub CI evidence: verify after PR branch push (do not infer PASS).
 - Data Platform staging QA: https://github.com/ngoctien20/demo-git/actions/runs/42824818633 — **success** (mock-provider and schema static tests, not a real Supabase database).
 - Inherited Super Admin V4 security QA: https://github.com/ngoctien20/demo-git/actions/runs/42824818584 — **success**, no regression detected by its existing suite.
 - GitHub Draft PR: https://github.com/ngoctien20/demo-git/pull/5 — not merged or production deployed.
+## Actual staging checks — 2026-11-10
+
+- Supabase project `ifxlvrhyjhbzbrkdsida`: ACTIVE_HEALTHY; migration `20261110133819` applied; 11 expected tables present.
+- 8/8 public tenant tables RLS enabled and FORCE; 3/3 private tables RLS enabled (no policies; deny-by-default).
+- Database role privilege probes: unauthenticated products SELECT=DENIED; authenticated products INSERT=DENIED; authenticated orders UPDATE=DENIED; app_private schema USAGE=DENIED.
+- Test role `authenticated` without user identity sees zero tenants, products, orders. **This test does not establish two-tenant isolation**; no real test users exist.
+- Supabase security advisor INFO: 3 intentionally policy-less private tables. Performance advisor INFO: 4 missing covering FK indexes + 6 unused indexes on new empty schema.
+- Render deploy `dep-dbphtbk9v7es73burv50` **live**, build/app logs confirm startup. `/health` and anonymous API 401 from independent GitHub runner still require results.
+- GitHub staging tests still pass at https://github.com/ngoctien20/demo-git/actions/runs/42825228110 . This tests code without credentials; remote API contract is a separate gate.
+- **NOT tested**: genuine Supabase Auth login; user A vs B with separate tenants; Supabase storage; restore; n8n signed gateway; E2E customer login; actual paid order / stock operations. Production NOT APPROVED.
