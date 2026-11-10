@@ -1,0 +1,48 @@
+name: TIEN404 V5 project policy & website integrity
+on:
+  push:
+    branches:
+      - ops/cto-autonomous-v5-20261110
+    paths:
+      - 'AGENTS.md'
+      - 'docs/**'
+      - 'data/workflow-registry.v5.json'
+      - 'scripts/check-project-integrity.mjs'
+      - 'scripts/check-site-navigation.mjs'
+      - 'index.html'
+      - 'demo.html'
+      - 'assets/ai-consultant.js'
+      - 'assets/live-chat.css'
+      - '.github/workflows/project-policy-qa.yml'
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'docs/**'
+      - 'data/workflow-registry.v5.json'
+      - 'scripts/check-project-integrity.mjs'
+      - 'scripts/check-site-navigation.mjs'
+      - 'index.html'
+      - 'demo.html'
+      - 'assets/ai-consultant.js'
+      - 'assets/live-chat.css'
+      - '.github/workflows/project-policy-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  project-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript widget syntax
+        run: node --check assets/ai-consultant.js
+      - name: Public navigation and legacy page compatibility
+        run: node scripts/check-site-navigation.mjs
+      - name: V5 governance, registry and widget safety contracts
+        run: node scripts/check-project-integrity.mjs
+      - name: Scope reminder
+        run: echo "Static read-only QA; no n8n, Orders, Messages, Supabase, Control Hub or production writes."
