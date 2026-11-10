@@ -20,3 +20,21 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 
 ### Điều chỉnh thứ tự theo kết quả QA
 NGO-7 và NGO-5 cùng ưu tiên trước pilot. NGO-7 đã có bằng chứng sai doanh thu với hai cách ghi giá VND. NGO-8/9 dùng 96 định nghĩa single-turn duy nhất và phân loại chín kịch bản một lượt trước khi chấm độ liên tục hội thoại.
+
+## Giai đoạn 1 · Messenger Bot V1 cho một shop
+Mười việc dưới đây là phạm vi nghiệm thu của các issue đang mở. Linear giữ trạng thái. P0 chặn việc chạy Lab an toàn hoặc làm lẫn dữ liệu; P1 chặn bàn giao pilot. Thứ tự này thay thế thứ tự bắt đầu tổng quát ở trên cho giai đoạn 1.
+
+| # | Mức | Issue và owner Work | Mục tiêu và tiêu chí hoàn thành | Phụ thuộc |
+|---|---|---|---|---|
+| 1 | P0 | [NGO-5](https://linear.app/ngoctien20/issue/NGO-5) · Messenger Lab | Cô lập đầu ra. Chặn toàn bộ đường đến Meta, Sheets thật và workflow ghi dùng chung. Một lượt đặt hàng fixture chỉ tạo bản ghi mock, số lần gửi/ghi ra bên ngoài bằng 0. | Bắt đầu ngay |
+| 2 | P0 | [NGO-6](https://linear.app/ngoctien20/issue/NGO-6) · Integration | Ràng buộc danh tính shop. Ánh xạ Page đã xác thực → tenant/store trên server. Hai shop fixture có SKU trùng đọc đúng giá của mình; mapping thiếu hoặc xung đột bị từ chối trước khi gọi tool. | Bắt đầu ngay |
+| 3 | P0 | [NGO-5](https://linear.app/ngoctien20/issue/NGO-5) · Messenger Lab | Chống xử lý trùng. Phát lại cùng MID, kể cả đồng thời, chỉ tạo tối đa một phản hồi và một ý định đặt hàng mock. Hai tin liên tiếp của cùng người gửi giữ đúng thứ tự. | Sau 1 và 2 |
+| 4 | P1 | [NGO-7](https://linear.app/ngoctien20/issue/NGO-7) · n8n Commerce | Chuẩn hóa doanh thu VND. Đối chiếu draft/live và caller; chín fixture có expected/actual, giá định dạng VN được tính đúng và dữ liệu paid bất hợp lệ báo lỗi. Gắn version và rollback để review. | Bắt đầu ngay |
+| 5 | P1 | [NGO-7](https://linear.app/ngoctien20/issue/NGO-7) · n8n Commerce | Kiểm giá, tồn và xác nhận đơn. Catalog fixture là nguồn giá. Từ chối SKU thiếu, lượng vượt tồn và giá chưa xác định. Trước xác nhận của chủ shop, hệ thống chỉ lưu đề nghị đơn trong fixture. | Sau 1 và 2 |
+| 6 | P1 | [NGO-11](https://linear.app/ngoctien20/issue/NGO-11) · Super Admin | Tạm nghỉ đúng cửa hàng. Trên PR #2 staging, tạm nghỉ shop A chặn hành động của A, shop B vẫn hoạt động. Có audit, kiểm quyền và khôi phục trạng thái A. | Sau 2 |
+| 7 | P1 | [NGO-9](https://linear.app/ngoctien20/issue/NGO-9) · Messenger Lab | Chuyển người xử lý. Ca cần tư vấn người thật tạo yêu cầu đến hộp nhận mock; bot dừng trả lời, chỉ tiếp tục khi có thao tác resume hợp lệ. Có bằng chứng cho cả hai trạng thái. | Sau 1 và 2 |
+| 8 | P1 | [NGO-8](https://linear.app/ngoctien20/issue/NGO-8) · QA | Chạy hồi quy V1 theo phiên bản. Chạy 96 định nghĩa single-turn duy nhất và 36 kịch bản theo mode trên Lab đã cô lập. Tách 27 kịch bản nhiều lượt, ghi skipped kèm lý do. Mọi ca trọng yếu về giá, đơn, tenant, gửi trùng và handoff phải đạt trước pilot. | Sau 3, 5, 6 và 7 |
+| 9 | P1 | [NGO-10](https://linear.app/ngoctien20/issue/NGO-10) · Website | Đối chiếu lời hứa trên web. Trên staging/mobile, kiểm đường demo và FAQ so với chức năng V1 đã nghiệm thu. Consultant chuyển người phụ trách khi gặp giá gói chưa duyệt. Bàn giao danh sách các cam kết cần sửa trước khi mời shop. | Đối chiếu ngay; chốt sau 8 |
+| 10 | P1 | [NGO-14](https://linear.app/ngoctien20/issue/NGO-14) · CTO và vận hành | Diễn tập pilot một shop. Dùng fixture diễn tập onboarding, một yêu cầu đơn, chủ shop duyệt, tạm dừng và rollback. Lưu thời gian, số lỗi, người trực, chi phí quan sát được hoặc UNKNOWN. Trình chủ dự án duyệt shop/kênh trước kết nối thật. | Sau 4, 6, 8 và 9 |
+
+**Cổng A — Lab:** QA xác nhận mock transport, kho fixture, mapping hai tenant và xử lý MID. **Cổng B — nghiệp vụ:** đối chiếu giá/tồn, doanh thu, handoff, pause và regression. **Cổng C — pilot:** một shop, một Page, một người trực; chủ shop duyệt từng đơn. Dừng pilot nếu gửi trùng, sai giá, ghi sai shop hoặc mất khả năng handoff. Khôi phục bằng tạm nghỉ entitlement của riêng shop và đưa hội thoại về người trực. Mỗi cổng lưu SHA, workflow version, suite/run, expected/actual, owner và bằng chứng rollback. NGO-12 và NGO-13 tiếp tục trong backlog; billing thật và phát hành Core cần quyết định riêng.

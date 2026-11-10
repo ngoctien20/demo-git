@@ -9,3 +9,6 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 
 ### Bàn giao theo issue
 NGO-7: dùng chín fixture tái kiểm từng bản Revenue, xác định nguồn định dạng và lập phương án rollback trước review publish. NGO-5: chứng minh đường vận chuyển mock và kho fixture riêng trước khi chạy agent. NGO-9: chốt tiêu chí đánh giá cho 27 kịch bản nhiều lượt và 9 kịch bản một lượt.
+
+## Giai đoạn 1 · Messenger Bot V1 cho một shop
+Đầu phiên nhận mục theo số trong [MASTER_ROADMAP](MASTER_ROADMAP.md) và ghi nhận owner trên issue trước khi chỉnh sửa. Website nhận 9 trên nhánh staging; Super Admin nhận 6 trên cơ sở PR #2; Commerce nhận 4 và 5; Messenger Lab nhận 1, 3 và 7. Integration phụ trách 2, QA phụ trách 8, CTO/Operations phụ trách 10. Khi component đổi SHA hoặc workflow version, đọc diff trước khi tiếp tục. Ưu tiên chạy 1, 2 và 4 ngay; Website có thể đối chiếu nội dung ngay. Không merge các PR độc lập để lấy checkpoint. Chủ dự án duyệt chuyển từ fixture sang Page/shop thật và mọi thay đổi production liên quan.
