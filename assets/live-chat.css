@@ -289,3 +289,36 @@
  .tien404-chat-panel #n8n-chat .chat-body{overscroll-behavior:contain!important}
 }
 @media(max-height:550px){.tien404-chat-panel{height:calc(100dvh - 88px);bottom:62px}}
+
+
+/* V8: concise live-AI CTA; the real chat lives in the floating launcher. */
+.ai-live.ai-live--compact{padding:26px 0 38px;scroll-margin-top:98px}
+.ai-live-compact-card{
+  display:flex;align-items:center;justify-content:space-between;gap:22px;
+  border:1px solid #51477e;border-radius:20px;
+  background:linear-gradient(120deg,#18192f,#141529 65%,#201a41);
+  padding:22px 26px;
+}
+.ai-live-compact-copy{max-width:690px;min-width:0}
+.ai-live-compact-tag{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:750;letter-spacing:.08em;color:#77e9bd}
+.ai-live-compact-tag span{font-size:10px}
+.ai-live-compact-card h2{font-size:clamp(22px,2.8vw,28px);line-height:1.25;letter-spacing:-.03em;margin:6px 0}
+.ai-live-compact-card p{font-size:14px;color:#d4d8ed;line-height:1.55;margin:0 0 6px}
+.ai-live-compact-card small{font-size:11px;line-height:1.5;color:#a6abc7}
+.ai-live-compact-button{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:48px;padding:12px 18px;border:0;border-radius:12px;
+  color:white;background:linear-gradient(110deg,#655df1,#9b45ec);
+  font:700 14px/1.2 system-ui,sans-serif;cursor:pointer;
+  box-shadow:0 8px 22px #6547c033;
+}
+.ai-live-compact-button:hover{filter:brightness(1.1)}
+.ai-live-compact-button:focus-visible{outline:3px solid #cbb5ff;outline-offset:3px}
+@media(max-width:600px){
+  .ai-live.ai-live--compact{padding:18px 0 30px}
+  .ai-live-compact-card{flex-direction:column;align-items:stretch;padding:18px;gap:16px;border-radius:16px}
+  .ai-live-compact-card h2{font-size:22px}
+  .ai-live-compact-card p{font-size:13px}
+  .ai-live-compact-button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.ai-live-compact-button{transition:none}}
