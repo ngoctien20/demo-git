@@ -21,6 +21,13 @@ Snapshot: 2026-11-10 (JST). Scope: standalone security core on a **staging-only 
 - Staging tests: 64 passing locally; GitHub Actions verification and exact PR commit are to be populated after pushing.
 - Website = existing project, unchanged.
 - Customer Dashboard = still demo; no production subscription API wired.
-- Super Admin = **code-only isolated staging core**, not a visible site and not production deployed.
+- Super Admin = **isolated staging backend plus an authenticated read-only HTML admin console** mounted at `/admin` in that staging app. No hosting/deployment or integration into Sites Control Hub, D1, n8n or production; requires a separately secured staging environment.
 
 Release: BLOCKED, pending authorized Sites source, provider approval, official payment integration, backup restore and production security testing.
+
+## 2026-11-10 update
+
+- Added staging UI (`app/ui/index.html`, `admin.css`, `admin.js`) for MFA login, tenant overview, plans and restricted audit log; reused the existing FastAPI API contract, no second backend.
+- Added `GET /api/v1/admin/plans` with backend admin role enforcement.
+- Added isolated UI/API tests in `tests/test_admin_ui.py`.
+- CI run 42819808814: success (isolated staging QA); does not validate a deployed browser, production D1 or Control Hub integration.
