@@ -101,6 +101,50 @@ function addMerchantList(card, tenant, viewGeneration, orders = false) {
   button.addEventListener('click',load);
   filters.addEventListener('submit',event=>{event.preventDefault();load();});
 }
+// Merchant overview: read-only counts from tenant-scoped RLS queries.
+function addMerchantOverview(card, tenant, viewGeneration) {
+  const section=document.createElement('section');
+  const heading=document.createElement('h4');
+  heading.textContent='Tổng quan cửa hàng';
+  const refresh=document.createElement('button');
+  refresh.type='button';
+  refresh.className='btn btn-outline';
+  refresh.textContent='Cập nhật tổng quan';
+  const summary=document.createElement('p');
+  summary.setAttribute('role','status');
+  const grid=document.createElement('ul');
+  section.append(heading,refresh,summary,grid);
+  card.append(section);
+  async function load() {
+    if(viewGeneration!==generation || refresh.disabled)return;
+    refresh.disabled=true;
+    grid.replaceChildren();
+    summary.textContent='Đang đọc dữ liệu staging...';
+    try {
+      const specs=[['Sản phẩm','products'],['Đơn hàng','orders'],['Khách hàng','customers'],['Hội thoại','conversations']];
+      const results=await Promise.all(specs.map(async ([label,table])=>{
+        const response=await withDeadline(sb.from(table).select('id',{count:'exact',head:true}).eq('tenant_id',tenant.id),13000);
+        if(response.error || !Number.isInteger(response.count))throw Error('count');
+        return [label,response.count];
+      }));
+      if(viewGeneration!==generation)return;
+      for(const [label,count] of results){
+        const item=document.createElement('li');
+        item.textContent=label+': '+count;
+        grid.append(item);
+      }
+      summary.textContent='Dữ liệu Supabase theo quyền cửa hàng · '+new Date().toLocaleTimeString('vi-VN');
+    }catch{
+      if(viewGeneration!==generation)return;
+      grid.replaceChildren();
+      summary.textContent='Không tải được tổng quan. Dữ liệu riêng vẫn được bảo vệ.';
+    }finally{
+      if(viewGeneration===generation)refresh.disabled=false;
+    }
+  }
+  refresh.addEventListener('click',load);
+  load();
+}
 const revalidate=async()=>{
   if(!sb || busy)return;
   busy=true;
@@ -162,6 +206,7 @@ const revalidate=async()=>{
       const note=document.createElement('small');
       note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
+      addMerchantOverview(card, t, current);
       addMerchantList(card, t, current);
       if (['owner','manager'].includes(t.role)) addMerchantList(card, t, current, true);
       cards.appendChild(card);
