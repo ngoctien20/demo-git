@@ -12,3 +12,7 @@
 
 Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/demo-git/tree/7bf9c660e70a65295e80b0fba8c241590d6aa0bf) · [checkpoint monitor](https://github.com/ngoctien20/demo-git/pull/1) · [checkpoint tổng thể riêng của dự án, ngày 10/11/2026].
 
+
+
+### Kiểm tra bổ sung
+Gmail list labels thành công. Calendar list calendars thành công. Contacts tìm TIEN404 trả 0 kết quả. Chưa kiểm quyền gửi, sửa lịch hoặc sửa liên hệ. Drive có đủ 11 thư mục. Linear đã có NGO-5 đến NGO-14. GitHub có ba PR draft, PR #3 giữ tài liệu điều phối.

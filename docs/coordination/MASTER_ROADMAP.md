@@ -17,3 +17,6 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 
 ### Cập nhật đồng thời · PR #2
 [Super Admin staging tại b2108431](https://github.com/ngoctien20/demo-git/tree/b2108431f1c230f03bb7961387d1aa900c046b62/ops/super-admin) đã triển khai FastAPI/SQLite, MFA, RBAC, entitlement từng shop, payment fixture, audit và test restore staging. QA_REPORT ghi nhận 64/64 local; [job staging-security](https://github.com/ngoctien20/demo-git/actions/runs/42802094703) đã success. PR #2 draft dựa trên nhánh PR #1. Chưa triển khai Sites/D1, thanh toán thật hay kết nối OAuth. Contract cho các route hiện có nằm tại ops/super-admin/docs/API_CONTRACT.md của PR #2. Tái sử dụng trước khi thiết kế thêm; PostgreSQL là phương án cần so với D1 theo phạm vi dữ liệu. NGO-6/11/12 tập trung review, port và kiểm phần thiếu.
+
+### Điều chỉnh thứ tự theo kết quả QA
+NGO-7 và NGO-5 cùng ưu tiên trước pilot. NGO-7 đã có bằng chứng sai doanh thu với hai cách ghi giá VND. NGO-8/9 dùng 96 định nghĩa single-turn duy nhất và phân loại chín kịch bản một lượt trước khi chấm độ liên tục hội thoại.
