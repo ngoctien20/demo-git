@@ -51,3 +51,6 @@ Render xác nhận LIVE `dep-dbpjiv1srm7s73aur350` tại `7d0c5754`. Đã kiểm
 - **Not yet verified:** real password sign-in on user's phone and a real Supabase authenticated session. User should retry and report the *nonsecret error message* or successful Shop A view. Static site logs did not expose relevant request traces.
 - Published n8n and GitHub Pages production were **not changed**.
 - Control Hub checklist status / execution evidence is in `docs/CONTROL_HUB_CHECKLIST_20261111.md`.
+
+## 2026-11-11 05:59 JST · Form readiness verified on Render
+Deploy dep-dbpob0vf3r2c738ps6rg LIVE, commit 2b16ac7c5f3db22826aae6fc01e26d6050d3a999. Browser reload verified all three forms use dialog submission, the login button is initially disabled and becomes enabled after the staging account prompt appears. Auth CI 42900349280 PASS including Chromium fixture and JavaScript-disabled Enter regression. Navigation 42900349121 PASS. No authenticated Shop A catalog or real A/B test in this run. Rollback deploy dep-dbpo69u1egvs7390iv80. Production changed: NO.
