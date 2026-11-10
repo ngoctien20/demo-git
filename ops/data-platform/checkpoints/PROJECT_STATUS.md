@@ -21,3 +21,6 @@ GitHub staged deliverable: Draft PR #5 (`ops/tenant-data-platform-v1-staging-202
 - GitHub PR #5 remains draft, stacked on Super Admin PR #2. Source branch may be ahead of deployed commit because autoDeploy=off; never imply the latest HEAD was automatically deployed.
 - HTTP GET `/health` from an independent external client has **not yet been verified**; GitHub read-only remote smoke workflow was added but its result must be checked separately. Render 'live' is infrastructure status, not full API or database integration acceptance.
 - No frontend, Sites Control Hub, n8n production, order management or billing integration changed.
+
+## 2026-11-11 00:38 JST · V6
+Auth A đã có E2E trên Render; API hai tài khoản và restore còn mở. [Bằng chứng](LIVE_INTEGRATION_QA_20261110.md).

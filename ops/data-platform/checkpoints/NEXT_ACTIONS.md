@@ -18,3 +18,6 @@
 5. Review identity bridge with Super Admin PR #2 and Sites Control Hub before shared sessions or production migration. No live order, payment, subscription or n8n workflow writes.
 6. Add independent safe health checks distinguishing configured vs genuinely connected. A 200 health response currently only reports CONFIGURED_NOT_VERIFIED.
 7. Capture backup/restore evidence and security audit before any production pilot. Update PR #5 checkpoints and require review before merge.
+
+## 2026-11-11 00:38 JST · V6
+Data Work tiếp tục live_auth_acceptance.py khi có tài khoản B được cấp qua kênh riêng. [Bằng chứng](LIVE_INTEGRATION_QA_20261110.md).

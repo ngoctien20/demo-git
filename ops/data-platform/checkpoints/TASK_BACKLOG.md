@@ -20,3 +20,6 @@
 - [ ] Storage bucket RLS / media upload / data retention and deletion jobs.
 - [ ] PostHog instrumentation without leaking PII.
 - [ ] Load tests, alerting, disaster recovery, deploy review.
+
+## 2026-11-11 00:38 JST · V6
+P0: hai danh tính QA độc lập và kiểm scopes/refresh. P1: kiểm restore fixture và adapter identity trước khi dùng tenant data. [Bằng chứng](LIVE_INTEGRATION_QA_20261110.md).

@@ -30,3 +30,6 @@ GitHub CI evidence: verify after PR branch push (do not infer PASS).
 - `GET https://tien404-data-staging.onrender.com/health` returned **HTTP 200** with `mode=staging`, `status=CONFIGURED_NOT_VERIFIED`, `database_connected=false`, `production_readiness=NOT_APPROVED`.
 - Anonymous `GET /api/v1/tenants` returned **401** (expected). This verifies public HTTPS route + basic auth boundary only; authenticated Supabase connection and tenant-specific read with real credentials remain **NOT TESTED**.
 - Render deploy `dep-dbphtbk9v7es73burv50` is live. Auto-deploy remains OFF, source deployed SHA `dfbd3b5a73d90e44c017cf060ac04375f5ac1001`.
+
+## 2026-11-11 00:38 JST · V6
+PASS metadata, anonymous 401 và Auth A ở PR #7; two-identity API suite BLOCKED. [Bằng chứng](LIVE_INTEGRATION_QA_20261110.md).

@@ -7,3 +7,6 @@
 - Render Free `tien404-data-staging` (Singapore) created with autoDeploy disabled and server-side publishable key; initial deployment is LIVE in Render and Uvicorn startup confirmed.
 - Added staging public smoke workflow; full remote endpoints/Auth acceptance pending.
 - No production workflow, Supabase Auth user, customer data or payment mutated.
+
+## 2026-11-11 00:38 JST · V6
+Đối chiếu hồ sơ staging, không đổi migration hoặc runtime. [Bằng chứng](LIVE_INTEGRATION_QA_20261110.md).

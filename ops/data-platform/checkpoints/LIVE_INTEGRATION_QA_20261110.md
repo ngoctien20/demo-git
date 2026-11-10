@@ -38,3 +38,7 @@
 3. Replace process-local HMAC replay cache with a durable shared atomic nonce store and channel-scope authorization for any production use.
 4. Test signed Messenger/Zalo provenance separately; never trust tenant_id from chatbot messages.
 5. Run restore test, key rotation, dependency/security scans, order idempotency and stock transactions before customer pilots.
+
+## 2026-11-11 00:38 JST · Đối chiếu V6
+Supabase Singapore ACTIVE_HEALTHY; migration 20261110133819. Truy vấn tổng hợp: 1 tài khoản đã xác nhận, 2 tenant, 1 owner active ở Shop A, 2 sản phẩm và 2 đơn. 11 bảng bật RLS, 0 table grant trực tiếp ở app_private cho anon/authenticated/PUBLIC. Advisor vẫn có ba INFO no-policy ở private và cảnh báo leaked-password protection. Chưa thực hiện restore hoặc đo tác động của grants gián tiếp.
+Render backend LIVE tại `9745dd18` / `dep-dbpifqbbc2fs73aa1ab0`; /health trả CONFIGURED_NOT_VERIFIED, /api/v1/tenants không phiên trả 401. Bài A/B qua backend còn BLOCKED vì chỉ có một Auth user. [PR #7](https://github.com/ngoctien20/demo-git/pull/7) có bằng chứng E2E riêng cho Shop A, refresh và logout. HMAC đọc lại assertion của 1639 và lỗi 401 của 1641; chưa replay. Adapter Super Admin hiện chỉ đọc status. Không có thay đổi schema, quyền hoặc dữ liệu nghiệp vụ.
