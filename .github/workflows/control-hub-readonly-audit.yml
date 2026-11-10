@@ -1,0 +1,36 @@
+name: TIEN404 Control Hub - read-only status audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [ops/control-hub-audit-v2-20261110]
+    paths:
+      - 'ops/control-hub/**'
+      - '.github/workflows/control-hub-readonly-audit.yml'
+  schedule:
+    - cron: '0 0 * * *' # Daily at 09:00 JST after approved merge to default branch
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit test read-only health classifications
+        run: python -m unittest discover -s ops/control-hub/tests -p 'test_*.py' -v
+      - name: Probe public endpoints without writing to external systems
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python ops/control-hub/tools/probe_public.py
+      - name: Store evidence as 14-day private-to-GitHub artifact (public URL metadata only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TIEN404-control-hub-health-snapshot
+          path: ops/control-hub/artifacts/
+          if-no-files-found: warn
+          retention-days: 14
