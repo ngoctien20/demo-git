@@ -13,7 +13,8 @@ const allowList=[
   'assets/style.css','assets/auth.css','assets/favicon.svg',
   'assets/app.js','assets/site-config.js',
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
-  'assets/auth-account.js','assets/auth-helpers.mjs'
+  'assets/auth-account.js','assets/auth-helpers.mjs',
+  'assets/auth-runtime.mjs','assets/auth-bootstrap.js'
 ];
 const production='https://ngoctien20.github.io/demo-git/';
 if(!existsSync(path.join(root,'assets/auth-client.js')))throw Error('Auth source missing');
