@@ -46,5 +46,19 @@ jobs:
           status,_=get('/api/v1/tenants')
           print('ANONYMOUS_TENANTS_HTTP='+str(status))
           assert status==401,'Tenant API must reject anonymous requests'
-          print('PASS: public staging health and anonymous deny. Real identity/RLS integration still unverified.')
+          # A syntactically accepted but fake bearer must be rejected by the
+          # real Supabase Auth gateway, not accepted as an authenticated user.
+          forged=urllib.request.Request(base+'/api/v1/tenants',headers={
+              'Accept':'application/json',
+              'Authorization':'Bearer '+('x'*48),
+              'User-Agent':'TIEN404-staging-smoke/1.0'
+          })
+          try:
+              with urllib.request.urlopen(forged,timeout=20) as response:
+                  fake_status=response.status
+          except urllib.error.HTTPError as error:
+              fake_status=error.code
+          print('FORGED_BEARER_HTTP='+str(fake_status))
+          assert fake_status==401,'Forged bearer must fail closed'
+          print('PASS: public staging health, anonymous deny and forged bearer reject. Real login still unverified.')
           PY
