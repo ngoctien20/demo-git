@@ -35,6 +35,12 @@ Build a reliable, simple Vietnamese AI SaaS for small shops. A visitor should qu
 9. Leave a checkpoint: what changed, links, passing/failing tests, risks, rollback and owner approvals needed.
 10. Never silently erase, replace or overwrite other branches or parallel agent work. Re-fetch before update and use exact file SHA.
 
+## AI access surfaces
+- Public marketing AI is shared across marketing tabs using `assets/website-chat-loader.js`, but NEVER on account/authenticated pages; code is branch-only until QA.
+- Merchant dashboard Copilot requires real login, server-derived tenant scope, RBAC/RLS and read-only tools first.
+- Buyer order support requires a tenant-scoped verified buyer identity and order ownership; do not treat order code alone as authorization.
+- Follow `docs/ASSISTANT_ACCESS_ARCHITECTURE_V5.md` before adding any order-status integration.
+
 ## Required checks
 - \`node scripts/check-site-navigation.mjs\`
 - \`node scripts/check-project-integrity.mjs\`
