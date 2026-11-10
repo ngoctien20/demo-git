@@ -13,9 +13,9 @@ Checkpoint generated: **2026-11-10T09:26:33Z** (UTC). Scope: **independent read-
 ## Source and limitations
 - n8n: authenticated connector read-only queries at this checkpoint.
 - GitHub: authenticated GitHub app queries.
-- Control Hub HTTP status: to be checked by GH Action probe; a 200 would only verify reachability, not operation.
+- Control Hub public URL: **HTTP 401 AUTH_REQUIRED**, verified from independent GitHub Actions runner on 2026-11-10T09:28:43Z; this does NOT establish whether an authorized session works.
 - Control Hub app and D1: **not accessible** to this runtime; no changes attempted.
-- A separate monitoring harness is being staged. Its outputs are artifacts, not data automatically displayed in Control Hub.
+- A separate read-only monitoring harness was staged and tested successfully: GitHub Actions run `42791015031`, 6/6 tests passed; site HTTP 401, TIEN404 AI HTTP 200, GitHub API reachable. Its outputs are artifacts, not data automatically displayed in Control Hub.
 
 ## Safety gate
 No production workflow modified, no Sites deployment performed, no tokens exported, no database rows changed. Release readiness: **NOT VERIFIED**.
