@@ -37,3 +37,7 @@ PR #7 sửa vô hiệu hóa hiển thị quyền cũ khi đổi danh tính và t
 ## V7 · 2026-11-11 JST · Merchant catalog
 
 Base 20eaa229 (PR #7), previous Render dep-dbpjiv1srm7s73aur350. V7 adds on-demand active SKU/name/price/stock for a verified membership through authenticated PostgREST with the existing products RLS. Up to 20 rows displayed; no order/customer or subscription operations. Discard late responses after session changes; refuse mixed-tenant responses. Anonymous account gate rechecked on Render before deployment. Supabase count: one user, two tenants, one membership. Browser fixture includes a scoped catalog and a mixed-scope rejection. Build + unit/artifact 9/9 pass locally. See Actions on this commit for browser result. Real two-user acceptance and callback remain open; the release gate is NOT READY. Rollback: redeploy prior Render artifact; no DB changes.
+
+## 2026-11-11 JST · PR #7 · Tiếp tục sau bước chờ đăng nhập Work
+
+Cloud Browser hiển thị biểu mẫu đăng nhập sẵn sàng trên deployment dep-dbpo69u1egvs7390iv80 (404b63b). Thẻ Work đang chờ xác nhận phiên. Kiểm tra mã phát hiện có thể gửi biểu mẫu HTML trước khi hoàn tất getUser. Khóa nút từ HTML, dùng method=dialog để vô hiệu gửi qua mạng mặc định và chỉ mở nút khi hoàn tất khởi tạo. Static QA và 13/13 unit/build PASS. Thêm Chromium regression không JavaScript/Enter, chạy trong Actions. Đăng nhập và xem danh mục trên bản mới bằng tài khoản thật, cùng kiểm thử hai tài khoản độc lập, còn mở. Rollback staging bằng deployment trên. Production changed: NO.

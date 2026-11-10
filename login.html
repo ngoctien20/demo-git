@@ -11,21 +11,21 @@
   <section class="auth-panel" aria-labelledby="auth-title">
     <h2 id="auth-title">Đăng nhập</h2>
     <p>Sử dụng tài khoản thử nghiệm do quản trị viên cấp. Không chấp nhận email bất kỳ như bản demo cũ.</p>
-    <form id="auth-login" novalidate>
+    <form method="dialog" id="auth-login" novalidate>
       <label for="auth-email">Email<input id="auth-email" name="email" type="email" autocomplete="username" inputmode="email" maxlength="254" required placeholder="ten@example.com"></label>
       <label for="auth-password">Mật khẩu<input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Nhập mật khẩu"></label>
-      <button id="auth-submit" type="submit">Đăng nhập an toàn <span aria-hidden="true">↗</span></button>
+      <button id="auth-submit" type="submit" disabled>Đăng nhập an toàn <span aria-hidden="true">↗</span></button>
     </form>
     <p id="auth-status" class="auth-message" role="status" aria-live="polite">Đang kết nối với Supabase Auth...</p><button id="auth-retry" type="button" class="auth-text-button" hidden>Thử tải lại trang</button>
     <button type="button" class="auth-text-button" id="auth-forgot-password">Quên mật khẩu?</button>
-    <form id="auth-recovery-request" hidden novalidate aria-label="Yêu cầu khôi phục mật khẩu">
+    <form method="dialog" id="auth-recovery-request" hidden novalidate aria-label="Yêu cầu khôi phục mật khẩu">
       <label for="auth-recovery-email">Email tài khoản<input id="auth-recovery-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="ten@example.com" required></label>
-      <button type="submit">Gửi liên kết khôi phục</button>
+      <button type="submit" disabled>Gửi liên kết khôi phục</button>
     </form>
-    <form id="auth-password-update" hidden novalidate aria-label="Đổi mật khẩu sau xác thực">
+    <form method="dialog" id="auth-password-update" hidden novalidate aria-label="Đổi mật khẩu sau xác thực">
       <label for="auth-new-password">Mật khẩu mới<input id="auth-new-password" type="password" name="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
       <label for="auth-password-confirm">Nhập lại mật khẩu<input id="auth-password-confirm" type="password" name="confirm" autocomplete="new-password" minlength="12" maxlength="256" required></label>
-      <button type="submit">Xác nhận mật khẩu mới</button>
+      <button type="submit" disabled>Xác nhận mật khẩu mới</button>
     </form>
     <a id="auth-go-account" class="auth-account-link" href="account.html" hidden>Tiếp tục vào tài khoản ↗</a>
     <button type="button" id="auth-return-login" class="auth-text-button" hidden>Quay lại đăng nhập</button>
@@ -37,4 +37,4 @@
 <div><h4>Khám phá</h4><ul><li><a href="solutions.html">Giải pháp AI</a></li><li><a href="demo.html">Live Demo</a></li><li><a href="pricing.html">Gói dịch vụ</a></li><li><a href="industries.html">Theo ngành</a></li></ul></div>
 <div><h4>TIEN404 AI</h4><ul><li><a href="about.html">Về chúng tôi</a></li><li><a href="contact.html">Đăng ký tư vấn</a></li><li><a href="faq.html">Câu hỏi thường gặp</a></li></ul></div>
 <div><h4>Thông tin</h4><ul><li><a href="privacy.html">Chính sách bảo mật</a></li><li><a href="terms.html">Điều khoản dịch vụ</a></li><li><a href="refund.html">Chính sách dịch vụ</a></li></ul></div>
-</div><div class="footer-bottom"><span>© 2026 TIEN404 AI. Bản thử nghiệm MVP — chưa tiếp nhận thanh toán.</span><span>Phát triển để mở rộng thành nền tảng AI cho nhiều cửa hàng.</span></div></div></footer><script defer="" src="assets/site-config.js"></script><script defer="" src="assets/app.js"></script><script defer src="assets/auth-bootstrap.js?v=authfix11"></script><script type="module" src="assets/auth-login.js?v=authfix11"></script></body></html>
+</div><div class="footer-bottom"><span>© 2026 TIEN404 AI. Bản thử nghiệm MVP — chưa tiếp nhận thanh toán.</span><span>Phát triển để mở rộng thành nền tảng AI cho nhiều cửa hàng.</span></div></div></footer><script defer="" src="assets/site-config.js"></script><script defer="" src="assets/app.js"></script><script defer src="assets/auth-bootstrap.js?v=authfix11"></script><script type="module" src="assets/auth-login.js?v=auth-form-ready"></script></body></html>

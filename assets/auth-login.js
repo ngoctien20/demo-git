@@ -49,10 +49,10 @@ if (inRecovery) {
   put('Đang xác minh liên kết khôi phục mật khẩu...');
   // Redirect processing happens in the SDK. Avoid navigating to the account page.
 }
+let initialized = false;
 try {
   const module = await import('./auth-client.js');
   client = await withDeadline(module.getAuthClient(), 20500);
-  window.dispatchEvent(new Event('tien404:auth-ready'));
   put('Đang kiểm tra phiên đăng nhập...');
   // Register before reading the session: a recovery callback may otherwise be missed.
   client.auth.onAuthStateChange((event) => {
@@ -76,6 +76,7 @@ try {
     // Do not claim recovery success until PASSWORD_RECOVERY fires.
     put('Đang xử lý liên kết khôi phục. Nếu không xuất hiện biểu mẫu đổi mật khẩu, hãy yêu cầu liên kết mới.');
   }
+  initialized = true;
 } catch (error) {
   window.dispatchEvent(new Event('tien404:auth-error'));
   put(isTimeout(error) ? 'Kết nối đăng nhập quá lâu. Vui lòng thử tải lại trang hoặc đổi mạng.' : 'Không tải được dịch vụ xác thực. Vui lòng thử lại.','error');
@@ -171,3 +172,11 @@ updateForm.addEventListener('submit',event=>{
     }
   });
 });
+
+// Native form navigation must remain disabled until every handler is installed.
+if (initialized) {
+  for (const form of [loginForm, requestForm, updateForm]) {
+    form.querySelector('button[type="submit"]').disabled = false;
+  }
+  window.dispatchEvent(new Event('tien404:auth-ready'));
+}

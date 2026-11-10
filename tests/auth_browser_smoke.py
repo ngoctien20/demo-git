@@ -48,6 +48,16 @@ with sync_playwright() as playwright:
     browser = playwright.chromium.launch()
     page = browser.new_page(viewport={'width':360,'height':780},
                             is_mobile=True,has_touch=True,color_scheme='dark')
+    blocked = browser.new_page(java_script_enabled=False)
+    blocked.goto(origin+'/login.html')
+    expect(blocked.locator('#auth-submit')).to_be_disabled()
+    for form in blocked.locator('form').all():
+        expect(form).to_have_attribute('method', 'dialog')
+    blocked.locator('#auth-email').fill('fixture@example.invalid')
+    blocked.locator('#auth-password').fill('fixture-only-invalid')
+    blocked.locator('#auth-password').press('Enter')
+    expect(blocked).to_have_url(origin+'/login.html')
+    blocked.close()
     page.route('**/assets/auth-client.js', lambda route: route.fulfill(
         content_type='application/javascript',body=MOCK))
     page.goto(origin+'/account.html')
