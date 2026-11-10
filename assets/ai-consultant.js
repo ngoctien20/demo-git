@@ -47,6 +47,71 @@ if(target){
     observer.observe(target,{childList:true,subtree:true});
     target.addEventListener('focusin',fixComposer);
     target.addEventListener('input',fixComposer);
+
+    // Dedicated, accessible composer: keeps n8n's original message transport
+    // and history, but replaces its visually broken Android text field.
+    const externalForm=document.getElementById('tien404-composer');
+    const externalInput=document.getElementById('tien404-message');
+    const externalSend=document.getElementById('tien404-send');
+    const externalStatus=document.getElementById('tien404-composer-status');
+    let nativeInput=null;
+    let nativeSend=null;
+    let sending=false;
+    const findNativeComposer=()=>{
+      const footer=target.querySelector('.chat-footer');
+      if(!footer)return false;
+      const input=footer.querySelector('textarea, input:not([type="hidden"]), [contenteditable="true"]');
+      const send=footer.querySelector('.chat-input-send-button, button[type="submit"], .chat-inputs button, button[aria-label*="Send"], button[title*="Send"]');
+      if(!input||!send)return false;
+      nativeInput=input;
+      nativeSend=send;
+      target.classList.add('tien404-custom-compose');
+      externalForm.hidden=false;
+      return true;
+    };
+    findNativeComposer();
+    const composerObserver=new MutationObserver(()=>{if(!nativeInput?.isConnected||!nativeSend?.isConnected)findNativeComposer()});
+    composerObserver.observe(target,{childList:true,subtree:true});
+    externalForm.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const message=externalInput.value.trim();
+      if(!message||sending)return;
+      if(!findNativeComposer()){
+        externalStatus.textContent='Ô chat đang tải lại. Vui lòng thử sau ít giây.';
+        return;
+      }
+      sending=true;
+      externalSend.disabled=true;
+      externalStatus.textContent='';
+      try{
+        if(nativeInput.isContentEditable){
+          nativeInput.textContent=message;
+          nativeInput.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:message}));
+        }else{
+          const descriptor=Object.getOwnPropertyDescriptor(
+            nativeInput.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value'
+          );
+          descriptor.set.call(nativeInput,message);
+          nativeInput.dispatchEvent(new Event('input',{bubbles:true}));
+          nativeInput.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        // Give Vue's reactive input state a chance to update the send button.
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        if(!nativeSend.isConnected||nativeSend.disabled){
+          externalStatus.textContent='Chưa thể gửi. Nội dung vẫn được giữ lại để bạn thử tiếp.';
+          return;
+        }
+        nativeSend.click();
+        externalInput.value='';
+        externalInput.focus({preventScroll:true});
+      }catch(error){
+        externalStatus.textContent='Không gửi được tin. Vui lòng thử lại.';
+      }finally{
+        sending=false;
+        externalSend.disabled=false;
+      }
+    });
+    externalInput.addEventListener('input',()=>{externalStatus.textContent=''});
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
     const note=document.querySelector('#n8n-chat-fallback');
