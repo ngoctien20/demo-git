@@ -23,3 +23,10 @@ GitHub CI evidence: verify after PR branch push (do not infer PASS).
 - Render deploy `dep-dbphtbk9v7es73burv50` **live**, build/app logs confirm startup. `/health` and anonymous API 401 from independent GitHub runner still require results.
 - GitHub staging tests still pass at https://github.com/ngoctien20/demo-git/actions/runs/42825228110 . This tests code without credentials; remote API contract is a separate gate.
 - **NOT tested**: genuine Supabase Auth login; user A vs B with separate tenants; Supabase storage; restore; n8n signed gateway; E2E customer login; actual paid order / stock operations. Production NOT APPROVED.
+
+## Independent remote Render API smoke (verified)
+
+- GitHub Actions run [42826941018](https://github.com/ngoctien20/demo-git/actions/runs/42826941018) — **success**. Runner queried actual deployed Render URL from outside the service, not a local mock.
+- `GET https://tien404-data-staging.onrender.com/health` returned **HTTP 200** with `mode=staging`, `status=CONFIGURED_NOT_VERIFIED`, `database_connected=false`, `production_readiness=NOT_APPROVED`.
+- Anonymous `GET /api/v1/tenants` returned **401** (expected). This verifies public HTTPS route + basic auth boundary only; authenticated Supabase connection and tenant-specific read with real credentials remain **NOT TESTED**.
+- Render deploy `dep-dbphtbk9v7es73burv50` is live. Auto-deploy remains OFF, source deployed SHA `dfbd3b5a73d90e44c017cf060ac04375f5ac1001`.
