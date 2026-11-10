@@ -1,0 +1,71 @@
+name: TIEN404 one-time Supabase Auth smoke (synthetic staging only)
+on:
+  push:
+    branches: [qa/auth-tenant-bridge-v1-20261110]
+    paths:
+      - '.github/workflows/auth-qa-supabase-once.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUPABASE_URL: https://ifxlvrhyjhbzbrkdsida.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_e7L9qkumVD6Y57RSLaWsaQ_tRjF7OvF
+    steps:
+      - name: Sign up two fully synthetic QA users and test real password session and refresh
+        run: |
+          python3 - <<'PY'
+          import json, os, secrets, uuid, urllib.request, urllib.error
+          root=os.environ['SUPABASE_URL']
+          key=os.environ['SUPABASE_PUBLISHABLE_KEY']
+          results=[]
+          def call(path, payload=None, token=None):
+              headers={'apikey':key,'Accept':'application/json'}
+              if payload is not None: headers['Content-Type']='application/json'
+              if token: headers['Authorization']='Bearer '+token
+              data=json.dumps(payload).encode() if payload is not None else None
+              req=urllib.request.Request(root+path,data=data,headers=headers,method='POST' if payload is not None else 'GET')
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as response:
+                      return response.status,json.loads(response.read(65536))
+              except urllib.error.HTTPError as e:
+                  return e.code,json.loads(e.read(65536))
+          for label in ('A','B'):
+              email='tien404-staging-qa-'+str(uuid.uuid4())+'@example.invalid'
+              password=secrets.token_urlsafe(40)+'A9!'
+              status,signup=call('/auth/v1/signup',{'email':email,'password':password})
+              uid=(signup.get('user') or {}).get('id') or signup.get('id')
+              print('SIGNUP_'+label+'_HTTP='+str(status)+' USER_ID='+str(uid))
+              if status not in (200,201) or not uid:
+                  print('SIGNUP_'+label+'_BLOCK='+str(signup.get('error_code') or signup.get('code') or 'unknown'))
+                  results.append({'case':label,'signup_http':status,'status':'BLOCKED'})
+                  continue
+              login_status,login=call('/auth/v1/token?grant_type=password',{'email':email,'password':password})
+              print('LOGIN_'+label+'_HTTP='+str(login_status)+' HAS_SESSION='+str(bool(login.get('access_token'))))
+              row={'case':label,'user_id':uid,'signup_http':status,'login_http':login_status}
+              if login_status==200 and login.get('access_token') and login.get('refresh_token'):
+                  user_status,user=call('/auth/v1/user',token=login['access_token'])
+                  refresh_status,refreshed=call('/auth/v1/token?grant_type=refresh_token',{'refresh_token':login['refresh_token']})
+                  print('SESSION_'+label+'_HTTP='+str(user_status)+' SUB_MATCH='+str(user.get('id')==uid))
+                  print('REFRESH_'+label+'_HTTP='+str(refresh_status)+' HAS_NEW_SESSION='+str(bool(refreshed.get('access_token'))))
+                  row['status']='PASS' if user_status==200 and user.get('id')==uid and refresh_status==200 and refreshed.get('access_token') else 'FAIL'
+              else:
+                  row['status']='CONFIRMATION_REQUIRED_OR_BLOCKED'
+                  row['auth_code']=login.get('error_code') or login.get('code') or 'unknown'
+                  print('AUTH_'+label+'_STATUS='+row['status']+' CODE='+row['auth_code'])
+              results.append(row)
+          with open('/tmp/tien404-auth-qa-summary.json','w') as f: json.dump(results,f)
+          print('AUTH_QA_OUTCOME='+','.join(r['status'] for r in results))
+          if any(r['status']=='FAIL' for r in results):raise AssertionError('An authenticated session or refresh verification failed')
+          PY
+      - name: Upload non-secret QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-supabase-auth-qa
+          path: /tmp/tien404-auth-qa-summary.json
+          retention-days: 3
+          if-no-files-found: warn
