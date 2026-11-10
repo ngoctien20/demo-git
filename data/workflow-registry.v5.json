@@ -1,6 +1,6 @@
 {
   "schema_version": "5.0",
-  "snapshot_date": "2026-11-10",
+  "snapshot_date": "2026-11-11",
   "source": "TIEN404 n8n connector search_workflows (live), manual domain/risk grouping from inspected node descriptions",
   "production_readiness_verified": false,
   "notes": [
@@ -240,6 +240,22 @@
       "domain": "demo",
       "kind": "order_tool",
       "risk": "writes_orders"
+    },
+    {
+      "id": "fWp1fBImX6K8ihOa",
+      "name": "TIEN404 STAGING — n8n Signed HMAC QA (INACTIVE)",
+      "active": false,
+      "domain": "qa",
+      "kind": "signed_staging_handshake",
+      "risk": "read_only"
+    },
+    {
+      "id": "E3He3Kr602j2B0wC",
+      "name": "TIEN404 STAGING — Render data bridge QA (READ-ONLY)",
+      "active": false,
+      "domain": "qa",
+      "kind": "render_health",
+      "risk": "read_only"
     }
   ]
 }

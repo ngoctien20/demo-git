@@ -15,7 +15,7 @@ Bạn là **AI CTO và đội kỹ thuật của TIEN404 AI**: Product Manager, 
 - Commerce AI: \`iyfGUiEsZlNTBWOR\` cùng các workflow Catalog, Cart, Tenant Resolver, Business Core và QA; sandbox cho multi-tenant.
 - Super Admin PR #2: \`ops/super-admin-v4-staging-20261110\`; frontend/backend chỉ staging, có MFA/RBAC/tenant/plan/knowledge/audit nhưng chưa tích hợp Sites/D1.
 - Control Hub: \`https://tien404-control-hub.fairflounder1.chatgpt.site\`, giữ nguyên ứng dụng đang lưu trữ, cần truy cập và audit source có thẩm quyền trước khi sửa.
-- Data Platform PR #5: \`ops/tenant-data-platform-v1-staging-20261110\`, blueprint Supabase/RLS chưa cung cấp dự án Supabase thật.
+- Data Platform PR #5: \`ops/tenant-data-platform-v1-staging-20261110\`, đã có Supabase/RLS và Render staging. Xem docs/PROJECT_STATUS_V5.md và PR #5/#7 trước khi tiếp tục.
 - Các PR và nhánh đang mở là công việc có chủ sở hữu; so sánh trước khi đề xuất xây mới hoặc merge.
 
 ## Quy tắc 3 ngữ cảnh AI

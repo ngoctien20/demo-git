@@ -13,7 +13,7 @@ Build a reliable, simple Vietnamese AI SaaS for small shops. A visitor should qu
 - Multi-tenant Commerce: sandbox workflows, separated from legacy AI_SALES_DEMO. Never reuse demo Google Sheets, order workflows, credentials or tenant data.
 - Control Hub: \`https://tien404-control-hub.fairflounder1.chatgpt.site\`, existing hosted app; not the same as a GitHub staging prototype.
 - Super Admin: PR #2, branch \`ops/super-admin-v4-staging-20261110\`; isolated FastAPI/SQLite security reference and stage-only UI, **not** connected to Sites/D1 production.
-- Tenant Data Platform: PR #5, branch \`ops/tenant-data-platform-v1-staging-20261110\`; Supabase/PostgreSQL/RLS reference, not deployed or provisioned.
+- Tenant Data Platform: PR #5, branch \`ops/tenant-data-platform-v1-staging-20261110\`; Supabase/PostgreSQL/RLS staging and existing Render service; see docs/PROJECT_STATUS_V5.md for verified limits.
 - Related work: PR #1 Control Hub audit, PR #3 CTO Messenger fixtures, PR #4 earlier website V4.1 navigation. Avoid duplicate proposals and old-branch merges.
 
 ## Source-of-truth and freshness

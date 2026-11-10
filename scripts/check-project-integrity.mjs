@@ -21,9 +21,9 @@ for(const [name,content] of [['AGENTS',charter],['prompt',prompt],['status',stat
 if(!charter.includes('AI_SALES_DEMO')||!prompt.includes('Commerce'))errors.push('legacy vs commerce separation missing');
 let registry={workflows:[]};
 try{registry=JSON.parse(registryText)}catch{errors.push('invalid workflow registry JSON')}
-if(registry.snapshot_date!=='2026-11-10')errors.push('registry snapshot date incorrect');
+if(registry.snapshot_date!=='2026-11-11')errors.push('registry snapshot date incorrect');
 const flows=Array.isArray(registry.workflows)?registry.workflows:[];
-if(flows.length!==29)errors.push('workflow inventory expected snapshot count 29, got '+flows.length);
+if(flows.length!==31)errors.push('workflow inventory expected snapshot count 31, got '+flows.length);
 const ids=new Set();
 const allowedRisk=new Set(['read_only','mock','unknown','may_write_orders','writes_orders','may_send_and_write','restricted','writes_tickets','may_send_email']);
 const allowedDomains=new Set(['website','qa','commerce','demo','messenger']);
@@ -76,5 +76,5 @@ if(errors.length){
  errors.forEach(e=>console.error('FAIL: '+e));
  process.exit(1);
 }
-console.log('PASS: V5 charter, status, release gates, 29-workflow snapshot, legacy isolation, floating widget and CTA static contracts.');
+console.log('PASS: V5 charter, status, release gates, 31-workflow snapshot, legacy isolation, floating widget and CTA static contracts.');
 console.log('NOTE: no real-browser, n8n runtime, payment, data writes or admin auth checks performed.');

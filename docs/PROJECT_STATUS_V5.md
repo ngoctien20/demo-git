@@ -2,7 +2,14 @@
 
 **Snapshot:** 2026-11-10 JST. **Evidence:** live n8n connector and GitHub API in the same session. This is a point-in-time audit, not ongoing live health.
 
-## Executive status
+## Hiện trạng V6 · 2026-11-11 00:38 JST
+- Auth merchant staging LIVE_VERIFIED trên Render `7d0c5754`: Shop A/owner → refresh → kiểm quyền → logout → account đóng. [PR #7](https://github.com/ngoctien20/demo-git/pull/7).
+- Data Platform staging đã có migration và Render read-only; scope và kết quả tại [PR #5](https://github.com/ngoctien20/demo-git/pull/5). Super Admin PR #2 vẫn có identity/MFA/RBAC riêng. Control Hub Sites V1 có deployment, V2 có source snapshot; D1 binding DB có bảng hub. Chưa chứng minh dùng chung phiên.
+- n8n: 31 workflow, 16 Active. HMAC/Render bridge inactive. HMAC 1639 PASS, 1641 từ chối 401. Messenger TEST active 27 node có thể gửi/ghi; QA chỉ đọc.
+- Widget PR #6 tại `75087620` có 15 trang marketing dùng loader. [CI 42845143511](https://github.com/ngoctien20/demo-git/actions/runs/42845143511) kiểm mất CDN, chống mount trùng, đóng và cuộn ở 360/412/1280px. Cloud Browser trên demo Pages `6bb57e63` đã mở, gửi câu hỏi về demo, nhận trả lời và thu nhỏ. Chưa nghiệm thu Android vật lý. PR #4 độc lập; không nhập thêm widget từ bản V4.1 cục bộ.
+- P0: xác minh Redirect URLs và recovery, hai danh tính QA và expiry/revocation thật. P1: kiểm identity bridge trong staging, restore và Android. P2: Merchant Copilot/Shopper Order Support theo access architecture; chưa mở tool tenant.
+
+## Snapshot lịch sử V5 · 10/11/2026
 - Public website: GitHub Pages on \`gh-pages\`; simplified six-link menu and floating AI widget code exists. Some visual Android dark-mode chat defects were reported and repeatedly patched; **no verified real-device E2E proof of resolution**. V5 feature branch now uses a shared widget loader across 15 public marketing HTML pages, but `gh-pages` live site still has the widget only in index/demo until separately reviewed, tested and released. Public site could not be fetched from the browser tool in this session.
 - n8n Cloud: **29 workflows**, **16 Active**. Active ≠ production ready. Current workflow topology and error history require reviews.
 - Historical executions: **19 error/crashed records since 2026-11-09T00:00:00Z** returned by connector (not necessarily unresolved, and not the daily count for every workflow). See Error Registry.
