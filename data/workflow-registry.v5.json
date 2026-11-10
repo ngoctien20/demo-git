@@ -1,0 +1,245 @@
+{
+  "schema_version": "5.0",
+  "snapshot_date": "2026-11-10",
+  "source": "TIEN404 n8n connector search_workflows (live), manual domain/risk grouping from inspected node descriptions",
+  "production_readiness_verified": false,
+  "notes": [
+    "This is a snapshot and not a sync with live n8n; active means workflow enabled, not production ready.",
+    "Unknown means side effects have not been fully reviewed, do not execute without inspecting published graph.",
+    "Never reuse demo Orders/Products or credentials for Commerce."
+  ],
+  "workflows": [
+    {
+      "id": "wgkkmT7q4lm4HyuA",
+      "name": "TIEN404 WEBSITE — DEMO & MARKETING AI (QA ISOLATED)",
+      "active": true,
+      "domain": "website",
+      "kind": "chat",
+      "risk": "read_only"
+    },
+    {
+      "id": "QR7aYMpLfKDLVgyH",
+      "name": "TIEN404_COMMERCE_V3_QA_EXTENSION_25",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock"
+    },
+    {
+      "id": "VBEns4KfWEz9AFgM",
+      "name": "TIEN404_COMMERCE_V3_RULES_EXTENSION_LAB",
+      "active": true,
+      "domain": "commerce",
+      "kind": "rules_sandbox",
+      "risk": "mock"
+    },
+    {
+      "id": "Y0WLykMtNAldbgL0",
+      "name": "TIEN404_COMMERCE_V3_BUSINESS_CORE_SANDBOX",
+      "active": true,
+      "domain": "commerce",
+      "kind": "business_core_sandbox",
+      "risk": "mock"
+    },
+    {
+      "id": "gpDYCp4sEzaVvPlb",
+      "name": "TIEN404_COMMERCE_00_START_HERE",
+      "active": false,
+      "domain": "commerce",
+      "kind": "guide",
+      "risk": "unknown"
+    },
+    {
+      "id": "iyfGUiEsZlNTBWOR",
+      "name": "TIEN404_COMMERCE_AI_AGENT_SANDBOX",
+      "active": false,
+      "domain": "commerce",
+      "kind": "ai_agent_sandbox",
+      "risk": "mock"
+    },
+    {
+      "id": "tjsVobfjKLnv0o6b",
+      "name": "TIEN404_COMMERCE_V3_REGRESSION_QA",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock"
+    },
+    {
+      "id": "3MzEyZgbwkRmO4NI",
+      "name": "AI_SALES_AGENT_TEST",
+      "active": false,
+      "domain": "demo",
+      "kind": "agent_test",
+      "risk": "may_write_orders"
+    },
+    {
+      "id": "6sdM8zacoYQP1g5X",
+      "name": "TIEN404_AI_SALES_REVENUE_V2_STAGING",
+      "active": false,
+      "domain": "demo",
+      "kind": "revenue_staging",
+      "risk": "mock"
+    },
+    {
+      "id": "fDB9dvs1qPPVt9Sp",
+      "name": "AI SALES - Manage Order",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders"
+    },
+    {
+      "id": "KrSn4DNR9ALX5ng4",
+      "name": "Create Order Tool (AI_SALES_DEMO)",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders"
+    },
+    {
+      "id": "Ax9P0JQlQu3gafZw",
+      "name": "TIEN404_COMMERCE_01_SHOP_PREFLIGHT",
+      "active": false,
+      "domain": "commerce",
+      "kind": "preflight",
+      "risk": "unknown"
+    },
+    {
+      "id": "Bc7UQjTIthfFB0PT",
+      "name": "TIEN404_COMMERCE_00_WIZARD_NEW_SHOP",
+      "active": false,
+      "domain": "commerce",
+      "kind": "wizard",
+      "risk": "unknown"
+    },
+    {
+      "id": "ZVmMlwe2g0bPjVEq",
+      "name": "TIEN404_COMMERCE_REGRESSION_QA",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock"
+    },
+    {
+      "id": "splyaeQtV719OuAu",
+      "name": "TIEN404_COMMERCE_SHOP_ONBOARDING",
+      "active": true,
+      "domain": "commerce",
+      "kind": "shop_onboarding",
+      "risk": "unknown"
+    },
+    {
+      "id": "jirkuVts1AjIhnPJ",
+      "name": "TIEN404_COMMERCE_SUPPORT_TICKETS_QA",
+      "active": true,
+      "domain": "commerce",
+      "kind": "support_ticket_qa",
+      "risk": "unknown"
+    },
+    {
+      "id": "igPOsSbEgd4NgtRA",
+      "name": "TIEN404_COMMERCE_CART_PREVIEW",
+      "active": true,
+      "domain": "commerce",
+      "kind": "cart_preview",
+      "risk": "read_only"
+    },
+    {
+      "id": "oOOXicKXGkBskKqh",
+      "name": "TIEN404_COMMERCE_CATALOG_QUERY",
+      "active": true,
+      "domain": "commerce",
+      "kind": "catalog_query",
+      "risk": "read_only"
+    },
+    {
+      "id": "5Eeh8hbpsoNhuiVo",
+      "name": "TIEN404_COMMERCE_TENANT_RESOLVER",
+      "active": true,
+      "domain": "commerce",
+      "kind": "tenant_resolver",
+      "risk": "read_only"
+    },
+    {
+      "id": "Z7FdV7uDvApfbURQ",
+      "name": "TIEN404_MESSENGER_TEST",
+      "active": true,
+      "domain": "messenger",
+      "kind": "live_messenger_agent",
+      "risk": "may_send_and_write"
+    },
+    {
+      "id": "v6PBwcqSapVzACMW",
+      "name": "AI_SALES_DEMO - Main Agent",
+      "active": true,
+      "domain": "demo",
+      "kind": "legacy_sales_agent",
+      "risk": "may_write_orders"
+    },
+    {
+      "id": "KKqVV8CtmyXBmI1s",
+      "name": "TIEN404_QA_SIGNATURE_ISOLATED",
+      "active": false,
+      "domain": "qa",
+      "kind": "webhook_signature",
+      "risk": "mock"
+    },
+    {
+      "id": "ZXcKOgawwYPhDUBZ",
+      "name": "TIEN404_QA_HTTP_CLIENT",
+      "active": false,
+      "domain": "qa",
+      "kind": "http_client",
+      "risk": "mock"
+    },
+    {
+      "id": "8gA4A8TM3Z9waloB",
+      "name": "TIEN404_META_TOKEN_CHECK",
+      "active": false,
+      "domain": "messenger",
+      "kind": "credential_check",
+      "risk": "restricted"
+    },
+    {
+      "id": "KqSuGxCHixc6fsiu",
+      "name": "TIEN404_MESSENGER_SUPPORT_REQUESTS",
+      "active": true,
+      "domain": "messenger",
+      "kind": "support_tool",
+      "risk": "writes_tickets"
+    },
+    {
+      "id": "4DFFCk60exrzaIl6",
+      "name": "TIEN404_MESSENGER_ORDER_STATUS",
+      "active": true,
+      "domain": "messenger",
+      "kind": "order_status_tool",
+      "risk": "read_only"
+    },
+    {
+      "id": "NvQfIffOrZokPBPW",
+      "name": "AI_SALES_AGENT_ISOLATED_READONLY",
+      "active": false,
+      "domain": "demo",
+      "kind": "agent_test_readonly",
+      "risk": "read_only"
+    },
+    {
+      "id": "U2DJsxzSYPH5hRop",
+      "name": "AI SALES - Revenue Report",
+      "active": true,
+      "domain": "demo",
+      "kind": "revenue_report",
+      "risk": "may_send_email"
+    },
+    {
+      "id": "BkAi6TVUKAjCnI7v",
+      "name": "AI SALES - Update Order.",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders"
+    }
+  ]
+}
