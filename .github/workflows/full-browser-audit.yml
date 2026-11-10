@@ -1,7 +1,7 @@
 name: TIEN404 independent full-browser QA
 on:
   push:
-    branches: [qa/tien404-full-audit-20261109, gh-pages]
+    branches: [qa/tien404-full-audit-20261109, gh-pages, "fix/floating-chat-*"]
   workflow_dispatch:
 permissions:
   contents: read
