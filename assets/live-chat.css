@@ -262,3 +262,30 @@
  #tien404-message{min-height:44px!important;max-height:100px!important;padding:9px!important}
  #tien404-send{min-height:44px!important;padding:0 13px}
 }
+
+
+/* V7 floating chat: compact launcher and collapsible fixed panel. */
+.tien404-floating-widget{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:9999;pointer-events:none;font-family:system-ui,-apple-system,sans-serif}
+.tien404-floating-widget>*{pointer-events:auto}
+.tien404-chat-launcher{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #a28cff;background:linear-gradient(135deg,#6047e8,#8b4de8);color:white;border-radius:999px;padding:13px 17px;min-height:56px;box-shadow:0 9px 30px #0008;font:700 15px system-ui,sans-serif;cursor:pointer}
+.tien404-chat-launcher:focus-visible,.tien404-panel-head button:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
+.tien404-chat-panel[hidden]{display:none!important}
+.tien404-chat-panel{position:absolute;bottom:70px;right:0;width:min(390px,calc(100vw - 24px));height:min(570px,calc(100dvh - 105px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #6755b3;border-radius:18px;background:#101126;box-shadow:0 15px 55px #000a;color:#fff}
+.tien404-panel-head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#181a35;border-bottom:1px solid #403969}
+.tien404-panel-head strong{display:block;font-size:15px}
+.tien404-panel-head small{display:block;font-size:11px;color:#c7c4e6;margin-top:3px}
+.tien404-panel-head button{min-width:42px;min-height:38px;border:1px solid #7263ae;border-radius:10px;background:#302c51;color:#fff;font-size:23px;cursor:pointer}
+.tien404-chat-panel .ai-live-card{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;overflow:hidden;border:0;border-radius:0;padding:0!important;box-shadow:none;background:#101126}
+.tien404-chat-panel .tien404-ai-chat{flex:1 1 0%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden}
+.tien404-chat-panel #n8n-chat .chat-layout{height:100%;min-height:0}
+.tien404-chat-panel #n8n-chat .chat-header{display:none!important}
+.tien404-chat-panel #n8n-chat .chat-body{flex:1 1 0%;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.tien404-chat-panel .tien404-composer{flex:0 0 auto;padding:8px!important}
+@media(max-width:600px){
+ .tien404-floating-widget{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+ .tien404-chat-panel{width:calc(100vw - 24px);height:min(530px,calc(100dvh - 105px));bottom:68px}
+ .tien404-chat-panel .tien404-ai-chat{height:auto!important;min-height:0!important;max-height:none!important}
+ .tien404-chat-panel .ai-live-card{padding:0!important}
+ .tien404-chat-panel #n8n-chat .chat-body{overscroll-behavior:contain!important}
+}
+@media(max-height:550px){.tien404-chat-panel{height:calc(100dvh - 88px);bottom:62px}}
