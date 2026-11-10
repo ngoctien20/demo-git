@@ -7,3 +7,8 @@
 - Added six unit tests for status classification and correct GitHub branch filtering.
 - Added GitHub Actions read-only monitor workflow on staging branch; production Control Hub app unchanged.
 - No tokens, credentials, Google Sheets orders or production databases modified.
+
+## 2026-11-10 09:28 UTC — Verified external probe
+- Control Hub: HTTP 401 AUTH_REQUIRED. Website: HTTP 200. Github Actions API reachable.
+- GitHub Actions run `42791015031`: 6/6 unit tests successful; JSON/Markdown evidence stored as artifact `13750119259`.
+- Draft pull request: https://github.com/ngoctien20/demo-git/pull/1 (approval required; no production merge).
