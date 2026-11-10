@@ -17,3 +17,7 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 
 ## Giai đoạn 1 · Messenger Bot V1 cho một shop
 Đã chạy lại Pages static 26 trang/871 tham chiếu, 0 lỗi; monitor 14/14; kiểm fixture 5/5. Corpus 96 single-turn, 97 dòng lịch sử, 36 kịch bản NOT_RUN. Trên bản mã Revenue đã chốt ở checkpoint 480008ab, published 3/9 và draft 9/9. Đây là fixture offline. Chưa chạy agent E2E với 132 định nghĩa/kịch bản, chưa kiểm gửi Meta, email delivery hay dữ liệu cửa hàng. [Contract và phiên bản nguồn](https://github.com/ngoctien20/demo-git/tree/480008aba792a8542c6f93d806a5a0bb900ef351/qa/lab).
+
+### V7 · 2026-11-11 JST · Training Lab
+
+Offline retrieval and fixture gate: python -m unittest discover -s qa/lab → 9 PASS, including 4 tests of scoped, versioned Vietnamese knowledge retrieval. Shop-specific answer, unaccented query, wrong tenant/industry, draft, conflicting versions and unknown question covered. Fixtures only; no AI response or live policy is approved by these tests. Keep the retrieval helper offline until a verified backend derives the scope and a reviewer approves real shop content. No trace text retained. Project CSV audit: 96 baseline cases with zero recorded answers; 36 additional scenarios still NOT_RUN. Do not treat fixture tests as a model pass rate.

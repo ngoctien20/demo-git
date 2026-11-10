@@ -17,3 +17,7 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 
 ## Giai đoạn 1 · Messenger Bot V1 cho một shop
 Đã kiểm tra lại 7/7 plugin. 29/29 workflow đọc được cấu hình; 16 active, 4 draft lệch published. PR #1, #2, #3 mở; Pages 7bf9c660, Super Admin b2108431, monitor 385782af. [Linear](https://linear.app/ngoctien20/project/tien404-ai-455b6a09e0fb) có 10 issue thuộc 8 nhóm. Supabase trả về 0 project khả kiến, PostHog Default chưa ingest; Gmail đọc labels. Sites V1 có deployment, V2 chưa có deployment ID. **BLOCKED** pilot thật tại cổng cô lập Messenger và tính đúng tiền. Trạng thái chạy thật của auth, quyền tenant, thanh toán và chi phí/shop là UNKNOWN. [Báo cáo quản trị](https://docs.google.com/document/d/16jeY-s8iwvPzgngQ2k8O16DcPYO1WG0x3hBMCAKGc3E/edit).
+
+### V7 · 2026-11-11 JST · Pilot NOT READY
+
+PR #7 catalog ada27656, auth QA run 42848394303; previous V6 real-browser login/refresh/logout for Shop A documented in PR #7. Supabase still has one user, two tenants and one membership. Require a separately authorized QA Shop B identity and a two-user negative test. PR #6 owns workflow inventory and public widget; PR #3 owns offline quality fixtures. PR #2 MFA/RBAC and entitlement remain isolated. Billing, agent release and order access stay gated. Restore prior Auth deployment dep-dbpjiv1srm7s73aur350 for UI rollback. No production change.
