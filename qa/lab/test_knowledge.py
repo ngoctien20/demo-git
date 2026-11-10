@@ -28,3 +28,11 @@ class LabKnowledgeTests(unittest.TestCase):
             self.assertIsNone(self.ask(dict(self.record, **change)))
         self.assertIsNone(self.ask(self.record, dict(self.record, id="conflict")))
         self.assertIsNone(self.ask(self.record, question="phí mỗi tháng"))
+
+    def test_incomplete_records_do_not_break_valid_retrieval(self):
+        for key in ("id", "version", "topic", "answer"):
+            for value in (None, 7, "  "):
+                broken = dict(self.shop, **{key: value})
+                with self.subTest(key=key, value=value):
+                    self.assertEqual(self.ask(None, broken, self.record)["id"], "fixture")
+        self.assertIsNone(self.ask(self.shop, question=None))

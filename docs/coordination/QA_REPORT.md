@@ -21,3 +21,6 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 ### V7 · 2026-11-11 JST · Training Lab
 
 Offline retrieval and fixture gate: python -m unittest discover -s qa/lab → 9 PASS, including 4 tests of scoped, versioned Vietnamese knowledge retrieval. Shop-specific answer, unaccented query, wrong tenant/industry, draft, conflicting versions and unknown question covered. Fixtures only; no AI response or live policy is approved by these tests. Keep the retrieval helper offline until a verified backend derives the scope and a reviewer approves real shop content. No trace text retained. Project CSV audit: 96 baseline cases with zero recorded answers; 36 additional scenarios still NOT_RUN. Do not treat fixture tests as a model pass rate.
+
+## 2026-11-11 JST · Training Lab offline
+Base a53e96a. Sửa lỗi record thiếu id/topic/answer hoặc sai kiểu làm dừng truy xuất kiến thức. Regression và fixture QA 10/10 PASS. Đối chiếu 4 CSV nguồn: 96 case đơn chưa có output ở baseline, 97 dòng lịch sử (một dòng lặp theo định nghĩa case), 36 case hội thoại NOT_RUN (9 case chỉ có một lượt). Không gọi bot hoặc ghi đơn. Rollback bằng revert commit này. Production changed: NO.

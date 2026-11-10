@@ -13,9 +13,15 @@ def terms(text):
 def retrieve(question, records, *, tenant, industry):
     if not isinstance(tenant, str) or not tenant.strip():
         return None
+    if not isinstance(question, str):
+        return None
+    question_terms = terms(question)
     ranked = []
     for record in records:
-        if record.get("status") != "approved" or not record.get("version"):
+        if not isinstance(record, dict) or record.get("status") != "approved":
+            continue
+        if any(not isinstance(record.get(key), str) or not record[key].strip()
+               for key in ("id", "version", "topic", "answer")):
             continue
         scope = record.get("scope")
         if scope == "shop":
@@ -27,7 +33,7 @@ def retrieve(question, records, *, tenant, industry):
         else:
             continue
         matched = terms(record["topic"])
-        if matched and matched <= terms(question):
+        if matched and matched <= question_terms:
             ranked.append(((len(matched), scope == "shop"), record))
     if not ranked:
         return None
