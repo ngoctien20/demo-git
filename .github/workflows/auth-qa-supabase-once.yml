@@ -34,7 +34,7 @@ jobs:
               except urllib.error.HTTPError as e:
                   return e.code,json.loads(e.read(65536))
           for label in ('A','B'):
-              email='tien404-staging-qa-'+str(uuid.uuid4())+'@example.invalid'
+              email='tien404-staging-qa-'+str(uuid.uuid4())+'@example.com'
               password=secrets.token_urlsafe(40)+'A9!'
               status,signup=call('/auth/v1/signup',{'email':email,'password':password})
               uid=(signup.get('user') or {}).get('id') or signup.get('id')
@@ -59,7 +59,7 @@ jobs:
               results.append(row)
           with open('/tmp/tien404-auth-qa-summary.json','w') as f: json.dump(results,f)
           print('AUTH_QA_OUTCOME='+','.join(r['status'] for r in results))
-          if any(r['status']=='FAIL' for r in results):raise AssertionError('An authenticated session or refresh verification failed')
+          if any(r['status'] not in ('PASS','CONFIRMATION_REQUIRED_OR_BLOCKED') for r in results):raise AssertionError('Signup or session test could not establish a valid result')
           PY
       - name: Upload non-secret QA evidence
         if: always()
