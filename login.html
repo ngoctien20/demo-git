@@ -6,7 +6,7 @@
     <h1 class="auth-heading">Đăng nhập vào <span class="text-grad">không gian TIEN404 AI.</span></h1>
     <p class="auth-intro">Tài khoản xác thực qua Supabase Auth. Quyền truy cập cửa hàng được kiểm tra riêng; đăng nhập thành công không đồng nghĩa có quyền xem đơn hàng.</p>
     <ul class="auth-points"><li>Xác minh email và mật khẩu qua Supabase</li><li>Kiểm tra phiên đăng nhập trước khi mở tài khoản</li><li>Chỉ hiển thị cửa hàng đã được cấp quyền</li></ul>
-    <div class="auth-note"><strong>MÔI TRƯỜNG STAGING</strong> — Đang thử nghiệm xác thực thật. Không dùng tài khoản chứa dữ liệu khách hàng thật. Chưa hỗ trợ đăng ký công khai, thanh toán hoặc truy cập đơn hàng thật.</div>
+    <div class="auth-note"><strong>MÔI TRƯỜNG STAGING</strong> — Đang thử nghiệm xác thực và phân quyền thật. Chưa hỗ trợ đăng ký công khai, thanh toán hoặc truy cập đơn hàng thật.</div>
   </div>
   <section class="auth-panel" aria-labelledby="auth-title">
     <h2 id="auth-title">Đăng nhập</h2>
@@ -17,7 +17,19 @@
       <button id="auth-submit" type="submit">Đăng nhập an toàn <span aria-hidden="true">↗</span></button>
     </form>
     <p id="auth-status" class="auth-message" role="status" aria-live="polite">Đang kết nối với Supabase Auth...</p>
-    <p class="auth-muted">Chưa có tài khoản? Liên hệ TIEN404 để được cấp quyền thử nghiệm. Chức năng khôi phục mật khẩu sẽ mở sau khi cấu hình URL xác nhận email.</p>
+    <button type="button" class="auth-text-button" id="auth-forgot-password">Quên mật khẩu?</button>
+    <form id="auth-recovery-request" hidden novalidate aria-label="Yêu cầu khôi phục mật khẩu">
+      <label for="auth-recovery-email">Email tài khoản<input id="auth-recovery-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="ten@example.com" required></label>
+      <button type="submit">Gửi liên kết khôi phục</button>
+    </form>
+    <form id="auth-password-update" hidden novalidate aria-label="Đổi mật khẩu sau xác thực">
+      <label for="auth-new-password">Mật khẩu mới<input id="auth-new-password" type="password" name="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
+      <label for="auth-password-confirm">Nhập lại mật khẩu<input id="auth-password-confirm" type="password" name="confirm" autocomplete="new-password" minlength="12" maxlength="256" required></label>
+      <button type="submit">Xác nhận mật khẩu mới</button>
+    </form>
+    <a id="auth-go-account" class="auth-account-link" href="account.html" hidden>Tiếp tục vào tài khoản ↗</a>
+    <button type="button" id="auth-return-login" class="auth-text-button" hidden>Quay lại đăng nhập</button>
+    <p class="auth-muted">Chưa có tài khoản? Liên hệ TIEN404 để được cấp quyền thử nghiệm. Khôi phục mật khẩu qua email đã cấu hình. Nếu không nhận được email, hãy liên hệ hỗ trợ.</p>
     <p><a href="contact.html">Yêu cầu hỗ trợ truy cập</a> · <a href="index.html">Về trang chủ</a></p>
   </section>
 </div></section></main><footer class="footer"><div class="container"><div class="footer-grid">
