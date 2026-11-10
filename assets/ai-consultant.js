@@ -10,12 +10,12 @@ if(target){
       showWelcomeScreen:false,
       initialMessages:[
         'Xin chào! Mình là trợ lý tư vấn TIEN404 AI.',
-        'Bạn có thể hỏi về AI bán hàng, Messenger, chi phí, tích hợp hoặc cách triển khai cho cửa hàng. Mình sẽ giải thích rõ những tính năng đang thử nghiệm.'
+        'Bạn muốn tìm hiểu tính năng, chi phí hay cách triển khai AI cho cửa hàng?'
       ],
       i18n:{
         en:{
-          title:'TIEN404 AI · Trợ lý tư vấn',
-          subtitle:'AI tư vấn · không tạo đơn hay lưu thông tin khách',
+          title:'TIEN404 AI',
+          subtitle:'Trợ lý tư vấn trực tuyến',
           footer:'',
           getStarted:'Bắt đầu trò chuyện',
           inputPlaceholder:'Hỏi bất kỳ điều gì về TIEN404 AI...',
