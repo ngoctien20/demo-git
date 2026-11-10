@@ -34,3 +34,6 @@ Date: 2026-11-10 JST. **Public preview only. Not production.**
 ## Rollback
 - Delete/suspend only the newly created Render Static Site using Render Dashboard if no longer needed. Do not alter `tien404-data-staging`.
 - No automatic deployments; future branch changes need deliberate `trigger_deploy`.
+
+## 2026-11-11 00:38 JST · Bản đang phục vụ
+Render xác nhận LIVE `dep-dbpjiv1srm7s73aur350` tại `7d0c5754`. Đã kiểm Cloud Browser sau deploy. [QA, rollback và cổng recovery](SUPABASE_AUTH_V2_CHECKPOINT.md).

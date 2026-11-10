@@ -27,3 +27,9 @@ Date: 2026-11-10. Status: DRAFT PR #7, not published.
 7. Do not merge to gh-pages until owner approval after E2E and security checks. The current public login remains demo.
 
 Rollback: close the draft PR or revert feature-branch commits. No customer data, live n8n workflow or actual Supabase Auth user was mutated here.
+
+## V6 · 2026-11-11 00:38 JST · Render Auth staging
+
+LIVE_VERIFIED với tài khoản QA hiện hữu trên Render deployment `dep-dbpjiv1srm7s73aur350`, commit `7d0c5754be97a69c41a4c69cdb6f4c5d0975b3a3`. Cloud Browser: khách ẩn danh mở account thấy link đăng nhập; sau đăng nhập email/mật khẩu thật chỉ hiện Shop A và owner; refresh và kiểm tra lại quyền giữ Shop A; logout rồi mở lại account không hiện shop. Truy vấn tổng hợp Auth sau QA: một tài khoản, một tài khoản đã đăng nhập. Không lưu định danh riêng, mật khẩu hoặc session.
+
+PR #7 sửa vô hiệu hóa hiển thị quyền cũ khi đổi danh tính và thông báo recovery khi build preview. Chín unit/build test đạt. Chromium fixture ở 360px/dark đạt login lỗi/hợp lệ, refresh, đổi A→B, sự kiện hết phiên và logout trong [CI 42845544780](https://github.com/ngoctien20/demo-git/actions/runs/42845544780). Lần chạy 42845132399 thất bại vì fixture đặt sẵn trạng thái đã đăng nhập khi kiểm form; đã sửa trong 7d0c5754. Chưa kiểm thiết bị Android vật lý, JWT hết hạn thực hoặc cưỡng chế thu hồi. Chưa có tài khoản B độc lập. Hai Render callback chưa đọc được do Dashboard yêu cầu phiên quản trị; recovery tiếp tục khóa. Production changed: NO. Rollback staging về deploy `dep-dbpj5rbbc2fs73abm09g` nếu cần.
