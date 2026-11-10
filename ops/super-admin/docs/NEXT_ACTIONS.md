@@ -8,9 +8,11 @@
 6. Select a real payment provider and pricing/grace rules with approval; implement its exact signature + idempotency and compensation/refund. Disable any synthetic payment adapter in production.
 7. Build one channel adapter at a time, beginning with existing Messenger test environment, and verify official permissions. Never reuse AI_SALES_DEMO credentials or Orders/Products in TIEN404 Commerce.
 8. Connect Knowledge Center to approved-version public AI only after hallucination and prompt-injection evaluation. Maintain a manual fallback to human support.
-9. Add Super Admin pages **inside existing Control Hub** after authorized source inspection. No mock 'Auto Fix', no client-side secret/token and no invented KPIs; every metric requires source, freshness and connection state.
+9. A separate **staging-only read-only Super Admin UI** now exists in `app/ui`, served by the isolated FastAPI app. Before adding any Super Admin pages **inside existing Control Hub**, inspect its authorized Sites source and auth; port existing views/policies rather than deploying a second privileged production console. No mock 'Auto Fix', client-side token or invented KPI.
 10. Run independent E2E/permission/mobile/backup restore tests on staging, categorize P0/P1, obtain human approval, then stage canary launch and rollback. Publish only after all release gates pass.
 
 Never claim 100% completion from a green unit test count. Checkpoint on the same branch and in user Library after every task group.
 
 11. The local SQLite staging backup/restore unit test passes; still take a **separate private Sites/D1 backup** and try restoration on isolated production-shaped staging. Never upload private SQLite backup to public GitHub.
+
+12. Test new `/admin` view via HTTPS staging in actual mobile/desktop browsers; verify keyboard, accessibility, MFA, CSP, session expiration, role-denied views and no cross-tenant data. CI 42819808814 passed local isolated tests, not end-to-end hosting.
