@@ -30,3 +30,12 @@
 .auth-account-status{margin:18px 0}
 @media(max-width:750px){.auth-layout{grid-template-columns:1fr}.auth-viewport{padding:32px 0}.auth-heading{font-size:32px}.auth-note{margin-bottom:6px}}
 @media(prefers-reduced-motion:reduce){.auth-panel button{transition:none}}
+
+/* Form toggles must override author's display:grid and the mobile browser's styles. */
+.auth-panel [hidden], .auth-viewport [hidden] { display:none!important; }
+.auth-text-button{display:inline-flex;background:transparent!important;border:0!important;color:#c5b0ff!important;text-decoration:underline;font-size:13px!important;padding:7px 0!important;min-height:30px!important;font-weight:650;box-shadow:none!important}
+.auth-account-link{display:block;margin:12px 0;padding:12px 15px;border-radius:11px;background:#5949d8;color:#fff!important;text-align:center;text-decoration:none;font-weight:700}
+.auth-toolbar{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.auth-toolbar button{min-height:43px;padding:11px 15px}
+.auth-message:focus-visible{outline:2px solid #c3b4ff}
+@media(max-width:750px){.auth-toolbar{width:100%;justify-content:flex-start}.auth-panel{min-width:0}}
