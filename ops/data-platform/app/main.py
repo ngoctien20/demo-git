@@ -7,6 +7,7 @@ service-role secret. No mutations, payment, bot activation, or production data.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from .signed_n8n import ReplayCache, verify_request
 from datetime import datetime, timezone
 import os
 import re
@@ -73,6 +74,7 @@ def sanitize_rows(value: Any, columns: tuple[str, ...], tenant_id: UUID | None =
 
 def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     cfg = settings or Settings.from_env()
+    n8n_replay = ReplayCache()
     app = FastAPI(title='TIEN404 SaaS Data Gateway STAGING', version='0.1.0',
                   docs_url=None, redoc_url=None, openapi_url=None)
     if cfg.allowed_origin:
@@ -153,6 +155,28 @@ def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTr
             'source': 'supabase_connection_configuration', 'observed_at': timestamp(),
             'reason': 'External connectivity and actual database schema not verified',
             'production_readiness': 'NOT_APPROVED',
+        }
+
+    @app.post('/api/v1/internal/n8n/handshake')
+    async def n8n_handshake(request: Request):
+        # No tenant resolver and no business writes: a staging connectivity proof.
+        if request.headers.get('content-type', '').split(';', 1)[0].lower() != 'application/json':
+            raise HTTPException(status_code=415, detail='JSON_REQUIRED')
+        verified = verify_request(
+            secret=os.getenv('TIEN404_N8N_STAGING_SECRET', ''),
+            raw=await request.body(),
+            timestamp=request.headers.get('X-TIEN404-Timestamp'),
+            nonce=request.headers.get('X-TIEN404-Nonce'),
+            signature=request.headers.get('X-TIEN404-Signature'),
+            cache=n8n_replay,
+        )
+        return {
+            'status': 'STAGING_N8N_VERIFIED',
+            'action': verified['action'],
+            'request_id': verified['request_id'],
+            'tenant_access': False, 'orders_access': False,
+            'writes_enabled': False, 'production_readiness': 'NOT_APPROVED',
+            'observed_at': timestamp(),
         }
 
     @app.get('/api/v1/tenants')
