@@ -123,6 +123,9 @@ if(target){
       else launcher.focus({preventScroll:true});
     };
     launcher?.addEventListener('click',()=>toggle(panel.hidden));
+    document.querySelectorAll('[data-tien404-open-chat]').forEach(button=>{
+      button.addEventListener('click',()=>toggle(true));
+    });
     close?.addEventListener('click',()=>toggle(false));
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});
     document.documentElement.classList.add('tien404-chat-ready');
