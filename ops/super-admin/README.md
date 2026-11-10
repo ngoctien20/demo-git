@@ -4,6 +4,13 @@
 
 This directory lives on the **stacked staging branch** and does not replace the existing TIEN404 website or Control Hub. Production databases, existing AI SALES DEMO workflows, Google Sheets, Messenger or tenant tokens are not accessed. No production credentials are stored. The test HMAC payment endpoint is **not** a real payment gateway.
 
+## New: authenticated staging admin console
+
+- This branch now includes an **actual HTML/CSS/JS read-only staging console** at `/admin` served by the isolated FastAPI app. It is not hosted on the public GitHub Pages website or the ChatGPT Sites Control Hub.
+- Login uses existing password + TOTP server authentication; access to tenants, plans and audit still requires backend RBAC. Console does not embed API keys or customer credentials.
+- Lists staging tenants, plan metadata and (for SUPER_ADMIN) append-only audit records. No create/edit/publish/payment/tenant service controls in UI; all product integrations remain intentionally disconnected.
+- New automated tests cover static UI CSP, unauthenticated access denial, admin plan retrieval and store-owner denial. CI run https://github.com/ngoctien20/demo-git/actions/runs/42819808814 completed successfully for the new code.
+
 ## Currently executable
 
 - Password + TOTP MFA login (Argon2id hash, encrypted MFA secret, TOTP replay prevention), server-side sessions (hashed bearer cookie, HttpOnly, Secure, SameSite=Strict), CSRF and same-origin restrictions, logout / session revocation, failed-login throttling, admin recent-MFA check.
