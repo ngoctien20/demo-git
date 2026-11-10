@@ -9,10 +9,10 @@
 | Stage | State | Evidence |
 |---|---|---|
 | Source code + backend tests | PASS locally | Test output count (no live dependencies) |
-| GitHub Actions independent CI | PENDING | Inspect new PR CI run after push |
+| GitHub Actions independent CI | PASS on updated branch | Run 42819808814 completed successfully on 2026-11-10; does not imply production approval |
 | API persistence after restart | PASS locally | SQLite reopening test (not D1) |
 | Production Sites authenticated routing | UNVERIFIED | Sites source not available |
-| Browser desktop/tablet/mobile UI | UNVERIFIED | No new UI deployed |
+| Browser desktop/tablet/mobile UI | IMPLEMENTED SOURCE, UNVERIFIED E2E | Static console added to staging FastAPI, no browser/device validation or hosting yet |
 | Messenger/LINE/Zalo/Telegram OAuth | NOT IMPLEMENTED | Stage adapter design only |
 | Real payment provider | NOT IMPLEMENTED | Signed sandbox fixture only |
 | Real knowledge RAG to website AI | NOT IMPLEMENTED | Approved version storage only |
@@ -20,3 +20,8 @@
 | Tenant entitlements in live n8n | NOT CONNECTED | No production tool writes were made |
 
 **Release readiness: NOT VERIFIED.** Count of passing staging tests is not a promise that the live Sites application is secure or commercially operational.
+
+## New staging console checks
+
+- `tests/test_admin_ui.py` verifies UI served with restrictive same-origin CSP, noindex header markup, unauthenticated admin API access denied, and role-protected staging plan listing.
+- Current CI validates code and tests only, not Android interactions, deployed URLs, accessibility audit or production auth.
