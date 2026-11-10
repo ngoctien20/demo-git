@@ -1,0 +1,41 @@
+name: TIEN404 Supabase staging login security QA
+on:
+  push:
+    branches: [work/supabase-auth-staging-v1]
+    paths:
+      - 'login.html'
+      - 'account.html'
+      - 'assets/auth*.js'
+      - 'assets/auth.css'
+      - 'scripts/check-supabase-auth-staging.mjs'
+      - '.github/workflows/auth-staging-qa.yml'
+  pull_request:
+    paths:
+      - 'login.html'
+      - 'account.html'
+      - 'assets/auth*.js'
+      - 'assets/auth.css'
+      - 'scripts/check-supabase-auth-staging.mjs'
+      - '.github/workflows/auth-staging-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-auth-static-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check assets/auth-config.js
+          node --check assets/auth-client.js
+          node --check assets/auth-login.js
+          node --check assets/auth-account.js
+      - name: Auth + no-secret + no-demo-bypass checks
+        run: node scripts/check-supabase-auth-staging.mjs
+      - name: Clarify no hosted Auth test was performed
+        run: echo "Static only, no sign in, no account created, no customer data or Supabase write."
