@@ -27,6 +27,8 @@ test('staging pages show safe UX and use relative auth routes',()=>{
     assert.match(html,/href="https:\/\/ngoctien20\.github\.io\/demo-git\/index\.html"/);
   }
   assert.match(login,/id="auth-login"/);
+  assert.match(login,/id="auth-forgot-password" disabled/);
+  assert.match(login,/Cần thêm Render preview URL/);
   assert.match(account,/id="account-protected" hidden/);
   assert.match(account,/href="login\.html"/);
   assert.doesNotMatch(login,/assets\/saas\.js/);
