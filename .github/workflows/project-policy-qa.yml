@@ -4,6 +4,7 @@ on:
     branches:
       - ops/cto-autonomous-v5-20261110
     paths:
+      - 'tests/widget_browser_smoke.py'
       - 'AGENTS.md'
       - 'docs/**'
       - 'data/workflow-registry.v5.json'
@@ -17,6 +18,7 @@ on:
       - '.github/workflows/project-policy-qa.yml'
   pull_request:
     paths:
+      - 'tests/widget_browser_smoke.py'
       - 'AGENTS.md'
       - 'docs/**'
       - 'data/workflow-registry.v5.json'
@@ -48,3 +50,8 @@ jobs:
         run: node scripts/check-project-integrity.mjs
       - name: Scope reminder
         run: echo "Static read-only QA; no n8n, Orders, Messages, Supabase, Control Hub or production writes."
+      - name: Chromium widget staging smoke with isolated transport
+        run: |
+          python -m pip install playwright==1.58.0
+          python -m playwright install --with-deps chromium
+          python tests/widget_browser_smoke.py
