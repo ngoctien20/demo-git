@@ -38,6 +38,7 @@ export const authClient = {auth, from(table) {
   return query;
 }};
 """
+MOCK = MOCK + "\nexport async function getAuthClient() { return authClient; }\n"
 
 server = ThreadingHTTPServer(('127.0.0.1', 0),
     partial(SimpleHTTPRequestHandler, directory='auth-preview-dist'))
