@@ -21,3 +21,6 @@ Nguồn đối chiếu: [Pages tại baseline](https://github.com/ngoctien20/dem
 ### V7 · 2026-11-11 JST · Pilot NOT READY
 
 PR #7 catalog ada27656, auth QA run 42848394303; previous V6 real-browser login/refresh/logout for Shop A documented in PR #7. Supabase still has one user, two tenants and one membership. Require a separately authorized QA Shop B identity and a two-user negative test. PR #6 owns workflow inventory and public widget; PR #3 owns offline quality fixtures. PR #2 MFA/RBAC and entitlement remain isolated. Billing, agent release and order access stay gated. Restore prior Auth deployment dep-dbpjiv1srm7s73aur350 for UI rollback. No production change.
+
+## 11/11/2026 JST · Work V7.1
+Xem [checkpoint tiếp quản V7.1](TIEN404_AI_WORK_MASTER_V7_1_CHECKPOINT.md) và [checklist thủ công](TIEN404_CONTROL_HUB_MANUAL_CHECKLIST.md). Chỉ 1/4 mục gốc đủ điều kiện đánh dấu. Pilot NOT READY.
