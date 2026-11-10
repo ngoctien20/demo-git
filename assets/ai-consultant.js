@@ -9,16 +9,16 @@ if(target){
       mode:'fullscreen',
       showWelcomeScreen:false,
       initialMessages:[
-        'Xin chào! Mình là TIEN404 AI Consultant (AI thật, bản thử nghiệm).',
-        'Bạn đang bán hàng ở ngành nào? Mình có thể giải thích các giải pháp và hướng dẫn bạn dùng thử website.'
+        'Xin chào! Mình là trợ lý tư vấn TIEN404 AI.',
+        'Bạn có thể hỏi về AI bán hàng, Messenger, chi phí, tích hợp hoặc cách triển khai cho cửa hàng. Mình sẽ giải thích rõ những tính năng đang thử nghiệm.'
       ],
       i18n:{
         en:{
           title:'TIEN404 AI · Trợ lý tư vấn',
-          subtitle:'AI thật · môi trường thử nghiệm an toàn',
+          subtitle:'AI tư vấn · không tạo đơn hay lưu thông tin khách',
           footer:'',
           getStarted:'Bắt đầu trò chuyện',
-          inputPlaceholder:'Hỏi về AI bán hàng, Messenger hoặc quy trình tự động...',
+          inputPlaceholder:'Hỏi bất kỳ điều gì về TIEN404 AI...',
           closeButtonTooltip:'Đóng cửa sổ chat'
         }
       }
