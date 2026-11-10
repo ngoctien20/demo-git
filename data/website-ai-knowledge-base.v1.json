@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "status": "draft",
+  "updated_at": "2026-11-10",
+  "owner": "TIEN404",
+  "scope": "website-product-consultant",
+  "policy": {
+    "unverified": "Say information is not confirmed; never invent.",
+    "pricing": "Liên hệ báo giá",
+    "max_links_per_reply": 1,
+    "production_access": false
+  },
+  "product": {
+    "name": "TIEN404 AI",
+    "description": "Trợ lý AI và tự động hóa quy trình cho cửa hàng Việt Nam",
+    "solutions": [
+      {
+        "id": "sales",
+        "title": "AI Sales Assistant",
+        "status": "internal_testing",
+        "description": "Tư vấn sản phẩm và tiếp nhận yêu cầu sau khi cấu hình"
+      },
+      {
+        "id": "messenger",
+        "title": "Messenger Automation",
+        "status": "internal_testing",
+        "description": "Xử lý hội thoại Messenger theo kết nối và quy trình đã kiểm thử"
+      },
+      {
+        "id": "support",
+        "title": "AI Customer Support",
+        "status": "design_or_configuration",
+        "description": "Trả lời FAQ và chuyển yêu cầu khi được cấu hình"
+      },
+      {
+        "id": "workflow",
+        "title": "Business Workflow Automation",
+        "status": "configuration_required",
+        "description": "Tự động hóa n8n, báo cáo và thông báo theo dự án"
+      }
+    ],
+    "plans": [
+      {
+        "name": "AI Starter",
+        "commercial_price": null,
+        "entitlements_verified": false
+      },
+      {
+        "name": "AI Business",
+        "commercial_price": null,
+        "entitlements_verified": false
+      },
+      {
+        "name": "Custom AI Solution",
+        "commercial_price": null,
+        "entitlements_verified": false
+      }
+    ],
+    "integrations": {
+      "messenger": "internal_testing",
+      "zalo": "not_verified",
+      "shopee": "not_verified"
+    },
+    "demo": {
+      "real_ai": true,
+      "can_create_real_orders": false,
+      "can_modify_real_orders": false,
+      "can_save_leads": false,
+      "can_process_payments": false,
+      "contact_form_backend_verified": false
+    }
+  },
+  "links": {
+    "home": "https://ngoctien20.github.io/demo-git/",
+    "demo": "https://ngoctien20.github.io/demo-git/demo.html",
+    "pricing": "https://ngoctien20.github.io/demo-git/pricing.html",
+    "features": "https://ngoctien20.github.io/demo-git/solutions.html",
+    "contact": "https://ngoctien20.github.io/demo-git/contact.html"
+  }
+}
