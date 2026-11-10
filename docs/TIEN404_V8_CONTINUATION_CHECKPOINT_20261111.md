@@ -39,3 +39,11 @@ Continued prior Work V7.1/V8 on existing Supabase Auth staging branch; did not r
 - Supabase read-only schema inventory: every listed `public` table (conversations, customers, messages, order_items, orders, products, tenant_memberships, tenants) has RLS enabled and one policy; this alone does not prove correct tenant isolation. Private tables audit_events, channel_secrets, order_idempotency have RLS enabled and no policies, which may be intentional deny-by-default.
 - Supabase security advisor: leaked-password protection disabled (WARN); review Auth security configuration before pilot. Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 - No Supabase mutations, n8n changes, or production deployment were made in this verification. E2E with two independent users remains BLOCKED/NOT VERIFIED.
+
+## V8.1 intake audit — 2026-11-11
+- Live connector inventory found 31 n8n workflows. DEMO workflows and TIEN404 Commerce are distinct; user preference mandates keeping DEMO Orders/Products/credentials isolated from product Commerce. No workflow was modified or published.
+- n8n prior manual QA execution metadata reverified: Catalog/Cart 1473 SUCCESS; Business Core 1474 SUCCESS; Extension 1479 SUCCESS. These are historical sandbox runs, **not** fresh E2E production tests.
+- Supabase read-only policy audit: all eight public tables have RLS enabled with SELECT-only authenticated policies. Products and tenants are visible only to active members; orders/customers/conversations/messages/order_items are limited to active owner/manager memberships; memberships are self-read. No INSERT/UPDATE/DELETE policy found in public tables. This is an intentionally read-only browser surface and must not be described as a completed merchant write API.
+- Latest observed Render Auth staging deployment remains `dep-dbppc3ek1f9s73ci4al0` at `4c13ea5`; later branch changes require careful reconciliation before deploying.
+- Priority gate: provision two authorized isolated staging users and perform real JWT-context RLS negative tests before marking tenant isolation VERIFIED_DONE. Do not manufacture test results or promote to production.
+- Remaining V8.1: Auth real E2E, staging deploy reconciliation, merchant write API design, Bot Registry/Training Lab, Super Admin and pilot readiness NOT VERIFIED.
