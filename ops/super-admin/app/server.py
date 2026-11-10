@@ -9,8 +9,9 @@ import os
 import re
 import secrets
 from typing import Annotated, Literal
+from pathlib import Path
 from fastapi import FastAPI, Request, Depends, Response, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, Field, ConfigDict
 from .core import Store, AccessDenied, Conflict, NotFound, Invalid, now_utc, iso, parse, verify_test_webhook
 
@@ -70,6 +71,9 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
                 return JSONResponse({'error':'cross_origin_denied'},status_code=403)
         response=await call_next(request)
         response.headers.update({'Cache-Control':'no-store','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'; base-uri 'none'"})
+        # Staging UI loads only same-origin static CSS/JS; API replies stay locked down.
+        if request.url.path == '/admin' or request.url.path.startswith('/admin/'):
+            response.headers['Content-Security-Policy']="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
         return response
     @app.exception_handler(AccessDenied)
     async def on_denied(request,exc):return JSONResponse({'error':str(exc)},status_code=403)
@@ -89,6 +93,19 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         if not store.verify_csrf(user,x_csrf_token):raise HTTPException(status_code=403,detail='csrf_invalid')
         return user
     def admin(user,roles):store.require_role(user,roles)
+
+    # Only static, non-secret staging UI assets are public; every data API stays authenticated.
+    ui_root=Path(__file__).resolve().parent/'ui'
+    @app.get('/admin')
+    @app.get('/admin/')
+    def admin_console():
+        return FileResponse(ui_root/'index.html',media_type='text/html')
+    @app.get('/admin/assets/admin.css')
+    def admin_css():
+        return FileResponse(ui_root/'admin.css',media_type='text/css')
+    @app.get('/admin/assets/admin.js')
+    def admin_js():
+        return FileResponse(ui_root/'admin.js',media_type='text/javascript')
 
     @app.get('/health')
     def health():return {'status':'STAGING_ONLY','production_readiness':'NOT_APPROVED','source':'local_sqlite_test_backend','checked_at':iso(now_utc()),'live_n8n':'DISCONNECTED','payment_gateway':'SANDBOX_ONLY'}
@@ -146,6 +163,11 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         admin(user,{'SUPER_ADMIN','SUPPORT_ADMIN','TECH_ADMIN'})
         records=store.rows('SELECT id,name,industry,service_enabled,bot_paused,created_at FROM tenants ORDER BY created_at DESC LIMIT 100')
         return {'items':[dict(r) for r in records],'source':'staging_sqlite','updated_at':iso(now_utc()),'status':'STAGING_DATA'}
+    @app.get('/api/v1/admin/plans')
+    def list_plans(user=Depends(actor)):
+        admin(user,{'SUPER_ADMIN','SUPPORT_ADMIN','TECH_ADMIN'})
+        records=store.rows('SELECT id,label,price_minor,currency,cycle,max_messages,grace_days,active FROM plans ORDER BY id LIMIT 100')
+        return {'items':[dict(r) for r in records],'source':'staging_sqlite','status':'STAGING_DATA','updated_at':iso(now_utc())}
     @app.post('/api/v1/admin/plans',status_code=201)
     def plan(body:PlanInput,user=Depends(write_actor)):return store.create_plan(user,body.id,body.label,body.price_minor,body.cycle,body.max_messages,body.grace_days)
     @app.post('/api/v1/admin/tenants',status_code=201)
