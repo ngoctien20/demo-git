@@ -37,3 +37,17 @@ Date: 2026-11-10 JST. **Public preview only. Not production.**
 
 ## 2026-11-11 00:38 JST · Bản đang phục vụ
 Render xác nhận LIVE `dep-dbpjiv1srm7s73aur350` tại `7d0c5754`. Đã kiểm Cloud Browser sau deploy. [QA, rollback và cổng recovery](SUPABASE_AUTH_V2_CHECKPOINT.md).
+
+
+## 2026-11-11 05:48 JST · Login loading timeout hotfix
+
+- Reported symptom: login appears to load or sign in indefinitely on mobile. Cause **not conclusively reproduced on the user's browser**.
+- Source finding: import of Supabase ESM via one CDN and multiple Auth/database awaits previously lacked explicit timeout and useful retry UI.
+- Feature branch fix: `assets/auth-client.js` now tries pinned jsDelivr and esm.sh ESM with bounded import; `assets/auth-runtime.mjs` enforces bounded operations; `assets/auth-bootstrap.js` displays slow/failure when main module never starts; login/account have error + safe retry states.
+- Built preview allowlist includes both new assets; auth credentials remain server/browser-held, **no service-role token**.
+- Tests: GitHub Actions https://github.com/ngoctien20/demo-git/actions/runs/42898728070 **SUCCESS** (syntax, unit timeout guards, artifact safety, simulated mobile Chromium). Navigation https://github.com/ngoctien20/demo-git/actions/runs/42898728163 **SUCCESS**.
+- Deployed: Render `dep-dbpo69u1egvs7390iv80` at commit `404b63b10d78b969704e660ff938b4489b7bcf2d`, confirmed **LIVE** by Render.
+- Browser endpoint to verify: https://tien404-auth-staging.onrender.com/login.html?v=authfix11
+- **Not yet verified:** real password sign-in on user's phone and a real Supabase authenticated session. User should retry and report the *nonsecret error message* or successful Shop A view. Static site logs did not expose relevant request traces.
+- Published n8n and GitHub Pages production were **not changed**.
+- Control Hub checklist status / execution evidence is in `docs/CONTROL_HUB_CHECKLIST_20261111.md`.
