@@ -6,8 +6,10 @@ on:
       - 'login.html'
       - 'account.html'
       - 'assets/auth*.js'
+      - 'assets/auth-helpers.mjs'
       - 'assets/auth.css'
       - 'scripts/check-supabase-auth-staging.mjs'
+      - 'tests/auth-helpers.test.mjs'
       - '.github/workflows/auth-staging-qa.yml'
   pull_request:
     paths:
@@ -35,7 +37,10 @@ jobs:
           node --check assets/auth-client.js
           node --check assets/auth-login.js
           node --check assets/auth-account.js
+          node --check assets/auth-helpers.mjs
       - name: Auth + no-secret + no-demo-bypass checks
         run: node scripts/check-supabase-auth-staging.mjs
+      - name: Isolated security and tenancy helper tests
+        run: node --test tests/auth-helpers.test.mjs
       - name: Clarify no hosted Auth test was performed
         run: echo "Static only, no sign in, no account created, no customer data or Supabase write."
