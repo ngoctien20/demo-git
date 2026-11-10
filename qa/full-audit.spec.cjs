@@ -186,6 +186,23 @@ test('Lab local simulation handles buying without real order writes',async({page
   await expect(page.locator('#v4-chat-remaining')).toContainText('20 lượt thử');
 });
 
+test('Lab Vietnamese decimal budgets are parsed as fractions, not tenfold amounts',async({page})=>{
+  await page.goto('/lab.html?industry=fashion');
+  const form=page.locator('#v4-product-form');
+  for(const [sku,name,price] of [['QA14','Áo ngân sách phù hợp',1400000],['QA16','Áo vượt ngân sách',1600000]]){
+    await form.locator('[name=name]').fill(name);
+    await form.locator('[name=sku]').fill(sku);
+    await form.locator('[name=price]').fill(String(price));
+    await form.locator('[name=stock]').fill('4');
+    await form.locator('button[type=submit]').click();
+  }
+  await page.locator('#v4-chat-input').fill('Tôi cần mua áo dưới 1,5 triệu');
+  await page.locator('#v4-chat-form button[type=submit]').click();
+  const reply=page.locator('#v4-chat-messages .v4-bubble--assistant').last();
+  await expect(reply).toContainText('QA14');
+  await expect(reply).not.toContainText('QA16');
+});
+
 test('Impact calculator updates and recomputes from sliders',async({page})=>{
   await page.goto('/impact.html');
   for(const [id,val] of [['messages','1200'],['minutes','5'],['repeat','50'],['hourly','50000']]){
