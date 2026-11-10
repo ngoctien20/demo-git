@@ -5,7 +5,7 @@ Snapshot: 2026-11-10 JST.
 ## Live provider evidence
 - Supabase project `tien404-staging` (ref `ifxlvrhyjhbzbrkdsida`) exists, status **ACTIVE_HEALTHY**, region ap-southeast-1.
 - Applied migration: `20261110133819_tien404_staging_tenant_read_only_v1`. Eight public tenant-scoped tables and three private tables are present, all RLS-enabled.
-- At audit: **0 Auth users and 0 tenant memberships**; two staging tenants. No real user can be authenticated until a valid staging Auth account is provisioned.
+- **Later check 2026-11-10:** one confirmed Auth user and one valid active owner membership for TIEN404 QA Shop A. The original V1 snapshot had zero; this has changed.
 - Permissions: `authenticated` has SELECT grants on memberships, tenants and orders; `anon` does **not** have SELECT on memberships. RLS membership `memberships_self_read` restricts rows to `auth.uid()` and `active`; tenant RLS requires active membership. No RLS policy bypass was added.
 - Security advisor emits informational `rls_enabled_no_policy` for three `app_private` tables intentionally inaccessible from clients. Review as part of release audit.
 - Render plugin is installed and a workspace exists, but the workspace must be explicitly selected/confirmed before inspecting or changing Render services. No Render service or deployment was modified.
@@ -19,9 +19,11 @@ Snapshot: 2026-11-10 JST.
 - `scripts/check-supabase-auth-staging.mjs` and GitHub Actions run non-mutating static QA.
 - Existing public `gh-pages` login, demo dashboard, Super Admin and n8n are left unchanged until approved.
 
+See the V2 checkpoint in `docs/SUPABASE_AUTH_V2_CHECKPOINT.md`.
+
 ## Not complete / release blockers
-1. No Auth test accounts or tenant memberships. Provision an **approved staging-only test user** with valid email verification; do NOT use customer data.
-2. Check Supabase Auth Settings: email provider, confirmation, allowed redirect URLs (including exact login/account URLs) and Site URL. Plugin connector doesn't expose these settings in this session; not verified.
+1. Completed: an approved staging Auth user and owner membership now exist, confirmed by read-only provider queries.
+2. User screenshot confirms Site URL and exact redirect URLs for login.html and account.html. Provider email/template behavior still needs actual recovery tests.
 3. Decide whether to enable registration or invitation workflow. **Public registration intentionally disabled** to prevent uncontrolled account/tenant creation.
 4. Run real browser login success, invalid password, unverified email, sign-out, session expiry, multi-tab, mobile dark-mode, rate limit and password recovery tests.
 5. Test with two staging users in two different tenants: deny cross-tenant memberships and orders; verify no role metadata from user-editable JWT fields.
