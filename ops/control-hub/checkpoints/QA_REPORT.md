@@ -10,12 +10,12 @@ Evidence collected: 2026-11-10T09:26:33Z (UTC).
 | n8n inventory API | PASS read-only | 29 workflows, 16 Active, 13 Inactive |
 | n8n executions API | PASS read-only | 1453 historical executions: 1432 success, 21 error; includes manual QA |
 | AI SALES Revenue Report last sample | ERROR (manual) | Execution ID 936, node error `Invalid paid total at Orders row 2 [line 18]`; not proof of production monetary error |
-| Control Hub direct public web read | INCONCLUSIVE | Web fetch cache miss; cannot authenticate or inspect functional UI |
+| Control Hub direct HTTPS from independent runner | **401 AUTH_REQUIRED** | Action `42791015031`, 2026-11-10T09:28:43Z. Authorization required; protected UI not tested |
 | Control Hub app source inspection | NOT TESTED | Sites workspace not mounted; do not confuse demo-git website with Hub source |
 | Control Hub auth/role/DB persistence | NOT TESTED | Requires protected authorized access and Site source |
 | Control Hub 320/390/768/1440 browser UI | NOT TESTED | Browser and source not available here |
 | Control Hub backup/restore test | NOT TESTED | No verified private restore/backup package |
-| Standalone monitor unit tests | **6/6 PASS (local)** | HTTP status and unknown-state logic, does not prove external reachability |
+| Standalone monitor unit tests | **6/6 PASS locally & GitHub runner** | GitHub Action `42791015031` inspected HTTP status and public GitHub API |
 
 Public probe pipeline should attach `health.json` and `health.md` with **source and checked-at timestamp**, but it does not confer access to Control Hub private APIs.
 
