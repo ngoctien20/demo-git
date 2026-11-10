@@ -23,6 +23,30 @@ if(target){
         }
       }
     });
+
+    // Android dark-mode hardening: n8n chat can render its composer with
+    // a light background while inheriting a light text color.
+    // Scope the fix to the composer, not the conversation bubbles.
+    const fixComposer=()=>{
+      const root=document.querySelector('#n8n-chat');
+      if(!root)return;
+      const controls=root.querySelectorAll(
+        '.chat-footer textarea, .chat-footer input, .chat-inputs textarea, .chat-inputs input, .chat-footer [contenteditable="true"]'
+      );
+      controls.forEach(el=>{
+        el.style.setProperty('color','#172033','important');
+        el.style.setProperty('-webkit-text-fill-color','#172033','important');
+        el.style.setProperty('background-color','#ffffff','important');
+        el.style.setProperty('caret-color','#5c3ac7','important');
+        el.style.setProperty('color-scheme','light','important');
+        el.style.setProperty('opacity','1','important');
+      });
+    };
+    fixComposer();
+    const observer=new MutationObserver(fixComposer);
+    observer.observe(target,{childList:true,subtree:true});
+    target.addEventListener('focusin',fixComposer);
+    target.addEventListener('input',fixComposer);
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
     const note=document.querySelector('#n8n-chat-fallback');
