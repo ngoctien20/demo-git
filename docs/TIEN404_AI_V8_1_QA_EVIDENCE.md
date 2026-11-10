@@ -25,3 +25,9 @@ Method: Supabase execute_sql transaction with `SET LOCAL ROLE authenticated`, `r
 - User-provided mobile screenshot confirms successful hosted Shop B login, displays `TIEN404 QA Shop B` and owner membership. PASS browser visual evidence for Shop B Auth/account display; **not** complete cross-tenant HTTP negative test.
 - Public policies are SELECT-only. Merchant writes are still BLOCKED/NOT IMPLEMENTED; do not loosen RLS without designed server-side authorization and transaction tests.
 - No staging data modifications or production deploy in this QA.
+
+## Merchant overview implementation — 2026-11-11
+- Commit `32f5a41c8191ef845d48bf24f8c71642c995cc9c` adds read-only counts for products, orders, customers and conversations to existing account tenant cards.
+- All queries explicitly filter `tenant_id` and use authenticated Supabase browser client, with server RLS as actual access boundary. Four queries use `head:true,count:'exact'` and do not return row bodies. UI clears on auth revalidation and handles error/empty counts.
+- Status: IMPLEMENTED_NOT_VERIFIED. No matching GitHub workflow run was found for the new commit; do not mark browser QA PASS or deploy this branch to Render without release gate.
+- Render staging still previously observed at commit `4c13ea5`; the new overview is NOT LIVE. User's screenshot confirms older live Shop B account display only.
