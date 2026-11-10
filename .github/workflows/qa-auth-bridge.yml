@@ -1,0 +1,31 @@
+name: TIEN404 Auth & Bridge staging QA
+on:
+  push:
+    branches: [qa/auth-tenant-bridge-v1-20261110]
+    paths:
+      - ".github/workflows/qa-auth-bridge.yml"
+      - "ops/data-platform/**"
+      - "ops/super-admin/app/server.py"
+      - "ops/super-admin/app/data_platform_status.py"
+      - "ops/super-admin/tests/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install pinned test dependencies
+        run: |
+          python -m pip install -r ops/super-admin/requirements-test.txt
+          python -m pip install -r ops/data-platform/requirements-test.txt
+      - name: RLS client and isolated HMAC bridge tests
+        run: python -m pytest -q ops/data-platform/tests
+      - name: Super Admin MFA and bridge regression tests
+        run: |
+          cd ops/super-admin
+          python -m pytest -q tests
