@@ -2,13 +2,13 @@
  * when JavaScript module loading is blocked by a mobile browser or DNS. */
 (() => {
   const start = () => {
-    const status = document.getElementById('auth-status');
+    const status = document.getElementById('auth-status') || document.getElementById('account-status');
     const retry = document.getElementById('auth-retry');
     if (!status || !retry) return;
     let moduleReady = false;
     const setReady = () => { moduleReady = true; retry.hidden = true; };
     window.addEventListener('tien404:auth-ready', setReady, {once:true});
-    window.addEventListener('tien404:auth-error', setReady, {once:true});
+    window.addEventListener('tien404:auth-error', () => { moduleReady = true; retry.hidden = false; }, {once:true});
     retry.addEventListener('click', () => window.location.reload());
     setTimeout(() => {
       if (!moduleReady && status.textContent.includes('Đang kết nối')) {
@@ -23,6 +23,6 @@
       }
     }, 23000);
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
+  // Both pages load this deferred script after their status and retry elements.
+  start();
 })();

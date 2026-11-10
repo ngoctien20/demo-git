@@ -145,7 +145,8 @@ const revalidate=async()=>{
 };
 
 try{
-  sb=await withDeadline((await import('./auth-client.js')).getAuthClient(),20500);
+  sb=await withDeadline(import('./auth-client.js').then(module => module.getAuthClient()),20500);
+  window.dispatchEvent(new Event('tien404:auth-ready'));
   sb.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
       verifiedUserId=null;
@@ -165,6 +166,7 @@ try{
   });
   await revalidate();
 }catch{
+  window.dispatchEvent(new Event('tien404:auth-error'));
   requireLogin('Không tải được dịch vụ xác thực. Vui lòng đăng nhập lại sau.');
 }
 refreshButton?.addEventListener('click',revalidate);
