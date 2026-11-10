@@ -7,7 +7,7 @@ QA accounts through secure environment variables, never through a commit.
 from __future__ import annotations
 import os
 import sys
-from urllib.parse import urlparse
+import argparse
 import httpx
 
 SUPABASE = "https://ifxlvrhyjhbzbrkdsida.supabase.co"
@@ -59,8 +59,9 @@ def check_tenant(client: httpx.Client, token: str, own: str, other: str) -> tupl
         own_res = client.get(GATEWAY + "/api/v1/tenants/" + own + "/" + kind, headers=headers)
         demand(own_res.status_code == 200, "OWN_" + kind.upper() + "_HTTP_" + str(own_res.status_code))
         payload = own_res.json()
-        rows = payload.get("items", [])
-        demand(isinstance(rows, list), "INVALID_" + kind.upper() + "_PAYLOAD")
+        rows = payload.get("items")
+        demand(isinstance(rows, list) and bool(rows), "MISSING_QA_" + kind.upper() + "_FIXTURE")
+        demand(all(isinstance(row, dict) and row.get("id") for row in rows), "INVALID_QA_ROW")
         demand(all(row.get("tenant_id") == own for row in rows), "CROSS_TENANT_ROW_LEAK")
         foreign = client.get(GATEWAY + "/api/v1/tenants/" + other + "/" + kind, headers=headers)
         demand(foreign.status_code == 404, "FOREIGN_" + kind.upper() + "_HTTP_" + str(foreign.status_code))
@@ -68,8 +69,10 @@ def check_tenant(client: httpx.Client, token: str, own: str, other: str) -> tupl
         fingerprints.append(tuple(sorted(str(row["id"]) for row in rows)))
     return tuple(fingerprints)
 
-def run() -> int:
-    missing = [key for key in REQUIRED if not os.getenv(key)]
+def run(shop_a_only: bool = False) -> int:
+    required = [key for key in REQUIRED if not shop_a_only or key not in (
+        "TIEN404_QA_B_EMAIL", "TIEN404_QA_B_PASSWORD")]
+    missing = [key for key in required if not os.getenv(key)]
     if missing:
         print("NOT_RUN: credentials or test tenant IDs missing: " + ", ".join(missing))
         return 2
@@ -79,7 +82,8 @@ def run() -> int:
     with httpx.Client(timeout=25, follow_redirects=False) as client:
         anonymous = client.get(GATEWAY + "/api/v1/tenants")
         demand(anonymous.status_code == 401, "ANONYMOUS_AUTH_BYPASS")
-        for suffix, own, other in (("A", a, b), ("B", b, a)):
+        scopes = [("A", a, b)] if shop_a_only else [("A", a, b), ("B", b, a)]
+        for suffix, own, other in scopes:
             tokens = acquire(client, key, os.environ["TIEN404_QA_" + suffix + "_EMAIL"],
                              os.environ["TIEN404_QA_" + suffix + "_PASSWORD"])
             original = check_tenant(client, tokens["access_token"], own, other)
@@ -87,12 +91,17 @@ def run() -> int:
             reread = check_tenant(client, renewed["access_token"], own, other)
             demand(original == reread, "DATA_CHANGED_ACROSS_TOKEN_REFRESH_" + suffix)
             print("QA_" + suffix + ": LOGIN_PASS, TENANT_ISOLATION_PASS, TOKEN_REFRESH_PASS, DATA_REREAD_PASS")
+    if shop_a_only:
+        print("PARTIAL: Shop A checked. Shop B login and reverse isolation NOT_RUN.")
+        return 0
     print("PASS: Live Auth + both tenant scopes + refreshed tokens; no customer writes performed.")
     return 0
 
 if __name__ == "__main__":
     try:
-        raise SystemExit(run())
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--shop-a-only", action="store_true", help="Check only the seeded QA Shop A and its denial of Shop B.")
+        raise SystemExit(run(parser.parse_args().shop_a_only))
     except (httpx.HTTPError, ValueError, KeyError, TestFailure) as exc:
         # Never include HTTP bodies, tokens, passwords or user emails in logs.
         label = str(exc) if isinstance(exc, TestFailure) else type(exc).__name__
