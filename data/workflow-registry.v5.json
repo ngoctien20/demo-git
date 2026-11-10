@@ -15,7 +15,22 @@
       "active": true,
       "domain": "website",
       "kind": "chat",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "wgkkmT7q4lm4HyuA",
+        "channel": "web",
+        "tenant_assignment": null,
+        "scope": "public_product_information",
+        "version": "fcda12f3-35c6-473e-bc9d-2359ada3989c",
+        "published_version": "fcda12f3-35c6-473e-bc9d-2359ada3989c",
+        "draft_dependencies": [],
+        "published_dependencies": [],
+        "tools": [],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "QR7aYMpLfKDLVgyH",
@@ -23,7 +38,8 @@
       "active": false,
       "domain": "qa",
       "kind": "regression",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "QA"
     },
     {
       "id": "VBEns4KfWEz9AFgM",
@@ -31,7 +47,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "rules_sandbox",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Tool"
     },
     {
       "id": "Y0WLykMtNAldbgL0",
@@ -39,7 +56,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "business_core_sandbox",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Tool"
     },
     {
       "id": "gpDYCp4sEzaVvPlb",
@@ -47,7 +65,8 @@
       "active": false,
       "domain": "commerce",
       "kind": "guide",
-      "risk": "unknown"
+      "risk": "unknown",
+      "component_type": "Infrastructure"
     },
     {
       "id": "iyfGUiEsZlNTBWOR",
@@ -55,7 +74,34 @@
       "active": false,
       "domain": "commerce",
       "kind": "ai_agent_sandbox",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "iyfGUiEsZlNTBWOR",
+        "channel": "sandbox",
+        "tenant_assignment": null,
+        "scope": "commerce_sandbox",
+        "version": "ddc3ce5b-365e-47e2-a06d-08daffceb9a8",
+        "published_version": null,
+        "draft_dependencies": [
+          "5Eeh8hbpsoNhuiVo",
+          "oOOXicKXGkBskKqh",
+          "igPOsSbEgd4NgtRA",
+          "jirkuVts1AjIhnPJ",
+          "Y0WLykMtNAldbgL0"
+        ],
+        "published_dependencies": null,
+        "tools": [
+          "Search Tenant Catalog",
+          "Preview Tenant Cart",
+          "Create Sandbox Ticket",
+          "Check Store Availability",
+          "Preview Smart Pricing"
+        ],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "tjsVobfjKLnv0o6b",
@@ -63,7 +109,8 @@
       "active": false,
       "domain": "qa",
       "kind": "regression",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "QA"
     },
     {
       "id": "3MzEyZgbwkRmO4NI",
@@ -71,7 +118,31 @@
       "active": false,
       "domain": "demo",
       "kind": "agent_test",
-      "risk": "may_write_orders"
+      "risk": "may_write_orders",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "3MzEyZgbwkRmO4NI",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "a7bf9c44-499c-4925-acc6-f7b046cfd2a7",
+        "published_version": null,
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "published_dependencies": null,
+        "tools": [
+          "Get row(s) in sheet in Google Sheets",
+          "create_order",
+          "update_order_address",
+          "manage_order"
+        ],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "6sdM8zacoYQP1g5X",
@@ -79,7 +150,8 @@
       "active": false,
       "domain": "demo",
       "kind": "revenue_staging",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Tool"
     },
     {
       "id": "fDB9dvs1qPPVt9Sp",
@@ -87,7 +159,8 @@
       "active": true,
       "domain": "demo",
       "kind": "order_tool",
-      "risk": "writes_orders"
+      "risk": "writes_orders",
+      "component_type": "Tool"
     },
     {
       "id": "KrSn4DNR9ALX5ng4",
@@ -95,7 +168,8 @@
       "active": true,
       "domain": "demo",
       "kind": "order_tool",
-      "risk": "writes_orders"
+      "risk": "writes_orders",
+      "component_type": "Tool"
     },
     {
       "id": "Ax9P0JQlQu3gafZw",
@@ -103,7 +177,8 @@
       "active": false,
       "domain": "commerce",
       "kind": "preflight",
-      "risk": "unknown"
+      "risk": "unknown",
+      "component_type": "QA"
     },
     {
       "id": "Bc7UQjTIthfFB0PT",
@@ -111,7 +186,8 @@
       "active": false,
       "domain": "commerce",
       "kind": "wizard",
-      "risk": "unknown"
+      "risk": "unknown",
+      "component_type": "Infrastructure"
     },
     {
       "id": "ZVmMlwe2g0bPjVEq",
@@ -119,7 +195,8 @@
       "active": false,
       "domain": "qa",
       "kind": "regression",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "QA"
     },
     {
       "id": "splyaeQtV719OuAu",
@@ -127,7 +204,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "shop_onboarding",
-      "risk": "unknown"
+      "risk": "unknown",
+      "component_type": "Infrastructure"
     },
     {
       "id": "jirkuVts1AjIhnPJ",
@@ -135,7 +213,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "support_ticket_qa",
-      "risk": "unknown"
+      "risk": "unknown",
+      "component_type": "QA"
     },
     {
       "id": "igPOsSbEgd4NgtRA",
@@ -143,7 +222,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "cart_preview",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Tool"
     },
     {
       "id": "oOOXicKXGkBskKqh",
@@ -151,7 +231,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "catalog_query",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Tool"
     },
     {
       "id": "5Eeh8hbpsoNhuiVo",
@@ -159,7 +240,8 @@
       "active": true,
       "domain": "commerce",
       "kind": "tenant_resolver",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Tool"
     },
     {
       "id": "Z7FdV7uDvApfbURQ",
@@ -167,7 +249,41 @@
       "active": true,
       "domain": "messenger",
       "kind": "live_messenger_agent",
-      "risk": "may_send_and_write"
+      "risk": "may_send_and_write",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "Z7FdV7uDvApfbURQ",
+        "channel": "messenger",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "450d9d60-3853-45f3-979f-20164a4adc7b",
+        "published_version": "450d9d60-3853-45f3-979f-20164a4adc7b",
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp",
+          "4DFFCk60exrzaIl6",
+          "KqSuGxCHixc6fsiu"
+        ],
+        "published_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp",
+          "4DFFCk60exrzaIl6",
+          "KqSuGxCHixc6fsiu"
+        ],
+        "tools": [
+          "Read Products - Messenger Read Only",
+          "create_order",
+          "update_order_address",
+          "manage_order",
+          "get_order_status",
+          "create_support_ticket"
+        ],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "v6PBwcqSapVzACMW",
@@ -175,7 +291,35 @@
       "active": true,
       "domain": "demo",
       "kind": "legacy_sales_agent",
-      "risk": "may_write_orders"
+      "risk": "may_write_orders",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "v6PBwcqSapVzACMW",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "c0f04eb1-9e2b-4b42-bf70-0ce12d5b0c30",
+        "published_version": "c0f04eb1-9e2b-4b42-bf70-0ce12d5b0c30",
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "published_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "tools": [
+          "Get row(s) in sheet in Google Sheets",
+          "create_order",
+          "update_order_address",
+          "manage_order"
+        ],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "KKqVV8CtmyXBmI1s",
@@ -183,7 +327,8 @@
       "active": false,
       "domain": "qa",
       "kind": "webhook_signature",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Infrastructure"
     },
     {
       "id": "ZXcKOgawwYPhDUBZ",
@@ -191,7 +336,8 @@
       "active": false,
       "domain": "qa",
       "kind": "http_client",
-      "risk": "mock"
+      "risk": "mock",
+      "component_type": "Infrastructure"
     },
     {
       "id": "8gA4A8TM3Z9waloB",
@@ -199,7 +345,8 @@
       "active": false,
       "domain": "messenger",
       "kind": "credential_check",
-      "risk": "restricted"
+      "risk": "restricted",
+      "component_type": "QA"
     },
     {
       "id": "KqSuGxCHixc6fsiu",
@@ -207,7 +354,8 @@
       "active": true,
       "domain": "messenger",
       "kind": "support_tool",
-      "risk": "writes_tickets"
+      "risk": "writes_tickets",
+      "component_type": "Tool"
     },
     {
       "id": "4DFFCk60exrzaIl6",
@@ -215,7 +363,8 @@
       "active": true,
       "domain": "messenger",
       "kind": "order_status_tool",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Tool"
     },
     {
       "id": "NvQfIffOrZokPBPW",
@@ -223,7 +372,24 @@
       "active": false,
       "domain": "demo",
       "kind": "agent_test_readonly",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "NvQfIffOrZokPBPW",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "4c2575de-5a92-41aa-88ab-c84f7e2e7e9f",
+        "published_version": null,
+        "draft_dependencies": [],
+        "published_dependencies": null,
+        "tools": [
+          "Get row(s) in sheet in Google Sheets"
+        ],
+        "model": null,
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7"
+      }
     },
     {
       "id": "U2DJsxzSYPH5hRop",
@@ -231,7 +397,8 @@
       "active": true,
       "domain": "demo",
       "kind": "revenue_report",
-      "risk": "may_send_email"
+      "risk": "may_send_email",
+      "component_type": "Tool"
     },
     {
       "id": "BkAi6TVUKAjCnI7v",
@@ -239,7 +406,8 @@
       "active": true,
       "domain": "demo",
       "kind": "order_tool",
-      "risk": "writes_orders"
+      "risk": "writes_orders",
+      "component_type": "Tool"
     },
     {
       "id": "fWp1fBImX6K8ihOa",
@@ -247,7 +415,8 @@
       "active": false,
       "domain": "qa",
       "kind": "signed_staging_handshake",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "QA"
     },
     {
       "id": "E3He3Kr602j2B0wC",
@@ -255,7 +424,8 @@
       "active": false,
       "domain": "qa",
       "kind": "render_health",
-      "risk": "read_only"
+      "risk": "read_only",
+      "component_type": "QA"
     }
   ]
 }

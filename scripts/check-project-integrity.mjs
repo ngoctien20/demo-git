@@ -36,6 +36,20 @@ for(const [id,domain] of [['v6PBwcqSapVzACMW','demo'],['wgkkmT7q4lm4HyuA','websi
  const w=flows.find(f=>f.id===id);
  if(!w||w.domain!==domain)errors.push('critical workflow missing or misclassified: '+id);
 }
+for (const w of flows) {
+ if (!['Agent','Tool','QA','Infrastructure'].includes(w.component_type)) errors.push('component type '+w.id);
+ if (w.component_type !== 'Agent') continue;
+ const agent=w.agent;
+ if (!agent || agent.bot_id !== w.id || !agent.version || !agent.scope) {
+   errors.push('missing agent metadata '+w.id);
+   continue;
+ }
+ for (const id of [...agent.draft_dependencies, ...(agent.published_dependencies || [])]) {
+   if (!ids.has(id)) errors.push('unregistered dependency '+id);
+ }
+ if (w.domain==='website' && (agent.tools.length || agent.draft_dependencies.length ||
+     (agent.published_dependencies || []).length)) errors.push('public tools require review');
+}
 const active=flows.filter(w=>w.active).length;
 if(active!==16)errors.push('snapshot 16 active workflows expected, got '+active);
 const marketing=[

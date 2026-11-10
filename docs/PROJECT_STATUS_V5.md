@@ -50,3 +50,7 @@
 - Last checkpoint remains in GitHub; re-read source before acting from this file.
 
 **Do not report completion based on PR creation, localhost/mock tests, or CI alone.**
+
+### V7 · 2026-11-11 JST · Registry and website
+
+Read-only n8n inventory: 31 workflows, 16 active. The existing registry now classifies Agent/Tool/QA/Infrastructure and records six agent draft versions, tool names and workflow references. Null model/cost/tenant assignment means unverified. Website agent wgkkmT7q4lm4HyuA has no wired AI tools. Messenger has five referenced workflows including order tools, so do not execute it for regression. The registry is branch metadata, not an authorization source. Integrity and public/private widget placement checks passed locally. Physical Android keyboard and iOS Safari remain open. Rollback via revert of this PR #6 revision.
