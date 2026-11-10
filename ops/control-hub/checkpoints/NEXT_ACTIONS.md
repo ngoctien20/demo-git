@@ -10,3 +10,8 @@
 8. Run authorized E2E browser/keyboard/mobile tests and test backup restore in staging. Track P0/P1 before production release.
 
 Never mark a deployment successful solely from GitHub Actions while Sites and n8n have unverified dependencies. Never backfill UNKNOWN with synthetic numbers.
+
+## New stage gate (staging, prior to any Sites edit)
+9. Confirm updated PR monitor returns correctly differentiated `AUTH_REQUIRED`, `RATE_LIMITED`, `SERVICE_ERROR`, `STALE`, `SAME_COMMIT` and `DEPLOY_BEHIND_BRANCH`. Do not merge until CI verifies the 14 regression tests.
+10. Review `CONTROL_HUB_INTEGRATION_CONTRACT.md` and `AUTH_TEST_MATRIX.md` against the **actual** Sites runtime; apply minimal in-place patches only after source/D1 backups and authorization are verified.
+11. Preserve the signed-off PR branch as checkpoint; do not add private n8n inventory or execution data to the public repository.

@@ -20,3 +20,8 @@ Evidence collected: 2026-11-10T09:26:33Z (UTC).
 Public probe pipeline should attach `health.json` and `health.md` with **source and checked-at timestamp**, but it does not confer access to Control Hub private APIs.
 
 Release readiness: **NOT VERIFIED**. Unknown/error data must not be made to look green.
+
+## Follow-up safety and regression — staged only
+- New probe unit suite: **14/14 PASS locally** (HTTP 302 `Location`, 401/403, 429, 5xx, branch sorting, release commit comparison, freshness, denylist/allowlist, no secret export, API outage).
+- GitHub runner evidence: **pending** until the updated PR workflow has completed; never substitute a local PASS for remote UI validation.
+- Site auth, D1, desktop/tablet/mobile and server-side adapters: **NOT TESTED**.

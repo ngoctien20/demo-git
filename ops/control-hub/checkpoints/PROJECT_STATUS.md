@@ -19,3 +19,9 @@ Checkpoint generated: **2026-11-10T09:26:33Z** (UTC). Scope: **independent read-
 
 ## Safety gate
 No production workflow modified, no Sites deployment performed, no tokens exported, no database rows changed. Release readiness: **NOT VERIFIED**.
+
+## Current follow-up — monitor hardening
+- Existing PR #1 still draft; staging branch `ops/control-hub-audit-v2-20261110` is the sole change target.
+- Existing probe incorrectly lost `Location` on HTTP 302; corrected in staging. GitHub Actions run for this patch must pass before claiming deployed probe works.
+- Public-source probe schema v2 adds GitHub `gh_pages_head`, `last_successful_deploy`, `release_alignment` and `freshness` with backward-compatible prior keys.
+- Control Hub actual Sites code, authorized login, D1, backup and rollback remain **NOT VERIFIED**; no UI/backend change in live Site.
