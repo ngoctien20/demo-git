@@ -23,4 +23,4 @@ jobs:
       - name: Unit and security contract tests (mock provider only)
         run: python -m pytest -q ops/data-platform/tests
       - name: Syntax validation
-        run: python -m compileall -q ops/data-platform/app
+        run: python -m compileall -q ops/data-platform/app ops/data-platform/scripts
