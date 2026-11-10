@@ -112,15 +112,19 @@ if(target){
     });
     externalInput.addEventListener('input',()=>{externalStatus.textContent=''});
 
-    const chatCard=document.getElementById('tien404-chat-card');
-    const expandButton=document.getElementById('tien404-chat-expand');
-    if(chatCard&&expandButton){
-      expandButton.addEventListener('click',()=>{
-        const expanded=chatCard.classList.toggle('tien404-chat-expanded');
-        expandButton.setAttribute('aria-expanded',String(expanded));
-        expandButton.textContent=expanded?'Thu gọn ↙':'Mở rộng ↗';
-      });
-    }
+    const panel=document.getElementById('tien404-chat-panel');
+    const launcher=document.getElementById('tien404-chat-launcher');
+    const close=document.getElementById('tien404-chat-close');
+    const toggle=open=>{
+      if(!panel||!launcher)return;
+      panel.hidden=!open;
+      launcher.setAttribute('aria-expanded',String(open));
+      if(open){panel.scrollTop=0;setTimeout(()=>externalInput?.focus({preventScroll:true}),100)}
+      else launcher.focus({preventScroll:true});
+    };
+    launcher?.addEventListener('click',()=>toggle(panel.hidden));
+    close?.addEventListener('click',()=>toggle(false));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
     const note=document.querySelector('#n8n-chat-fallback');
