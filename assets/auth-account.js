@@ -2,6 +2,7 @@
  * No order/customer queries or writes, no user-selected tenant authority.
  */
 import {approvedMemberships,scopedTenantDisplay} from './auth-helpers.mjs';
+import {withDeadline} from './auth-runtime.mjs';
 const status=document.getElementById('account-status');
 const loginLink=document.getElementById('account-login-link');
 const protectedContent=document.getElementById('account-protected');
@@ -41,10 +42,10 @@ function addCatalog(card, tenant, viewGeneration) {
     list.replaceChildren();
     summary.textContent = 'Đang tải danh mục…';
     try {
-      const {data, error} = await sb.from('products')
+      const {data, error} = await withDeadline(sb.from('products')
         .select('tenant_id,sku,name,price_vnd,stock_on_hand')
         .eq('tenant_id', tenant.id).eq('is_active', true)
-        .order('sku').limit(21);
+        .order('sku').limit(21),13000);
       if (viewGeneration !== generation) return;
       if (error || !Array.isArray(data) || data.some(row => row.tenant_id !== tenant.id)) {
         throw new Error('catalog unavailable');
@@ -77,7 +78,7 @@ const revalidate=async()=>{
   loginLink.hidden=true;
   put('Đang xác minh phiên và quyền thành viên cửa hàng...');
   try{
-    const {data,error}=await sb.auth.getUser();
+    const {data,error}=await withDeadline(sb.auth.getUser(),13000);
     if(current!==generation)return;
     if(error||!data?.user?.id){
       verifiedUserId=null;
@@ -87,9 +88,9 @@ const revalidate=async()=>{
     const user=data.user;
     verifiedUserId=user.id;
     // Authorization remains in database: the extra filter is only defensive.
-    const membershipResponse=await sb.from('tenant_memberships')
+    const membershipResponse=await withDeadline(sb.from('tenant_memberships')
       .select('tenant_id,user_id,role,active')
-      .eq('user_id',user.id).eq('active',true).limit(50);
+      .eq('user_id',user.id).eq('active',true).limit(50),13000);
     if(current!==generation)return;
     if(membershipResponse.error){
       resetView();
@@ -103,8 +104,8 @@ const revalidate=async()=>{
       return;
     }
     const ids=memberships.map(m=>m.tenant_id);
-    const tenantsResponse=await sb.from('tenants')
-      .select('id,name').in('id',ids).limit(50);
+    const tenantsResponse=await withDeadline(sb.from('tenants')
+      .select('id,name').in('id',ids).limit(50),13000);
     if(current!==generation)return;
     if(tenantsResponse.error){
       resetView();
@@ -144,7 +145,7 @@ const revalidate=async()=>{
 };
 
 try{
-  sb=(await import('./auth-client.js')).authClient;
+  sb=await withDeadline((await import('./auth-client.js')).getAuthClient(),20500);
   sb.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
       verifiedUserId=null;
@@ -179,7 +180,7 @@ logout?.addEventListener('click',async()=>{
   resetView();
   put('Đang đăng xuất...');
   try{
-    const {error}=await sb.auth.signOut();
+    const {error}=await withDeadline(sb.auth.signOut(),13000);
     if(error)throw error;
     location.replace('login.html');
   }catch{
