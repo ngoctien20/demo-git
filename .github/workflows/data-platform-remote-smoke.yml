@@ -1,0 +1,50 @@
+name: TIEN404 staging deployed API smoke
+on:
+  push:
+    branches: [ops/tenant-data-platform-v1-staging-20261110]
+    paths:
+      - '.github/workflows/data-platform-remote-smoke.yml'
+      - 'ops/data-platform/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-read-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify deployed staging response and authorization boundary
+        env:
+          STAGING_URL: https://tien404-data-staging.onrender.com
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.error, urllib.request
+          base=os.environ['STAGING_URL']
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Accept':'application/json','User-Agent':'TIEN404-staging-smoke/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as res:
+                      return res.status,res.read(16384).decode('utf-8')
+              except urllib.error.HTTPError as err:
+                  return err.code,err.read(16384).decode('utf-8')
+          for attempt in range(4):
+              try:
+                  status,raw=get('/health')
+                  if status==200:
+                      data=json.loads(raw)
+                      assert data.get('mode')=='staging',data
+                      assert data.get('production_readiness')=='NOT_APPROVED',data
+                      assert data.get('database_connected') is False,'Do not claim unverified DB readiness'
+                      print('STAGING_HEALTH=200 status='+str(data.get('status')))
+                      break
+                  print('HEALTH_RESPONSE='+str(status)+' try='+str(attempt+1))
+              except Exception as exc:
+                  print('HEALTH_CONNECTION_PENDING='+type(exc).__name__+' try='+str(attempt+1))
+              if attempt==3:
+                  raise AssertionError('Staging health endpoint did not respond')
+              time.sleep(10)
+          status,_=get('/api/v1/tenants')
+          print('ANONYMOUS_TENANTS_HTTP='+str(status))
+          assert status==401,'Tenant API must reject anonymous requests'
+          print('PASS: public staging health and anonymous deny. Real identity/RLS integration still unverified.')
+          PY
