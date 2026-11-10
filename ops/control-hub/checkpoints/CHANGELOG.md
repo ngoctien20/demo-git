@@ -21,3 +21,5 @@
 - Added tests for malformed JSON, missing metrics, staleness, auth redirects, secret isolation and source-commit drift.
 - Added `CONTROL_HUB_INTEGRATION_CONTRACT.md` and `AUTH_TEST_MATRIX.md` for future safe integration into the **existing** Sites project.
 - Not deployed to Sites or merged to production. No n8n credentials/workflows modified.
+
+- Verified the hardening on GitHub Actions: 14/14 PASS, run `42793920660`; artifacts include JSON/Markdown with source URLs and UTC timestamps. PR #1 remains Draft.

@@ -22,6 +22,6 @@ Public probe pipeline should attach `health.json` and `health.md` with **source 
 Release readiness: **NOT VERIFIED**. Unknown/error data must not be made to look green.
 
 ## Follow-up safety and regression — staged only
-- New probe unit suite: **14/14 PASS locally** (HTTP 302 `Location`, 401/403, 429, 5xx, branch sorting, release commit comparison, freshness, denylist/allowlist, no secret export, API outage).
-- GitHub runner evidence: **pending** until the updated PR workflow has completed; never substitute a local PASS for remote UI validation.
+- New probe unit suite: **14/14 PASS locally and on GitHub Actions run `42793920660`** (HTTP 302 `Location`, 401/403, 429, 5xx, branch sorting, release commit comparison, freshness, denylist/allowlist, no secret export, API outage).
+- GitHub runner evidence: **PASS** — run `42793920660`, commit `b72de8e40d04198200a55b711e11b827eecbef69`. Probe: Control Hub `401 AUTH_REQUIRED`, website `200 REACHABLE`, GitHub API `REACHABLE`, latest Pages deployment SHA aligned with `gh-pages` HEAD (`SAME_COMMIT`). n8n/Sites auth/D1 remain `UNKNOWN/NOT_TESTED`.
 - Site auth, D1, desktop/tablet/mobile and server-side adapters: **NOT TESTED**.

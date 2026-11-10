@@ -25,3 +25,5 @@ No production workflow modified, no Sites deployment performed, no tokens export
 - Existing probe incorrectly lost `Location` on HTTP 302; corrected in staging. GitHub Actions run for this patch must pass before claiming deployed probe works.
 - Public-source probe schema v2 adds GitHub `gh_pages_head`, `last_successful_deploy`, `release_alignment` and `freshness` with backward-compatible prior keys.
 - Control Hub actual Sites code, authorized login, D1, backup and rollback remain **NOT VERIFIED**; no UI/backend change in live Site.
+
+- GitHub-hosted monitoring regression 14/14 PASS: run `42793920660` (`b72de8e4`); public Site 401, website 200, GitHub Actions reachable, commit alignment SAME_COMMIT. This is not proof of authenticated Site functionality.
