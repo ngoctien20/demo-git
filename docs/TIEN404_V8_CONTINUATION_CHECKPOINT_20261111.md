@@ -31,3 +31,11 @@ Continued prior Work V7.1/V8 on existing Supabase Auth staging branch; did not r
 - n8n published workflow changes: NO.
 - Production `gh-pages` changed: NO.
 - Pilot readiness: NOT READY.
+
+## 2026-11-11 follow-up verification
+- GitHub Actions run [42913004312](https://github.com/ngoctien20/demo-git/actions/runs/42913004312): **PASS**, including Node regression tests and isolated Chromium smoke. This is not real hosted sign-in.
+- Navigation CI run 42913004094: PASS.
+- Render Auth service verified static site, branch `work/supabase-auth-staging-v1`, autoDeploy OFF. At inspection, latest LIVE deploy was `dep-dbppc3ek1f9s73ci4al0` on commit `4c13ea5877682d1c1cc5715f95ab8effa6ff0440` (merchant read-only filters); this does **not** prove latest Auth recovery guard is deployed. Other work has updated this branch concurrently; avoid blind redeploy until HEAD/QA reconciliation.
+- Supabase read-only schema inventory: every listed `public` table (conversations, customers, messages, order_items, orders, products, tenant_memberships, tenants) has RLS enabled and one policy; this alone does not prove correct tenant isolation. Private tables audit_events, channel_secrets, order_idempotency have RLS enabled and no policies, which may be intentional deny-by-default.
+- Supabase security advisor: leaked-password protection disabled (WARN); review Auth security configuration before pilot. Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- No Supabase mutations, n8n changes, or production deployment were made in this verification. E2E with two independent users remains BLOCKED/NOT VERIFIED.
