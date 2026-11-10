@@ -9,8 +9,7 @@ if(target){
       mode:'fullscreen',
       showWelcomeScreen:false,
       initialMessages:[
-        'Xin chào! Mình là trợ lý tư vấn TIEN404 AI.',
-        'Bạn muốn tìm hiểu tính năng, chi phí hay cách triển khai AI cho cửa hàng?'
+        'Xin chào! Bạn muốn hỏi về tính năng, chi phí hay cách dùng TIEN404 AI?'
       ],
       i18n:{
         en:{
@@ -112,6 +111,16 @@ if(target){
       }
     });
     externalInput.addEventListener('input',()=>{externalStatus.textContent=''});
+
+    const chatCard=document.getElementById('tien404-chat-card');
+    const expandButton=document.getElementById('tien404-chat-expand');
+    if(chatCard&&expandButton){
+      expandButton.addEventListener('click',()=>{
+        const expanded=chatCard.classList.toggle('tien404-chat-expanded');
+        expandButton.setAttribute('aria-expanded',String(expanded));
+        expandButton.textContent=expanded?'Thu gọn ↙':'Mở rộng ↗';
+      });
+    }
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
     const note=document.querySelector('#n8n-chat-fallback');
