@@ -11,6 +11,8 @@ test('preview build contains only allowlisted login assets',()=>{
   assert.ok(fs.existsSync(path.join(output,'login.html')));
   assert.ok(fs.existsSync(path.join(output,'account.html')));
   assert.ok(fs.existsSync(path.join(output,'assets/auth-client.js')));
+  assert.ok(fs.existsSync(path.join(output,'assets/auth-runtime.mjs')));
+  assert.ok(fs.existsSync(path.join(output,'assets/auth-bootstrap.js')));
   assert.equal(fs.existsSync(path.join(output,'dashboard.html')),false);
   assert.equal(fs.existsSync(path.join(output,'package.json')),false);
   assert.equal(fs.existsSync(path.join(output,'.env')),false);
@@ -27,6 +29,8 @@ test('staging pages show safe UX and use relative auth routes',()=>{
     assert.match(html,/href="https:\/\/ngoctien20\.github\.io\/demo-git\/index\.html"/);
   }
   assert.match(login,/id="auth-login"/);
+  assert.match(login,/id="auth-retry"/);
+  assert.match(login,/auth-bootstrap\.js/);
   assert.match(login,/id="auth-forgot-password" disabled/);
   assert.match(login,/<span id="auth-recovery-note">Khôi phục qua email đang tạm khóa/);
   assert.doesNotMatch(login,/qua email đã cấu hình/);
