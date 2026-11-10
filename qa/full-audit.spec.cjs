@@ -252,9 +252,16 @@ for (const p of routes) {
 test('AI widget displays usable fallback when external chat script is unavailable',async({page})=>{
   await page.route('**/cdn.jsdelivr.net/npm/@n8n/chat/**', route=>route.abort());
   await page.goto('/demo.html',{waitUntil:'domcontentloaded'});
+  const launcher=page.locator('#tien404-chat-launcher');
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  await expect(launcher).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#tien404-chat-panel')).toBeVisible();
   await expect(page.locator('#n8n-chat-fallback')).toBeVisible({timeout:10000});
   await expect(page.locator('#n8n-chat-fallback a[href="lab.html"]')).toBeVisible();
   await expect(page.locator('html')).not.toHaveClass(/tien404-chat-ready/);
+  await page.keyboard.press('Escape');
+  await expect(launcher).toHaveAttribute('aria-expanded','false');
 });
 
 test('Sample dashboard and homepage capture visual QA screenshots',async({page})=>{
@@ -395,19 +402,27 @@ test('Live GitHub Pages public URL renders the latest AI panel', async({page})=>
 test('Live n8n AI chat loads and accepts an inquiry without real orders',async({page})=>{
   test.setTimeout(70000);
   await page.goto(live+'demo.html#ai-live',{waitUntil:'domcontentloaded',timeout:20000});
+  const launcher=page.locator('#tien404-chat-launcher');
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  await expect(launcher).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#tien404-chat-panel')).toBeVisible();
   const chat=page.locator('#n8n-chat');
   await expect(chat).toBeVisible();
-  const input=chat.locator('textarea,input[type="text"]').first();
-  await expect(input).toBeVisible({timeout:18000});
+  await expect(page.locator('#tien404-composer')).toBeVisible({timeout:18000});
+  const input=page.locator('#tien404-message');
+  await expect(input).toBeVisible();
   const before=await chat.locator('.chat-message-from-bot').count();
   console.log('CHAT_INITIAL_BOT_COUNT '+before);
-  console.log('CHAT_DOM '+(await chat.innerHTML()).slice(0,1700).replace(/\s+/g,' '));
   await input.fill('Tôi bán thời trang online, bạn gợi ý bắt đầu từ tính năng AI nào?');
-  await input.press('Enter');
+  await page.locator('#tien404-send').click();
+  await expect(chat.locator('.chat-message-from-user')).toHaveCount(1,{timeout:12000});
   await expect.poll(async()=>await chat.locator('.chat-message-from-bot').count(),{timeout:45000,intervals:[1000,2000,3000]}).toBeGreaterThan(before);
   await expect.poll(async()=>(await chat.locator('.chat-message-from-bot').last().innerText()).trim().length,{timeout:45000,intervals:[1000,2000,3000]}).toBeGreaterThan(50);
   const reply=await chat.locator('.chat-message-from-bot').last().innerText();
   console.log('AI_REAL_RESPONSE '+reply.slice(0,700));
   expect(reply).not.toContain('Rất tiếc, trợ lý đang bận');
   expect(reply).toMatch(/shop|AI|giải pháp|thời trang|bán hàng|tư vấn/i);
+  await page.locator('#tien404-chat-close').click();
+  await expect(launcher).toHaveAttribute('aria-expanded','false');
 });

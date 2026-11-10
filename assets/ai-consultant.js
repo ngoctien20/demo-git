@@ -1,5 +1,21 @@
 const target=document.querySelector('#n8n-chat');
 if(target){
+  // Bind launcher before the network import. A CDN outage must not disable
+  // the button users need to open the fallback message.
+  const panel=document.getElementById('tien404-chat-panel');
+  const launcher=document.getElementById('tien404-chat-launcher');
+  const close=document.getElementById('tien404-chat-close');
+  const composerInput=document.getElementById('tien404-message');
+  const toggle=open=>{
+    if(!panel||!launcher)return;
+    panel.hidden=!open;
+    launcher.setAttribute('aria-expanded',String(open));
+    if(open){panel.scrollTop=0;setTimeout(()=>{if(composerInput&&!composerInput.closest('[hidden]'))composerInput.focus({preventScroll:true});},100)}
+    else launcher.focus({preventScroll:true});
+  };
+  launcher?.addEventListener('click',()=>toggle(panel.hidden));
+  close?.addEventListener('click',()=>toggle(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel&&!panel.hidden)toggle(false)});
   (async () => {
   try{
     const { createChat } = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
@@ -112,19 +128,6 @@ if(target){
     });
     externalInput.addEventListener('input',()=>{externalStatus.textContent=''});
 
-    const panel=document.getElementById('tien404-chat-panel');
-    const launcher=document.getElementById('tien404-chat-launcher');
-    const close=document.getElementById('tien404-chat-close');
-    const toggle=open=>{
-      if(!panel||!launcher)return;
-      panel.hidden=!open;
-      launcher.setAttribute('aria-expanded',String(open));
-      if(open){panel.scrollTop=0;setTimeout(()=>externalInput?.focus({preventScroll:true}),100)}
-      else launcher.focus({preventScroll:true});
-    };
-    launcher?.addEventListener('click',()=>toggle(panel.hidden));
-    close?.addEventListener('click',()=>toggle(false));
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
     const note=document.querySelector('#n8n-chat-fallback');
