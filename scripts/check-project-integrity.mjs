@@ -38,14 +38,33 @@ for(const [id,domain] of [['v6PBwcqSapVzACMW','demo'],['wgkkmT7q4lm4HyuA','websi
 }
 const active=flows.filter(w=>w.active).length;
 if(active!==16)errors.push('snapshot 16 active workflows expected, got '+active);
+const marketing=[
+ 'index.html','demo.html','solutions.html','pricing.html','contact.html',
+ 'industries.html','onboarding.html','about.html','faq.html',
+ 'industry-fashion.html','industry-beauty.html','industry-accessories.html',
+ 'industry-ecommerce.html','industry-services.html','impact.html'
+];
+const privatePages=['login.html','register.html','checkout.html','dashboard.html','billing.html'];
 const home=requireFile('index.html'),demo=requireFile('demo.html');
+const loader=requireFile('assets/website-chat-loader.js');
 const widget=requireFile('assets/ai-consultant.js');
 const css=requireFile('assets/live-chat.css');
-for(const [name,html] of [['index.html',home],['demo.html',demo]]){
- if((html.match(/id="tien404-chat-panel"/g)||[]).length!==1)errors.push(name+' must have exactly one floating chat panel');
- if((html.match(/id="n8n-chat"/g)||[]).length!==1)errors.push(name+' must have exactly one chat mount');
- if(!html.includes('id="tien404-message"'))errors.push(name+' missing independent Android-friendly composer');
- if(!html.includes('id="tien404-chat-close"'))errors.push(name+' missing chat close control');
+for(const name of marketing){
+ const html=requireFile(name);
+ const count=(html.match(/assets\/website-chat-loader\.js/g)||[]).length;
+ if(count!==1)errors.push(name+' must load the shared public widget exactly once, got '+count);
+ if(html.includes('id="tien404-chat-panel"')||html.includes('id="n8n-chat"'))errors.push(name+' has duplicate inline widget shell');
+ if(!html.includes('assets/live-chat.css'))errors.push(name+' missing widget css');
+ if(html.includes('assets/ai-consultant.js'))errors.push(name+' should not start AI script outside shared loader');
+}
+for(const name of privatePages){
+ const html=requireFile(name);
+ if(html.includes('website-chat-loader.js')||html.includes('id="tien404-chat-panel"')){
+  errors.push(name+' must not show unauthenticated marketing chat on account pages');
+ }
+}
+for(const id of ['id="tien404-chat-panel"','id="n8n-chat"','id="tien404-message"','id="tien404-chat-close"']){
+ if((loader.match(new RegExp(id,'g'))||[]).length!==1)errors.push('shared loader missing/duplicate '+id);
 }
 if(!demo.includes('id="ai-live"')||!demo.includes('data-tien404-open-chat'))errors.push('demo CTA anchor or button missing');
 if(!widget.includes("data-tien404-open-chat")||!widget.includes("toggle(true)"))errors.push('demo open-chat behavior missing');
