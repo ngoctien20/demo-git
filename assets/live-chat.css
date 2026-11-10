@@ -129,3 +129,34 @@
 #n8n-chat .chat-inputs input:focus {
   outline-color:#7856e8;
 }
+
+
+/* Composer foreground fix: override all n8n chat variables and input states. */
+#n8n-chat {
+  --chat--input--text-color:#172033;
+  --chat--input--background:#ffffff;
+  --chat--input--placeholder-color:#596477;
+  --chat--textarea--color:#172033;
+}
+#n8n-chat .chat-footer textarea,
+#n8n-chat .chat-footer input,
+#n8n-chat .chat-inputs textarea,
+#n8n-chat .chat-inputs input,
+#n8n-chat .chat-footer [contenteditable="true"],
+#n8n-chat .chat-footer textarea:focus,
+#n8n-chat .chat-footer input:focus,
+#n8n-chat .chat-footer [contenteditable="true"]:focus {
+  color:#172033 !important;
+  -webkit-text-fill-color:#172033 !important;
+  background:#ffffff !important;
+  caret-color:#5c3ac7 !important;
+  color-scheme:light !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+#n8n-chat .chat-footer textarea::placeholder,
+#n8n-chat .chat-footer input::placeholder {
+  color:#596477 !important;
+  -webkit-text-fill-color:#596477 !important;
+  opacity:1 !important;
+}
