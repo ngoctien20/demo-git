@@ -75,6 +75,17 @@ with sync_playwright() as playwright:
     expect(page.locator('#account-protected')).to_be_hidden()
     page.locator('#account-login-link').click()
     expect(page.locator('#auth-forgot-password')).to_be_disabled()
+    # A forged recovery-looking URL or DOM-unhidden form cannot authorize updateUser.
+    page.evaluate("""() => {
+      const form = document.getElementById('auth-password-update');
+      form.hidden = false;
+      form.querySelector('button[type=submit]').disabled = false;
+      document.getElementById('auth-new-password').value = 'Fixture-only-strong-password-123!';
+      document.getElementById('auth-password-confirm').value = 'Fixture-only-strong-password-123!';
+      form.requestSubmit();
+    }""")
+    expect(page.locator('#auth-status')).to_contain_text('Phiên khôi phục không hợp lệ')
+    page.evaluate("document.getElementById('auth-password-update').hidden = true")
     password = page.locator('#auth-password')
     page.locator('#auth-email').fill('fixture@example.invalid')
     password.fill('fixture-only-invalid')
