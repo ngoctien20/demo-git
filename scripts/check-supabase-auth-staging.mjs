@@ -32,8 +32,13 @@ assert(files.accountJs.includes('protectedContent.hidden=true'),'Auth fail-close
 assert(!files.accountJs.includes("from('orders')"),'Staging account must not query real orders');
 assert(!files.accountJs.includes("from('customers')"),'Staging account must not query customer PII');
 assert(files.client.includes('@supabase/supabase-js@2.119.0/+esm'),'SDK not pinned');
-assert(files.client.includes("flowType: 'pkce'"),'PKCE disabled');
+assert(/flowType:\s*'pkce'/.test(files.client),'PKCE disabled');
 assert(files.login.includes('type="password"'),'Missing password input');
+assert(files.login.includes('id="auth-retry"'),'Missing login connection retry');
+assert(files.login.includes('auth-bootstrap.js'),'Missing pre-module fallback');
+assert(files.loginJs.includes('withDeadline(client.auth.signInWithPassword'),'Missing login timeout');
+assert(files.accountJs.includes('getAuthClient()'),'Account must use common Supabase SDK loader');
+assert(files.client.includes('https://esm.sh/'),'Missing alternate CDN fallback');
 for(const [path,body] of Object.entries(files)){
  if(/(?:sb_secret_|service_role_key)\S{12,}/.test(body))issues.push(path+' appears to contain secret material');
 }
