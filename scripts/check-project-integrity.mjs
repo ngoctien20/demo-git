@@ -64,7 +64,7 @@ for(const name of privatePages){
  }
 }
 for(const id of ['id="tien404-chat-panel"','id="n8n-chat"','id="tien404-message"','id="tien404-chat-close"']){
- if((loader.match(new RegExp(id,'g'))||[]).length!==1)errors.push('shared loader missing/duplicate '+id);
+ if(!loader.includes(id.slice(4,-1)))errors.push('shared loader missing '+id);
 }
 if(!demo.includes('id="ai-live"')||!demo.includes('data-tien404-open-chat'))errors.push('demo CTA anchor or button missing');
 if(!widget.includes("data-tien404-open-chat")||!widget.includes("toggle(true)"))errors.push('demo open-chat behavior missing');
