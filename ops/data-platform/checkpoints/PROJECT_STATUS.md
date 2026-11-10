@@ -9,3 +9,5 @@ Snapshot: 2026-11-10 (Asia/Tokyo). This is an **additive staging design** based 
 - Boundary: `AI_SALES_DEMO` Sheets and credentials remain isolated from Commerce SaaS.
 - Security: all exposed public tables have read-only authenticated RLS policies; no public write grants; no service_role key committed; private schema denied to anon/authenticated.
 - Caveat: SQL static review is not a real Supabase migration or a live two-tenant RLS penetration test. Staging acceptance remains blocked until those succeed.
+
+GitHub staged deliverable: Draft PR #5 (`ops/tenant-data-platform-v1-staging-20261110`) built on the existing Super Admin PR #2; data-platform and super-admin CI both succeeded (runs 42824818633 and 42824818584). No real Supabase/Render connection yet.
