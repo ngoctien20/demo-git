@@ -5,7 +5,7 @@
 ## Priority queue
 
 ### P0 — Public product and safety
-1. **Website widget end-to-end QA**: Android dark-mode text, native and custom composer consistency, send/reply, keyboard resizing, page scroll, minimize/open, screen reader, mobile and desktop browsers. Current repo has code but no verified device QA. **Acceptance:** stable operation on real Android and representative desktop, screenshots + test log + rollback. Don't claim solved from CSS changes alone.
+1. **Global public marketing widget (15 pages) + end-to-end QA**: Android dark-mode text, native and custom composer consistency, send/reply, keyboard resizing, page scroll, minimize/open, screen reader, mobile and desktop browsers. Feature branch has one shared `assets/website-chat-loader.js` mounted across 15 public pages, excluding login and account pages. Needs real-browser and device QA before deployment. **Acceptance:** stable operation on real Android and representative desktop, screenshots + test log + rollback. Don't claim solved from CSS changes alone.
 2. **Website AI response accuracy and quotas**: verify public FAQ, integration statuses, link CTA and safe fallback. Avoid unsupported price/quota claims and real Orders/Products integration. **Acceptance:** safe test scenarios pass with actual execution IDs; error-free isolated test; webhook integration observed.
 3. **Messenger/Revenue/Legacy errors**: investigate error registry via read-only data, safe trace filtering. **Acceptance:** each incident classified open/historical; root cause and any proposed patch in staging.
 
@@ -16,9 +16,10 @@
 7. **Website IA**: main nav six links, no duplicate onboarding/industry menu items. Preserve specialist examples as deeper links; reduce repeated warnings and unneeded mock routes. **Acceptance:** \`node scripts/check-site-navigation.mjs\` + real browser UX.
 
 ### P2 — Scale when stages are ready
-8. Customer dashboard with real tenant auth and role checks; don't confuse old browser simulation with working SaaS.
-9. Pricing + payment after legal/commercial approval, signed provider webhooks and refund/consent handling.
-10. Approved versioned knowledge base + QA rubric + safe deployment gates; never auto-promote internal test bot to commercial template.
+8. Deliver tenant-authenticated **Merchant Copilot** read-only order/product/usage assistant after backend identity and RLS are proven; separately pilot **Shopper Order Support** on verified order ownership and OTP, not on the anonymous TIEN404 marketing widget. See `docs/ASSISTANT_ACCESS_ARCHITECTURE_V5.md`.
+9. Customer dashboard with real tenant auth and role checks; don't confuse old browser simulation with working SaaS.
+10. Pricing + payment after legal/commercial approval, signed provider webhooks and refund/consent handling.
+11. Approved versioned knowledge base + QA rubric + safe deployment gates; never auto-promote internal test bot to commercial template.
 
 ## Staging / live decision matrix
 | Workstream | Source | Implementation branch | Activation |
