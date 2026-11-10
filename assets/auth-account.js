@@ -26,6 +26,47 @@ const requireLogin=message=>{
   loginLink.hidden=false;
   put(message,'error');
 };
+function addCatalog(card, tenant, viewGeneration) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn-outline';
+  button.textContent = 'Xem sản phẩm';
+  const summary = document.createElement('p');
+  summary.setAttribute('role', 'status');
+  const list = document.createElement('ul');
+  card.append(button, summary, list);
+  button.addEventListener('click', async () => {
+    if (viewGeneration !== generation || button.disabled) return;
+    button.disabled = true;
+    list.replaceChildren();
+    summary.textContent = 'Đang tải danh mục…';
+    try {
+      const {data, error} = await sb.from('products')
+        .select('tenant_id,sku,name,price_vnd,stock_on_hand')
+        .eq('tenant_id', tenant.id).eq('is_active', true)
+        .order('sku').limit(21);
+      if (viewGeneration !== generation) return;
+      if (error || !Array.isArray(data) || data.some(row => row.tenant_id !== tenant.id)) {
+        throw new Error('catalog unavailable');
+      }
+      const money = new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'});
+      for (const row of data.slice(0, 20)) {
+        const item = document.createElement('li');
+        item.textContent = row.name + ' · ' + row.sku + ' · ' + money.format(row.price_vnd) + ' · Tồn ' + row.stock_on_hand;
+        list.append(item);
+      }
+      const count = data.length > 20 ? '20 sản phẩm đầu tiên' : data.length + ' sản phẩm đang bán';
+      summary.textContent = 'Supabase staging · ' + count + ' · ' + new Date().toLocaleTimeString('vi-VN');
+      button.textContent = 'Tải lại danh mục';
+    } catch {
+      if (viewGeneration !== generation) return;
+      list.replaceChildren();
+      summary.textContent = 'Chưa tải được danh mục. Hãy kiểm tra lại quyền hoặc thử lại.';
+    } finally {
+      if (viewGeneration === generation) button.disabled = false;
+    }
+  });
+}
 const revalidate=async()=>{
   if(!sb || busy)return;
   busy=true;
@@ -87,6 +128,7 @@ const revalidate=async()=>{
       const note=document.createElement('small');
       note.textContent='Môi trường staging · chưa bật truy cập đơn hàng';
       card.append(title,role,note);
+      addCatalog(card, t, current);
       cards.appendChild(card);
     }
     protectedContent.hidden=false;

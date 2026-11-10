@@ -28,8 +28,10 @@ const auth = {
 export const authClient = {auth, from(table) {
   const id = identity().id;
   const query = {
-    select(){return query;},eq(){return query;},in(){return query;},
-    async limit(){return {data:table === 'tenants'
+    select(){return query;},eq(){return query;},in(){return query;},order(){return query;},
+    async limit(){
+      if (table === 'products') return {data:[{tenant_id:window.badScope ? 'B' : id,sku:'QA',name:'Sản phẩm '+id,price_vnd:15000,stock_on_hand:2}]};
+      return {data:table === 'tenants'
       ? [{id,name:'Shop '+id}]
       : [{tenant_id:id,user_id:id,role:'owner',active:true}]};}
   };
@@ -61,6 +63,12 @@ with sync_playwright() as playwright:
     password.fill('fixture-only-valid')
     page.locator('#auth-submit').click()
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
+    page.get_by_role('button',name='Xem sản phẩm').click()
+    expect(page.locator('#account-tenants li')).to_contain_text('Sản phẩm A')
+    page.evaluate('window.badScope=true')
+    page.get_by_role('button',name='Tải lại danh mục').click()
+    expect(page.locator('#account-tenants li')).to_have_count(0)
+    expect(page.get_by_text('Chưa tải được danh mục.',exact=False)).to_be_visible()
     page.reload()
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
     page.evaluate("window.changeFixtureIdentity('B')")
