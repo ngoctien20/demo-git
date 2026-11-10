@@ -30,10 +30,11 @@ export const authClient = {auth, from(table) {
   const query = {
     select(){return query;},eq(){return query;},in(){return query;},order(){return query;},
     async limit(){
+      if (table === 'orders') return {count:1,data:[{tenant_id:window.badScope ? 'B' : id,id:'QA-ORDER',status:'paid',total_vnd:15000,created_at:'2026-11-10T00:00:00Z'}]};
       if (table === 'products') return {data:[{tenant_id:window.badScope ? 'B' : id,sku:'QA',name:'Sản phẩm '+id,price_vnd:15000,stock_on_hand:2}]};
       return {data:table === 'tenants'
       ? [{id,name:'Shop '+id}]
-      : [{tenant_id:id,user_id:id,role:'owner',active:true}]};}
+      : [{tenant_id:id,user_id:id,role:id==='B'?'staff':'owner',active:true}]};}
   };
   return query;
 }};
@@ -85,7 +86,11 @@ with sync_playwright() as playwright:
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
     page.get_by_role('button',name='Xem sản phẩm').click()
     expect(page.locator('#account-tenants li')).to_contain_text('Sản phẩm A')
+    page.get_by_role('button',name='Xem đơn hàng').click()
+    expect(page.get_by_text('QA-ORDER',exact=False)).to_be_visible()
     page.evaluate('window.badScope=true')
+    page.get_by_role('button',name='Tải lại đơn hàng').click()
+    expect(page.get_by_text('QA-ORDER',exact=False)).to_have_count(0)
     page.get_by_role('button',name='Tải lại danh mục').click()
     expect(page.locator('#account-tenants li')).to_have_count(0)
     expect(page.get_by_text('Chưa tải được danh mục.',exact=False)).to_be_visible()
@@ -93,6 +98,7 @@ with sync_playwright() as playwright:
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
     page.evaluate("window.changeFixtureIdentity('B')")
     expect(page.get_by_text('Shop B',exact=True)).to_be_visible()
+    expect(page.get_by_role('button', name='Xem đơn hàng')).to_have_count(0)
     expect(page.get_by_text('Shop A',exact=True)).to_have_count(0)
     page.evaluate('window.changeFixtureIdentity(null)')
     expect(page.locator('#account-protected')).to_be_hidden()

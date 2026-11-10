@@ -27,46 +27,79 @@ const requireLogin=message=>{
   loginLink.hidden=false;
   put(message,'error');
 };
-function addCatalog(card, tenant, viewGeneration) {
+const orderStatuses = {
+  pending:'Chờ xử lý', confirmed:'Đã xác nhận', paid:'Đã thanh toán',
+  cancelled:'Đã hủy', refunded:'Đã hoàn tiền'
+};
+function addMerchantList(card, tenant, viewGeneration, orders = false) {
+  const label = orders ? 'đơn hàng' : 'sản phẩm';
+  const section = document.createElement('section');
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn btn-outline';
-  button.textContent = 'Xem sản phẩm';
+  button.textContent = 'Xem ' + label;
+  const filters = document.createElement('form');
+  filters.hidden = true;
+  const input = document.createElement('input');
+  input.placeholder = orders ? 'Mã đơn đầy đủ' : 'Mã SKU chính xác';
+  input.setAttribute('aria-label', input.placeholder);
+  const select = document.createElement('select');
+  select.setAttribute('aria-label', 'Trạng thái ' + label);
+  const choices = orders ? {'':'Mọi trạng thái', ...orderStatuses} :
+    {active:'Đang bán', inactive:'Ngừng bán', all:'Tất cả sản phẩm'};
+  for (const [value, title] of Object.entries(choices)) select.add(new Option(title,value));
+  const apply = document.createElement('button');
+  apply.type = 'submit';
+  apply.textContent = 'Áp dụng';
+  filters.append(input, select, apply);
   const summary = document.createElement('p');
-  summary.setAttribute('role', 'status');
+  summary.setAttribute('role','status');
   const list = document.createElement('ul');
-  card.append(button, summary, list);
-  button.addEventListener('click', async () => {
+  section.append(button, filters, summary, list);
+  card.append(section);
+  async function load() {
     if (viewGeneration !== generation || button.disabled) return;
-    button.disabled = true;
     list.replaceChildren();
-    summary.textContent = 'Đang tải danh mục…';
+    filters.hidden = false;
+    const key = input.value.trim();
+    if (orders && key && !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(key)) {
+      summary.textContent = 'Nhập đầy đủ mã đơn hoặc để trống.';
+      return;
+    }
+    button.disabled = apply.disabled = true;
+    summary.textContent = 'Đang tải ' + label + '…';
     try {
-      const {data, error} = await withDeadline(sb.from('products')
-        .select('tenant_id,sku,name,price_vnd,stock_on_hand')
-        .eq('tenant_id', tenant.id).eq('is_active', true)
-        .order('sku').limit(21),13000);
+      const fields = orders ? 'id,tenant_id,status,total_vnd,created_at' : 'tenant_id,sku,name,price_vnd,stock_on_hand,is_active';
+      let query = sb.from(orders ? 'orders' : 'products').select(fields,{count:'exact'}).eq('tenant_id',tenant.id);
+      if (key) query = query.eq(orders ? 'id' : 'sku',key);
+      if (orders && select.value) query = query.eq('status',select.value);
+      if (!orders && select.value !== 'all') query = query.eq('is_active',select.value === 'active');
+      query = orders ? query.order('created_at',{ascending:false}).order('id') : query.order('sku');
+      const {data,count,error} = await withDeadline(query.limit(20),13000);
       if (viewGeneration !== generation) return;
-      if (error || !Array.isArray(data) || data.some(row => row.tenant_id !== tenant.id)) {
-        throw new Error('catalog unavailable');
-      }
-      const money = new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'});
-      for (const row of data.slice(0, 20)) {
+      if (error || !Array.isArray(data) || data.some(row=>row?.tenant_id !== tenant.id)) throw Error('scope');
+      const money = new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'});
+      for (const row of data) {
         const item = document.createElement('li');
-        item.textContent = row.name + ' · ' + row.sku + ' · ' + money.format(row.price_vnd) + ' · Tồn ' + row.stock_on_hand;
+        item.textContent = orders
+          ? [row.id,orderStatuses[row.status] || row.status,money.format(row.total_vnd),new Date(row.created_at).toLocaleString('vi-VN')].join(' · ')
+          : [row.name,row.sku,money.format(row.price_vnd),'Tồn '+row.stock_on_hand,row.is_active ? 'Đang bán' : 'Ngừng bán'].join(' · ');
         list.append(item);
       }
-      const count = data.length > 20 ? '20 sản phẩm đầu tiên' : data.length + ' sản phẩm đang bán';
-      summary.textContent = 'Supabase staging · ' + count + ' · ' + new Date().toLocaleTimeString('vi-VN');
-      button.textContent = 'Tải lại danh mục';
+      const total = Number.isInteger(count) ? ' / '+count : '';
+      summary.textContent = 'Supabase staging · Hiển thị '+data.length+total+' '+label+' theo bộ lọc · '+new Date().toLocaleTimeString('vi-VN');
+      button.textContent = orders ? 'Tải lại đơn hàng' : 'Tải lại danh mục';
     } catch {
       if (viewGeneration !== generation) return;
       list.replaceChildren();
-      summary.textContent = 'Chưa tải được danh mục. Hãy kiểm tra lại quyền hoặc thử lại.';
+      summary.textContent = orders ? 'Chưa tải được đơn hàng. Hãy kiểm tra lại quyền hoặc thử lại.' :
+        'Chưa tải được danh mục. Hãy kiểm tra lại quyền hoặc thử lại.';
     } finally {
-      if (viewGeneration === generation) button.disabled = false;
+      if (viewGeneration === generation) button.disabled = apply.disabled = false;
     }
-  });
+  }
+  button.addEventListener('click',load);
+  filters.addEventListener('submit',event=>{event.preventDefault();load();});
 }
 const revalidate=async()=>{
   if(!sb || busy)return;
@@ -127,13 +160,14 @@ const revalidate=async()=>{
       const role=document.createElement('small');
       role.textContent='Quyền thành viên: '+t.role;
       const note=document.createElement('small');
-      note.textContent='Môi trường staging · chưa bật truy cập đơn hàng';
+      note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
-      addCatalog(card, t, current);
+      addMerchantList(card, t, current);
+      if (['owner','manager'].includes(t.role)) addMerchantList(card, t, current, true);
       cards.appendChild(card);
     }
     protectedContent.hidden=false;
-    put('Xác minh phiên và quyền truy cập thành công. Dữ liệu đơn hàng thực vẫn chưa được mở.','ok');
+    put('Xác minh phiên và quyền truy cập thành công. Chọn dữ liệu cần xem.','ok');
   }catch{
     if(current===generation){
       resetView();

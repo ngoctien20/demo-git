@@ -29,7 +29,9 @@ assert(files.accountJs.includes('approvedMemberships('),'Missing membership safe
 assert(files.accountJs.includes('scopedTenantDisplay('),'Missing tenant intersection filter');
 assert(files.accountJs.includes('protectedContent.hidden=false'),'No positive authorization UI transition');
 assert(files.accountJs.includes('protectedContent.hidden=true'),'Auth fail-closed state missing');
-assert(!files.accountJs.includes("from('orders')"),'Staging account must not query real orders');
+assert(files.accountJs.includes("'id,tenant_id,status,total_vnd,created_at'"),'Order projection missing');
+assert(files.accountJs.includes("eq('tenant_id',tenant.id)"),'Missing merchant scope');
+assert(!/\.(insert|update|delete|upsert)\(/.test(files.accountJs),'Unexpected merchant mutation');
 assert(!files.accountJs.includes("from('customers')"),'Staging account must not query customer PII');
 assert(files.client.includes('@supabase/supabase-js@2.119.0/+esm'),'SDK not pinned');
 assert(/flowType:\s*'pkce'/.test(files.client),'PKCE disabled');
