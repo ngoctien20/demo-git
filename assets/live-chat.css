@@ -160,3 +160,64 @@
   -webkit-text-fill-color:#596477 !important;
   opacity:1 !important;
 }
+
+
+/* Independent TIEN404 composer: bypasses Android forced-dark n8n textarea rendering. */
+.ai-live-card{display:flex;flex-direction:column;min-width:0}
+.tien404-ai-chat{flex:1 1 auto;min-height:0}
+#n8n-chat.tien404-custom-compose .chat-footer{display:none!important}
+.tien404-composer[hidden]{display:none!important}
+.tien404-composer{
+  flex:0 0 auto;
+  padding:10px 12px 12px;
+  background:#14172c;
+  border-top:1px solid #46405f;
+  color-scheme:light;
+}
+.tien404-composer-label{display:block;color:#dfe3ff;font-size:12px;font-weight:600;margin-bottom:7px}
+.tien404-composer-row{display:flex;gap:8px;align-items:flex-end}
+#tien404-message{
+  display:block!important;
+  box-sizing:border-box!important;
+  flex:1 1 auto;
+  min-width:0;
+  width:100%;
+  min-height:60px;
+  max-height:160px;
+  padding:12px!important;
+  border:2px solid #8c7cda!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  background-image:none!important;
+  color:#101827!important;
+  -webkit-text-fill-color:#101827!important;
+  caret-color:#4425b0!important;
+  color-scheme:light!important;
+  font:normal 16px/1.5 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:normal!important;
+  text-shadow:none!important;
+  opacity:1!important;
+  resize:vertical;
+  overflow:auto;
+}
+#tien404-message::placeholder{color:#657083!important;-webkit-text-fill-color:#657083!important;opacity:1!important}
+#tien404-message:focus{outline:2px solid #b9a7ff!important;outline-offset:1px}
+#tien404-send{
+  flex:0 0 auto;
+  min-height:48px;
+  border:0;
+  border-radius:12px;
+  background:#7653e8;
+  color:#fff;
+  padding:0 17px;
+  font:700 15px system-ui,sans-serif;
+  cursor:pointer;
+}
+#tien404-send:disabled{opacity:.55;cursor:wait}
+.tien404-composer-status{margin:5px 0 0;color:#ffd6d6;font-size:12px}
+.tien404-composer-status:empty{display:none}
+@media(max-width:600px){
+ .tien404-ai-chat{height:min(570px,calc(100dvh - 220px));min-height:280px}
+ .tien404-composer{padding:8px}
+ #tien404-message{min-height:54px;max-height:120px}
+}
