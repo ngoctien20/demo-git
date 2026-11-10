@@ -77,7 +77,9 @@ def test_data_platform_status_requires_admin_session_and_stays_staging(monkeypat
     assert result.json()["status"]=="UNKNOWN"
     assert result.json()["production_readiness"]=="NOT_APPROVED"
     s.conn.close()
-    s,c,secret,uid=client_with_user(tmp_path,role="STORE_OWNER")
+    owner_dir=tmp_path / "owner-case"
+    owner_dir.mkdir()
+    s,c,secret,uid=client_with_user(owner_dir,role="STORE_OWNER")
     assert c.post("/api/v1/auth/login",json={
         "email":"admin@example.test","password":PASS,"totp":totp(secret)
     }).status_code==200
