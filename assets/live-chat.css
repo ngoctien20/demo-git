@@ -95,3 +95,37 @@
   #n8n-chat .chat-header { max-height:70px; padding:6px 10px !important; }
   .tien404-ai-chat { height:calc(100dvh - 92px); min-height:300px; }
 }
+
+
+/* Android dark-mode / forced-dark text visibility fix.
+   n8n chat inherits light/dark variables; explicitly pair background and foreground. */
+#n8n-chat .chat-input,
+#n8n-chat .chat-inputs,
+#n8n-chat .chat-inputs textarea,
+#n8n-chat .chat-inputs input,
+#n8n-chat textarea,
+#n8n-chat input[type="text"] {
+  color-scheme:light !important;
+  background-color:#ffffff !important;
+  color:#172033 !important;
+  -webkit-text-fill-color:#172033 !important;
+  caret-color:#5138b5 !important;
+  opacity:1 !important;
+}
+#n8n-chat .chat-inputs textarea::placeholder,
+#n8n-chat .chat-inputs input::placeholder,
+#n8n-chat textarea::placeholder,
+#n8n-chat input[type="text"]::placeholder {
+  color:#626b7e !important;
+  -webkit-text-fill-color:#626b7e !important;
+  opacity:1 !important;
+}
+#n8n-chat .chat-inputs textarea::selection,
+#n8n-chat .chat-inputs input::selection {
+  color:#172033;
+  background:#cfc4ff;
+}
+#n8n-chat .chat-inputs textarea:focus,
+#n8n-chat .chat-inputs input:focus {
+  outline-color:#7856e8;
+}
