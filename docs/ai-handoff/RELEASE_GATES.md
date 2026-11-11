@@ -15,3 +15,8 @@ Chủ dự án duyệt việc mở quyền ghi merchant, thay đổi quyền qu�
 
 
 Nếu duyệt mở catalog trong giới hạn hai shop QA, phải kiểm soát giới hạn đó **ở DB** trước khi cấp EXECUTE, kiểm staff/tenant đối diện, kiểm backup và lệnh thu hồi quyền. Bản ứng viên V8 kiểm membership nói chung. Tắt cờ UI không thay thế việc thu hồi quyền chạy RPC. Cấu hình thử và schema ứng viên: [PR5](https://github.com/ngoctien20/demo-git/pull/5), [PR7](https://github.com/ngoctien20/demo-git/pull/7).
+
+
+## Quyết định V10.1 — cấp quyền catalog hai shop QA
+
+Chủ dự án đã phê duyệt **đúng hai Shop QA trên staging** cho owner/manager tạo/sửa sản phẩm, không áp dụng production hoặc các tenant khác. Đã triển khai RPC trong migration `20261111095308`, quyền EXECUTE chỉ với `authenticated` và kiểm allowlist tenant phía DB. Giao diện editor vẫn tắt; signed HTTP JWT A/B + staff/anon/nonmember, review Advisor WARN cho SECURITY DEFINER, backup và rollback là các gate bắt buộc trước khi bật form. Phê duyệt này KHÔNG đồng thời cho phép Publish Messenger, tạo đơn thật hoặc kết nối dữ liệu AI_SALES_DEMO vào Commerce.
