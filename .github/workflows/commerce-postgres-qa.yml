@@ -40,3 +40,33 @@ jobs:
           SQL
           psql -v ON_ERROR_STOP=1 -f ops/data-platform/schema.staging.sql
       - run: python ops/data-platform/qa/commerce_postgres.py
+      - name: Restore synthetic commerce data into a second disposable database
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$POSTGRES_CONTAINER" bash -se <<'RECOVERY'
+          set -eu -o pipefail
+          db=tien404_qa
+          restored=tien404_qa_restore
+          dump=$(mktemp)
+          trap 'rm -f "$dump"' EXIT
+          pg_dump -U postgres -Fc "$db" > "$dump"
+          createdb -U postgres "$restored"
+          pg_restore --exit-on-error --single-transaction -U postgres -d "$restored" "$dump"
+          fingerprint() {
+            pg_dump -U postgres --data-only --inserts "$1" |
+              LC_ALL=C awk '/^INSERT INTO /' | LC_ALL=C sort | sha256sum
+          }
+          test "$(psql -U postgres -d "$restored" -Atc 'select count(*) from public.orders')" = 2
+          test "$(psql -U postgres -d "$restored" -Atc 'select count(*) from app_private.audit_events')" = 3
+          test "$(fingerprint "$db")" = "$(fingerprint "$restored")"
+          psql -U postgres -d "$restored" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.products'::regclass)
+               OR has_table_privilege('authenticated','public.products','UPDATE') THEN
+              RAISE EXCEPTION 'Restored product security differs from the read-only contract';
+            END IF;
+          END $$;
+          SQL
+          RECOVERY
