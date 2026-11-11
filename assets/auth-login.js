@@ -15,7 +15,7 @@ const goAccount = document.getElementById('auth-go-account');
 let client = null;
 let inRecovery = containsRecoverySignal(location.search, location.hash);
 // A URL flag is untrusted; only Supabase's recovery event may authorize a password change.
-let recoveryVerified = false;
+let recoveryUserId = null;
 let busy = false;
 
 const put = (message, kind = 'info') => {
@@ -57,13 +57,20 @@ try {
   client = await withDeadline(module.getAuthClient(), 20500);
   put('Đang kiểm tra phiên đăng nhập...');
   // Register before reading the session: a recovery callback may otherwise be missed.
-  client.auth.onAuthStateChange((event) => {
-    if (event === 'PASSWORD_RECOVERY' && inRecovery) {
-      recoveryVerified = true;
+  client.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY' && session?.user?.id) {
+      // PKCE callbacks can carry only a code, with no recovery marker in the URL.
+      recoveryUserId = session.user.id;
       showMode('update');
       put('Liên kết khôi phục hợp lệ. Hãy đặt mật khẩu mới.','ok');
     }
-    if (event === 'SIGNED_OUT' && !inRecovery) {
+    if (recoveryUserId && (event === 'SIGNED_OUT' || session?.user?.id !== recoveryUserId)) {
+      recoveryUserId = null;
+      inRecovery = false;
+      updateForm.reset();
+      showMode('login');
+      put('Phiên khôi phục đã thay đổi. Hãy mở lại liên kết khôi phục.', 'error');
+    } else if (event === 'SIGNED_OUT' && !inRecovery) {
       showMode('login');
     }
   });
@@ -147,7 +154,7 @@ requestForm.addEventListener('submit', event=>{
 });
 updateForm.addEventListener('submit',event=>{
   event.preventDefault();
-  if (!client || !inRecovery || !recoveryVerified) {
+  if (!client || !inRecovery || !recoveryUserId) {
     put('Phiên khôi phục không hợp lệ. Hãy yêu cầu liên kết mới.','error');return;
   }
   const password = String(updateForm.elements.password.value||'');
@@ -158,7 +165,7 @@ updateForm.addEventListener('submit',event=>{
   withBusy(updateForm,async()=>{
     try {
       const { data, error } = await withDeadline(client.auth.getUser(),13000);
-      if (error || !data?.user) {
+      if (error || !data?.user?.id || data.user.id !== recoveryUserId) {
         put('Liên kết đã hết hạn hoặc phiên xác thực không hợp lệ.','error');return;
       }
       const result = await withDeadline(client.auth.updateUser({password}),16000);
@@ -166,7 +173,7 @@ updateForm.addEventListener('submit',event=>{
       updateForm.reset();
       await withDeadline(client.auth.signOut(),13000);
       inRecovery = false;
-      recoveryVerified = false;
+      recoveryUserId = null;
       // Clear any code or recovery tokens from browser URL without persisting them.
       history.replaceState(null,'',location.pathname);
       showMode('login');
