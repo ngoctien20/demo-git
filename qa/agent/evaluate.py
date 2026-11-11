@@ -22,6 +22,13 @@ def score(case, trace):
     if trace['status'] != 'success' or not reply.strip():
         failures.append('execution_failed_or_empty')
     calls = trace['calls']
+    if not isinstance(calls, list) or any(not isinstance(c, dict) for c in calls):
+        failures.append('invalid_tool_trace')
+        return failures
+    for call in calls:
+        if not isinstance(call.get('rows'), list) or any(not isinstance(row, dict) for row in call['rows']):
+            failures.append('invalid_tool_trace')
+            return failures
     lookup = case.get('lookup')
     if lookup:
         if not calls or any(c['name'] != SUITE['read_tool'] or c['query'] != lookup or
