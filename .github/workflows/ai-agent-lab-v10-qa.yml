@@ -6,6 +6,9 @@ on:
     paths:
       - 'qa/agent/**'
       - '.github/workflows/ai-agent-lab-v10-qa.yml'
+  pull_request:
+    branches: [ops/cto-autonomous-v5-20261110]
+    paths: ['qa/agent/**', '.github/workflows/ai-agent-lab-v10-qa.yml']
   workflow_dispatch:
 
 permissions:
