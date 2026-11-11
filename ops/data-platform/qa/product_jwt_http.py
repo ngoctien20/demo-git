@@ -7,7 +7,9 @@ import os
 import time
 import traceback
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener
+
+LOOPBACK = build_opener(ProxyHandler({}))
 from uuid import uuid4
 
 import psycopg
@@ -34,11 +36,16 @@ def request(path, token=None, body=None, method="GET"):
     req = Request("http://127.0.0.1:3011/" + path, method=method, headers=headers,
                   data=None if body is None else json.dumps(body).encode())
     try:
-        response = urlopen(req, timeout=8)
+        response = LOOPBACK.open(req, timeout=20)
     except HTTPError as error:
         response = error
+    except OSError as error:
+        raise RuntimeError(f"{method} {path} connection: {type(error).__name__}") from None
     with response:
-        data = response.read()
+        try:
+            data = response.read()
+        except OSError as error:
+            raise RuntimeError(f"{method} {path} body after status {response.status}: {type(error).__name__}") from None
         value = json.loads(data) if data else None
         print(method, path.split("?")[0], response.status, value.get("code", "") if isinstance(value,dict) else "")
         return response.status, value
@@ -97,5 +104,5 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         frame = traceback.extract_tb(error.__traceback__)[-1]
-        print(f"::error file={__file__},line={frame.lineno}::{type(error).__name__} at {frame.name}: {frame.line}")
+        print(f"::error file={__file__},line={frame.lineno}::{type(error).__name__} {error} at {frame.name}: {frame.line}")
         raise

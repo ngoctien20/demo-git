@@ -104,4 +104,8 @@ jobs:
             -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET -e PGRST_SERVER_HOST=127.0.0.1 \
             -e PGRST_SERVER_PORT=3011 postgrest/postgrest:v12.2.3
           curl -fsS --retry 12 --retry-connrefused --retry-delay 1 http://127.0.0.1:3011/ -o /dev/null
-          python ops/data-platform/qa/product_jwt_http.py
+          if ! python -u ops/data-platform/qa/product_jwt_http.py; then
+            docker logs --tail 20 rest-qa 2>&1 | sed 's/^/::warning::/'
+            psql -Atc "select state,wait_event_type,wait_event,left(query,100) from pg_stat_activity where usename='jwt_qa_gateway'" | sed 's/^/::warning::/'
+            exit 1
+          fi
