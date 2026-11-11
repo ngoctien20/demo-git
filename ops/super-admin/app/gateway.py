@@ -16,7 +16,7 @@ class VerifiedGatewayRequest:
         if proof is not _GATEWAY_PROOF:raise AccessDenied('unverified gateway assertion')
         self.platform=platform;self.account_ref=account_ref;self.request_id=request_id
 
-def verify_internal_gateway_request(secret,raw_body,timestamp,signature,at=None):
+def verify_internal_gateway_request(secret,raw_body,timestamp,signature,at=None,*,purpose='CHECK_ENTITLEMENT'):
     if not secret or len(secret)<32:raise AccessDenied('missing or weak gateway secret')
     if len(raw_body)>2048:raise Invalid('request too large')
     at=at or now_utc()
@@ -29,6 +29,6 @@ def verify_internal_gateway_request(secret,raw_body,timestamp,signature,at=None)
     except (UnicodeDecodeError,ValueError):raise Invalid('malformed gateway JSON')
     if not isinstance(payload,dict) or set(payload)!={'platform','account_ref','request_id','purpose'}:
         raise Invalid('exact gateway schema required; tenant_id is not accepted from callers')
-    if payload['purpose']!='CHECK_ENTITLEMENT' or payload['platform'] not in CHANNELS or not isinstance(payload['account_ref'],str) or not 1<=len(payload['account_ref'])<=180 or not isinstance(payload['request_id'],str) or not 8<=len(payload['request_id'])<=100:
+    if payload['purpose']!=purpose or payload['platform'] not in CHANNELS or not isinstance(payload['account_ref'],str) or not 1<=len(payload['account_ref'])<=180 or not isinstance(payload['request_id'],str) or not 8<=len(payload['request_id'])<=100:
         raise Invalid('gateway payload invalid')
     return VerifiedGatewayRequest(payload['platform'],payload['account_ref'],payload['request_id'],_GATEWAY_PROOF)

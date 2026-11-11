@@ -501,3 +501,50 @@ def test_stage_backup_refuses_world_readable_folder(env,tmp_path):
     from app.backup import backup_private_stage
     public=tmp_path/'public';public.mkdir(mode=0o755)
     with pytest.raises(Invalid):backup_private_stage(env['store'],public/'dump.sqlite')
+def test_signed_quota_reservations_and_admin_visibility(env):
+    from concurrent.futures import ThreadPoolExecutor
+
+    tenant, _ = setup_tenant(env)
+    store = env['store']
+    client = TestClient(create_app(store, gateway_secret=GATEWAY_SECRET), base_url='https://admin.test')
+    reserve = '/api/v1/internal/gateway/reserve-message'
+    usage = '/api/v1/admin/usage'
+
+    def submit(request_id, **extra):
+        raw, headers = gateway_payload('telegram', 'test-channel', request_id=request_id,
+                                      purpose='RESERVE_MESSAGE', **extra)
+        return client.post(reserve, content=raw, headers=headers)
+
+    assert client.get(usage).status_code == 401
+    assert env['owner']['client'].get(usage).status_code == 403
+    assert env['staff']['client'].get(usage).status_code == 403
+    assert submit('request_01').status_code == 403
+    assert submit('request_01', tenant_id=tenant).status_code == 422
+    raw, headers = gateway_payload('telegram', 'test-channel')
+    assert client.post(reserve, content=raw, headers=headers).status_code == 422
+    raw, headers = gateway_payload('telegram', 'test-channel', purpose='RESERVE_MESSAGE')
+    headers['x-gateway-signature'] = '0'*64
+    assert client.post(reserve, content=raw, headers=headers).status_code == 403
+    assert post(env['admin'], f'/api/v1/admin/tenants/{tenant}/channels', {
+        'platform':'telegram', 'external_account_ref':'test-channel',
+        'secret_ref':'vault://qa/demo1', 'reason':'Staging fixture binding'}).status_code == 200
+    assert submit('request_01').json()['reason'] == 'CHANNEL_NOT_VERIFIED'
+    # Scope verified ONLY inside the disposable fixture.
+    store.conn.execute("UPDATE channels SET connection_status='VERIFIED' WHERE tenant_id=?", (tenant,))
+    store.conn.execute("UPDATE plans SET max_messages=1 WHERE id='basic'")
+    assert submit('request_01').json()['reason'] == 'SERVICE_DISABLED'
+    assert post(env['admin'], f'/api/v1/admin/tenants/{tenant}/service', {
+        'enabled':True,'reason':'Enable test fixture'}).status_code == 200
+    with ThreadPoolExecutor(2) as pool:
+        keys = ['request_01', 'request_02']
+        results = list(pool.map(lambda k: submit(k).json(), keys))
+    assert sorted(r['reason'] for r in results) == ['QUOTA_EXHAUSTED', 'RESERVED']
+    accepted = next(k for k,r in zip(keys,results) if r['reserved'])
+    assert submit(accepted).json() == {'reserved':False, 'reason':'ALREADY_RESERVED'}
+    for role in ['admin', 'tech', 'support']:
+        data = env[role]['client'].get(usage).json()
+        assert data['items'] == [{'tenant_id':tenant,'name':'Staging Shop A','reserved':1,'quota':1}]
+        assert not data['has_more'] and data['month_utc'] == iso(now_utc())[:7]
+    assert env['admin']['client'].get(usage+'?page=2').json()['items'] == []
+    assert env['admin']['client'].get(usage+'?page=0').status_code == 422
+    assert store.one('SELECT COUNT(*) FROM message_reservations')[0] == 1

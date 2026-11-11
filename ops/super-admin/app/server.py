@@ -10,7 +10,7 @@ import re
 import secrets
 from typing import Annotated, Literal
 from pathlib import Path
-from fastapi import FastAPI, Request, Depends, Response, Header, HTTPException
+from fastapi import FastAPI, Request, Depends, Response, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, Field, ConfigDict
 from .core import Store, AccessDenied, Conflict, NotFound, Invalid, now_utc, iso, parse, verify_test_webhook
@@ -163,6 +163,9 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         admin(user,{'SUPER_ADMIN','SUPPORT_ADMIN','TECH_ADMIN'})
         records=store.rows('SELECT id,name,industry,service_enabled,bot_paused,created_at FROM tenants ORDER BY created_at DESC LIMIT 100')
         return {'items':[dict(r) for r in records],'source':'staging_sqlite','updated_at':iso(now_utc()),'status':'STAGING_DATA'}
+    @app.get('/api/v1/admin/usage')
+    def usage(page: int = Query(1, ge=1, le=1000000), user=Depends(actor)):
+        return store.usage_overview(user, page)
     @app.get('/api/v1/admin/plans')
     def list_plans(user=Depends(actor)):
         admin(user,{'SUPER_ADMIN','SUPPORT_ADMIN','TECH_ADMIN'})
@@ -213,6 +216,15 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         from .gateway import verify_internal_gateway_request
         assertion=verify_internal_gateway_request(gateway_secret,await request.body(),request.headers.get('x-gateway-timestamp',''),request.headers.get('x-gateway-signature',''))
         return store.internal_entitlement_from_verified_channel(assertion)
+    @app.post('/api/v1/internal/gateway/reserve-message')
+    async def reserve_message(request: Request):
+        if not gateway_secret:
+            raise NotFound('gateway integration disabled')
+        from .gateway import verify_internal_gateway_request
+        assertion = verify_internal_gateway_request(
+            gateway_secret, await request.body(), request.headers.get('x-gateway-timestamp', ''),
+            request.headers.get('x-gateway-signature', ''), purpose='RESERVE_MESSAGE')
+        return store.reserve_message(assertion)
     @app.post('/api/v1/internal/qa/test-payment-webhook')
     async def test_payment_webhook(request:Request):
         if not allow_test_webhook or not sandbox_payment_secret:raise NotFound('test hook disabled')

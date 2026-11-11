@@ -109,6 +109,11 @@ class Store:
           id TEXT PRIMARY KEY,kind TEXT NOT NULL,version INTEGER NOT NULL,status TEXT NOT NULL,
           content_json TEXT NOT NULL,source TEXT NOT NULL,approved_by TEXT REFERENCES users(id),
           approved_at TEXT,created_at TEXT NOT NULL,UNIQUE(kind,version));
+        CREATE TABLE IF NOT EXISTS message_reservations(
+          tenant_id TEXT NOT NULL REFERENCES tenants(id), channel_event_hash TEXT NOT NULL,
+          month_utc TEXT NOT NULL, reserved_at TEXT NOT NULL,
+          PRIMARY KEY (tenant_id,channel_event_hash));
+        CREATE INDEX IF NOT EXISTS message_reservations_month ON message_reservations(tenant_id,month_utc);
         CREATE TABLE IF NOT EXISTS audit_events(
           seq INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL,
           actor_id TEXT,action TEXT NOT NULL,tenant_id TEXT,reason TEXT NOT NULL,
@@ -336,6 +341,44 @@ class Store:
         if row['connection_status']!='VERIFIED':return {'allowed':False,'reason':'CHANNEL_NOT_VERIFIED','source':'staging_channel_registry'}
         decision=self._entitlement(row['tenant_id'],at)
         return {'allowed':decision['allowed'],'reason':decision['reason'],'tenant_id':row['tenant_id'],'source':'staging_entitlement_engine','checked_at':decision.get('current_time_checked_at')}
+    def reserve_message(self, assertion, at=None):
+        """Atomically admit one synthetic gateway message per verified channel event."""
+        at = at or now_utc()
+        with self.tx():
+            decision = self.internal_entitlement_from_verified_channel(assertion, at)
+            if not decision['allowed']:
+                return {'reserved': False, 'reason': decision['reason']}
+            tenant_id = decision['tenant_id']
+            event = json.dumps([assertion.platform, assertion.account_ref, assertion.request_id],
+                               ensure_ascii=True, separators=(',', ':'))
+            event_hash = hashlib.sha256(event.encode()).hexdigest()
+            if self.one('SELECT 1 FROM message_reservations WHERE tenant_id=? AND channel_event_hash=?',
+                        tenant_id, event_hash):
+                return {'reserved': False, 'reason': 'ALREADY_RESERVED'}
+            month = iso(at)[:7]
+            usage = self.one("""SELECT p.max_messages AS quota,
+                                  (SELECT count(*) FROM message_reservations
+                                   WHERE tenant_id=s.tenant_id AND month_utc=?) AS used
+                                FROM subscriptions s JOIN plans p ON p.id=s.plan_id
+                                WHERE s.tenant_id=?""", month, tenant_id)
+            if usage['used'] >= usage['quota']:
+                return {'reserved': False, 'reason': 'QUOTA_EXHAUSTED'}
+            self.conn.execute('INSERT INTO message_reservations VALUES (?,?,?,?)',
+                              (tenant_id, event_hash, month, iso(at)))
+            return {'reserved': True, 'reason': 'RESERVED', 'month_utc': month}
+
+    def usage_overview(self, user, page):
+        self.require_role(user, ADMIN_ROLES)
+        month = iso(now_utc())[:7]
+        records = self.rows("""SELECT t.id AS tenant_id, t.name, p.max_messages AS quota,
+                                      (SELECT COUNT(*) FROM message_reservations
+                                       WHERE tenant_id=t.id AND month_utc=?) AS reserved
+                               FROM tenants t LEFT JOIN subscriptions s ON s.tenant_id=t.id
+                               LEFT JOIN plans p ON p.id=s.plan_id
+                               ORDER BY t.id LIMIT 51 OFFSET ?""", month, (page-1)*50)
+        return {'items': [dict(row) for row in records[:50]], 'has_more': len(records)>50,
+                'page': page, 'month_utc': month, 'source': 'staging_sqlite_reservations'}
+
     def upsert_channel_reference(self,user,tenant_id,platform,account_ref,secret_ref,reason):
         self.require_role(user,{'SUPER_ADMIN','TECH_ADMIN'});self.require_fresh_auth(user)
         if platform not in CHANNELS or not account_ref or not secret_ref.startswith('vault://') or not reason.strip():raise Invalid('invalid channel metadata; use vault:// reference, NEVER a token')

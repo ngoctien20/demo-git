@@ -56,3 +56,8 @@ All administrative read/write routes require `__Host-tien404_sid` (Secure, HttpO
 ```
 
 Use `UNKNOWN/CONNECTION_ERROR` for unavailable GitHub/n8n sources. Do not use local staging counts as live tenant or revenue metrics. Define tenant and role-specific response schemas before porting into Sites.
+## V9 · Hạn mức tin nhắn staging
+
+- `POST /api/v1/internal/gateway/reserve-message` nhận assertion HMAC hiện có với purpose `RESERVE_MESSAGE`. Tenant lấy từ mapping kênh VERIFIED. Gateway từ chối khi dịch vụ tắt, bot nghỉ, thuê bao hết quyền hoặc đã dùng hết hạn mức. Chỉ một lượt cho mỗi tenant, kênh và mã sự kiện. Retry trả `reserved=false, reason=ALREADY_RESERVED`.
+- `GET /api/v1/admin/usage?page=1` cần phiên MFA của super/support/tech-admin. Trả tối đa 50 tenant mỗi trang, số lượt giữ và hạn mức tháng UTC. Gói thiếu trả quota null. Không ghi nội dung tin nhắn, số điện thoại hay chi phí ước đoán.
+- Một lượt đo là một quyết định giữ chỗ trước khi xử lý. Chưa đấu nối nhà cung cấp, xác nhận giao tin, thu phí, hoàn lượt hoặc đối soát. Hạn mức tháng UTC chỉ dùng cho ứng viên staging. Khi hồi quy, revert commit ứng viên và giữ bảng số liệu để điều tra.

@@ -39,6 +39,7 @@
   <nav class="tabs" aria-label="Danh mục quản trị">
     <button type="button" class="active" data-tab="tenants" aria-current="page">Cửa hàng</button>
     <button type="button" data-tab="plans">Gói dịch vụ</button>
+    <button type="button" data-tab="usage">Hạn mức tin nhắn</button>
     <button type="button" data-tab="audit">Nhật ký kiểm toán</button>
   </nav>
   <section class="panel" id="tenants-panel">
@@ -50,6 +51,13 @@
     <div class="panel-head"><div><h2>Gói dịch vụ</h2><p>Gói cấu hình nội bộ, không đại diện bảng giá thương mại đã duyệt.</p></div><button class="secondary" id="refresh-plans" type="button">Làm mới</button></div>
     <div class="table-scroller"><table><thead><tr><th>Gói</th><th>Chu kỳ</th><th>Giá staging</th><th>Hạn mức tin nhắn</th></tr></thead><tbody id="plans-body"></tbody></table></div>
     <p id="plans-empty" class="empty" hidden>Chưa có gói staging hoặc không có quyền xem.</p>
+  </section>
+  <section class="panel" id="usage-panel" hidden>
+    <div class="panel-head"><div><h2>Hạn mức tin nhắn</h2><p id="usage-period"></p></div></div>
+    <div class="table-scroller"><table><thead><tr><th>Cửa hàng</th><th>Lượt đã giữ</th><th>Hạn mức thử nghiệm</th></tr></thead><tbody id="usage-body"></tbody></table></div>
+    <p id="usage-status" role="status"></p>
+    <button type="button" class="secondary" id="usage-prev" disabled>Trang trước</button>
+    <button type="button" class="secondary" id="usage-next" disabled>Trang sau</button>
   </section>
   <section class="panel" id="audit-panel" hidden>
     <div class="panel-head"><div><h2>Nhật ký kiểm toán</h2><p>Chỉ SUPER_ADMIN được xem. Xác minh chuỗi hash tại máy chủ.</p></div><span id="audit-check"></span></div>

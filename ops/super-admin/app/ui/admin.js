@@ -6,6 +6,7 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const state={csrf:null,me:null};
+let usagePage=1;
 function show(id,yes){$(id).hidden=!yes}
 function setText(id,value){$(id).textContent=String(value??"—")}
 function row(cells,body){
@@ -15,9 +16,11 @@ function row(cells,body){
 }
 function clear(id){$(id).replaceChildren()}
 async function request(path,options={}){
+  const identity=state.me;
   const res=await fetch(path,{credentials:"same-origin",cache:"no-store",...options});
   let data=null;
   try{data=await res.json()}catch{data={}}
+  if(identity!==state.me)throw new Error("session_changed");
   if(!res.ok){const e=new Error("HTTP "+res.status);e.status=res.status;throw e}
   return data;
 }
@@ -35,6 +38,14 @@ async function session(){
 }
 function showLogin(message=""){
   state.csrf=null;state.me=null;
+  for(const name of ["tenants","plans","audit","usage"])clear(name+"-body");
+  for(const id of ["account-role","tenant-count","audit-check","source-state","app-status","usage-period","usage-status"])setText(id,"");
+  const tab=document.querySelector('[data-tab="tenants"]');
+  for(const btn of document.querySelectorAll("[data-tab]")){
+    btn.classList.toggle("active",btn===tab);
+    if(btn===tab)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
+    show(btn.dataset.tab+"-panel",btn===tab);
+  }
   show("console-view",false);show("login-view",true);
   setText("login-error",message);show("login-error",Boolean(message));
 }
@@ -58,6 +69,23 @@ async function refreshPlans(){
     show("plans-empty",items.length===0);
   }catch(e){show("plans-empty",true);notice("Không tải được các gói trong staging ("+e.message+").")}
 }
+async function refreshUsage(page=1){
+  const previous=$("usage-prev"),next=$("usage-next");
+  previous.disabled=next.disabled=true;
+  clear("usage-body");
+  setText("usage-status","Đang tải…");
+  try{
+    const data=await request("/api/v1/admin/usage?page="+page);
+    usagePage=data.page;
+    setText("usage-period","Tháng "+data.month_utc+" (UTC) · Lượt giữ chỗ trên gateway staging.");
+    for(const item of data.items)row([item.name,item.reserved,item.quota??"Chưa có gói"],$("usage-body"));
+    setText("usage-status",data.items.length?"Trang "+usagePage:"Chưa có cửa hàng.");
+    previous.disabled=usagePage===1;
+    next.disabled=!data.has_more;
+  }catch(e){setText("usage-status","Không tải được hạn mức. Mở lại mục này để thử lại.")}
+}
+$("usage-prev").addEventListener("click",()=>refreshUsage(usagePage-1));
+$("usage-next").addEventListener("click",()=>refreshUsage(usagePage+1));
 async function refreshAudit(){
   clear("audit-body");show("audit-empty",false);notice("");
   try{
@@ -71,9 +99,10 @@ async function refreshAudit(){
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("[data-tab]").forEach(x=>{x.classList.toggle("active",x===b);if(x===b)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const tab=b.dataset.tab;
-  for(const name of ["tenants","plans","audit"])show(name+"-panel",tab===name);
+  for(const name of ["tenants","plans","audit","usage"])show(name+"-panel",tab===name);
   if(tab==="tenants")refreshTenants();
   if(tab==="plans")refreshPlans();
+  if(tab==="usage")refreshUsage();
   if(tab==="audit")refreshAudit();
 }));
 $("login-form").addEventListener("submit",async e=>{
@@ -91,8 +120,13 @@ $("login-form").addEventListener("submit",async e=>{
  finally{btn.disabled=false}
 });
 $("logout").addEventListener("click",async()=>{
- try{await request("/api/v1/auth/logout",{method:"POST",headers:{"X-CSRF-Token":state.csrf||""}})}catch{}
- showLogin();
+ try{
+   await request("/api/v1/auth/logout",{method:"POST",headers:{"X-CSRF-Token":state.csrf||""}});
+   showLogin();
+ }catch(e){
+   if(e.status===401)showLogin();
+   else notice("Chưa xác nhận đăng xuất. Hãy kiểm tra kết nối và thử lại.");
+ }
 });
 $("refresh-tenants").addEventListener("click",refreshTenants);
 $("refresh-plans").addEventListener("click",refreshPlans);
