@@ -28,3 +28,15 @@ Chốt ngày 11/11/2026, 18:15 JST. Agent WORK, bản V9. **PILOT READINESS: NOT
 | Website công khai | gh-pages 6bb57e6 | PR4 chỉ phát hành preview/CI. Không merge production. |
 
 Form sản phẩm hiện có thể thử bằng transport fixture. Cấp quyền ghi và bật form cho QA đang chờ chủ dự án duyệt. Lúc chốt chưa có dấu hiệu V8.2 được lưu trên các nhánh đã rà.
+
+
+## GPT V10.1 delta — sau Work V10 bị ngắt do credit (2026-11-11 JST)
+
+Agent GPT; tiếp quản từ checkpoint Work V9 `266e9f66` và nhật ký Work V10 dừng sau các bước đọc/sao lưu. Nhật ký 32 commands **không đủ chứng minh** backup n8n đã được lưu bền vững; phải kiểm lại artifact trong workspace Work. Không xác nhận đã tiếp quản worktree cloud riêng của Work.
+
+- **Catalog QA DB:** chủ dự án đã cho phép đúng Shop A/B staging tạo/sửa sản phẩm. Migration `20261111095308 v10_qa_two_shop_merchant_product_rpc` đã áp dụng; SQL trong `ops/data-platform/candidates/merchant_product_qa_allowlist_v10.sql` (nhánh `ops/tenant-data-platform-v1-staging-20261110`, commit `25accdef`). Kiểm thử owner, manager, staff, nonmember, chéo tenant A/B, anon ACL, giá âm, trùng SKU, xung đột version, audit và rollback giao dịch: PASS tại PostgreSQL. `authenticated` vẫn chỉ SELECT trực tiếp products; quyền ghi chỉ qua RPC có tenant ID+slug allowlist. File rollback thu hồi EXECUTE: `merchant_product_qa_allowlist_v10_rollback.sql` commit `8e4ae8de`.
+- **Release gate chưa đạt:** HTTP JWT signed A/B, staff và nonmember qua API thật còn NOT_RUN; `PRODUCT_EDITOR_ENABLED=false` và chưa deploy Auth build mới. Không có sản phẩm QA mới được giữ lại do test dùng ROLLBACK.
+- **Messenger:** workflow gốc `Z7FdV7uDvApfbURQ`, Published `450d9d60-3853-45f3-979f-20164a4adc7b` **giữ nguyên**; Draft mới `d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92` chỉ tăng cường prompt an toàn SKU/giá/ảnh/quyền riêng tư, không thay webhook, node, credential. Bot đã có năm business tools; các tool tạo/sửa đơn còn Draft khác Published. Messenger E2E thật chưa chạy, chưa Publish bot mới.
+- **AI Lab:** `NvQfIffOrZokPBPW` inactive, read-only fixture catalog. Có trace thật 1909, 2041–2062. Snapshot 7-case trước hotfix: 5/7 đạt theo bộ tiêu chí; hotfix targeted `price-injection` 2061 và `unverified-order` 2062 phản hồi đúng, nhưng chưa chạy lại đủ 7 ca cùng phiên bản cuối và chưa chạy Python CI cho snapshot này. Files `qa/agent/recorded_v10_1_final.json`, `qa/agent/recorded_v10_1_hotfix.json` trên nhánh `ops/cto-autonomous-v5-20261110`.
+
+**Pilot Readiness vẫn NOT READY.** Production không thay đổi. Bản Merchant và Messenger chỉ tăng cường staging/draft, không gộp AI_SALES_DEMO vào dữ liệu TIEN404 Commerce.
