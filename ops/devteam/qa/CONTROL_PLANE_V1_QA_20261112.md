@@ -2,7 +2,7 @@
 
 ## Live Supabase staging observations
 - Project `ifxlvrhyjhbzbrkdsida`; migration `tien404_factory_control_plane_v1` returned success.
-- `factory_private` has exactly 5 tables (agents, config, tasks, events, agent_runs); RLS enabled on 5/5; no grants for browser roles. Registered 4 existing Agent IDs (CTO, Developer, QA, Reviewer); zero task rows left after QA; initial budget $0.
+- `factory_private` has exactly 5 tables (agents, config, tasks, events, agent_runs); RLS enabled on 5/5; no grants for browser roles. Registered 4 existing Agent IDs (CTO, Developer, QA, Reviewer). The synthetic test tasks were rolled back; **three actual on-demand backlog tasks** were then intentionally enqueued in state NEW with zero budget and no lease. Initial global budget $0.
 - Independent SQL privileges probe: `authenticated` cannot USAGE schema or EXECUTE `factory_private.enqueue`/`advance`; `anon` also has no schema grant.
 - Positive **REAL SQL** transaction: enqueue → claim CTO → SPEC_READY → claim Developer → IN_PROGRESS → READY_QA → claim QA → QA_FAIL → claim Developer → repair IN_PROGRESS. Observation: `revision=10`, `fix_rounds=1`, `events=5`, `spent_cents=0`. Entire transaction rolled back.
 - Negative **REAL SQL** transaction: budget overspend, forbidden production write, missing acceptance, wrong lease owner, stale revision all rejected. **5/5 negative gates passed**, then ROLLBACK.
