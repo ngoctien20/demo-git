@@ -95,3 +95,13 @@ Work V10.2 docs branch and product branches differ. GitHub root `main` contains 
 - GitHub Actions **[run 43035910218](https://github.com/ngoctien20/demo-git/actions/runs/43035910218)** completed SUCCESS with **26 passed (11.5s)**. Its final test performed real HTTPS GET on immutable preview `https://edf09e40.tien404-ai-git-staging.pages.dev/` and verified `X-Robots-Tag` contains `noindex`, `X-Content-Type-Options=nosniff`, `X-Frame-Options=DENY`. This supersedes the earlier "HTTP HEAD/response header not verified" status for these three header assertions; the test used GET, not HEAD.
 - The V10.3 source branch latest SHA is now `37052a9e`. The **last verified completed Cloudflare widget preview deployment still serves prior visual source SHA `2a276a8`**, because preview builds were intentionally disabled after unexpected PR preview events; the subsequent change only added QA code. New full deployed SHA not asserted.
 - V10.3 widget score update: 26/26 PASS in isolated/read-only browser suite. Actual model chat send, full commercial checkout and authenticated cross-tenant E2E still NOT_RUN.
+
+
+## 8. Fresh n8n V10.4 sandbox regression on real QA workflows
+
+Directly triggered three pre-existing n8n manual QA workflow executions (no workflow modifications):
+- `ZVmMlwe2g0bPjVEq` execution **2249**: catalog 7/7, cart 10/10, total 17/17, allPassed=true.
+- `tjsVobfjKLnv0o6b` execution **2255**: Business Core 22/22, allPassed=true, executedWithRealSends=false, executedWithRealOrders=false, fake tenants/outbox.
+- `QR7aYMpLfKDLVgyH` execution **2269**: Extension 25/25, allPassed=true, productionReady=false.
+
+**64/64 regression assertions passed in Commerce sandbox**, while production commerce transaction, real database tenant routing, live stock synchronization and actual paid orders all remain NOT_RUN / NOT READY. Recorded in `QA_EVIDENCE.md`.
