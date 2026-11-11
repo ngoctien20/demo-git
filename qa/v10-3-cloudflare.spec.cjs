@@ -67,3 +67,13 @@ test('V10.3 staging public pages parity (read-only, no chat sent)',async({reques
     expect((await b.text()).includes('TIEN404 AI')).toBe(true);
   }
 });
+
+
+test('V10.3 Cloudflare immutable preview sends noindex and basic safety headers',async({request})=>{
+  const response=await request.get('https://edf09e40.tien404-ai-git-staging.pages.dev/',{timeout:25000});
+  expect(response.status()).toBe(200);
+  const h=response.headers();
+  expect(h['x-robots-tag']||'').toContain('noindex');
+  expect(h['x-content-type-options']||'').toBe('nosniff');
+  expect(h['x-frame-options']||'').toBe('DENY');
+});
