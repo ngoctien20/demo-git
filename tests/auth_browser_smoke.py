@@ -28,7 +28,14 @@ const auth = {
 export const authClient = {auth, from(table) {
   const id = identity().id;
   const query = {
-    select(){return query;},eq(){return query;},in(){return query;},order(){return query;},
+    select(fields, options){query.head=options?.head;return query;},
+    eq(column,value){
+      if (query.head) {
+        if (column!=='tenant_id' || value!==id) throw Error('missing scope');
+        return {count:table==='products'?3:1};
+      }
+      return query;
+    },in(){return query;},order(){return query;},
     async limit(){
       if (table === 'orders') return {count:1,data:[{tenant_id:window.badScope ? 'B' : id,id:'QA-ORDER',status:'paid',total_vnd:15000,created_at:'2026-11-10T00:00:00Z'}]};
       if (table === 'products') return {data:[{tenant_id:window.badScope ? 'B' : id,sku:'QA',name:'Sản phẩm '+id,price_vnd:15000,stock_on_hand:2}]};
@@ -75,6 +82,7 @@ with sync_playwright() as playwright:
     expect(page.locator('#account-protected')).to_be_hidden()
     page.locator('#account-login-link').click()
     expect(page.locator('#auth-forgot-password')).to_be_disabled()
+    expect(page.locator('#auth-submit')).to_be_enabled()
     # A forged recovery-looking URL or DOM-unhidden form cannot authorize updateUser.
     page.evaluate("""() => {
       const form = document.getElementById('auth-password-update');
@@ -95,20 +103,24 @@ with sync_playwright() as playwright:
     password.fill('fixture-only-valid')
     page.locator('#auth-submit').click()
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
+    expect(page.get_by_text('Sản phẩm: 3',exact=True)).to_be_visible()
+    expect(page.get_by_text('Đơn hàng: 1',exact=True)).to_be_visible()
     page.get_by_role('button',name='Xem sản phẩm').click()
-    expect(page.locator('#account-tenants li')).to_contain_text('Sản phẩm A')
+    expect(page.locator('#account-tenants section').filter(has=page.get_by_role('button', name='Tải lại danh mục')).locator('li')).to_contain_text('Sản phẩm A')
     page.get_by_role('button',name='Xem đơn hàng').click()
     expect(page.get_by_text('QA-ORDER',exact=False)).to_be_visible()
     page.evaluate('window.badScope=true')
     page.get_by_role('button',name='Tải lại đơn hàng').click()
     expect(page.get_by_text('QA-ORDER',exact=False)).to_have_count(0)
     page.get_by_role('button',name='Tải lại danh mục').click()
-    expect(page.locator('#account-tenants li')).to_have_count(0)
+    expect(page.locator('#account-tenants section').filter(has=page.get_by_role('button', name='Tải lại danh mục')).locator('li')).to_have_count(0)
     expect(page.get_by_text('Chưa tải được danh mục.',exact=False)).to_be_visible()
     page.reload()
     expect(page.get_by_text('Shop A',exact=True)).to_be_visible()
     page.evaluate("window.changeFixtureIdentity('B')")
     expect(page.get_by_text('Shop B',exact=True)).to_be_visible()
+    expect(page.get_by_text('Sản phẩm: 3',exact=True)).to_be_visible()
+    expect(page.get_by_text('Đơn hàng: 1',exact=True)).to_have_count(0)
     expect(page.get_by_role('button', name='Xem đơn hàng')).to_have_count(0)
     expect(page.get_by_text('Shop A',exact=True)).to_have_count(0)
     page.evaluate('window.changeFixtureIdentity(null)')

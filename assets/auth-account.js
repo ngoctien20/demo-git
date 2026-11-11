@@ -121,7 +121,10 @@ function addMerchantOverview(card, tenant, viewGeneration) {
     grid.replaceChildren();
     summary.textContent='Đang đọc dữ liệu staging...';
     try {
-      const specs=[['Sản phẩm','products'],['Đơn hàng','orders'],['Khách hàng','customers'],['Hội thoại','conversations']];
+      const specs=[['Sản phẩm','products']];
+      if (['owner','manager'].includes(tenant.role)) {
+        specs.push(['Đơn hàng','orders'],['Khách hàng','customers'],['Hội thoại','conversations']);
+      }
       const results=await Promise.all(specs.map(async ([label,table])=>{
         const response=await withDeadline(sb.from(table).select('id',{count:'exact',head:true}).eq('tenant_id',tenant.id),13000);
         if(response.error || !Number.isInteger(response.count))throw Error('count');
