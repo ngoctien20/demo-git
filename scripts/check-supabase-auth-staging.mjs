@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
 const files={login:read('login.html'),account:read('account.html'),config:read('assets/auth-config.js'),client:read('assets/auth-client.js'),loginJs:read('assets/auth-login.js'),accountJs:read('assets/auth-account.js'),css:read('assets/auth.css'),helpers:read('assets/auth-helpers.mjs')};
+const merchant=read('assets/merchant-lists.mjs');
 const issues=[];
 const assert=(value,msg)=>{if(!value)issues.push(msg)};
 assert(files.config.includes('sb_publishable_'),'Public publishable key not found');
@@ -29,10 +30,11 @@ assert(files.accountJs.includes('approvedMemberships('),'Missing membership safe
 assert(files.accountJs.includes('scopedTenantDisplay('),'Missing tenant intersection filter');
 assert(files.accountJs.includes('protectedContent.hidden=false'),'No positive authorization UI transition');
 assert(files.accountJs.includes('protectedContent.hidden=true'),'Auth fail-closed state missing');
-assert(files.accountJs.includes("'id,tenant_id,status,total_vnd,created_at'"),'Order projection missing');
+assert(merchant.includes("'id,tenant_id,status,total_vnd,created_at'"),'Order projection missing');
 assert(files.accountJs.includes("eq('tenant_id',tenant.id)"),'Missing merchant scope');
-assert(!/\.(insert|update|delete|upsert)\(/.test(files.accountJs),'Unexpected merchant mutation');
-assert(!files.accountJs.includes("from('customers')"),'Staging account must not query customer PII');
+assert(!/\.(insert|update|delete|upsert)\(/.test(files.accountJs+merchant),'Unexpected merchant mutation');
+assert(merchant.includes("fields:'id,tenant_id,display_name,created_at'"),'Customer directory projection missing');
+assert(!merchant.includes("select('*'"),'Unbounded merchant column selection');
 assert(files.client.includes('@supabase/supabase-js@2.119.0/+esm'),'SDK not pinned');
 assert(/flowType:\s*'pkce'/.test(files.client),'PKCE disabled');
 assert(files.login.includes('type="password"'),'Missing password input');

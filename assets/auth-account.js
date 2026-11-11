@@ -1,6 +1,4 @@
-/* TIEN404 account staging. Display-only; Supabase RLS is the authorization boundary.
- * No order/customer queries or writes, no user-selected tenant authority.
- */
+import {addMerchantList} from './merchant-lists.mjs';
 import {approvedMemberships,scopedTenantDisplay} from './auth-helpers.mjs';
 import {withDeadline} from './auth-runtime.mjs';
 const status=document.getElementById('account-status');
@@ -27,80 +25,6 @@ const requireLogin=message=>{
   loginLink.hidden=false;
   put(message,'error');
 };
-const orderStatuses = {
-  pending:'Chờ xử lý', confirmed:'Đã xác nhận', paid:'Đã thanh toán',
-  cancelled:'Đã hủy', refunded:'Đã hoàn tiền'
-};
-function addMerchantList(card, tenant, viewGeneration, orders = false) {
-  const label = orders ? 'đơn hàng' : 'sản phẩm';
-  const section = document.createElement('section');
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'btn btn-outline';
-  button.textContent = 'Xem ' + label;
-  const filters = document.createElement('form');
-  filters.hidden = true;
-  const input = document.createElement('input');
-  input.placeholder = orders ? 'Mã đơn đầy đủ' : 'Mã SKU chính xác';
-  input.setAttribute('aria-label', input.placeholder);
-  const select = document.createElement('select');
-  select.setAttribute('aria-label', 'Trạng thái ' + label);
-  const choices = orders ? {'':'Mọi trạng thái', ...orderStatuses} :
-    {active:'Đang bán', inactive:'Ngừng bán', all:'Tất cả sản phẩm'};
-  for (const [value, title] of Object.entries(choices)) select.add(new Option(title,value));
-  const apply = document.createElement('button');
-  apply.type = 'submit';
-  apply.textContent = 'Áp dụng';
-  filters.append(input, select, apply);
-  const summary = document.createElement('p');
-  summary.setAttribute('role','status');
-  const list = document.createElement('ul');
-  section.append(button, filters, summary, list);
-  card.append(section);
-  async function load() {
-    if (viewGeneration !== generation || button.disabled) return;
-    list.replaceChildren();
-    filters.hidden = false;
-    const key = input.value.trim();
-    if (orders && key && !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(key)) {
-      summary.textContent = 'Nhập đầy đủ mã đơn hoặc để trống.';
-      return;
-    }
-    button.disabled = apply.disabled = true;
-    summary.textContent = 'Đang tải ' + label + '…';
-    try {
-      const fields = orders ? 'id,tenant_id,status,total_vnd,created_at' : 'tenant_id,sku,name,price_vnd,stock_on_hand,is_active';
-      let query = sb.from(orders ? 'orders' : 'products').select(fields,{count:'exact'}).eq('tenant_id',tenant.id);
-      if (key) query = query.eq(orders ? 'id' : 'sku',key);
-      if (orders && select.value) query = query.eq('status',select.value);
-      if (!orders && select.value !== 'all') query = query.eq('is_active',select.value === 'active');
-      query = orders ? query.order('created_at',{ascending:false}).order('id') : query.order('sku');
-      const {data,count,error} = await withDeadline(query.limit(20),13000);
-      if (viewGeneration !== generation) return;
-      if (error || !Array.isArray(data) || data.some(row=>row?.tenant_id !== tenant.id)) throw Error('scope');
-      const money = new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'});
-      for (const row of data) {
-        const item = document.createElement('li');
-        item.textContent = orders
-          ? [row.id,orderStatuses[row.status] || row.status,money.format(row.total_vnd),new Date(row.created_at).toLocaleString('vi-VN')].join(' · ')
-          : [row.name,row.sku,money.format(row.price_vnd),'Tồn '+row.stock_on_hand,row.is_active ? 'Đang bán' : 'Ngừng bán'].join(' · ');
-        list.append(item);
-      }
-      const total = Number.isInteger(count) ? ' / '+count : '';
-      summary.textContent = 'Supabase staging · Hiển thị '+data.length+total+' '+label+' theo bộ lọc · '+new Date().toLocaleTimeString('vi-VN');
-      button.textContent = orders ? 'Tải lại đơn hàng' : 'Tải lại danh mục';
-    } catch {
-      if (viewGeneration !== generation) return;
-      list.replaceChildren();
-      summary.textContent = orders ? 'Chưa tải được đơn hàng. Hãy kiểm tra lại quyền hoặc thử lại.' :
-        'Chưa tải được danh mục. Hãy kiểm tra lại quyền hoặc thử lại.';
-    } finally {
-      if (viewGeneration === generation) button.disabled = apply.disabled = false;
-    }
-  }
-  button.addEventListener('click',load);
-  filters.addEventListener('submit',event=>{event.preventDefault();load();});
-}
 // Merchant overview: read-only counts from tenant-scoped RLS queries.
 function addMerchantOverview(card, tenant, viewGeneration) {
   const section=document.createElement('section');
@@ -199,7 +123,9 @@ const revalidate=async()=>{
       return;
     }
     emailNode.textContent=user.email||'Tài khoản đã xác thực';
-    for(const t of allowed){
+    const workspace=document.createElement('div');
+    function openTenant(t) {
+      workspace.replaceChildren();
       const card=document.createElement('div');
       card.className='auth-tenant-card';
       const title=document.createElement('strong');
@@ -210,10 +136,27 @@ const revalidate=async()=>{
       note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
       addMerchantOverview(card, t, current);
-      addMerchantList(card, t, current);
-      if (['owner','manager'].includes(t.role)) addMerchantList(card, t, current, true);
-      cards.appendChild(card);
+      const context = {client:sb, tenantId:t.id, current:()=>current===generation};
+      addMerchantList(card,'products',context);
+      if (['owner','manager'].includes(t.role)) {
+        for (const table of ['orders','customers','conversations','tenant_agent_configs']) addMerchantList(card,table,context);
+      }
+      workspace.appendChild(card);
     }
+    if (allowed.length>1) {
+      const label=document.createElement('label');
+      label.textContent='Cửa hàng đang xem';
+      const picker=document.createElement('select');
+      for (const t of allowed) picker.add(new Option(t.name,t.id));
+      picker.addEventListener('change',()=>{
+        const selected=allowed.find(t=>t.id===picker.value);
+        if (current===generation && selected) openTenant(selected);
+      });
+      label.append(picker);
+      cards.append(label);
+    }
+    cards.append(workspace);
+    openTenant(allowed[0]);
     protectedContent.hidden=false;
     put('Xác minh phiên và quyền truy cập thành công. Chọn dữ liệu cần xem.','ok');
   }catch{

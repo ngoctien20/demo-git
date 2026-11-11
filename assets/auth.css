@@ -39,3 +39,8 @@
 .auth-toolbar button{min-height:43px;padding:11px 15px}
 .auth-message:focus-visible{outline:2px solid #c3b4ff}
 @media(max-width:750px){.auth-toolbar{width:100%;justify-content:flex-start}.auth-panel{min-width:0}}
+.auth-tenant-card section{margin-block:14px;min-width:0}
+.auth-tenant-card ul{padding-inline-start:20px;overflow-wrap:anywhere}
+.auth-tenant-card li{margin-block:7px}
+.auth-tenant-card select{max-width:100%;min-height:44px}
+.merchant-pagination{display:flex;gap:8px;flex-wrap:wrap}
