@@ -37,3 +37,13 @@ Chủ dự án đã phê duyệt **đúng hai Shop QA trên staging** cho owner/
 | Kết nối Super Admin prototype trực tiếp với production hay cấp quyền admin rộng | NO — phải qua review và approval riêng |
 
 **RELEASE GATE HARD STOP:** Chưa có phê duyệt mới bằng lời rõ ràng của chủ dự án thì không được chuyển từ GitHub demo/staging sang website thương mại thực, kể cả khi các test tự động đều xanh. Khi có domain, hướng dẫn cấu hình DNS/Render/TLS/Auth redirects từng bước sau khi kiểm tra hạ tầng thực tế. Xem `WEBSITE_V10_2_ROADMAP.md`.
+
+
+## V10.3 — release evidence and hold
+
+- Owner authorizes **GitHub feature branches, staging QA, isolated Cloudflare preview**, not a commercial production deployment. PRs #10 (Auth), #11 (widget), #12 (Super Admin) all remain DRAFT/unmerged.
+- `gh-pages=6bb57e631709cb0be8d3b2b02c299d5915638df8`; Cloudflare baseline production-branch deployment remains `2715c6e2-edc1-4a5d-9ceb-5953311b752d`. Never merge #11 without separately assessing impact on **both** GitHub Pages + Cloudflare Pages.
+- Widget CI [43035200229](https://github.com/ngoctien20/demo-git/actions/runs/43035200229) 25 browser tests PASS; Auth [43035277528](https://github.com/ngoctien20/demo-git/actions/runs/43035277528) PASS; Admin [43035070898](https://github.com/ngoctien20/demo-git/actions/runs/43035070898) 71 security tests PASS. Static/isolated QA does not confer entitlement to production.
+- Cloudflare preview setting returned to `none` after PR-related cross-branch preview events despite an initial branch allowlist; no domain or DNS changes.
+- **Hard HOLD** on Render Auth new CSS release until independent staging browser QA and SHA check; Super Admin hosted deployment until backend identity/MFA/RBAC and staging host proven; public merchant editor until signed HTTP JWT A/B/negative checks; domain production cutover until explicit owner approval.
+- Supabase warnings remain: authenticated security-definer RPC executable and leaked-password protection disabled (see `V10_3_4_IMPLEMENTATION.md`). No key/role modification performed.
