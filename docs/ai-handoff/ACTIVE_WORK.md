@@ -30,3 +30,14 @@ Khi bắt đầu mỗi phiên, fetch trước; ghi agent, version, branch, PR, s
 3. P0 — Super Admin: đưa nguyên mẫu `ops/super-admin` thành cổng read-only staging thật, tách khỏi trang Merchant; RBAC backend/MFA + audit, không ghi production.
 4. P1 — Website release: triển khai CI, visual regressions và demo GitHub Pages sau QA; **không chuyển sang website thật**. Chỉ chuẩn bị hướng dẫn chi tiết cho domain/Render/Supabase production để sử dụng sau khi chủ dự án phê duyệt.
 5. Mỗi hạng mục báo ba trạng thái riêng: mã đã commit, đã có link staging/preview, đã production (phải là NO đến khi cutover được duyệt). Xem `WEBSITE_V10_2_ROADMAP.md` và `RELEASE_GATES.md`.
+
+
+## V10.3 verified code & deployment handoff
+
+**2026-11-11 JST.** Bản báo cáo kỹ thuật chi tiết: `V10_3_4_IMPLEMENTATION.md`. Chủ dự án đã cấp phạm vi kiểm thử staging nhưng vẫn **chưa phê duyệt** mua tên miền, production, thu phí hoặc thay thế website demo.
+
+- Widget CSS+JS, Cloudflare noindex _headers, Playwright 25-case PASS trên **nhánh riêng** `feature/v10.3-cloudflare-widget-qa-20261111` / draft PR #11; Cloudflare preview đã SUCCESS. Bản Cloudflare chính + gh-pages KHÔNG đổi.
+- Render Auth visual CSS trên nhánh `feature/v10.3-auth-ui-staging-20261111`, draft PR #10: CI static/Auth isolated/Chromium PASS. **Chưa merge / chưa triển khai Render.**
+- Super Admin protected prototype UI CSS trên nhánh `feature/v10.3-super-admin-ui-20261111`, draft PR #12: **71/71 staging security tests PASS**, chưa có hosted URL admin.
+- Trước đây bật Cloudflare preview custom một nhánh; khi kiểm tra thấy thêm preview event từ Auth/Admin PR; đã khôi phục `preview_deployment_setting=none`, Cloudflare production baseline giữ nguyên.
+- P0 còn mở: real JWT A/B cross-tenant, Auth staging live browser smoke, Cloudflare header response check, Super Admin host và server authorization, sửa n8n catalog freshness, giải pháp Commerce idempotency trên backend chuẩn; V10.4 chưa release.
