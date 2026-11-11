@@ -14,3 +14,13 @@
 | RECOVERY | Email/PKCE hợp lệ, link hết hạn, dùng lại trên Android | BLOCKED: chưa có callback và phiên email QA để nghiệm thu. Trong Chromium fixture đã có kiểm chặn recovery giả. |
 
 Chi phí thực, giao dịch bán hàng qua n8n, cấp quyền admin xuyên hệ thống và toàn bộ hành trình website tới shop thật chưa có bằng chứng nghiệm thu.
+
+
+## Kết quả bổ sung sau triển khai
+
+| ID | Môi trường, đầu vào và điều kiện đạt | Kết quả |
+|---|---|---|
+| REV-SQL | [Postgres fixture](https://github.com/ngoctien20/demo-git/actions/runs/42992604667), dc107e1, kiểm 7/30 ngày và đơn hoàn | PASS, fixture lần lượt 159000 và 258000 đồng; chặn staff, tenant khác, kỳ sai và anon. Trên staging, A/B có 1 đơn mỗi bên trong kỳ và 0 đồng ở trạng thái paid, gọi sang tenant đối diện bị từ chối. |
+| MERCH | [Auth Chromium](https://github.com/ngoctien20/demo-git/actions/runs/42993227442), c728f15 | PASS UI đổi tenant, phân trang, chi tiết đơn, lịch sử, phân quyền, dữ liệu sai scope, tổng paid, trạng thái trống/lỗi; thử tạo/sửa dưới fixture với giá trị tồn ban đầu và version. Thử lại sau lỗi selector ở e87bb82. |
+| WEB-LIVE | [GitHub hosted mobile Chromium](https://github.com/ngoctien20/demo-git/actions/runs/42993354537), f2c3508 | PASS mở trang preview ở 360×780, đi từ login preview tới Render, chờ nút đăng nhập bật, mở account thật ẩn danh và thấy yêu cầu đăng nhập lại. Chưa chạy quy trình cấp tenant. |
+| DEPLOY | Render auth c728f15, data 3c29f70 | LIVE cả hai. So từng byte auth-account.js, merchant-lists.mjs, merchant-product.mjs bản phục vụ với Git. Chạy live_auth_acceptance.py --anonymous-only đạt. Truy cập metadata bot qua Data API với publishable key, không session trả 401. |
