@@ -1,6 +1,8 @@
 const target=document.querySelector('#n8n-chat');
 if(target){
   (async () => {
+  const chatPanel=document.getElementById('tien404-chat-panel');
+  chatPanel?.setAttribute('aria-busy','true');
   try{
     const { createChat } = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
     createChat({
@@ -81,7 +83,7 @@ if(target){
       }
       sending=true;
       externalSend.disabled=true;
-      externalStatus.textContent='';
+      externalStatus.textContent='Đang chuyển tin nhắn...';
       try{
         if(nativeInput.isContentEditable){
           nativeInput.textContent=message;
@@ -101,6 +103,7 @@ if(target){
           return;
         }
         nativeSend.click();
+        externalStatus.textContent='';
         externalInput.value='';
         externalInput.focus({preventScroll:true});
       }catch(error){
@@ -111,6 +114,14 @@ if(target){
       }
     });
     externalInput.addEventListener('input',()=>{externalStatus.textContent=''});
+    // Keyboard alternative to clicking send; plain Enter still allows composing text.
+    externalInput.addEventListener('keydown',event=>{
+      if(event.isComposing)return;
+      if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
+        event.preventDefault();
+        if(!sending)externalForm.requestSubmit();
+      }
+    });
 
     const panel=document.getElementById('tien404-chat-panel');
     const launcher=document.getElementById('tien404-chat-launcher');
@@ -128,8 +139,10 @@ if(target){
     });
     close?.addEventListener('click',()=>toggle(false));
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});
+    chatPanel?.setAttribute('aria-busy','false');
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
+    chatPanel?.setAttribute('aria-busy','false');
     const note=document.querySelector('#n8n-chat-fallback');
     if(note)note.hidden=false;
     target.setAttribute('aria-label','Chat AI hiện không tải được; vui lòng thử bản mô phỏng.');
