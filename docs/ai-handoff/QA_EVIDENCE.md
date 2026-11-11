@@ -92,3 +92,10 @@ User submitted six complete Messenger replies from live pilot. Workflows `Z7FdV7
 - Initial Widget CI runs `43033647644`/`43033814907` FAILED on Ubuntu mirror DNS while installing browser dependencies; after removing `--with-deps`, the later run `43035200229` passed. These failures are infrastructure setup rather than UI test assertions.
 - Cloudflare Pages preview branch controls unexpectedly allowed some PR-related Auth/Admin deployments to be scheduled as `idle`. Preview settings explicitly reverted to `none` with read-back. No known production deployment changed; no DNS, Supabase Auth, n8n Meta or real orders touched.
 - Detailed SHA, branch, endpoints, limits and next gates: `V10_3_4_IMPLEMENTATION.md`.
+
+
+### V10.3 widget real header verification — run 43035910218
+
+- New widget test added in feature commit `37052a9e63960697ce077a420f88803aeb9d25f0`, did **not** modify site HTML/CSS or n8n endpoint.
+- [GitHub Actions run 43035910218](https://github.com/ngoctien20/demo-git/actions/runs/43035910218) **SUCCESS: 26/26 Playwright tests PASS**, including real HTTPS response header check against `https://edf09e40.tien404-ai-git-staging.pages.dev/` for `X-Robots-Tag: noindex`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`.
+- Not a universal SEO security certificate: test is one specific immutable preview URL; do not assume the same headers on the unaffected gh-pages baseline or Auth/Account. Real chat model messages and signed JWT tenant QA still NOT_RUN.
