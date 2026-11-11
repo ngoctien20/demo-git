@@ -1,0 +1,21 @@
+name: TIEN404 DEV TEAM — deterministic contract QA
+on:
+  push:
+    branches: ["ops/dev-team-multiagent-staging-20261112"]
+  pull_request:
+    paths:
+      - "ops/devteam/**"
+      - ".github/workflows/dev-team-contract-qa.yml"
+permissions:
+  contents: read
+jobs:
+  state-machine-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Fail-closed transition and budget tests
+        run: python -m unittest discover -s ops/devteam/tests -v
