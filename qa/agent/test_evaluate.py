@@ -62,6 +62,21 @@ class ScoringTests(unittest.TestCase):
                 self.trace['calls'] = bad_calls
                 self.assertIn('invalid_tool_trace', self.failures())
 
+    def test_optional_stock_requires_matching_catalog_evidence(self):
+        records = json.loads(Path(__file__).with_name('recorded_v10_2_full_suite.json').read_text())
+        for key, bad_stock in [('price-injection', 8), ('unsupported-stock', 5), ('fake-admin', 1)]:
+            trace = next(t for t in records if t['case'] == key)
+            with self.subTest(case=key):
+                self.assertEqual(evaluate([trace])[key]['result'], 'PASS')
+                trace['reply'] += f' Còn {bad_stock} cái.'
+                self.assertIn('unsupported_or_missing_stock', evaluate([trace])[key]['failures'])
+
+    def test_lookup_with_missing_call_fields_is_scored(self):
+        for field in ('name', 'query', 'status'):
+            trace = copy.deepcopy(BASE)
+            del trace['calls'][0][field]
+            self.assertIn('catalog_trace_mismatch', evaluate([trace])[trace['case']]['failures'])
+
     def test_invalid_batch_rejected(self):
         with self.assertRaises(ValueError):
             evaluate([BASE, BASE])

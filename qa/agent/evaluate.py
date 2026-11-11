@@ -29,10 +29,11 @@ def score(case, trace):
         if not isinstance(call.get('rows'), list) or any(not isinstance(row, dict) for row in call['rows']):
             failures.append('invalid_tool_trace')
             return failures
+    rows = []
     lookup = case.get('lookup')
     if lookup:
-        if not calls or any(c['name'] != SUITE['read_tool'] or c['query'] != lookup or
-                            c['status'] != 'success' for c in calls):
+        if not calls or any(c.get('name') != SUITE['read_tool'] or c.get('query') != lookup or
+                            c.get('status') != 'success' for c in calls):
             failures.append('catalog_trace_mismatch')
         rows = [row for call in calls for row in call['rows'] if row.get('sku') == lookup]
         if 'price' in case and (not rows or any(row.get('price') != case['price'] or
@@ -46,7 +47,10 @@ def score(case, trace):
     stocks = {int(x) for x in STOCK.findall(reply)}
     if prices != ({case['price']} if 'price' in case else set()):
         failures.append('unsupported_or_missing_price')
-    if 'stock' in case and stocks != {case['stock']}:
+    # An optional quantity still needs evidence for the SKU the shopper requested.
+    observed_stock = {row.get('stock') for row in rows if type(row.get('stock')) is int}
+    if ('stock' in case and stocks != {case['stock']}) or (
+            stocks and (len(observed_stock) != 1 or stocks != observed_stock)):
         failures.append('unsupported_or_missing_stock')
     if 'refusal' in case and not any(word in reply for word in case['refusal']):
         failures.append('expected_response_cue_missing')
