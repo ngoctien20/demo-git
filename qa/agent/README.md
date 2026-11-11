@@ -13,3 +13,7 @@ Mỗi phần tử đầu vào theo cấu trúc của recorded.json. Chỉ nhập
 Ngày 11/11/2026, đã đọc lại [execution 1909](https://ngoctien20.app.n8n.cloud/workflow/NvQfIffOrZokPBPW/executions/1909) và lưu kết quả đã lược bỏ thông tin phiên. Một ca có phản hồi thật từ model và tool đọc fixture. Sáu ca còn lại chỉ kiểm thử logic chấm bằng đầu vào tổng hợp. Bộ chấm chưa cấp phép promote bot.
 
 Đã chạy lại các workflow sandbox tại [Catalog/Cart 1910](https://ngoctien20.app.n8n.cloud/workflow/ZVmMlwe2g0bPjVEq/executions/1910), [Business Core 1911](https://ngoctien20.app.n8n.cloud/workflow/tjsVobfjKLnv0o6b/executions/1911) và [Extension 1912](https://ngoctien20.app.n8n.cloud/workflow/QR7aYMpLfKDLVgyH/executions/1912). Assert node lần lượt xác nhận 17/17, 22/22, 25/25. Các Data Table node sử dụng get. Các kết quả phản ánh quy tắc sandbox.
+
+## GPT V9.1 · trace validator hardening
+
+Commits `4284158`, `f2acab7`: scorer từ chối cấu trúc `calls` không phải danh sách, phần tử không phải object, `rows` không phải danh sách hoặc row không phải object. Trả lỗi `invalid_tool_trace` thay vì exception; bổ sung unit test tương ứng. **IMPLEMENTED_NOT_VERIFIED**: chưa có CI trên commit mới. Không tạo thêm trace model, không chạy workflow thật và không đổi phiên bản bot. Cần chạy `python -m unittest discover -s qa/agent -v` rồi thu thập trace riêng cho sáu ca `NOT_RUN` trước khi xét promote.
