@@ -16,6 +16,10 @@ function change(id) {
   callback(id ? 'SIGNED_IN' : 'SIGNED_OUT', {user:identity()});
 }
 window.changeFixtureIdentity = change;
+window.fixtureRecovery = () => {
+  sessionStorage.setItem('qa-shop','A');
+  callback('PASSWORD_RECOVERY', {user:identity()});
+};
 const auth = {
   onAuthStateChange(fn) {callback = fn;},
   async getUser() {return {data:{user:identity()}};},
@@ -23,6 +27,7 @@ const auth = {
     if (password !== 'fixture-only-valid') return {error:{code:'invalid_credentials'}};
     change('A'); return {data:{user:identity(),session:{}}};
   },
+  async updateUser() {window.passwordUpdates=(window.passwordUpdates || 0)+1;return {}},
   async signOut() {change(null);return {};}
 };
 export const authClient = {auth, async rpc(name,args) {
@@ -124,6 +129,25 @@ with sync_playwright() as playwright:
     }""")
     expect(page.locator('#auth-status')).to_contain_text('Phiên khôi phục không hợp lệ')
     page.evaluate("document.getElementById('auth-password-update').hidden = true")
+    # The SDK alone authorizes a code-only PKCE callback.
+    page.goto(origin+'/login.html?code=synthetic')
+    expect(page.locator('#auth-submit')).to_be_enabled()
+    page.evaluate('window.fixtureRecovery()')
+    recovery = page.locator('#auth-password-update')
+    expect(recovery).to_be_visible()
+    page.locator('#auth-new-password').fill('Fixture-only-strong-password-123!')
+    page.locator('#auth-password-confirm').fill('Fixture-only-strong-password-123!')
+    page.evaluate("window.changeFixtureIdentity('B')")
+    expect(recovery).to_be_hidden()
+    page.evaluate("document.querySelector('#auth-password-update').requestSubmit()")
+    expect(page.locator('#auth-status')).to_contain_text('Phiên khôi phục không hợp lệ')
+    assert page.evaluate('window.passwordUpdates || 0') == 0
+    page.evaluate('window.fixtureRecovery()')
+    page.locator('#auth-new-password').fill('Fixture-only-strong-password-123!')
+    page.locator('#auth-password-confirm').fill('Fixture-only-strong-password-123!')
+    recovery.locator('[type=submit]').click()
+    expect(page.locator('#auth-status')).to_contain_text('Đã cập nhật mật khẩu')
+    assert page.evaluate('window.passwordUpdates') == 1
     password = page.locator('#auth-password')
     page.locator('#auth-email').fill('fixture@example.invalid')
     password.fill('fixture-only-invalid')
