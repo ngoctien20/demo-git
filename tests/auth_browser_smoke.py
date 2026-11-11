@@ -26,6 +26,11 @@ const auth = {
   async signOut() {change(null);return {};}
 };
 export const authClient = {auth, async rpc(name,args) {
+  if (name==='save_merchant_product') {
+    if(args.p_tenant!==identity().id) throw Error('scope');
+    window.qaSave=args;
+    return {data:'2026-11-11T01:00:00Z'};
+  }
   if (name!=='merchant_paid_orders_daily' || args.p_tenant!==identity().id) throw Error('wrong scope');
   return {data:args.p_days===30?[]:[{tenant_id:window.badScope?'wrong':args.p_tenant,order_day:'2026-11-11',
     paid_vnd:'159000',paid_count:1,order_count:2}]};
@@ -192,6 +197,26 @@ with sync_playwright() as playwright:
     expect(page.locator('#account-protected')).to_be_hidden()
     page.evaluate("window.changeFixtureIdentity('A')")
     expect(page.locator('.auth-tenant-card strong')).to_have_text('Shop A')
+    expect(page.get_by_text('Quản lý sản phẩm',exact=True)).to_have_count(0)
+    # Enable the candidate only in this isolated fixture; the hosted module remains off.
+    from pathlib import Path
+    editor=Path('auth-preview-dist/assets/merchant-product.mjs').read_text()
+    assert 'PRODUCT_EDITOR_ENABLED = false' in editor
+    page.route('**/merchant-product.mjs',lambda route:route.fulfill(content_type='application/javascript',
+        body=editor.replace('PRODUCT_EDITOR_ENABLED = false','PRODUCT_EDITOR_ENABLED = true')))
+    page.reload()
+    page.get_by_text('Quản lý sản phẩm',exact=True).click()
+    page.get_by_label('Mã SKU',exact=True).fill('QA-CREATE')
+    page.get_by_label('Tên bán hàng').fill('Sản phẩm thử')
+    page.get_by_label('Giá bán (đồng)').fill('159000')
+    page.get_by_label('Tồn ban đầu').fill('8')
+    page.get_by_role('button',name='Tạo sản phẩm').click()
+    expect(page.get_by_text('Đã lưu sản phẩm.',exact=False)).to_be_visible()
+    assert page.evaluate('window.qaSave.p_initial_stock')==8
+    page.get_by_label('Giá bán (đồng)').fill('149000')
+    page.get_by_role('button',name='Lưu thay đổi').click()
+    page.wait_for_function('window.qaSave.p_price===149000')
+    assert page.evaluate('window.qaSave.p_initial_stock===null && !!window.qaSave.p_expected_updated_at')
     page.locator('#account-logout').click()
     expect(page.locator('#auth-login')).to_be_visible()
     browser.close()

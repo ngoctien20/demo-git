@@ -1,3 +1,4 @@
+import {PRODUCT_EDITOR_ENABLED,addProductEditor} from './merchant-product.mjs';
 import {addMerchantList} from './merchant-lists.mjs';
 import {approvedMemberships,scopedTenantDisplay} from './auth-helpers.mjs';
 import {withDeadline} from './auth-runtime.mjs';
@@ -193,6 +194,7 @@ const revalidate=async()=>{
       addMerchantList(card,'products',context);
       if (['owner','manager'].includes(t.role)) {
         addPaidOrderReport(card,t,current);
+        if (PRODUCT_EDITOR_ENABLED) addProductEditor(card,t.id,sb,context.current);
         for (const table of ['orders','customers','conversations','tenant_agent_configs']) addMerchantList(card,table,context);
       }
       workspace.appendChild(card);
