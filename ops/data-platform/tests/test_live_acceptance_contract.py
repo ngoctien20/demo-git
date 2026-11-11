@@ -19,3 +19,42 @@ def test_empty_or_unidentified_fixture_cannot_prove_a_scoped_read(payload):
     with httpx.Client(transport=httpx.MockTransport(provide)) as client:
         with pytest.raises(AcceptanceFailure):
             check_tenant(client, "fixture-only", "a", "b")
+
+
+@pytest.mark.parametrize("foreign,expected", [([], True), ([{"tenant_id": "b"}], False), ({}, False)])
+def test_direct_postgrest_requires_populated_own_and_empty_foreign_reads(foreign, expected):
+    from scripts.live_auth_acceptance import check_postgrest
+    paths = []
+    def provide(request):
+        assert request.url.params["select"] == "tenant_id"
+        assert request.headers["apikey"] == "public-fixture"
+        assert request.headers["Authorization"] == "Bearer test"
+        paths.append(request.url.path)
+        rows = [{"tenant_id":"a"}] if request.url.params["tenant_id"] == "eq.a" else foreign
+        return httpx.Response(200, json=rows)
+    with httpx.Client(transport=httpx.MockTransport(provide)) as client:
+        if expected:
+            check_postgrest(client, "public-fixture", "test", "a", "b")
+            assert paths == ["/rest/v1/products"] * 2 + ["/rest/v1/orders"] * 2
+        else:
+            with pytest.raises(AcceptanceFailure):
+                check_postgrest(client, "public-fixture", "test", "a", "b")
+
+
+@pytest.mark.parametrize("code,expected", [("refresh_token_not_found", True), ("bad_jwt", False)])
+def test_logout_is_local_and_accepts_only_session_revocation_evidence(code, expected):
+    from scripts.live_auth_acceptance import check_refresh_revoked, logout_session
+    def provide(request):
+        if request.url.path.endswith("/logout"):
+            assert request.url.params["scope"] == "local"
+            assert request.headers["Authorization"] == "Bearer test"
+            return httpx.Response(204)
+        assert request.url.params["grant_type"] == "refresh_token"
+        return httpx.Response(400, json={"error_code": code})
+    with httpx.Client(transport=httpx.MockTransport(provide)) as client:
+        logout_session(client, "public-fixture", {"access_token": "test"})
+        if expected:
+            check_refresh_revoked(client, "public-fixture", "test-refresh")
+        else:
+            with pytest.raises(AcceptanceFailure):
+                check_refresh_revoked(client, "public-fixture", "test-refresh")
