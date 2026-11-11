@@ -38,12 +38,29 @@ function addPaidOrderReport(card, tenant, viewGeneration) {
   const statusNode = document.createElement('p');
   statusNode.setAttribute('role','status');
   const daily = document.createElement('ul');
-  section.append(period,button,statusNode,daily);
+  const exportButton = document.createElement('button');
+  exportButton.type = 'button';
+  exportButton.textContent = 'Xuất báo cáo CSV';
+  exportButton.disabled = true;
+  let csvRows = [];
+  exportButton.addEventListener('click', () => {
+    if (!section.isConnected || viewGeneration !== generation || !csvRows.length) return;
+    const header = 'Ngày tạo đơn (Việt Nam),Tổng số đơn,Số đơn đang ở trạng thái đã thanh toán,Giá trị đơn đã thanh toán (VND)';
+    const csv = '\uFEFF' + [header, ...csvRows].join('\r\n') + '\r\n';
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'don-hang-' + tenant.id + '-' + period.value + '-ngay.csv';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  section.append(period,button,exportButton,statusNode,daily);
   card.append(section);
   const currency = new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'});
   async function load() {
     if (viewGeneration !== generation || button.disabled) return;
-    button.disabled = period.disabled = true;
+    button.disabled = period.disabled = exportButton.disabled = true;
+    csvRows = [];
     daily.replaceChildren();
     statusNode.textContent = 'Đang tổng hợp đơn hàng…';
     try {
@@ -54,6 +71,7 @@ function addPaidOrderReport(card, tenant, viewGeneration) {
       if (error || !Array.isArray(data) || data.length > days) throw Error('report');
       let total = 0n;
       const rows = document.createDocumentFragment();
+      const validatedRows = [];
       for (const row of data) {
         if (row.tenant_id !== tenant.id || !/^\d{4}-\d{2}-\d{2}$/.test(row.order_day)
             || typeof row.paid_vnd !== 'string' || !/^\d+$/.test(row.paid_vnd)
@@ -61,12 +79,15 @@ function addPaidOrderReport(card, tenant, viewGeneration) {
             || row.paid_count < 0 || row.order_count < row.paid_count) throw Error('scope');
         const amount = BigInt(row.paid_vnd);
         total += amount;
+        validatedRows.push([row.order_day,row.order_count,row.paid_count,amount].join(','));
         const item = document.createElement('li');
         item.textContent = row.order_day.split('-').reverse().join('/')+' · '+row.paid_count+'/'+row.order_count+
           ' đơn đã thanh toán · '+currency.format(amount);
         rows.append(item);
       }
       daily.append(rows);
+      csvRows = validatedRows;
+      exportButton.disabled = !csvRows.length;
       statusNode.textContent = data.length ? 'Tổng giá trị đơn đang ở trạng thái đã thanh toán: '+
         currency.format(total)+'. Tính theo ngày tạo đơn, giờ Việt Nam.' : 'Chưa có đơn trong kỳ đã chọn.';
     } catch {
