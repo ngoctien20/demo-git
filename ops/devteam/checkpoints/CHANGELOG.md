@@ -1,0 +1,3 @@
+# Agent Factory V1 — Changelog
+
+2026-11-12: Reused seven unpublished n8n Agent drafts; verified all lack model and credential. Created additive branch on PR #20 and a Draft PR #21. Applied `factory_private` migration to existing Supabase staging project. Created five RLS-protected private tables with atomic leases/CAS, event idempotency, zero-cost and production-deny guards. Validated real SQL positive and negative transactions, all rolled back. Created n8n Personal staging folder, n8n inbox Data Table and inactive manual workflow; executions 2512/2513 passed and idempotent upsert left one QA row. Enqueued three zero-budget real backlog tasks. Added independent offline CI and durable handoff docs. No model calls, no publish/merge, no production writes.
