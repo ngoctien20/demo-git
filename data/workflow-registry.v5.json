@@ -27,9 +27,11 @@
         "draft_dependencies": [],
         "published_dependencies": [],
         "tools": [],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-10T11:55:56.469Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
       }
     },
     {
@@ -98,9 +100,11 @@
           "Check Store Availability",
           "Preview Smart Pricing"
         ],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-10T05:32:41.341Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
       }
     },
     {
@@ -139,9 +143,11 @@
           "update_order_address",
           "manage_order"
         ],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T21:42:40.453Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
       }
     },
     {
@@ -280,9 +286,11 @@
           "get_order_status",
           "create_support_ticket"
         ],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T15:00:56.244Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
       }
     },
     {
@@ -316,9 +324,11 @@
           "update_order_address",
           "manage_order"
         ],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T15:00:52.095Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
       }
     },
     {
@@ -386,9 +396,29 @@
         "tools": [
           "Get row(s) in sheet in Google Sheets"
         ],
-        "model": null,
+        "model": "gpt-5-mini",
         "estimated_cost": null,
-        "qa_status": "NOT_EVALUATED_V7"
+        "qa_status": "PASS_QA_CATALOG_T_A",
+        "workflow_updated_at": "2026-11-09T14:35:36.644Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z",
+        "last_evaluation": {
+          "execution_id": "1909",
+          "model": "gpt-5-mini",
+          "data_source": "toolCode synthetic catalog",
+          "input_sku": "T-A",
+          "expected": {
+            "price_vnd": 159000,
+            "stock": 8
+          },
+          "actual": {
+            "price_vnd": 159000,
+            "stock": 8
+          },
+          "tool_calls_completed": 1,
+          "latency_ms": 13639,
+          "estimated_tokens": 1272,
+          "billed_cost": null
+        }
       }
     },
     {
