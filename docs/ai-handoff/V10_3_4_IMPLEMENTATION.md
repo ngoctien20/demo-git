@@ -87,3 +87,11 @@ Work V10.2 docs branch and product branches differ. GitHub root `main` contains 
 - **QA:** Widget browser 25 passed ✅; Auth isolated CI ✅; Admin 71 passed ✅; production security/real-account E2E ❌.
 - **PRODUCTION_DEPLOYED:** NO. Github Pages gh-pages/Cloudflare main Pages unchanged; Render live Auth/Data unchanged; n8n Messenger workflow unchanged.
 - **Next:** owner can review exact Cloudflare preview and PR #10/#11/#12; finish signed JWT auth, browser header checks, security host for Super Admin, then separately approve merges/deploys. No domain purchase/cutover until explicit later approval.
+
+
+## 7. Verified HTTP header and final CI on widget branch
+
+- Follow-up Playwright test appended to `qa/v10-3-cloudflare.spec.cjs`, widget branch commit `37052a9e63960697ce077a420f88803aeb9d25f0`. This source-only QA test does not change widget visuals or the already-successful immutable Cloudflare preview.
+- GitHub Actions **[run 43035910218](https://github.com/ngoctien20/demo-git/actions/runs/43035910218)** completed SUCCESS with **26 passed (11.5s)**. Its final test performed real HTTPS GET on immutable preview `https://edf09e40.tien404-ai-git-staging.pages.dev/` and verified `X-Robots-Tag` contains `noindex`, `X-Content-Type-Options=nosniff`, `X-Frame-Options=DENY`. This supersedes the earlier "HTTP HEAD/response header not verified" status for these three header assertions; the test used GET, not HEAD.
+- The V10.3 source branch latest SHA is now `37052a9e`. The **last verified completed Cloudflare widget preview deployment still serves prior visual source SHA `2a276a8`**, because preview builds were intentionally disabled after unexpected PR preview events; the subsequent change only added QA code. New full deployed SHA not asserted.
+- V10.3 widget score update: 26/26 PASS in isolated/read-only browser suite. Actual model chat send, full commercial checkout and authenticated cross-tenant E2E still NOT_RUN.
