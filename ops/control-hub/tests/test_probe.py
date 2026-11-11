@@ -25,6 +25,26 @@ class ReadOnlyProbeTests(unittest.TestCase):
         self.assertEqual(probe.classify_http(None,probe.HUB_URL),'CONNECTION_ERROR')
         self.assertEqual(probe.classify_http(429,probe.HUB_URL),'RATE_LIMITED')
         self.assertEqual(probe.classify_http(503,probe.HUB_URL),'SERVICE_ERROR')
+    def test_login_path_cannot_mask_outage_or_missing_route(self):
+        for code, expected in [(None, 'CONNECTION_ERROR'), (429, 'RATE_LIMITED'),
+                               (503, 'SERVICE_ERROR'), (404, 'HTTP_ERROR')]:
+            with self.subTest(code=code):
+                self.assertEqual(probe.classify_http(code, probe.HUB_URL+'login'), expected)
+
+    def test_github_403_reports_quota_evidence_without_exporting_headers(self):
+        for headers, expected in [({'X-RateLimit-Remaining': '0'}, 'RATE_LIMITED'),
+                                  ({'Retry-After': '60'}, 'RATE_LIMITED'),
+                                  ({'X-RateLimit-Remaining': '50'}, 'AUTH_REQUIRED')]:
+            with self.subTest(headers=headers):
+                opener = MagicMock()
+                opener.open.side_effect = urllib.error.HTTPError(
+                    probe.GITHUB_ACTIONS, 403, 'Forbidden', headers, None)
+                with patch.object(probe.urllib.request, 'build_opener', return_value=opener):
+                    record, body = probe.request(probe.GITHUB_ACTIONS)
+                self.assertEqual((record['status'], body), (expected, b''))
+                self.assertNotIn('headers', record)
+        self.assertEqual(probe.classify_http(403, probe.HUB_URL, headers={'Retry-After':'60'}), 'AUTH_REQUIRED')
+
     def test_only_expected_origins_are_allowed(self):
         for url in ['http://api.github.com/', 'https://example.net/',
                     'https://api.github.com:8443/repos/ngoctien20/demo-git/',

@@ -36,17 +36,26 @@ def utc_now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
 
-def classify_http(code, final_url, location=''):
+def classify_http(code, final_url, location='', headers=None):
     path = urllib.parse.urlsplit(final_url or '').path.lower()
     redirect_path = urllib.parse.urlsplit(location or '').path.lower()
-    if code in (401, 403) or any(word in path + ' ' + redirect_path for word in ('login', 'sign-in', 'signin', 'oauth', 'authorize')):
-        return 'AUTH_REQUIRED'
     if code is None:
         return 'CONNECTION_ERROR'
-    if code == 429:
+    headers = headers or {}
+    github_quota = (
+        urllib.parse.urlsplit(final_url or '').hostname == 'api.github.com'
+        and (headers.get('X-RateLimit-Remaining') == '0' or headers.get('Retry-After') is not None)
+    )
+    if code == 429 or (code == 403 and github_quota):
         return 'RATE_LIMITED'
     if code >= 500:
         return 'SERVICE_ERROR'
+    if code in (401, 403):
+        return 'AUTH_REQUIRED'
+    if 200 <= code < 400 and any(
+        word in path + ' ' + redirect_path for word in ('login', 'sign-in', 'signin', 'oauth', 'authorize')
+    ):
+        return 'AUTH_REQUIRED'
     if 200 <= code <= 299:
         return 'REACHABLE'
     if 300 <= code <= 399:
@@ -81,12 +90,14 @@ def request(url, authorization=None, timeout=12):
         with opener.open(req, timeout=timeout) as response:
             status = response.status
             final_url = response.geturl()
-            location = response.headers.get('Location', '')
+            response_headers = response.headers
+            location = response_headers.get('Location', '')
             body = response.read(1_500_000) if parsed.hostname == 'api.github.com' else b''
     except urllib.error.HTTPError as e:
         status = e.code
         final_url = e.geturl()
-        location = e.headers.get('Location', '') if e.headers else ''
+        response_headers = e.headers or {}
+        location = response_headers.get('Location', '')
         body = b''
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         return {
@@ -95,7 +106,7 @@ def request(url, authorization=None, timeout=12):
             'error_type': type(e).__name__, 'checked_at': utc_now(),
         }, b''
     return {
-        'status': classify_http(status, final_url, location), 'http_status': status,
+        'status': classify_http(status, final_url, location, response_headers), 'http_status': status,
         'url': url, 'final_url': final_url,
         'latency_ms': int((time.monotonic() - start)*1000),
         'checked_at': utc_now(),

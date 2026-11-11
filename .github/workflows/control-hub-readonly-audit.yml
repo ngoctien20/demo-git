@@ -6,6 +6,11 @@ on:
     paths:
       - 'ops/control-hub/**'
       - '.github/workflows/control-hub-readonly-audit.yml'
+  pull_request:
+    branches: [ops/control-hub-audit-v2-20261110]
+    paths:
+      - 'ops/control-hub/**'
+      - '.github/workflows/control-hub-readonly-audit.yml'
   schedule:
     - cron: '0 0 * * *' # Daily at 09:00 JST after approved merge to default branch
 permissions:
@@ -23,11 +28,12 @@ jobs:
       - name: Unit test read-only health classifications
         run: python -m unittest discover -s ops/control-hub/tests -p 'test_*.py' -v
       - name: Probe public endpoints without writing to external systems
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python ops/control-hub/tools/probe_public.py
       - name: Store evidence as 14-day private-to-GitHub artifact (public URL metadata only)
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: TIEN404-control-hub-health-snapshot
