@@ -1,5 +1,5 @@
-/* Cloudflare Pages staging only. GitHub Pages ignores this configuration file.
-   No production-domain SEO transfer until owner approval. */
+# Cloudflare Pages staging only. GitHub Pages ignores this configuration file.
+# Keep noindex until the owner approves a real-domain cutover.
 /*
   X-Robots-Tag: noindex, nofollow
   X-Content-Type-Options: nosniff
