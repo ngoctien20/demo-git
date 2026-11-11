@@ -85,3 +85,20 @@ def test_data_platform_status_requires_admin_session_and_stays_staging(monkeypat
     }).status_code==200
     assert c.get("/api/v1/admin/integrations/data-platform").status_code==403
     s.conn.close()
+
+
+def test_invalid_login_never_echoes_credentials(tmp_path):
+    store, client, _, _ = client_with_user(tmp_path)
+    try:
+        # Missing fields, invalid values and unexpected keys all carry private input.
+        for payload in (
+            {"password": PASS},
+            {"email": "qa@example.test", "password": "short-secret", "totp": "bad-otp"},
+            {"email": "qa@example.test", "password": PASS, "totp": "123456", "private-key": "private-value"},
+        ):
+            response = client.post("/api/v1/auth/login", json=payload)
+            assert response.status_code == 422
+            assert response.json() == {"error": "invalid_request"}
+            assert response.headers["cache-control"] == "no-store"
+    finally:
+        store.conn.close()
