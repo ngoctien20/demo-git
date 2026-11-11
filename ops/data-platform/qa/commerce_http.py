@@ -19,7 +19,7 @@ with connect() as db:
     actor, outsider, tenant, other = (uuid4() for _ in range(4))
     for uid, tid in ((actor, tenant), (outsider, other)):
         db.execute("INSERT INTO auth.users VALUES (%s)", (uid,))
-        db.execute("INSERT INTO tenants(id,slug,name) VALUES (%s,%s,'QA')", (tid,str(tid)))
+        db.execute("INSERT INTO tenants(id,slug,name) VALUES (%s,%s,'QA')", (tid,'qa-'+str(tid)))
         db.execute("INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')", (tid,uid))
         db.execute("INSERT INTO products(tenant_id,sku,name,price_vnd,stock_on_hand) VALUES (%s,'QA','Sample',150000,4)", (tid,))
 
