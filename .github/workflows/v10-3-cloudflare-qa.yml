@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/v10.3-cloudflare-widget-qa-20261111
+      - work/v11-widget-resilience
   workflow_dispatch:
 permissions:
   contents: read

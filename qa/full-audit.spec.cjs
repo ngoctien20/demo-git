@@ -252,6 +252,7 @@ for (const p of routes) {
 test('AI widget displays usable fallback when external chat script is unavailable',async({page})=>{
   await page.route('**/cdn.jsdelivr.net/npm/@n8n/chat/**', route=>route.abort());
   await page.goto('/demo.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#tien404-chat-launcher').click();
   await expect(page.locator('#n8n-chat-fallback')).toBeVisible({timeout:10000});
   await expect(page.locator('#n8n-chat-fallback a[href="lab.html"]')).toBeVisible();
   await expect(page.locator('html')).not.toHaveClass(/tien404-chat-ready/);
