@@ -11,6 +11,7 @@ import secrets
 from typing import Annotated, Literal
 from pathlib import Path
 from fastapi import FastAPI, Request, Depends, Response, Header, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, Field, ConfigDict
 from .core import Store, AccessDenied, Conflict, NotFound, Invalid, now_utc, iso, parse, verify_test_webhook
@@ -76,6 +77,11 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         if request.url.path == '/admin' or request.url.path.startswith('/admin/'):
             response.headers['Content-Security-Policy']="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
         return response
+    @app.exception_handler(RequestValidationError)
+    async def on_invalid_request(request, exc):
+        # Validation details can echo request values, including the complete login body.
+        return JSONResponse({"error": "invalid_request"}, status_code=422)
+
     @app.exception_handler(AccessDenied)
     async def on_denied(request,exc):return JSONResponse({'error':str(exc)},status_code=403)
     @app.exception_handler(Conflict)
