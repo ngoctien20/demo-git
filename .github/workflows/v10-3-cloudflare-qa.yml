@@ -33,7 +33,7 @@ jobs:
       - name: Install Chromium QA
         run: |
           npm install --no-save @playwright/test@1.58.2
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Start local staging replica
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/tien404-v103.log 2>&1 &
