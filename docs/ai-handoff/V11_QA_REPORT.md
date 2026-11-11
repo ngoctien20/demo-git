@@ -17,3 +17,16 @@
 Chưa đo tải 100 cửa hàng, chi phí model thực, E2E giao dịch thật, WCAG toàn site, hay restore Supabase vào môi trường riêng.
 
 **WEB-HOSTED · PASS.** Ba bài Playwright trên URL triển khai bất biến eb7edbed kiểm 4 tệp HTTPS khớp byte, header noindex/nosniff và hai trang mobile khi chặn CDN. Cả hai nút mở được fallback, Escape trả focus, không phát sinh request ghi. [CI sau deploy](https://github.com/ngoctien20/demo-git/actions/runs/43109930511) · [mã QA](https://github.com/ngoctien20/demo-git/commit/5160370c40b86dd27b63833694f19a371d59832c).
+
+
+## 12/11/2026 — new verified evidence
+
+| QA gate | Source | Result and scope |
+|---|---|---|
+| Stale merchant RPC before fix | [Commerce run 43113215829](https://github.com/ngoctien20/demo-git/actions/runs/43113215829) | **FAIL**: synthetic JWT HTTP stale update hung and timed out at 20s; old PostgreSQL `40001` caused retry storm. |
+| PostgreSQL/PostgREST after fix | [run 43114961344](https://github.com/ngoctien20/demo-git/actions/runs/43114961344) | **PASS**: all job steps including signed JWT fixture A/B; stale product update returns `409 PT409` promptly, not indefinite retry. |
+| Data Platform static/mock QA | [run 43114961157](https://github.com/ngoctien20/demo-git/actions/runs/43114961157) | **PASS** isolated, no real customer Auth. |
+| Real staging PostgreSQL RPC | Migration `20261111225128` | **PASS** transaction/ROLLBACK: create/update QA product, reject stale version PT409, reject foreign tenant, confirm anon/direct-update disabled. No QA record remains. |
+| Public multi-provider health | `.github/workflows/v11-public-staging-health.yml` | **Test introduced**; do not call PASS until the new CI run is verified. Proves public HTTPS and anonymous 401 only. |
+
+**Still NOT_RUN:** two real Supabase Auth user sessions A/B including refresh/logout and forbidden writes, end-to-end merchant transactions through a deploy with trusted gateway identity, actual Messenger live order tool, independent live restore. Existing mock JWT A/B is not a live Auth token verification.

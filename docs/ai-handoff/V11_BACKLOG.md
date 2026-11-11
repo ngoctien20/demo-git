@@ -10,3 +10,15 @@
 | P1 Recovery | BLOCKED | Kiểm allowlist redirect và mail QA, diễn tập restore từ backup vào đích cô lập, đo RTO/RPO. |
 | P1 Onboarding/omnichannel | IN_PROGRESS | Xác minh cấp tenant, handoff có xác nhận và routing ràng buộc merchant; kiểm vòng đời hội thoại. |
 | P2 Business | DEFERRED | Chốt quota, ngân sách, điều khoản, quyền riêng tư và quy trình hỗ trợ trước pilot; billing thật, domain Mắt Bão và DNS cần phê duyệt. |
+
+
+## 12/11/2026 — V11 continuation backlog delta
+
+| Priority | Owner | State | Exit gate |
+|---|---|---|---|
+| P0 Merchant conflict/CI | CTO/Backend | **FIXED ON FIX BRANCH AND STAGING DB; INTEGRATION PENDING** | Review Draft PR #26 and integrate with parent Work #22 only after full QA; preserve PT409 in eventual merchant RPC. |
+| P0 Identity E2E | Auth/QA | BLOCKED | Real signed Supabase Auth two-user A/B via private QA credentials, session refresh/browser reopen/logout, cross-tenant writes denied. |
+| P0 Product writes | Security | QA-ONLY | Audit SECURITY DEFINER allowlist and JWT role paths; no UI product editor activation without prior approval. |
+| P1 Public provider status monitoring | DevOps | CODED/QA PENDING | Finish CI on docs verification branch, record actual HTTP results; note Cloudflare newest event can be skipped. |
+| P1 Commerce integration | Backend/n8n | IN_PROGRESS | Trusted per-tenant signed gateway, transactional idempotency, stock restoration on retry/partial failure and real merchant session. |
+| P1 Super Admin | Admin | HOST PENDING | Dedicated staging host with MFA/server RBAC/audit and real identity bridge; no Super Admin privilege by frontend labels. |

@@ -15,3 +15,14 @@ Fetch các branch của PR #13–20 và ref staging, đối chiếu deployment L
 Ước chi phí mỗi shop từ số lượt chat × token vào/ra thực đo × đơn giá model đã chọn, cộng phần hạ tầng và hỗ trợ. Chưa có dữ liệu để báo con số tiền. Domain: chọn tên, kiểm khả dụng và báo giá Mắt Bão tại thời điểm quyết định, duyệt chi phí, sau đó mới cấu hình Cloudflare DNS và kiểm TLS/rollback.
 
 Điểm chạy QA danh tính đã có sẵn tại ops/data-platform/scripts/live_auth_acceptance.py trên nhánh ops/tenant-data-platform-v1-staging-20261110. Chạy với hai tài khoản QA trong môi trường bí mật để xác minh gateway, PostgREST, refresh và local logout. Script hiện kiểm đọc; tiếp tục bộ test write-denial riêng trước khi bật chức năng ghi.
+
+
+## 12/11/2026 — Ordered next handoff
+
+1. Reuse [Draft PR #26](https://github.com/ngoctien20/demo-git/pull/26) as verified conflict fix stacked on Work V11 #22. Base Work PR #22 CI was still failing due 40001. Do not merge unreviewed branches or revert PT409 with an older SQL candidate.
+2. Verify staging SQL migration history contains `v11_qa_merchant_product_stale_conflict_pt409` and `public.save_merchant_product` retains two shop UUID+slug allowlist, owner/manager check, anon-deny and direct product-table-write deny. Never reapply migration blindly.
+3. Run actual Supabase Auth login/recovery/refresh with two controlled QA accounts through private CI secrets; preserve RLS, no token logging. **This remains the P0 production blocker.**
+4. Complete merchant product editor gate only after real signed JWT positive/negative and owner review. No customer/real-order writes.
+5. Verify on-demand public provider health CI and store outcome without asserting cloud deployment SHA from an HTTP status code.
+6. Build/review Super Admin hosted identity adapter, backup/restore isolated rehearsal, quota/AI monitoring, Messenger QA with owner-chosen approved channel.
+7. Draft production readiness checklist for 1→3→5 merchant pilots. Continue to forbid DNS/domain purchase, billing activation and production merge without owner's approval.
