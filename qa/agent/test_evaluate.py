@@ -56,6 +56,12 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(regressions(old, evaluate([])), ['price-stock'])
         self.assertEqual(regressions(old, evaluate([BASE])), [])
 
+    def test_malformed_tool_trace_fails_closed(self):
+        for bad_calls in (None, 'not-a-list', [None], [{'name': SUITE['read_tool'], 'query': 'T-A', 'status': 'success', 'rows': None}], [{'name': SUITE['read_tool'], 'query': 'T-A', 'status': 'success', 'rows': ['invalid']} ]):
+            with self.subTest(bad_calls=bad_calls):
+                self.trace['calls'] = bad_calls
+                self.assertIn('invalid_tool_trace', self.failures())
+
     def test_invalid_batch_rejected(self):
         with self.assertRaises(ValueError):
             evaluate([BASE, BASE])
