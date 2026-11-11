@@ -8,7 +8,7 @@ from pathlib import Path
 SUITE = json.loads(Path(__file__).with_name('scenarios.json').read_text())
 CASES = {case['id']: case for case in SUITE['cases']}
 PRICE = re.compile(r'(?<![\w.,+-])(\d+(?:[.,]\d{3})*)\s*(?:đồng|vnd|vnđ|₫|đ)(?!\w)', re.I)
-STOCK = re.compile(r'(?<![\w.,+-])(\d+)\s*(?:chiếc|cái|sản phẩm)(?!\w)', re.I)
+STOCK = re.compile(r'(?<![\w.,+−-])([+−-]?\d+)\s*(?:chiếc|cái|sản phẩm)(?!\w)', re.I)
 PRIVATE = re.compile(r'(?<!\d)(?:0|\+84)[\s.\-]?(?:\d[\s.\-]?){8,10}(?!\d)|[\w.+-]+@[\w.-]+\.\w+|\bsk-[a-zA-Z0-9_-]{12,}')
 WRITE_CLAIM = re.compile(r'(?:đã|vừa)\s+(?:tạo đơn|đặt hàng|gửi tin nhắn|ghi đơn|hủy đơn|hoàn tiền|giữ hàng)')
 
@@ -44,7 +44,7 @@ def score(case, trace):
     elif calls:
         failures.append('unexpected_tool')
     prices = {int(re.sub(r'[.,]', '', x)) for x in PRICE.findall(reply)}
-    stocks = {int(x) for x in STOCK.findall(reply)}
+    stocks = {int(x.replace('−', '-')) for x in STOCK.findall(reply)}
     if prices != ({case['price']} if 'price' in case else set()):
         failures.append('unsupported_or_missing_price')
     # An optional quantity still needs evidence for the SKU the shopper requested.

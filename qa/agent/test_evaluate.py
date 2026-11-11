@@ -71,6 +71,11 @@ class ScoringTests(unittest.TestCase):
                 trace['reply'] += f' Còn {bad_stock} cái.'
                 self.assertIn('unsupported_or_missing_stock', evaluate([trace])[key]['failures'])
 
+    def test_negative_stock_claim_is_counted_even_alongside_correct_quantity(self):
+        for minus in ('-', '−'):
+            trace = dict(BASE, reply=BASE['reply'] + f' Còn {minus}3 cái.')
+            self.assertIn('unsupported_or_missing_stock', evaluate([trace])[trace['case']]['failures'])
+
     def test_lookup_with_missing_call_fields_is_scored(self):
         for field in ('name', 'query', 'status'):
             trace = copy.deepcopy(BASE)
