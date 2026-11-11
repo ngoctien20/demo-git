@@ -1,4 +1,4 @@
-"""PostgreSQL transaction primitives. No HTTP route. Tenant and actor come from a trusted caller."""
+"""PostgreSQL merchant transactions. Actor must come from verified server identity."""
 import hashlib
 import json
 from uuid import UUID
@@ -6,6 +6,19 @@ from uuid import UUID
 
 class CommerceRejected(ValueError):
     pass
+
+
+def reserve_request(cursor, tenant, key, digest):
+    if not isinstance(key, str) or not 8 <= len(key) <= 128:
+        raise CommerceRejected("invalid_request")
+    cursor.execute("""INSERT INTO app_private.order_idempotency (tenant_id,request_key,request_sha256)
+                      VALUES (%s,%s,%s) ON CONFLICT (tenant_id,request_key) DO NOTHING""", (tenant,key,digest))
+    cursor.execute("""SELECT request_sha256,order_id FROM app_private.order_idempotency
+                      WHERE tenant_id=%s AND request_key=%s FOR UPDATE""", (tenant,key))
+    prior_digest, order = cursor.fetchone()
+    if prior_digest != digest:
+        raise CommerceRejected("key_conflict")
+    return order
 
 
 def checkout(connection, tenant: UUID, actor: UUID, key: str, cart: dict[str, int]) -> UUID:
@@ -19,13 +32,7 @@ def checkout(connection, tenant: UUID, actor: UUID, key: str, cart: dict[str, in
     digest = hashlib.sha256(json.dumps(cart, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     with connection.transaction(), connection.cursor() as c:
         authorize(c, tenant, actor)
-        c.execute("""INSERT INTO app_private.order_idempotency (tenant_id,request_key,request_sha256)
-                     VALUES (%s,%s,%s) ON CONFLICT (tenant_id,request_key) DO NOTHING""", (tenant,key,digest))
-        c.execute("""SELECT request_sha256,order_id FROM app_private.order_idempotency
-                     WHERE tenant_id=%s AND request_key=%s FOR UPDATE""", (tenant,key))
-        previous, order = c.fetchone()
-        if previous != digest:
-            raise CommerceRejected("key_conflict")
+        order = reserve_request(c, tenant, key, digest)
         if order:
             return order
         total = 0
@@ -66,16 +73,10 @@ def audit(cursor, tenant, actor, order, event):
 def cancel(connection, tenant: UUID, actor: UUID, order: UUID):
     with connection.transaction(), connection.cursor() as c:
         authorize(c, tenant, actor)
-        # Only reverse stock for orders created by this checkout path.
-        c.execute("""SELECT o.status FROM public.orders o WHERE o.tenant_id=%s AND o.id=%s
-                     AND EXISTS (SELECT 1 FROM app_private.order_idempotency i
-                                 WHERE i.tenant_id=o.tenant_id AND i.order_id=o.id) FOR UPDATE""", (tenant,order))
-        row = c.fetchone()
-        if not row:
-            raise CommerceRejected("unknown_order")
-        if row[0] == "cancelled":
+        status = lock_managed_order(c, tenant, order)
+        if status == "cancelled":
             return
-        if row[0] != "pending":
+        if status not in ("pending", "confirmed"):
             raise CommerceRejected("not_cancellable")
         c.execute("""SELECT i.product_id,i.quantity FROM public.order_items i JOIN public.products p
                      ON (p.id,p.tenant_id)=(i.product_id,i.tenant_id)
@@ -86,3 +87,60 @@ def cancel(connection, tenant: UUID, actor: UUID, order: UUID):
         c.execute("UPDATE public.orders SET status='cancelled',updated_at=now() WHERE tenant_id=%s AND id=%s",
                   (tenant,order))
         audit(c, tenant, actor, order, "cancel")
+
+
+def lock_managed_order(cursor, tenant, order):
+    cursor.execute("""SELECT status FROM public.orders o WHERE tenant_id=%s AND id=%s
+                      AND EXISTS (SELECT 1 FROM app_private.order_idempotency i
+                                  WHERE i.tenant_id=o.tenant_id AND i.order_id=o.id) FOR UPDATE""",
+                   (tenant, order))
+    row = cursor.fetchone()
+    if not row:
+        raise CommerceRejected("unknown_order")
+    return row[0]
+
+
+def update_order(connection, tenant, actor, order, key, *, sku=None, quantity=None, confirm=False):
+    """Set an existing line's quantity or confirm the order. Preserve its original unit price."""
+    if confirm:
+        if sku is not None or quantity is not None:
+            raise CommerceRejected("invalid_request")
+    elif not isinstance(sku, str) or not sku.strip() or len(sku) > 80 or type(quantity) is not int or not 1 <= quantity <= 10000:
+        raise CommerceRejected("invalid_request")
+    payload = ["merchant_change_v1", str(order), sku, quantity, confirm]
+    digest = hashlib.sha256(json.dumps(payload, separators=(",", ":")).encode()).hexdigest()
+    with connection.transaction(), connection.cursor() as cursor:
+        authorize(cursor, tenant, actor)
+        prior = reserve_request(cursor, tenant, key, digest)
+        if prior:
+            return prior
+        if lock_managed_order(cursor, tenant, order) != "pending":
+            raise CommerceRejected("not_pending")
+        if confirm:
+            cursor.execute("UPDATE public.orders SET status='confirmed',updated_at=clock_timestamp() WHERE tenant_id=%s AND id=%s",
+                           (tenant, order))
+        else:
+            cursor.execute("""SELECT i.id,i.product_id,i.quantity,i.unit_price_vnd
+                              FROM public.order_items i JOIN public.products p
+                                ON (i.tenant_id,i.product_id)=(p.tenant_id,p.id)
+                              WHERE i.tenant_id=%s AND i.order_id=%s AND p.sku=%s""", (tenant,order,sku))
+            row = cursor.fetchone()
+            if not row:
+                raise CommerceRejected("unknown_line")
+            item, product, old_quantity, price = row
+            delta = quantity - old_quantity
+            cursor.execute("""UPDATE public.products SET stock_on_hand=stock_on_hand-%s, updated_at=clock_timestamp()
+                              WHERE tenant_id=%s AND id=%s AND (%s <= 0 OR (is_active AND stock_on_hand >= %s))""",
+                           (delta, tenant, product, delta, delta))
+            if cursor.rowcount != 1:
+                raise CommerceRejected("unavailable")
+            cursor.execute("UPDATE public.order_items SET quantity=%s WHERE tenant_id=%s AND id=%s", (quantity,tenant,item))
+            cursor.execute("""UPDATE public.orders SET total_vnd=total_vnd+%s,updated_at=clock_timestamp()
+                              WHERE tenant_id=%s AND id=%s""", (delta*price,tenant,order))
+        cursor.execute("UPDATE app_private.order_idempotency SET order_id=%s WHERE tenant_id=%s AND request_key=%s",
+                       (order, tenant, key))
+        cursor.execute("""INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,request_id,metadata)
+                          VALUES (%s,%s,%s,%s,%s::jsonb)""",
+                       (tenant, actor, "confirm" if confirm else "quantity_change", str(order),
+                        json.dumps({"key":key} if confirm else {"key":key,"sku":sku,"before":old_quantity,"after":quantity})))
+        return order

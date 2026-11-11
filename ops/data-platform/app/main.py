@@ -72,7 +72,7 @@ def sanitize_rows(value: Any, columns: tuple[str, ...], tenant_id: UUID | None =
     return result
 
 
-def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTransport | None = None, commerce_connect=None) -> FastAPI:
     cfg = settings or Settings.from_env()
     n8n_replay = ReplayCache()
     app = FastAPI(title='TIEN404 SaaS Data Gateway STAGING', version='0.1.0',
@@ -214,6 +214,10 @@ def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTr
         })
         return {'items': sanitize_rows(data, fields, tenant_id), 'source': 'supabase_rls',
                 'observed_at': timestamp()}
+
+    if commerce_connect is not None:
+        from .merchant_orders import add_merchant_orders
+        add_merchant_orders(app, identity, commerce_connect)
 
     return app
 
