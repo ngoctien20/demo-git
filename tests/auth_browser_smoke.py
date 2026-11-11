@@ -43,14 +43,20 @@ export const authClient = {auth, async rpc(name,args) {
   const id = identity().id;
   const predicates = {};
   const query = {
-    select(fields, options){query.head=options?.head;return query;},
+    select(fields, options){query.head=options?.head;query.exact=options?.count;return query;},
     eq(column,value){
       predicates[column]=value;
-      if (query.head) {
-        if (column!=='tenant_id' || value!==id) throw Error('missing scope');
-        return {count:table==='products'?3:1};
-      }
       return query;
+    },then(resolve,reject){
+      const shop=predicates.tenant_id;
+      if(!query.head || query.exact!=='exact' || !(shop===id || (window.dualShop && id==='A' && shop==='C'))){
+        reject(Error('wrong count scope'));return;
+      }
+      if(table==='products' && ('is_active' in predicates || 'stock_on_hand' in predicates)){
+        if(predicates.is_active!==true || predicates.stock_on_hand!==0){reject(Error('wrong stock filters'));return;}
+        resolve(window.stockCountUnavailable ? {count:null} : {count:shop==='A'?2:0});return;
+      }
+      resolve({count:table==='products'?3:1});
     },in(){return query;},order(){return query;},
     ilike(column,value){predicates[column]=value;return query;},
     async range(start,end){
@@ -159,6 +165,14 @@ with sync_playwright() as playwright:
     expect(page.locator('.auth-tenant-card strong')).to_have_text('Shop A')
     expect(page.get_by_text('Sản phẩm: 3',exact=True)).to_be_visible()
     expect(page.get_by_text('Đơn hàng: 1',exact=True)).to_be_visible()
+    expect(page.get_by_text('Sản phẩm đang bán đã hết hàng: 2',exact=True)).to_be_visible()
+    page.evaluate('window.stockCountUnavailable=true')
+    page.get_by_role('button',name='Cập nhật tổng quan').click()
+    expect(page.get_by_text('Không tải được tổng quan.',exact=False)).to_be_visible()
+    expect(page.get_by_text('Sản phẩm đang bán đã hết hàng:',exact=False)).to_have_count(0)
+    page.evaluate('window.stockCountUnavailable=false')
+    page.get_by_role('button',name='Cập nhật tổng quan').click()
+    expect(page.get_by_text('Sản phẩm đang bán đã hết hàng: 2',exact=True)).to_be_visible()
     page.get_by_role('button',name='Xem sản phẩm').click()
     expect(page.locator('#account-tenants section').filter(has=page.get_by_role('button', name='Tải lại danh mục')).locator('li').first).to_contain_text('Sản phẩm A')
     page.get_by_role('button',name='Xem đơn hàng').click()
@@ -222,6 +236,7 @@ with sync_playwright() as playwright:
     expect(page.locator('.auth-tenant-card').get_by_text('Sản phẩm A',exact=False)).to_have_count(0)
     page.evaluate("window.changeFixtureIdentity('B')")
     expect(page.get_by_text('Shop B',exact=True)).to_be_visible()
+    expect(page.get_by_text('Sản phẩm đang bán đã hết hàng: 0',exact=True)).to_be_visible()
     expect(page.get_by_text('Sản phẩm: 3',exact=True)).to_be_visible()
     expect(page.get_by_text('Đơn hàng: 1',exact=True)).to_have_count(0)
     for private_module in ('Xuất báo cáo CSV','Xem giá trị đơn đã thanh toán','Xem đơn hàng','Xem khách hàng','Xem hội thoại','Xem AI Agent'):

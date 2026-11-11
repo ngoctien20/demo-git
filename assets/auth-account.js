@@ -120,13 +120,18 @@ function addMerchantOverview(card, tenant, viewGeneration) {
     grid.replaceChildren();
     summary.textContent='Đang đọc dữ liệu staging...';
     try {
-      const specs=[['Sản phẩm','products']];
+      const specs=[
+        ['Sản phẩm','products'],
+        ['Sản phẩm đang bán đã hết hàng','products',{is_active:true,stock_on_hand:0}]
+      ];
       if (['owner','manager'].includes(tenant.role)) {
         specs.push(['Đơn hàng','orders'],['Khách hàng','customers'],['Hội thoại','conversations']);
       }
-      const results=await Promise.all(specs.map(async ([label,table])=>{
-        const response=await withDeadline(sb.from(table).select('id',{count:'exact',head:true}).eq('tenant_id',tenant.id),13000);
-        if(response.error || !Number.isInteger(response.count))throw Error('count');
+      const results=await Promise.all(specs.map(async ([label,table,filters={}])=>{
+        let query=sb.from(table).select('id',{count:'exact',head:true}).eq('tenant_id',tenant.id);
+        for(const [column,value] of Object.entries(filters))query=query.eq(column,value);
+        const response=await withDeadline(query,13000);
+        if(response.error || !Number.isSafeInteger(response.count) || response.count<0)throw Error('count');
         return [label,response.count];
       }));
       if(viewGeneration!==generation)return;
