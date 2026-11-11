@@ -1,7 +1,7 @@
 name: Tenant agent assignment isolation
 on:
   pull_request:
-    paths: ['ops/data-platform/candidates/tenant_agent_configs.sql', 'ops/data-platform/qa/tenant_agents.sql', '.github/workflows/agent-assignment-qa.yml']
+    paths: ['ops/data-platform/candidates/merchant_paid_orders_daily.sql', 'ops/data-platform/candidates/tenant_agent_configs.sql', 'ops/data-platform/qa/tenant_agents.sql', '.github/workflows/agent-assignment-qa.yml']
   push:
     branches: ['work/v9-tenant-agent-preview']
 permissions:
@@ -39,4 +39,5 @@ jobs:
           SQL
           psql -v ON_ERROR_STOP=1 -f ops/data-platform/schema.staging.sql
           psql -1 -v ON_ERROR_STOP=1 -f ops/data-platform/candidates/tenant_agent_configs.sql
+          psql -1 -v ON_ERROR_STOP=1 -f ops/data-platform/candidates/merchant_paid_orders_daily.sql
           psql -v ON_ERROR_STOP=1 -f ops/data-platform/qa/tenant_agents.sql
