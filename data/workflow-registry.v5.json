@@ -1,0 +1,461 @@
+{
+  "schema_version": "5.0",
+  "snapshot_date": "2026-11-11",
+  "source": "TIEN404 n8n connector search_workflows (live), manual domain/risk grouping from inspected node descriptions",
+  "production_readiness_verified": false,
+  "notes": [
+    "This is a snapshot and not a sync with live n8n; active means workflow enabled, not production ready.",
+    "Unknown means side effects have not been fully reviewed, do not execute without inspecting published graph.",
+    "Never reuse demo Orders/Products or credentials for Commerce."
+  ],
+  "workflows": [
+    {
+      "id": "wgkkmT7q4lm4HyuA",
+      "name": "TIEN404 WEBSITE — DEMO & MARKETING AI (QA ISOLATED)",
+      "active": true,
+      "domain": "website",
+      "kind": "chat",
+      "risk": "read_only",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "wgkkmT7q4lm4HyuA",
+        "channel": "web",
+        "tenant_assignment": null,
+        "scope": "public_product_information",
+        "version": "fcda12f3-35c6-473e-bc9d-2359ada3989c",
+        "published_version": "fcda12f3-35c6-473e-bc9d-2359ada3989c",
+        "draft_dependencies": [],
+        "published_dependencies": [],
+        "tools": [],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-10T11:55:56.469Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
+      }
+    },
+    {
+      "id": "QR7aYMpLfKDLVgyH",
+      "name": "TIEN404_COMMERCE_V3_QA_EXTENSION_25",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock",
+      "component_type": "QA"
+    },
+    {
+      "id": "VBEns4KfWEz9AFgM",
+      "name": "TIEN404_COMMERCE_V3_RULES_EXTENSION_LAB",
+      "active": true,
+      "domain": "commerce",
+      "kind": "rules_sandbox",
+      "risk": "mock",
+      "component_type": "Tool"
+    },
+    {
+      "id": "Y0WLykMtNAldbgL0",
+      "name": "TIEN404_COMMERCE_V3_BUSINESS_CORE_SANDBOX",
+      "active": true,
+      "domain": "commerce",
+      "kind": "business_core_sandbox",
+      "risk": "mock",
+      "component_type": "Tool"
+    },
+    {
+      "id": "gpDYCp4sEzaVvPlb",
+      "name": "TIEN404_COMMERCE_00_START_HERE",
+      "active": false,
+      "domain": "commerce",
+      "kind": "guide",
+      "risk": "unknown",
+      "component_type": "Infrastructure"
+    },
+    {
+      "id": "iyfGUiEsZlNTBWOR",
+      "name": "TIEN404_COMMERCE_AI_AGENT_SANDBOX",
+      "active": false,
+      "domain": "commerce",
+      "kind": "ai_agent_sandbox",
+      "risk": "mock",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "iyfGUiEsZlNTBWOR",
+        "channel": "sandbox",
+        "tenant_assignment": null,
+        "scope": "commerce_sandbox",
+        "version": "ddc3ce5b-365e-47e2-a06d-08daffceb9a8",
+        "published_version": null,
+        "draft_dependencies": [
+          "5Eeh8hbpsoNhuiVo",
+          "oOOXicKXGkBskKqh",
+          "igPOsSbEgd4NgtRA",
+          "jirkuVts1AjIhnPJ",
+          "Y0WLykMtNAldbgL0"
+        ],
+        "published_dependencies": null,
+        "tools": [
+          "Search Tenant Catalog",
+          "Preview Tenant Cart",
+          "Create Sandbox Ticket",
+          "Check Store Availability",
+          "Preview Smart Pricing"
+        ],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-10T05:32:41.341Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
+      }
+    },
+    {
+      "id": "tjsVobfjKLnv0o6b",
+      "name": "TIEN404_COMMERCE_V3_REGRESSION_QA",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock",
+      "component_type": "QA"
+    },
+    {
+      "id": "3MzEyZgbwkRmO4NI",
+      "name": "AI_SALES_AGENT_TEST",
+      "active": false,
+      "domain": "demo",
+      "kind": "agent_test",
+      "risk": "may_write_orders",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "3MzEyZgbwkRmO4NI",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "a7bf9c44-499c-4925-acc6-f7b046cfd2a7",
+        "published_version": null,
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "published_dependencies": null,
+        "tools": [
+          "Get row(s) in sheet in Google Sheets",
+          "create_order",
+          "update_order_address",
+          "manage_order"
+        ],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T21:42:40.453Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
+      }
+    },
+    {
+      "id": "6sdM8zacoYQP1g5X",
+      "name": "TIEN404_AI_SALES_REVENUE_V2_STAGING",
+      "active": false,
+      "domain": "demo",
+      "kind": "revenue_staging",
+      "risk": "mock",
+      "component_type": "Tool"
+    },
+    {
+      "id": "fDB9dvs1qPPVt9Sp",
+      "name": "AI SALES - Manage Order",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders",
+      "component_type": "Tool"
+    },
+    {
+      "id": "KrSn4DNR9ALX5ng4",
+      "name": "Create Order Tool (AI_SALES_DEMO)",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders",
+      "component_type": "Tool"
+    },
+    {
+      "id": "Ax9P0JQlQu3gafZw",
+      "name": "TIEN404_COMMERCE_01_SHOP_PREFLIGHT",
+      "active": false,
+      "domain": "commerce",
+      "kind": "preflight",
+      "risk": "unknown",
+      "component_type": "QA"
+    },
+    {
+      "id": "Bc7UQjTIthfFB0PT",
+      "name": "TIEN404_COMMERCE_00_WIZARD_NEW_SHOP",
+      "active": false,
+      "domain": "commerce",
+      "kind": "wizard",
+      "risk": "unknown",
+      "component_type": "Infrastructure"
+    },
+    {
+      "id": "ZVmMlwe2g0bPjVEq",
+      "name": "TIEN404_COMMERCE_REGRESSION_QA",
+      "active": false,
+      "domain": "qa",
+      "kind": "regression",
+      "risk": "mock",
+      "component_type": "QA"
+    },
+    {
+      "id": "splyaeQtV719OuAu",
+      "name": "TIEN404_COMMERCE_SHOP_ONBOARDING",
+      "active": true,
+      "domain": "commerce",
+      "kind": "shop_onboarding",
+      "risk": "unknown",
+      "component_type": "Infrastructure"
+    },
+    {
+      "id": "jirkuVts1AjIhnPJ",
+      "name": "TIEN404_COMMERCE_SUPPORT_TICKETS_QA",
+      "active": true,
+      "domain": "commerce",
+      "kind": "support_ticket_qa",
+      "risk": "unknown",
+      "component_type": "QA"
+    },
+    {
+      "id": "igPOsSbEgd4NgtRA",
+      "name": "TIEN404_COMMERCE_CART_PREVIEW",
+      "active": true,
+      "domain": "commerce",
+      "kind": "cart_preview",
+      "risk": "read_only",
+      "component_type": "Tool"
+    },
+    {
+      "id": "oOOXicKXGkBskKqh",
+      "name": "TIEN404_COMMERCE_CATALOG_QUERY",
+      "active": true,
+      "domain": "commerce",
+      "kind": "catalog_query",
+      "risk": "read_only",
+      "component_type": "Tool"
+    },
+    {
+      "id": "5Eeh8hbpsoNhuiVo",
+      "name": "TIEN404_COMMERCE_TENANT_RESOLVER",
+      "active": true,
+      "domain": "commerce",
+      "kind": "tenant_resolver",
+      "risk": "read_only",
+      "component_type": "Tool"
+    },
+    {
+      "id": "Z7FdV7uDvApfbURQ",
+      "name": "TIEN404_MESSENGER_TEST",
+      "active": true,
+      "domain": "messenger",
+      "kind": "live_messenger_agent",
+      "risk": "may_send_and_write",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "Z7FdV7uDvApfbURQ",
+        "channel": "messenger",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "450d9d60-3853-45f3-979f-20164a4adc7b",
+        "published_version": "450d9d60-3853-45f3-979f-20164a4adc7b",
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp",
+          "4DFFCk60exrzaIl6",
+          "KqSuGxCHixc6fsiu"
+        ],
+        "published_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp",
+          "4DFFCk60exrzaIl6",
+          "KqSuGxCHixc6fsiu"
+        ],
+        "tools": [
+          "Read Products - Messenger Read Only",
+          "create_order",
+          "update_order_address",
+          "manage_order",
+          "get_order_status",
+          "create_support_ticket"
+        ],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T15:00:56.244Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
+      }
+    },
+    {
+      "id": "v6PBwcqSapVzACMW",
+      "name": "AI_SALES_DEMO - Main Agent",
+      "active": true,
+      "domain": "demo",
+      "kind": "legacy_sales_agent",
+      "risk": "may_write_orders",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "v6PBwcqSapVzACMW",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "c0f04eb1-9e2b-4b42-bf70-0ce12d5b0c30",
+        "published_version": "c0f04eb1-9e2b-4b42-bf70-0ce12d5b0c30",
+        "draft_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "published_dependencies": [
+          "KrSn4DNR9ALX5ng4",
+          "BkAi6TVUKAjCnI7v",
+          "fDB9dvs1qPPVt9Sp"
+        ],
+        "tools": [
+          "Get row(s) in sheet in Google Sheets",
+          "create_order",
+          "update_order_address",
+          "manage_order"
+        ],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "NOT_EVALUATED_V7",
+        "workflow_updated_at": "2026-11-09T15:00:52.095Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z"
+      }
+    },
+    {
+      "id": "KKqVV8CtmyXBmI1s",
+      "name": "TIEN404_QA_SIGNATURE_ISOLATED",
+      "active": false,
+      "domain": "qa",
+      "kind": "webhook_signature",
+      "risk": "mock",
+      "component_type": "Infrastructure"
+    },
+    {
+      "id": "ZXcKOgawwYPhDUBZ",
+      "name": "TIEN404_QA_HTTP_CLIENT",
+      "active": false,
+      "domain": "qa",
+      "kind": "http_client",
+      "risk": "mock",
+      "component_type": "Infrastructure"
+    },
+    {
+      "id": "8gA4A8TM3Z9waloB",
+      "name": "TIEN404_META_TOKEN_CHECK",
+      "active": false,
+      "domain": "messenger",
+      "kind": "credential_check",
+      "risk": "restricted",
+      "component_type": "QA"
+    },
+    {
+      "id": "KqSuGxCHixc6fsiu",
+      "name": "TIEN404_MESSENGER_SUPPORT_REQUESTS",
+      "active": true,
+      "domain": "messenger",
+      "kind": "support_tool",
+      "risk": "writes_tickets",
+      "component_type": "Tool"
+    },
+    {
+      "id": "4DFFCk60exrzaIl6",
+      "name": "TIEN404_MESSENGER_ORDER_STATUS",
+      "active": true,
+      "domain": "messenger",
+      "kind": "order_status_tool",
+      "risk": "read_only",
+      "component_type": "Tool"
+    },
+    {
+      "id": "NvQfIffOrZokPBPW",
+      "name": "AI_SALES_AGENT_ISOLATED_READONLY",
+      "active": false,
+      "domain": "demo",
+      "kind": "agent_test_readonly",
+      "risk": "read_only",
+      "component_type": "Agent",
+      "agent": {
+        "bot_id": "NvQfIffOrZokPBPW",
+        "channel": "lab",
+        "tenant_assignment": null,
+        "scope": "isolated_legacy_lab",
+        "version": "4c2575de-5a92-41aa-88ab-c84f7e2e7e9f",
+        "published_version": null,
+        "draft_dependencies": [],
+        "published_dependencies": null,
+        "tools": [
+          "Get row(s) in sheet in Google Sheets"
+        ],
+        "model": "gpt-5-mini",
+        "estimated_cost": null,
+        "qa_status": "PASS_QA_CATALOG_T_A",
+        "workflow_updated_at": "2026-11-09T14:35:36.644Z",
+        "graph_checked_at": "2026-11-11T03:29:00Z",
+        "last_evaluation": {
+          "execution_id": "1909",
+          "model": "gpt-5-mini",
+          "data_source": "toolCode synthetic catalog",
+          "input_sku": "T-A",
+          "expected": {
+            "price_vnd": 159000,
+            "stock": 8
+          },
+          "actual": {
+            "price_vnd": 159000,
+            "stock": 8
+          },
+          "tool_calls_completed": 1,
+          "latency_ms": 13639,
+          "estimated_tokens": 1272,
+          "billed_cost": null
+        }
+      }
+    },
+    {
+      "id": "U2DJsxzSYPH5hRop",
+      "name": "AI SALES - Revenue Report",
+      "active": true,
+      "domain": "demo",
+      "kind": "revenue_report",
+      "risk": "may_send_email",
+      "component_type": "Tool"
+    },
+    {
+      "id": "BkAi6TVUKAjCnI7v",
+      "name": "AI SALES - Update Order.",
+      "active": true,
+      "domain": "demo",
+      "kind": "order_tool",
+      "risk": "writes_orders",
+      "component_type": "Tool"
+    },
+    {
+      "id": "fWp1fBImX6K8ihOa",
+      "name": "TIEN404 STAGING — n8n Signed HMAC QA (INACTIVE)",
+      "active": false,
+      "domain": "qa",
+      "kind": "signed_staging_handshake",
+      "risk": "read_only",
+      "component_type": "QA"
+    },
+    {
+      "id": "E3He3Kr602j2B0wC",
+      "name": "TIEN404 STAGING — Render data bridge QA (READ-ONLY)",
+      "active": false,
+      "domain": "qa",
+      "kind": "render_health",
+      "risk": "read_only",
+      "component_type": "QA"
+    }
+  ]
+}
