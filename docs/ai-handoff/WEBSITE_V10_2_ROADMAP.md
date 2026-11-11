@@ -142,3 +142,17 @@ Người truy cập          Merchant Shop Owner/Staff           TIEN404 Platfor
 - Supabase Production Checklist: https://supabase.com/docs/guides/deployment/going-into-prod
 - Supabase Security Checklist: https://supabase.com/docs/guides/security/production-checklist
 - GitHub Pages Custom Domains: https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages
+
+
+## Quyết định của chủ dự án — GitHub-first / domain-deferred (2026-11-11)
+
+**Owner decision overrides W4 timing in the original roadmap:**
+
+- Chủ dự án **tự mua tên miền** khi thấy phù hợp. **Không mua, không trỏ DNS, không thêm custom domain, không tạo hoặc chuyển sang website thương mại ở thời điểm này.**
+- V10.2 **tiếp tục phát triển trên GitHub** `ngoctien20/demo-git`, ưu tiên feature branches/PR và GitHub Actions. `gh-pages` / `https://ngoctien20.github.io/demo-git/` là **website demo/preview hiện tại**, không phải production SaaS. Sau khi UI/code QA đạt, có thể cập nhật bản preview GitHub Pages theo quy trình bảo vệ branch, nhưng **không tự biến demo thành website có giao dịch/dữ liệu khách thật**.
+- V10.2 trước mắt gồm W1 Widget UI, W2 Login/Account UI trên Auth staging, W3 Super Admin staged read-only với phân quyền thực. Mục W4 **chỉ soạn hướng dẫn** cho hosting, domain, TLS, cấu hình Auth redirect, CI/CD và migration; mọi hành động cắt chuyển chỉ sau **phê duyệt mới bằng lời rõ ràng** của chủ dự án.
+- Không tự thay `ngoctien20.github.io/demo-git/` bằng domain ước đoán trong mã nguồn/canonical/OAuth redirects, không đổi Render production service, không tạo Supabase production project hay gói trả phí, không bật giao dịch khách thật.
+- **Điều kiện chuyển sau này:** (1) Chủ dự án sở hữu tên miền và cung cấp tên + nhà đăng ký, (2) được trình bày kế hoạch DNS và hạ tầng/cost/backup/rollback, (3) signed JWT A/B, RLS, bảo mật, Super Admin và E2E QA PASS, (4) **chủ dự án phê duyệt cutover bằng một yêu cầu riêng**. Khi đó mới hướng dẫn/cấu hình từng DNS record, xác nhận chứng chỉ HTTPS, redirect, cookies, CORS, callback, canonical/sitemap.
+- Để báo cáo tiến độ, phải tách **CODE_COMMITTED (GitHub)**, **PREVIEW_DEPLOYED (GitHub Pages/isolated staging)**, **PRODUCTION_DEPLOYED (domain/hosting thật)**. Hiện chỉ cập nhật tài liệu kế hoạch; không được xem V10.2 UI đã code/deploy vì vừa thêm kế hoạch này.
+
+**Quy trình release GitHub-first:** `feature/v10.2-*` → review/test → PR → staging/preview → nghiệm thu UI → cập nhật `gh-pages` demo có kiểm soát → *STOP* trước production migration. Mọi thay đổi vào preview phải tránh lộ secrets và dữ liệu khách; nhánh GitHub Pages chỉ dùng frontend.
