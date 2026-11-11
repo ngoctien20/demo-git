@@ -64,4 +64,28 @@ with TestClient(app) as client, connect() as db:
         assert send("POST",order+"/cancel","cancel-qa").status_code == 200
     assert amounts()==(2,300000,4)
     assert db.execute("SELECT count(*) FROM app_private.audit_events WHERE request_id=%s",(oid,)).fetchone()==(5,)
-print("PASS HTTP + PostgreSQL: verified-identity fixture, cross-tenant deny, retry, quantities, snapshotted pricing, confirm and cancel.")
+
+    # Exercise both SQL limits through HTTP, including rollback and same-key retry.
+    db.execute("UPDATE products SET price_vnd=1000000000000,stock_on_hand=2000 WHERE tenant_id=%s",(tenant,))
+    excessive = send("POST",root,"limit-create",{"items":{"QA":1001}})
+    assert (excessive.status_code, excessive.json()["detail"]) == (409, "order_total_limit")
+    boundary = send("POST",root,"limit-create",{"items":{"QA":1000}})
+    assert boundary.status_code == 200
+    boundary_order = root + "/" + boundary.json()["order_id"]
+    overflow = send("PUT",boundary_order+"/quantity","limit-edit",{"sku":"QA","quantity":1001})
+    assert (overflow.status_code, overflow.json()["detail"]) == (409, "order_total_limit")
+    def boundary_state():
+        return db.execute("""SELECT o.status,o.total_vnd,i.quantity,p.stock_on_hand FROM orders o
+                             JOIN order_items i ON i.order_id=o.id JOIN products p ON p.id=i.product_id
+                             WHERE o.id=%s""",(boundary.json()["order_id"],)).fetchone()
+    assert boundary_state() == ("pending",10**15,1000,1000)
+    db.execute("UPDATE products SET stock_on_hand=2147483647 WHERE tenant_id=%s",(tenant,))
+    for result in (send("PUT",boundary_order+"/quantity","limit-edit",{"sku":"QA","quantity":999}),
+                   send("POST",boundary_order+"/cancel","limit-cancel")):
+        assert (result.status_code,result.json()["detail"]) == (409,"stock_limit")
+    assert boundary_state() == ("pending",10**15,1000,2147483647)
+    db.execute("UPDATE products SET stock_on_hand=0 WHERE tenant_id=%s",(tenant,))
+    assert send("POST",boundary_order+"/cancel","limit-cancel").status_code == 200
+    assert boundary_state() == ("cancelled",10**15,1000,1000)
+
+print("PASS merchant HTTP transactions, limit conflicts, atomic rollback and retry")

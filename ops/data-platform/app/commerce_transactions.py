@@ -4,6 +4,10 @@ import json
 from uuid import UUID
 
 
+MAX_ORDER_VND = 10**15  # public.orders.total_vnd CHECK constraint
+MAX_STOCK = 2**31 - 1  # public.products.stock_on_hand is an integer
+
+
 class CommerceRejected(ValueError):
     pass
 
@@ -47,6 +51,8 @@ def checkout(connection, tenant: UUID, actor: UUID, key: str, cart: dict[str, in
             product_id, price = product
             items.append((product_id, quantity, price))
             total += quantity * price
+            if total > MAX_ORDER_VND:
+                raise CommerceRejected("order_total_limit")
         c.execute("""INSERT INTO public.orders (tenant_id,total_vnd,order_source)
                      VALUES (%s,%s,'api') RETURNING id""", (tenant,total))
         order = c.fetchone()[0]
@@ -83,7 +89,10 @@ def cancel(connection, tenant: UUID, actor: UUID, order: UUID):
                      WHERE i.tenant_id=%s AND i.order_id=%s ORDER BY p.sku COLLATE "C" """, (tenant,order))
         for product, quantity in c.fetchall():
             c.execute("""UPDATE public.products SET stock_on_hand=stock_on_hand+%s,updated_at=now()
-                         WHERE tenant_id=%s AND id=%s""", (quantity,tenant,product))
+                         WHERE tenant_id=%s AND id=%s AND stock_on_hand <= %s""",
+                      (quantity,tenant,product,MAX_STOCK-quantity))
+            if c.rowcount != 1:
+                raise CommerceRejected("stock_limit")
         c.execute("UPDATE public.orders SET status='cancelled',updated_at=now() WHERE tenant_id=%s AND id=%s",
                   (tenant,order))
         audit(c, tenant, actor, order, "cancel")
@@ -129,6 +138,11 @@ def update_order(connection, tenant, actor, order, key, *, sku=None, quantity=No
                 raise CommerceRejected("unknown_line")
             item, product, old_quantity, price = row
             delta = quantity - old_quantity
+            if delta < 0:
+                cursor.execute("SELECT stock_on_hand FROM public.products WHERE tenant_id=%s AND id=%s FOR UPDATE",
+                               (tenant, product))
+                if cursor.fetchone()[0] > MAX_STOCK + delta:
+                    raise CommerceRejected("stock_limit")
             cursor.execute("""UPDATE public.products SET stock_on_hand=stock_on_hand-%s, updated_at=clock_timestamp()
                               WHERE tenant_id=%s AND id=%s AND (%s <= 0 OR (is_active AND stock_on_hand >= %s))""",
                            (delta, tenant, product, delta, delta))
@@ -136,7 +150,10 @@ def update_order(connection, tenant, actor, order, key, *, sku=None, quantity=No
                 raise CommerceRejected("unavailable")
             cursor.execute("UPDATE public.order_items SET quantity=%s WHERE tenant_id=%s AND id=%s", (quantity,tenant,item))
             cursor.execute("""UPDATE public.orders SET total_vnd=total_vnd+%s,updated_at=clock_timestamp()
-                              WHERE tenant_id=%s AND id=%s""", (delta*price,tenant,order))
+                              WHERE tenant_id=%s AND id=%s AND total_vnd <= %s""",
+                           (delta*price,tenant,order,MAX_ORDER_VND-delta*price))
+            if cursor.rowcount != 1:
+                raise CommerceRejected("order_total_limit")
         cursor.execute("UPDATE app_private.order_idempotency SET order_id=%s WHERE tenant_id=%s AND request_key=%s",
                        (order, tenant, key))
         cursor.execute("""INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,request_id,metadata)

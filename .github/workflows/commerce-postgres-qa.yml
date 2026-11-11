@@ -3,6 +3,12 @@ on:
   push:
     branches: [ops/tenant-data-platform-v1-staging-20261110]
     paths: ['ops/data-platform/app/merchant_orders.py', 'ops/data-platform/qa/commerce_http.py', 'ops/data-platform/app/main.py', 'ops/data-platform/candidates/merchant_product.sql', 'ops/data-platform/qa/merchant_product.sql', 'ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
+  pull_request:
+    paths:
+      - 'ops/data-platform/app/**'
+      - 'ops/data-platform/qa/**'
+      - 'ops/data-platform/schema.staging.sql'
+      - '.github/workflows/commerce-postgres-qa.yml'
   workflow_dispatch:
 permissions:
   contents: read

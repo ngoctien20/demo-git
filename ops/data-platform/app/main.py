@@ -7,7 +7,7 @@ service-role secret. No mutations, payment, bot activation, or production data.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from .signed_n8n import ReplayCache, verify_request
+from .signed_n8n import MAX_BODY, ReplayCache, verify_request
 from datetime import datetime, timezone
 import os
 import re
@@ -162,9 +162,14 @@ def create_app(settings: Settings | None = None, *, transport: httpx.AsyncBaseTr
         # No tenant resolver and no business writes: a staging connectivity proof.
         if request.headers.get('content-type', '').split(';', 1)[0].lower() != 'application/json':
             raise HTTPException(status_code=415, detail='JSON_REQUIRED')
+        raw = bytearray()
+        async for chunk in request.stream():
+            if len(raw) + len(chunk) > MAX_BODY:
+                raise HTTPException(status_code=413, detail='INVALID_BODY_SIZE')
+            raw.extend(chunk)
         verified = verify_request(
             secret=os.getenv('TIEN404_N8N_STAGING_SECRET', ''),
-            raw=await request.body(),
+            raw=bytes(raw),
             timestamp=request.headers.get('X-TIEN404-Timestamp'),
             nonce=request.headers.get('X-TIEN404-Nonce'),
             signature=request.headers.get('X-TIEN404-Signature'),

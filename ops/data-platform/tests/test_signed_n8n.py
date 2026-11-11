@@ -63,3 +63,23 @@ def test_invalid_body_and_unsigned_anonymous_rejected(monkeypatch):
         assert c.post(PATH,json={'action':'PING'}).status_code==401
         body,headers=make_signed()
         assert c.post(PATH,content=body+b' '*2000,headers=headers).status_code==413
+
+
+def test_chunked_overflow_stops_consuming_stream(monkeypatch):
+    import asyncio
+    from starlette.requests import Request
+    from fastapi import HTTPException
+    from app.signed_n8n import MAX_BODY
+
+    app = create_app(Settings())
+    endpoint = next(route.endpoint for route in app.routes if route.path == PATH)
+    chunks = iter([b'x' * MAX_BODY, b'x'])
+    async def receive():
+        return {"type": "http.request", "body": next(chunks), "more_body": True}
+    request = Request({"type": "http", "headers": [(b"content-type", b"application/json")]}, receive)
+    try:
+        asyncio.run(endpoint(request))
+    except HTTPException as exc:
+        assert exc.status_code == 413
+    else:
+        raise AssertionError("Expected early rejection")
