@@ -44,3 +44,117 @@
 .auth-tenant-card li{margin-block:7px}
 .auth-tenant-card select{max-width:100%;min-height:44px}
 .merchant-pagination{display:flex;gap:8px;flex-wrap:wrap}
+
+
+/* V10.3 — Merchant Auth visual upgrade; scoped to existing staging forms.
+   Deliberately leaves Supabase Auth, tenant resolution, RLS and enabled flags unchanged. */
+.auth-viewport{
+  position:relative;
+  isolation:isolate;
+  background:
+    radial-gradient(ellipse 43% 36% at 15% 16%,rgba(101,95,238,.11),transparent 72%),
+    radial-gradient(ellipse 35% 32% at 88% 78%,rgba(59,205,231,.075),transparent 72%);
+}
+.auth-viewport .container{position:relative;z-index:1}
+.auth-kicker{
+  gap:10px;
+  padding:7px 11px;
+  border:1px solid rgba(124,226,194,.32);
+  border-radius:999px;
+  background:rgba(46,120,113,.1);
+  color:#99edca;
+  font-size:11px;
+  letter-spacing:.075em;
+}
+.auth-heading{font-weight:800;line-height:1.09;letter-spacing:-.055em}
+.auth-intro{max-width:600px;font-size:clamp(14px,1.1vw,16px);line-height:1.85}
+.auth-points{list-style:none;padding:0;display:grid;gap:11px;margin:27px 0}
+.auth-points li{position:relative;padding:12px 12px 12px 40px;border:1px solid rgba(131,139,187,.2);border-radius:12px;background:rgba(27,30,57,.52);line-height:1.4;color:#d5daf5;font-size:14px}
+.auth-points li:before{content:"✓";position:absolute;left:15px;top:11px;color:#9eeace;font-weight:800}
+.auth-panel{
+  border:1px solid rgba(151,132,234,.4);
+  border-radius:25px;
+  background:linear-gradient(150deg,rgba(27,29,60,.97),rgba(15,17,36,.97));
+  box-shadow:0 28px 80px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.045);
+}
+.auth-layout>.auth-panel{max-width:530px;width:100%;justify-self:end}
+.auth-panel h2{font-size:clamp(23px,2.3vw,29px);font-weight:790;letter-spacing:-.035em}
+.auth-panel p{line-height:1.7}
+.auth-panel label{font-size:13px;color:#e3e5fa;letter-spacing:.005em}
+.auth-panel input{
+  min-height:52px;
+  border-radius:13px;
+  border:1px solid #9790c1;
+  background:#f7f7ff;
+  transition:border-color .2s,box-shadow .2s;
+}
+.auth-panel input:hover{border-color:#bba7ff}
+.auth-panel input:focus-visible{
+  outline:2px solid #aa93ff;
+  outline-offset:2px;
+  box-shadow:0 0 0 4px rgba(159,109,235,.14);
+}
+.auth-panel button[type=submit]{
+  background:linear-gradient(115deg,var(--blue,#5277ff),var(--violet,#a35afb));
+  border:1px solid rgba(223,206,255,.2);
+  font-weight:800;
+  box-shadow:0 8px 25px rgba(90,87,230,.2);
+  transition:filter .2s,box-shadow .2s;
+}
+.auth-panel button[type=submit]:not([disabled]):hover{filter:brightness(1.1);box-shadow:0 10px 30px rgba(99,73,229,.38)}
+.auth-panel button[type=submit]:focus-visible,.auth-toolbar button:focus-visible,.auth-text-button:focus-visible,.auth-account-link:focus-visible{
+  outline:3px solid #c8b9ff;
+  outline-offset:3px;
+}
+.auth-note{
+  background:rgba(22,25,47,.8);
+  border:1px solid rgba(154,133,218,.42);
+  border-left:3px solid #9774ed;
+  line-height:1.75;
+  color:#d5daf6;
+}
+.auth-message{border-color:rgba(152,142,205,.43);background:rgba(39,42,75,.75)}
+.auth-message[data-state=error]{border-color:#bc637f}
+.auth-account{max-width:1110px}
+.auth-account .auth-heading{margin:14px 0}
+.auth-account-actions{align-items:flex-end;padding-bottom:18px;border-bottom:1px solid rgba(141,142,201,.2)}
+.auth-toolbar{align-items:center}
+.auth-toolbar .btn{
+  background:rgba(38,42,78,.9);
+  border:1px solid rgba(124,129,185,.45);
+  color:#f1f1ff;
+  min-height:43px;
+  border-radius:11px;
+}
+.auth-account-status{margin:20px 0}
+.auth-card-list{gap:18px;margin-top:22px}
+.auth-tenant-card{
+  border:1px solid rgba(132,133,194,.38);
+  border-radius:17px;
+  background:linear-gradient(145deg,rgba(30,34,67,.85),rgba(17,20,43,.9));
+  padding:20px;
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+}
+.auth-tenant-card strong{font-size:17px;letter-spacing:-.02em}
+.auth-tenant-card small{line-height:1.6}
+.auth-tenant-card button,
+.auth-tenant-card select{min-height:40px;max-width:100%;border-radius:10px}
+.auth-tenant-card :focus-visible{outline:2px solid #ad9bff;outline-offset:3px}
+@media(max-width:750px){
+  .auth-viewport{padding:34px 0}
+  .auth-layout{gap:26px;grid-template-columns:minmax(0,1fr)}
+  .auth-layout>.auth-panel{max-width:none;justify-self:stretch}
+  .auth-panel{padding:22px;border-radius:20px}
+  .auth-heading{font-size:clamp(32px,8vw,42px)}
+  .auth-points{gap:8px;margin:17px 0}
+  .auth-account-actions{align-items:flex-start}
+  .auth-toolbar{gap:8px}
+}
+@media(max-width:380px){
+  .auth-panel{padding:18px}
+  .auth-tenant-card{padding:15px}
+  .auth-toolbar .btn{font-size:13px;padding:10px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .auth-panel input,.auth-panel button[type=submit]{transition:none}
+}
