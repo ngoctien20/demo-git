@@ -75,3 +75,20 @@ User submitted six complete Messenger replies from live pilot. Workflows `Z7FdV7
 - User-supplied messenger reply reports `TKT-1794397853790-H324RP` for complaint "missing one white shirt; does not remember order ID; wants staff". Independently verified live Messenger execution `2246` success, `create_support_ticket` success status `ticket_created` and matching `ticket_id`. Main Agent output includes exact ID; Send Messenger Reply and Verify Messenger Send Result executed successfully with Meta acknowledgement.
 - Subworkflow `TIEN404_MESSENGER_SUPPORT_REQUESTS` (`KqSuGxCHixc6fsiu`) execution `2247` success: `Validate Support Request` valid, `Write Support Ticket` output included persisted row `id, createdAt, updatedAt`, and `Ticket Saved` returned `success=true,status=ticket_created,ticket_id` matching the exact sample. `order_id` is allowed empty, so the complaint can be created without the buyer remembering the order code.
 - Release gate: **Support ticket creation on a live signed Messenger event PASS**; no evidence that any human employee received a notification or picked up the ticket. Bot must not promise direct handoff or fast reply. Follow-up user messages must not be described as appended to the same ticket unless an update-ticket capability and evidence exist. Do not write customer contact or sender IDs into public QA notes.
+
+
+### V10.3 staging QA — Cloudflare + Auth + Admin (2026-11-11 JST)
+
+| Evidence | Result | Scope limitation |
+|---|---|---|
+| [Widget CI 43035200229](https://github.com/ngoctien20/demo-git/actions/runs/43035200229), commit `2a276a8` | **PASS 25/25** local browser responsive 390/768/1440, widget Escape/focus/mobile bounds, HTTP parity old Pages/Cloudflare | No n8n live message or actual API transaction |
+| [Auth CI 43035277528](https://github.com/ngoctien20/demo-git/actions/runs/43035277528), commit `ffca72d` | **PASS** static no-demo/no-secret/Auth helper/build + isolated Chromium | Real QA JWT A/B, user login/recovery and new CSS Render deployment NOT_RUN |
+| [Super Admin CI 43035070898](https://github.com/ngoctien20/demo-git/actions/runs/43035070898), commit `1d84a4f` | **PASS 71/71**, 1 warning; isolated MFA/RBAC/tenancy backend tests | Hosted admin-only staging URL NOT_DEPLOYED |
+| Cloudflare preview deploy `5727518f-e644-4e9a-9965-e82b799e5e02` | **SUCCESS**, branch widget SHA `2a276a8` | Cloudflare project's gh-pages production-branch deployment unchanged |
+| Render existing live deploys | Auth `dep-dbq33krl550s739e1vfg` / Data `dep-dbq30a2jnfac73euucsg` confirmed live | New Auth/Admin PRs unmerged/unreleased |
+| Supabase metadata | **9/9 public tables RLS enabled** with ≥1 policy | Policy semantics and real HTTP JWT cross-tenant not verified; two security WARN still open |
+| n8n metadata | Commerce QA latest runs `2085`, `2090`, `2102` SUCCESS | Read-only metadata: not a re-executed regression suite by this workstream |
+
+- Initial Widget CI runs `43033647644`/`43033814907` FAILED on Ubuntu mirror DNS while installing browser dependencies; after removing `--with-deps`, the later run `43035200229` passed. These failures are infrastructure setup rather than UI test assertions.
+- Cloudflare Pages preview branch controls unexpectedly allowed some PR-related Auth/Admin deployments to be scheduled as `idle`. Preview settings explicitly reverted to `none` with read-back. No known production deployment changed; no DNS, Supabase Auth, n8n Meta or real orders touched.
+- Detailed SHA, branch, endpoints, limits and next gates: `V10_3_4_IMPLEMENTATION.md`.
