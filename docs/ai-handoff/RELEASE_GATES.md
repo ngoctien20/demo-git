@@ -20,3 +20,20 @@ Nếu duyệt mở catalog trong giới hạn hai shop QA, phải kiểm soát g
 ## Quyết định V10.1 — cấp quyền catalog hai shop QA
 
 Chủ dự án đã phê duyệt **đúng hai Shop QA trên staging** cho owner/manager tạo/sửa sản phẩm, không áp dụng production hoặc các tenant khác. Đã triển khai RPC trong migration `20261111095308`, quyền EXECUTE chỉ với `authenticated` và kiểm allowlist tenant phía DB. Giao diện editor vẫn tắt; signed HTTP JWT A/B + staff/anon/nonmember, review Advisor WARN cho SECURITY DEFINER, backup và rollback là các gate bắt buộc trước khi bật form. Phê duyệt này KHÔNG đồng thời cho phép Publish Messenger, tạo đơn thật hoặc kết nối dữ liệu AI_SALES_DEMO vào Commerce.
+
+
+## V10.2 — chủ dự án chốt triển khai GitHub trước, domain sau
+
+**OWNER APPROVAL STATUS**
+
+| Mục | Phê duyệt |
+|---|---|
+| Phát triển mã widget, Login/Account, Super Admin trên nhánh GitHub + QA | YES — trong phạm vi staging và dữ liệu giả/đã ủy quyền |
+| Cập nhật bản demo/preview GitHub Pages sau CI/UI QA, giữ nguyên các hệ thống live khác | YES — preview only; cần bảo vệ và rollback code |
+| Soạn tài liệu kiến trúc, chi phí, hướng dẫn DNS/hosting/cutover | YES — planning only |
+| Đăng ký/mua tên miền | NO — chủ dự án tự thực hiện sau |
+| Thiết lập custom domain, sửa DNS, thay OAuth redirect/canonical sang domain thật | NO |
+| Tạo production hosting, production DB, mua dịch vụ trả phí hoặc bắt đầu giao dịch khách thật | NO |
+| Kết nối Super Admin prototype trực tiếp với production hay cấp quyền admin rộng | NO — phải qua review và approval riêng |
+
+**RELEASE GATE HARD STOP:** Chưa có phê duyệt mới bằng lời rõ ràng của chủ dự án thì không được chuyển từ GitHub demo/staging sang website thương mại thực, kể cả khi các test tự động đều xanh. Khi có domain, hướng dẫn cấu hình DNS/Render/TLS/Auth redirects từng bước sau khi kiểm tra hạ tầng thực tế. Xem `WEBSITE_V10_2_ROADMAP.md`.
