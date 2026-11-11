@@ -19,3 +19,10 @@ Phiên song song đã mở [PR #20](https://github.com/ngoctien20/demo-git/pull/
 - **Cloudflare canonical** production environment deployment `2715c6e2-edc1-4a5d-9ceb-5953311b752d`, SUCCESS at `gh-pages 6bb57e6`. Its newest overall event `70e34d43-a9ea-4755-9369-612af0f8b360` is a **SKIPPED preview** (preview_deployments_disabled), NOT an active release. Never conflate these.
 - **Render Auth** newer live deploy `dep-dbqeqgafngtc73fcpf9g` at commit `deaa5e1c6193a7861f6f3d1b55448a1ce1c05624`; Render Data remains live `dep-dbq30a2jnfac73euucsg` / `3c29f70e...`. Both have auto-deploy OFF; verify hosted artifact SHA before accepting code changes.
 - Staging readiness remains **NOT READY for paid customers**; live signed two-Auth-session A/B and real browser persistence, Super Admin hosted identity, commerce live gateway writes, backup restore on isolated Supabase and privacy/legal/payment gates remain open. Production unchanged.
+
+
+### 12/11/2026 — V11 hosted health + Auth SHA gate **VERIFIED PASS**
+
+- Both latest CI on docs continuation SHA `8847b685ffb1308143f02d8a9d0e7fbffbd9bfee` completed SUCCESS: [hosted Auth release 43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858) and [read-only public provider smoke 43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699).
+- Auth verification had FAILED on older docs SHA because its pinned build candidate was `32669aba` while Render was serving `deaa5e1c`; corrected the isolated docs branch's default candidate to actual Render Auth deployed SHA `deaa5e1c6193a7861f6f3d1b55448a1ce1c05624`. Hosted build/byte and anonymous mobile Chromium QA then passed. This is **not** proof of authenticated user A/B sessions.
+- Public smoke verified real HTTP: Cloudflare 200, GitHub Pages 200, Render Auth login 200, Render Data health 200, anonymous API 401, forged JWT API 401. One transient Render Free 503 during cold-start was recorded and recovered on attempt 3. The test has a bounded wait and continues to FAIL persistent 503. No production action.

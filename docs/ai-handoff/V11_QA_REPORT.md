@@ -30,3 +30,15 @@ Chưa đo tải 100 cửa hàng, chi phí model thực, E2E giao dịch thật, 
 | Public multi-provider health | `.github/workflows/v11-public-staging-health.yml` | **Test introduced**; do not call PASS until the new CI run is verified. Proves public HTTPS and anonymous 401 only. |
 
 **Still NOT_RUN:** two real Supabase Auth user sessions A/B including refresh/logout and forbidden writes, end-to-end merchant transactions through a deploy with trusted gateway identity, actual Messenger live order tool, independent live restore. Existing mock JWT A/B is not a live Auth token verification.
+
+
+### Latest independent on-host QA — 12/11/2026 JST
+
+| Test | Latest evidence | State |
+|---|---|---|
+| Public staging / anonymous deny | [GitHub Actions 43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699) | **PASS**. 7 fixture tests + six live read-only HTTP checks (Cloudflare 200, GitHub Pages 200, Render Auth login 200, Render Data health 200, anon tenants 401, forged bearer 401). Cold-start HTTP 503 logged and recovered on attempt 3. |
+| Hosted Render Auth deployed SHA | [GitHub Actions 43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858) | **PASS**. Pinned candidate updated to actual deployed Render commit `deaa5e1c6...`; built artifacts matched hosted and mobile anonymous Chromium smoke verified account protected after refresh. |
+| Previous hosted Auth default SHA | [GitHub Actions 43116409568](https://github.com/ngoctien20/demo-git/actions/runs/43116409568) | **FAIL expected from stale comparison** `32669aba...` vs current deployed Render `deaa5e1c6...`; corrected without modifying service deployment. |
+| Initial public Render Free warmup | [GitHub Actions 43115725125](https://github.com/ngoctien20/demo-git/actions/runs/43115725125) | **FAIL**: health 503 during Render Free cold start before 7s Uvicorn startup; bounded retries now preserve this incident evidence and fail on sustained 503. |
+
+Neither public health smoke nor anonymous browser tests verifies a real signed-in A/B session. Pilot gate remains BLOCKED.

@@ -22,3 +22,10 @@ Rollback Auth: xác nhận SHA đang phục vụ, chọn deployment trước dep
 | Supabase PostgreSQL staging | migration `20261111225128 v11_qa_merchant_product_stale_conflict_pt409` applied | Only QA two-shop product-RPC error semantics; versioned source in Draft PR #26 |
 
 No Cloudflare Pages deploy or Render service redeploy was triggered by this continuation. No DNS/domain/production change. Prior V11 Auth deploy row above remains historical, not the latest release.
+
+
+### Hosted staging health verification — 12/11/2026
+
+Real read-only CI [43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699) confirmed current public Cloudflare and GitHub Pages sites + both Render staging services respond 200 after bounded warmup. Data API rejects anonymous and forged JWT with 401. Render Free transient 503 recovered attempt 3; log-based confirmation showed Uvicorn startup completion roughly 7 seconds after process start. No Render deploy was triggered to resolve it.
+
+Hosted Render Auth verification [43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858) confirms pinned commit `deaa5e1c6193a7861f6f3d1b55448a1ce1c05624` matches actual hosted artifacts and anonymous Chromium denial; earlier default `32669aba...` was stale and yielded a false SHA mismatch. The docs QA workflow's default SHA has been corrected on isolated PR #27; no live service source was changed.

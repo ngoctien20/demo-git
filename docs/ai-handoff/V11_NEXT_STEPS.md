@@ -26,3 +26,10 @@ Fetch các branch của PR #13–20 và ref staging, đối chiếu deployment L
 5. Verify on-demand public provider health CI and store outcome without asserting cloud deployment SHA from an HTTP status code.
 6. Build/review Super Admin hosted identity adapter, backup/restore isolated rehearsal, quota/AI monitoring, Messenger QA with owner-chosen approved channel.
 7. Draft production readiness checklist for 1→3→5 merchant pilots. Continue to forbid DNS/domain purchase, billing activation and production merge without owner's approval.
+
+
+### Verified follow-up from 12/11/2026 CTO continuation
+
+- Public staging health and hosted anonymous Auth SHA checks are now **PASS** at [43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699) and [43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858); do not repeat the stale default SHA `32669aba...` when validating the current Render Auth release `deaa5e1c...`. Work #25 independently tracks the related QA workflow correction; avoid duplicate PR merges.
+- Render Free cold start must be monitored as a transient 503/recovery event, not silently classified as uptime. Persistent 503 must fail the release gate and be escalated.
+- P0 remains signed-in, independent Supabase Auth sessions A/B with tenant negative writes/reopen/refresh/logout. Anonymous-only PASS is not sufficient for release.
