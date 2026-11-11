@@ -48,5 +48,18 @@ class PublicHealthSmokeTests(unittest.TestCase):
         with self.assertRaisesRegex(probe.SmokeFailure,"forged_bearer_denial"):
             probe.run_suite(wrong)
 
+    def test_transient_503_cold_start_is_recorded_and_recovered(self):
+        from unittest.mock import patch
+        responses=iter([(503,{},b""),(503,{},b""),(200,{},b"ok")])
+        with patch.object(probe,"request_once",side_effect=lambda url,headers=None:next(responses)) as req, patch.object(probe.time,"sleep") as sleeper:
+            self.assertEqual(probe.request_with_retry(probe.RENDER_DATA+"/health")[0],200)
+            self.assertEqual(req.call_count,3)
+            self.assertEqual(sleeper.call_count,2)
+    def test_persistent_503_never_becomes_pass(self):
+        from unittest.mock import patch
+        with patch.object(probe,"request_once",return_value=(503,{},b"")) as req, patch.object(probe.time,"sleep"):
+            status,_,_=probe.request_with_retry(probe.RENDER_DATA+"/health")
+            self.assertEqual(status,503)
+            self.assertEqual(req.call_count,12)
 if __name__=="__main__":
     unittest.main()

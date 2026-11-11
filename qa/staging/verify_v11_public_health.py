@@ -33,15 +33,24 @@ def request_once(url: str, headers: dict[str, str] | None = None) -> tuple[int, 
             return err.code, dict(err.headers.items()), err.read(4096)
 
 def request_with_retry(url: str, headers: dict[str, str] | None = None):
-    for attempt in range(3):
+    # Render Free can return 503 while an idle instance wakes up; the initial
+    # response is evidence of a cold start, not a successful health check.
+    # Retry GET only, with a bounded 55-second maximum waiting period.
+    previous_status=None
+    for attempt in range(12):
         try:
             status,hdr,data=request_once(url,headers=headers)
-            if status not in (502,503,504) or attempt==2:
+            if status not in (502,503,504):
+                if attempt:
+                    print(f"NOTICE transient_http={previous_status or 'connection'} recovered_attempt={attempt+1}")
                 return status,hdr,data
+            previous_status=status
+            if attempt==11:
+                return status,hdr,data  # final non-200 MUST fail in run_suite
         except (TimeoutError,URLError):
-            if attempt==2:
+            if attempt==11:
                 raise SmokeFailure("CONNECTIVITY_UNAVAILABLE")
-        time.sleep(4)
+        time.sleep(5)
     raise SmokeFailure("HTTP_UNAVAILABLE")
 
 def assert_status(label: str, observed: int, wanted: int):
