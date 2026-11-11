@@ -322,3 +322,144 @@
   .ai-live-compact-button{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.ai-live-compact-button{transition:none}}
+
+
+/* V10.3 — TIEN404 design-system pass (staging branch only).
+ * Purely visual: preserves n8n transport, message history and custom Android composer.
+ * Canonical tokens live in assets/style.css; keep this section scoped to the widget.
+ */
+.tien404-floating-widget{
+  --tien-chat-surface:var(--surface,#111428);
+  --tien-chat-surface2:var(--surface2,#171a31);
+  --tien-chat-line:var(--line,#292b48);
+  --tien-chat-muted:var(--muted,#a3a7bd);
+  font-family:inherit;
+}
+.tien404-chat-launcher{
+  min-height:56px;
+  padding:12px 19px;
+  font:750 14px/1.3 inherit;
+  letter-spacing:.005em;
+  border:1px solid rgba(197,183,255,.42);
+  background:linear-gradient(120deg,var(--blue,#5277ff),var(--violet,#a35afb));
+  box-shadow:0 14px 35px rgba(36,25,111,.38),inset 0 1px rgba(255,255,255,.25);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+.tien404-chat-launcher:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 18px 45px rgba(45,30,119,.46)}
+.tien404-chat-launcher[aria-expanded="true"]{box-shadow:0 0 0 3px rgba(153,127,250,.18)}
+.tien404-chat-panel{
+  width:min(410px,calc(100vw - 24px));
+  height:min(620px,calc(100dvh - 108px));
+  border:1px solid rgba(135,132,205,.45);
+  border-radius:22px;
+  background:var(--bg2,#0a0c1c);
+  box-shadow:0 26px 85px rgba(3,5,20,.76),0 0 0 1px rgba(255,255,255,.035) inset;
+  color:var(--white,#f5f5ff);
+  isolation:isolate;
+}
+.tien404-panel-head{
+  position:relative;
+  min-height:72px;
+  padding:16px 18px 15px 60px;
+  background:linear-gradient(125deg,rgba(34,38,77,.96),rgba(21,22,49,.96));
+  border-bottom:1px solid rgba(148,136,223,.26);
+}
+.tien404-panel-head:before{
+  content:"✦";
+  position:absolute;
+  left:17px;
+  top:17px;
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center;
+  color:#f7f5ff;
+  border-radius:11px;
+  font-size:18px;
+  background:linear-gradient(135deg,#556dff,#a75be4);
+  box-shadow:0 6px 18px rgba(84,69,210,.35);
+}
+.tien404-panel-head strong{font-size:15px;line-height:1.3;letter-spacing:-.01em;font-weight:780}
+.tien404-panel-head small{font-size:12px;color:#b8c4e7;line-height:1.4}
+.tien404-panel-head button{
+  min-width:40px;
+  min-height:40px;
+  background:rgba(93,88,143,.3);
+  border-color:rgba(171,159,229,.35);
+  border-radius:12px;
+  font-size:21px;
+  transition:background .2s ease;
+}
+.tien404-panel-head button:hover{background:rgba(121,103,196,.45)}
+.tien404-chat-panel .ai-live-card,
+.tien404-chat-panel .tien404-ai-chat,
+.tien404-chat-panel #n8n-chat{background:var(--bg2,#0a0c1c)}
+.tien404-chat-panel #n8n-chat .chat-body{padding:18px 14px!important;scrollbar-color:#56527d transparent}
+.tien404-chat-panel #n8n-chat .chat-message{max-width:94%;border-radius:15px;line-height:1.55;overflow-wrap:anywhere}
+.tien404-chat-panel #n8n-chat .chat-message-from-bot{border:1px solid rgba(162,160,230,.16)}
+.tien404-chat-panel .tien404-composer{
+  background:linear-gradient(180deg,#141629,#111327);
+  border-top:1px solid rgba(142,134,201,.22);
+  padding:14px!important;
+  color-scheme:dark;
+}
+.tien404-chat-panel .tien404-composer-label{font-size:12px;color:#c9cde8;margin-bottom:9px}
+.tien404-chat-panel #tien404-message{
+  min-height:52px;
+  max-height:130px;
+  padding:13px 14px!important;
+  background:#20243d!important;
+  color:#f8f9ff!important;
+  -webkit-text-fill-color:#f8f9ff!important;
+  border:1px solid #5b6089!important;
+  border-radius:13px!important;
+  caret-color:#b6a6ff!important;
+  color-scheme:dark!important;
+  resize:none;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.tien404-chat-panel #tien404-message::placeholder{
+  color:#a7b0ce!important;
+  -webkit-text-fill-color:#a7b0ce!important;
+}
+.tien404-chat-panel #tien404-message:focus-visible{
+  outline:2px solid #b2a4ff!important;
+  outline-offset:2px;
+  border-color:#b6a6ff!important;
+}
+.tien404-chat-panel #tien404-send{
+  min-height:52px;
+  padding:0 16px;
+  border:1px solid rgba(210,196,255,.28);
+  border-radius:13px;
+  background:linear-gradient(135deg,#596df4,#9456e8);
+  font-weight:750;
+  box-shadow:0 8px 18px rgba(91,83,222,.2);
+}
+.tien404-chat-panel #tien404-send:not(:disabled):hover{filter:brightness(1.1)}
+.tien404-chat-panel #tien404-send:focus-visible{outline:3px solid #c5b9ff;outline-offset:2px}
+.tien404-chat-panel .tien404-composer-status{color:#ffbcbf;min-height:0;line-height:1.4}
+.tien404-chat-panel .tien404-composer-status:not(:empty){padding-top:6px}
+#tien404-chat-panel[aria-busy="true"] .tien404-panel-head:after{
+  content:"";
+  position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan,#39d5ea),var(--violet,#a35afb),transparent);
+  animation:tien404-chat-loading 1.4s ease-in-out infinite;
+}
+@keyframes tien404-chat-loading{50%{opacity:.3}}
+@media(max-width:600px){
+  .tien404-floating-widget{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .tien404-chat-panel{width:calc(100vw - 24px);height:min(610px,calc(100dvh - 98px));bottom:70px;border-radius:19px}
+  .tien404-panel-head{min-height:66px;padding:14px 12px 12px 54px}
+  .tien404-panel-head:before{left:12px;top:14px;width:30px;height:30px}
+  .tien404-chat-panel #n8n-chat .chat-body{padding:12px 10px!important}
+  .tien404-chat-panel .tien404-composer{padding:10px!important}
+  .tien404-chat-panel #tien404-message{min-height:48px!important}
+  .tien404-chat-panel #tien404-send{min-height:48px}
+}
+@media(max-height:520px){.tien404-chat-panel{height:calc(100dvh - 85px);bottom:61px}}
+@media(prefers-reduced-motion:reduce){
+  .tien404-chat-launcher,.tien404-panel-head button,.tien404-chat-panel #tien404-message{transition:none}
+  .tien404-chat-launcher:hover{transform:none}
+  #tien404-chat-panel[aria-busy="true"] .tien404-panel-head:after{animation:none}
+}
