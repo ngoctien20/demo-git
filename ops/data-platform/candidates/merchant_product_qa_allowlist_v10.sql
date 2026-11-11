@@ -1,7 +1,8 @@
 -- TIEN404 V10.1: approved staging-only create/edit RPC for exactly two QA tenants.
 -- Security boundary: SECURITY DEFINER with explicit tenant id+slug allowlist,
 -- verified auth.uid membership, no direct INSERT/UPDATE grants to authenticated.
--- This file is NOT intended for production.
+-- Only two staging QA tenant UUID+slug pairs are authorized. NOT for production.
+-- PT409 is a terminal HTTP conflict; 40001 triggers PostgREST transaction retries.
 CREATE FUNCTION public.save_merchant_product(
  p_tenant uuid,p_sku text,p_name text,p_price bigint,p_active boolean,
  p_initial_stock integer,p_expected_updated_at timestamptz
@@ -44,7 +45,7 @@ BEGIN
     WHERE tenant_id=p_tenant AND sku=p_sku AND updated_at=p_expected_updated_at
     RETURNING updated_at INTO changed_at;
     IF NOT FOUND THEN
-      RAISE EXCEPTION 'product_changed_or_missing' USING ERRCODE='40001';
+      RAISE SQLSTATE 'PT409' USING MESSAGE='product_changed_or_missing';
     END IF;
   END IF;
   INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,metadata)

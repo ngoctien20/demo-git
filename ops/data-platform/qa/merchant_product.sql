@@ -12,7 +12,7 @@ BEGIN
   stamp := public.save_merchant_product(t,'SKU-QA','Mẫu',159000,true,8,NULL);
   PERFORM public.save_merchant_product(t,'SKU-QA','Mẫu cập nhật',150000,false,NULL,stamp);
   BEGIN PERFORM public.save_merchant_product(t,'SKU-QA','Cũ',1,true,NULL,stamp);
-    RAISE EXCEPTION 'stale edit accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+    RAISE EXCEPTION 'stale edit accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
   BEGIN PERFORM public.save_merchant_product(current_setting('test.foreign')::uuid,'SKU-QA','Sai shop',1,true,1,NULL);
     RAISE EXCEPTION 'foreign write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.save_merchant_product(t,'SKU-QA','Trùng',1,true,1,NULL);

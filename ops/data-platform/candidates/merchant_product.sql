@@ -31,7 +31,7 @@ BEGIN
       updated_at=greatest(clock_timestamp(),updated_at + interval '1 microsecond')
       WHERE tenant_id=p_tenant AND sku=p_sku AND updated_at=p_expected_updated_at
       RETURNING updated_at INTO changed_at;
-    IF NOT FOUND THEN RAISE EXCEPTION 'product_changed_or_missing' USING ERRCODE='40001'; END IF;
+    IF NOT FOUND THEN RAISE SQLSTATE 'PT409' USING MESSAGE='product_changed_or_missing'; END IF;
   END IF;
   INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,metadata)
     VALUES(p_tenant,actor,CASE WHEN p_expected_updated_at IS NULL THEN 'product_create' ELSE 'product_edit' END,
