@@ -1,0 +1,23 @@
+name: TIEN404 Agent Factory V1 — on-demand staging contract QA
+on:
+  workflow_dispatch:
+  push:
+    branches: ["ops/agent-factory-control-plane-v1-20261112"]
+    paths:
+      - "ops/devteam/**"
+      - ".github/workflows/agent-factory-control-plane-qa.yml"
+permissions:
+  contents: read
+jobs:
+  deterministic-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Offline deterministic agent and SQL-gate tests
+        run: python -m unittest discover -s ops/devteam/tests -v
+      - name: Syntax check
+        run: python -m compileall -q ops/devteam
