@@ -1,7 +1,7 @@
 name: Isolated Commerce PostgreSQL QA
 on:
   push:
-    branches: [ops/tenant-data-platform-v1-staging-20261110]
+    branches: [ops/tenant-data-platform-v1-staging-20261110, fix/v11-merchant-stale-conflict-pt409-20261112]
     paths: ['ops/data-platform/app/merchant_orders.py', 'ops/data-platform/qa/commerce_http.py', 'ops/data-platform/app/main.py', 'ops/data-platform/candidates/merchant_product.sql', 'ops/data-platform/qa/merchant_product.sql', 'ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
   pull_request:
     paths:

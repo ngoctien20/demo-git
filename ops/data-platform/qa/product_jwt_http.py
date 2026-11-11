@@ -80,8 +80,9 @@ def main():
         status,new_version = request(endpoint,token,edit,"POST")
         assert status == 200 and new_version != version
         status,body = request(endpoint,token,edit,"POST")
-        assert status >= 400
-        assert body["code"]=="40001"
+        # An optimistic-lock conflict must be a terminal 409, not a retryable
+        # 40001 serialization error (which can loop in PostgREST).
+        assert (status, body.get("code")) == (409, "PT409"), (status, body.get("code"))
     for index,token in enumerate((a,b)):
         own,other = SHOPS[index], SHOPS[1-index]
         status,rows = request("products?select=tenant_id,price_vnd,stock_on_hand",token)
