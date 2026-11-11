@@ -77,3 +77,43 @@ test('V10.3 Cloudflare immutable preview sends noindex and basic safety headers'
   expect(h['x-content-type-options']||'').toBe('nosniff');
   expect(h['x-frame-options']||'').toBe('DENY');
 });
+
+for (const path of ['index.html','demo.html']) {
+  test('V11 chat is optional and usable offline: '+path,async({page})=>{
+    const sdkRequests=[];
+    await page.route('**/cdn.jsdelivr.net/npm/@n8n/chat/**',route=>{
+      sdkRequests.push(route.request().url());
+      return route.abort();
+    });
+    await page.goto('/'+path);
+    expect(sdkRequests).toEqual([]);
+    const launcher=page.locator('#tien404-chat-launcher');
+    const openButton=path==='demo.html' ? page.locator('[data-tien404-open-chat]').first() : launcher;
+    await openButton.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#n8n-chat-fallback a')).toBeVisible();
+    await expect(page.locator('#tien404-chat-panel')).toHaveAttribute('aria-busy','false');
+    await expect(page.locator('#tien404-chat-close')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(openButton).toBeFocused();
+    await expect(launcher).toHaveAttribute('aria-expanded','false');
+  });
+}
+
+test('V11 mobile smoke on the existing immutable Cloudflare preview',async({page})=>{
+  const writes=[];
+  await page.route('**/*',route=>{
+    const request=route.request();
+    if(!['GET','HEAD','OPTIONS'].includes(request.method())){
+      writes.push(request.method());
+      return route.abort();
+    }
+    return route.continue();
+  });
+  await page.setViewportSize({width:390,height:844});
+  const response=await page.goto('https://edf09e40.tien404-ai-git-staging.pages.dev/',{waitUntil:'domcontentloaded'});
+  expect(response.status()).toBe(200);
+  await expect(page.locator('header .brand').first()).toBeVisible();
+  await expect(page.locator('#tien404-chat-launcher')).toBeVisible();
+  expect(writes).toEqual([]);
+});

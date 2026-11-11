@@ -1,10 +1,55 @@
 const target=document.querySelector('#n8n-chat');
 if(target){
-  (async () => {
   const chatPanel=document.getElementById('tien404-chat-panel');
+  const launcher=document.getElementById('tien404-chat-launcher');
+  const close=document.getElementById('tien404-chat-close');
+  let opener=launcher;
+  let started=false;
+
+  const setOpen=(open,trigger)=>{
+    chatPanel.hidden=!open;
+    launcher.setAttribute('aria-expanded',String(open));
+    if(!open){
+      opener.focus({preventScroll:true});
+      return;
+    }
+    opener=trigger;
+    chatPanel.scrollTop=0;
+    const composer=document.getElementById('tien404-composer');
+    const focusTarget=composer.hidden ? close : document.getElementById('tien404-message');
+    focusTarget.focus({preventScroll:true});
+    if(!started){
+      started=true;
+      initializeChat();
+    }
+  };
+  launcher.addEventListener('click',()=>setOpen(chatPanel.hidden,launcher));
+  document.querySelectorAll('[data-tien404-open-chat]').forEach(button=>{
+    button.addEventListener('click',()=>setOpen(true,button));
+  });
+  close.addEventListener('click',()=>setOpen(false));
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!chatPanel.hidden)setOpen(false);
+  });
+
+  async function initializeChat(){
+  let timer;
+  const style=document.createElement('link');
+  style.rel='stylesheet';
+  style.href='https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css';
+  const stylesLoaded=new Promise((resolve,reject)=>{
+    style.onload=resolve;
+    style.onerror=()=>reject(new Error('Chat stylesheet unavailable'));
+  });
+  document.head.insertBefore(style,document.head.firstChild);
+
   chatPanel?.setAttribute('aria-busy','true');
   try{
-    const { createChat } = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
+    const [sdk]=await Promise.race([
+      Promise.all([import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js'),stylesLoaded]),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Chat load timeout')),10000)})
+    ]);
+    const {createChat}=sdk;
     createChat({
       webhookUrl:'https://ngoctien20.app.n8n.cloud/webhook/c29c6398-04d1-467f-ab23-8d679cdd7133/chat',
       target:'#n8n-chat',
@@ -123,22 +168,6 @@ if(target){
       }
     });
 
-    const panel=document.getElementById('tien404-chat-panel');
-    const launcher=document.getElementById('tien404-chat-launcher');
-    const close=document.getElementById('tien404-chat-close');
-    const toggle=open=>{
-      if(!panel||!launcher)return;
-      panel.hidden=!open;
-      launcher.setAttribute('aria-expanded',String(open));
-      if(open){panel.scrollTop=0;setTimeout(()=>externalInput?.focus({preventScroll:true}),100)}
-      else launcher.focus({preventScroll:true});
-    };
-    launcher?.addEventListener('click',()=>toggle(panel.hidden));
-    document.querySelectorAll('[data-tien404-open-chat]').forEach(button=>{
-      button.addEventListener('click',()=>toggle(true));
-    });
-    close?.addEventListener('click',()=>toggle(false));
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});
     chatPanel?.setAttribute('aria-busy','false');
     document.documentElement.classList.add('tien404-chat-ready');
   }catch(e){
@@ -146,6 +175,8 @@ if(target){
     const note=document.querySelector('#n8n-chat-fallback');
     if(note)note.hidden=false;
     target.setAttribute('aria-label','Chat AI hiện không tải được; vui lòng thử bản mô phỏng.');
+  }finally{
+    clearTimeout(timer);
   }
-  })();
+  }
 }
