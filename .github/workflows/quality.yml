@@ -1,7 +1,7 @@
 name: TIEN404 AI · Static QA and Sass build
 on:
   push:
-    branches: [gh-pages]
+    branches: [gh-pages, work/website-v4-1-simplify-navigation]
   workflow_dispatch:
 permissions:
   contents: read
