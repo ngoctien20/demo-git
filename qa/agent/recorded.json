@@ -1,0 +1,33 @@
+[
+  {
+    "case": "price-stock",
+    "source": "recorded_n8n",
+    "version": "4c2575de-5a92-41aa-88ab-c84f7e2e7e9f",
+    "workflow_id": "NvQfIffOrZokPBPW",
+    "execution_id": "1909",
+    "status": "success",
+    "prompt": "Trong catalog QA, áo mã T-A giá bao nhiêu và còn mấy chiếc? Chỉ tra cứu, không đặt hàng.",
+    "reply": "Shop đã tra cứu trong catalog QA: áo mã T-A (Áo đen QA) giá 159.000₫, còn 8 chiếc. Shop chỉ tra cứu, không đặt hàng. Anh/chị cần mình tra thêm thông tin gì nữa?",
+    "calls": [
+      {
+        "name": "Get row(s) in sheet in Google Sheets",
+        "query": "T-A",
+        "status": "success",
+        "rows": [
+          {
+            "sku": "T-A",
+            "name": "Áo đen QA",
+            "price": 159000,
+            "stock": 8
+          },
+          {
+            "sku": "T-B",
+            "name": "Áo trắng QA",
+            "price": 159000,
+            "stock": 5
+          }
+        ]
+      }
+    ]
+  }
+]

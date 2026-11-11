@@ -5,6 +5,7 @@ on:
       - ops/cto-autonomous-v5-20261110
     paths:
       - 'tests/widget_browser_smoke.py'
+      - 'qa/agent/**'
       - 'AGENTS.md'
       - 'docs/**'
       - 'data/workflow-registry.v5.json'
@@ -19,6 +20,7 @@ on:
   pull_request:
     paths:
       - 'tests/widget_browser_smoke.py'
+      - 'qa/agent/**'
       - 'AGENTS.md'
       - 'docs/**'
       - 'data/workflow-registry.v5.json'
@@ -48,6 +50,10 @@ jobs:
         run: node scripts/check-site-navigation.mjs
       - name: V5 governance, registry and widget safety contracts
         run: node scripts/check-project-integrity.mjs
+      - name: Isolated AI evaluation and recorded trace replay
+        run: |
+          python -m unittest discover -s qa/agent -v
+          python qa/agent/evaluate.py qa/agent/recorded.json
       - name: Scope reminder
         run: echo "Static read-only QA; no n8n, Orders, Messages, Supabase, Control Hub or production writes."
       - name: Chromium widget staging smoke with isolated transport
