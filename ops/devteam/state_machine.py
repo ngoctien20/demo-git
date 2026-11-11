@@ -79,7 +79,7 @@ def transition(task, event):
     if target=="DONE":
         if not all((t["candidate_sha"],t["qa_sha"]==t["candidate_sha"],
                     t["review_sha"]==t["candidate_sha"],event.get("ci_pass"),
-                    event.get("checkpoint_url"),event.get("pr_is_draft")):
+                    event.get("checkpoint_url"),event.get("pr_is_draft"))):
             raise GateError("QA and Review PASS on same SHA + CI + checkpoint required")
         t["checkpoint_url"]=event["checkpoint_url"]
     if target in {"BLOCKED","NEEDS_APPROVAL"} and not event.get("reason"):
