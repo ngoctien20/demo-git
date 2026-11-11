@@ -2,7 +2,7 @@ name: Isolated Commerce PostgreSQL QA
 on:
   push:
     branches: [ops/tenant-data-platform-v1-staging-20261110]
-    paths: ['ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
+    paths: ['ops/data-platform/candidates/merchant_product.sql', 'ops/data-platform/qa/merchant_product.sql', 'ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -70,3 +70,7 @@ jobs:
           END $$;
           SQL
           RECOVERY
+      - name: Check merchant catalog write candidate in disposable database only
+        run: |
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/candidates/merchant_product.sql
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/qa/merchant_product.sql
