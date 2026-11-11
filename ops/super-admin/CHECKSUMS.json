@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "scope": "TIEN404 Super Admin V4 isolated staging only",
+  "created_at": "2026-11-10",
+  "production_changes": false,
+  "files": {
+    ".env.example": "0ade11b629e2d8c6c1528e0d1ec4472de172c6a9b9b4874964c4dd7ea8406c41",
+    ".gitignore": "15e7b4127662d2d065a1ceb96712eca4493f01f0dbe806c2f2f98a498808ca0c",
+    "README.md": "98902b5c35684010f95803cda0de8fa4948694f9c3bf9c530eefba5d98d32977",
+    "app/__init__.py": "9f285aec9476403e6af5a3c06eb0b799daa3274d51084605b11e7833159a4ae4",
+    "app/backup.py": "5ff010d28a50406de80e5934778ee601958fc2869f2bb01167e823ecdc2fc33a",
+    "app/core.py": "d08a046cac4cb544d3aaa5a1e7e512a4c0c9caf50f8f00817bf1dc5af61202bc",
+    "app/gateway.py": "1b232d781abb5d758a5ee3ce41a6ae46d0547e5254a1aefd9681932a23a644e4",
+    "app/server.py": "bb60becdc73fecaabc9165e1616ea49fd0a62fe415eef95c850bad9b39a035d6",
+    "docs/ADMIN_ARCHITECTURE.md": "1195014ebb7f8cfd8239c2ddac03102fb39bcb5b32aa860f1ad00ffc2e343c5c",
+    "docs/API_CONTRACT.md": "0b9807f4b1432d4bad4b6833aefa976c0be2adf51c232adee6b71e1c4043aedd",
+    "docs/CHANGELOG.md": "387dd297bdcb9cc9d0537f59783e84c0aa113ec1db06c7f27b85f0f1e7d77757",
+    "docs/CHANNEL_CONNECTORS.md": "6c92f0fa3c9abd71cd8e32c983658e03beaebc761f7705cf67c69e6619ecebf2",
+    "docs/NEXT_ACTIONS.md": "e6ff3a023a862637ad09b84a6f3b1d3943b2bd7b0778fa35b8f9762fb2f3fabf",
+    "docs/ONE_CLICK_SETUP.md": "f78132901ec412a781ed155b7afdd6ee860d84a79934e2059e35c1ed315988bc",
+    "docs/PROJECT_STATUS.md": "44ddac3c61eddb75e536f28269cb13745933c1b4e812d519f31ea4812f4b9d69",
+    "docs/QA_REPORT.md": "a72cb84f17d42349964de7d9daabcb4af50dd93330ed3954ee1978dccba9d618",
+    "docs/SALES_AI_KNOWLEDGE.md": "a6a839647483e6696a0744cbfb4de558cafb30a8e74062e767a429f40193094d",
+    "docs/SECURITY_REVIEW.md": "ad0b65e390f3fba05e81b9f8ffe45e7d155805c6640cba50ea42c21ff04ea7aa",
+    "docs/SUBSCRIPTION_DESIGN.md": "9e8a95d08cad3a2ed4ca0b75ac9e9034d309673926b7aa3c9389c5a791c04d50",
+    "docs/TASK_BACKLOG.md": "cd05a02f4e1ca1b15351d2756f76876c272c74f810bc99cd3fa9526b8f000f32",
+    "requirements-test.txt": "e99942488f7f8277eec3778ebbae32d6ed9f4a26cbc71a3bf53d8d9c80922b82",
+    "scripts/bootstrap_user.py": "419ca4da024ca886715baa0f7718c67606a474ac9b9ea67bf129b3abe70555b0",
+    "tests/test_security_engine.py": "c178e99a88160d3d873bd1b7983a20f8fba0449a16f73b5bf790dc2516cc831c"
+  }
+}

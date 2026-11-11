@@ -1,0 +1,53 @@
+name: TIEN404 Super Admin V4 - isolated staging security QA
+on:
+  push:
+    branches: [ops/super-admin-v4-staging-20261110]
+    paths:
+      - 'ops/super-admin/**'
+      - '.github/workflows/super-admin-v4-staging-qa.yml'
+      - 'ops/control-hub/checkpoints/**'
+  pull_request:
+    paths:
+      - 'ops/super-admin/**'
+      - '.github/workflows/super-admin-v4-staging-qa.yml'
+      - 'ops/control-hub/checkpoints/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify staging does not track local secret material or database files
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(git ls-files 'ops/super-admin/**' | grep -E '(\.db$|\.db-wal$|\.db-shm$|\.pem$|\.key$|(^|/)\.env$)' || true)
+          if [ -n "$files" ]; then echo "ERROR: tracked sensitive local files"; exit 1; fi
+      - name: Install pinned QA dependencies only
+        run: python -m pip install -r ops/super-admin/requirements-test.txt
+      - name: Syntax verification
+        run: python -m compileall -q ops/super-admin/app ops/super-admin/tests
+      - name: Test staging security and tenancy (NO external services)
+        working-directory: ops/super-admin
+        run: python -m pytest -q tests --junitxml=qa-evidence/security-tests.xml
+      - name: Verify mobile admin usage pagination and logout clearing with isolated transport
+        run: |
+          python -m pip install 'playwright==1.55.0'
+          python ops/super-admin/qa/admin_usage_browser.py
+      - name: Ensure staged policy does not change hosted services
+        run: |
+          echo 'Isolated staging only: no deployment, no n8n invocation, no token access.'
+      - name: Store test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TIEN404-V4-staging-security-test-evidence
+          path: ops/super-admin/qa-evidence/security-tests.xml
+          if-no-files-found: warn
+          retention-days: 14

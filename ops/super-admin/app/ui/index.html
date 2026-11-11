@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>TIEN404 · Super Admin Staging</title>
+<link rel="stylesheet" href="/admin/assets/admin.css">
+</head>
+<body>
+<div class="shell">
+<header class="mast">
+  <div class="brand"><span class="mark">◈</span><span><b>TIEN404 <em>Super Admin</em></b><small>Management security console</small></span></div>
+  <div class="env"><i></i> STAGING · KHÔNG PHẢI PRODUCTION</div>
+</header>
+<main>
+<section id="login-view" class="login">
+  <div class="login-card">
+    <div class="eyebrow">QUYỀN TRUY CẬP BẢO MẬT</div>
+    <h1>Đăng nhập Super Admin</h1>
+    <p>Chỉ dùng tài khoản thử nghiệm đã tạo trong backend staging. Không kết nối TIEN404 Control Hub production, Messenger hay Google Sheets.</p>
+    <form id="login-form">
+      <label>Email quản trị<input name="email" type="email" autocomplete="username" maxlength="254" required></label>
+      <label>Mật khẩu<input name="password" type="password" autocomplete="current-password" minlength="14" required></label>
+      <label>Mã MFA sáu số<input name="totp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+      <button class="primary" type="submit">Đăng nhập an toàn</button>
+    </form>
+    <p id="login-error" class="error" role="alert" hidden></p>
+    <p class="fine">Phiên xác thực qua cookie HttpOnly và kiểm tra quyền trên máy chủ. Không nhập tài khoản production vào bản staging này.</p>
+  </div>
+</section>
+<section id="console-view" hidden>
+  <div class="topbar"><div><div class="eyebrow">QUẢN TRỊ NỀN TẢNG · CHỈ ĐỌC</div><h1>Super Admin</h1><p>Dữ liệu có nguồn gốc từ staging API đã xác thực, không phải thống kê sản xuất.</p></div><div class="account"><span id="account-role"></span><button id="logout" type="button" class="secondary">Đăng xuất</button></div></div>
+  <div class="metrics">
+    <article><span>Nguồn dữ liệu</span><strong id="source-state">Đang kết nối</strong><small>API staging có xác thực</small></article>
+    <article><span>Cửa hàng tải được</span><strong id="tenant-count">—</strong><small>Tối đa 100 bản ghi / truy vấn</small></article>
+    <article><span>n8n production</span><strong>Chưa kết nối</strong><small>Không bật/tắt shared workflow tại đây</small></article>
+  </div>
+  <div class="workspace">
+  <nav class="tabs" aria-label="Danh mục quản trị">
+    <button type="button" class="active" data-tab="tenants" aria-current="page">Cửa hàng</button>
+    <button type="button" data-tab="plans">Gói dịch vụ</button>
+    <button type="button" data-tab="usage">Hạn mức tin nhắn</button>
+    <button type="button" data-tab="audit">Nhật ký kiểm toán</button>
+  </nav>
+  <section class="panel" id="tenants-panel">
+    <div class="panel-head"><div><h2>Danh sách cửa hàng</h2><p>Hiển thị trạng thái trong staging; không thay đổi dịch vụ đang chạy.</p></div><button class="secondary" id="refresh-tenants" type="button">Làm mới</button></div>
+    <div class="table-scroller"><table><thead><tr><th>Cửa hàng</th><th>Ngành</th><th>Dịch vụ</th><th>Bot</th><th>Mã tenant</th></tr></thead><tbody id="tenants-body"></tbody></table></div>
+    <p id="tenants-empty" class="empty" hidden>Chưa có cửa hàng staging hoặc không có quyền xem.</p>
+  </section>
+  <section class="panel" id="plans-panel" hidden>
+    <div class="panel-head"><div><h2>Gói dịch vụ</h2><p>Gói cấu hình nội bộ, không đại diện bảng giá thương mại đã duyệt.</p></div><button class="secondary" id="refresh-plans" type="button">Làm mới</button></div>
+    <div class="table-scroller"><table><thead><tr><th>Gói</th><th>Chu kỳ</th><th>Giá staging</th><th>Hạn mức tin nhắn</th></tr></thead><tbody id="plans-body"></tbody></table></div>
+    <p id="plans-empty" class="empty" hidden>Chưa có gói staging hoặc không có quyền xem.</p>
+  </section>
+  <section class="panel" id="usage-panel" hidden>
+    <div class="panel-head"><div><h2>Hạn mức tin nhắn</h2><p id="usage-period"></p></div></div>
+    <div class="table-scroller"><table><thead><tr><th>Cửa hàng</th><th>Lượt đã giữ</th><th>Hạn mức thử nghiệm</th></tr></thead><tbody id="usage-body"></tbody></table></div>
+    <p id="usage-status" role="status"></p>
+    <button type="button" class="secondary" id="usage-prev" disabled>Trang trước</button>
+    <button type="button" class="secondary" id="usage-next" disabled>Trang sau</button>
+  </section>
+  <section class="panel" id="audit-panel" hidden>
+    <div class="panel-head"><div><h2>Nhật ký kiểm toán</h2><p>Chỉ SUPER_ADMIN được xem. Xác minh chuỗi hash tại máy chủ.</p></div><span id="audit-check"></span></div>
+    <div class="table-scroller"><table><thead><tr><th>Thời gian</th><th>Hành động</th><th>Tenant</th><th>Lý do</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+    <p id="audit-empty" class="empty" hidden>Chưa có sự kiện hoặc không đủ quyền truy cập.</p>
+  </section>
+  </div>
+  <p id="app-status" role="status" aria-live="polite"></p>
+  <footer>TIEN404 Super Admin · Giai đoạn staging, chưa vận hành thuê bao thật, không kết nối hoặc thay đổi bot production.</footer>
+</section>
+</main>
+</div>
+<script defer src="/admin/assets/admin.js"></script>
+</body></html>

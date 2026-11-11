@@ -23,3 +23,4 @@
 - Not deployed to Sites or merged to production. No n8n credentials/workflows modified.
 
 - Verified the hardening on GitHub Actions: 14/14 PASS, run `42793920660`; artifacts include JSON/Markdown with source URLs and UTC timestamps. PR #1 remains Draft.
+\n## 2026-11-10 — Super Admin V4 staging PR layered on Control Hub audit\n- Added isolated authenticated API prototype and 64 local security tests; no production mutation.\n- Fixed newly discovered trial/paid-grace entitlement bug before staging; added secure channel account mapping, explicit tenant confirmation and local SQLite restore drill.\n- Added architecture, billing, connectors, sales KB, API, security, QA and continuity docs under `ops/super-admin/`.\n
