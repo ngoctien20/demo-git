@@ -25,7 +25,11 @@ const auth = {
   },
   async signOut() {change(null);return {};}
 };
-export const authClient = {auth, from(table) {
+export const authClient = {auth, async rpc(name,args) {
+  if (name!=='merchant_paid_orders_daily' || args.p_tenant!==identity().id) throw Error('wrong scope');
+  return {data:args.p_days===30?[]:[{tenant_id:window.badScope?'wrong':args.p_tenant,order_day:'2026-11-11',
+    paid_vnd:'159000',paid_count:1,order_count:2}]};
+}, from(table) {
   const id = identity().id;
   const predicates = {};
   const query = {
@@ -148,6 +152,11 @@ with sync_playwright() as playwright:
     catalog.get_by_label('Tên sản phẩm',exact=True).fill('')
     catalog.get_by_role('button',name='Áp dụng').click()
     expect(catalog.locator('li')).to_have_count(20)
+    report=page.get_by_role('button',name='Xem giá trị đơn đã thanh toán')
+    report.click()
+    expect(page.get_by_text('1/2 đơn đã thanh toán',exact=False)).to_be_visible()
+    page.get_by_label('Kỳ thống kê đơn hàng').select_option('30')
+    expect(page.get_by_text('Chưa có đơn trong kỳ đã chọn.')).to_be_visible()
     page.get_by_role('button',name='Xem AI Agent').click()
     expect(page.get_by_text('Không có cấu hình AI phù hợp.')).to_be_visible()
     page.get_by_role('button',name='Xem khách hàng').click()
@@ -158,6 +167,8 @@ with sync_playwright() as playwright:
     page.get_by_role('button',name='Lịch sử tương tác').click()
     expect(page.get_by_text('Lời chào QA',exact=False)).to_be_visible()
     page.evaluate('window.badScope=true')
+    page.get_by_label('Kỳ thống kê đơn hàng').select_option('7')
+    expect(page.get_by_text('Chưa tải được thống kê đơn hàng.')).to_be_visible()
     page.get_by_role('button',name='Tải lại đơn hàng').click()
     expect(orders.get_by_text('QA-ORDER',exact=False)).to_have_count(0)
     page.get_by_role('button',name='Tải lại danh mục').click()
@@ -174,7 +185,7 @@ with sync_playwright() as playwright:
     expect(page.get_by_text('Shop B',exact=True)).to_be_visible()
     expect(page.get_by_text('Sản phẩm: 3',exact=True)).to_be_visible()
     expect(page.get_by_text('Đơn hàng: 1',exact=True)).to_have_count(0)
-    for private_module in ('Xem đơn hàng','Xem khách hàng','Xem hội thoại','Xem AI Agent'):
+    for private_module in ('Xem giá trị đơn đã thanh toán','Xem đơn hàng','Xem khách hàng','Xem hội thoại','Xem AI Agent'):
         expect(page.get_by_role('button',name=private_module)).to_have_count(0)
     expect(page.get_by_text('Shop A',exact=True)).to_have_count(0)
     page.evaluate('window.changeFixtureIdentity(null)')

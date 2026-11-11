@@ -25,6 +25,59 @@ const requireLogin=message=>{
   loginLink.hidden=false;
   put(message,'error');
 };
+function addPaidOrderReport(card, tenant, viewGeneration) {
+  const section = document.createElement('section');
+  const period = document.createElement('select');
+  period.setAttribute('aria-label','Kỳ thống kê đơn hàng');
+  period.add(new Option('7 ngày','7'));
+  period.add(new Option('30 ngày','30'));
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'Xem giá trị đơn đã thanh toán';
+  const statusNode = document.createElement('p');
+  statusNode.setAttribute('role','status');
+  const daily = document.createElement('ul');
+  section.append(period,button,statusNode,daily);
+  card.append(section);
+  const currency = new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'});
+  async function load() {
+    if (viewGeneration !== generation || button.disabled) return;
+    button.disabled = period.disabled = true;
+    daily.replaceChildren();
+    statusNode.textContent = 'Đang tổng hợp đơn hàng…';
+    try {
+      const days = Number(period.value);
+      const {data,error} = await withDeadline(sb.rpc('merchant_paid_orders_daily',
+        {p_tenant:tenant.id,p_days:days}),13000);
+      if (!section.isConnected || viewGeneration !== generation) return;
+      if (error || !Array.isArray(data) || data.length > days) throw Error('report');
+      let total = 0n;
+      const rows = document.createDocumentFragment();
+      for (const row of data) {
+        if (row.tenant_id !== tenant.id || !/^\d{4}-\d{2}-\d{2}$/.test(row.order_day)
+            || typeof row.paid_vnd !== 'string' || !/^\d+$/.test(row.paid_vnd)
+            || !Number.isSafeInteger(row.paid_count) || !Number.isSafeInteger(row.order_count)
+            || row.paid_count < 0 || row.order_count < row.paid_count) throw Error('scope');
+        const amount = BigInt(row.paid_vnd);
+        total += amount;
+        const item = document.createElement('li');
+        item.textContent = row.order_day.split('-').reverse().join('/')+' · '+row.paid_count+'/'+row.order_count+
+          ' đơn đã thanh toán · '+currency.format(amount);
+        rows.append(item);
+      }
+      daily.append(rows);
+      statusNode.textContent = data.length ? 'Tổng giá trị đơn đang ở trạng thái đã thanh toán: '+
+        currency.format(total)+'. Tính theo ngày tạo đơn, giờ Việt Nam.' : 'Chưa có đơn trong kỳ đã chọn.';
+    } catch {
+      if (section.isConnected && viewGeneration === generation) statusNode.textContent = 'Chưa tải được thống kê đơn hàng.';
+    } finally {
+      period.disabled = button.disabled = false;
+    }
+  }
+  button.addEventListener('click',load);
+  period.addEventListener('change',load);
+}
+
 // Merchant overview: read-only counts from tenant-scoped RLS queries.
 function addMerchantOverview(card, tenant, viewGeneration) {
   const section=document.createElement('section');
@@ -139,6 +192,7 @@ const revalidate=async()=>{
       const context = {client:sb, tenantId:t.id, current:()=>current===generation};
       addMerchantList(card,'products',context);
       if (['owner','manager'].includes(t.role)) {
+        addPaidOrderReport(card,t,current);
         for (const table of ['orders','customers','conversations','tenant_agent_configs']) addMerchantList(card,table,context);
       }
       workspace.appendChild(card);
