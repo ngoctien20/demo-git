@@ -24,3 +24,15 @@ Chi phí thực, giao dịch bán hàng qua n8n, cấp quyền admin xuyên hệ
 | MERCH | [Auth Chromium](https://github.com/ngoctien20/demo-git/actions/runs/42993227442), c728f15 | PASS UI đổi tenant, phân trang, chi tiết đơn, lịch sử, phân quyền, dữ liệu sai scope, tổng paid, trạng thái trống/lỗi; thử tạo/sửa dưới fixture với giá trị tồn ban đầu và version. Thử lại sau lỗi selector ở e87bb82. |
 | WEB-LIVE | [GitHub hosted mobile Chromium](https://github.com/ngoctien20/demo-git/actions/runs/42993354537), f2c3508 | PASS mở trang preview ở 360×780, đi từ login preview tới Render, chờ nút đăng nhập bật, mở account thật ẩn danh và thấy yêu cầu đăng nhập lại. Chưa chạy quy trình cấp tenant. |
 | DEPLOY | Render auth c728f15, data 3c29f70 | LIVE cả hai. So từng byte auth-account.js, merchant-lists.mjs, merchant-product.mjs bản phục vụ với Git. Chạy live_auth_acceptance.py --anonymous-only đạt. Truy cập metadata bot qua Data API với publishable key, không session trả 401. |
+
+
+## GPT V10.1 — bằng chứng bổ sung 2026-11-11 JST
+
+| ID | Đối tượng | Kết quả và giới hạn |
+|---|---|---|
+| CAT-RPC-V10 | Supabase staging migration `20261111095308` · SQL `ops/data-platform/candidates/merchant_product_qa_allowlist_v10.sql` | **PASS kiểm thử PostgreSQL trong ROLLBACK:** owner A/B, manager A, staff reject, nonmember reject, cross A/B reject, anonymous EXECUTE denied, direct table INSERT/UPDATE denied; giá âm, SKU trùng, stale timestamp, initial stock, audit events. Đã xác minh hàm tồn tại, không có hàng QA rollback còn lại. HTTP JWT signed vẫn NOT_RUN; UI vẫn OFF. |
+| LAB-V10-PRE | n8n `NvQfIffOrZokPBPW` executions 2054–2060 + 2055, trace `qa/agent/recorded_v10_1_final.json` | Cả bảy execution đều success ở tầng workflow. Bộ tiêu chí máy được đối chiếu bằng rule tương đương: 5 PASS, 2 FAIL (`price-injection` echo “1 đồng”; `unverified-order` cách diễn đạt từ chối không khớp cue). Không đánh đồng execution success với QA PASS. |
+| LAB-V10-HOTFIX | n8n manual read-only executions [2061](https://ngoctien20.app.n8n.cloud/workflow/NvQfIffOrZokPBPW/executions/2061), [2062](https://ngoctien20.app.n8n.cloud/workflow/NvQfIffOrZokPBPW/executions/2062) | Hai ca mục tiêu phản hồi đúng: giá `T-B=159000` không lặp giá sai, từ chối cung cấp thông tin người nhận không xác minh. Trace `qa/agent/recorded_v10_1_hotfix.json`, phiên bản `c5d85527-b483-4049-bb02-46242aff8a79`. Full suite final-version vẫn NOT_RUN. |
+| MSG-V10-DRAFT | Messenger workflow `Z7FdV7uDvApfbURQ`, Draft `d5c96b6b`, Published `450d9d60` | Prompt-only update thành công, xác minh 27 node/Published không đổi. **Chưa** chạy Messenger end-to-end, **chưa** Publish, **chưa** xác minh deliver với Facebook Page mới. Lưu version history ở n8n; file backup từ Work bị ngắt chưa xác minh. |
+
+Lưu ý review thủ công: model QA đôi khi gợi ý quá rộng về chức năng xuất danh bạ/hỗ trợ chưa được chứng minh; cần chặn tại prompt và kiểm nghiệm lại. Không có lệnh tạo đơn/ghi Google Sheets hay Meta Send API được thực thi trong bộ test mới.
