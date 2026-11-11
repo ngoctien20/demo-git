@@ -99,3 +99,16 @@ User submitted six complete Messenger replies from live pilot. Workflows `Z7FdV7
 - New widget test added in feature commit `37052a9e63960697ce077a420f88803aeb9d25f0`, did **not** modify site HTML/CSS or n8n endpoint.
 - [GitHub Actions run 43035910218](https://github.com/ngoctien20/demo-git/actions/runs/43035910218) **SUCCESS: 26/26 Playwright tests PASS**, including real HTTPS response header check against `https://edf09e40.tien404-ai-git-staging.pages.dev/` for `X-Robots-Tag: noindex`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`.
 - Not a universal SEO security certificate: test is one specific immutable preview URL; do not assume the same headers on the unaffected gh-pages baseline or Auth/Account. Real chat model messages and signed JWT tenant QA still NOT_RUN.
+
+
+### V10.4 n8n Commerce sandbox regression rerun — 2249/2255/2269
+
+Actual manual executions on 2026-11-11 JST, existing QA workflows only, **no real sends, no real orders, no production writes**:
+
+| Workflow | Execution | Passed/Total | Assertion |
+|---|---:|---:|---|
+| `TIEN404_COMMERCE_REGRESSION_QA` `ZVmMlwe2g0bPjVEq` | `2249` | Catalog **7/7**, Cart **10/10** | `allPassed=true` |
+| `TIEN404_COMMERCE_V3_REGRESSION_QA` `tjsVobfjKLnv0o6b` | `2255` | Business **22/22** | `allPassed=true`, `executedWithRealSends=false`, `executedWithRealOrders=false`, note: sandbox tenants, fake pricing/outbox |
+| `TIEN404_COMMERCE_V3_QA_EXTENSION_25` `QR7aYMpLfKDLVgyH` | `2269` | Extension **25/25** | `allPassed=true`, `productionReady=false` |
+
+**Aggregate 64/64 assertions passed in sandbox.** Do NOT claim product-ready, tenant live E2E, accounting/inventory production or real customer data integration from these results. These workflows were already present and were only executed, not modified/published.
