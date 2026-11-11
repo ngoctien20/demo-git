@@ -36,3 +36,8 @@ Chi phí thực, giao dịch bán hàng qua n8n, cấp quyền admin xuyên hệ
 | MSG-V10-DRAFT | Messenger workflow `Z7FdV7uDvApfbURQ`, Draft `d5c96b6b`, Published `450d9d60` | Prompt-only update thành công, xác minh 27 node/Published không đổi. **Chưa** chạy Messenger end-to-end, **chưa** Publish, **chưa** xác minh deliver với Facebook Page mới. Lưu version history ở n8n; file backup từ Work bị ngắt chưa xác minh. |
 
 Lưu ý review thủ công: model QA đôi khi gợi ý quá rộng về chức năng xuất danh bạ/hỗ trợ chưa được chứng minh; cần chặn tại prompt và kiểm nghiệm lại. Không có lệnh tạo đơn/ghi Google Sheets hay Meta Send API được thực thi trong bộ test mới.
+
+
+### Supabase Security Advisor — sau migration V10.1
+
+Advisor phát sinh WARN `authenticated_security_definer_function_executable` cho `public.save_merchant_product`. Đây là **quyền có chủ đích nhưng đặc quyền cao**: hàm dùng SECURITY DEFINER để ghi trong khi `authenticated` không có INSERT/UPDATE trực tiếp; bên trong kiểm `auth.uid()`, owner/manager active, ràng buộc đúng tenant UUID+slug QA và audit. Đã thử role negative trong transaction. **Không coi warning đã được giải quyết** cho đến khi HTTP signed negative PASS, review độc lập code và bảo đảm không có phương thức bypass. Nếu không đạt, chạy file rollback `merchant_product_qa_allowlist_v10_rollback.sql` để REVOKE EXECUTE, giữ nguyên dữ liệu. Leaked Password Protection Disabled là WARN có trước, chưa đổi cấu hình Auth.
