@@ -1,5 +1,7 @@
 # TIEN404 AI · Bàn giao Work V9
 
+Phiên mới nhất ngày 12/11/2026 JST: [V11_STATUS.md](V11_STATUS.md). Các phần V8–V10 bên dưới là lịch sử bàn giao.
+
 Chốt ngày 11/11/2026, 18:15 JST. Agent WORK, bản V9. **PILOT READINESS: NOT READY. PRODUCTION CHANGED: NO.**
 
 Điểm xuất phát [V8 e9752ea](../coordination/TIEN404_AI_V8_MASTER_CHECKPOINT.md). Đã rà tất cả remote refs, PR #1–#7 và hồ sơ V8.1 trên nhánh Auth. Tại lúc đồng bộ chưa thấy checkpoint V8.2. PR #8 mới chứa schema cấu hình bot theo tenant. Xem SHA sản phẩm và file thay đổi trong [CHANGELOG](CHANGELOG.md), kết quả thực thi trong [QA_EVIDENCE](QA_EVIDENCE.md).
