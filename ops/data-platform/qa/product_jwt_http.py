@@ -5,6 +5,7 @@ import hmac
 import json
 import os
 import time
+import traceback
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -38,7 +39,9 @@ def request(path, token=None, body=None, method="GET"):
         response = error
     with response:
         data = response.read()
-        return response.status, json.loads(data) if data else None
+        value = json.loads(data) if data else None
+        print(method, path.split("?")[0], response.status, value.get("code", "") if isinstance(value,dict) else "")
+        return response.status, value
 
 
 def denied(result, expected):
@@ -90,4 +93,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        frame = traceback.extract_tb(error.__traceback__)[-1]
+        print(f"::error file={__file__},line={frame.lineno}::{type(error).__name__} at {frame.name}: {frame.line}")
+        raise
