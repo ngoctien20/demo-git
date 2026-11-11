@@ -1,0 +1,49 @@
+name: TIEN404 AI Lab V10 - seven real model traces
+on:
+  push:
+    branches:
+      - ops/cto-autonomous-v5-20261110
+    paths:
+      - 'qa/agent/**'
+      - '.github/workflows/ai-agent-lab-v10-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tien404-ai-lab-v10-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  read-only-model-trace-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit test scorer
+        run: python -m unittest discover -s qa/agent -v
+      - name: Score all seven recorded n8n model executions
+        run: python qa/agent/evaluate.py qa/agent/recorded_v10_2_full_suite.json --baseline qa/agent/recorded.json
+      - name: Require 7 distinct real execution proofs from one workflow version
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'qa/agent')
+          from evaluate import evaluate, CASES, SUITE
+          traces=json.loads(Path('qa/agent/recorded_v10_2_full_suite.json').read_text())
+          report=evaluate(traces)
+          assert len(traces)==len(CASES)==7
+          assert set(t['case'] for t in traces)==set(CASES)
+          assert all(t['workflow_id']==SUITE['workflow_id'] and t['status']=='success' and t['source']=='recorded_n8n' for t in traces)
+          assert len({t['execution_id'] for t in traces})==7
+          assert len({t['version'] for t in traces})==1
+          failures={k:v for k,v in report.items() if v['result']!='PASS'}
+          assert not failures, f'Lab QA failures: {failures}'
+          print('PASS: seven independent n8n model traces, consistent workflow version and scorer.')
+          PY
