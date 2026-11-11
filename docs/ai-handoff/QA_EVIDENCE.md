@@ -68,3 +68,10 @@ User submitted six complete Messenger replies from live pilot. Workflows `Z7FdV7
 - Complaint reply 2245 asks for a mandatory order ID; real ticket validator in workflow `KqSuGxCHixc6fsiu` treats `order_id` as optional; requires sender/page, allowed request type, explicit user request, and nonempty description. **Mismatch P1:** bot must accept support requests even without order code when description is sufficient, then only claim ticket exists if tool returns `ticket_created`.
 
 **Scoring:** four acceptable safe responses, one partial (image receipt claim), one pending ticket end-to-end; separate P0 stale catalog lookup defect affects price statements in samples 1 & 2, even though numeric values matched prior catalog. Do not announce full Messenger commerce QA PASS. V10.1 was not modified/published further during this audit.
+
+
+### Messenger V10.1 support ticket E2E 2246/2247
+
+- User-supplied messenger reply reports `TKT-1794397853790-H324RP` for complaint "missing one white shirt; does not remember order ID; wants staff". Independently verified live Messenger execution `2246` success, `create_support_ticket` success status `ticket_created` and matching `ticket_id`. Main Agent output includes exact ID; Send Messenger Reply and Verify Messenger Send Result executed successfully with Meta acknowledgement.
+- Subworkflow `TIEN404_MESSENGER_SUPPORT_REQUESTS` (`KqSuGxCHixc6fsiu`) execution `2247` success: `Validate Support Request` valid, `Write Support Ticket` output included persisted row `id, createdAt, updatedAt`, and `Ticket Saved` returned `success=true,status=ticket_created,ticket_id` matching the exact sample. `order_id` is allowed empty, so the complaint can be created without the buyer remembering the order code.
+- Release gate: **Support ticket creation on a live signed Messenger event PASS**; no evidence that any human employee received a notification or picked up the ticket. Bot must not promise direct handoff or fast reply. Follow-up user messages must not be described as appended to the same ticket unless an update-ticket capability and evidence exist. Do not write customer contact or sender IDs into public QA notes.
