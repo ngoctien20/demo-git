@@ -80,6 +80,18 @@ with connect() as db:
         pass
     else:
         raise AssertionError('forged audit accepted')
+    for i, shop in enumerate(shops):
+        with db.transaction():
+            db.execute("select set_config('request.jwt.claim.sub', %s, true)", (str(users[i]),))
+            db.execute("set local role authenticated")
+            inbox = db.execute("select * from merchant_notification_inbox(%s)", (shop,)).fetchall()
+            assert len(inbox)==1 and inbox[0][1]==(first,other)[i] and inbox[0][3] is None
+            assert len(inbox[0][4])==3
+            assert db.execute("select * from merchant_notification_inbox(%s)", (shops[1-i],)).fetchall()==[]
+            for target, expected in [(shops[1-i],False),(shop,True),(shop,True)]:
+                assert db.execute("select mark_merchant_notification_viewed(%s,%s)",(target,inbox[0][0])).fetchone()==(expected,)
+            assert db.execute("select viewed_at is not null from merchant_notification_inbox(%s)",(shop,)).fetchone()==(True,)
+    assert db.execute("select count(*) from orders where status='pending'").fetchone()==(2,)
     cancel(db,shops[0],users[0],first)
     assert db.execute('select stock_on_hand from products where tenant_id=%s',(shops[0],)).fetchone()==(4,)
 print("PASS: checkout, routing, rollback, two-worker claim, receipt fencing, retry, ambiguity, crash and cross-shop forgery")
