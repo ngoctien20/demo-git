@@ -5,7 +5,7 @@
 (() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={csrf:null,me:null};
+const state={csrf:null,me:null,epoch:0};
 function show(id,yes){$(id).hidden=!yes}
 function setText(id,value){$(id).textContent=String(value??"—")}
 function row(cells,body){
@@ -23,50 +23,79 @@ async function request(path,options={}){
 }
 function notice(text){setText("app-status",text)}
 async function session(){
+  const epoch=state.epoch;
   const me=await request("/api/v1/auth/me");
+  if(epoch!==state.epoch)return;
   if(!["SUPER_ADMIN","SUPPORT_ADMIN","TECH_ADMIN"].includes(me.role))throw Object.assign(new Error("insufficient_role"),{status:403});
   state.me=me;
   const csrf=await request("/api/v1/auth/csrf",{method:"POST"});
+  if(epoch!==state.epoch)return;
   state.csrf=csrf.csrf;
+  // Never reuse DOM from a prior privileged session or role.
+  resetConsole();
   show("login-view",false);show("console-view",true);
   setText("account-role",me.role);
   document.querySelector('[data-tab="audit"]').hidden=me.role!=="SUPER_ADMIN";
   await refreshTenants();
 }
+function resetConsole(){
+  for(const id of ["tenants-body","plans-body","audit-body"])clear(id);
+  for(const id of ["tenant-count","source-state","audit-check","account-role"])setText(id,"—");
+  for(const id of ["tenants-empty","plans-empty","audit-empty"])show(id,false);
+  notice("");
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    const selected=b.dataset.tab==="tenants";
+    b.classList.toggle("active",selected);
+    if(selected)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");
+  });
+  for(const name of ["tenants","plans","audit"])show(name+"-panel",name==="tenants");
+  document.querySelector('[data-tab="audit"]').hidden=true;
+}
 function showLogin(message=""){
+  state.epoch++;
   state.csrf=null;state.me=null;
+  resetConsole();
   show("console-view",false);show("login-view",true);
   setText("login-error",message);show("login-error",Boolean(message));
 }
 async function refreshTenants(){
+  const epoch=state.epoch;
+  if(!state.me)return;
   clear("tenants-body");show("tenants-empty",false);notice("");
   try{
     const d=await request("/api/v1/admin/tenants");
+    if(epoch!==state.epoch||!state.me)return;
     setText("source-state",d.source==="staging_sqlite"?"STAGING":"Không xác định");
     const items=Array.isArray(d.items)?d.items:[];
     setText("tenant-count",items.length);
     for(const t of items)row([t.name,t.industry,t.service_enabled?"Bật trong staging":"Tắt trong staging",t.bot_paused?"Đang tạm dừng":"Chưa tạm dừng",t.id],$("tenants-body"));
     show("tenants-empty",items.length===0);
-  }catch(e){setText("source-state","Lỗi kết nối");show("tenants-empty",true);notice("Không tải được dữ liệu cửa hàng ("+e.message+").")}
+  }catch(e){if(epoch!==state.epoch)return;setText("source-state","Lỗi kết nối");show("tenants-empty",true);notice("Không tải được dữ liệu cửa hàng ("+e.message+").")}
 }
 async function refreshPlans(){
+  const epoch=state.epoch;
+  if(!state.me)return;
   clear("plans-body");show("plans-empty",false);notice("");
   try{
     const d=await request("/api/v1/admin/plans");
+    if(epoch!==state.epoch||!state.me)return;
     const items=Array.isArray(d.items)?d.items:[];
     for(const p of items)row([p.label,p.cycle,p.price_minor+" VND (staging)",p.max_messages],$("plans-body"));
     show("plans-empty",items.length===0);
-  }catch(e){show("plans-empty",true);notice("Không tải được các gói trong staging ("+e.message+").")}
+  }catch(e){if(epoch!==state.epoch)return;show("plans-empty",true);notice("Không tải được các gói trong staging ("+e.message+").")}
 }
 async function refreshAudit(){
+  const epoch=state.epoch;
+  if(!state.me)return;
   clear("audit-body");show("audit-empty",false);notice("");
   try{
     const d=await request("/api/v1/admin/audit");
+    if(epoch!==state.epoch||!state.me)return;
     setText("audit-check",d.hash_chain_valid?"Chuỗi hash hợp lệ":"Lỗi xác minh chuỗi hash");
     const entries=Array.isArray(d.entries)?d.entries:[];
     for(const a of entries)row([a.created_at,a.action,a.tenant_id||"—",a.reason],$("audit-body"));
     show("audit-empty",entries.length===0);
-  }catch(e){show("audit-empty",true);notice("Không thể xem nhật ký ("+e.message+").")}
+  }catch(e){if(epoch!==state.epoch)return;show("audit-empty",true);notice("Không thể xem nhật ký ("+e.message+").")}
 }
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("[data-tab]").forEach(x=>{x.classList.toggle("active",x===b);if(x===b)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
@@ -91,8 +120,12 @@ $("login-form").addEventListener("submit",async e=>{
  finally{btn.disabled=false}
 });
 $("logout").addEventListener("click",async()=>{
- try{await request("/api/v1/auth/logout",{method:"POST",headers:{"X-CSRF-Token":state.csrf||""}})}catch{}
+ const csrf=state.csrf||"";
+ // Clear sensitive content before waiting for the network. Stale requests
+ // cannot repopulate the console because showLogin increments epoch.
  showLogin();
+ try{await request("/api/v1/auth/logout",{method:"POST",headers:{"X-CSRF-Token":csrf}})}
+ catch{show("login-error",true);setText("login-error","Chưa xác nhận được đăng xuất trên máy chủ. Vui lòng thử lại hoặc đóng trình duyệt.");}
 });
 $("refresh-tenants").addEventListener("click",refreshTenants);
 $("refresh-plans").addEventListener("click",refreshPlans);
