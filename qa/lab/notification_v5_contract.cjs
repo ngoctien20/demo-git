@@ -58,13 +58,13 @@ function channelEligibility(channel, settings, nowIso) {
         settings.estimated_cost_vnd > settings.cost_ceiling_vnd)
       return { allowed: false, reason: 'ZALO_COST_NOT_APPROVED' };
   } else if (channel === 'telegram') {
-    if (!/^\\d{5,20}$/.test(settings.recipient_ref))
+    if (!/^\d{5,20}$/.test(settings.recipient_ref))
       return { allowed: false, reason: 'TELEGRAM_CHAT_ID_INVALID' };
   } else if (channel === 'gmail') {
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(settings.recipient_ref))
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.recipient_ref))
       return { allowed: false, reason: 'GMAIL_ADDRESS_INVALID' };
   } else if (channel === 'messenger') {
-    if (settings.meta_page_verified !== true || !/^\\d{6,25}$/.test(settings.recipient_ref))
+    if (settings.meta_page_verified !== true || !/^\d{6,25}$/.test(settings.recipient_ref))
       return { allowed: false, reason: 'META_PSID_OR_PAGE_INVALID' };
     if (settings.meta_policy_approved !== true || settings.inbound_hmac_verified !== true)
       return { allowed: false, reason: 'META_POLICY_NOT_VERIFIED' };
@@ -121,7 +121,7 @@ function prepareNotificationPlan(event, channels, options = {}) {
   }));
   return Object.freeze({
     mode: options.mode, primary: primary || null, event_id: order.event_id,
-    routes: routing, blocked, dashboard_inbox: true, no_external_sends: true,
+    routes: routing, eligible_channels: selected, blocked, dashboard_inbox: true, no_external_sends: true,
     authorization_source: 'SERVER_SESSION_REQUIRED'
   });
 }
@@ -131,7 +131,7 @@ function nextFallback(plan, primaryStatus, alternateChannel) {
   if (primaryStatus !== 'failed_definitive') return { allowed: false, reason: 'PRIMARY_NOT_DEFINITIVELY_FAILED' };
   if (!plan.routes.length) return { allowed: false, reason: 'PRIMARY_NOT_SELECTED' };
   const blocked = new Set(plan.blocked.map(x => x.channel));
-  if (!EXTERNAL.includes(alternateChannel) || blocked.has(alternateChannel) ||
+  if (!EXTERNAL.includes(alternateChannel) || !Array.isArray(plan.eligible_channels) || !plan.eligible_channels.includes(alternateChannel) || blocked.has(alternateChannel) ||
       alternateChannel === plan.routes[0].channel) return { allowed: false, reason: 'FALLBACK_NOT_ELIGIBLE' };
   // Approval and recipient lookup MUST be repeated at dispatch time.
   return { allowed: true, reason: 'RECHECK_POLICY_AND_RECIPIENT_BEFORE_DISPATCH' };
