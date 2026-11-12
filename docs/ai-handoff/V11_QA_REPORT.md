@@ -60,3 +60,7 @@ SQL staging xác nhận 2 tenant, function chứa PT409, anon không EXECUTE và
 Runner đã nhận đủ bốn secret. Shop A đạt HTTP JWT qua gateway và PostgREST, refresh và logout. Shop B bị từ chối ở bước đăng nhập HTTP 400. Chromium chưa chạy. [Actions · lần 3](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/3).
 
 Lần 2 dừng do ReadTimeout. Lần 3 vượt qua kiểm tra ẩn danh. Shop A đọc được sản phẩm và đơn fixture của A, bị từ chối khi đọc B. RPC nhận payload cố ý sai và từ chối truy cập tenant B. Runner đọc lại sau refresh và xác minh refresh token bị từ chối sau local logout. Supabase có một sự kiện thông tin đăng nhập không hợp lệ trong cửa sổ chẩn đoán 10 phút. Chưa nghiệm thu chiều B → A, phiên trình duyệt hoặc quyền ghi hợp lệ. Form ghi chưa được phê duyệt bật.
+
+## 12/11/2026 · kiểm thử lại sau cập nhật tài khoản QA
+
+Lần 4 dừng ở ReadTimeout. [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5) đạt. Render Auth 219dd086, Data ab940a95. Hai tài khoản QA đạt đăng nhập, đọc đúng tenant, chặn đọc chéo qua gateway và PostgREST, kiểm quyền RPC sản phẩm bằng payload sai, refresh token và logout. Chromium 360 × 780 đạt cho cả hai shop khi tải lại, đóng/mở lại và chặn trang account sau logout. Kiểm tra ẩn danh đạt. Các phép thử RPC dùng đầu vào bị từ chối, chưa nghiệm thu vòng đời ghi hợp lệ, staff và nonmember.

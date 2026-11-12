@@ -2,7 +2,7 @@
 
 | Ưu tiên / owner | Trạng thái | Đầu ra để đóng |
 |---|---|---|
-| P0 Identity | BLOCKED | Xác minh cặp thông tin đăng nhập Shop B. Shop A đã đạt kiểm thử HTTP. Hai danh tính A/B phải có positive control, đọc/ghi chéo bị từ chối, nonmember/staff/anon bị từ chối, kiểm refresh/reopen/logout. |
+| P0 Identity | IN_PROGRESS | Đã đạt HTTP JWT hai chiều và Chromium. Còn staff/nonmember, các quyền ghi và recovery. |
 | P0 Merchant | IMPLEMENTED_NOT_VERIFIED | Dùng phiên thật xuất CSV, đối số tiền theo ngày Việt Nam với truy vấn DB. Nghiệm thu 13 điều kiện quyền ghi trước khi bật form. |
 | P0 Commerce | IN_PROGRESS | Trên giao dịch DB staging kiểm mua sản phẩm cuối, retry, hoàn kho, audit và rollback; xác minh quyền sở hữu đơn. |
 | P1 Admin | IMPLEMENTED_NOT_VERIFIED | Host staging có MFA/RBAC, endpoint admin từ chối non-admin, ghi audit và giữ bí mật khi validation lỗi. |
@@ -17,7 +17,7 @@
 | Priority | Owner | State | Exit gate |
 |---|---|---|---|
 | P0 Merchant conflict/CI | CTO/Backend | **FIXED ON FIX BRANCH AND STAGING DB; INTEGRATION PENDING** | Review Draft PR #26 and integrate with parent Work #22 only after full QA; preserve PT409 in eventual merchant RPC. |
-| P0 Identity E2E | Auth/QA | BLOCKED | Real signed Supabase Auth two-user A/B via private QA credentials, session refresh/browser reopen/logout, cross-tenant writes denied. |
+| P0 Identity E2E | Auth/QA | VERIFIED_DONE | Hai owner A/B qua gateway, PostgREST, RPC từ chối khác tenant, refresh và Chromium reopen/logout. [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5) |
 | P0 Product writes | Security | QA-ONLY | Audit SECURITY DEFINER allowlist and JWT role paths; no UI product editor activation without prior approval. |
 | P1 Public provider status monitoring | DevOps | CODED/QA PENDING | Finish CI on docs verification branch, record actual HTTP results; note Cloudflare newest event can be skipped. |
 | P1 Commerce integration | Backend/n8n | IN_PROGRESS | Trusted per-tenant signed gateway, transactional idempotency, stock restoration on retry/partial failure and real merchant session. |

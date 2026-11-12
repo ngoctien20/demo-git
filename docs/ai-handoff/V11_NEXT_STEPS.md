@@ -36,6 +36,6 @@ Fetch các branch của PR #13–20 và ref staging, đối chiếu deployment L
 
 ### Tiếp quản bản LIVE sau #28/#29
 
-1. Kiểm tra đăng nhập Shop B trên Render bằng tài khoản thử nghiệm. Đối chiếu hai secret B trong GitHub rồi chạy lại [Actions · lần 3](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/3). Hai secret A đã vượt kiểm tra đăng nhập.
-2. Đọc riêng kết quả gateway/PostgREST, refresh, local logout, mobile reopen và membership. Nếu thiếu một shop, giữ trạng thái BLOCKED. Sau khi các bước này đạt, còn phải nghiệm thu staff/nonmember trên host và test ghi dữ liệu QA được phép trước khi bật editor.
+1. Ghi nhận QA hai chủ shop qua API và Chromium tại [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5).
+2. Kiểm tra staff/nonmember, ghi dữ liệu QA hợp lệ, audit, cập nhật đồng thời và rollback trước khi bật form sản phẩm.
 3. Theo dõi lỗi và đối soát đơn/tồn kho trong fixture, chuẩn bị restore Supabase cô lập và hosted Super Admin. Không đưa bot Messenger đang phục vụ vào kiểm thử có tác dụng ghi.
