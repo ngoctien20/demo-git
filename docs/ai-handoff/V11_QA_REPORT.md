@@ -54,3 +54,9 @@ Neither public health smoke nor anonymous browser tests verifies a real signed-i
 | Signed hosted | Job riêng dừng ở kiểm cấu hình đầu vào; không có kết quả login/refresh/reopen/logout của hai user trên host. BLOCKED | [Private acceptance](https://github.com/ngoctien20/demo-git/actions/runs/43149990296) |
 
 SQL staging xác nhận 2 tenant, function chứa PT409, anon không EXECUTE và authenticated không UPDATE trực tiếp. Không áp dụng lại migration của #26.
+
+## 12/11/2026 · kiểm thử có xác thực sau khi cấu hình secrets
+
+Runner đã nhận đủ bốn secret. Shop A đạt HTTP JWT qua gateway và PostgREST, refresh và logout. Shop B bị từ chối ở bước đăng nhập HTTP 400. Chromium chưa chạy. [Actions · lần 3](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/3).
+
+Lần 2 dừng do ReadTimeout. Lần 3 vượt qua kiểm tra ẩn danh. Shop A đọc được sản phẩm và đơn fixture của A, bị từ chối khi đọc B. RPC nhận payload cố ý sai và từ chối truy cập tenant B. Runner đọc lại sau refresh và xác minh refresh token bị từ chối sau local logout. Supabase có một sự kiện thông tin đăng nhập không hợp lệ trong cửa sổ chẩn đoán 10 phút. Chưa nghiệm thu chiều B → A, phiên trình duyệt hoặc quyền ghi hợp lệ. Form ghi chưa được phê duyệt bật.

@@ -1,6 +1,6 @@
 # V11 · trạng thái ngày 12/11/2026 JST
 
-Render Auth LIVE 219dd086, Data LIVE ab940a95. Đã tích hợp các nhánh #22, #26 và hồ sơ #27. Commerce/PostgREST cô lập đạt QA. Hosted Auth ẩn danh đạt. QA hai người dùng thật bị chặn vì runner thiếu cấu hình tài khoản. Pilot cửa hàng thật: NOT READY. Production changed: NO.
+Render Auth LIVE 219dd086, Data LIVE ab940a95. Đã tích hợp các nhánh #22, #26 và hồ sơ #27. Commerce/PostgREST cô lập đạt QA. Hosted Auth ẩn danh đạt. Runner đã nhận đủ bốn secret. Shop A đạt HTTP JWT qua gateway và PostgREST, refresh và logout. Shop B bị từ chối ở bước đăng nhập HTTP 400. Chromium chưa chạy. [Actions · lần 3](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/3). Pilot cửa hàng thật: NOT READY. Production changed: NO.
 
 [QA](V11_QA_REPORT.md) · [Deployment](V11_DEPLOYMENT.md) · [Hướng dẫn tiếp quản](V11_NEXT_STEPS.md) · [PR bàn giao #30](https://github.com/ngoctien20/demo-git/pull/30).
 
