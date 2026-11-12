@@ -1,0 +1,55 @@
+name: V11 private two-shop staging acceptance
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [docs/cto-coordination-v2]
+    paths: ['.github/workflows/v11-private-auth-acceptance.yml']
+permissions:
+  contents: read
+jobs:
+  two-shop:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'work/v11-consolidated-staging')
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Check private QA inputs
+        id: inputs
+        env:
+          A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
+          B_EMAIL: ${{ secrets.TIEN404_QA_B_EMAIL }}
+          A_PASSWORD: ${{ secrets.TIEN404_QA_A_PASSWORD }}
+          B_PASSWORD: ${{ secrets.TIEN404_QA_B_PASSWORD }}
+        run: |
+          if [[ -z "$A_EMAIL" || -z "$B_EMAIL" || -z "$A_PASSWORD" || -z "$B_PASSWORD" ]]; then
+            echo 'BLOCKED: dedicated QA credentials missing; no sign-in attempted' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: 80199d3dcf99f60db733b790c3ddf433cd6eac44
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ab940a95dae8afdff426bc6ac71693833d5348ce
+          path: data
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 219dd0864d4a26500d758edbb803f3b8b5e61f73
+          path: auth
+          persist-credentials: false
+      - run: python -m pip install httpx==0.28.1 playwright==1.58.0 && python -m playwright install chromium
+      - name: Verify staging HTTP identities and mobile browser persistence
+        env:
+          TIEN404_QA_A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
+          TIEN404_QA_A_PASSWORD: ${{ secrets.TIEN404_QA_A_PASSWORD }}
+          TIEN404_QA_B_EMAIL: ${{ secrets.TIEN404_QA_B_EMAIL }}
+          TIEN404_QA_B_PASSWORD: ${{ secrets.TIEN404_QA_B_PASSWORD }}
+          TIEN404_QA_A_TENANT: 9c8c524c-88db-4771-8ab0-a4316298494c
+          TIEN404_QA_B_TENANT: 4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5
+        run: |
+          set -eu
+          TIEN404_QA_PUBLISHABLE_KEY="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=await import('data:text/javascript;base64,'+readFileSync('auth/assets/auth-config.js').toString('base64')); console.log(m.SUPABASE_PUBLISHABLE_KEY)")"
+          export TIEN404_QA_PUBLISHABLE_KEY
+          python data/ops/data-platform/scripts/live_auth_acceptance.py
+          python qa/staging/signed_auth_browser.py

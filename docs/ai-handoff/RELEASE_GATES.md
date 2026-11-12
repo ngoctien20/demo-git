@@ -1,0 +1,49 @@
+# Điều kiện phát hành và hoàn tác
+
+| Điều kiện pilot | Kết quả Work V9 |
+|---|---|
+| JWT thật A/B, refresh/logout/recovery, nonmember và truy cập chéo đọc/ghi | BLOCKED |
+| Mobile login → tenant → catalog → cấu hình bot → test chat → logout | IN_PROGRESS |
+| Giao dịch DB và HTTP fixture chịu retry/concurrency | VERIFIED_DONE trong DB thử; tích hợp tenant thật và n8n còn mở |
+| Quota chống trùng/giới hạn | VERIFIED_DONE trong môi trường Admin cô lập; chưa nối provider |
+| Restore dữ liệu có kiểm và audit | VERIFIED_DONE trong PostgreSQL CI; diễn tập trên bản sao Supabase còn mở |
+| 4 workflow có Draft khác Published | DEFERRED Publish. Cần kiểm fixture lịch sử, quyết định chủ dự án và phương án revert. |
+
+Trước triển khai, đối chiếu SHA đang phục vụ với HEAD, CI, phạm vi diff, cấu hình tự deploy và phương án phục hồi. Nếu form ứng viên gây hồi quy, Auth rollback về dep-dbq31p15efls739ha120 của 8ea63eb. Nếu cần quay về trước V9, dùng dep-dbpu1qajnfac73efpjr0 của d25d683. Data rollback về dep-dbpifqbbc2fs73aa1ab0 của 9745dd18. Với bảng bot mới, tạm dừng hiển thị ở UI hoặc thu hồi SELECT bằng migration đã duyệt, giữ nguyên bản ghi. PR Admin, Website, Commerce và Lab có thể revert commit trên branch phát triển tương ứng.
+
+Chủ dự án duyệt việc mở quyền ghi merchant, thay đổi quyền quản trị/credential, Publish workflow phục vụ thật, promote Core Bot, production merge hoặc thanh toán/chi phí mới. Các việc QA chỉ đọc và bảo trì fixture tiếp tục theo quyền đã giao.
+
+
+Nếu duyệt mở catalog trong giới hạn hai shop QA, phải kiểm soát giới hạn đó **ở DB** trước khi cấp EXECUTE, kiểm staff/tenant đối diện, kiểm backup và lệnh thu hồi quyền. Bản ứng viên V8 kiểm membership nói chung. Tắt cờ UI không thay thế việc thu hồi quyền chạy RPC. Cấu hình thử và schema ứng viên: [PR5](https://github.com/ngoctien20/demo-git/pull/5), [PR7](https://github.com/ngoctien20/demo-git/pull/7).
+
+
+## Quyết định V10.1 — cấp quyền catalog hai shop QA
+
+Chủ dự án đã phê duyệt **đúng hai Shop QA trên staging** cho owner/manager tạo/sửa sản phẩm, không áp dụng production hoặc các tenant khác. Đã triển khai RPC trong migration `20261111095308`, quyền EXECUTE chỉ với `authenticated` và kiểm allowlist tenant phía DB. Giao diện editor vẫn tắt; signed HTTP JWT A/B + staff/anon/nonmember, review Advisor WARN cho SECURITY DEFINER, backup và rollback là các gate bắt buộc trước khi bật form. Phê duyệt này KHÔNG đồng thời cho phép Publish Messenger, tạo đơn thật hoặc kết nối dữ liệu AI_SALES_DEMO vào Commerce.
+
+
+## V10.2 — chủ dự án chốt triển khai GitHub trước, domain sau
+
+**OWNER APPROVAL STATUS**
+
+| Mục | Phê duyệt |
+|---|---|
+| Phát triển mã widget, Login/Account, Super Admin trên nhánh GitHub + QA | YES — trong phạm vi staging và dữ liệu giả/đã ủy quyền |
+| Cập nhật bản demo/preview GitHub Pages sau CI/UI QA, giữ nguyên các hệ thống live khác | YES — preview only; cần bảo vệ và rollback code |
+| Soạn tài liệu kiến trúc, chi phí, hướng dẫn DNS/hosting/cutover | YES — planning only |
+| Đăng ký/mua tên miền | NO — chủ dự án tự thực hiện sau |
+| Thiết lập custom domain, sửa DNS, thay OAuth redirect/canonical sang domain thật | NO |
+| Tạo production hosting, production DB, mua dịch vụ trả phí hoặc bắt đầu giao dịch khách thật | NO |
+| Kết nối Super Admin prototype trực tiếp với production hay cấp quyền admin rộng | NO — phải qua review và approval riêng |
+
+**RELEASE GATE HARD STOP:** Chưa có phê duyệt mới bằng lời rõ ràng của chủ dự án thì không được chuyển từ GitHub demo/staging sang website thương mại thực, kể cả khi các test tự động đều xanh. Khi có domain, hướng dẫn cấu hình DNS/Render/TLS/Auth redirects từng bước sau khi kiểm tra hạ tầng thực tế. Xem `WEBSITE_V10_2_ROADMAP.md`.
+
+
+## V10.3 — release evidence and hold
+
+- Owner authorizes **GitHub feature branches, staging QA, isolated Cloudflare preview**, not a commercial production deployment. PRs #10 (Auth), #11 (widget), #12 (Super Admin) all remain DRAFT/unmerged.
+- `gh-pages=6bb57e631709cb0be8d3b2b02c299d5915638df8`; Cloudflare baseline production-branch deployment remains `2715c6e2-edc1-4a5d-9ceb-5953311b752d`. Never merge #11 without separately assessing impact on **both** GitHub Pages + Cloudflare Pages.
+- Widget CI [43035200229](https://github.com/ngoctien20/demo-git/actions/runs/43035200229) 25 browser tests PASS; Auth [43035277528](https://github.com/ngoctien20/demo-git/actions/runs/43035277528) PASS; Admin [43035070898](https://github.com/ngoctien20/demo-git/actions/runs/43035070898) 71 security tests PASS. Static/isolated QA does not confer entitlement to production.
+- Cloudflare preview setting returned to `none` after PR-related cross-branch preview events despite an initial branch allowlist; no domain or DNS changes.
+- **Hard HOLD** on Render Auth new CSS release until independent staging browser QA and SHA check; Super Admin hosted deployment until backend identity/MFA/RBAC and staging host proven; public merchant editor until signed HTTP JWT A/B/negative checks; domain production cutover until explicit owner approval.
+- Supabase warnings remain: authenticated security-definer RPC executable and leaked-password protection disabled (see `V10_3_4_IMPLEMENTATION.md`). No key/role modification performed.

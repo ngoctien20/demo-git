@@ -1,0 +1,30 @@
+name: V11 hosted Auth release verification
+on:
+  pull_request:
+    branches: [docs/cto-coordination-v2]
+    paths:
+      - 'qa/staging/**'
+      - '.github/workflows/v11-staging-smoke.yml'
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Render staging commit SHA
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  hosted:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha || '219dd0864d4a26500d758edbb803f3b8b5e61f73' }}
+          path: candidate
+          persist-credentials: false
+      - run: node candidate/scripts/build-auth-preview.mjs
+      - run: python qa/staging/verify_auth_release.py candidate/auth-preview-dist
+      - run: python -m pip install playwright==1.58.0 && python -m playwright install chromium
+      - run: python qa/staging/anonymous_auth_browser.py
