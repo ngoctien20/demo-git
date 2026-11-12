@@ -37,5 +37,5 @@ Fetch các branch của PR #13–20 và ref staging, đối chiếu deployment L
 ### Tiếp quản bản LIVE sau #28/#29
 
 1. Ghi nhận QA hai chủ shop qua API và Chromium tại [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5).
-2. Kiểm tra staff/nonmember, ghi dữ liệu QA hợp lệ, audit, cập nhật đồng thời và rollback trước khi bật form sản phẩm.
+2. Tiếp quản [PR #31](https://github.com/ngoctien20/demo-git/pull/31). CSV hai shop, audit và rollback transaction sản phẩm staging đã đạt. Ưu tiên JWT riêng cho staff/nonmember, ghi hợp lệ qua HTTP, hai yêu cầu sửa đồng thời và diễn tập restore Supabase trước khi bật form.
 3. Theo dõi lỗi và đối soát đơn/tồn kho trong fixture, chuẩn bị restore Supabase cô lập và hosted Super Admin. Không đưa bot Messenger đang phục vụ vào kiểm thử có tác dụng ghi.

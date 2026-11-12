@@ -2,6 +2,8 @@
 
 Render Auth LIVE 219dd086, Data LIVE ab940a95. Đã tích hợp các nhánh #22, #26 và hồ sơ #27. Commerce/PostgREST cô lập đạt QA. Hosted Auth ẩn danh đạt. Hai tài khoản QA đạt đăng nhập, đọc đúng tenant, chặn đọc chéo qua gateway và PostgREST, kiểm quyền RPC sản phẩm bằng payload sai, refresh token và logout. Chromium 360 × 780 đạt cho cả hai shop khi tải lại, đóng/mở lại và chặn trang account sau logout. [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5). Pilot cửa hàng thật: NOT READY. Production changed: NO.
 
+**Merchant.** Hai shop đã tải CSV 7 và 30 ngày trên staging, đối soát RPC với đơn hàng gốc đạt. Ghi sản phẩm bằng RPC đã đạt trong transaction rollback của staging. Editor vẫn tắt trong khi chờ kiểm quyền và thao tác ghi qua HTTP. [PR #31](https://github.com/ngoctien20/demo-git/pull/31).
+
 [QA](V11_QA_REPORT.md) · [Deployment](V11_DEPLOYMENT.md) · [Hướng dẫn tiếp quản](V11_NEXT_STEPS.md) · [PR bàn giao #30](https://github.com/ngoctien20/demo-git/pull/30).
 
 ## Lịch sử

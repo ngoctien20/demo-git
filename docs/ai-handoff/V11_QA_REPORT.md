@@ -64,3 +64,20 @@ Lần 2 dừng do ReadTimeout. Lần 3 vượt qua kiểm tra ẩn danh. Shop A 
 ## 12/11/2026 · kiểm thử lại sau cập nhật tài khoản QA
 
 Lần 4 dừng ở ReadTimeout. [Actions · lần 5](https://github.com/ngoctien20/demo-git/actions/runs/43149990296/attempts/5) đạt. Render Auth 219dd086, Data ab940a95. Hai tài khoản QA đạt đăng nhập, đọc đúng tenant, chặn đọc chéo qua gateway và PostgREST, kiểm quyền RPC sản phẩm bằng payload sai, refresh token và logout. Chromium 360 × 780 đạt cho cả hai shop khi tải lại, đóng/mở lại và chặn trang account sau logout. Kiểm tra ẩn danh đạt. Các phép thử RPC dùng đầu vào bị từ chối, chưa nghiệm thu vòng đời ghi hợp lệ, staff và nonmember.
+
+## 12/11/2026 JST · Merchant, danh mục và báo cáo
+
+WORK, nền bàn giao 7fe4a5a. Mã kiểm thử [PR #31](https://github.com/ngoctien20/demo-git/pull/31). Auth 219dd086, Data ab940a95.
+
+| Bài thử | Môi trường và đầu vào | Nghiệm thu và kết quả |
+|---|---|---|
+| PRODUCT-RPC-DB | Supabase staging, hai owner giả lập claim SQL, hai SKU tạm cùng mã ở hai tenant | PASS. Tạo ở giá 100 và tồn 3, sửa giá thành 200 và ngừng bán. Đọc lại đúng giá và tồn. Mỗi tenant có một audit tạo, một audit sửa và đúng actor. Xung đột bản cũ trả PT409. Giá âm, tồn âm, ghi chéo, UPDATE trực tiếp và UID ngoài membership bị từ chối. |
+| PRODUCT-ROLLBACK | ROLLBACK toàn bộ transaction trên staging, truy vấn mới tìm SKU tiền tố của bài thử | PASS. Còn 0 sản phẩm và 0 audit của bài thử. Kiểm tra grant cho thấy authenticated thiếu INSERT/DELETE trực tiếp, anon thiếu EXECUTE. Khôi phục backup staging là bài riêng. |
+| PRODUCT-ROLES | PostgreSQL 16.2 cô lập, schema/candidate tại ab940a95, danh tính tổng hợp | PASS. Manager tạo thành công, staff, manager bất hoạt và nonmember bị từ chối. Owner của tenant ngoài allowlist bị từ chối. Trên staging hiện chỉ thấy membership active vai trò owner ở hai shop QA. |
+| REPORT-DB | Supabase staging, hai shop × 7/30 ngày, cùng snapshot, ngày Việt Nam, có đơn ở mỗi kỳ | PASS. Mọi ngày, số đơn, số đơn paid và tổng VND do RPC trả khớp truy vấn độc lập trên orders. |
+| REPORT-CSV | Render staging, hai JWT thật, Chromium 360×780, tải 4 CSV | PASS. Kiểm tham số tenant/kỳ, tên file, tiêu đề, từng dòng và tổng tiền so với response. Refresh, mở lại, logout và từ chối route cũng đạt cho cả hai. [Actions](https://github.com/ngoctien20/demo-git/actions/runs/43194173398). |
+| AUTH-RELEASE | Render staging | PASS. [Hosted verification](https://github.com/ngoctien20/demo-git/actions/runs/43194173182). |
+
+Regression cục bộ gồm 7 bài health và 10 bài lab đạt. Chưa kiểm staff/nonmember bằng JWT riêng trên host, ghi hợp lệ qua HTTP, cạnh tranh hai request thực hoặc phục hồi bản sao lưu Supabase sang đích cô lập. Form ghi sản phẩm tiếp tục tắt.
+
+Commit cuối của PR là 832a64bd. [Private acceptance](https://github.com/ngoctien20/demo-git/actions/runs/43194528530) và [hosted release verification](https://github.com/ngoctien20/demo-git/actions/runs/43194528538) đều đạt.
