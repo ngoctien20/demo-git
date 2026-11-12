@@ -1,0 +1,33 @@
+name: "V11.5 Notification Policy (isolated, no external sends)"
+on:
+  push:
+    branches:
+      - "work/v11-5-zalo-first-notifications-*"
+    paths:
+      - "qa/lab/notification_v5_contract.cjs"
+      - "qa/lab/test_notification_v5.cjs"
+      - ".github/workflows/v11-5-notification-contract.yml"
+  pull_request:
+    branches:
+      - "work/v11-consolidated-staging"
+    paths:
+      - "qa/lab/notification_v5_contract.cjs"
+      - "qa/lab/test_notification_v5.cjs"
+      - ".github/workflows/v11-5-notification-contract.yml"
+permissions:
+  contents: read
+jobs:
+  policy-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate syntax
+        run: |
+          node --check qa/lab/notification_v5_contract.cjs
+          node --check qa/lab/test_notification_v5.cjs
+      - name: Run isolated policy QA
+        run: node --test qa/lab/test_notification_v5.cjs
