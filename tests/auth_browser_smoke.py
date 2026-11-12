@@ -28,7 +28,11 @@ const auth = {
     change('A'); return {data:{user:identity(),session:{}}};
   },
   async updateUser() {window.passwordUpdates=(window.passwordUpdates || 0)+1;return {}},
-  async signOut() {change(null);return {};}
+  async signOut(options) {
+    if (location.pathname.endsWith('/account.html') && options?.scope !== 'local')
+      throw Error('Merchant logout must be session-local');
+    change(null);return {};
+  }
 };
 export const authClient = {auth, async rpc(name,args) {
   if (name==='save_merchant_product') {

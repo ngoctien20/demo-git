@@ -18,7 +18,7 @@ assert(files.accountJs.includes('auth.getUser()'),'Missing network-verified user
 assert(files.accountJs.includes("from('tenant_memberships')"),'Missing RLS membership check');
 assert(files.accountJs.includes("eq('user_id',user.id)"),'Missing explicit auth user predicate');
 assert(files.accountJs.includes("from('tenants')"),'Missing scoped tenant lookup');
-assert(files.accountJs.includes('auth.signOut()'),'Missing logout handler');
+assert(files.accountJs.includes("auth.signOut({scope:'local'})"),'Missing logout handler');
 assert(files.loginJs.includes('auth.signInWithPassword'),'No password Auth flow');
 assert(files.loginJs.includes('auth.resetPasswordForEmail'),'Recovery email function missing');
 assert(files.loginJs.includes('auth.updateUser'),'Password update missing');

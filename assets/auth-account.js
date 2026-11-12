@@ -289,7 +289,7 @@ logout?.addEventListener('click',async()=>{
   resetView();
   put('Đang đăng xuất...');
   try{
-    const {error}=await withDeadline(sb.auth.signOut(),13000);
+    const {error}=await withDeadline(sb.auth.signOut({scope:'local'}),13000);
     if(error)throw error;
     location.replace('login.html');
   }catch{
