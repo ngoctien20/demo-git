@@ -42,3 +42,15 @@ Chưa đo tải 100 cửa hàng, chi phí model thực, E2E giao dịch thật, 
 | Initial public Render Free warmup | [GitHub Actions 43115725125](https://github.com/ngoctien20/demo-git/actions/runs/43115725125) | **FAIL**: health 503 during Render Free cold start before 7s Uvicorn startup; bounded retries now preserve this incident evidence and fail on sustained 503. |
 
 Neither public health smoke nor anonymous browser tests verifies a real signed-in A/B session. Pilot gate remains BLOCKED.
+
+### Nghiệm thu bản tích hợp · 12/11
+
+| Phép thử | Đầu vào và kết quả | Bằng chứng |
+|---|---|---|
+| Commerce CI | Hai phiên DB tranh sản phẩm cuối, retry, hoàn kho hai lần, rollback, đối soát tiền, khôi phục DB fixture thứ hai, PostgREST thật với JWT ký trong CI cho owner/manager/staff/nonmember và HTTP 409 cho version cũ. PASS | [Commerce QA](https://github.com/ngoctien20/demo-git/actions/runs/43149543214) |
+| Data CI | Contract mới buộc đúng cặp HTTP/SQLSTATE của shop mình và shop khác, kiểm cả trường hợp cho qua sai. PASS | [Data QA](https://github.com/ngoctien20/demo-git/actions/runs/43149543498) |
+| Auth/Render | 16 unit và Chromium cô lập. Trên host, 19 tài nguyên đúng build, login sẵn sàng và account ẩn danh bị khóa sau refresh. PASS | [Auth CI](https://github.com/ngoctien20/demo-git/actions/runs/43149675318) · [Hosted](https://github.com/ngoctien20/demo-git/actions/runs/43149990246) |
+| Public health | Website, Auth và Data public/anonymous cùng chữ ký giả; kiểm độc lập. PASS | [Hosted public](https://github.com/ngoctien20/demo-git/actions/runs/43149990241) |
+| Signed hosted | Job riêng dừng ở kiểm cấu hình đầu vào; không có kết quả login/refresh/reopen/logout của hai user trên host. BLOCKED | [Private acceptance](https://github.com/ngoctien20/demo-git/actions/runs/43149990296) |
+
+SQL staging xác nhận 2 tenant, function chứa PT409, anon không EXECUTE và authenticated không UPDATE trực tiếp. Không áp dụng lại migration của #26.

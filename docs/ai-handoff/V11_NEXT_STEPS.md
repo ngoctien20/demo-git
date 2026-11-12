@@ -33,3 +33,9 @@ Fetch các branch của PR #13–20 và ref staging, đối chiếu deployment L
 - Public staging health and hosted anonymous Auth SHA checks are now **PASS** at [43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699) and [43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858); do not repeat the stale default SHA `32669aba...` when validating the current Render Auth release `deaa5e1c...`. Work #25 independently tracks the related QA workflow correction; avoid duplicate PR merges.
 - Render Free cold start must be monitored as a transient 503/recovery event, not silently classified as uptime. Persistent 503 must fail the release gate and be escalated.
 - P0 remains signed-in, independent Supabase Auth sessions A/B with tenant negative writes/reopen/refresh/logout. Anonymous-only PASS is not sufficient for release.
+
+### Tiếp quản bản LIVE sau #28/#29
+
+1. Cấp bốn repository Actions secrets dành riêng cho hai shop thử nghiệm: TIEN404_QA_A_EMAIL, TIEN404_QA_A_PASSWORD, TIEN404_QA_B_EMAIL, TIEN404_QA_B_PASSWORD. Chạy lại failed job [43149990296](https://github.com/ngoctien20/demo-git/actions/runs/43149990296). Workflow tự sử dụng public key từ build staging và đúng hai tenant đã duyệt.
+2. Đọc riêng kết quả gateway/PostgREST, refresh, local logout, mobile reopen và membership. Nếu thiếu một shop, giữ trạng thái BLOCKED. Sau khi các bước này đạt, còn phải nghiệm thu staff/nonmember trên host và test ghi dữ liệu QA được phép trước khi bật editor.
+3. Theo dõi lỗi và đối soát đơn/tồn kho trong fixture, chuẩn bị restore Supabase cô lập và hosted Super Admin. Không đưa bot Messenger đang phục vụ vào kiểm thử có tác dụng ghi.

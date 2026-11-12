@@ -29,3 +29,12 @@ No Cloudflare Pages deploy or Render service redeploy was triggered by this cont
 Real read-only CI [43116766699](https://github.com/ngoctien20/demo-git/actions/runs/43116766699) confirmed current public Cloudflare and GitHub Pages sites + both Render staging services respond 200 after bounded warmup. Data API rejects anonymous and forged JWT with 401. Render Free transient 503 recovered attempt 3; log-based confirmation showed Uvicorn startup completion roughly 7 seconds after process start. No Render deploy was triggered to resolve it.
 
 Hosted Render Auth verification [43116766858](https://github.com/ngoctien20/demo-git/actions/runs/43116766858) confirms pinned commit `deaa5e1c6193a7861f6f3d1b55448a1ce1c05624` matches actual hosted artifacts and anonymous Chromium denial; earlier default `32669aba...` was stale and yielded a false SHA mismatch. The docs QA workflow's default SHA has been corrected on isolated PR #27; no live service source was changed.
+
+### Deployment đang phục vụ sau khi tích hợp #28/#29
+
+| Dịch vụ | ID | Commit | Smoke sau deploy |
+|---|---|---|---|
+| [Render Auth](https://tien404-auth-staging.onrender.com/login.html) | dep-dbqjagd6e07s73fcpasg | 219dd0864d4a26500d758edbb803f3b8b5e61f73 | LIVE, khớp 19 file và mobile Chromium ẩn danh |
+| [Render Data](https://tien404-data-staging.onrender.com/health) | dep-dbqj9plg1s2s73egr30g | ab940a95dae8afdff426bc6ac71693833d5348ce | LIVE, health 200, anonymous 401, handshake quá kích thước 413, POST orders 405 |
+
+Mốc quay lui trước lần triển khai này: Auth dep-dbqeqgafngtc73fcpf9g, Data dep-dbq30a2jnfac73euucsg. Không cần rollback trong lần smoke. Canonical Cloudflare 6bb57e6, immutable preview eb7edbed (61cf82f) success.

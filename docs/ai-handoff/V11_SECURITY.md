@@ -13,3 +13,5 @@
 - Current staging privilege check: `anon` cannot EXECUTE the product RPC; `authenticated` cannot directly UPDATE products; only owner/manager of two fixed QA tenants may call the SECURITY DEFINER function. Cross-shop owner A→B denied in live PostgreSQL transaction.
 - Supabase Security Advisor still flags `authenticated_security_definer_function_executable` for this intentionally privileged QA RPC and `auth_leaked_password_protection`. **Neither warning is resolved** by PT409; no production-grade merchant writing until independent full review and signed JWT acceptance.
 - No service-role key, customer payload or Auth token was written into source/logs. No changes to Messenger credentials or production traffic.
+
+**12/11.** Hosted gateway từ chối handshake 1025 byte với 413, POST lên route đơn chưa bật trả 405. Phép kiểm RPC mới phân biệt 403/42501 (khác tenant) và 400/22023 (đúng tenant nhưng dữ liệu cố ý không hợp lệ). Kiểm này là một phần của nghiệm thu hosted và còn chờ phiên QA. Trình duyệt QA không lưu screenshot, trace hay bản xuất session. Quyền sản phẩm ở giao diện vẫn khóa.

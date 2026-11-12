@@ -22,3 +22,5 @@
 | P1 Public provider status monitoring | DevOps | CODED/QA PENDING | Finish CI on docs verification branch, record actual HTTP results; note Cloudflare newest event can be skipped. |
 | P1 Commerce integration | Backend/n8n | IN_PROGRESS | Trusted per-tenant signed gateway, transactional idempotency, stock restoration on retry/partial failure and real merchant session. |
 | P1 Super Admin | Admin | HOST PENDING | Dedicated staging host with MFA/server RBAC/audit and real identity bridge; no Super Admin privilege by frontend labels. |
+
+**Cập nhật 12/11:** Đã hoàn tất tích hợp backend, kiểm khôi phục PostgreSQL disposable và smoke hosted anonymous. BLOCKED tại private hosted acceptance #30. Chưa kiểm backup/restore bản sao Supabase staging thực, giao dịch xuyên kênh, host Super Admin, giới hạn sử dụng và cảnh báo ngân sách đầu cuối.

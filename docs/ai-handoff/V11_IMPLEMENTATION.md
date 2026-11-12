@@ -16,3 +16,10 @@
 - Changed `ops/data-platform/candidates/merchant_product_qa_allowlist_v10.sql` and legacy candidate to return terminal `PT409` on stale optimistic lock instead of retryable `40001`. Updated disposable SQL QA, synthetic signed JWT/PostgREST HTTP QA, and added static regression tests.
 - Exact reviewed QA-only function was applied to Supabase staging as a new migration, retaining 2 tenant UUID+slug allowlists and grants. No Render API deployment / merchant editor activation.
 - Added a separate read-only public HTTP monitoring workflow/script on **docs-only branch** `docs/v11-continuation-verification-20261112`: Cloudflare/GitHub Pages/Render Auth/Render Data health and anonymous/forged bearer 401 checks, no credentials and no business writes. CI run result must be read before marking this monitoring test PASS.
+
+### 12/11 · tích hợp vào staging
+
+- Data #28 ab940a95 kế thừa #22/#26. Bổ sung vào live_auth_acceptance.py phép gọi RPC với SKU null và giá âm trước/sau refresh. Với owner đúng shop, dữ liệu phải bị từ chối ở bước validation. Với shop khác, phải bị từ chối sớm ở bước kiểm quyền. Bài này không tạo sản phẩm.
+- Merchant #29 219dd086 giới hạn đăng xuất vào phiên hiện tại và sửa nhãn nút, static guard và phép thử Chromium. Hành vi sau đổi mật khẩu ở luồng recovery được giữ riêng.
+- DevOps #30 bổ sung qa/staging/signed_auth_browser.py và workflow chỉ sử dụng hai tài khoản QA trong GitHub Actions secrets; kiểm user, tenant, reload, đóng và mở lại Chromium, đăng xuất, từ chối truy cập account. Script và CI không xuất profile hoặc token.
+- Operations #24 d8ba0e21 sửa phân loại quota GitHub và outage trang login; đã qua 16 test và vẫn là Draft. Phiên song song có Agent Factory ở 7cb06a1.

@@ -18,3 +18,7 @@ Quản lý thuê bao, lập hóa đơn, theo dõi chi phí theo tenant và kênh
 - Cloudflare Pages canonical deployment uses `gh-pages` (one production SUCCESS); feature-branch preview events can be skipped when preview disabled. The latest event need not be the latest successful deployment.
 - Render Auth (static) and Data (Python API) are distinct staging services; a LIVE health response is not proof of full Auth/RLS integration.
 - New V11 read-only public smoke script checks four public service origins and two negative tenant gateway requests, without Auth tokens or write tools. This CI complements—not replaces—Work V11 browser tests and signed JWT E2E.
+
+### 12/11 · phiên Merchant và đường ghi
+
+Account đăng xuất bằng scope local; runner dùng profile Chromium riêng cho từng QA shop, giữ profile qua hai lần khởi động và xóa khi kết thúc. Backend hosted chỉ chạy gateway đọc và handshake. API giao dịch sử dụng kết nối DB riêng trong CI. Supabase RPC ghi catalog là một đường khác, có allowlist đúng hai shop QA. n8n có 33 workflow, 16 active; inbox Agent Factory chưa active.
