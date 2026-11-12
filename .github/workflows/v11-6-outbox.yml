@@ -47,4 +47,4 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/outbox_v5.sql
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/inbox_v5.sql
           python qa/notification/test_outbox.py
-          node --test qa/lab/test_notification_v5.cjs
+          node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs

@@ -11,6 +11,14 @@ CREATE TABLE notification_private.routes (
   PRIMARY KEY (tenant_id,channel),
   FOREIGN KEY (tenant_id,merchant_id) REFERENCES public.tenant_memberships(tenant_id,user_id)
 );
+CREATE FUNCTION notification_private.invalidate_route() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
+BEGIN
+  IF (OLD.merchant_id,OLD.enabled,OLD.verified,OLD.consent) IS DISTINCT FROM
+     (NEW.merchant_id,NEW.enabled,NEW.verified,NEW.consent) THEN NEW.destination_id := gen_random_uuid(); END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER route_revision BEFORE UPDATE ON notification_private.routes
+FOR EACH ROW EXECUTE FUNCTION notification_private.invalidate_route();
 ALTER TABLE notification_private.routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_private.notification_events ADD FOREIGN KEY (tenant_id,order_id)
   REFERENCES public.orders(tenant_id,id), ADD UNIQUE (tenant_id,order_id,event_type);
@@ -37,8 +45,10 @@ BEGIN
   ON CONFLICT (tenant_id,order_id,event_type) DO NOTHING RETURNING id INTO ev;
   IF ev IS NULL THEN RETURN NEW; END IF;
   INSERT INTO notification_private.notification_outbox
-    (tenant_id,event_id,channel,recipient_verified,destination_id)
-  SELECT NEW.tenant_id,ev,r.channel,true,r.destination_id
+    (tenant_id,event_id,channel,recipient_verified,destination_id,status,accepted_at)
+  SELECT NEW.tenant_id,ev,r.channel,true,r.destination_id,
+    CASE WHEN r.channel='dashboard' THEN 'accepted' ELSE 'queued' END,
+    CASE WHEN r.channel='dashboard' THEN now() END
   FROM notification_private.routes r JOIN public.tenant_memberships m
     ON (r.tenant_id,r.merchant_id)=(m.tenant_id,m.user_id)
   WHERE r.tenant_id=NEW.tenant_id AND m.active AND m.role IN ('owner','manager')

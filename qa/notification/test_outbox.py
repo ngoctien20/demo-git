@@ -64,6 +64,8 @@ with connect() as db:
     assert not finish(db, row, 'accepted', 'late') and not claim(db, 'gmail')
     db.execute("update notification_private.routes set consent=false where channel='telegram' and tenant_id=%s", (shops[1],))
     assert not claim(db, 'telegram')
+    db.execute("update notification_private.routes set consent=true where channel='telegram' and tenant_id=%s", (shops[1],))
+    assert not claim(db, 'telegram')  # new consent cannot revive an old recipient snapshot
     try:
         with db.transaction():
             checkout(db, shops[0], users[0], 'rollback-check', {'QA':1})
@@ -87,6 +89,7 @@ with connect() as db:
             inbox = db.execute("select * from merchant_notification_inbox(%s)", (shop,)).fetchall()
             assert len(inbox)==1 and inbox[0][1]==(first,other)[i] and inbox[0][3] is None
             assert len(inbox[0][4])==3
+            assert next(d for d in inbox[0][4] if d["channel"]=="dashboard")["status"]=="accepted"
             assert db.execute("select * from merchant_notification_inbox(%s)", (shops[1-i],)).fetchall()==[]
             for target, expected in [(shops[1-i],False),(shop,True),(shop,True)]:
                 assert db.execute("select mark_merchant_notification_viewed(%s,%s)",(target,inbox[0][0])).fetchone()==(expected,)
