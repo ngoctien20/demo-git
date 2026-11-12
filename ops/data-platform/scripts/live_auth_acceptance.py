@@ -88,6 +88,18 @@ def check_postgrest(client: httpx.Client, key: str, token: str, own: str, other:
                 demand(rows == [], "POSTGREST_FOREIGN_ROW_EXPOSED")
 
 
+def check_product_permissions(client: httpx.Client, key: str, token: str, own: str, other: str) -> None:
+    """Invalid SKU and price make these probes non-mutating even if a tenant check regresses."""
+    headers = {"apikey": key, "Authorization": "Bearer " + token}
+    payload = {"p_sku": None, "p_name": None, "p_price": -1, "p_active": True,
+               "p_initial_stock": 0, "p_expected_updated_at": None}
+    for tenant, expected_status, expected_code in ((own, 400, "22023"), (other, 403, "42501")):
+        result = client.post(SUPABASE + "/rest/v1/rpc/save_merchant_product",
+                             headers=headers, json={**payload, "p_tenant": tenant})
+        demand(result.status_code == expected_status and result.json().get("code") == expected_code,
+               "PRODUCT_RPC_TENANT_BOUNDARY_UNCONFIRMED")
+
+
 def logout_session(client: httpx.Client, key: str, tokens: dict) -> None:
     """Close only the session created by this run, leaving the user's devices signed in."""
     result = client.post(SUPABASE + "/auth/v1/logout", params={"scope": "local"}, headers={
@@ -143,9 +155,11 @@ def run(shop_a_only: bool = False, anonymous_only: bool = False) -> int:
             try:
                 original = check_tenant(client, tokens["access_token"], own, other)
                 check_postgrest(client, key, tokens["access_token"], own, other)
+                check_product_permissions(client, key, tokens["access_token"], own, other)
                 tokens = refresh(client, key, tokens["refresh_token"])
                 reread = check_tenant(client, tokens["access_token"], own, other)
                 check_postgrest(client, key, tokens["access_token"], own, other)
+                check_product_permissions(client, key, tokens["access_token"], own, other)
                 demand(original == reread, "DATA_CHANGED_ACROSS_TOKEN_REFRESH_" + suffix)
             finally:
                 logout_session(client, key, tokens)

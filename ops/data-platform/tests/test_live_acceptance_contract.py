@@ -58,3 +58,24 @@ def test_logout_is_local_and_accepts_only_session_revocation_evidence(code, expe
         else:
             with pytest.raises(AcceptanceFailure):
                 check_refresh_revoked(client, "public-fixture", "test-refresh")
+
+
+@pytest.mark.parametrize("foreign_status,foreign_code,should_pass", [
+    (403, "42501", True), (400, "22023", False), (403, "unexpected_code", False), (200, "", False),
+])
+def test_rpc_requires_authorization_denial_before_input_validation(foreign_status, foreign_code, should_pass):
+    import json
+    from scripts.live_auth_acceptance import check_product_permissions
+    def provide(request):
+        data = json.loads(request.content)
+        assert data["p_sku"] is None and data["p_price"] < 0
+        assert request.headers["Authorization"] == "Bearer fixture"
+        if data["p_tenant"] == "a":
+            return httpx.Response(400, json={"code": "22023"})
+        return httpx.Response(foreign_status, json={"code": foreign_code})
+    with httpx.Client(transport=httpx.MockTransport(provide)) as client:
+        if should_pass:
+            check_product_permissions(client, "public", "fixture", "a", "b")
+        else:
+            with pytest.raises(AcceptanceFailure):
+                check_product_permissions(client, "public", "fixture", "a", "b")
