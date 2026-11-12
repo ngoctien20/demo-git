@@ -23,6 +23,19 @@ ALTER TABLE notification_private.routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_private.notification_events ADD FOREIGN KEY (tenant_id,order_id)
   REFERENCES public.orders(tenant_id,id), ADD UNIQUE (tenant_id,order_id,event_type);
 ALTER TABLE notification_private.notification_outbox ADD COLUMN destination_id uuid;
+CREATE FUNCTION notification_private.block_stale_routes() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
+BEGIN
+  UPDATE notification_private.notification_outbox SET status='blocked',
+    last_error_code='route_changed',updated_at=now()
+  WHERE tenant_id=OLD.tenant_id AND channel=OLD.channel AND destination_id=OLD.destination_id
+    AND status='queued';
+  RETURN NULL;
+END $$;
+CREATE TRIGGER route_block AFTER UPDATE ON notification_private.routes
+FOR EACH ROW WHEN (OLD.destination_id IS DISTINCT FROM NEW.destination_id)
+EXECUTE FUNCTION notification_private.block_stale_routes();
+CREATE TRIGGER route_removed AFTER DELETE ON notification_private.routes
+FOR EACH ROW EXECUTE FUNCTION notification_private.block_stale_routes();
 -- A destination ID references a verified route version, never a raw chat ID or email.
 -- Each approved shop currently corresponds to one store (tenant_id).
 CREATE FUNCTION notification_private.on_saved_order() RETURNS trigger

@@ -93,6 +93,8 @@ with connect() as db:
             assert db.execute("select * from merchant_notification_channels(%s)", (shops[1-i],)).fetchall()==[]
             assert len(inbox)==1 and inbox[0][1]==(first,other)[i] and inbox[0][3] is None
             assert len(inbox[0][4])==3
+            if i==1:
+                assert next(d for d in inbox[0][4] if d["channel"]=="telegram")["status"]=="blocked"
             assert next(d for d in inbox[0][4] if d["channel"]=="dashboard")["status"]=="accepted"
             assert db.execute("select * from merchant_notification_inbox(%s)", (shops[1-i],)).fetchall()==[]
             for target, expected in [(shops[1-i],False),(shop,True),(shop,True)]:
