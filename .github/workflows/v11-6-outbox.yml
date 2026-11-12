@@ -1,0 +1,49 @@
+name: V11.6 isolated commerce and notification transactions
+on:
+  push:
+    branches: [work/v11-5-zalo-first-notifications-20261113]
+    paths: ['qa/notification/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tien404_qa
+          POSTGRES_PASSWORD: disposable-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 4s --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGDATABASE: tien404_qa
+      PGUSER: postgres
+      PGPASSWORD: disposable-only
+      PYTHONPATH: data/ops/data-platform
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ab940a95dae8afdff426bc6ac71693833d5348ce
+          path: data
+          persist-credentials: false
+      - run: python -m pip install 'psycopg[binary]==3.2.9'
+      - run: |
+          set -eu
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon;
+          CREATE ROLE authenticated;
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users(id uuid PRIMARY KEY);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+          SQL
+          psql -X -v ON_ERROR_STOP=1 -f data/ops/data-platform/schema.staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/outbox_v5.sql
+          python qa/notification/test_outbox.py
+          node --test qa/lab/test_notification_v5.cjs
