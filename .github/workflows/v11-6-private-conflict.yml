@@ -1,0 +1,32 @@
+name: V11.6 signed staging product conflict
+on:
+  push:
+    branches: [work/v11-5-zalo-first-notifications-20261113]
+    paths: ['.github/workflows/v11-6-private-conflict.yml']
+permissions:
+  contents: read
+jobs:
+  conflict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fd2c1e76f52cd54763da9bb3951744101b71c524
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 219dd0864d4a26500d758edbb803f3b8b5e61f73
+          path: auth
+          persist-credentials: false
+      - name: Verify terminal HTTP response without changing a product
+        env:
+          TIEN404_QA_A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
+          TIEN404_QA_A_PASSWORD: ${{ secrets.TIEN404_QA_A_PASSWORD }}
+          TIEN404_QA_B_EMAIL: ${{ secrets.TIEN404_QA_B_EMAIL }}
+          TIEN404_QA_B_PASSWORD: ${{ secrets.TIEN404_QA_B_PASSWORD }}
+        run: |
+          set -eu
+          QA_PUBLIC_KEY="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=await import('data:text/javascript;base64,'+readFileSync('auth/assets/auth-config.js').toString('base64')); console.log(m.SUPABASE_PUBLISHABLE_KEY)")"
+          export QA_PUBLIC_KEY
+          python qa/notification/staging_conflict.py
