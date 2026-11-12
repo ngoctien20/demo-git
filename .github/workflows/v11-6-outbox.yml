@@ -2,7 +2,7 @@ name: V11.6 isolated commerce and notification transactions
 on:
   push:
     branches: [work/v11-5-zalo-first-notifications-20261113]
-    paths: ['qa/notification/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
+    paths: ['qa/notification/**', 'merchant/notification-center.mjs', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
 permissions:
   contents: read
 jobs:
@@ -72,3 +72,9 @@ jobs:
           END $$;
           SQL
           RESTORE
+
+      - name: Check mobile merchant UI with synthetic responses
+        run: |
+          python -m pip install playwright==1.58.0
+          python -m playwright install chromium
+          python qa/notification/browser_check.py
