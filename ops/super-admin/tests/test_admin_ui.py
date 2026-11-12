@@ -85,3 +85,26 @@ def test_data_platform_status_requires_admin_session_and_stays_staging(monkeypat
     }).status_code==200
     assert c.get("/api/v1/admin/integrations/data-platform").status_code==403
     s.conn.close()
+
+
+def test_admin_ui_scrubs_privileged_dom_on_logout_and_role_change():
+    """Regression contract: no audit/tenant rows survive a session boundary.
+
+    API authorization is separately covered by backend tests. This test guards
+    against a UI-only privacy regression; full browser role-switch QA remains
+    required before hosting the Super Admin.
+    """
+    script = (Path(__file__).resolve().parents[1] / "app/ui/admin.js").read_text()
+    assert "function resetConsole()" in script
+    for target in ('"tenants-body"', '"plans-body"', '"audit-body"'):
+        assert target in script.split("function resetConsole(){", 1)[1].split("function showLogin", 1)[0]
+    assert "state.epoch++;" in script.split("function showLogin", 1)[1].split("async function refreshTenants", 1)[0]
+    for name in ("refreshTenants", "refreshPlans", "refreshAudit"):
+        body = script.split(f"async function {name}()", 1)[1].split("async function ", 1)[0]
+        assert "const epoch=state.epoch;" in body
+        assert "if(epoch!==state.epoch||!state.me)return;" in body
+        assert "if(epoch!==state.epoch)return;" in body
+    assert 'document.querySelector(\'[data-tab="audit"]\').hidden=true;' in script
+    logout = script.split('$(\"logout\").addEventListener', 1)[1]
+    assert logout.index("showLogin();") < logout.index('await request("/api/v1/auth/logout"')
+    assert 'resetConsole();\n  show("login-view",false)' in script
