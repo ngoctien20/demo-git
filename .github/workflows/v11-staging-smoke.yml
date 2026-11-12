@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || 'deaa5e1c6193a7861f6f3d1b55448a1ce1c05624' }}
+          ref: ${{ inputs.release_sha || '219dd0864d4a26500d758edbb803f3b8b5e61f73' }}
           path: candidate
           persist-credentials: false
       - run: node candidate/scripts/build-auth-preview.mjs
