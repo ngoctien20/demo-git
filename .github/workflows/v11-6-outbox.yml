@@ -48,3 +48,27 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/inbox_v5.sql
           python qa/notification/test_outbox.py
           node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs
+      - name: Restore isolated notification database and verify boundaries
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$POSTGRES_CONTAINER" bash -se <<'RESTORE'
+          set -eu -o pipefail
+          dump=$(mktemp)
+          trap 'rm -f "$dump"' EXIT
+          pg_dump -U postgres -Fc tien404_qa > "$dump"
+          createdb -U postgres tien404_restored
+          pg_restore -U postgres --exit-on-error --single-transaction -d tien404_restored "$dump"
+          fingerprint() {
+            pg_dump -U postgres --data-only --inserts "$1" | LC_ALL=C awk '/^INSERT INTO /' | LC_ALL=C sort | sha256sum
+          }
+          test "$(fingerprint tien404_qa)" = "$(fingerprint tien404_restored)"
+          psql -X -U postgres -d tien404_restored -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$ BEGIN
+            IF (SELECT count(*) FROM notification_private.notification_outbox) <> 6 OR
+              has_table_privilege('authenticated','notification_private.routes','SELECT') OR
+              has_function_privilege('anon','public.merchant_notification_inbox(uuid)','EXECUTE')
+              THEN RAISE EXCEPTION 'restore gate failed'; END IF;
+          END $$;
+          SQL
+          RESTORE

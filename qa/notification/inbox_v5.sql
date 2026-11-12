@@ -38,3 +38,27 @@ $$;
 REVOKE ALL ON FUNCTION public.merchant_notification_inbox(uuid),public.mark_merchant_notification_viewed(uuid,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.merchant_notification_inbox(uuid),public.mark_merchant_notification_viewed(uuid,uuid) TO authenticated;
 COMMIT;
+
+BEGIN;
+CREATE FUNCTION public.merchant_notification_channels(p_shop uuid)
+RETURNS TABLE(channel text,enabled boolean,verified boolean,connection_state text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT c.channel,coalesce(r.enabled AND r.consent AND eligible.active,false),
+        coalesce(r.verified AND eligible.active,false),
+        CASE WHEN c.channel='zalo' THEN 'waiting_for_owner'
+             WHEN c.channel='messenger' THEN 'policy_qa'
+             WHEN r.tenant_id IS NULL THEN 'unconfigured'
+             WHEN NOT coalesce(eligible.active AND r.verified AND r.consent AND r.enabled,false) THEN 'disabled'
+             WHEN c.channel='dashboard' THEN 'internal'
+             ELSE 'qa_route_only' END
+ FROM (VALUES ('zalo',1),('telegram',2),('gmail',3),('messenger',4),('dashboard',5)) c(channel,n)
+ LEFT JOIN notification_private.routes r ON r.tenant_id=p_shop AND r.channel=c.channel
+ LEFT JOIN public.tenant_memberships eligible ON (eligible.tenant_id,eligible.user_id)=(r.tenant_id,r.merchant_id)
+    AND eligible.role IN ('owner','manager')
+ WHERE EXISTS (SELECT 1 FROM public.tenant_memberships m WHERE m.tenant_id=p_shop
+   AND m.user_id=(SELECT auth.uid()) AND m.active AND m.role IN ('owner','manager'))
+ ORDER BY c.n;
+$$;
+REVOKE ALL ON FUNCTION public.merchant_notification_channels(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.merchant_notification_channels(uuid) TO authenticated;
+COMMIT;

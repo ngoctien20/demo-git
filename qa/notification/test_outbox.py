@@ -87,6 +87,10 @@ with connect() as db:
             db.execute("select set_config('request.jwt.claim.sub', %s, true)", (str(users[i]),))
             db.execute("set local role authenticated")
             inbox = db.execute("select * from merchant_notification_inbox(%s)", (shop,)).fetchall()
+            channels = db.execute("select * from merchant_notification_channels(%s)", (shop,)).fetchall()
+            assert [r[0] for r in channels] == ['zalo','telegram','gmail','messenger','dashboard']
+            assert channels[0][1:] == (False,False,'waiting_for_owner')
+            assert db.execute("select * from merchant_notification_channels(%s)", (shops[1-i],)).fetchall()==[]
             assert len(inbox)==1 and inbox[0][1]==(first,other)[i] and inbox[0][3] is None
             assert len(inbox[0][4])==3
             assert next(d for d in inbox[0][4] if d["channel"]=="dashboard")["status"]=="accepted"
