@@ -41,3 +41,10 @@ Khi bắt đầu mỗi phiên, fetch trước; ghi agent, version, branch, PR, s
 - Super Admin protected prototype UI CSS trên nhánh `feature/v10.3-super-admin-ui-20261111`, draft PR #12: **71/71 staging security tests PASS**, chưa có hosted URL admin.
 - Trước đây bật Cloudflare preview custom một nhánh; khi kiểm tra thấy thêm preview event từ Auth/Admin PR; đã khôi phục `preview_deployment_setting=none`, Cloudflare production baseline giữ nguyên.
 - P0 còn mở: real JWT A/B cross-tenant, Auth staging live browser smoke, Cloudflare header response check, Super Admin host và server authorization, sửa n8n catalog freshness, giải pháp Commerce idempotency trên backend chuẩn; V10.4 chưa release.
+
+
+### V10.3 Super Admin session privacy patch (2026-11-12)
+
+- Draft PR #12 updated at commit `aeb31938` (two-file patch: `ops/super-admin/app/ui/admin.js`, `ops/super-admin/tests/test_admin_ui.py`): clear privileged tables on logout/role change, invalidate late responses, reset audit tab and warn on unconfirmed logout. Isolated GitHub Actions 43245448320 SUCCESS.
+- Next gate: real browser E2E with Super Admin → logout → Support Admin in same browser, intentionally delayed `/api/v1/admin/audit`, assert no privileged row persists; run backend RBAC 401/403 and audit again. Do **not** deploy prototype to public hosting without isolated staging identity/MFA and owner approval for privilege changes.
+- Existing V11 hosted QA now proves two owner JWT A/B read/deny and browser persistence; outstanding: staff/nonmember signed identity, valid write HTTP, hosted admin, production-domain cutover (explicitly deferred).
