@@ -63,3 +63,25 @@ def test_store_owner_cannot_list_admin_plans(tmp_path):
     assert c.get("/api/v1/admin/plans").status_code==403
     assert c.get("/api/v1/admin/audit").status_code==403
     s.conn.close()
+
+
+def test_data_platform_status_requires_admin_session_and_stays_staging(monkeypatch,tmp_path):
+    s,c,secret,uid=client_with_user(tmp_path,role="SUPER_ADMIN")
+    monkeypatch.delenv("TIEN404_STAGING_DATA_PLATFORM_URL",raising=False)
+    assert c.get("/api/v1/admin/integrations/data-platform").status_code==401
+    assert c.post("/api/v1/auth/login",json={
+        "email":"admin@example.test","password":PASS,"totp":totp(secret)
+    }).status_code==200
+    result=c.get("/api/v1/admin/integrations/data-platform")
+    assert result.status_code==200
+    assert result.json()["status"]=="UNKNOWN"
+    assert result.json()["production_readiness"]=="NOT_APPROVED"
+    s.conn.close()
+    owner_dir=tmp_path / "owner-case"
+    owner_dir.mkdir()
+    s,c,secret,uid=client_with_user(owner_dir,role="STORE_OWNER")
+    assert c.post("/api/v1/auth/login",json={
+        "email":"admin@example.test","password":PASS,"totp":totp(secret)
+    }).status_code==200
+    assert c.get("/api/v1/admin/integrations/data-platform").status_code==403
+    s.conn.close()

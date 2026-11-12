@@ -1,0 +1,26 @@
+name: TIEN404 SaaS Data Platform — staging QA
+on:
+  push:
+    branches: ["ops/tenant-data-platform-v1-staging-20261110"]
+  pull_request:
+    paths:
+      - "ops/data-platform/**"
+      - "ops/super-admin/docs/DATA_PLATFORM_BRIDGE.md"
+      - ".github/workflows/data-platform-staging-qa.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned staging QA dependencies
+        run: python -m pip install -r ops/data-platform/requirements-test.txt
+      - name: Unit and security contract tests (mock provider only)
+        run: python -m pytest -q ops/data-platform/tests
+      - name: Syntax validation
+        run: python -m compileall -q ops/data-platform/app ops/data-platform/scripts

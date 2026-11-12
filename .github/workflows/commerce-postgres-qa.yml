@@ -1,0 +1,111 @@
+name: Isolated Commerce PostgreSQL QA
+on:
+  push:
+    branches: [ops/tenant-data-platform-v1-staging-20261110, fix/v11-merchant-stale-conflict-pt409-20261112]
+    paths: ['ops/data-platform/app/merchant_orders.py', 'ops/data-platform/qa/commerce_http.py', 'ops/data-platform/app/main.py', 'ops/data-platform/candidates/merchant_product.sql', 'ops/data-platform/qa/merchant_product.sql', 'ops/data-platform/app/commerce_transactions.py', 'ops/data-platform/qa/commerce_postgres.py', '.github/workflows/commerce-postgres-qa.yml']
+  pull_request:
+    paths:
+      - 'ops/data-platform/app/**'
+      - 'ops/data-platform/qa/**'
+      - 'ops/data-platform/schema.staging.sql'
+      - '.github/workflows/commerce-postgres-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tien404_qa
+          POSTGRES_PASSWORD: isolated-ci-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 4s --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGDATABASE: tien404_qa
+      PGUSER: postgres
+      PGPASSWORD: isolated-ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'psycopg[binary]==3.2.9'
+      - name: Install schema in disposable Postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon;
+          CREATE ROLE authenticated;
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users(id uuid PRIMARY KEY);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS 'SELECT NULL::uuid';
+          SQL
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/schema.staging.sql
+      - run: python ops/data-platform/qa/commerce_postgres.py
+      - name: Restore synthetic commerce data into a second disposable database
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$POSTGRES_CONTAINER" bash -se <<'RECOVERY'
+          set -eu -o pipefail
+          db=tien404_qa
+          restored=tien404_qa_restore
+          dump=$(mktemp)
+          trap 'rm -f "$dump"' EXIT
+          pg_dump -U postgres -Fc "$db" > "$dump"
+          createdb -U postgres "$restored"
+          pg_restore --exit-on-error --single-transaction -U postgres -d "$restored" "$dump"
+          fingerprint() {
+            pg_dump -U postgres --data-only --inserts "$1" |
+              LC_ALL=C awk '/^INSERT INTO /' | LC_ALL=C sort | sha256sum
+          }
+          test "$(psql -U postgres -d "$restored" -Atc 'select count(*) from public.orders')" = 2
+          test "$(psql -U postgres -d "$restored" -Atc 'select count(*) from app_private.audit_events')" = 3
+          test "$(fingerprint "$db")" = "$(fingerprint "$restored")"
+          psql -U postgres -d "$restored" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.products'::regclass)
+               OR has_table_privilege('authenticated','public.products','UPDATE') THEN
+              RAISE EXCEPTION 'Restored product security differs from the read-only contract';
+            END IF;
+          END $$;
+          SQL
+          RECOVERY
+      - name: Check merchant catalog write candidate in disposable database only
+        run: |
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/candidates/merchant_product.sql
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/qa/merchant_product.sql
+      - name: Exercise merchant HTTP commands against disposable PostgreSQL
+        run: |
+          python -m pip install -r ops/data-platform/requirements-test.txt
+          python ops/data-platform/qa/commerce_http.py
+
+      - name: Exercise signed tenant JWTs through an isolated PostgREST server
+        env:
+          PGRST_JWT_SECRET: ephemeral-test-signing-key-local-to-ci-only-404
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE jwt_qa_gateway LOGIN PASSWORD 'disposable-local-only' NOINHERIT;
+          GRANT authenticated, anon TO jwt_qa_gateway;
+          GRANT USAGE ON SCHEMA auth TO authenticated;
+          CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+            $$ SELECT (current_setting('request.jwt.claims',true)::jsonb ->> 'sub')::uuid $$;
+          DROP FUNCTION public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz);
+          CREATE ROLE service_role;
+          SQL
+          psql -v ON_ERROR_STOP=1 -f ops/data-platform/candidates/merchant_product_qa_allowlist_v10.sql
+          docker run --detach --name rest-qa --network host \
+            -e PGRST_DB_URI=postgres://jwt_qa_gateway:disposable-local-only@127.0.0.1:5432/tien404_qa \
+            -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET -e PGRST_SERVER_HOST=127.0.0.1 \
+            -e PGRST_SERVER_PORT=3011 postgrest/postgrest:v12.2.3
+          curl -fsS --retry 12 --retry-connrefused --retry-delay 1 http://127.0.0.1:3011/ -o /dev/null
+          if ! python -u ops/data-platform/qa/product_jwt_http.py; then
+            docker logs --tail 20 rest-qa 2>&1 | sed 's/^/::warning::/'
+            psql -Atc "select state,wait_event_type,wait_event,left(query,100) from pg_stat_activity where usename='jwt_qa_gateway'" | sed 's/^/::warning::/'
+            exit 1
+          fi

@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Depends, Response, Header, HTTPException, 
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, Field, ConfigDict
 from .core import Store, AccessDenied, Conflict, NotFound, Invalid, now_utc, iso, parse, verify_test_webhook
+from .data_platform_status import fetch_data_platform_status
 
 class Strict(BaseModel):model_config=ConfigDict(extra='forbid',strict=True)
 class Login(Strict):
@@ -210,6 +211,14 @@ def create_app(store:Store,*,gateway_secret:bytes|None=None,origin:str='https://
         admin(user,{'SUPER_ADMIN'})
         data=store.rows('SELECT id,created_at,actor_id,action,tenant_id,reason,sha256 FROM audit_events ORDER BY seq DESC LIMIT 100')
         return {'entries':[dict(x) for x in data],'hash_chain_valid':store.verify_audit()}
+    @app.get('/api/v1/admin/integrations/data-platform')
+    async def data_platform_health(user=Depends(actor)):
+        # Local Super Admin session + RBAC always checked before outbound call.
+        admin(user,{'SUPER_ADMIN','TECH_ADMIN'})
+        return await fetch_data_platform_status(
+            os.environ.get('TIEN404_STAGING_DATA_PLATFORM_URL')
+        )
+
     @app.post('/api/v1/internal/gateway/entitlement')
     async def gateway_entitlement(request:Request):
         if not gateway_secret:raise NotFound('gateway integration disabled')
