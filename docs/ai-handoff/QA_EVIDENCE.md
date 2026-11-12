@@ -112,3 +112,12 @@ Actual manual executions on 2026-11-11 JST, existing QA workflows only, **no rea
 | `TIEN404_COMMERCE_V3_QA_EXTENSION_25` `QR7aYMpLfKDLVgyH` | `2269` | Extension **25/25** | `allPassed=true`, `productionReady=false` |
 
 **Aggregate 64/64 assertions passed in sandbox.** Do NOT claim product-ready, tenant live E2E, accounting/inventory production or real customer data integration from these results. These workflows were already present and were only executed, not modified/published.
+
+
+### 2026-11-12 Super Admin stale-session DOM hardening
+
+- **Discovery:** `ops/super-admin/app/ui/admin.js` on Draft PR #12 hid the admin console on logout without clearing `tenants-body`, `plans-body`, `audit-body` or resetting the active tab. Pending API responses could repopulate old privileged data after logout or a lower-privilege login on the same browser.
+- **Fix committed on existing isolated Super Admin branch** `feature/v10.3-super-admin-ui-20261111`: `a7cf04a8f93a8e4563dfc22e8c45bb37ed1cb279` updated JS to scrub sensitive rows, reset active tab, guard all async refreshes with session epoch, reset UI on session change and show a warning if logout server confirmation fails. `aeb31938e139fdfe5c5f6b4858e77efddcb191c1` adds `test_admin_ui_scrubs_privileged_dom_on_logout_and_role_change` to isolated Python test suite.
+- **CI:** [GitHub Actions 43245448320](https://github.com/ngoctien20/demo-git/actions/runs/43245448320) SUCCESS, staging-security job completed syntax, isolated security/tenancy and new UI privacy contract test. **Actual browser role-switch + pending-request race NOT_RUN**; add Playwright E2E before hosting Super Admin. No Render/Cloudflare production deployment or GitHub Pages merge.
+- **Cross-project live audit:** Cloudflare `tien404-ai-git-staging` Git-connected `gh-pages`, preview setting `none`, latest preview events idle; Render Auth/Data exist with autoDeploy OFF; Supabase `ifxlvrhyjhbzbrkdsida` ACTIVE_HEALTHY; n8n workflow list now 37 (multiple newer inactive staging AI SALES workflows, do not replace existing). Supabase Security Advisor still flags intentional privileged RPC and leaked password protection; no grant changes.
+- **V11 evidence supersedes V10.3 issue's older blocker:** `V11_STATUS.md` and `V11_QA_REPORT.md` record signed hosted two-QA-user A/B read/cross-tenant deny, refresh/logout and Chromium persistence PASS (Actions attempt 5); still NOT_RUN for staff/nonmember signed JWT, legitimate HTTP product writes and hosted Super Admin. Do not repeat blanket "A/B not tested".
