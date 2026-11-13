@@ -38,3 +38,19 @@ def accept_v3_preview(resolved_tenant, cart):
         raise ValueError("subtotal mismatch")
     return {"kind": "human_quote" if cart["requiresHumanQuote"] else "cart_preview",
             "subtotal_vnd": total, "line_count": len(lines), "order_saved": False}
+
+
+def stage_checkout_preview(db, tenant_bindings, resolved_tenant, actor, sender, ingress_id, cart):
+    """Trusted registry supplies both tenant keys; return a revocable preview only."""
+    from order_preview import preview
+    checked = accept_v3_preview(resolved_tenant, cart)
+    if checked["kind"] != "cart_preview":
+        raise ValueError("human quote required")
+    shop_uuid = tenant_bindings[resolved_tenant]
+    quantities = {line["sku"]: line["quantity"] for line in cart["lines"]}
+    prices = {line["sku"]: line["unitPriceVnd"] for line in cart["lines"]}
+    with db.transaction():
+        token, lines = preview(db, shop_uuid, actor, sender, quantities, ingress_id)
+        if any(prices[sku] != price for sku, _, price in lines):
+            raise ValueError("catalog changed")
+        return token
