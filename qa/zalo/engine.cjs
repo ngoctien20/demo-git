@@ -35,6 +35,8 @@ function respond(shop, previous, text) {
   const q = normalize(text);
   if (/prompt|token|secret|bo qua (quy tac|huong dan)|khach khac|shop khac|mat khau/.test(q))
     return result('denied','Shop chỉ hỗ trợ thông tin sản phẩm trong danh mục ạ.');
+  if (/\b(khong|chua|dung|k|ko)\s+(muon\s+)?(lay|mua|dat|chot)\b/.test(q))
+    return result('cancel','Dạ, mình chưa chốt mẫu này nhé.');
   const intent = classify(q);
   if (intent === 'cancel') return result('cancel','Dạ, mình bỏ lựa chọn vừa rồi nhé.');
   if (intent === 'human') return result('human','Trường hợp này cần nhân viên kiểm tra. Lab chưa có kênh chuyển tiếp ạ.');
@@ -47,6 +49,8 @@ function respond(shop, previous, text) {
     return result('size','Mình cần áo đen size nào ạ?',{pending:'black'});
   let row = matches[0];
   if (!row && previous.pending === 'black' && /^(size )?l[.!?]?$/.test(q)) row = rows[0];
+  if (!row && /\b(size|mau|doi sang|doi qua|ao trang|ao xanh)\b/.test(q) && q !== 'size l')
+    return result('clarify','Mình cho shop xin mã mẫu mới để kiểm tra đúng giá và tồn nhé.');
   if (!row && previous.sku && (intent !== 'unknown' || /^(size )?l$/.test(q))) row = rows.find(r=>r[0]===previous.sku);
   if (!row) return result('clarify','Mình đang tìm sản phẩm hoặc mã nào để shop kiểm tra ạ?');
   const [sku,name,,price,stock,min,bulk] = row;

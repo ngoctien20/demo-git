@@ -58,3 +58,13 @@ Mỗi lần gửi, workflow lấy sessionId từ Chat Trigger, đọc bảng QA 
 | 2855 | Session có ngữ cảnh hết hạn, Size L. | Hỏi lại sản phẩm |
 
 Execution đầu dùng trigger chat manual. Các lượt tiếp dùng fixture ở đầu ra trigger để cố định ID. Năm node xử lý phía sau chạy thật với Data Table. Chưa kiểm thử thao tác trên trình duyệt người dùng hoặc hai tin đến đồng thời trong cùng session. Không dùng chuỗi đọc/upsert này làm cơ chế chống trùng giao dịch. Rollback về phiên bản 2a0cc328-f981-45f5-a8f5-eee6b6935c37. Bảng QA có thể giữ lại khi rollback.
+
+## V2.2 · Trước khi nối Zalo thật
+
+13/11/2026 JST. Cập nhật từ c702591. QA n8n 29/29 tại execution 2856, draft 5d042955-ffcb-4ffe-aa33-8c20f5146387. Editor xử lý “không mua 2 nhé” tại 2857, draft 6d23177f-6367-449f-867f-7f438f816837. Hai workflow thử vẫn inactive.
+
+Trên Node 24, 6/6 bài test đạt. Bridge QA nhận hợp đồng event từ normalizer V1 với ID giả, chỉ nhận chat riêng được chỉ định, ghi session, receipt và outbox trong cùng giao dịch SQLite. Hai worker tạo một phản hồi và chỉ một lượt dispatch mock. Đã test giữ quota khi timeout, 429, retry sau restart và kill switch. Replay 132 case/167 lượt kiểm tra phạm vi fixture. SQLite chỉ chạy cục bộ. Chưa có sender thật, chưa chứng minh external delivery hoặc chất lượng LLM thực.
+
+Workflow staging OgDZNSAvKEvhnAvn trong Personal / 90_QA - DIAGNOSTICS. Execution 2858 trả disabled cho sự kiện giả. Bản cuối 3862224f-ee64-485d-b461-181aa271cfaf inactive, giới hạn caller ở ID V1, tắt lưu execution thủ công, thành công, lỗi và tiến độ. Chưa nối V1. Shadow chỉ phát quyết định, chưa chạy hội thoại trên tin thật.
+
+Bước cần duyệt: nhận đúng một tin thử từ tài khoản của chủ dự án, cho V1 chuyển sự kiện đã xác thực vào nhánh shadow sau ACK, quan sát quyết định qua bằng chứng tối thiểu không chứa nội dung chat. Trước Publish phải xác minh allowlist, kiểm thử ACK khi nhánh lỗi và kiểm tra lại version V1. Cần duyệt riêng cho gửi trả qua Zalo, model trả phí và bất kỳ luồng khách hàng nào. Để rollback V2.2 giữ shadow inactive và khôi phục Editor về 8fcd65e4-59ec-428f-b6e6-56fb4ff25ff5, QA về eb568836-8a3d-40a1-9e40-00f37c5d2d56. V1 chưa cần rollback.

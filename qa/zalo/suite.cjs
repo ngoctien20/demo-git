@@ -24,6 +24,8 @@ function evaluate() {
   check('retail',respond('dealer',{},'mua D01 9').facts.total===810000);
   check('invalid-shop',respond('invalid',{},'D01').kind==='denied');
   check('handoff',respond('fashion',{},'gap nhan vien').kind==='human');
+  check('negative-buy',respond('fashion',next.state,'không mua 2').kind==='cancel');
+  check('changed-size',respond('fashion',next.state,'lấy size XL').kind==='clarify');
   const request={enabled:true,recipient:'fixture-owner',remaining:1,status:200};
   for(const [id,patch,expected] of [['kill',{enabled:false},'blocked'],['wrong-recipient',{recipient:'foreign'},'blocked'],['quota',{remaining:0},'blocked'],['replay',{prior:true},'blocked'],['timeout',{status:'timeout'},'needs_review'],['429',{status:429},'rate_limited'],['accepted',{},'mock_accepted']])
     check(id,simulateDelivery({...request,...patch})===expected);
