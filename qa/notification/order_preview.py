@@ -5,13 +5,22 @@ from uuid import uuid4
 from app.commerce_transactions import authorize, checkout, CommerceRejected
 
 
-def preview(db, shop, actor, sender, cart):
-    if not sender or not isinstance(cart, dict) or not 1 <= len(cart) <= 100:
+def preview(db, shop, actor, sender, cart, ingress_id):
+    if not isinstance(ingress_id,str) or not 1<=len(ingress_id)<=256 or not sender or not isinstance(cart, dict) or not 1 <= len(cart) <= 100:
         raise CommerceRejected('invalid_request')
     lines=[]
     with db.transaction():
         with db.cursor() as cur:
             authorize(cur,shop,actor)
+        sender_hash=hashlib.sha256(sender.encode()).digest()
+        # Serialize replacement for this tenant/sender, including first use.
+        db.execute("select pg_advisory_xact_lock(hashtextextended(%s,0))",(str(shop)+sender_hash.hex(),))
+        previous=db.execute("""select id,lines,actor_id from notification_private.order_previews
+                             where tenant_id=%s and sender_hash=%s and ingress_id=%s""",(shop,sender_hash,ingress_id)).fetchone()
+        if previous:
+            if previous[2]!=actor or {sku:q for sku,q,_ in previous[1]}!=cart:
+                raise CommerceRejected('event_conflict')
+            return previous[0],previous[1]
         for sku,qty in sorted(cart.items()):
             if type(qty) is not int or not 1<=qty<=10000:
                 raise CommerceRejected('invalid_quantity')
@@ -20,15 +29,12 @@ def preview(db, shop, actor, sender, cart):
             if not item:
                 raise CommerceRejected('unavailable')
             lines.append([sku,qty,item[0]])
-        sender_hash=hashlib.sha256(sender.encode()).digest()
-        # Serialize replacement for this tenant/sender, including first use.
-        db.execute("select pg_advisory_xact_lock(hashtextextended(%s,0))",(str(shop)+sender_hash.hex(),))
         db.execute("""update notification_private.order_previews set withdrawn=true
                       where tenant_id=%s and sender_hash=%s and order_id is null and not withdrawn""",(shop,sender_hash))
         token=uuid4()
-        db.execute("""insert into notification_private.order_previews(id,tenant_id,actor_id,sender_hash,lines)
-                      values (%s,%s,%s,%s,%s::jsonb)""",
-                   (token,shop,actor,hashlib.sha256(sender.encode()).digest(),json.dumps(lines)))
+        db.execute("""insert into notification_private.order_previews(id,tenant_id,actor_id,sender_hash,ingress_id,lines)
+                      values (%s,%s,%s,%s,%s,%s::jsonb)""",
+                   (token,shop,actor,sender_hash,ingress_id,json.dumps(lines)))
     return token,lines
 
 
