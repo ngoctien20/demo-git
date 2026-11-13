@@ -12,13 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 12661aac51fab70fbb3203dc69a2016f69123e7d
+          ref: 91f2bc32dc46b8f6eb21177b0cd7ab77e4b6178d
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           ref: 219dd0864d4a26500d758edbb803f3b8b5e61f73
           path: auth
           persist-credentials: false
+      - run: python -m pip install playwright==1.58.0 && python -m playwright install chromium
       - name: Check signed merchant revenue totals and tenant denial
         env:
           TIEN404_QA_A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
@@ -30,3 +31,7 @@ jobs:
           QA_PUBLIC_KEY="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=await import('data:text/javascript;base64,'+readFileSync('auth/assets/auth-config.js').toString('base64')); console.log(m.SUPABASE_PUBLISHABLE_KEY)")"
           export QA_PUBLIC_KEY
           python qa/notification/staging_revenue.py
+          export TIEN404_VERIFY_REVENUE_V3=1
+          export TIEN404_QA_A_TENANT=9c8c524c-88db-4771-8ab0-a4316298494c
+          export TIEN404_QA_B_TENANT=4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5
+          python qa/staging/signed_auth_browser.py
