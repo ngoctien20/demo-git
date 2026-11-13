@@ -1,4 +1,5 @@
 """Private manual QA against Render staging. Requires dedicated QA owners, no recordings."""
+import csv
 import os
 from pathlib import Path
 import sys
@@ -6,6 +7,32 @@ from tempfile import TemporaryDirectory
 
 ORIGIN = "https://tien404-auth-staging.onrender.com"
 DB = "https://ifxlvrhyjhbzbrkdsida.supabase.co"
+
+
+def check_report_download(page, tenant):
+    report = page.get_by_role("button", name="Xem giá trị đơn đã thanh toán")
+    export = page.get_by_role("button", name="Xuất báo cáo CSV")
+    for days in (7, 30):
+        with page.expect_response(lambda response: response.url == DB + "/rest/v1/rpc/merchant_paid_orders_daily"
+                                  and response.request.method == "POST") as observed:
+            if days == 7:
+                report.click()
+            else:
+                page.get_by_label("Kỳ thống kê đơn hàng").select_option(str(days))
+        response = observed.value
+        assert response.ok and response.request.post_data_json == {"p_tenant": tenant, "p_days": days}
+        rows = response.json()
+        assert rows and all(row["tenant_id"] == tenant for row in rows)
+        with page.expect_download() as download:
+            export.click()
+        result = download.value
+        assert result.suggested_filename == f"don-hang-{tenant}-{days}-ngay.csv"
+        with result.path().open(encoding="utf-8-sig", newline="") as source:
+            data = list(csv.reader(source))
+        assert data[0] == ["Ngày tạo đơn (Việt Nam)", "Tổng số đơn",
+                           "Số đơn đang ở trạng thái đã thanh toán", "Giá trị đơn đã thanh toán (VND)"]
+        assert data[1:] == [[str(row[key]) for key in ("order_day", "order_count", "paid_count", "paid_vnd")]
+                            for row in rows]
 
 
 def run_shop(chromium, profile, email, password, tenant):
@@ -31,6 +58,7 @@ def run_shop(chromium, profile, email, password, tenant):
             expect(page.locator("#account-protected")).to_be_visible(timeout=35000)
             assert page.locator("#account-email").inner_text().casefold() == email.casefold()
             if first_launch:
+                check_report_download(page, tenant)
                 page.reload()
                 expect(page.locator("#account-protected")).to_be_visible(timeout=35000)
             else:
@@ -60,7 +88,7 @@ def main():
             except Exception as error:
                 print(f"FAIL: shop {label}, {type(error).__name__}")  # Never log email, page or token.
                 return 1
-            print(f"PASS: shop {label}, authenticated tenant, refresh, reopen, logout and route denial")
+            print(f"PASS: shop {label}, authenticated tenant, 7/30-day CSV, refresh, reopen, logout and route denial")
     return 0
 
 

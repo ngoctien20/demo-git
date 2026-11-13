@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   two-shop:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'work/v11-consolidated-staging')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'work/v11-consolidated-staging' || github.head_ref == 'qa/v11-merchant-export-evidence'))
     runs-on: ubuntu-latest
     timeout-minutes: 9
     steps:
@@ -26,7 +26,7 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
-          ref: 80199d3dcf99f60db733b790c3ddf433cd6eac44
+          ref: 745b1596c0f183790e032def3944664def66ea00
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -39,6 +39,10 @@ jobs:
           path: auth
           persist-credentials: false
       - run: python -m pip install httpx==0.28.1 playwright==1.58.0 && python -m playwright install chromium
+      - name: Wait for staging before starting private sessions
+        run: |
+          curl --fail --silent --show-error --output /dev/null --max-time 55 --retry 2 --retry-max-time 100 https://tien404-data-staging.onrender.com/health
+          curl --fail --silent --show-error --output /dev/null --max-time 55 --retry 2 --retry-max-time 100 https://tien404-auth-staging.onrender.com/login.html
       - name: Verify staging HTTP identities and mobile browser persistence
         env:
           TIEN404_QA_A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
