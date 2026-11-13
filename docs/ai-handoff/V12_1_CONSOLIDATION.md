@@ -1,0 +1,21 @@
+# V12.1 · Quyết định hợp nhất staging · 14/11/2026 JST
+
+Đầu nhánh trước sửa e6ddfe39d9f7ce79efc64a086d0d6177f60b7d82, draft PR #34. Phạm vi quyết định là kiến trúc đích cho staging. Chưa promote module live.
+
+| Khả năng | Nguồn tái sử dụng | Phần còn thiếu / quyết định |
+|---|---|---|
+| Core AI | Main Agent và Messenger Lab, pattern hội thoại, công cụ, QA | Một contract lõi độc lập kênh. Giữ Sheets và credential DEMO riêng. Ba tool Create/Manage/Update có draft khác published. |
+| Tenant | Commerce V3 Tenant Resolver | Chỉ nhận route đã xác thực từ adapter. Đối chiếu Bot Registry; cấm prompt chọn shop. |
+| Catalog, pricing | Commerce V3 Catalog Query + Rules Extension | Một nơi tra giá/tồn. Fixture hội thoại Zalo chỉ dùng để QA. |
+| Cart | Commerce V3 Cart Preview | Giữ preview riêng với lệnh ghi đã xác nhận. |
+| Order commit | Commerce V3 điều phối, transaction PostgreSQL R1 làm mẫu nghiệm thu | Một service ghi phía PostgreSQL cho Commerce. Schema QA chỉ giữ fixture. Cần bridge có chứng thực và hợp đồng retry/readback trước rollout. |
+| Outbox | V4.5 router/reconcile + outbox PostgreSQL cùng transaction order | Chọn PostgreSQL làm nơi ghi intent chuẩn. Data Tables V4.2/V4.5, SQLite và V3 giữ cho QA. Một writer, không dual-write. |
+| Telegram/Gmail | V4.5 dispatchers | Giữ adapter, kiểm recipient/quota trước gửi, unknown delivery cần đối soát. |
+| Zalo | Webhook V1, Shadow V2, Gateway và V2.1 memory | Giữ ingress/echo guard/kill switch, chỉ map identity đã xác minh. Adapter chưa nối đường commit. |
+| Owner | Pairing V3: challenge, claim pending, confirm bằng Dashboard | Một binding cho đúng người phát mã. Edge preflight chỉ xác minh quyền; test HTTP độc lập với test SQL. |
+
+**Cơ sở lựa chọn.** PostgreSQL cho phép ghi đơn, sự kiện và unique intent trong một transaction theo tenant. Chuỗi nhiều thao tác n8n/Data Tables chưa có bằng chứng rollback nguyên tử giữa các bảng. Dùng chung V3 và dispatcher giảm số workflow, lượt ghi và cấu hình mỗi shop; chưa benchmark throughput hoặc chi phí. Các schema và fixture cũ giữ nguyên. Khi thử bridge cần một shop QA mỗi lần, dừng ingress và giữ HELD để rollback. Không chuyển dữ liệu DEMO.
+
+**QA n8n mới.** Catalog/cart 3069; Business 3063; Extension 3064; Zalo V2.1 3062. Zalo Webhook published 9ef7342b-0623-4921-9969-7d33d112bbef; Shadow published 7f100319-b820-4f02-a52b-85cd8e0c7e25; Agent V2.1 inactive 40faa4ff-93b0-4d40-9d07-7ac6bcb0baf6; Messenger published d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92. Cloudflare ZALO_SEND_ENABLED=false. Supabase owner-preflight v1 ACTIVE, verify_jwt=true.
+
+**Release gates.** Hosted CI cần chứng minh owner A/B đúng shop 200, chéo shop 403, token sai 401. RLS proof này chỉ bao phủ preflight. Tiếp theo là trusted ingress tới pending claim, Dashboard confirm, một order transaction tới outbox HELD và đối soát giữa V3/V4.5. Production, thanh toán, LLM có phí và gửi thật đều ngoài lần chạy.
