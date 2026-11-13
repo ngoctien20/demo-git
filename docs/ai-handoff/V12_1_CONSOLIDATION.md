@@ -23,3 +23,5 @@
 **Kết quả HTTP mới.** Actions 43522424943, job 132219761893, commit 5f228a552582a5b5caa63a4be6140c54bb32ea20: A→A 200, A→B 403, B→B 200, B→A 403, JWT sai 401. Hai phiên QA được đăng xuất cục bộ. Scope là endpoint đọc, chưa phải challenge/confirm qua HTTP.
 
 **Adapter đọc Cart V3.** commerce_preview.py nhận tenant tin cậy từ caller, kiểm tenant/cờ quyền, VND/tồn/tổng, chỉ trả preview hoặc yêu cầu báo giá. Hai kết quả synthetic từ execution 3069 được lưu rút gọn trong v3_cart_3069.json. Không có hàm commit, sender hoặc outbox mới. Resolver published hiện chỉ nhận messenger/zalo_oa/website; cần mở rộng riêng cho zalo_bot với route đã xác thực trước khi nối live. Không ánh xạ giả thành OA. Tách kết quả replay contract khỏi E2E webhook. Rollback bằng revert các commit V12.1 trên nhánh PR; không có migration/deploy cần hoàn tác.
+
+**Regression.** Shop-owned 17/17, Actions 43522771634 tại commit 1222e7c5f61dfd6d052ca6575e08d20a88b74a54. Notification/model/ordered 30/30 cục bộ. Bộ PostgreSQL cần psycopg và database dùng riêng cho QA. Dùng lại CI PostgreSQL/restore/mobile hiện có trên nhánh PR. Không chạy bộ fixture này trên Supabase hosting.
