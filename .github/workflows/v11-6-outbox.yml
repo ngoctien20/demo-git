@@ -1,0 +1,88 @@
+name: V11.6 isolated commerce and notification transactions
+on:
+  push:
+    branches: [work/v11-5-zalo-first-notifications-20261113]
+    paths: ['qa/notification/**', 'merchant/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tien404_qa
+          POSTGRES_PASSWORD: disposable-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 4s --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGDATABASE: tien404_qa
+      PGUSER: postgres
+      PGPASSWORD: disposable-only
+      PYTHONPATH: data/ops/data-platform
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ab940a95dae8afdff426bc6ac71693833d5348ce
+          path: data
+          persist-credentials: false
+      - run: python -m pip install 'psycopg[binary]==3.2.9'
+      - run: |
+          set -eu
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon;
+          CREATE ROLE authenticated;
+          CREATE SCHEMA auth;
+          GRANT USAGE ON SCHEMA auth TO authenticated;
+          CREATE TABLE auth.users(id uuid PRIMARY KEY);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+          SQL
+          psql -X -v ON_ERROR_STOP=1 -f data/ops/data-platform/schema.staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/outbox_v5.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/inbox_v5.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/merchant_alert.sql
+          python qa/notification/test_outbox.py
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/revenue_v3.sql
+          python qa/notification/test_revenue.py
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/preview.sql
+          python qa/notification/test_preview.py
+          python -m unittest discover -s qa/notification -p test_ingress.py
+          node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs
+          node qa/notification/test_period.mjs
+      - name: Restore isolated notification database and verify boundaries
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$POSTGRES_CONTAINER" bash -se <<'RESTORE'
+          set -eu -o pipefail
+          dump=$(mktemp)
+          trap 'rm -f "$dump"' EXIT
+          pg_dump -U postgres -Fc tien404_qa > "$dump"
+          createdb -U postgres tien404_restored
+          pg_restore -U postgres --exit-on-error --single-transaction -d tien404_restored "$dump"
+          fingerprint() {
+            pg_dump -U postgres --data-only --inserts "$1" | LC_ALL=C awk '/^INSERT INTO /' | LC_ALL=C sort | sha256sum
+          }
+          test "$(fingerprint tien404_qa)" = "$(fingerprint tien404_restored)"
+          psql -X -U postgres -d tien404_restored -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$ BEGIN
+            IF (SELECT count(*) FROM notification_private.notification_outbox) <> 6 OR
+              has_table_privilege('authenticated','notification_private.routes','SELECT') OR
+              has_function_privilege('anon','public.merchant_notification_inbox(uuid)','EXECUTE')
+              THEN RAISE EXCEPTION 'restore gate failed'; END IF;
+          END $$;
+          SQL
+          RESTORE
+
+      - name: Check mobile merchant UI with synthetic responses
+        run: |
+          python -m pip install playwright==1.58.0
+          python -m playwright install chromium
+          python qa/notification/browser_check.py
