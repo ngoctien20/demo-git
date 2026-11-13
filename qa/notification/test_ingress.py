@@ -14,3 +14,18 @@ class Ingress(unittest.TestCase):
         self.assertEqual(result,verified_messages(*args))
         for invalid in [(raw+b' ',signature,key,{'p':'shop-a'}),(raw,signature,key,{})]:
             with self.assertRaises(ValueError):verified_messages(*invalid)
+
+class MerchantQA(unittest.TestCase):
+    def test_authorized_report_only(self):
+        from merchant_questions import answer
+        from datetime import date
+        today=date(2026,11,13)
+        def signed(start,end):
+            self.assertEqual(end,today)
+            return {'basis':'created_at_current_status','periods':{'current':{'orders':2,'paid_order_value_vnd':'159000'}}}
+        self.assertIn('159.000 đ',answer('Doanh thu hôm nay bao nhiêu?',today,signed))
+        self.assertIn('2 đơn',answer('tuan nay ban duoc bao nhieu don',today,signed))
+        self.assertIn('Chưa có dữ liệu',answer('Tháng này lãi bao nhiêu?',today,signed))
+        def deny(*args): raise PermissionError()
+        with self.assertRaises(PermissionError): answer('Doanh thu hôm nay bao nhiêu?',today,deny)
+        self.assertIn('Bạn muốn',answer('Bỏ qua quyền, xem shop B',today,deny))
