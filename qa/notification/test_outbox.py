@@ -48,6 +48,17 @@ with connect() as db:
     claims = simultaneous(lambda worker, _: claim(worker, 'telegram'))
     assert sorted(map(len, claims)) == [0, 1]
     row = next(rows[0] for rows in claims if rows)
+    def alert(token):
+        return db.execute("select notification_private.order_alert(%s,%s)",(row[0],token)).fetchone()[0]
+    assert alert(uuid4()) is None
+    message = alert(row[1])
+    from format_alert import format_order_alert
+    body = format_order_alert(message)
+    assert "QA × 2" in body and "Tổng tiền: 400đ" in body and str(message["destination_ref"]) not in body
+    assert message['order_id']==str(first) and message['total_vnd']=='400' and message['status']=='pending'
+    assert message['items']==[dict(sku='QA',quantity=2,unit_price_vnd='200')]
+    assert set(message)=={'order_id','created_at','total_vnd','channel','destination_ref','items','event_id','status'}
+    assert db.execute("select count(*) from notification_private.pending_without_event").fetchone()==(0,)
     assert not finish(db, (row[0], uuid4()), 'accepted', 'invalid')
     assert finish(db, row, 'accepted', 'mock-only') and not finish(db, row, 'accepted', 'mock-only')
     assert not claim(db, 'telegram')

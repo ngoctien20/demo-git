@@ -39,6 +39,7 @@ jobs:
           CREATE ROLE anon;
           CREATE ROLE authenticated;
           CREATE SCHEMA auth;
+          GRANT USAGE ON SCHEMA auth TO authenticated;
           CREATE TABLE auth.users(id uuid PRIMARY KEY);
           CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
           SQL
@@ -46,6 +47,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/outbox_v5.sql
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/inbox_v5.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/merchant_alert.sql
           python qa/notification/test_outbox.py
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/revenue_v3.sql
           python qa/notification/test_revenue.py
