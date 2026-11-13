@@ -15,7 +15,7 @@ Kiểm tra ngày 13/11/2026 UTC. Nhánh work/v12-zalo-sales-lab, gốc 8c7bef523
 
 ## Cách chạy và giới hạn
 
-Mở workflow Editor, chọn Chat trong trình biên tập. Dùng hội thoại giả lập tối đa tám dòng trong cùng một lần gửi. Ví dụ “Shop còn áo đen không?”, “Size L.”, “Lấy 2”. Catalog thời trang trả 159.000đ, tồn 3, dự toán 318.000đ. Các số này thuộc fixture. UI hiện tại chưa lưu ngữ cảnh giữa hai lần bấm gửi. Bốn ngành có fixture riêng trong suite.
+Mở workflow Editor, chọn Chat trong trình biên tập. Dùng hội thoại giả lập tối đa tám dòng trong cùng một lần gửi. Ví dụ “Shop còn áo đen không?”, “Size L.”, “Lấy 2”. Catalog thời trang trả 159.000đ, tồn 3, dự toán 318.000đ. Các số này thuộc fixture. Tại checkpoint V2.0, UI chưa lưu ngữ cảnh giữa hai lần bấm gửi. Xem cập nhật V2.1 bên dưới. Bốn ngành có fixture riêng trong suite.
 
 Bộ xử lý offline truy hồi ý định từ ví dụ tiếng Việt. Chỉ dữ liệu fixture quyết định SKU, giá, tồn và tổng. Prompt vi-sales-lab-2.0 và adapter nhận đề xuất SKU đã kiểm thử bằng model giả. Chưa gắn LLM vào n8n. Mã session SQLite dành cho QA bằng định danh giả. Đối với giao tiếp giữa các execution thật cần xác thực ánh xạ shop/bot/khách tại gateway và datastore được cấp riêng. Chưa thẩm định RLS, lỗi gửi cạnh tranh qua provider hoặc chất lượng model thực.
 
@@ -42,3 +42,19 @@ Hướng dẫn chính thức mô tả tạo Bot và thử từ local bằng getU
 - https://docs.zaloplatforms.com/docs/BOT/create_bot
 - https://docs.zaloplatforms.com/docs/BOT/best-practices/build-your-bot
 - https://oa.zalo.me/home/documents/guides/huong-dan-su-dung-zalo-chatbot
+
+## V2.1 · Bộ nhớ Editor giữa các lần gửi
+
+Workflow Editor Dy4DYbsL059MLXUi, draft 8fcd65e4-59ec-428f-b6e6-56fb4ff25ff5, inactive. Bản JSON sáu node đã lưu trong qa/zalo/editor-session.workflow.json. Khi phục hồi V2.1 dùng JSON này trong cùng project. build.cjs editor vẫn sinh phiên bản V2.0 dùng cho rollback.
+
+Mỗi lần gửi, workflow lấy sessionId từ Chat Trigger, đọc bảng QA qksG5U9jcsYAUygG, tính câu trả lời, lưu ngữ cảnh trước khi trả lời. Khóa giới hạn trong editor và shop fixture fashion. Bảng lưu SKU hoặc thuộc tính cần hỏi, ID phiên và thời điểm hết hạn. TTL 30 phút kể từ lần cập nhật gần nhất. Bản ghi hết hạn bị bỏ qua khi đọc. Chưa đặt lịch xóa vật lý.
+
+| Execution | Đầu vào | Kết quả n8n |
+|---|---|---|
+| 2851 | Áo đen | Hỏi size |
+| 2852 | Cùng session, Size L. | F01, 159.000đ, tồn 3 |
+| 2854 | Cùng session, Lấy 2 | Bản nháp 318.000đ |
+| 2853 | Session khác, Size L. | Hỏi lại sản phẩm |
+| 2855 | Session có ngữ cảnh hết hạn, Size L. | Hỏi lại sản phẩm |
+
+Execution đầu dùng trigger chat manual. Các lượt tiếp dùng fixture ở đầu ra trigger để cố định ID. Năm node xử lý phía sau chạy thật với Data Table. Chưa kiểm thử thao tác trên trình duyệt người dùng hoặc hai tin đến đồng thời trong cùng session. Không dùng chuỗi đọc/upsert này làm cơ chế chống trùng giao dịch. Rollback về phiên bản 2a0cc328-f981-45f5-a8f5-eee6b6935c37. Bảng QA có thể giữ lại khi rollback.
