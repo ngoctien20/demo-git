@@ -32,3 +32,29 @@ with sync_playwright() as p:
     expect(page.get_by_role('button')).to_have_count(0)
     browser.close()
 print("PASS mobile Chromium, mock RPC, read confirmation, error, denied and unmount")
+
+# Exercise the revenue panel against a synthetic tenant-scoped RPC. No credentials.
+with sync_playwright() as p:
+    browser=p.chromium.launch()
+    page=browser.new_page(viewport={"width":360,"height":780})
+    page.set_content('<html lang="vi"><main></main></html>')
+    for script in ['revenue-panel','onboarding']:
+        page.add_script_tag(content=Path(f'merchant/{script}.mjs').read_text().replace('export function','function'))
+    page.evaluate("""() => {
+        const root=document.querySelector('main');
+        mountOnboarding(root,{membershipVerified:true,dashboardAvailable:true});
+        mountRevenuePanel(root,{rpc:async(name,args)=>{
+          if(name!=='merchant_revenue_v3'||args.p_shop!=='A')throw Error();
+          return {data:{basis:'created_at_current_status',periods:{current:{paid_order_value_vnd:'200',unpaid_order_value_vnd:'500',
+            orders:2,pending:1,paid:1,cancelled:0},previous:{paid_order_value_vnd:'0'}},top_skus_by_units:[]}};
+        }},'A');
+    }""")
+    expect(page.get_by_text('Zalo OA · Tùy chọn · Có thể bỏ qua')).to_be_visible()
+    page.get_by_role('button',name='Xem báo cáo').click()
+    expect(page.get_by_role('status')).to_contain_text('Giá trị đơn đã thanh toán: 200 đ')
+    page.get_by_label('Kỳ báo cáo').select_option('custom')
+    page.get_by_label('Từ ngày').fill('2026-11-15')
+    page.get_by_label('Đến ngày').fill('2026-11-01')
+    page.get_by_role('button',name='Xem báo cáo').click()
+    expect(page.get_by_role('status')).to_contain_text('Chọn kỳ báo cáo')
+    browser.close()

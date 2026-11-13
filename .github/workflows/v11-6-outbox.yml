@@ -2,7 +2,7 @@ name: V11.6 isolated commerce and notification transactions
 on:
   push:
     branches: [work/v11-5-zalo-first-notifications-20261113]
-    paths: ['qa/notification/**', 'merchant/notification-center.mjs', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
+    paths: ['qa/notification/**', 'merchant/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
 permissions:
   contents: read
 jobs:
@@ -54,6 +54,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/preview.sql
           python qa/notification/test_preview.py
           node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs
+          node qa/notification/test_period.mjs
       - name: Restore isolated notification database and verify boundaries
         env:
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
