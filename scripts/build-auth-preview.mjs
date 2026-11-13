@@ -13,7 +13,7 @@ const allowList=[
   'assets/style.css','assets/auth.css','assets/favicon.svg',
   'assets/app.js','assets/site-config.js',
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
-  'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-product.mjs',
+  'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/merchant-product.mjs',
   'assets/auth-runtime.mjs','assets/auth-bootstrap.js'
 ];
 const production='https://ngoctien20.github.io/demo-git/';
