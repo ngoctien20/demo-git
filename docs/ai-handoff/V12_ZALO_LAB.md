@@ -1,0 +1,70 @@
+# V12.0 · Zalo Sales Lab V2 · EXPERIMENTAL
+
+Kiểm tra ngày 13/11/2026 UTC. Nhánh work/v12-zalo-sales-lab, gốc 8c7bef52324dae073479646fd983832c2c2ab20e. Phạm vi là hội thoại thử. Bot Platform V1 tiếp tục nhận sự kiện. Lab chưa được định tuyến từ webhook.
+
+| Thành phần | Trạng thái | Bằng chứng |
+|---|---|---|
+| Webhook V1 | VERIFIED cấu hình Published | yIJk8LvJoLF40Z62, phiên bản 25f910ce-d576-437b-ba5c-cc7247272d0f. Header Auth, normalize, ACK. Tắt lưu execution thành công, lỗi, manual và tiến độ. |
+| TEST 08 | VERIFIED bằng chứng đã lưu | Bảng iu4YwmjRzW1SDGMg có hai hàng accepted, một SIMULATED_MANUAL và một WEBHOOK_PRODUCTION, cùng message.text.received. getWebhookInfo hiện thời chưa chạy lại. |
+| Messenger | VERIFIED phiên bản | Z7FdV7uDvApfbURQ ở d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92. Agent thử 3MzEyZgbwkRmO4NI inactive có tools ghi, loại khỏi lab. |
+| QA n8n | TESTED 27/27 | [Execution 2849](https://ngoctien20.app.n8n.cloud/workflow/7ilAB2bfIvh81H8j/executions/2849), draft eb568836-8a3d-40a1-9e40-00f37c5d2d56. |
+| Chat Editor | TESTED ba lượt | [Execution 2850](https://ngoctien20.app.n8n.cloud/workflow/Dy4DYbsL059MLXUi/executions/2850), draft 2a0cc328-f981-45f5-a8f5-eee6b6935c37. Hai workflow trong Personal → 90_QA - DIAGNOSTICS. |
+| Session, model adapter | TESTED cục bộ | Node 24, SQLite, 3/3 bài test. Session TTL 30 phút, dedup 24 giờ theo shop, bot và khách giả lập. Hai worker cùng event cho một catalog, một duplicate. Adapter chặn sai shop, trường thừa và timeout. |
+| Bốn bộ CSV | TESTED replay an toàn | 97 hàng lịch sử có một hàng lặp. Hai bản 96 single giống nhau. 36 kịch bản khác gồm 9 kịch bản chỉ một lượt. Replay 132 case, 167 lượt kiểm tra độ dài, phạm vi SKU, trường session và mã thiếu QA05. Chất lượng từng câu theo expected_behavior chưa chấm đủ. |
+| Sender | IMPLEMENTED mô phỏng | Chặn sai người nhận, hết quota, replay và kill switch. Timeout/5xx cần đối soát. 429 dừng. Chưa có transport thật hoặc quota phân tán. |
+
+## Cách chạy và giới hạn
+
+Mở workflow Editor, chọn Chat trong trình biên tập. Dùng hội thoại giả lập tối đa tám dòng trong cùng một lần gửi. Ví dụ “Shop còn áo đen không?”, “Size L.”, “Lấy 2”. Catalog thời trang trả 159.000đ, tồn 3, dự toán 318.000đ. Các số này thuộc fixture. Tại checkpoint V2.0, UI chưa lưu ngữ cảnh giữa hai lần bấm gửi. Xem cập nhật V2.1 bên dưới. Bốn ngành có fixture riêng trong suite.
+
+Bộ xử lý offline truy hồi ý định từ ví dụ tiếng Việt. Chỉ dữ liệu fixture quyết định SKU, giá, tồn và tổng. Prompt vi-sales-lab-2.0 và adapter nhận đề xuất SKU đã kiểm thử bằng model giả. Chưa gắn LLM vào n8n. Mã session SQLite dành cho QA bằng định danh giả. Đối với giao tiếp giữa các execution thật cần xác thực ánh xạ shop/bot/khách tại gateway và datastore được cấp riêng. Chưa thẩm định RLS, lỗi gửi cạnh tranh qua provider hoặc chất lượng model thực.
+
+Chạy tại gốc nhánh với Node 24 và Python 3.
+
+    node qa/zalo/suite.cjs
+    node --test qa/zalo/*.test.cjs
+    python -B qa/zalo/corpus.py HISTORY.csv MULTI.csv SINGLE.csv COPY.csv
+    node qa/zalo/build.cjs editor
+    node qa/zalo/build.cjs
+
+Hai lệnh cuối sinh mã n8n SDK để kiểm tra hoặc tái tạo workflow QA trên bản nháp độc lập.
+
+## Kiểm soát và rollback
+
+Checkpoint khôi phục V1 là phiên bản Published nêu trong bảng. V12 đứng riêng. Để dừng thử nghiệm, dừng manual runs và giữ hai workflow V2 inactive. Nếu sau này định tuyến thử nghiệm được duyệt, ngắt định tuyến sang V2 trước khi kiểm tra lại ACK V1. Chưa diễn tập phục hồi V1 trên webhook đang hoạt động.
+
+P0 trước thử thật: khóa identity theo binding phía server, triển khai TTL và dedup bền vững tại n8n, quota nguyên tử, xử lý crash sau accepted, chặn log nội dung thật, kiểm thử sai xác thực và replay trên endpoint V2 riêng. P1: nối model đã duyệt, đánh giá chất lượng bằng CSV, xử lý biến thể khẩu ngữ, khách đổi sản phẩm và ý định phủ định. Chưa nghiệm thu việc hiểu đúng mọi phủ định hoặc lựa chọn nhiều thuộc tính. Chưa chuyển lưu lượng, cấp quyền, gửi tin, dùng model tính phí hay ghi đơn.
+
+## Điều kiện nền tảng
+
+Hướng dẫn chính thức mô tả tạo Bot và thử từ local bằng getUpdates. Tài liệu OA có điều kiện sản phẩm riêng. Chưa xác minh quyền thương mại nhiều merchant, BASIC quota, biểu phí và quyền gửi tới từng đối tượng của tài khoản cụ thể. Trước Milestone 5 cần đối chiếu điều khoản và hạn mức của tài khoản, có người nhận QA đã duyệt, budget và nơi quản lý bí mật phía server. Chưa đủ điều kiện CANDIDATE.
+
+- https://docs.zaloplatforms.com/docs/BOT/create_bot
+- https://docs.zaloplatforms.com/docs/BOT/best-practices/build-your-bot
+- https://oa.zalo.me/home/documents/guides/huong-dan-su-dung-zalo-chatbot
+
+## V2.1 · Bộ nhớ Editor giữa các lần gửi
+
+Workflow Editor Dy4DYbsL059MLXUi, draft 8fcd65e4-59ec-428f-b6e6-56fb4ff25ff5, inactive. Bản JSON sáu node đã lưu trong qa/zalo/editor-session.workflow.json. Khi phục hồi V2.1 dùng JSON này trong cùng project. build.cjs editor vẫn sinh phiên bản V2.0 dùng cho rollback.
+
+Mỗi lần gửi, workflow lấy sessionId từ Chat Trigger, đọc bảng QA qksG5U9jcsYAUygG, tính câu trả lời, lưu ngữ cảnh trước khi trả lời. Khóa giới hạn trong editor và shop fixture fashion. Bảng lưu SKU hoặc thuộc tính cần hỏi, ID phiên và thời điểm hết hạn. TTL 30 phút kể từ lần cập nhật gần nhất. Bản ghi hết hạn bị bỏ qua khi đọc. Chưa đặt lịch xóa vật lý.
+
+| Execution | Đầu vào | Kết quả n8n |
+|---|---|---|
+| 2851 | Áo đen | Hỏi size |
+| 2852 | Cùng session, Size L. | F01, 159.000đ, tồn 3 |
+| 2854 | Cùng session, Lấy 2 | Bản nháp 318.000đ |
+| 2853 | Session khác, Size L. | Hỏi lại sản phẩm |
+| 2855 | Session có ngữ cảnh hết hạn, Size L. | Hỏi lại sản phẩm |
+
+Execution đầu dùng trigger chat manual. Các lượt tiếp dùng fixture ở đầu ra trigger để cố định ID. Năm node xử lý phía sau chạy thật với Data Table. Chưa kiểm thử thao tác trên trình duyệt người dùng hoặc hai tin đến đồng thời trong cùng session. Không dùng chuỗi đọc/upsert này làm cơ chế chống trùng giao dịch. Rollback về phiên bản 2a0cc328-f981-45f5-a8f5-eee6b6935c37. Bảng QA có thể giữ lại khi rollback.
+
+## V2.2 · Trước khi nối Zalo thật
+
+13/11/2026 JST. Cập nhật từ c702591. QA n8n 29/29 tại execution 2856, draft 5d042955-ffcb-4ffe-aa33-8c20f5146387. Editor xử lý “không mua 2 nhé” tại 2857, draft 6d23177f-6367-449f-867f-7f438f816837. Hai workflow thử vẫn inactive.
+
+Trên Node 24, 6/6 bài test đạt. Bridge QA nhận hợp đồng event từ normalizer V1 với ID giả, chỉ nhận chat riêng được chỉ định, ghi session, receipt và outbox trong cùng giao dịch SQLite. Hai worker tạo một phản hồi và chỉ một lượt dispatch mock. Đã test giữ quota khi timeout, 429, retry sau restart và kill switch. Replay 132 case/167 lượt kiểm tra phạm vi fixture. SQLite chỉ chạy cục bộ. Chưa có sender thật, chưa chứng minh external delivery hoặc chất lượng LLM thực.
+
+Workflow staging OgDZNSAvKEvhnAvn trong Personal / 90_QA - DIAGNOSTICS. Execution 2858 trả disabled cho sự kiện giả. Bản cuối 3862224f-ee64-485d-b461-181aa271cfaf inactive, giới hạn caller ở ID V1, tắt lưu execution thủ công, thành công, lỗi và tiến độ. Chưa nối V1. Shadow chỉ phát quyết định, chưa chạy hội thoại trên tin thật.
+
+Bước cần duyệt: nhận đúng một tin thử từ tài khoản của chủ dự án, cho V1 chuyển sự kiện đã xác thực vào nhánh shadow sau ACK, quan sát quyết định qua bằng chứng tối thiểu không chứa nội dung chat. Trước Publish phải xác minh allowlist, kiểm thử ACK khi nhánh lỗi và kiểm tra lại version V1. Cần duyệt riêng cho gửi trả qua Zalo, model trả phí và bất kỳ luồng khách hàng nào. Để rollback V2.2 giữ shadow inactive và khôi phục Editor về 8fcd65e4-59ec-428f-b6e6-56fb4ff25ff5, QA về eb568836-8a3d-40a1-9e40-00f37c5d2d56. V1 chưa cần rollback.

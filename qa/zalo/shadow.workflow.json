@@ -1,0 +1,101 @@
+{
+  "name": "TIEN404_ZALO_V2_SHADOW_STAGING",
+  "nodes": [
+    {
+      "id": "07cc59f2-ec73-40a6-8f59-e8c6f6293ef0",
+      "name": "Fixture only",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a9861cd6-9652-4aef-a4da-8932a3331fb6",
+      "name": "Synthetic private event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{accepted:true,stage:'READ_ONLY',eventName:'message.text.received',chatType:'PRIVATE',chatId:'qa-owner',messageId:'qa-one',text:'QA'}}];"
+      }
+    },
+    {
+      "id": "16ad6555-962d-4a0c-8a8d-6f3fac51a8d7",
+      "name": "Owner gate disabled",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "jsCode": "// n8n private subworkflow. No public trigger, outbound transport, session writes\n// or chat text in the output. The owner chat ID is injected at build time only.\nfunction inspectShadow(event, approvedChat) {\n  if (typeof approvedChat !== 'string' || !approvedChat) return {decision:'disabled'};\n  if (!event || event.stage !== 'READ_ONLY' || event.accepted !== true ||\n      event.eventName !== 'message.text.received' || event.chatType !== 'PRIVATE')\n    return {decision:'unsupported'};\n  if (event.chatId !== approvedChat) return {decision:'recipient_denied'};\n  if (typeof event.messageId !== 'string' || !event.messageId.trim() ||\n      typeof event.text !== 'string' || !event.text.trim() || event.text.length > 512)\n    return {decision:'invalid'};\n  return {decision:'eligible_for_shadow'};\n}\n\nreturn [{json:inspectShadow($input.first().json,null)}];"
+      }
+    },
+    {
+      "id": "56d38165-3de6-48b3-b692-fa49bd1a5efc",
+      "name": "V1 normalized input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    }
+  ],
+  "connections": {
+    "Fixture only": {
+      "main": [
+        [
+          {
+            "node": "Synthetic private event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic private event": {
+      "main": [
+        [
+          {
+            "node": "Owner gate disabled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "V1 normalized input": {
+      "main": [
+        [
+          {
+            "node": "Owner gate disabled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "yIJk8LvJoLF40Z62",
+    "saveManualExecutions": false
+  },
+  "active": false
+}
