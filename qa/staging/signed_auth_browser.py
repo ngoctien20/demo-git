@@ -31,6 +31,15 @@ def run_shop(chromium, profile, email, password, tenant):
             expect(page.locator("#account-protected")).to_be_visible(timeout=35000)
             assert page.locator("#account-email").inner_text().casefold() == email.casefold()
             if first_launch:
+                if os.getenv("TIEN404_VERIFY_REVENUE_V3")=="1":
+                    page.get_by_label("Kỳ báo cáo",exact=True).select_option("month")
+                    with page.expect_response(lambda r: r.url==DB+"/rest/v1/rpc/merchant_revenue_v3" and r.request.method=="POST") as observed_report:
+                        page.get_by_role("button",name="Xem báo cáo",exact=True).click()
+                    response=observed_report.value
+                    assert response.ok and response.request.post_data_json["p_shop"]==tenant
+                    amount=int(response.json()["periods"]["current"]["paid_order_value_vnd"])
+                    rendered=f"{amount:,}".replace(",",".")+" đ"
+                    expect(page.get_by_text("Giá trị đơn đã thanh toán: "+rendered,exact=True)).to_be_visible()
                 page.reload()
                 expect(page.locator("#account-protected")).to_be_visible(timeout=35000)
             else:
