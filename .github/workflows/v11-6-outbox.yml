@@ -51,6 +51,8 @@ jobs:
           python qa/notification/test_outbox.py
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/revenue_v3.sql
           python qa/notification/test_revenue.py
+          psql -X -v ON_ERROR_STOP=1 -f qa/notification/preview.sql
+          python qa/notification/test_preview.py
           node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs
       - name: Restore isolated notification database and verify boundaries
         env:
