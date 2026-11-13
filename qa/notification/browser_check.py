@@ -20,7 +20,7 @@ with sync_playwright() as p:
       }};
       window.unmount=mountNotificationCenter(document.querySelector('main'),client,'A');
     }""")
-    expect(page.get_by_text("Zalo · Đề xuất · Chờ xác minh OA")).to_be_visible()
+    expect(page.get_by_text("Zalo · Tùy chọn · Chờ xác minh OA")).to_be_visible()
     page.get_by_role("button",name="Đánh dấu đã xem").click()
     expect(page.get_by_role("button",name="Đã xem trong hộp thư")).to_be_disabled()
     for mode, message in [('error','Chưa tải được thông báo.'),('denied','Bạn chưa có quyền')]:

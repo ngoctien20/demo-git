@@ -51,7 +51,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
              WHEN NOT coalesce(eligible.active AND r.verified AND r.consent AND r.enabled,false) THEN 'disabled'
              WHEN c.channel='dashboard' THEN 'internal'
              ELSE 'qa_route_only' END
- FROM (VALUES ('zalo',1),('telegram',2),('gmail',3),('messenger',4),('dashboard',5)) c(channel,n)
+ FROM (VALUES ('telegram',1),('gmail',2),('dashboard',3),('messenger',4),('zalo',5)) c(channel,n)
  LEFT JOIN notification_private.routes r ON r.tenant_id=p_shop AND r.channel=c.channel
  LEFT JOIN public.tenant_memberships eligible ON (eligible.tenant_id,eligible.user_id)=(r.tenant_id,r.merchant_id)
     AND eligible.role IN ('owner','manager')

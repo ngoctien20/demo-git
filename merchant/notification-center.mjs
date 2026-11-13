@@ -1,6 +1,6 @@
 // Candidate for the existing signed-in merchant account page. Pass its Supabase client.
 const labels = {
-  zalo:'Zalo · Đề xuất', telegram:'Telegram', gmail:'Gmail', messenger:'Messenger', dashboard:'Hộp thư',
+  zalo:'Zalo · Tùy chọn', telegram:'Telegram', gmail:'Gmail', messenger:'Messenger', dashboard:'Hộp thư',
   waiting_for_owner:'Chờ xác minh OA', policy_qa:'Đang kiểm thử chính sách', unconfigured:'Chưa cấu hình',
   disabled:'Đang tắt', internal:'Nội bộ', qa_route_only:'Đã cấu hình thử nghiệm',
   queued:'Đang chờ', sending:'Đang xử lý', accepted:'Đã tiếp nhận', failed:'Thất bại',
