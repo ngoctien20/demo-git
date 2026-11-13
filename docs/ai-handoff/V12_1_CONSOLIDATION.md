@@ -19,3 +19,7 @@
 **QA n8n mới.** Catalog/cart 3069; Business 3063; Extension 3064; Zalo V2.1 3062. Zalo Webhook published 9ef7342b-0623-4921-9969-7d33d112bbef; Shadow published 7f100319-b820-4f02-a52b-85cd8e0c7e25; Agent V2.1 inactive 40faa4ff-93b0-4d40-9d07-7ac6bcb0baf6; Messenger published d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92. Cloudflare ZALO_SEND_ENABLED=false. Supabase owner-preflight v1 ACTIVE, verify_jwt=true.
 
 **Release gates.** Hosted CI cần chứng minh owner A/B đúng shop 200, chéo shop 403, token sai 401. RLS proof này chỉ bao phủ preflight. Tiếp theo là trusted ingress tới pending claim, Dashboard confirm, một order transaction tới outbox HELD và đối soát giữa V3/V4.5. Production, thanh toán, LLM có phí và gửi thật đều ngoài lần chạy.
+
+**Kết quả HTTP mới.** Actions 43522424943, job 132219761893, commit 5f228a552582a5b5caa63a4be6140c54bb32ea20: A→A 200, A→B 403, B→B 200, B→A 403, JWT sai 401. Hai phiên QA được đăng xuất cục bộ. Scope là endpoint đọc, chưa phải challenge/confirm qua HTTP.
+
+**Adapter đọc Cart V3.** commerce_preview.py nhận tenant tin cậy từ caller, kiểm tenant/cờ quyền, VND/tồn/tổng, chỉ trả preview hoặc yêu cầu báo giá. Hai kết quả synthetic từ execution 3069 được lưu rút gọn trong v3_cart_3069.json. Không có hàm commit, sender hoặc outbox mới. Resolver published hiện chỉ nhận messenger/zalo_oa/website; cần mở rộng riêng cho zalo_bot với route đã xác thực trước khi nối live. Không ánh xạ giả thành OA. Tách kết quả replay contract khỏi E2E webhook. Rollback bằng revert các commit V12.1 trên nhánh PR; không có migration/deploy cần hoàn tác.
