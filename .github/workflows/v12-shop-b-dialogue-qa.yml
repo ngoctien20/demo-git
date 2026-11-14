@@ -1,0 +1,33 @@
+name: "V12 Shop B Conversation QA (no outbound)"
+on:
+  push:
+    branches:
+      - "work/v12-shop-b-dialogue-staging-*"
+    paths:
+      - "qa/zalo/shop-b-conversation.cjs"
+      - "qa/zalo/shop-b-conversation.test.cjs"
+      - ".github/workflows/v12-shop-b-dialogue-qa.yml"
+  pull_request:
+    branches:
+      - "work/v12-r1-shop-owned"
+    paths:
+      - "qa/zalo/shop-b-conversation.cjs"
+      - "qa/zalo/shop-b-conversation.test.cjs"
+      - ".github/workflows/v12-shop-b-dialogue-qa.yml"
+permissions:
+  contents: read
+jobs:
+  dialogue-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate no-send dialogue syntax
+        run: |
+          node --check qa/zalo/shop-b-conversation.cjs
+          node --check qa/zalo/shop-b-conversation.test.cjs
+      - name: Run Shop B owner and order-safety cases
+        run: node --test qa/zalo/shop-b-conversation.test.cjs
