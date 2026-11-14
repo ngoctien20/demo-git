@@ -1,3 +1,4 @@
+import {mountOwnerPairing} from './owner-pairing.mjs';
 import {mountRevenuePanel} from './merchant-revenue-v3.mjs';
 import {PRODUCT_EDITOR_ENABLED,addProductEditor} from './merchant-product.mjs';
 import {addMerchantList} from './merchant-lists.mjs';
@@ -17,7 +18,11 @@ let generation=0;
 let lastChecked=0;
 let verifiedUserId=null;
 let busy=false;
+let removePairing;
+const qaPairingShops=new Set(['9c8c524c-88db-4771-8ab0-a4316298494c','4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5']);
 const resetView=()=>{
+  removePairing?.();
+  removePairing=null;
   protectedContent.hidden=true;
   cards.replaceChildren();
   emailNode.textContent='';
@@ -206,6 +211,8 @@ const revalidate=async()=>{
     emailNode.textContent=user.email||'Tài khoản đã xác thực';
     const workspace=document.createElement('div');
     function openTenant(t) {
+      removePairing?.();
+      removePairing=null;
       workspace.replaceChildren();
       const card=document.createElement('div');
       card.className='auth-tenant-card';
@@ -216,6 +223,7 @@ const revalidate=async()=>{
       const note=document.createElement('small');
       note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
+      if (t.role==='owner' && qaPairingShops.has(t.id)) removePairing=mountOwnerPairing(card,sb,t);
       addMerchantOverview(card, t, current);
       const context = {client:sb, tenantId:t.id, current:()=>current===generation};
       addMerchantList(card,'products',context);

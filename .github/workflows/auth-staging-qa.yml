@@ -6,6 +6,7 @@ on:
       - 'tests/auth_browser_smoke.py'
       - 'login.html'
       - 'account.html'
+      - 'assets/owner-*.mjs'
       - 'assets/auth*.js'
       - 'assets/auth-helpers.mjs'
       - 'assets/auth-runtime.mjs'
@@ -23,6 +24,7 @@ on:
       - 'tests/auth_browser_smoke.py'
       - 'login.html'
       - 'account.html'
+      - 'assets/owner-*.mjs'
       - 'assets/auth*.js'
       - 'assets/auth.css'
       - 'scripts/check-supabase-auth-staging.mjs'
@@ -32,7 +34,7 @@ permissions:
   contents: read
 jobs:
   safe-auth-static-qa:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
