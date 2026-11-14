@@ -149,3 +149,30 @@ Bot **sẽ không tự phản hồi**. Khi Owner báo “đã gửi”, đối c
 4. Catalog snapshot QA hết hạn `2026-11-14T15:41:35.598Z` (00:41:35 JST ngày 15/11); refresh từ Supabase trước test tiếp theo nếu quá hạn, không tái sử dụng dữ liệu cũ làm giá thật.
 
 **Rollback/production:** Chưa có bất kỳ sửa đổi code, published workflow, credential, dữ liệu đơn thật, gateway hoặc outbox trong lượt đối soát này; chỉ cập nhật checkpoint. Các automation gửi vẫn khóa.
+
+
+## V12.1.3 — Zalo webhook live-ingress repair / diagnostics (14 Nov 2026 JST)
+
+**Vấn đề:** Owner đã báo gửi hai lệnh `TEST SHOP B CHAT F01`, `TEST SHOP B CHAT MUA F01 2`. Không có marker mới sau execution 3371; không thể nghiệm thu dựa trên lời xác nhận gửi tin và test mô phỏng. V1 trước đó tắt lưu execution thành công/lỗi nên thiếu log nhận sự kiện.
+
+### Audited, no external sends
+
+- **Provider Zalo Bot API `getWebhookInfo`** qua Cloudflare staging: n8n workflow `TIEN404_ZALO_SHOP_B_WEBHOOK_DIAGNOSTICS_STAGING` `bD510xyr5jBHQ99K`, execution **3372 SUCCESS**, `has_webhook=true`, URL HTTPS trỏ chính xác `ngoctien20.app.n8n.cloud/webhook/tien404-zalo-bot-lab-v1`, không phải `webhook-test`. **Không sửa webhook, không gửi tin**.
+- Cloudflare Gateway diagnostic-only version `74a4d872-a1e6-420e-9d9c-2cb92c60dbdc`, được deploy lên staging với 6 bindings/secret kế thừa, `ZALO_SEND_ENABLED=false`. API chẩn đoán `/v1/webhook-diagnostics` chỉ gọi `getWebhookInfo`. Thay đổi tạm thời trước đó phục vụ gửi F01 một lần đã không còn trong phiên bản này. Bản rollback gốc `38c7df57-8e22-4b79-b5c4-e08b342833c6` còn lưu.
+- V1 webhook `yIJk8LvJoLF40Z62` giữ node `Zalo Bot Webhook (Protected)` headerAuth, `Validate & Normalize Event (Read Only)`, `Ack Zalo (No Message Sent)` và `Zalo V2 Shadow` **không sửa**. Bổ sung đúng 2 node song song: `V1 Private Ingress QA Meter (No PII)` → `Upsert V1 PII-Free QA Markers`. Bản mới `08f22ee1-cf5a-4459-bd33-bf80ac67af0e` đã publish. Diff so với `9ef7342b-0623-4921-9969-7d33d112bbef`: +2 node, +2 kết nối, 0 node sửa/xóa, 0 link xóa. n8n đã tự bỏ nhóm node trang trí `Event intake — read only` khi thêm nhánh, nhưng không bỏ node chức năng.
+- QA marker lưu **chỉ** `slot`, `outcome`, `observed_at`, không lưu Chat ID, người gửi, message ID, token hay văn bản tin. Các slot: `v1_ingress_any`, `v1_shop_b_price_cmd`, `v1_shop_b_order_cmd`. Marker chung chỉ nói request vượt qua HeaderAuth và được normalize, **không tự chứng minh do Zalo thật gửi**.
+- Execution **3375**: n8n test_workflow với pin fake event thành công, ghi `v1_shop_b_order_cmd`. Đây là fixture, không phải tin từ Owner.
+- Tạo workflow thủ công `TIEN404_ZALO_V1_WEBHOOK_HTTP_AUTH_PROBE_STAGING` ID `RnbsXSriPcythZjq`; dùng credential webhook staging đã có dưới dạng reference, gửi một POST tổng hợp không có PII tới chính URL staging. Execution **3377 SUCCESS**, HTTP **200**, body `{ok:true}`; `v1_ingress_any=ACCEPTED` được readback, Owner Gate **denied** người gửi giả đúng thiết kế. Không tạo đơn, không gửi trả lời Zalo.
+
+### Telegram screenshots provided by Owner: independent issue
+
+Các ảnh là n8n workflow Telegram `AI_SALES_V4_3_TELEGRAM_CHAT_DIAGNOSTIC_STAGING`, ID `nAHHoEEMEhYkujys` và credential `Telegram account` (không phải Zalo Bot API). Execution **2680 ERROR** `The resource you are requesting could not be found` giải thích ảnh chụp; execution **2681 SUCCESS** (read-only Chat ID match, type private, valid for private notification, 0 sends) chứng minh đã qua bước đó. Notification V4.5 Telegram exec 2686 sau đó có API ACK. **Không tự thay token hay chuyển Chat ID Telegram sang Zalo**.
+
+### Status & next owner acceptance
+
+- **VERIFIED:** Zalo provider có đúng URL webhook; n8n header-auth live endpoint hoạt động với request synthetic; Owner pairing Shop B valid tại lần kiểm tra; Shadow staging version `f00ba506-c52a-4340-9a0c-809fd9c6ea9a` không sửa.
+- **NOT VERIFIED:** hai tin Owner gửi trước telemetry mới; chưa có Zalo provider-origin event sau khi bật telemetry. Không thể kết luận nguyên nhân từ token, URL hay app khi chưa có sự kiện mới. Không tuyên bố đã sửa xong hai chiều.
+- **NEXT:** Owner gửi một lệnh QA **mới** vào đúng Zalo Bot Shop B từ tài khoản Owner đã ghép, trước khi catalog QA snapshot hết hạn **15/11/2026 00:41:35 JST**: `TEST SHOP B CHAT MUA F01 2`. Sau khi Owner báo đã gửi, đọc `v1_shop_b_order_cmd` thời gian **sau 22:25 JST**, Owner Gate `eligible`, `shop_b_chat_preview=ORDER_DRAFT_PREVIEW`, total `398000`. Nếu `v1_ingress_any` không đổi, tập trung vào provider-to-n8n / header secret; nếu `v1_ingress_any` đổi nhưng preview không đổi, sửa normalizer hoặc Shadow.
+- Không kích hoạt `sendMessage`, không chạm Orders/Products production, không đổi provider `setWebhook`, không kích hoạt phí. Phần gửi trả lời tự động vẫn cần phê duyệt riêng.
+
+**Rollback:** n8n V1 quay về published version `9ef7342b-0623-4921-9969-7d33d112bbef` nếu telemetry phát sinh regression; Cloudflare diagnostic worker quay về `38c7df57-8e22-4b79-b5c4-e08b342833c6`. Trước rollback phải xác minh version thật và giữ lại QA evidence.
