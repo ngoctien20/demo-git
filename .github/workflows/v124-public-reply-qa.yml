@@ -36,5 +36,6 @@ jobs:
           node --check qa/commerce/v124-core/ports.cjs
           node --check qa/commerce/v124-core/core.cjs
           node --check qa/commerce/v124-core/core.test.cjs
+          node --check qa/commerce/v124-core/index.cjs
       - name: Run public customer policy tests
         run: node --test qa/zalo/public-reply-pilot.test.cjs qa/commerce/v124-core/core.test.cjs
