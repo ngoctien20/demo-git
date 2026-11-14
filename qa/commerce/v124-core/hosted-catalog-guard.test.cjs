@@ -71,10 +71,8 @@ test('wrong tenant/store/bot from SQL readback is never silently accepted',async
  for(const field of ['tenant_key','store_key','bot_key']){
   const p={...product,[field]:'qa-attacker'};
   const c=client(checked,p);
-  const out=await guard('core_qa_a').readProduct({context:ctx,sku:'F01',client:c});
-  // The core validates scope in readFreshQaProduct before producing a reply.
-  const {readFreshQaProduct}=require('./catalog.cjs');
-  await assert.rejects(readFreshQaProduct({repository:{readProduct:async()=>out},
-    context:ctx,sku:'F01',clock:()=>Date.now()}),/CATALOG_CROSS_SCOPE_REJECTED/);
+  await assert.rejects(guard('core_qa_a').readProduct({context:ctx,sku:'F01',client:c}),
+    /CATALOG_CROSS_SCOPE_REJECTED/);
+  assert.equal(c.calls.length,2);
  }
 });
