@@ -46,5 +46,7 @@ jobs:
           python -m pip install playwright==1.58.0
           python -m playwright install chromium
           python tests/tester-portal-browser-smoke.py
+      - name: Hosted HTTPS smoke (anonymous, no credentials or writes)
+        run: node --test tests/tester-hosted-qa.mjs
       - name: Document scope
         run: echo "Static QA only. PostgreSQL RLS tested independently. No real tester approved, emails sent, or production changes."
