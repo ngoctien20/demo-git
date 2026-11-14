@@ -36,7 +36,7 @@
 </section>
 <section class="tp-card" id="ta-assignment-card" hidden>
 <h2>Phân công bài thử</h2>
-<p>Chỉ người đã được cấp quyền Tester mới có thể truy cập module sẵn sàng.</p>
+<p>Chỉ người đã được duyệt còn hạn mới được truy cập module READY; riêng Sheets mẫu có thể giao nhanh trong bảng Quyền Tester.</p>
 <form id="ta-assignment-form" class="tp-admin-form">
 <div class="tp-field"><label for="ta-assignment-id">Auth User ID</label><input class="tp-input" id="ta-assignment-id" autocomplete="off" required></div>
 <div class="tp-field"><label for="ta-module-id">Chọn module</label><select class="tp-select" id="ta-module-id"></select></div>
@@ -44,7 +44,7 @@
 </form></section></div>
 <section class="tp-card">
 <div class="tp-compact"><h2>Đơn đăng ký quyền thử nghiệm</h2><span id="ta-request-count" class="tp-module-badge">— đơn chờ</span></div>
-<p>Chỉ tài khoản Auth đã được xác minh mới có thể gửi yêu cầu. <strong>Duyệt</strong> là cấp quyền 7 ngày; module thử nghiệm cần phân công riêng. Chưa gửi lời mời email tự động.</p>
+<p>Chỉ tài khoản Auth đã xác minh mới gửi được đơn. <strong>Duyệt</strong> cấp quyền 7 ngày và cố gắng giao ngay module Sheets mẫu; các bot thật vẫn khóa. Nếu giao module thất bại, xem mục Quyền Tester để giao lại. Chưa gửi lời mời email tự động.</p>
 <div id="ta-request-list" class="tp-scroll"><p>Đang kiểm tra đơn đăng ký…</p></div>
 </section>
 <section class="tp-card"><div class="tp-compact"><h2>Quyền Tester hiện tại</h2><button type="button" id="ta-refresh" class="tp-outline">↻ Tải lại</button></div>
