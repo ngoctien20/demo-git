@@ -32,7 +32,8 @@ const tables={
  {case_id:'SHEET-SIM-006',module_id:'sheets',title:'Số lượng 0',instructions:'Dữ liệu mẫu',expected_result:'invalid_quantity',readiness:'ready',sort_order:6},
  {case_id:'SHEET-SIM-010',module_id:'sheets',title:'Đúng giá VND',instructions:'Dữ liệu mẫu',expected_result:'ok',readiness:'ready',sort_order:7},
  {case_id:'SHEET-SIM-011',module_id:'sheets',title:'VND sai',instructions:'Dữ liệu mẫu',expected_result:'invalid_price',readiness:'ready',sort_order:8},
- {case_id:'SHEET-AI-REVIEW-001',module_id:'sheets',title:'Báo cáo AI độc lập',instructions:'Tự đánh giá kết quả mẫu',expected_result:'self reported',readiness:'ready',sort_order:9}
+ {case_id:'SHEET-AI-REVIEW-001',module_id:'sheets',title:'Báo cáo AI độc lập',instructions:'Tự đánh giá kết quả mẫu',expected_result:'self reported',readiness:'ready',sort_order:9},
+ {case_id:'SHEET-MESSENGER-CLONE-001',module_id:'sheets',title:'Messenger Clone QA',instructions:'Kiểm thử hội thoại giả lập',expected_result:'self reported',readiness:'ready',sort_order:10}
 ],
  tien404_tester_runs:results,
  tien404_qa_sandbox_products:[],
@@ -243,6 +244,31 @@ def run():
         page.wait_for_function("document.querySelector('#tp-ai-submit-status')?.textContent.includes('Đã lưu báo cáo')",timeout=12000)
         page.wait_for_function("document.querySelector('#tp-done')?.textContent==='4'",timeout=12000)
 
+        # Expert Messenger Clone QA: 96-case prompt, copy, reject secrets, save self-reported result.
+        page.locator('#tp-messenger-clone').wait_for(state='visible',timeout=8000)
+        page.locator('#tp-messenger-clone-topic').select_option('catalog')
+        page.locator('#tp-messenger-clone-draw').click()
+        assert 'QA' in page.locator('#tp-messenger-clone-prompt').inner_text()
+        page.locator('#tp-messenger-clone-copy').click()
+        page.wait_for_function("window.__qaCopiedPrompt?.includes('A002') || window.__qaCopiedPrompt?.length>10",timeout=8000)
+        assert page.locator('#tp-messenger-clone-report-details').evaluate('(e)=>e.open') is False
+        page.locator('#tp-messenger-clone-report-details > summary').click()
+        page.locator('#tp-messenger-clone-source').select_option('n8n_private')
+        assert page.locator('#tp-messenger-clone-execution').is_visible()
+        page.locator('#tp-messenger-clone-execution').fill('4200')
+        page.locator('#tp-messenger-clone-response').fill('Bearer abcdefghijklmnopqrst is a fake secret')
+        page.locator('#tp-messenger-clone-notes').fill('Cần kiểm tra bot đã tra cứu giá của sản phẩm trong lượt chat hay chưa.')
+        page.locator('#tp-messenger-clone-attest').check()
+        prior=page.evaluate('window.__qaRunCount()')
+        page.locator('#tp-messenger-clone-submit').click()
+        assert 'token/SĐT' in page.locator('#tp-messenger-clone-status').inner_text()
+        assert page.evaluate('window.__qaRunCount()')==prior, 'Clone secret must not be stored'
+        page.locator('#tp-messenger-clone-response').fill('Shop đã tra cứu giá của A002 từ bộ sản phẩm QA và trả lời theo giá nguồn.')
+        page.locator('#tp-messenger-clone-outcome').select_option('needs_review')
+        page.locator('#tp-messenger-clone-submit').click()
+        page.wait_for_function("document.querySelector('#tp-messenger-clone-status')?.textContent.includes('Đã lưu báo cáo')",timeout=12000)
+        assert page.evaluate('window.__qaRunCount()')==prior+1
+
         # Legacy advanced QA and freeform practice must remain usable.
         page.locator('#tp-more summary').click()
         assert page.locator('button[data-page="practice"]').is_visible()
@@ -255,7 +281,7 @@ def run():
         page.locator('button',has_text='Kiểm tra dữ liệu mẫu').click()
         assert 'out_of_stock' in page.locator('#tp-sim-result').inner_text()
         page.locator('button[data-page="modules"]').click()
-        page.locator('button',has_text='Xem 9 bài thử').click()
+        page.locator('button',has_text='Xem 10 bài thử').click()
         page.locator('button',has_text='Bắt đầu bài này').first.click()
         page.locator('button',has_text='Lưu kết quả tự đánh giá').click()
         assert not errors,errors
