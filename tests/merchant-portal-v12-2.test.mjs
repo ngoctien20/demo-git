@@ -68,7 +68,7 @@ test('Preview build contains only allowlisted portal and existing Auth',()=>{
   const b=text('scripts/build-auth-preview.mjs');
   for(const token of ["'merchant-portal.html'","'assets/merchant-portal.js'",
     "'assets/merchant-portal-policy.mjs'","'assets/merchant-portal.css'",
-    "['login.html','account.html','merchant-portal.html','register-staging.html']","auth-preview-dist"])
+    "['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html']","auth-preview-dist"])
     assert.ok(b.includes(token),token);
 });
 test('Built preview has portal files but no private repository files',()=>{
