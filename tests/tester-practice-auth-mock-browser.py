@@ -25,7 +25,13 @@ const tables={
  tien404_tester_cases:[
  {case_id:'SHEET-SIM-002',module_id:'sheets',title:'Báo giá đúng cho 2 áo trắng',instructions:'Thử SKU QA-DEMO-01, số lượng 2',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'Tổng 318.000đ (mẫu)',readiness:'ready',sort_order:1},
  {case_id:'SHEET-SIM-004',module_id:'sheets',title:'Chặn vượt tồn',instructions:'Thử SKU QA-DEMO-01, số lượng 26',sample_prompt:'SKU QA-DEMO-01, số lượng 26',expected_result:'out_of_stock',readiness:'ready',sort_order:2},
- {case_id:'SHEET-SIM-009',module_id:'sheets',title:'Từ chối trả giá',instructions:'Thử SKU QA-DEMO-01, số lượng 2, giá 100000',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'price_mismatch',readiness:'ready',sort_order:3}
+ {case_id:'SHEET-SIM-009',module_id:'sheets',title:'Từ chối trả giá',instructions:'Thử SKU QA-DEMO-01, số lượng 2, giá 100000',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'price_mismatch',readiness:'ready',sort_order:3},
+ {case_id:'SHEET-SIM-003',module_id:'sheets',title:'Mua đúng tồn',instructions:'Dữ liệu mẫu',expected_result:'ok',readiness:'ready',sort_order:4},
+ {case_id:'SHEET-SIM-005',module_id:'sheets',title:'SKU sai',instructions:'Dữ liệu mẫu',expected_result:'not_found',readiness:'ready',sort_order:5},
+ {case_id:'SHEET-SIM-006',module_id:'sheets',title:'Số lượng 0',instructions:'Dữ liệu mẫu',expected_result:'invalid_quantity',readiness:'ready',sort_order:6},
+ {case_id:'SHEET-SIM-010',module_id:'sheets',title:'Đúng giá VND',instructions:'Dữ liệu mẫu',expected_result:'ok',readiness:'ready',sort_order:7},
+ {case_id:'SHEET-SIM-011',module_id:'sheets',title:'VND sai',instructions:'Dữ liệu mẫu',expected_result:'invalid_price',readiness:'ready',sort_order:8},
+ {case_id:'SHEET-AI-REVIEW-001',module_id:'sheets',title:'Báo cáo AI độc lập',instructions:'Tự đánh giá kết quả mẫu',expected_result:'self reported',readiness:'ready',sort_order:9}
 ],
  tien404_tester_runs:results
 };
@@ -39,7 +45,11 @@ class Query{
  insert(p){this.action='insert';this.insertPayload=p;return this}
  getData(){
   if(this.action==='insert'){
-   if(this.name==='tien404_tester_runs')results.unshift({...this.insertPayload,run_id:'test-run-local',created_at:new Date().toISOString()});
+   if(this.name==='tien404_tester_runs'){
+     const inserted={...this.insertPayload,run_id:'test-run-local-'+(results.length+1),created_at:new Date().toISOString()};
+     results.unshift(inserted);
+     return {data:inserted,error:null};
+   }
    return {data:null,error:null};
   }
   let data=[...(tables[this.name]||[])];
@@ -49,7 +59,8 @@ class Query{
   if(this.max!==null)data=data.slice(0,this.max);
   return {data,error:null};
  }
- maybeSingle(){const result=this.getData();return Promise.resolve({data:result.data[0]||null,error:null});}
+ maybeSingle(){const result=this.getData();return Promise.resolve({data:result.data?.[0]||result.data||null,error:null});}
+ single(){const result=this.getData();return Promise.resolve({data:result.data?.[0]||result.data||null,error:null});}
  then(resolve,reject){return Promise.resolve(this.getData()).then(resolve,reject)}
 }
 export async function getAuthClient(){
@@ -80,9 +91,13 @@ def run():
         assert 'chưa phải trò chuyện với AI thật' in page.locator('.tp-hero-hint').inner_text()
         assert page.locator('button[data-page="practice"]').is_hidden()  # Advanced menu is closed.
         assert page.locator('#tp-more').evaluate('(el)=>el.open') is False
-        assert page.locator('#tp-total').text_content()=='3'
+        assert page.locator('#tp-total').text_content()=='9'
         assert page.locator('.tp-quick-choice').count()==3
 
+        assert page.locator('#tp-ai-studio').is_visible()
+        assert page.locator('#tp-ai-submit').is_disabled()
+        # Previous quick test mode remains optional and collapsible.
+        page.locator('#tp-quick-details summary').click()
         # Friend-first default: tap a situation, see result, tap one quick feedback.
         page.get_by_role('button',name='Mua 2 áo trắng').click()
         assert '318.000đ' in page.locator('#tp-quick-response').inner_text()
@@ -121,6 +136,21 @@ def run():
         assert 'Đã nhận góp ý!' in page.locator('#tp-quick-saved').inner_text()
         page.wait_for_function("document.querySelector('#tp-done')?.textContent==='3'",timeout=10000)
 
+        # New expert path: run 8 synthetic checks, preview prompt, human-review, save to RLS-shaped mock.
+        page.locator('#tp-ai-run').click()
+        assert '8 bài' in page.locator('#tp-ai-run-status').inner_text()
+        assert page.locator('.tp-ai-result').count()==8
+        assert page.locator('#tp-ai-copy').is_enabled()
+        page.get_by_role('button',name='Xem nội dung gửi AI').click()
+        assert 'CHƯA XÁC MINH' in page.locator('#tp-ai-prompt').input_value()
+        page.locator('#tp-ai-notes').fill('Tôi đề xuất thêm kiểm tra lượng tồn vượt 1 tỷ; chưa thử trên bot AI thật.')
+        page.locator('#tp-ai-severity').select_option('P1')
+        page.locator('#tp-ai-verdict').select_option('needs_review')
+        page.locator('#tp-ai-attest').check()
+        page.locator('#tp-ai-submit').click()
+        page.wait_for_function("document.querySelector('#tp-ai-submit-status')?.textContent.includes('Đã lưu báo cáo')",timeout=12000)
+        page.wait_for_function("document.querySelector('#tp-done')?.textContent==='4'",timeout=12000)
+
         # Legacy advanced QA and freeform practice must remain usable.
         page.locator('#tp-more summary').click()
         assert page.locator('button[data-page="practice"]').is_visible()
@@ -133,7 +163,7 @@ def run():
         page.locator('button',has_text='Kiểm tra dữ liệu mẫu').click()
         assert 'out_of_stock' in page.locator('#tp-sim-result').inner_text()
         page.locator('button[data-page="modules"]').click()
-        page.locator('button',has_text='Xem 3 bài thử').click()
+        page.locator('button',has_text='Xem 9 bài thử').click()
         page.locator('button',has_text='Bắt đầu bài này').first.click()
         page.locator('button',has_text='Lưu kết quả tự đánh giá').click()
         assert not errors,errors
