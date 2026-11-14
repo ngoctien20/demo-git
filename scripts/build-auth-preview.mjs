@@ -27,12 +27,12 @@ for(const relative of allowList){
   if(!existsSync(from))throw Error('Required preview asset missing: '+relative);
   copyFileSync(from,to);
 }
-for(const page of ['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html']){
+for(const page of ['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html','tester-request.html']){
   const target=path.join(output,page);
   let html=readFileSync(target,'utf8');
   // Marketing links go to the existing public site, local auth links stay in preview.
   html=html.replace(/href="([a-z0-9-]+\.html)(#[^"]*)?"/g,(full,basename,hash='')=>
-    ['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html'].includes(basename)
+    ['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html','tester-request.html'].includes(basename)
       ?full:'href="'+production+basename+hash+'"');
   if(page==='login.html'){
     // Recovery stays closed until the allowlist and callback are both verified.
