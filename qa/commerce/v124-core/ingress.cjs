@@ -1,43 +1,54 @@
 'use strict';
-// V12.4 SANDBOX ingress contract. This verifies an internal QA signature,
-// NOT a Zalo/provider signature. Production channel adapters are intentionally absent.
-const {createHmac,timingSafeEqual}=require('node:crypto');
-const FIELDS=Object.freeze(['version','channel','botRef','senderRef','eventRef','eventType','chatType','text','issuedAt']);
-const KEYS=Object.freeze([...FIELDS,'signature']);
-const fail=code=>{const e=new Error(code);e.code=code;throw e;};
-const id=x=>typeof x==='string'&&x.length>=2&&x.length<=128&&/^[A-Za-z0-9:_-]+$/.test(x);
-const canonical=e=>JSON.stringify(FIELDS.map(k=>e[k]));
-function createQaIngressVerifier({registry,internalKey,clock=()=>Date.now(),maxSkewMs=120000}={}){
- if(!Buffer.isBuffer(internalKey)||internalKey.length<32)fail('QA_INTERNAL_KEY_REQUIRED');
- if(!Array.isArray(registry)||registry.length===0)fail('QA_REGISTRY_REQUIRED');
- return Object.freeze({verify(envelope){
-  if(!envelope||typeof envelope!=='object'||Array.isArray(envelope)||
-     Object.keys(envelope).length!==KEYS.length||
-     !Object.keys(envelope).every(k=>KEYS.includes(k))||
-     envelope.version!==1||envelope.channel!=='qa-fixture'||
-     envelope.eventType!=='message.text.received'||envelope.chatType!=='PRIVATE'||
-     !id(envelope.botRef)||!id(envelope.senderRef)||!id(envelope.eventRef)||
-     typeof envelope.text!=='string'||!envelope.text.trim()||envelope.text.length>512||
-     typeof envelope.issuedAt!=='string'||!/^[a-f0-9]{64}$/.test(envelope.signature||''))
-    fail('QA_ENVELOPE_INVALID');
-  const now=clock(),issued=Date.parse(envelope.issuedAt);
-  if(!Number.isFinite(now)||!Number.isFinite(issued)||Math.abs(now-issued)>maxSkewMs)
-    fail('QA_TIMESTAMP_REJECTED');
-  const a=createHmac('sha256',internalKey).update(canonical(envelope)).digest();
-  const b=Buffer.from(envelope.signature,'hex');
-  if(b.length!==a.length||!timingSafeEqual(a,b))fail('QA_SIGNATURE_REJECTED');
-  const candidates=registry.filter(r=>r.channel===envelope.channel&&r.botRef===envelope.botRef&&
-       r.mode==='qa-preview'&&r.active===true&&id(r.tenantId)&&id(r.storeId));
-  if(candidates.length!==1)fail('QA_BOT_MAPPING_INVALID');
-  const r=candidates[0];
-  const scopeKey=r.tenantId+':'+r.storeId+':'+envelope.botRef;
-  const hash=s=>createHmac('sha256',internalKey).update(s).digest('hex');
-  // Only opaque digests are returned for session/receipt QA; never raw senderRef.
-  return Object.freeze({trust:'SIGNED_INTERNAL_QA_FIXTURE',tenantId:r.tenantId,storeId:r.storeId,
-   channel:envelope.channel,botRef:envelope.botRef,scopeKey,
-   actorHash:hash('actor|'+scopeKey+'|'+envelope.senderRef),
-   receiptHash:hash('receipt|'+scopeKey+'|'+envelope.eventRef),
-   eventType:envelope.eventType,chatType:envelope.chatType,text:envelope.text});
- }});
+const { createHmac, timingSafeEqual } = require('node:crypto');
+
+const fields = ['version', 'channel', 'botRef', 'senderRef', 'eventRef', 'eventType', 'chatType', 'text', 'issuedAt'];
+const verifiedCustomers = new WeakSet();
+const identifier = value => typeof value === 'string' && /^[A-Za-z0-9:_-]{2,128}$/.test(value);
+const canonical = envelope => JSON.stringify(fields.map(key => envelope[key]));
+const isVerifiedCustomer = value => verifiedCustomers.has(value);
+
+function validBinding(binding, now) {
+  if (binding.revoked === true || binding.revokedAt != null) return false;
+  if (binding.revoked !== undefined && typeof binding.revoked !== 'boolean') return false;
+  if (binding.validFrom != null && !(Date.parse(binding.validFrom) <= now)) return false;
+  if (binding.expiresAt != null && !(now < Date.parse(binding.expiresAt))) return false;
+  return binding.active === true && binding.mode === 'qa-preview' &&
+    identifier(binding.tenantId) && identifier(binding.storeId);
 }
-module.exports={createQaIngressVerifier,canonical};
+
+function createQaIngressVerifier({registry, internalKey, clock = Date.now, maxSkewMs = 120000} = {}) {
+  if (!Buffer.isBuffer(internalKey) || internalKey.length < 32) throw Error('QA_INTERNAL_KEY_REQUIRED');
+  if (!Array.isArray(registry) || !registry.length) throw Error('QA_REGISTRY_REQUIRED');
+  if (!Number.isSafeInteger(maxSkewMs) || maxSkewMs < 1 || maxSkewMs > 120000) throw Error('QA_SKEW_INVALID');
+  const key = Buffer.from(internalKey);
+  const hash = value => createHmac('sha256', key).update(value).digest('hex');
+  return Object.freeze({verify(envelope) {
+    if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope) ||
+        Object.keys(envelope).length !== fields.length + 1 || !fields.every(f => Object.hasOwn(envelope, f)) ||
+        !Object.hasOwn(envelope, 'signature') || envelope.version !== 1 || envelope.channel !== 'qa-fixture' ||
+        envelope.eventType !== 'message.text.received' || envelope.chatType !== 'PRIVATE' ||
+        ![envelope.botRef, envelope.senderRef, envelope.eventRef].every(identifier) ||
+        typeof envelope.text !== 'string' || !envelope.text.trim() || envelope.text.length > 512 ||
+        typeof envelope.issuedAt !== 'string' || typeof envelope.signature !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(envelope.signature)) throw Error('QA_ENVELOPE_INVALID');
+    const now = clock(), issuedAt = Date.parse(envelope.issuedAt);
+    if (!Number.isFinite(now) || !Number.isFinite(issuedAt) || Math.abs(now - issuedAt) > maxSkewMs)
+      throw Error('QA_TIMESTAMP_REJECTED');
+    if (!timingSafeEqual(Buffer.from(hash(canonical(envelope)), 'hex'), Buffer.from(envelope.signature, 'hex')))
+      throw Error('QA_SIGNATURE_REJECTED');
+    const matches = registry.filter(r => r.channel === envelope.channel && r.botRef === envelope.botRef);
+    if (matches.length !== 1 || !validBinding(matches[0], now)) throw Error('QA_BOT_MAPPING_INVALID');
+    const {tenantId, storeId} = matches[0];
+    const scope = [tenantId, storeId, envelope.channel, envelope.botRef];
+    const context = Object.freeze({
+      trust: 'SIGNED_INTERNAL_QA_FIXTURE', role: 'CUSTOMER', tenantId, storeId, channel: envelope.channel,
+      botRef: envelope.botRef, scopeKey: JSON.stringify(scope), issuedAt,
+      actorHash: hash(JSON.stringify(['actor', ...scope, envelope.senderRef])),
+      receiptHash: hash(JSON.stringify(['receipt', ...scope, envelope.senderRef, envelope.eventRef])),
+      chatType: envelope.chatType, eventType: envelope.eventType, text: envelope.text
+    });
+    verifiedCustomers.add(context);
+    return context;
+  }});
+}
+module.exports = {createQaIngressVerifier, canonical, isVerifiedCustomer};

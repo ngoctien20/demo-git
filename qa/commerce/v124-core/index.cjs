@@ -4,5 +4,8 @@ module.exports=Object.freeze({
  ...require('./ingress.cjs'),
  ...require('./catalog.cjs'),
  ...require('./core.cjs'),
- ...require('./ports.cjs')
+ ...require('./ports.cjs'),
+ ...require('./postgres-state.cjs'),
+ ...require('./budget.cjs'),
+ versions:require('./version.cjs')
 });

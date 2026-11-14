@@ -3,25 +3,18 @@
 const fail=code=>{const e=new Error(code);e.code=code;throw e;};
 function createDisabledChannelAdapter(channel){
  if(!['zalo','messenger','website','telegram'].includes(channel))fail('UNKNOWN_CHANNEL');
- return Object.freeze({channel,state:'RESERVED_NOT_CONNECTED',send:async()=>fail('CHANNEL_OUTBOUND_DISABLED')});
+ const offline = async () => fail('CHANNEL_OUTBOUND_DISABLED');
+ const unconnected = () => fail('CHANNEL_PROVIDER_NOT_CONNECTED');
+ return Object.freeze({channel, state:'RESERVED_NOT_CONNECTED', outbound:'OUTBOUND_DISABLED', productionReady:false,
+  verifyProviderEvent:unconnected, normalizeInbound:unconnected, resolveBotIdentity:unconnected,
+  toCoreEvent:unconnected, formatReply:unconnected, sendReply:offline, send:offline,
+  getDeliveryStatus:async () => 'NOT_SENT'});
 }
 function createBlockedPaidModelPort(){
- return Object.freeze({classify:async()=>fail('MODEL_COST_GATE_UNVERIFIED')});
+ return require('./budget.cjs').createModelCallController();
 }
 function createFixtureIntentClassifier(){
- return Object.freeze({kind:'DETERMINISTIC_FIXTURE_NOT_LLM',async classify({text}){
-  const s=String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
-  const sku=(s.match(/\b[a-z]{1,4}\d{2,5}\b/)||[])[0]?.toUpperCase()||'UNKNOWN';
-  const m=s.match(/\b(?:mua|lay|dat)\s+(?:[a-z]{1,4}\d{2,5}\s+)?(\d{1,4})\b/)||
-          s.match(/\b(?:mua|lay|dat)\s+(\d{1,4})\s+[a-z]{1,4}\d{2,5}\b/);
-  let intent='UNKNOWN';
-  if(/^\s*(xin chao|chao|hi|hello)\b/.test(s))intent='GREETING';
-  else if(/^\s*(huy|dung lai|thoi)\s*$/.test(s))intent='CANCEL';
-  else if(/gap nhan vien|gap nguoi|khieu nai/.test(s))intent='HUMAN';
-  else if(/\b(?:mua|lay|dat)\b/.test(s))intent='ORDER_PREVIEW';
-  else if(sku!=='UNKNOWN')intent='PRODUCT_QUERY';
-  return {intent,sku,quantity:m?Number(m[1]):null};
- }});
+ return Object.freeze({kind:'DETERMINISTIC_FIXTURE_NOT_LLM', classify:require('./intent.cjs').classifyFixture});
 }
 function createQaMemoryReceipts({clock=()=>Date.now(),ttlMs=1800000,maxEntries=2000}={}){
  const data=new Map();
