@@ -51,7 +51,8 @@ before(async()=>{
     const role='core_qa_'+shop, password=randomBytes(24).toString('hex');
     await admin.query('CREATE ROLE '+role+" LOGIN PASSWORD '"+password+"'");
     await admin.query('GRANT USAGE ON SCHEMA '+privateSchema+','+catalogSchema+' TO '+role);
-    await admin.query('GRANT SELECT ON '+catalogSchema+'.catalog,'+catalogSchema+'.shop_bots TO '+role);
+    await admin.query('GRANT SELECT (tenant_key,store_key,bot_key,sku,product_name,price_vnd,stock) ON '+catalogSchema+'.catalog TO '+role);
+    await admin.query('GRANT SELECT (tenant_key,store_key,bot_key,enabled_mode,identity_status) ON '+catalogSchema+'.shop_bots TO '+role);
     await admin.query('GRANT SELECT,INSERT,UPDATE ON '+privateSchema+'.sessions TO '+role);
     await admin.query('GRANT SELECT,INSERT,DELETE ON '+privateSchema+'.receipts TO '+role);
     const scope="tenant_key='qa-tenant-"+shop+"' AND store_key='qa-store-"+shop+"' AND bot_key='qa-bot-"+shop+"'";
@@ -290,4 +291,27 @@ test('Disposable PostgreSQL retention deletes only expired synthetic sessions in
   const third=await manager.sweepDisposableQaOnly();
   assert.equal(third.deletedSessions,0);
   assert.equal(third.deletedReceipts,0);
+});
+
+test('V12.4R.3 role-bound Customer Catalog verifies RLS and excludes bot credential_ref',async()=>{
+ const {createRlsEnforcedQaCatalog}=require('../hosted-catalog-guard.cjs');
+ const repository=createRlsEnforcedQaCatalog({
+  roleForContext:ctx=>ctx.storeId==='qa-store-a'?'core_qa_a':ctx.storeId==='qa-store-b'?'core_qa_b':'unapproved'
+ });
+ const a=setup({repository}),b=setup({repository});
+ const aa=await a.preview('F01',{botRef:'qa-bot-a'});
+ const bb=await b.preview('F01',{botRef:'qa-bot-b'});
+ assert.equal(aa.status,'PRODUCT_QA_PREVIEW');
+ assert.equal(bb.status,'PRODUCT_QA_PREVIEW');
+ assert.match(aa.replyCandidate,/159.000/);
+ assert.match(bb.replyCandidate,/199.000/);
+ const db=getPool('a');
+ const caps=await db.query(`SELECT current_user AS role_name,
+   row_security_active('tien404_r1_qa.catalog'::regclass) AS catalog_rls,
+   row_security_active('tien404_r1_qa.shop_bots'::regclass) AS binding_rls,
+   has_column_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'credential_ref','SELECT') AS can_read_secret,
+   has_table_privilege(current_user,'tien404_r1_qa.catalog'::regclass,'UPDATE') AS can_update_catalog`);
+ assert.deepEqual(caps.rows,[{role_name:'core_qa_a',catalog_rls:true,binding_rls:true,can_read_secret:false,can_update_catalog:false}]);
+ const spoof=setup({repository:createRlsEnforcedQaCatalog({roleForContext:()=> 'core_qa_b'})});
+ assert.equal((await spoof.preview('F01')).status,'CATALOG_UNTRUSTED');
 });
