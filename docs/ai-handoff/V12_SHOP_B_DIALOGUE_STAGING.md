@@ -176,3 +176,29 @@ Các ảnh là n8n workflow Telegram `AI_SALES_V4_3_TELEGRAM_CHAT_DIAGNOSTIC_STA
 - Không kích hoạt `sendMessage`, không chạm Orders/Products production, không đổi provider `setWebhook`, không kích hoạt phí. Phần gửi trả lời tự động vẫn cần phê duyệt riêng.
 
 **Rollback:** n8n V1 quay về published version `9ef7342b-0623-4921-9969-7d33d112bbef` nếu telemetry phát sinh regression; Cloudflare diagnostic worker quay về `38c7df57-8e22-4b79-b5c4-e08b342833c6`. Trước rollback phải xác minh version thật và giữ lại QA evidence.
+
+
+## V12.1.4 — Owner repeat live Zalo chat: provider delivery or secret mismatch remains unverified
+
+**Ngày:** 14/11/2026 JST (sau 22:38). Owner xác nhận đã gửi lại `TEST SHOP B CHAT MUA F01 2` vào bot đang ghép. **Nghiệm thu chưa PASS** vì không có dấu mới từ provider; không đánh đồng mẫu synthetic với Zalo device ingress.
+
+### Verified observations
+
+1. Đọc trực tiếp n8n Data Table `e7eJAGSwzn67aA1z` và preview `dh0SSc30x3pw4rDx` sau lời xác nhận của Owner:
+   - `v1_ingress_any`: cuối `2026-11-14T13:25:48.591Z` (**22:25:48 JST**), là probe HTTPS giả lập có xác thực trong n8n execution `3377`.
+   - `owner_gate=denied`: `13:25:48.329Z`, đúng với chat giả lập không được phép từ execution `3377`.
+   - `v1_shop_b_order_cmd`: `13:20:57.227Z` (pin/mock execution `3375`).
+   - `shop_b_chat_preview=ORDER_DRAFT_PREVIEW`, total `398000 VND`: `13:20:56.543Z` (pin/mock). **Không có marker sau 22:25:48 JST**.
+2. **NEW: getMe + getWebhookInfo** qua Cloudflare Worker phiên bản diagnostic-only `ef7b7a33-5551-48e0-954b-646c047b5c6d`, n8n `bD510xyr5jBHQ99K` execution **3380 SUCCESS**: API Bot trả name **`Bot TIEN404 AI`**, giống tên trong ảnh chụp Bot Creator Owner đã cung cấp; Webhook URL của bot trỏ đúng `https://ngoctien20.app.n8n.cloud/webhook/tien404-zalo-bot-lab-v1`; `provider_ack=true`, `external_sends=0`, `configuration_changes=0`. Đây chỉ chứng minh **bot/token identity và webhook configured URL**, không chứng minh provider đã POST từng event.
+3. n8n V1 `yIJk8LvJoLF40Z62` active/published `08f22ee1-cf5a-4459-bd33-bf80ac67af0e`; Shadow `OgDZNSAvKEvhnAvn` active/published `f00ba506-c52a-4340-9a0c-809fd9c6ea9a`. V1 có `httpHeaderAuth` credential `TIEN404_ZALO_WEBHOOK_STAGING_V2`, metadata ID `HEkVpC6qHYZpLG9r`; không đọc secret hoặc header value.
+4. Synthetic HTTP POST tới V1 qua n8n credential cùng tên đã trả HTTP 200, chứng minh **n8n có thể nhận request khi ký đúng credential n8n**. **Không** xác minh secret do Zalo Bot Creator hiện cấu hình có khớp credential n8n; Zalo thường gửi header `X-Bot-Api-Secret-Token`, cần review headerName+secret locally. Nguồn: https://docs.zaloplatforms.com/zalo-bot và Zalo Bot SDK webhook documentation.
+5. Cloudflare gateway `ZALO_SEND_ENABLED=false`, 6 binding hiện hữu; không bật gửi. Supabase `qa-store-b` giữ `2` sandbox orders, `2` outbox `HELD/SEND_DISABLED`; không có state khác; F01 `199000 VND`, stock `5`. Không có tin outbound hoặc đơn được tạo trong lần kiểm tra này.
+
+### Root-cause classification
+
+- **VERIFIED:** đúng bot/token, đúng webhook configured URL, synthetic authorized HTTP V1 → Shadow marker hoạt động.
+- **BLOCKED / UNKNOWN:** Provider-origin POST có đến n8n hay không, response HTTP 401/403 trên provider delivery, và `X-Bot-Api-Secret-Token` của Zalo Bot Creator có khớp HeaderAuth credential của V1 không. Không thể đọc, suy đoán hoặc log secret. Không tự đổi credential hoặc gọi `setWebhook` vì đây là thay đổi bảo mật cần owner phê duyệt.
+- **NEXT OWNER ACTION (non-secret):** Mở Zalo Bot Creator → Bot TIEN404 AI → Thiết lập chung, xác nhận URL vẫn trỏ đúng `/webhook/tien404-zalo-bot-lab-v1`. Trong n8n, mở Credentials → `TIEN404_ZALO_WEBHOOK_STAGING_V2`, kiểm tra **Header Name = `X-Bot-Api-Secret-Token`**; so sánh *trực tiếp trong giao diện riêng*, không gửi secret vào chat. Nếu khác, Owner phê duyệt chỉnh credential bằng quy trình backup + rollback. Nếu Zalo có logs delivery/HTTP status, chỉ cung cấp status code (không gửi token).
+- Khi đã xác minh/điều chỉnh secret, refresh QA catalog từ read-only Supabase trước khi chạy lại nếu snapshot hết hạn lúc **15/11/2026 00:41:35 JST**. Sau đó gửi **một** lệnh mới `TEST SHOP B CHAT MUA F01 2`, yêu cầu marker `v1_shop_b_order_cmd` mới + `owner_gate=eligible` + preview `ORDER_DRAFT_PREVIEW` 398000; no-send/no-order-write.
+
+**Rollback:** Cloudflare diagnostic version trước `74a4d872-a1e6-420e-9d9c-2cb92c60dbdc`, original locked Gateway `38c7df57-8e22-4b79-b5c4-e08b342833c6`, Shadow/V1 rollback versions trong V12.1.3. No production, credential, secret, Zalo API webhook configuration or orders touched in this subphase.
