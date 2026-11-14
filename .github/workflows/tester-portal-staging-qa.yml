@@ -33,10 +33,11 @@ jobs:
         run: |
           node --check assets/tester-portal.js
           node --check assets/tester-admin.js
+          node --check assets/tester-report-csv.mjs
           node --check assets/auth-client.js
           node --check assets/auth-runtime.mjs
       - name: Supabase Auth and Tester security contract
-        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs
+        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs
       - name: Build existing strict Render Auth preview
         run: node scripts/build-auth-preview.mjs
       - name: Verify no private files leak and old Auth remains
