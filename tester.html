@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#10192b">
+<title>Tester Portal | TIEN404 AI Staging</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/tester-portal.css">
+</head>
+<body>
+<a class="tp-skip" href="#tp-main">Chuyển đến nội dung chính</a>
+<header class="tp-top"><div class="tp-brand"><span class="tp-symbol">✦</span><span>TIEN404 <b>AI</b><small>Trung tâm thử nghiệm riêng</small></span></div>
+<div class="tp-top-right"><span class="tp-stage">PRIVATE BETA • STAGING</span><a href="account.html">Tài khoản</a></div></header>
+<div class="tp-status" id="tp-status" role="status" aria-live="polite">Đang kiểm tra tài khoản và quyền thử nghiệm…</div>
+<main id="tp-main">
+<section id="tp-locked" class="tp-locked" hidden>
+<p class="tp-overline">QUYỀN TRUY CẬP</p><h1>Trung tâm thử nghiệm TIEN404 AI</h1>
+<p id="tp-locked-reason">Bạn cần đăng nhập bằng tài khoản đã được cấp quyền tham gia thử nghiệm.</p>
+<a class="tp-button" href="login.html">Đăng nhập</a>
+<p class="tp-dim">Không có đăng ký Tester tự do. Hãy liên hệ người quản lý dự án để nhận lời mời và cấp quyền.</p>
+</section>
+<div id="tp-workspace" class="tp-workspace" hidden>
+<aside class="tp-side">
+<div class="tp-welcome"><small>BẠN ĐANG THỬ NGHIỆM</small><h2 id="tp-welcome-name">Tài khoản thử nghiệm</h2>
+<p id="tp-expiry">Quyền chỉ có hiệu lực trong thời gian được cấp.</p></div>
+<nav id="tp-nav" aria-label="Điều hướng thử nghiệm">
+<button type="button" data-page="home" aria-current="page">⌂ <span>Trang chủ</span></button>
+<button type="button" data-page="modules">▣ <span>Chọn bài thử</span></button>
+<button type="button" data-page="data">▦ <span>Dữ liệu thử nghiệm</span></button>
+<button type="button" data-page="progress">◴ <span>Tiến độ của tôi</span></button>
+<button type="button" data-page="help">? <span>Hướng dẫn & báo lỗi</span></button>
+</nav>
+<a id="tp-admin-link" href="tester-admin.html" class="tp-admin" hidden>♜ Quản lý người thử</a>
+<div class="tp-side-footer">Dữ liệu QA giả lập • Không gửi tin thật • Không dùng Orders production</div>
+</aside>
+<section class="tp-content" tabindex="-1">
+<div class="tp-page-heading"><div><p class="tp-overline">TIEN404 AI / TESTER PORTAL V1</p>
+<h1 id="tp-heading">Tổng quan thử nghiệm</h1><p id="tp-subheading">Chọn bài thử đã được cấp quyền để bắt đầu.</p></div>
+<button type="button" id="tp-refresh" class="tp-outline">↻ Cập nhật</button></div>
+<div class="tp-summary" aria-label="Tiến độ thử nghiệm">
+<div><span>Bài được giao</span><strong id="tp-total">—</strong></div>
+<div><span>Đã tự đánh giá</span><strong id="tp-done">—</strong></div>
+<div><span>Đang chờ</span><strong id="tp-remaining">—</strong></div>
+</div>
+<div class="tp-progress"><div id="tp-progress-bar" aria-hidden="true"></div></div>
+<p class="tp-progress-caption" id="tp-progress-label">Chưa có kết quả đã xác minh.</p>
+<div id="tp-panel" class="tp-panel" aria-live="polite"></div>
+<p class="tp-footer">Kết quả do bạn tự đánh giá được ghi riêng, không phải QA tự động xác minh. Không gửi mật khẩu, token hoặc ảnh có dữ liệu khách thật.</p>
+</section>
+</div></main>
+<script type="module" src="assets/tester-portal.js"></script>
+</body></html>
