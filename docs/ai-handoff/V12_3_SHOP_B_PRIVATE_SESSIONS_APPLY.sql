@@ -1,0 +1,63 @@
+-- TIEN404 AI V12.3: OWNER-APPROVED ADDITIVE PRIVATE QA SESSIONS SCHEMA.
+-- Supabase STAGING ONLY: ifxlvrhyjhbzbrkdsida; no production or existing orders/credentials touched.
+-- SQL source: docs/ai-handoff/V12_2_SHOP_B_PRIVATE_SESSIONS_REVIEW_ONLY.sql blob a15662debcf6a21563c0fc2b59a3500b5199489e.
+-- Recovery checkpoint: docs/ai-handoff/V12_3_PRE_MIGRATION_RECOVERY_CHECKPOINT.md.
+DO $$ BEGIN IF to_regnamespace('tien404_dialogue_private') IS NOT NULL THEN RAISE EXCEPTION 'EXISTING_QA_SCHEMA_ABORT'; END IF; END $$;
+
+CREATE SCHEMA IF NOT EXISTS tien404_dialogue_private;
+REVOKE ALL ON SCHEMA tien404_dialogue_private FROM PUBLIC, anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA tien404_dialogue_private
+  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
+
+CREATE TABLE IF NOT EXISTS tien404_dialogue_private.shop_b_sessions (
+  scope_key text PRIMARY KEY
+    CHECK (scope_key ~ '^[a-f0-9]{64}$'),
+  tenant_key text NOT NULL CHECK (tenant_key = 'qa-tenant-b'),
+  store_key text NOT NULL CHECK (store_key = 'qa-store-b'),
+  bot_key text NOT NULL CHECK (bot_key = 'qa-bot-b'),
+  binding_fingerprint text NOT NULL CHECK (length(binding_fingerprint) BETWEEN 8 AND 128),
+  phase text NOT NULL DEFAULT 'idle'
+    CHECK (phase IN ('idle','viewing','await_quantity','await_confirmation','commit_pending')),
+  sku text CHECK (sku IS NULL OR sku = 'F01'),
+  quantity integer CHECK (quantity IS NULL OR quantity BETWEEN 1 AND 100),
+  expected_total_vnd bigint CHECK (expected_total_vnd IS NULL OR expected_total_vnd > 0),
+  confirmation_hash text CHECK (confirmation_hash IS NULL OR confirmation_hash ~ '^[a-f0-9]{64}$'),
+  quote_expires_at timestamptz,
+  order_key text CHECK (order_key IS NULL OR order_key ~ '^QA-B-[A-F0-9]{24}$'),
+  idempotency_key text CHECK (idempotency_key IS NULL OR idempotency_key ~ '^[a-f0-9]{64}$'),
+  session_ref text CHECK (session_ref IS NULL OR session_ref ~ '^qa-session-[a-f0-9]{24}$'),
+  expires_at timestamptz NOT NULL,
+  revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (
+    phase <> 'await_confirmation' OR (
+      sku='F01' AND quantity IS NOT NULL AND expected_total_vnd IS NOT NULL
+      AND confirmation_hash IS NOT NULL AND quote_expires_at IS NOT NULL
+      AND order_key IS NOT NULL AND idempotency_key IS NOT NULL
+      AND session_ref IS NOT NULL
+    )
+  ),
+  CHECK (expires_at > '2026-01-01'::timestamptz)
+);
+
+CREATE TABLE IF NOT EXISTS tien404_dialogue_private.shop_b_receipts (
+  scope_key text NOT NULL
+    REFERENCES tien404_dialogue_private.shop_b_sessions(scope_key) ON DELETE CASCADE,
+  event_hash text NOT NULL CHECK (event_hash ~ '^[a-f0-9]{64}$'),
+  observed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (scope_key,event_hash)
+);
+
+CREATE INDEX IF NOT EXISTS shop_b_sessions_expiry_idx
+  ON tien404_dialogue_private.shop_b_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS shop_b_receipts_expiry_idx
+  ON tien404_dialogue_private.shop_b_receipts(observed_at);
+
+ALTER TABLE tien404_dialogue_private.shop_b_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tien404_dialogue_private.shop_b_receipts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON ALL TABLES IN SCHEMA tien404_dialogue_private
+  FROM PUBLIC, anon, authenticated;
+
+-- No RLS client policies and no exposed RPC functions.
+-- RLS without policy intentionally fails closed for client roles.
+-- Grant only to a dedicated trusted database executor after review.
