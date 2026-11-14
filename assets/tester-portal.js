@@ -13,7 +13,7 @@ const pane=$('tp-panel'),statusNode=$('tp-status'),locked=$('tp-locked'),workspa
 const nav=$('tp-nav');
 const state={client:null,user:null,access:null,staff:null,modules:[],cases:[],runs:[],page:'home',caseId:null,epoch:0,lastCheck:0,busy:false};
 const staffRoles=new Set(['super_admin','qa_manager']);
-const pages={home:['Tổng quan','Chọn bài kiểm tra được giao và tiếp tục từ lần trước.'],modules:['Bài kiểm tra','Hướng dẫn từng bước cho từng chức năng đã được cấp quyền.'],data:['Dữ liệu thử nghiệm','Dữ liệu minh họa, không phải giá hoặc tồn kho của cửa hàng thật.'],practice:['Thực hành an toàn','Tính giá, kiểm tra tồn kho trên dữ liệu MẪU cục bộ — không có AI và không tạo đơn.'],progress:['Tiến độ của tôi','Báo cáo do bạn tự đánh giá, chưa phải kết luận QA tự động.'],help:['Hướng dẫn & báo lỗi','Tự xử lý các vấn đề thường gặp và báo lỗi theo bài thử.']};
+const pages={home:['Chào mừng bạn!','Hiểu TIEN404 AI và thử một tình huống bán hàng trong vài giây.'],modules:['Bài kiểm tra','Hướng dẫn từng bước cho từng chức năng đã được cấp quyền.'],data:['Dữ liệu thử nghiệm','Dữ liệu minh họa, không phải giá hoặc tồn kho của cửa hàng thật.'],practice:['Thực hành an toàn','Tính giá, kiểm tra tồn kho trên dữ liệu MẪU cục bộ — không có AI và không tạo đơn.'],progress:['Tiến độ của tôi','Báo cáo do bạn tự đánh giá, chưa phải kết luận QA tự động.'],help:['Hướng dẫn & báo lỗi','Tự xử lý các vấn đề thường gặp và báo lỗi theo bài thử.']};
 function e(tag,text,cls){const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=String(text);if(cls)n.className=cls;return n}
 function card(title){const s=e('section',null,'tp-card');if(title)s.append(e('h2',title));pane.append(s);return s}
 function info(root,text,cls='tp-note'){const p=e('div',text,cls);root.append(p);return p}
@@ -35,7 +35,7 @@ function progress(){
  $('tp-progress-bar').style.width=(all.length?Math.round(done/all.length*100):0)+'%';
  $('tp-progress-label').textContent=all.length?done+' / '+all.length+' bài có kết quả tự đánh giá.':'Chưa được giao bài nào đủ điều kiện thực hiện.';
 }
-function display(page){state.page=Object.hasOwn(pages,page)?page:'home';state.caseId=null;render();$('tp-main').focus?.()}
+function display(page){state.page=Object.hasOwn(pages,page)?page:'home';state.caseId=null;const more=$('tp-more');if(more)more.open=state.page!=='home';render();$('tp-main').focus?.()}
 function render(){
  pane.replaceChildren();
  const [title,description]=pages[state.page];$('tp-heading').textContent=title;$('tp-subheading').textContent=description;
@@ -55,21 +55,128 @@ function render(){
  else renderHelp();
 }
 function renderHome(){
- const box=card('Bắt đầu trong ba phút');
- const list=e('ol',null,'tp-list');
- ['Chọn một module được giao.','Đọc bước thực hiện và kết quả mong đợi.','Thực hiện bài thử trên đúng kênh đã được phê duyệt.','Chọn Đạt / Không đạt / Bị chặn và ghi chú.','Xem tiến độ hoặc tiếp tục bài trước.'].forEach(t=>list.append(e('li',t)));
- box.append(list);
- const actions=e('div',null,'tp-actions');box.append(actions);
- button(actions,'Chọn bài thử',()=>display('modules'),'tp-primary');
- button(actions,'Xem kết quả của tôi',()=>display('progress'));
- if(state.modules.some(m=>m.module_id==='sheets'))button(actions,'Thực hành dữ liệu mẫu',()=>display('practice'));
-
- if(!state.modules.length)info(card('Chưa có bài được cấp quyền'),'Quyền đăng nhập và quyền xem bài thử là hai bước khác nhau. Bạn đã được duyệt nhưng chưa được phân công module READY. Hãy nhờ Tester Super Admin giao “Dữ liệu mẫu (Sheets)” và bấm Cập nhật.');
- else {
-  const listCard=card('Những module bạn được phép thử');
-  for(const m of state.modules){const box=e('div',null,'tp-compact');box.append(e('strong',m.title));button(box,'Mở hướng dẫn',()=>openModule(m.module_id));listCard.append(box)}
+ const intro=e('section',null,'tp-intro');
+ intro.append(e('span','TIEN404 AI · DỰ ÁN ĐANG PHÁT TRIỂN','tp-hero-eyebrow'));
+ intro.append(e('h2','Một trợ lý bán hàng cho những cửa hàng nhỏ.'));
+ intro.append(e('p','TIEN404 AI hướng tới việc giúp shop tư vấn sản phẩm, trả lời khách, kiểm tra hàng và hỗ trợ xử lý đơn qua các kênh chat.'));
+ intro.append(e('p','Bạn đang thử các quy tắc bán hàng bằng dữ liệu mẫu — chưa phải trò chuyện với AI thật. Bản này không chạy AI thật hoặc tạo đơn hàng. Chỉ cần thử một tình huống và cho biết bạn thấy thế nào.','tp-hero-hint'));
+ const concepts=e('div',null,'tp-concepts');
+ for(const [symbol,title,description] of [
+  ['💬','Tư vấn','Hướng tới hỗ trợ trả lời khách nhanh'],
+  ['🏷️','Giá bán','Không tự nhận giá khách đề xuất'],
+  ['📦','Tồn kho','Kiểm tra trước khi nhận đơn']
+ ]){
+  const item=e('div',null,'tp-concept');
+  item.append(e('span',symbol,'tp-concept-icon'),e('strong',title),e('small',description));
+  concepts.append(item);
  }
- info(card('Các kênh bot cần đợt QA riêng'),'Messenger, Zalo, Telegram, AI SALES và Commerce chưa có endpoint thực thi an toàn được xác minh cho tester trong Portal này. Mục Thực hành hiện chỉ dùng dữ liệu MẪU, không chạy AI thật.');
+ intro.append(concepts);
+ pane.append(intro);
+ if(!state.modules.some(m=>m.module_id==='sheets')){
+  const lockedCard=card('Bạn đã đăng nhập, nhưng chưa có bài được giao');
+  info(lockedCard,'Nhờ quản trị viên TIEN404 AI giao quyền “Dữ liệu mẫu” cho tài khoản của bạn, sau đó nhấn Tải lại ở đầu trang. Không cần tự cấu hình gì thêm.');
+  return;
+ }
+ const box=e('section',null,'tp-card tp-quick');
+ box.append(e('p','BƯỚC 1 / 2 — THỬ NHANH','tp-overline'));
+ box.append(e('h2','Nếu bạn là khách mua hàng, điều gì sẽ xảy ra?'));
+ box.append(e('p','Chọn 1 trong 3 tình huống dưới đây. Không cần gõ SKU hoặc nhập thông tin cá nhân.','tp-quick-lead'));
+ const choiceList=e('div',null,'tp-quick-choices');
+ const scenarios=[
+  {caseId:'SHEET-SIM-002',label:'Mua 2 áo trắng',quote:'Mình lấy 2 chiếc áo trắng nhé!',input:{sku:'QA-DEMO-01',quantity:'2'}},
+  {caseId:'SHEET-SIM-004',label:'Mua nhiều hơn tồn',quote:'Mình muốn mua 26 chiếc áo trắng.',input:{sku:'QA-DEMO-01',quantity:'26'}},
+  {caseId:'SHEET-SIM-009',label:'Trả giá thấp hơn',quote:'2 áo giá 100.000đ/chiếc được không?',input:{sku:'QA-DEMO-01',quantity:'2',offeredPrice:'100000'}}
+ ].filter(x=>state.cases.some(c=>c.case_id===x.caseId&&c.module_id==='sheets'&&c.readiness==='ready'));
+ let selected=null;
+ const response=e('div',null,'tp-chat-response');response.id='tp-quick-response';response.hidden=true;
+ const ask=e('p',null,'tp-chat-request'),answer=e('p',null,'tp-chat-answer');
+ response.append(e('span','TÌNH HUỐNG BẠN CHỌN','tp-quick-kicker'),ask,
+  e('span','KẾT QUẢ MÔ PHỎNG — KHÔNG PHẢI AI THẬT','tp-quick-kicker'),answer);
+ const review=e('section',null,'tp-quick-review');review.id='tp-quick-review';review.hidden=true;
+ review.append(e('p','BƯỚC 2 / 2 — CHO BIẾT Ý KIẾN','tp-overline'),
+  e('h3','Bạn thấy kết quả này thế nào?'));
+ const feedbackActions=e('div',null,'tp-feedback-actions');
+ const noteBox=e('div',null,'tp-note-box');noteBox.hidden=true;
+ const noteLabel=e('label','Điểm nào bạn thấy chưa ổn?','tp-field');
+ const noteInput=e('textarea',null,'tp-textarea');noteInput.maxLength=500;
+ noteInput.placeholder='Ví dụ: Câu trả lời hơi khó hiểu, chưa giống cách nhân viên tư vấn…';
+ noteLabel.append(noteInput);noteBox.append(noteLabel);
+ const message=e('p','', 'tp-quick-message');message.id='tp-quick-message';message.setAttribute('role','status');message.setAttribute('aria-live','polite');
+ const saved=e('p','', 'tp-feedback-success');saved.id='tp-quick-saved';saved.setAttribute('role','status');saved.setAttribute('aria-live','polite');
+ async function save(outcome,feedback){
+  if(!selected||!canSave()){message.textContent='Phiên hoặc quyền thử nghiệm đã hết hạn. Hãy bấm Tải lại.';return}
+  if(!state.cases.some(c=>c.case_id===selected.caseId&&c.readiness==='ready')){
+   message.textContent='Tình huống này chưa được quản trị viên phân công.';return;
+  }
+  const epoch=state.epoch;state.busy=true;
+  for(const control of feedbackActions.querySelectorAll('button'))control.disabled=true;
+  for(const control of noteBox.querySelectorAll('button'))control.disabled=true;
+  message.textContent='Đang lưu góp ý của bạn…';
+  try{
+   const verified=await withDeadline(state.client.auth.getUser(),12000);
+   if(verified.error||verified.data?.user?.id!==state.user.id)throw Error('IDENTITY_CHANGED');
+   const result=await withDeadline(state.client.from('tien404_tester_runs').insert({
+    user_id:state.user.id,case_id:selected.caseId,outcome,
+    feedback:feedback||null,environment:'staging',self_reported:true
+   }),15000);
+   if(result.error)throw Error('REPORT_NOT_SAVED');
+   const readback=await withDeadline(state.client.from('tien404_tester_runs')
+    .select('run_id,case_id,outcome,created_at').eq('user_id',state.user.id)
+    .order('created_at',{ascending:false}).limit(200),12000);
+   if(readback.error||!readback.data?.some(r=>r.case_id===selected.caseId&&r.outcome===outcome))
+    throw Error('REPORT_NOT_VERIFIED');
+   if(epoch!==state.epoch)return;
+   state.runs=readback.data;
+   progress();
+   message.textContent='';
+   saved.textContent='Đã nhận góp ý! Cảm ơn bạn đã giúp TIEN404 AI cải thiện. Bạn có thể thử thêm tình huống khác ở trên.';
+   noteBox.hidden=true;
+   feedbackActions.hidden=true;
+  }catch{
+   if(epoch===state.epoch)message.textContent='Chưa xác nhận lưu được góp ý. Hãy kiểm tra mạng rồi thử lại. Không tự báo Đã gửi khi hệ thống chưa xác minh.';
+  }finally{
+   state.busy=false;
+   if(epoch===state.epoch){
+    for(const control of feedbackActions.querySelectorAll('button'))control.disabled=false;
+    for(const control of noteBox.querySelectorAll('button'))control.disabled=false;
+   }
+  }
+ }
+ button(feedbackActions,'👍 Dễ hiểu',()=>save('self_pass','Người thử thấy kết quả mô phỏng dễ hiểu.'),'tp-primary');
+ button(feedbackActions,'💬 Cần cải thiện',()=>{
+  noteBox.hidden=false;noteInput.focus();
+  message.textContent='Viết một câu ngắn để nhóm dự án biết cần sửa gì.';
+ });
+ button(feedbackActions,'Không thử được',()=>save('blocked','Người thử không thực hiện được tình huống mô phỏng.'));
+ const send=button(noteBox,'Gửi góp ý',()=>{
+  const value=noteInput.value.trim();
+  if(value.length<5){message.textContent='Hãy mô tả ít nhất 5 ký tự để nhóm có thể sửa lỗi.';return}
+  save('self_fail',value);
+ },'tp-primary');
+ send.setAttribute('aria-label','Gửi góp ý cải thiện bài mô phỏng');
+ review.append(feedbackActions,noteBox,message,saved);
+ for(const entry of scenarios){
+  const b=button(choiceList,entry.label,()=>{
+   if(state.busy)return;
+   selected=entry;
+   for(const other of choiceList.querySelectorAll('button'))other.setAttribute('aria-pressed',other===b?'true':'false');
+   const result=calculateDemo(entry.input);
+   ask.textContent='Khách: “'+entry.quote+'”';
+   answer.textContent=result.message;
+   response.dataset.result=result.code;response.hidden=false;
+   review.hidden=false;feedbackActions.hidden=false;noteBox.hidden=true;
+   noteInput.value='';message.textContent='';saved.textContent='';
+  },'tp-quick-choice');
+  b.setAttribute('aria-pressed','false');
+ }
+ box.append(choiceList);
+ if(scenarios.length){box.append(response,review)}
+ else info(box,'Chưa có tình huống mẫu phù hợp. Hãy liên hệ quản trị viên hoặc xem bài nâng cao.');
+ pane.append(box);
+ const more=e('section',null,'tp-small-footer');
+ more.append(e('p','Muốn kiểm tra kỹ hơn? Bạn có thể dùng bộ 15 bài chi tiết. Phần này không bắt buộc.','tp-quiet'));
+ button(more,'Xem các bài kiểm tra chi tiết',()=>display('modules'));
+ pane.append(more);
 }
 function moduleCases(id){return state.cases.filter(c=>c.module_id===id&&c.readiness==='ready')}
 function renderGuidedSteps(moduleId){
@@ -300,7 +407,7 @@ async function load(){
   }
   if(round!==state.epoch)return;
   state.modules=modules;state.cases=cases;state.runs=runs;workspace.hidden=false;locked.hidden=true;render();
-  status('Đã xác minh quyền Tester trên Supabase. Chỉ hiển thị module được phân công.','ok');
+  status('Bạn đã sẵn sàng! Chọn một tình huống bên dưới để trải nghiệm bản mẫu.','ok');
  }catch{if(round===state.epoch)reset('Không thể xác minh quyền hoặc dữ liệu. Không mở bài thử khi kiểm tra quyền thất bại.')}
  finally{if(round===state.epoch)$('tp-refresh').disabled=false}
 }
