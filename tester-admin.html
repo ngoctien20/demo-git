@@ -1,0 +1,53 @@
+<!doctype html><html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#10192b">
+<title>Quản lý Tester | TIEN404 AI Staging</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/tester-portal.css">
+</head><body>
+<header class="tp-top"><div class="tp-brand"><span class="tp-symbol">✦</span><span>TIEN404 <b>AI</b><small>Quản trị thử nghiệm • STAGING</small></span></div>
+<div class="tp-top-right"><span class="tp-stage">PRIVATE QA</span><a href="tester.html">Trang Tester</a></div></header>
+<div id="ta-status" class="tp-status" role="status" aria-live="polite">Đang xác thực nhân sự QA…</div>
+<main class="tp-admin-workspace" id="ta-main">
+<section id="ta-locked" class="tp-locked" hidden>
+<h1>Chưa có quyền quản trị Tester</h1>
+<p id="ta-locked-reason">Đăng nhập bằng tài khoản Super Admin/QA Manager đã được cấp quyền backend.</p>
+<a href="login.html" class="tp-button">Đăng nhập</a></section>
+<div id="ta-protected" hidden>
+<p class="tp-overline">TIEN404 AI / QUẢN LÝ THỬ NGHIỆM</p>
+<h1>Bảng điều khiển Tester</h1>
+<p id="ta-role" class="tp-quiet">Chỉ đọc và thay đổi trong phạm vi quyền Supabase được cấp.</p>
+<div class="tp-summary">
+<div><span>Người đã đăng ký quyền</span><strong id="ta-access-count">—</strong></div>
+<div><span>Lượt tự báo cáo</span><strong id="ta-run-count">—</strong></div>
+<div><span>Module</span><strong id="ta-module-count">—</strong></div>
+</div>
+<p class="tp-note">Chỉ dữ liệu staging. Trạng thái “Đạt” do người thử báo cáo <strong>không phải QA tự động PASS</strong>.</p>
+<div id="ta-manage" class="tp-grid">
+<section class="tp-card" id="ta-grant-card" hidden>
+<h2>Cấp quyền cho tài khoản đã tồn tại</h2>
+<p>Chỉ nhập Supabase Auth User ID đã xác minh. Chưa gửi lời mời email và không tạo tài khoản tự động.</p>
+<form id="ta-grant-form" class="tp-admin-form">
+<div class="tp-field"><label for="ta-user-id">Auth User ID</label><input id="ta-user-id" class="tp-input" type="text" autocomplete="off" required placeholder="UUID của tài khoản QA"></div>
+<div class="tp-field"><label for="ta-days">Hiệu lực</label><select id="ta-days" class="tp-select"><option value="1">1 ngày</option><option value="7" selected>7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select></div>
+<div class="tp-field"><label for="ta-notes">Ghi chú nội bộ (không nhập thông tin nhạy cảm)</label><input id="ta-notes" class="tp-input" maxlength="200" autocomplete="off"></div>
+<div class="tp-actions"><button type="submit" class="tp-primary">Cấp quyền Tester</button></div>
+</form>
+</section>
+<section class="tp-card" id="ta-assignment-card" hidden>
+<h2>Phân công bài thử</h2>
+<p>Chỉ người đã được cấp quyền Tester mới có thể truy cập module sẵn sàng.</p>
+<form id="ta-assignment-form" class="tp-admin-form">
+<div class="tp-field"><label for="ta-assignment-id">Auth User ID</label><input class="tp-input" id="ta-assignment-id" autocomplete="off" required></div>
+<div class="tp-field"><label for="ta-module-id">Chọn module</label><select class="tp-select" id="ta-module-id"></select></div>
+<div class="tp-actions"><button type="submit" class="tp-primary">Giao module</button></div>
+</form></section></div>
+<section class="tp-card"><div class="tp-compact"><h2>Quyền Tester hiện tại</h2><button type="button" id="ta-refresh" class="tp-outline">↻ Tải lại</button></div>
+<div id="ta-access-list" class="tp-scroll"><p>Đang tải…</p></div></section>
+<section class="tp-card"><h2>Báo cáo tự đánh giá</h2><div id="ta-runs-list" class="tp-scroll"><p>Đang tải…</p></div></section>
+<section class="tp-card"><h2>Nhật ký thay đổi quyền</h2><div id="ta-audit-list" class="tp-scroll"><p>Đang tải…</p></div></section>
+<section class="tp-card"><h2>Mời Tester bằng email và ảnh bằng chứng</h2>
+<p class="tp-note">BLOCKED: chỉ bật sau khi có SMTP/Auth invitation, danh sách redirect, kho ảnh riêng có RLS, kiểm thử anti-abuse và phê duyệt quyền phù hợp.</p>
+<p>Không gửi email hoặc tải ảnh lên dịch vụ ngoài trong bản này.</p></section>
+</div></main>
+<script type="module" src="assets/tester-admin.js"></script>
+</body></html>
