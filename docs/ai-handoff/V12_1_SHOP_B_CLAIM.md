@@ -1,0 +1,3 @@
+# Shop B — réception de la commande GHÉP / staging
+
+14/11/2026. Workflow OgDZNSAvKEvhnAvn. Draft 2717b45d-4396-42f6-bf3a-c5982d5948e4. Published và mốc rollback 7f100319-b820-4f02-a52b-85cd8e0c7e25. Draft nhận dạng lệnh sau Owner Gate, chưa chuyển sang backend. Execution n8n 3345 dùng fixture. Sáu ca parser được chạy độc lập. SQL candidate được tạo, test thiếu credential bị từ chối trong giao dịch rollback. Chưa deploy RPC. Chưa chứng minh HTTP positive, retry hoặc pairing đầu cuối. Cần Header Auth riêng n8n và key tương ứng trong Supabase Vault. Gateway chỉ chuyển yêu cầu pending cho QA Shop B, xác nhận do Owner thực hiện trên Dashboard. Không replay mã từ phiên cũ. Phục hồi draft từ Published nếu cần.
