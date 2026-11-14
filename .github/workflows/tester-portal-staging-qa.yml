@@ -42,10 +42,13 @@ jobs:
           node --check assets/tester-sandbox.mjs
           node --check assets/tester-qa-pack.mjs
           node --check assets/tester-ai-studio.mjs
+          node --check assets/tester-qa-writable-sandbox.mjs
+          node --check assets/tester-random-qa-cases.mjs
+          node --check assets/tester-qa-products-snapshot.mjs
           node --check assets/auth-client.js
           node --check assets/auth-runtime.mjs
       - name: Supabase Auth and Tester security contract
-        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/tester-ai-studio.test.mjs tests/auth-session-stability.test.mjs
+        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/tester-ai-studio.test.mjs tests/tester-qa-writes-and-random.test.mjs tests/auth-session-stability.test.mjs
       - name: Build existing strict Render Auth preview
         run: node scripts/build-auth-preview.mjs
       - name: Verify no private files leak and old Auth remains
