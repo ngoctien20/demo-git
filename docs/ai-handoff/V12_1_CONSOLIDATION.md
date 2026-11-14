@@ -45,3 +45,11 @@ Bắt đầu tại c005eab, mã kiểm thử 2793e8394ba0f19a2747745468d71d48098
 * Rollback: revert các commit sau c005eab trên nhánh PR; PostgreSQL CI là database dùng một lần. Gate tiếp theo: xác định credential riêng cho gateway/backend và phạm vi quyền, review migration/API staging, nối Dashboard với backend staging, test A/B qua HTTP rồi mới đề nghị kiểm tra inbound trên điện thoại.
 
 Kết quả cuối tại cùng SHA: [PostgreSQL A/B, restore và mobile Chromium — SUCCESS](https://github.com/ngoctien20/demo-git/actions/runs/43552509564) · [Shop-Owned — 17/17 SUCCESS](https://github.com/ngoctien20/demo-git/actions/runs/43552509572).
+
+## Dashboard Owner · 14/11/2026 JST
+
+TEST 10 từ điện thoại: bản ghi n8n 4 verified lúc 14:35:11 JST, F01, 159000 VND, tồn fixture 3. Không cần gửi lại.
+
+Commit 2ecb8ff4d5d6daddb7f89c831df0a5e936e4f76b. Dashboard component gọi RPC issue/status/confirm, xóa mã khỏi giao diện khi nhận pending hoặc hết hạn; chỉ Owner đúng shop có thể gọi contract. Trên PostgreSQL dùng riêng CI, chạy với role authenticated, sau claim chuyển pending, đúng Owner mới confirm. Chromium mobile dùng mock RPC. [CI DB và mobile](https://github.com/ngoctien20/demo-git/actions/runs/43573109764), [CI Shop-Owned](https://github.com/ngoctien20/demo-git/actions/runs/43573109769) đều thành công.
+
+Supabase hosting đã áp dụng riêng hàm phát mã trong schema tien404_r1_qa (migration qa_private_owner_challenge_issuer); rà pg_proc xác nhận SECURITY INVOKER, anon và authenticated không có EXECUTE. Kiểm tra phát mã cho cả hai tenant bằng DB context trong transaction rollback. Chưa triển khai SECURITY DEFINER RPC public hoặc thay grant truy cập Dashboard. Chưa có route gateway xác thực ghi pending; account.html trên Render chưa gắn component. Rollback ứng dụng bằng revert commit trên PR; hàm private chưa có caller public có thể để nguyên khi tắt tính năng. Khi cần gỡ, kiểm tra phụ thuộc trước. Gate: duyệt đúng quyền EXECUTE trên RPC staging có kiểm tra Owner, triển khai và chạy JWT HTTP A/B; kiểm tra ingress đã chứng thực trước khi đưa link Dashboard cho Owner.
