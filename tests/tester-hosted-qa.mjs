@@ -26,7 +26,7 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
     ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","self_reported:true"]],
     ['/assets/tester-qa-writable-sandbox.mjs',["tien404_qa_sandbox_products","tien404_qa_sandbox_orders","QA_PRODUCTS_SNAPSHOT","drawQaCase","QA_CREATE_ORDER_FAILED"]],
     ['/assets/tester-random-qa-cases.mjs',["QA_RANDOM_CASES","QA96","export function drawQaCase"]],
-    ['/assets/tester-qa-products-snapshot.mjs',["QA_PRODUCTS_SNAPSHOT","A002","159000","21"]],
+    ['/assets/tester-qa-products-snapshot.mjs',["QA_PRODUCTS_SNAPSHOT","A002","159000","QA_CATALOG_SOURCE_LABEL"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
