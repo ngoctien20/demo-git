@@ -82,7 +82,8 @@ def run():
         page.get_by_role('button',name='Mua 2 áo trắng').click()
         assert '318.000đ' in page.locator('#tp-quick-response').inner_text()
         page.get_by_role('button',name='👍 Dễ hiểu').click()
-        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.locator('#tp-quick-saved').wait_for(state='visible',timeout=10000)
+        assert 'Đã nhận góp ý!' in page.locator('#tp-quick-saved').inner_text()
         page.wait_for_function("document.querySelector('#tp-done')?.textContent==='1'",timeout=10000)
 
         # Friend reports a problem using a short note; no AI inference/network.
@@ -91,13 +92,15 @@ def run():
         page.get_by_role('button',name='💬 Cần cải thiện').click()
         page.locator('.tp-note-box textarea').fill('Câu trả lời còn hơi khó hiểu.')
         page.get_by_role('button',name='Gửi góp ý').click()
-        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.locator('#tp-quick-saved').wait_for(state='visible',timeout=10000)
+        assert 'Đã nhận góp ý!' in page.locator('#tp-quick-saved').inner_text()
         page.wait_for_function("document.querySelector('#tp-done')?.textContent==='2'",timeout=10000)
 
         page.get_by_role('button',name='Trả giá thấp hơn').click()
         assert page.locator('#tp-quick-response').get_attribute('data-result')=='price_mismatch'
         page.get_by_role('button',name='Không thử được').click()
-        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.locator('#tp-quick-saved').wait_for(state='visible',timeout=10000)
+        assert 'Đã nhận góp ý!' in page.locator('#tp-quick-saved').inner_text()
         page.wait_for_function("document.querySelector('#tp-done')?.textContent==='3'",timeout=10000)
 
         # Legacy advanced QA and freeform practice must remain usable.
