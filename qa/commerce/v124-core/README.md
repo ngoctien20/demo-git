@@ -22,3 +22,13 @@ Từ repository dùng `node --test qa/zalo/public-reply-pilot.test.cjs qa/commer
 ## Vận hành
 
 Lớp session lưu hash, SKU, số lượng, phase, revision và mốc thời gian. Session hết hạn được reset ở lần truy cập tiếp theo; receipt quá hạn của khách được dọn khi có lượt mới. Cần chính sách dọn các phiên khách không quay lại trước khi vận hành dữ liệu thật. Khi dùng kết nối PostgreSQL thực, pool phải xác thực SSL và quyền tối thiểu gắn với shop, có timeout khi lấy connection. Chưa có ánh xạ customer credential/RLS được phê duyệt trên Supabase hosting.
+
+
+## V12.4R.2 · Retention QA candidate (no hosted cleanup)
+
+`postgres/retention.cjs` bổ sung cổng `createQaRetentionMaintenance` với hai phương thức:
+
+- `inspect()`: giao dịch `BEGIN READ ONLY`, chỉ đếm tổng số sessions đã hết hạn quá kỳ lưu giữ (mặc định 24 giờ) và receipts quá hạn + khoảng đệm (5 phút). Không đọc hoặc xuất danh tính khách, SKU, giá hay nội dung tin nhắn. Cần pool DB được cấp quyền rõ ràng, không có quyền mới.
+- `sweepDisposableQaOnly()`: chỉ chạy khi cả ba cờ cho phép môi trường PostgreSQL kiểm thử dùng một lần cùng khớp; còn kiểm tra `current_database()` bên trong transaction. Xóa theo từng lô tối đa 250 và dùng `FOR UPDATE SKIP LOCKED`. PostgreSQL 17 CI kiểm chứng hai session QA cũ bị dọn, session còn hạn và receipt hiện hành được giữ, gọi lại không xóa thêm.
+
+**BLOCKED trên Supabase staging và production:** chưa có maintenance role với RLS và quyền xóa tối thiểu, lịch chạy, retention policy được duyệt, backup và giám sát. Không import module này vào API core hoặc webhook; không bật job dọn; không chạy lệnh xóa trên Supabase. Cleanup candidate dùng cho QA PostgreSQL cô lập, không phải session thực thuộc PR #41.
