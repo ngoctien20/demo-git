@@ -116,3 +116,10 @@ Bot **sẽ không tự phản hồi**. Khi Owner báo “đã gửi”, đối c
 - **P1:** Ghi đơn sandbox cần xác nhận qua backend, giá/tồn kho realtime, idempotency, readback và outbox vẫn `HELD`; không ảnh hưởng production.
 
 **Rollback:** Nếu có regression, khôi phục và publish Shadow version `3aeabdb0-79b1-4dca-96bb-c5b0c9c2bee6`; dữ liệu QA snapshot/preview giữ lại làm evidence, không xóa. Không cần thay đổi webhook V1, Cloudflare hoặc Commerce production.
+
+
+### QA bổ sung — Mốc chặn catalog cũ
+
+- **Execution 3370: PASS**. Pin bản sao F01 với `snapshot_at=2026-11-10T00:00:00Z` (chỉ dữ liệu giả lập cho test). Workflow ghi `outcome=BLOCKED_STALE_SNAPSHOT`, `catalog_mode=QA_SNAPSHOT_EXPIRED`, giá trả về `0` với nội dung *không báo giá, không tạo đơn*. Đây là chặn dữ liệu cũ, **không phải mức giá của sản phẩm**.
+- **Execution 3371: PASS**. Sau đó bỏ pin snapshot cũ, n8n đọc snapshot staging hiện có, phục hồi đúng `PRICE_PREVIEW`, F01 giá 199.000đ, tồn QA 5; snapshot gốc `2026-11-14T12:41:35.598Z` không bị sửa.
+- Hai bài kiểm thử đều chạy bằng pin input tổng hợp, không gửi Zalo hay gọi Order Service; không làm mất dữ liệu catalog/sandbox.
