@@ -59,7 +59,7 @@ function renderHome(){
  intro.append(e('span','TIEN404 AI · DỰ ÁN ĐANG PHÁT TRIỂN','tp-hero-eyebrow'));
  intro.append(e('h2','Một trợ lý bán hàng cho những cửa hàng nhỏ.'));
  intro.append(e('p','TIEN404 AI hướng tới việc giúp shop tư vấn sản phẩm, trả lời khách, kiểm tra hàng và hỗ trợ xử lý đơn qua các kênh chat.'));
- intro.append(e('p','Bạn đang thử **quy tắc bán hàng bằng dữ liệu mẫu** — chưa phải trò chuyện với AI thật. Chỉ cần thử một tình huống và cho biết bạn thấy thế nào.','tp-hero-hint'));
+ intro.append(e('p','Bạn đang thử các quy tắc bán hàng bằng dữ liệu mẫu — chưa phải trò chuyện với AI thật. Chỉ cần thử một tình huống và cho biết bạn thấy thế nào.','tp-hero-hint'));
  const concepts=e('div',null,'tp-concepts');
  for(const [symbol,title,description] of [
   ['💬','Tư vấn','Hướng tới hỗ trợ trả lời khách nhanh'],
