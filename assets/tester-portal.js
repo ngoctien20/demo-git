@@ -6,13 +6,14 @@
 import {getAuthClient} from './auth-client.js';
 import {withDeadline} from './auth-runtime.mjs';
 import {guideForModule} from './tester-guides.mjs';
+import {DEMO_CATALOG,calculateDemo,formatVnd} from './tester-sandbox.mjs';
 
 const $=id=>document.getElementById(id);
 const pane=$('tp-panel'),statusNode=$('tp-status'),locked=$('tp-locked'),workspace=$('tp-workspace');
 const nav=$('tp-nav');
 const state={client:null,user:null,access:null,staff:null,modules:[],cases:[],runs:[],page:'home',caseId:null,epoch:0,lastCheck:0,busy:false};
 const staffRoles=new Set(['super_admin','qa_manager']);
-const pages={home:['Tổng quan','Chọn bài kiểm tra được giao và tiếp tục từ lần trước.'],modules:['Bài kiểm tra','Hướng dẫn từng bước cho từng chức năng đã được cấp quyền.'],data:['Dữ liệu thử nghiệm','Dữ liệu minh họa, không phải giá hoặc tồn kho của cửa hàng thật.'],progress:['Tiến độ của tôi','Báo cáo do bạn tự đánh giá, chưa phải kết luận QA tự động.'],help:['Hướng dẫn & báo lỗi','Tự xử lý các vấn đề thường gặp và báo lỗi theo bài thử.']};
+const pages={home:['Tổng quan','Chọn bài kiểm tra được giao và tiếp tục từ lần trước.'],modules:['Bài kiểm tra','Hướng dẫn từng bước cho từng chức năng đã được cấp quyền.'],data:['Dữ liệu thử nghiệm','Dữ liệu minh họa, không phải giá hoặc tồn kho của cửa hàng thật.'],practice:['Thực hành an toàn','Tính giá, kiểm tra tồn kho trên dữ liệu MẪU cục bộ — không có AI và không tạo đơn.'],progress:['Tiến độ của tôi','Báo cáo do bạn tự đánh giá, chưa phải kết luận QA tự động.'],help:['Hướng dẫn & báo lỗi','Tự xử lý các vấn đề thường gặp và báo lỗi theo bài thử.']};
 function e(tag,text,cls){const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=String(text);if(cls)n.className=cls;return n}
 function card(title){const s=e('section',null,'tp-card');if(title)s.append(e('h2',title));pane.append(s);return s}
 function info(root,text,cls='tp-note'){const p=e('div',text,cls);root.append(p);return p}
@@ -49,6 +50,7 @@ function render(){
  if(state.page==='home')renderHome();
  else if(state.page==='modules')renderModules();
  else if(state.page==='data')renderData();
+ else if(state.page==='practice')renderPractice();
  else if(state.page==='progress')renderProgress();
  else renderHelp();
 }
@@ -60,7 +62,9 @@ function renderHome(){
  const actions=e('div',null,'tp-actions');box.append(actions);
  button(actions,'Chọn bài thử',()=>display('modules'),'tp-primary');
  button(actions,'Xem kết quả của tôi',()=>display('progress'));
- if(!state.modules.length)info(card('Chưa có bài được cấp quyền'),'Chủ dự án chưa phân công module an toàn cho tài khoản này. Hãy liên hệ quản trị viên.');
+ if(state.modules.some(m=>m.module_id==='sheets'))button(actions,'Thực hành dữ liệu mẫu',()=>display('practice'));
+
+ if(!state.modules.length)info(card('Chưa có bài được cấp quyền'),'Quyền đăng nhập và quyền xem bài thử là hai bước khác nhau. Bạn đã được duyệt nhưng chưa được phân công module READY. Hãy nhờ Tester Super Admin giao “Dữ liệu mẫu (Sheets)” và bấm Cập nhật.');
  else {
   const listCard=card('Những module bạn được phép thử');
   for(const m of state.modules){const box=e('div',null,'tp-compact');box.append(e('strong',m.title));button(box,'Mở hướng dẫn',()=>openModule(m.module_id));listCard.append(box)}
@@ -133,6 +137,7 @@ function openCase(caseId){
   box.append(e('div',c.sample_prompt,'tp-prompt'));
   button(box,'Sao chép câu hỏi',async()=>{try{await navigator.clipboard.writeText(c.sample_prompt);status('Đã sao chép câu hỏi mẫu.','ok')}catch{status('Không thể sao chép tự động. Bạn có thể chọn và sao chép văn bản.', 'error')}})
  }
+ if(c.module_id==='sheets')renderDemoPractice(pane);
  info(card('Kết quả mong đợi'),c.expected_result);
  const form=card('Gửi kết quả thử nghiệm');
  info(form,'Kết quả bạn gửi sẽ được ghi là TỰ ĐÁNH GIÁ, không mặc định là QA tự động PASS.');
@@ -170,6 +175,48 @@ function openCase(caseId){
  button(actions,'Trở lại module',()=>openModule(c.module_id));
  info(form,'Ảnh lỗi: chưa có kho lưu ảnh riêng đã nghiệm thu. Không tải ảnh có token hoặc thông tin khách thật lên kênh công khai.');
 }
+
+function renderDemoPractice(root){
+ const box=e('section',null,'tp-card');
+ box.append(e('p','THỰC HÀNH NỘI BỘ — KHÔNG PHẢI AI SALES LIVE','tp-overline'),
+            e('h2','Bộ tính thử giá và tồn kho (dữ liệu giả lập)'));
+ info(box,'Bài tập chạy 100% trong trình duyệt, không kết nối n8n, Google Sheets hoặc bot Messenger/Zalo. Giá và SKU dưới đây chỉ là mẫu, KHÔNG phải dữ liệu cửa hàng thật.');
+ const list=e('ul',null,'tp-list');
+ for(const p of DEMO_CATALOG)list.append(e('li',p.sku+' · '+p.name+' · '+formatVnd(p.unitPrice)+' · tồn mẫu '+p.stock));
+ box.append(list);
+ const form=e('form',null,'tp-admin-form');
+ const skuLabel=e('label','Chọn sản phẩm mẫu','tp-field');
+ const sku=e('select',null,'tp-select');sku.id='tp-sim-sku';
+ for(const p of [...DEMO_CATALOG,{sku:'QA-UNKNOWN',name:'Mã không tồn tại (thử lỗi)'}]){
+  const op=e('option',p.sku+' — '+p.name);op.value=p.sku;sku.append(op);
+ }
+ skuLabel.append(sku);form.append(skuLabel);
+ const qtyLabel=e('label','Số lượng yêu cầu','tp-field');
+ const qty=e('input',null,'tp-input');qty.id='tp-sim-qty';qty.type='text';qty.inputMode='numeric';qty.maxLength=12;qty.value='2';qtyLabel.append(qty);form.append(qtyLabel);
+ const offeredLabel=e('label','Giá khách đề xuất (tuỳ chọn)','tp-field');
+ const offered=e('input',null,'tp-input');offered.id='tp-sim-offered';offered.type='text';offered.inputMode='decimal';offered.maxLength=24;offered.placeholder='Để trống hoặc nhập 159000';offeredLabel.append(offered);form.append(offeredLabel);
+ const actions=e('div',null,'tp-actions');
+ const run=e('button','Kiểm tra dữ liệu mẫu','tp-primary');run.type='submit';
+ actions.append(run);form.append(actions);
+ const result=e('p','Chưa chạy bài thực hành.','tp-note');result.id='tp-sim-result';result.setAttribute('role','status');result.setAttribute('aria-live','polite');
+ form.addEventListener('submit',ev=>{
+  ev.preventDefault();
+  const output=calculateDemo({sku:sku.value,quantity:qty.value,offeredPrice:offered.value});
+  result.textContent='Kết quả mô phỏng ['+output.code+']: '+output.message;
+  result.dataset.result=output.code;
+ });
+ box.append(form,result);
+ root.append(box);
+}
+function renderPractice(){
+ if(!state.modules.some(m=>m.module_id==='sheets')){
+  info(card('Chưa được giao bài thực hành'),'Chỉ Tester đã được phân công module Dữ liệu mẫu mới có thể thực hành. Không tự mở quyền trên trình duyệt.');return;
+ }
+ renderDemoPractice(pane);
+ const recap=card('Cách ghi nhận kết quả');
+ info(recap,'Sau khi thực hành, vào Chọn bài thử → Dữ liệu mẫu để đối chiếu bài QA và lưu phản hồi tự đánh giá. Mô phỏng này không chứng minh AI bot đã trả lời đúng.');
+ button(recap,'Xem bài Sheets được giao',()=>openModule('sheets'),'tp-primary');
+}
 function renderData(){
  const box=card('Ví dụ minh họa cho việc đối chiếu dữ liệu');
  const hasSheets=state.modules.some(m=>m.module_id==='sheets');
@@ -181,6 +228,7 @@ function renderData(){
   'Đơn QA-DEMO-ORDER-01 chỉ để minh họa cách tính: 2 × 159.000đ = 318.000đ.'].forEach(t=>list.append(e('li',t)));
  box.append(list);
  const a=e('div',null,'tp-actions');box.append(a);button(a,'Mở bài đối chiếu',()=>openModule('sheets'));
+ button(a,'Thực hành tính giá / tồn mẫu',()=>display('practice'));
 }
 function renderProgress(){
  const cardEl=card('Nhật ký kết quả cá nhân');
