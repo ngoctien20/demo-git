@@ -140,7 +140,7 @@ def run():
         assert 'chưa phải trò chuyện với AI thật' in page.locator('.tp-hero-hint').inner_text()
         assert page.locator('button[data-page="practice"]').is_hidden()  # Advanced menu is closed.
         assert page.locator('#tp-more').evaluate('(el)=>el.open') is False
-        assert page.locator('#tp-total').text_content()=='9'
+        assert page.locator('#tp-total').text_content()=='10'
         assert page.locator('.tp-quick-choice').count()==3
 
         # QA isolated CRUD and 96 random QA prompts are independent of the model.
