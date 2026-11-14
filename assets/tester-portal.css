@@ -205,3 +205,24 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{
 .tp-friends .tp-qa-local-details>summary{cursor:pointer;color:#d5edf0;font-weight:650;font-size:13px;padding:15px 6px;line-height:1.55}
 .tp-friends .tp-qa-local-details>.tp-qa-write-section{margin-bottom:13px}
 .tp-friends .tp-qa-local-details>.tp-qa-write-section:first-of-type{margin-top:5px}
+
+/* V12.5 — Messenger Clone QA reviewer, no live model transport. */
+.tp-friends .tp-messenger-clone{border-color:#4a9c9e;background:linear-gradient(140deg,#102c36,#142339 80%);padding:clamp(16px,3vw,24px);display:grid;gap:12px}
+.tp-friends .tp-messenger-clone>h2{font-size:clamp(21px,3vw,27px);letter-spacing:-.02em;line-height:1.22;margin:0}
+.tp-friends .tp-messenger-clone .tp-ai-description{font-size:13px;line-height:1.6;max-width:780px}
+.tp-friends .tp-messenger-clone .tp-ai-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.tp-friends .tp-messenger-clone .tp-ai-fields>label{min-width:0;display:grid;gap:5px}
+.tp-friends .tp-messenger-clone select{min-width:0;width:100%;box-sizing:border-box;min-height:42px;font-size:13px}
+.tp-friends .tp-messenger-clone .tp-qa-random-prompt{display:grid;gap:7px;padding:13px 15px;background:#143b43;border:1px solid #428b8b;border-radius:11px;margin:0}
+.tp-friends #tp-messenger-clone-prompt{margin:0;font-size:15px;font-weight:600;line-height:1.55}
+.tp-friends #tp-messenger-clone-expected{margin:0;font-size:12px;color:#bfe9df;line-height:1.55}
+.tp-friends .tp-messenger-clone .tp-actions{display:flex;flex-wrap:wrap;gap:8px}
+.tp-friends .tp-messenger-clone .tp-actions>a{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid #49677c;border-radius:10px;color:#d9ecfa;text-decoration:none;font-size:13px}
+.tp-friends .tp-messenger-clone .tp-actions button{min-height:44px}
+.tp-friends .tp-messenger-clone .tp-messenger-clone-report-details{border:1px solid #385668;border-radius:11px;padding:0 12px}
+.tp-friends .tp-messenger-clone .tp-messenger-clone-report-details>summary{cursor:pointer;padding:14px 5px;font-weight:650;color:#d3ecf3;font-size:13px}
+.tp-friends .tp-messenger-clone .tp-ai-form{display:grid;gap:11px;padding:2px 0 14px}
+.tp-friends .tp-messenger-clone .tp-ai-form>label:not(.tp-ai-attest){display:grid;gap:7px}
+.tp-friends .tp-messenger-clone .tp-ai-form textarea{width:100%;box-sizing:border-box;min-height:75px}
+.tp-friends .tp-messenger-clone #tp-messenger-clone-status[data-tone=ok]{color:#b4f7d5}
+@media(max-width:690px){.tp-friends .tp-messenger-clone .tp-ai-fields{grid-template-columns:1fr}.tp-friends .tp-messenger-clone .tp-actions>button{flex:1 1 125px}}
