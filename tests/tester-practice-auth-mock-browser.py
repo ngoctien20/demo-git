@@ -17,7 +17,11 @@ const tables={
  tien404_tester_staff:[],
  tien404_tester_assignments:[{user_id:uid,module_id:'sheets',active:true}],
  tien404_tester_modules:[{module_id:'sheets',title:'Dữ liệu mẫu (Sheets)',summary:'Dữ liệu mô phỏng riêng',channel:'sheets',readiness:'ready',setup_note:'Mẫu, không phải hàng thật',sort_order:1}],
- tien404_tester_cases:[{case_id:'SHEET-SIM-002',module_id:'sheets',title:'Báo giá đúng cho 2 áo trắng',instructions:'Thử SKU QA-DEMO-01, số lượng 2',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'Tổng 318.000đ (mẫu)',readiness:'ready',sort_order:1}],
+ tien404_tester_cases:[
+ {case_id:'SHEET-SIM-002',module_id:'sheets',title:'Báo giá đúng cho 2 áo trắng',instructions:'Thử SKU QA-DEMO-01, số lượng 2',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'Tổng 318.000đ (mẫu)',readiness:'ready',sort_order:1},
+ {case_id:'SHEET-SIM-004',module_id:'sheets',title:'Chặn vượt tồn',instructions:'Thử SKU QA-DEMO-01, số lượng 26',sample_prompt:'SKU QA-DEMO-01, số lượng 26',expected_result:'out_of_stock',readiness:'ready',sort_order:2},
+ {case_id:'SHEET-SIM-009',module_id:'sheets',title:'Từ chối trả giá',instructions:'Thử SKU QA-DEMO-01, số lượng 2, giá 100000',sample_prompt:'SKU QA-DEMO-01, số lượng 2',expected_result:'price_mismatch',readiness:'ready',sort_order:3}
+],
  tien404_tester_runs:results
 };
 class Query{
@@ -67,7 +71,38 @@ def run():
         page.route('**/assets/auth-client.js',lambda route:route.fulfill(status=200,content_type='application/javascript',body=STUB))
         page.goto(origin+'/tester.html',wait_until='domcontentloaded')
         page.locator('#tp-workspace').wait_for(state='visible',timeout=12000)
-        assert page.locator('#tp-total').inner_text()=='1'
+        assert 'Một trợ lý bán hàng' in page.locator('.tp-intro h2').inner_text()
+        assert 'chưa phải trò chuyện với AI thật' in page.locator('.tp-hero-hint').inner_text()
+        assert page.locator('button[data-page="practice"]').is_hidden()  # Advanced menu is closed.
+        assert page.locator('#tp-more').evaluate('(el)=>el.open') is False
+        assert page.locator('#tp-total').text_content()=='3'
+        assert page.locator('.tp-quick-choice').count()==3
+
+        # Friend-first default: tap a situation, see result, tap one quick feedback.
+        page.get_by_role('button',name='Mua 2 áo trắng').click()
+        assert '318.000đ' in page.locator('#tp-quick-response').inner_text()
+        page.get_by_role('button',name='👍 Dễ hiểu').click()
+        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.wait_for_function("document.querySelector('#tp-done')?.textContent==='1'",timeout=10000)
+
+        # Friend reports a problem using a short note; no AI inference/network.
+        page.get_by_role('button',name='Mua nhiều hơn tồn').click()
+        assert 'out_of_stock' in page.locator('#tp-quick-response').get_attribute('data-result')
+        page.get_by_role('button',name='💬 Cần cải thiện').click()
+        page.locator('.tp-note-box textarea').fill('Câu trả lời còn hơi khó hiểu.')
+        page.get_by_role('button',name='Gửi góp ý').click()
+        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.wait_for_function("document.querySelector('#tp-done')?.textContent==='2'",timeout=10000)
+
+        page.get_by_role('button',name='Trả giá thấp hơn').click()
+        assert page.locator('#tp-quick-response').get_attribute('data-result')=='price_mismatch'
+        page.get_by_role('button',name='Không thử được').click()
+        page.locator('#tp-quick-saved').get_by_text('Đã nhận góp ý!',exact=False).wait_for(timeout=10000)
+        page.wait_for_function("document.querySelector('#tp-done')?.textContent==='3'",timeout=10000)
+
+        # Legacy advanced QA and freeform practice must remain usable.
+        page.locator('#tp-more summary').click()
+        assert page.locator('button[data-page="practice"]').is_visible()
         page.locator('button[data-page="practice"]').click()
         page.locator('#tp-sim-sku').select_option('QA-DEMO-01')
         page.locator('#tp-sim-qty').fill('2')
@@ -77,15 +112,13 @@ def run():
         page.locator('button',has_text='Kiểm tra dữ liệu mẫu').click()
         assert 'out_of_stock' in page.locator('#tp-sim-result').inner_text()
         page.locator('button[data-page="modules"]').click()
-        page.locator('button',has_text='Xem 1 bài thử').click()
-        page.locator('button',has_text='Bắt đầu bài này').click()
+        page.locator('button',has_text='Xem 3 bài thử').click()
+        page.locator('button',has_text='Bắt đầu bài này').first.click()
         page.locator('button',has_text='Lưu kết quả tự đánh giá').click()
-        page.locator('#tp-done').wait_for(state='attached')
-        page.wait_for_function("document.querySelector('#tp-done')?.textContent==='1'",timeout=10000)
         assert not errors,errors
         assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+2')
         page.close()
-        print('PASS: approved tester local Auth stub -> Sheets practice -> price/stock -> self-report state; no external requests')
+        print('PASS: friend-first tester -> 3 scenario reports -> advanced existing practice; zero external requests')
        finally:browser.close()
     finally:
      server.shutdown();server.server_close()
