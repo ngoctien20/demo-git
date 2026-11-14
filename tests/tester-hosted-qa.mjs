@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+const origin = 'https://tien404-auth-staging.onrender.com';
+async function read(relative, expected=200) {
+  const response = await fetch(origin+relative,{redirect:'follow',cache:'no-store',signal:AbortSignal.timeout(25000)});
+  const body=await response.text();
+  assert.equal(response.status,expected,relative+' HTTP '+response.status);
+  assert.ok(body.length>40,relative+' empty response');
+  return {body,headers:response.headers};
+}
+test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
+  const checks=[
+    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','class="tp-friends"','id="tp-more"','id="tp-progress-more"','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"','data-page="practice"']],
+    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"','id="ta-request-list"','id="ta-request-count"','Sheets mẫu']],
+    ['/login.html',['id="auth-login"','Supabase']],
+    ['/account.html',['account-protected','tester.html','href="tester-request.html"']],
+    ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
+    ['/tester-request.html',['id="tr-form" class="tp-admin-form" hidden','noindex,nofollow','assets/tester-request.js']],
+    ['/assets/tester-request.js',["from('tien404_tester_requests')",'email_confirmed_at','auth.getUser()']],
+    ['/assets/auth-account.js',["verifiedScopeSignature","const check=++verificationSeq","renderGeneration=generation","Date.now()-lastChecked>300000"]],
+    ['/assets/merchant-portal.js',["const round=++verificationSeq","Date.now()-lastChecked>300000","Đang kiểm tra quyền trong nền"]],
+    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)","Một trợ lý bán hàng cho những cửa hàng nhỏ", "SHEET-SIM-004", "Đã nhận góp ý!", "state.client.auth.getUser()", "Date.now()-state.lastCheck>300000", "previousSnapshot!==nextSnapshot", "mountQaStudio(pane,{state,onSaved:()=>progress()})", "tp-quick-details"]],
+    ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
+    ['/assets/tester-qa-pack.mjs',["PRIORITY_CHECKS","SHEET-AI-REVIEW-001","reviewPrompt(results)","reportText({notes","containsSensitive(text)"]],
+    ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","self_reported:true"]],
+    ['/assets/tester-qa-writable-sandbox.mjs',["tien404_qa_sandbox_products","tien404_qa_sandbox_orders","QA_PRODUCTS_SNAPSHOT","drawQaCase","QA_CREATE_ORDER_FAILED","tien404_tester_google_sheets","tp-qa-sheet-link","tp-qa-local-details","noopener noreferrer"]],
+    ['/assets/tester-random-qa-cases.mjs',["QA_RANDOM_CASES","QA96","export function drawQaCase"]],
+    ['/assets/tester-qa-products-snapshot.mjs',["QA_PRODUCTS_SNAPSHOT","A002","159000","QA_CATALOG_SOURCE_LABEL"]],
+    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
+    ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
+    ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
+    ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step','.tp-friends .tp-intro','.tp-friends .tp-quick-choices']]
+  ];
+  for(const [path,needles] of checks){
+    const {body}=await read(path);
+    for(const needle of needles)assert.ok(body.includes(needle),path+' missing marker '+needle);
+    if(path==='/assets/tester-qa-writable-sandbox.mjs')assert.ok(!body.includes('17rjkZV_u9ye17BLimCePYC7EyZML2GlXSHfX8dFVTgM'),'Private tester workbook ID must not be in static bundle');
+    console.log('VERIFIED HTTP 200 '+path+' '+body.length+' bytes');
+    if(path==='/tester-admin.html')assert.ok(!body.includes('class="tp-friends"'),'Admin must remain unchanged');
+  }
+});
+test('Private source SQL is not served by Render static preview',async()=>{
+  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/qa/tester_portal/V12_3_AI_REVIEW_SHEETS_CASE_STAGING.sql','/qa/tester_portal/V12_4_ISOLATED_QA_PRODUCTS_ORDERS_STAGING.sql','/qa/tester_portal/V12_4_1_TESTER_GOOGLE_SHEETS_BINDING_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
+    const r=await fetch(origin+path,{redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(25000)});
+    const body=await r.text();
+    assert.notEqual(r.status,200,'private content publicly accessible at '+path);
+    assert.ok(!body.includes('CREATE TABLE public.tien404_tester_staff'),'SQL source leaked to web');
+    console.log('PRIVATE PATH NOT PUBLIC '+path+' HTTP '+r.status);
+  }
+});

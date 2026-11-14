@@ -1,0 +1,66 @@
+name: TIEN404 Private Tester Portal staging QA
+on:
+  push:
+    branches: [work/v12-2-private-tester-portal]
+    paths:
+      - 'tester*.html'
+      - 'assets/tester-*'
+      - 'tests/tester-*'
+      - 'qa/tester_portal/**'
+      - 'scripts/build-auth-preview.mjs'
+      - 'account.html'
+      - 'assets/auth-account.js'
+      - 'assets/merchant-portal.js'
+      - 'tests/auth-session-stability.test.mjs'
+      - 'tests/auth-tab-stability-browser.py'
+      - '.github/workflows/tester-portal-staging-qa.yml'
+  pull_request:
+    paths:
+      - 'tester*.html'
+      - 'assets/tester-*'
+      - 'tests/tester-*'
+      - 'qa/tester_portal/**'
+      - 'scripts/build-auth-preview.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tester-private-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax checks
+        run: |
+          node --check assets/tester-portal.js
+          node --check assets/tester-admin.js
+          node --check assets/tester-request.js
+          node --check assets/tester-report-csv.mjs
+          node --check assets/tester-sandbox.mjs
+          node --check assets/tester-qa-pack.mjs
+          node --check assets/tester-ai-studio.mjs
+          node --check assets/tester-qa-writable-sandbox.mjs
+          node --check assets/tester-random-qa-cases.mjs
+          node --check assets/tester-qa-products-snapshot.mjs
+          node --check assets/auth-client.js
+          node --check assets/auth-runtime.mjs
+      - name: Supabase Auth and Tester security contract
+        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/tester-ai-studio.test.mjs tests/tester-qa-writes-and-random.test.mjs tests/tester-qa-google-sheet-binding.test.mjs tests/auth-session-stability.test.mjs
+      - name: Build existing strict Render Auth preview
+        run: node scripts/build-auth-preview.mjs
+      - name: Verify no private files leak and old Auth remains
+        run: node --test tests/auth-preview-build.test.mjs tests/tester-portal-staging.test.mjs tests/tester-request-staging.test.mjs tests/tester-ai-studio.test.mjs
+      - name: Anonymous Chromium fail-closed UX (no credentials or external traffic)
+        run: |
+          python -m pip install playwright==1.58.0
+          python -m playwright install chromium
+          python tests/tester-portal-browser-smoke.py
+          python tests/tester-practice-auth-mock-browser.py
+          python tests/auth-tab-stability-browser.py
+      - name: Hosted HTTPS smoke (anonymous, no credentials or writes)
+        run: node --test tests/tester-hosted-qa.mjs
+      - name: Document scope
+        run: echo "Static QA only. PostgreSQL RLS tested independently. No real tester approved, emails sent, or production changes."
