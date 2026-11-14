@@ -58,7 +58,7 @@ jobs:
           python qa/notification/test_preview.py
           PYTHONPATH="$PYTHONPATH:qa/notification" python qa/shop_owned/test_postgres_bridge.py
           psql -X -v ON_ERROR_STOP=1 -c 'CREATE ROLE service_role; CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions'
-          for sql in supabase_r1_postgres_staging_candidate supabase_r1_owner_jwt_gate_candidate supabase_r1_owner_pairing_two_phase_candidate zalo_held; do
+          for sql in supabase_r1_postgres_staging_candidate supabase_r1_owner_jwt_gate_candidate supabase_r1_owner_pairing_two_phase_candidate zalo_held owner_dashboard_staging; do
             psql -X -v ON_ERROR_STOP=1 -f "qa/shop_owned/$sql.sql"
           done
           PYTHONPATH="$PYTHONPATH:qa/notification" python qa/shop_owned/test_pairing_checkout.py

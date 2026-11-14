@@ -76,3 +76,28 @@ with sync_playwright() as p:
         expect(button).to_be_disabled()
     browser.close()
 print("PASS mobile owner-confirm component with synthetic pending/paired responses")
+
+with sync_playwright() as p:
+    browser=p.chromium.launch()
+    page=browser.new_page(viewport={"width":360,"height":780})
+    page.set_content('<main lang="vi"></main>')
+    for module in ('owner-confirm','owner-pairing'):
+        source=Path(f'merchant/{module}.mjs').read_text()
+        page.add_script_tag(content='\n'.join(s for s in source.splitlines() if not s.startswith("import ")).replace('export function','function'))
+    page.evaluate("""() => {
+      let issued=false;
+      mountOwnerPairing(document.querySelector('main'),{rpc:async(name,args)=>{
+        if(name!=='qa_owner_pairing'||args.p_shop!=='a')throw Error();
+        const common={challengeId:'qa-a',bot:'qa-bot-a',expiresAt:new Date(Date.now()+300000).toISOString()};
+        if(args.p_action==='issue'){issued=true;return {data:{...common,state:'WAITING_FOR_BOT',code:'a'.repeat(32)}};}
+        if(args.p_action==='confirm')return {data:{status:'PAIRED',challengeId:'qa-a'}};
+        return {data:issued?{...common,state:'PENDING_OWNER_CONFIRMATION',recipientFingerprint:'01234567'}:{state:'NO_CURRENT_CHALLENGE'}};
+      }},{id:'a',name:'Shop A'});
+    }""")
+    page.get_by_role('button',name='Tạo mã ghép nối').click()
+    expect(page.locator('code')).to_have_text('GHÉP qa-a '+'a'*32)
+    page.get_by_role('button',name='Kiểm tra trạng thái').click()
+    expect(page.locator('code')).to_be_empty()
+    page.get_by_role('button',name='Xác nhận đúng tài khoản').click()
+    expect(page.get_by_text('Đã ghép nối.',exact=True)).to_be_visible()
+    browser.close()

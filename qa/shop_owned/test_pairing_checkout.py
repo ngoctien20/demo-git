@@ -1,5 +1,5 @@
 """Disposable PostgreSQL only. Two synthetic shops and simulated subject contexts."""
-from uuid import uuid4
+from uuid import UUID, uuid4
 from secrets import token_bytes
 from zalo_claim import claim_from_fixture
 import psycopg
@@ -27,7 +27,13 @@ with psycopg.connect("dbname=tien404_qa",autocommit=True) as db, db.transaction(
     fixture_key=token_bytes(32)
     for i,(shop,owner,route) in enumerate(shops):
         context(db,owner)
-        code_id,code=db.execute("select * from tien404_r1_qa.issue_owner_challenge(%s,%s,%s)",route).fetchone()
+        rpc="select public.qa_owner_pairing(%s,%s,%s)"
+        db.execute("set local role authenticated")
+        issued=db.execute(rpc,(shop,"issue",None)).fetchone()[0]
+        code_id,code=issued["challengeId"],issued["code"]
+        waiting=db.execute(rpc,(shop,"status",code_id)).fetchone()[0]
+        assert waiting["state"]=="WAITING_FOR_BOT" and "code" not in waiting
+        db.execute("reset role")
         other=shops[1-i]
         event={"stage":"READ_ONLY","accepted":True,"eventName":"message.text.received",
                "chatType":"PRIVATE","chatId":"qa-chat","messageId":"qa-mid","text":f"GHÉP {code_id} {code}"}
@@ -40,7 +46,11 @@ with psycopg.connect("dbname=tien404_qa",autocommit=True) as db, db.transaction(
         context(db,other[1])
         assert db.execute(accept,(*route,code_id)).fetchone()==(False,)
         context(db,owner)
-        assert db.execute(accept,(*route,code_id)).fetchone()==(True,)
+        db.execute("set local role authenticated")
+        pending=db.execute(rpc,(shop,"status",code_id)).fetchone()[0]
+        assert pending["state"]=="PENDING_OWNER_CONFIRMATION" and len(pending["recipientFingerprint"])==12
+        assert db.execute(rpc,(shop,"confirm",code_id)).fetchone()[0]=={"status":"PAIRED","challengeId":code_id}
+        db.execute("reset role")
         assert db.execute(accept,(*route,code_id)).fetchone()==(False,)
         token,_=preview(db,shop,owner,"customer",{"F01":2},"preview-1")
         order=confirm(db,shop,owner,"customer",token,True)
@@ -49,7 +59,7 @@ with psycopg.connect("dbname=tien404_qa",autocommit=True) as db, db.transaction(
             return db.execute("""select o.status,o.destination_id,o.attempts from notification_private.notification_outbox o
               join notification_private.notification_events e on (e.tenant_id,e.id)=(o.tenant_id,o.event_id)
               where e.tenant_id=%s and e.order_id=%s and o.channel='zalo_bot'""",(shop,order)).fetchall()
-        assert notices()==[("held",code_id,0)]
+        assert notices()==[("held",UUID(code_id),0)]
         assert db.execute("select * from notification_private.claim('zalo_bot')").fetchall()==[]
         db.execute("update tien404_r1_qa.owner_bindings set status='revoked' where bot_key=%s",(route[2],))
         token,_=preview(db,shop,owner,"customer",{"F01":1},"preview-2")

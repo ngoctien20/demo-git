@@ -22,7 +22,8 @@ CREATE OR REPLACE FUNCTION tien404_r1_qa.owner_authorized_qa(p_tenant_key text, 
  SET search_path TO 'pg_catalog', 'public', 'auth', 'tien404_r1_qa'
 AS $function$
  select coalesce(
-   current_setting('request.jwt.claim.role',true)='authenticated'
+   coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role',
+            current_setting('request.jwt.claim.role',true))='authenticated'
    and auth.uid() is not null
    and exists(
      select 1 from tien404_r1_qa.tenant_identity_map m
