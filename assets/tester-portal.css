@@ -33,3 +33,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{
 .tp-guide-description{font-size:13px;color:#c2d1e3}
 .tp-guide-step:has(input:checked){border-color:#5eb89d;background:#16332f}
 @media(max-width:700px){.tp-guide-step{padding:11px;gap:9px}}
+
+/* V12.2 gated application request: no public signup on staging. */
+.tp-request-layout{width:min(100% - 32px,920px);margin:clamp(20px,5vw,52px) auto;display:grid;gap:18px}
+.tp-request-layout h1{font-size:clamp(25px,4vw,34px);margin:6px 0 12px}
+.tp-request-layout .tp-card p{overflow-wrap:anywhere}
+.tp-request-state{border-top:1px solid var(--line);margin-top:18px;padding-top:15px}
+.tp-request-full{grid-column:1/-1}
+.tp-request-state h2{font-size:17px;margin:0 0 10px}
+.tp-request-state .tp-button{margin-top:12px}
+@media(max-width:700px){.tp-request-layout{width:calc(100% - 24px);margin:18px auto}.tp-request-layout .tp-card{padding:17px}}
