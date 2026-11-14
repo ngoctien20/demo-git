@@ -23,7 +23,7 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
     ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)","Một trợ lý bán hàng cho những cửa hàng nhỏ", "SHEET-SIM-004", "Đã nhận góp ý!", "state.client.auth.getUser()", "Date.now()-state.lastCheck>300000", "previousSnapshot!==nextSnapshot", "mountQaStudio(pane,{state,onSaved:()=>progress()})", "tp-quick-details"]],
     ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
     ['/assets/tester-qa-pack.mjs',["PRIORITY_CHECKS","SHEET-AI-REVIEW-001","reviewPrompt(results)","reportText({notes","containsSensitive(text)"]],
-    ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","UNVERIFIED"]],
+    ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","self_reported:true"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
