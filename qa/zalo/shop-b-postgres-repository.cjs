@@ -8,7 +8,7 @@ const bad=(reason)=>{const e=new Error(reason);e.code=reason;throw e;};
 const asMillis=(date)=>date instanceof Date?date.getTime():Date.parse(date);
 const int=(x)=>Number.isSafeInteger(x)||typeof x==='string'&&/^\d+$/.test(x);
 const sql=Object.freeze({
-  binding: \`SELECT b.status,b.expires_at,b.confirmed_challenge_id,b.recipient_ref,c.status AS claim_status,
+  binding: `SELECT b.status,b.expires_at,b.confirmed_challenge_id,b.recipient_ref,c.status AS claim_status,
     c.recipient_ref AS claim_recipient_ref,s.enabled_mode,s.identity_status
     FROM tien404_r1_qa.owner_bindings b
     JOIN tien404_r1_qa.owner_pairing_claims_v3 c ON
@@ -16,25 +16,25 @@ const sql=Object.freeze({
       (c.tenant_key,c.store_key,c.bot_key,c.challenge_id)
     JOIN tien404_r1_qa.shop_bots s ON
       (s.tenant_key,s.store_key,s.bot_key)=(b.tenant_key,b.store_key,b.bot_key)
-    WHERE (b.tenant_key,b.store_key,b.bot_key)=($1,$2,$3) FOR SHARE OF b,c,s\`,
-  insertSession: \`INSERT INTO \${PREFIX}.shop_b_sessions
+    WHERE (b.tenant_key,b.store_key,b.bot_key)=($1,$2,$3) FOR SHARE OF b,c,s`,
+  insertSession: `INSERT INTO ${PREFIX}.shop_b_sessions
     (scope_key,tenant_key,store_key,bot_key,binding_fingerprint,expires_at)
     VALUES ($1,$2,$3,$4,$5,$6)
-    ON CONFLICT(scope_key) DO NOTHING\`,
-  getSession: \`SELECT * FROM \${PREFIX}.shop_b_sessions
-    WHERE scope_key=$1 FOR UPDATE\`,
-  catalog: \`SELECT tenant_key,store_key,bot_key,sku,product_name,price_vnd,stock
+    ON CONFLICT(scope_key) DO NOTHING`,
+  getSession: `SELECT * FROM ${PREFIX}.shop_b_sessions
+    WHERE scope_key=$1 FOR UPDATE`,
+  catalog: `SELECT tenant_key,store_key,bot_key,sku,product_name,price_vnd,stock
     FROM tien404_r1_qa.catalog
-    WHERE (tenant_key,store_key,bot_key,sku)=($1,$2,$3,$4) FOR SHARE\`,
-  receiptExists: \`SELECT 1 FROM \${PREFIX}.shop_b_receipts
-    WHERE scope_key=$1 AND event_hash=$2 LIMIT 1\`,
-  updateSession: \`UPDATE \${PREFIX}.shop_b_sessions SET phase=$2,sku=$3,quantity=$4,
+    WHERE (tenant_key,store_key,bot_key,sku)=($1,$2,$3,$4) FOR SHARE`,
+  receiptExists: `SELECT 1 FROM ${PREFIX}.shop_b_receipts
+    WHERE scope_key=$1 AND event_hash=$2 LIMIT 1`,
+  updateSession: `UPDATE ${PREFIX}.shop_b_sessions SET phase=$2,sku=$3,quantity=$4,
     expected_total_vnd=$5,confirmation_hash=$6,quote_expires_at=$7,
     order_key=$8,idempotency_key=$9,session_ref=$10,expires_at=$11,
     revision=revision+1,updated_at=now()
-    WHERE scope_key=$1 AND revision=$12 RETURNING revision\`,
-  writeReceipt: \`INSERT INTO \${PREFIX}.shop_b_receipts(scope_key,event_hash)
-    VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING event_hash\`
+    WHERE scope_key=$1 AND revision=$12 RETURNING revision`,
+  writeReceipt: `INSERT INTO ${PREFIX}.shop_b_receipts(scope_key,event_hash)
+    VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING event_hash`
 });
 function makePostgresQARepository({pool,owner,clock=Date.now}){
   if(!pool||typeof pool.connect!=='function')bad('PG_POOL_REQUIRED');
