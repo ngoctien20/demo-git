@@ -11,15 +11,16 @@ async function read(relative, expected=200) {
 }
 test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   const checks=[
-    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"']],
-    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"','id="ta-request-list"','id="ta-request-count"']],
+    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"','data-page="practice"']],
+    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"','id="ta-request-list"','id="ta-request-count"','Sheets mẫu']],
     ['/login.html',['id="auth-login"','Supabase']],
     ['/account.html',['account-protected','tester.html','href="tester-request.html"']],
     ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
     ['/tester-request.html',['id="tr-form" class="tp-admin-form" hidden','noindex,nofollow','assets/tester-request.js']],
     ['/assets/tester-request.js',["from('tien404_tester_requests')",'email_confirmed_at','auth.getUser()']],
-    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()"]],
-    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)"]],
+    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)"]],
+    ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
+    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
     ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step']]
