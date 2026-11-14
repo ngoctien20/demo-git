@@ -248,3 +248,46 @@ test('A failed explicit switch can retry its exact same event before a later tur
   fail=false;assert.equal((await f.core.preview(e)).status,'PRODUCT_QA_PREVIEW');
   assert.equal((await f.core.preview(e)).status,'DUPLICATE_BLOCKED');
 });
+
+
+test('Disposable PostgreSQL retention deletes only expired synthetic sessions in bounded batches',async()=>{
+  const {createQaRetentionMaintenance}=require('./retention.cjs');
+  const scope=['qa-tenant-a','qa-store-a','qa-fixture','qa-bot-a'];
+  const actors=['d'.repeat(64),'e'.repeat(64),'f'.repeat(64)];
+  const add=async(hash,when)=>admin.query(`INSERT INTO tien404_customer_core_qa.sessions
+    (tenant_key,store_key,channel,bot_key,actor_hash,expires_at)
+    VALUES ($1,$2,$3,$4,$5,clock_timestamp()+$6::interval)`,
+    [...scope,hash,when]);
+  await add(actors[0],'-48 hours');
+  await add(actors[1],'-47 hours');
+  await add(actors[2],'+20 minutes');
+  const receipt=async(actor,hash,interval)=>admin.query(`INSERT INTO tien404_customer_core_qa.receipts
+    (tenant_key,store_key,channel,bot_key,actor_hash,receipt_hash,expires_at)
+    VALUES ($1,$2,$3,$4,$5,$6,clock_timestamp()+$7::interval)`,
+    [...scope,actor,hash,interval]);
+  await receipt(actors[0],'1'.repeat(64),'-47 hours');
+  await receipt(actors[2],'2'.repeat(64),'-36 hours');
+  await receipt(actors[2],'3'.repeat(64),'+20 minutes');
+  const manager=createQaRetentionMaintenance({pool:admin,batchSize:1,sessionRetentionMs:86400000});
+  const before=await manager.inspect();
+  assert.ok(before.staleSessions>=2);
+  assert.ok(before.staleReceipts>=2);
+  assert.equal(before.mode,'READ_ONLY_RETENTION_INSPECTION');
+  const first=await manager.sweepDisposableQaOnly(),second=await manager.sweepDisposableQaOnly();
+  assert.equal(first.mode,'DISPOSABLE_PG_QA_ONLY');
+  assert.equal(first.deletedSessions,1);assert.equal(second.deletedSessions,1);
+  for(const x of [first,second]){
+    assert.ok(x.deletedSessions<=1&&x.deletedReceipts<=1);
+    assert.equal(x.didCallModel,false);assert.equal(x.didSendChannel,false);
+    assert.ok(!JSON.stringify(x).includes('actorHash'));
+  }
+  const old=await admin.query(`SELECT actor_hash FROM tien404_customer_core_qa.sessions
+    WHERE tenant_key=$1 AND store_key=$2 AND actor_hash=ANY($3)`,[scope[0],scope[1],actors]);
+  assert.deepEqual(old.rows.map(x=>x.actor_hash),[actors[2]]);
+  const receiptRows=await admin.query(`SELECT receipt_hash FROM tien404_customer_core_qa.receipts
+    WHERE actor_hash=$1 ORDER BY receipt_hash`,[actors[2]]);
+  assert.deepEqual(receiptRows.rows.map(x=>x.receipt_hash),['3'.repeat(64)]);
+  const third=await manager.sweepDisposableQaOnly();
+  assert.equal(third.deletedSessions,0);
+  assert.equal(third.deletedReceipts,0);
+});
