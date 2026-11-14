@@ -1,6 +1,6 @@
 /* TIEN404 V12.2: staged permission request for EXISTING, verified Auth users.
  * A request never creates Auth users, access grants, module assignments or provider sends.
- * DB RLS is the final authority. No credentials, service_role or direct admin calls.
+ * DB RLS is the final authority. No credentials or direct admin calls.
  */
 import {getAuthClient} from './auth-client.js';
 import {withDeadline} from './auth-runtime.mjs';
