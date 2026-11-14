@@ -13,6 +13,7 @@ export function mountOwnerPairing(root, client, shop) {
   command.style.overflowWrap = 'anywhere';
   section.append(heading, status, command, actions, confirmation);
   root.append(section);
+  const channelNotice = 'Bot Zalo chưa được kết nối để nhận mã ghép. Bạn chưa cần gửi mã.';
   let generation = 0;
   let timer;
   let challengeId = null;
@@ -44,7 +45,7 @@ export function mountOwnerPairing(root, client, shop) {
         clearTimeout(timer);
         challengeId = null;
         command.textContent = '';
-        status.textContent = reply.state === 'CLOSED' ? 'Yêu cầu đã đóng.' : 'Chưa có mã đang dùng.';
+        status.textContent = (reply.state === 'CLOSED' ? 'Yêu cầu đã đóng. ' : 'Chưa có mã đang dùng. ') + channelNotice;
         button('Tạo mã ghép nối', 'issue');
         return;
       }
@@ -56,7 +57,7 @@ export function mountOwnerPairing(root, client, shop) {
         command.textContent = '';
         confirmation.replaceChildren();
         actions.replaceChildren();
-        status.textContent = 'Mã ghép nối đã hết hạn.';
+        status.textContent = 'Mã ghép nối đã hết hạn. ' + channelNotice;
         if (attached()) button('Kiểm tra lại', 'status');
       }, Math.min(expires - Date.now(), 300000));
       if (reply.state === 'PENDING_OWNER_CONFIRMATION') {
@@ -69,8 +70,7 @@ export function mountOwnerPairing(root, client, shop) {
         if (action === 'issue' && /^[0-9a-f]{32}$/.test(reply.code)) {
           command.textContent = 'GHÉP ' + challengeId + ' ' + reply.code;
         }
-        status.textContent = command.textContent ? 'Mã thử nghiệm có hiệu lực 5 phút. Kênh nhận mã Zalo đang chờ kết nối.' :
-          'Đang chờ Bot nhận mã. Mã chỉ hiển thị khi tạo.';
+        status.textContent = (command.textContent ? 'Đã tạo mã thử nghiệm có hiệu lực 5 phút. ' : '') + channelNotice;
       } else throw Error();
       button('Kiểm tra trạng thái', 'status');
     } catch {

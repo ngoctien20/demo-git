@@ -99,6 +99,25 @@ Thread(target=server.serve_forever, daemon=True).start()
 origin = f'http://127.0.0.1:{server.server_port}'
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch()
+    pairing = browser.new_page()
+    pairing.route('**/qa-pairing', lambda route: route.fulfill(content_type='text/html', body='<main></main>'))
+    pairing.goto(origin+'/qa-pairing')
+    pairing.evaluate("""async () => {
+      const {mountOwnerPairing} = await import('/assets/owner-pairing.mjs');
+      window.qaState = 'WAITING_FOR_BOT';
+      mountOwnerPairing(document.querySelector('main'), {rpc: async () => ({data: {
+        state: window.qaState, challengeId: 'qa-id', expiresAt: new Date(Date.now()+300000).toISOString(),
+        bot: 'QA Bot', recipientFingerprint: '1234abcd'
+      }})}, {id:'qa-shop', name:'QA Shop'});
+    }""")
+    pairing.get_by_role('button', name='Kiểm tra trạng thái').click()
+    expect(pairing.get_by_role('status')).to_contain_text('Bạn chưa cần gửi mã.')
+    confirm = pairing.get_by_role('button', name='Xác nhận đúng tài khoản')
+    expect(confirm).to_have_count(0)
+    pairing.evaluate("window.qaState='PENDING_OWNER_CONFIRMATION'")
+    pairing.get_by_role('button', name='Kiểm tra trạng thái').click()
+    expect(confirm).to_be_visible()
+    pairing.close()
     page = browser.new_page(viewport={'width':360,'height':780},
                             is_mobile=True,has_touch=True,color_scheme='dark')
     offline = browser.new_page()
