@@ -45,16 +45,16 @@ CREATE POLICY qa_b_receipts_insert ON tien404_dialogue_private.shop_b_receipts
 
 CREATE POLICY qa_b_catalog_select ON tien404_r1_qa.catalog
   FOR SELECT TO tien404_shop_b_qa_backend
-  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b');
+  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b' AND sku='F01');
 CREATE POLICY qa_b_owner_bindings_select ON tien404_r1_qa.owner_bindings
   FOR SELECT TO tien404_shop_b_qa_backend
-  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b');
+  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b' AND status='paired' AND expires_at>now());
 CREATE POLICY qa_b_owner_claims_select ON tien404_r1_qa.owner_pairing_claims_v3
   FOR SELECT TO tien404_shop_b_qa_backend
-  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b');
+  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b' AND status='CONFIRMED');
 CREATE POLICY qa_b_shop_bots_select ON tien404_r1_qa.shop_bots
   FOR SELECT TO tien404_shop_b_qa_backend
-  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b');
+  USING (tenant_key='qa-tenant-b' AND store_key='qa-store-b' AND bot_key='qa-bot-b' AND enabled_mode='dry_run' AND identity_status='synthetic_qa');
 
 -- BACKEND LOGIN CREATION IS A SEPARATE STEP, ONLY AFTER VERIFIED BACKUP.
 -- Keep the intended server login password exclusively in an approved Secret Manager.
