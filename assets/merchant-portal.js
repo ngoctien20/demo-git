@@ -7,6 +7,7 @@ import {approvedMemberships,scopedTenantDisplay} from './auth-helpers.mjs';
 import {withDeadline} from './auth-runtime.mjs';
 import {addMerchantList} from './merchant-lists.mjs';
 import {mountRevenuePanel} from './merchant-revenue-v3.mjs';
+import {mayOpenPanel,selectAuthorizedShop} from './merchant-portal-policy.mjs';
 
 const byId=id=>document.getElementById(id);
 const message=byId('merchant-status');
@@ -32,7 +33,6 @@ const headings={
   help:['Hỗ trợ TIEN404','Hướng dẫn sử dụng và yêu cầu trợ giúp về nền tảng.'],
   settings:['Tài khoản & bảo mật','Xem tài khoản đã xác thực và quản lý phiên đăng nhập.']
 };
-const managersOnly=new Set(['orders','customers','care','bots','reports']);
 const publicBase='https://ngoctien20.github.io/demo-git/';
 let client=null;
 let authEpoch=0, panelEpoch=0, lastChecked=0;
@@ -41,7 +41,7 @@ let cleanup=null;
 const verifiedRoles=new Set(['owner','manager']);
 const status=(text,tone='info')=>{message.textContent=text;message.dataset.tone=tone};
 const isManager=()=>selected && verifiedRoles.has(selected.role);
-const allowedView=view=>Object.hasOwn(headings,view)&&(!managersOnly.has(view)||isManager());
+const allowedView=view=>mayOpenPanel(selected?.role,view);
 function clearPanel(){ panelEpoch++;cleanup?.();cleanup=null;panel.replaceChildren(); }
 function lock(text){
   authEpoch++;clearPanel();shops=[];selected=null;currentUser=null;
@@ -172,8 +172,9 @@ function showPanel(view,focus=false) {
   if(focus)byId('merchant-content').focus();
 }
 function setShop(shop){
-  if(!shops.some(t=>t.id===shop.id))return;
-  selected=shop;
+  const verified=selectAuthorizedShop(shops,shop?.id);
+  if(!verified)return;
+  selected=verified;
   selector.value=shop.id;
   if(!allowedView(currentPanel))currentPanel='overview';
   showPanel(currentPanel);
