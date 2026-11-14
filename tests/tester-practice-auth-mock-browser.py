@@ -55,7 +55,7 @@ class Query{
 export async function getAuthClient(){
  return {
   auth:{getUser:async()=>{window.__qaUserReads++;return {data:{user:{id:uid,email:'qa@example.test',email_confirmed_at:'2026-11-14T00:00:00Z'}},error:null}},
-  onAuthStateChange:(cb)=>{callbacks.push(cb);return {data:{subscription:{unsubscribe(){}}}}},
+  onAuthStateChange:(cb)=>{callbacks.push(cb);return {data:{subscription:{unsubscribe(){}}}}}},
   from:(name)=>new Query(name)
  };
 }
