@@ -15,8 +15,10 @@ const put=(message,kind='info')=>{status.textContent=message;status.dataset.stat
 
 let sb=null;
 let generation=0;
+let verificationSeq=0;
 let lastChecked=0;
 let verifiedUserId=null;
+let verifiedScopeSignature=null;
 let busy=false;
 let removePairing;
 const qaPairingShops=new Set(['9c8c524c-88db-4771-8ab0-a4316298494c','4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5']);
@@ -161,53 +163,70 @@ function addMerchantOverview(card, tenant, viewGeneration) {
 const revalidate=async()=>{
   if(!sb || busy)return;
   busy=true;
-  const current=++generation;
+  const current=generation;
+  const check=++verificationSeq;
   lastChecked=Date.now();
   refreshButton.disabled=true;
-  resetView();
-  loginLink.hidden=true;
-  put('Đang xác minh phiên và quyền thành viên cửa hàng...');
+  // Keep a verified workspace mounted while a silent permissions recheck runs.
+  // Supabase RLS still authorizes EVERY data request and privileged action.
+  const hadWorkspace=!protectedContent.hidden && !!verifiedUserId;
+  if(!hadWorkspace) loginLink.hidden=true;
+  put(hadWorkspace?'Đang kiểm tra quyền trong nền; bạn có thể tiếp tục xem trang.':'Đang xác minh phiên và quyền thành viên cửa hàng...');
   try{
     const {data,error}=await withDeadline(sb.auth.getUser(),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(error||!data?.user?.id){
-      verifiedUserId=null;
+      verifiedUserId=null;verifiedScopeSignature=null;
       requireLogin('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
       return;
     }
     const user=data.user;
-    verifiedUserId=user.id;
+    if(hadWorkspace && verifiedUserId!==user.id){
+      // Identity switches must clear the previous account data immediately.
+      resetView();verifiedScopeSignature=null;
+    }
     // Authorization remains in database: the extra filter is only defensive.
     const membershipResponse=await withDeadline(sb.from('tenant_memberships')
       .select('tenant_id,user_id,role,active')
       .eq('user_id',user.id).eq('active',true).limit(50),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(membershipResponse.error){
-      resetView();
+      resetView();verifiedScopeSignature=null;
       put('Không xác minh được quyền cửa hàng. Mọi dữ liệu riêng vẫn bị khóa.','error');
       return;
     }
     const memberships=approvedMemberships(membershipResponse.data,user.id);
     if(!memberships.length){
-      resetView();
+      resetView();verifiedScopeSignature=null;
       put('Đăng nhập hợp lệ nhưng chưa có quyền cửa hàng. Vui lòng liên hệ quản trị viên.','info');
       return;
     }
     const ids=memberships.map(m=>m.tenant_id);
     const tenantsResponse=await withDeadline(sb.from('tenants')
       .select('id,name').in('id',ids).limit(50),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(tenantsResponse.error){
-      resetView();
+      resetView();verifiedScopeSignature=null;
       put('Chưa xác minh được danh sách cửa hàng. Không hiển thị dữ liệu.','error');
       return;
     }
     const allowed=scopedTenantDisplay(memberships,tenantsResponse.data);
     if(!allowed.length){
-      resetView();
+      resetView();verifiedScopeSignature=null;
       put('Không có cửa hàng nào xác minh được quyền truy cập.','error');
       return;
     }
+    const scopeSignature=JSON.stringify(allowed.map(t=>[t.id,t.role,t.name]).sort((a,b)=>a[0].localeCompare(b[0])));
+    if(hadWorkspace && user.id===verifiedUserId && scopeSignature===verifiedScopeSignature){
+      // Do not destroy selected shop, form inputs, scroll or pending UI just for focus/refreshed token.
+      put('Phiên và quyền cửa hàng vẫn hợp lệ.','ok');
+      return;
+    }
+    generation++;
+    const renderGeneration=generation;
+    resetView();
+    verifiedUserId=user.id;
+    verifiedScopeSignature=scopeSignature;
     emailNode.textContent=user.email||'Tài khoản đã xác thực';
     const workspace=document.createElement('div');
     function openTenant(t) {
@@ -224,11 +243,11 @@ const revalidate=async()=>{
       note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
       if (t.role==='owner' && qaPairingShops.has(t.id)) removePairing=mountOwnerPairing(card,sb,t);
-      addMerchantOverview(card, t, current);
-      const context = {client:sb, tenantId:t.id, current:()=>current===generation};
+      addMerchantOverview(card, t, renderGeneration);
+      const context = {client:sb, tenantId:t.id, current:()=>renderGeneration===generation};
       addMerchantList(card,'products',context);
       if (['owner','manager'].includes(t.role)) {
-        addPaidOrderReport(card,t,current);
+        addPaidOrderReport(card,t,renderGeneration);
         mountRevenuePanel(card,sb,t.id);
         if (PRODUCT_EDITOR_ENABLED) addProductEditor(card,t.id,sb,context.current);
         for (const table of ['orders','customers','conversations','tenant_agent_configs']) addMerchantList(card,table,context);
@@ -242,7 +261,7 @@ const revalidate=async()=>{
       for (const t of allowed) picker.add(new Option(t.name,t.id));
       picker.addEventListener('change',()=>{
         const selected=allowed.find(t=>t.id===picker.value);
-        if (current===generation && selected) openTenant(selected);
+        if (renderGeneration===generation && selected) openTenant(selected);
       });
       label.append(picker);
       cards.append(label);
@@ -252,12 +271,12 @@ const revalidate=async()=>{
     protectedContent.hidden=false;
     put('Xác minh phiên và quyền truy cập thành công. Chọn dữ liệu cần xem.','ok');
   }catch{
-    if(current===generation){
-      resetView();
+    if(current===generation && check===verificationSeq){
+      resetView();verifiedScopeSignature=null;
       put('Không kết nối được hệ thống xác thực. Dữ liệu đã được khóa.','error');
     }
   }finally{
-    if(current===generation){busy=false;refreshButton.disabled=false}
+    if(check===verificationSeq){busy=false;refreshButton.disabled=false}
   }
 };
 
@@ -266,20 +285,23 @@ try{
   window.dispatchEvent(new Event('tien404:auth-ready'));
   sb.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
-      verifiedUserId=null;
+      verifiedUserId=null;verifiedScopeSignature=null;
       refreshButton.disabled=false;
-      generation++;
+      generation++;verificationSeq++;
       busy=false;
-      resetView();
       requireLogin('Đã đăng xuất khỏi tài khoản.');
-    }else if(event==='TOKEN_REFRESHED' || (event==='SIGNED_IN' && session?.user?.id!==verifiedUserId)){
-      // Re-check role and membership after token refresh; never trust cached role.
-      const next=++generation;
-      busy=false;
-      resetView();
-      // Run after the SDK releases its auth event lock.
-      setTimeout(()=>{if(next===generation) revalidate()},0);
+    } else if(event==='SIGNED_IN' && session?.user?.id && session.user.id!==verifiedUserId){
+      // A different identity must clear previous data; re-login after SIGNED_OUT must also work.
+      if(verifiedUserId){
+        generation++;verificationSeq++;busy=false;verifiedUserId=null;verifiedScopeSignature=null;
+        resetView();loginLink.hidden=true;
+      }
+      setTimeout(()=>revalidate(),0);
+    } else if(event==='USER_UPDATED'){
+      // Profile/claim refresh can change permissions; recheck silently.
+      setTimeout(()=>revalidate(),0);
     }
+    // TOKEN_REFRESHED and same-user SIGNED_IN are normal SDK events: no UI reset.
   });
   await revalidate();
 }catch{
@@ -288,7 +310,7 @@ try{
 }
 refreshButton?.addEventListener('click',revalidate);
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible' && Date.now()-lastChecked>30000){
+  if(document.visibilityState==='visible' && Date.now()-lastChecked>300000){
     revalidate();
   }
 });
@@ -296,6 +318,7 @@ logout?.addEventListener('click',async()=>{
   if(!sb){requireLogin('Không có phiên hợp lệ.');return}
   logout.disabled=true;
   generation++;
+  verifiedUserId=null;verifiedScopeSignature=null;
   resetView();
   put('Đang đăng xuất...');
   try{

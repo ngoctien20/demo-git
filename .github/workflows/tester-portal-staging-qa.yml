@@ -9,6 +9,10 @@ on:
       - 'qa/tester_portal/**'
       - 'scripts/build-auth-preview.mjs'
       - 'account.html'
+      - 'assets/auth-account.js'
+      - 'assets/merchant-portal.js'
+      - 'tests/auth-session-stability.test.mjs'
+      - 'tests/auth-tab-stability-browser.py'
       - '.github/workflows/tester-portal-staging-qa.yml'
   pull_request:
     paths:
@@ -39,7 +43,7 @@ jobs:
           node --check assets/auth-client.js
           node --check assets/auth-runtime.mjs
       - name: Supabase Auth and Tester security contract
-        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs
+        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/auth-session-stability.test.mjs
       - name: Build existing strict Render Auth preview
         run: node scripts/build-auth-preview.mjs
       - name: Verify no private files leak and old Auth remains
@@ -50,6 +54,7 @@ jobs:
           python -m playwright install chromium
           python tests/tester-portal-browser-smoke.py
           python tests/tester-practice-auth-mock-browser.py
+          python tests/auth-tab-stability-browser.py
       - name: Hosted HTTPS smoke (anonymous, no credentials or writes)
         run: node --test tests/tester-hosted-qa.mjs
       - name: Document scope

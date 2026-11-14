@@ -35,7 +35,7 @@ const headings={
 };
 const publicBase='https://ngoctien20.github.io/demo-git/';
 let client=null;
-let authEpoch=0, panelEpoch=0, lastChecked=0;
+let authEpoch=0, panelEpoch=0, lastChecked=0, verificationSeq=0;
 let currentUser=null, shops=[], selected=null, currentPanel='overview';
 let cleanup=null;
 const verifiedRoles=new Set(['owner','manager']);
@@ -44,7 +44,7 @@ const isManager=()=>selected && verifiedRoles.has(selected.role);
 const allowedView=view=>mayOpenPanel(selected?.role,view);
 function clearPanel(){ panelEpoch++;cleanup?.();cleanup=null;panel.replaceChildren(); }
 function lock(text){
-  authEpoch++;clearPanel();shops=[];selected=null;currentUser=null;
+  authEpoch++;verificationSeq++;clearPanel();shops=[];selected=null;currentUser=null;
   selector.replaceChildren();roleNode.textContent='';
   protectedBox.hidden=true;locked.hidden=false;
   status(text,'error');
@@ -181,30 +181,40 @@ function setShop(shop){
 }
 async function revalidate(){
   if(!client){lock('Dịch vụ xác thực chưa sẵn sàng.');return;}
-  const round=++authEpoch;lastChecked=Date.now();clearPanel();
-  protectedBox.hidden=true;locked.hidden=true;
-  status('Đang kiểm tra phiên và quyền cửa hàng…');
+  const round=++verificationSeq;lastChecked=Date.now();
+  const hadWorkspace=!protectedBox.hidden && !!currentUser?.id;
+  // A valid session can refresh silently; never clear tenant panels before checking.
+  if(!hadWorkspace){clearPanel();protectedBox.hidden=true;locked.hidden=true;}
+  status(hadWorkspace?'Đang kiểm tra quyền trong nền…':'Đang kiểm tra phiên và quyền cửa hàng…');
   refreshButton.disabled=true;
   try {
     const userResult=await withDeadline(client.auth.getUser(),13000);
-    if(round!==authEpoch)return;
+    if(round!==verificationSeq)return;
     const user=userResult.data?.user;
     if(userResult.error||!user?.id){lock('Không có phiên đăng nhập hợp lệ. Hãy đăng nhập để tiếp tục.');return;}
     const membership=await withDeadline(client.from('tenant_memberships')
       .select('tenant_id,user_id,role,active').eq('user_id',user.id)
       .eq('active',true).limit(50),13000);
-    if(round!==authEpoch)return;
+    if(round!==verificationSeq)return;
     if(membership.error){lock('Không thể xác minh quyền cửa hàng. Dữ liệu riêng vẫn bị khóa.');return;}
     const accepted=approvedMemberships(membership.data,user.id);
     if(!accepted.length){lock('Tài khoản đã xác thực nhưng chưa được cấp quyền cửa hàng.');return;}
     const tenantIds=accepted.map(m=>m.tenant_id);
     const response=await withDeadline(client.from('tenants').select('id,name')
       .in('id',tenantIds).limit(50),13000);
-    if(round!==authEpoch)return;
+    if(round!==verificationSeq)return;
     if(response.error){lock('Không đọc được danh sách cửa hàng đã cấp quyền.');return;}
     const allowed=scopedTenantDisplay(accepted,response.data);
     if(!allowed.length){lock('Không có cửa hàng nào được cấp quyền hợp lệ.');return;}
-    const oldShop=selected?.id;
+    if(hadWorkspace && currentUser?.id===user.id &&
+       JSON.stringify(shops.map(t=>[t.id,t.name,t.role]).sort((a,b)=>a[0].localeCompare(b[0])))===
+       JSON.stringify(allowed.map(t=>[t.id,t.name,t.role]).sort((a,b)=>a[0].localeCompare(b[0])))){
+      // Selected shop, current dashboard tab, scroll and edit form remain untouched.
+      status('Phiên và quyền cửa hàng vẫn hợp lệ.','ok');
+      return;
+    }
+    const oldShop=currentUser?.id===user.id?selected?.id:null;
+    authEpoch++;clearPanel();
     shops=allowed;currentUser=user;
     selector.replaceChildren();
     for(const s of shops)selector.add(new Option(s.name,s.id));
@@ -241,18 +251,22 @@ logoutButton.addEventListener('click',async()=>{
   }
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&Date.now()-lastChecked>30000)revalidate();
+  if(document.visibilityState==='visible'&&Date.now()-lastChecked>300000)revalidate();
 });
 try {
   client=await withDeadline(getAuthClient(),20500);
   client.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
       lock('Đã đăng xuất. Vui lòng đăng nhập lại.');
-    } else if(event==='TOKEN_REFRESHED'||event==='USER_UPDATED'||
-      (event==='SIGNED_IN'&&currentUser?.id!==session?.user?.id)){
-      // Auth state callbacks should not perform awaited DB calls inside the SDK lock.
+    } else if(event==='SIGNED_IN' && session?.user?.id && currentUser?.id!==session.user.id){
+      // Account changed, or a new login followed a sign-out.
+      if(currentUser?.id)lock('Đang xác minh tài khoản mới…');
+      setTimeout(()=>revalidate(),0);
+    } else if(event==='USER_UPDATED'){
       setTimeout(()=>revalidate(),0);
     }
+    // TOKEN_REFRESHED / same-user SIGNED_IN: Supabase SDK refreshes the token;
+    // the RLS-protected server still enforces tenant authorization.
   });
   await revalidate();
 }catch{

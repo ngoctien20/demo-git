@@ -12,6 +12,11 @@ ROOT=Path(__file__).resolve().parent.parent/'auth-preview-dist'
 STUB=r"""
 const uid='22222222-2222-4222-8222-222222222222';
 const results=[];
+const callbacks=[];
+window.__qaUserReads=0;
+window.__qaEmitAuth=(event,session)=>callbacks.forEach(cb=>cb(event,session));
+window.__qaRevokeTester=()=>{tables.tien404_tester_access[0].access_status='revoked'};
+
 const tables={
  tien404_tester_access:[{user_id:uid,access_status:'approved',expires_at:'2027-01-01T00:00:00Z'}],
  tien404_tester_staff:[],
@@ -49,8 +54,8 @@ class Query{
 }
 export async function getAuthClient(){
  return {
-  auth:{getUser:async()=>({data:{user:{id:uid,email:'qa@example.test',email_confirmed_at:'2026-11-14T00:00:00Z'}},error:null}),
-  onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},
+  auth:{getUser:async()=>{window.__qaUserReads++;return {data:{user:{id:uid,email:'qa@example.test',email_confirmed_at:'2026-11-14T00:00:00Z'}},error:null}},
+  onAuthStateChange:(cb)=>{callbacks.push(cb);return {data:{subscription:{unsubscribe(){}}}}}},
   from:(name)=>new Query(name)
  };
 }
@@ -91,6 +96,19 @@ def run():
         assert 'out_of_stock' in page.locator('#tp-quick-response').get_attribute('data-result')
         page.get_by_role('button',name='💬 Cần cải thiện').click()
         page.locator('.tp-note-box textarea').fill('Câu trả lời còn hơi khó hiểu.')
+
+        # SDK token refresh and routine tab switch MUST preserve unsent feedback.
+        initial_reads=page.evaluate('window.__qaUserReads')
+        page.evaluate("""() => {
+          window.__qaEmitAuth('TOKEN_REFRESHED',{user:{id:'22222222-2222-4222-8222-222222222222'}});
+          Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'visible'});
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_timeout(220)
+        assert page.evaluate('window.__qaUserReads')==initial_reads
+        assert page.locator('.tp-note-box textarea').input_value()=='Câu trả lời còn hơi khó hiểu.'
+        assert page.locator('#tp-quick-review').is_visible()
+
         page.get_by_role('button',name='Gửi góp ý').click()
         page.locator('#tp-quick-saved').wait_for(state='visible',timeout=10000)
         assert 'Đã nhận góp ý!' in page.locator('#tp-quick-saved').inner_text()
@@ -120,6 +138,18 @@ def run():
         page.locator('button',has_text='Lưu kết quả tự đánh giá').click()
         assert not errors,errors
         assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+2')
+
+        # After a long absence the server authorization is re-read.
+        # A revoked grant closes the portal instead of retaining stale protected content.
+        page.evaluate("""() => {
+          window.__qaRevokeTester();
+          const now=Date.now.bind(Date);
+          Date.now=()=>now()+301000;
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.locator('#tp-locked').wait_for(state='visible',timeout=10000)
+        assert page.locator('#tp-workspace').is_hidden()
+        assert not errors,errors
         page.close()
         print('PASS: friend-first tester -> 3 scenario reports -> advanced existing practice; zero external requests')
        finally:browser.close()
