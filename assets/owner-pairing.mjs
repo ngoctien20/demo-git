@@ -45,7 +45,7 @@ export function mountOwnerPairing(root, client, shop) {
         clearTimeout(timer);
         challengeId = null;
         command.textContent = '';
-        status.textContent = (reply.state === 'CLOSED' ? 'Yêu cầu đã đóng. ' : 'Chưa có mã đang dùng. ') + channelNotice;
+        status.textContent = (reply.state === 'CLOSED' ? 'Yêu cầu đã đóng. ' : 'Chưa có mã đang dùng. ');
         button('Tạo mã ghép nối', 'issue');
         return;
       }
@@ -57,7 +57,7 @@ export function mountOwnerPairing(root, client, shop) {
         command.textContent = '';
         confirmation.replaceChildren();
         actions.replaceChildren();
-        status.textContent = 'Mã ghép nối đã hết hạn. ' + channelNotice;
+        status.textContent = 'Mã ghép nối đã hết hạn.';
         if (attached()) button('Kiểm tra lại', 'status');
       }, Math.min(expires - Date.now(), 300000));
       if (reply.state === 'PENDING_OWNER_CONFIRMATION') {
@@ -70,7 +70,7 @@ export function mountOwnerPairing(root, client, shop) {
         if (action === 'issue' && /^[0-9a-f]{32}$/.test(reply.code)) {
           command.textContent = 'GHÉP ' + challengeId + ' ' + reply.code;
         }
-        status.textContent = (command.textContent ? 'Đã tạo mã thử nghiệm có hiệu lực 5 phút. ' : '') + channelNotice;
+        status.textContent = (command.textContent ? 'Đã tạo mã thử nghiệm có hiệu lực 5 phút. ' : '') + (reply.bot === 'qa-bot-b' ? 'Gửi nguyên dòng GHÉP cho Bot Zalo thử nghiệm trong tin nhắn riêng rồi nhấn Kiểm tra trạng thái.' : channelNotice);
       } else throw Error();
       button('Kiểm tra trạng thái', 'status');
     } catch {
