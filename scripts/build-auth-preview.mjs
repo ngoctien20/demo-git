@@ -9,13 +9,13 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const output=path.join(root,'auth-preview-dist');
 const allowList=[
-  'login.html','account.html','merchant-portal.html',
+  'login.html','account.html','merchant-portal.html','register-staging.html',
   'assets/style.css','assets/auth.css','assets/favicon.svg',
   'assets/app.js','assets/site-config.js',
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
   'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/owner-pairing.mjs','assets/owner-confirm.mjs','assets/merchant-product.mjs',
   'assets/auth-runtime.mjs','assets/auth-bootstrap.js',
-  'assets/merchant-portal.js','assets/merchant-portal-policy.mjs','assets/merchant-portal.css'
+  'assets/merchant-portal.js','assets/merchant-portal-policy.mjs','assets/merchant-portal.css','assets/register-staging.js'
 ];
 const production='https://ngoctien20.github.io/demo-git/';
 if(!existsSync(path.join(root,'assets/auth-client.js')))throw Error('Auth source missing');
@@ -26,12 +26,12 @@ for(const relative of allowList){
   if(!existsSync(from))throw Error('Required preview asset missing: '+relative);
   copyFileSync(from,to);
 }
-for(const page of ['login.html','account.html','merchant-portal.html']){
+for(const page of ['login.html','account.html','merchant-portal.html','register-staging.html']){
   const target=path.join(output,page);
   let html=readFileSync(target,'utf8');
   // Marketing links go to the existing public site, local auth links stay in preview.
   html=html.replace(/href="([a-z0-9-]+\.html)(#[^"]*)?"/g,(full,basename,hash='')=>
-    ['login.html','account.html','merchant-portal.html'].includes(basename)
+    ['login.html','account.html','merchant-portal.html','register-staging.html'].includes(basename)
       ?full:'href="'+production+basename+hash+'"');
   if(page==='login.html'){
     // Recovery stays closed until the allowlist and callback are both verified.
