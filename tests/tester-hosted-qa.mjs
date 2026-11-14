@@ -13,9 +13,9 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   const checks=[
     ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js']],
     ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js']],
-    ['/login.html',['auth-login','SUPABASE']],
+    ['/login.html',['id="auth-login"','Supabase']],
     ['/account.html',['account-protected','tester.html']],
-    ['/merchant-portal.html',['merchant','auth']],
+    ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
     ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
