@@ -68,7 +68,7 @@ test('Preview build contains only allowlisted portal and existing Auth',()=>{
   const b=text('scripts/build-auth-preview.mjs');
   for(const token of ["'merchant-portal.html'","'assets/merchant-portal.js'",
     "'assets/merchant-portal-policy.mjs'","'assets/merchant-portal.css'",
-    "['login.html','account.html','merchant-portal.html']","auth-preview-dist"])
+    "['login.html','account.html','merchant-portal.html','register-staging.html']","auth-preview-dist"])
     assert.ok(b.includes(token),token);
 });
 test('Built preview has portal files but no private repository files',()=>{
@@ -78,4 +78,20 @@ test('Built preview has portal files but no private repository files',()=>{
    'assets/merchant-portal-policy.mjs'])assert.ok(fs.existsSync(new URL(name,root)),name);
   for(const name of ['docs','.env','qa','.github'])
     assert.equal(fs.existsSync(new URL(name,root)),false,name);
+});
+
+test('Self-registration is explicitly gated until confirmed Auth email setup',()=>{
+  const html=text('register-staging.html');
+  const js=text('assets/register-staging.js');
+  assert.ok(html.includes('id="mp-register-submit" disabled'));
+  assert.ok(html.includes('noindex,nofollow'));
+  assert.ok(js.includes('MERCHANT_SELF_SIGNUP_ENABLED=false'));
+  assert.ok(js.includes('auth.signUp('));
+  assert.ok(js.includes('isNewPasswordStrong('));
+  assert.ok(js.includes('emailRedirectTo'));
+  assert.ok(!js.includes('role:owner'));
+  assert.ok(!js.includes('.insert('));
+  const build=text('scripts/build-auth-preview.mjs');
+  assert.ok(build.includes("'register-staging.html'"));
+  assert.ok(build.includes("'assets/register-staging.js'"));
 });
