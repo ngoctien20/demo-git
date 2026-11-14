@@ -51,6 +51,40 @@ async function revoke(userId){
  status('Đã gửi lệnh thu hồi. Đang kiểm tra readback…','ok');await refresh();
 }
 
+async function assignSafeSheetsToTester(targetUserId){
+ if(!canEdit()||!uuid(targetUserId))throw Error('ADMIN_ROLE_REQUIRED');
+ const valid=await withDeadline(client.from('tien404_tester_access')
+  .select('access_status,expires_at').eq('user_id',targetUserId).maybeSingle(),13000);
+ if(valid.error||valid.data?.access_status!=='approved'
+  ||Date.parse(valid.data.expires_at)<=Date.now())throw Error('TESTER_NOT_APPROVED');
+ const module=await withDeadline(client.from('tien404_tester_modules')
+  .select('module_id,readiness').eq('module_id','sheets').maybeSingle(),13000);
+ if(module.error||module.data?.readiness!=='ready')throw Error('SAFE_MODULE_NOT_READY');
+ const write=await withDeadline(client.from('tien404_tester_assignments')
+  .upsert({user_id:targetUserId,module_id:'sheets',active:true},{onConflict:'user_id,module_id'}),15000);
+ if(write.error)throw Error('ASSIGNMENT_DENIED');
+ const confirm=await withDeadline(client.from('tien404_tester_assignments')
+  .select('active').eq('user_id',targetUserId).eq('module_id','sheets').maybeSingle(),13000);
+ if(confirm.error||confirm.data?.active!==true)throw Error('ASSIGNMENT_READBACK_FAILED');
+ return true;
+}
+async function assignSheetsFromRow(targetUserId){
+ if(!canEdit()||!uuid(targetUserId))return;
+ if(!confirm('Giao module Dữ liệu mẫu (Sheets) an toàn cho người thử '+short(targetUserId)+'?'))return;
+ status('Đang xác minh quyền và phân công module an toàn…');
+ try{
+  const current=await withDeadline(client.auth.getUser(),12000);
+  if(current.error||current.data?.user?.id!==user.id)throw Error('IDENTITY_CHANGED');
+  const staffNow=await withDeadline(client.from('tien404_tester_staff')
+    .select('active,staff_role').eq('user_id',user.id).maybeSingle(),12000);
+  if(staffNow.error||!staffNow.data?.active||staffNow.data.staff_role!=='super_admin')
+    throw Error('ROLE_REVOKED');
+  await assignSafeSheetsToTester(targetUserId);
+  status('Đã phân công Dữ liệu mẫu. Tester có thể bấm Cập nhật để thấy bài thử.','ok');
+ }catch{status('Không thể giao bài. Quyền Tester có thể hết hạn, module chưa READY hoặc RLS chặn.','error');}
+ await refresh();
+}
+
 async function reviewRequest(request,decision){
  if(!canEdit()||!request?.request_id||!request?.user_id||request.status!=='pending'){
   status('Không thể xét duyệt yêu cầu này.','error');return;
@@ -68,6 +102,7 @@ async function reviewRequest(request,decision){
    .select('staff_role,active').eq('user_id',user.id).maybeSingle(),12000);
   if(role.error||role.data?.staff_role!=='super_admin'||!role.data.active)
    throw Error('ROLE_REVOKED');
+  let sheetsAssigned=false;
   if(decision==='approved'){
    const now=Date.now();
    const grant=await withDeadline(client.from('tien404_tester_access').upsert({
@@ -84,6 +119,7 @@ async function reviewRequest(request,decision){
       ||Date.parse(readback.data.expires_at)<=Date.now()
       ||readback.data.approved_by!==user.id)
      throw Error('GRANT_READBACK_FAILED');
+   try{await assignSafeSheetsToTester(request.user_id);sheetsAssigned=true;}catch{/* Access grant may persist; show partial status after review. */}
   }
   const reviewedAt=new Date().toISOString();
   const update=await withDeadline(client.from('tien404_tester_requests').update({
@@ -93,7 +129,7 @@ async function reviewRequest(request,decision){
   if(update.error||update.data?.status!==decision)
    throw Error('REQUEST_UPDATE_DENIED');
   status(decision==='approved'
-    ?'Đã duyệt 7 ngày và kiểm tra readback. Hãy phân công module an toàn cho Tester.'
+    ?(sheetsAssigned?'Đã duyệt 7 ngày và tự giao Dữ liệu mẫu (Sheets) cho Tester.':'Đã duyệt 7 ngày nhưng CHƯA giao được Sheets. Mở Quyền Tester để giao lại.')
     :'Đã từ chối đơn. Chưa cấp quyền truy cập.','ok');
   await refresh();
  }catch{status('Xét duyệt chưa hoàn tất. Kiểm tra danh sách quyền và trạng thái đơn trước khi thử lại.','error');await refresh();}
@@ -143,8 +179,15 @@ async function refresh(){
    ['Quyền',a=>a.access_status+(new Date(a.expires_at)<=new Date()?' (hết hạn)':'')],
    ['Hết hạn',a=>date(a.expires_at)],
    ['Module',a=>assignments.filter(x=>x.user_id===a.user_id&&x.active).map(x=>x.module_id).join(', ')||'Chưa giao'],
-   ['Thao tác',a=>canEdit()&&a.access_status==='approved'?
-    userActionButton('Thu hồi',()=>revoke(a.user_id)):'Chỉ xem']
+   ['Thao tác',a=>{
+    if(!canEdit()||a.access_status!=='approved'||Date.parse(a.expires_at)<=Date.now())return 'Chỉ xem';
+    const actions=node('div',null,'tp-actions');
+    const hasSheets=assignments.some(x=>x.user_id===a.user_id&&x.module_id==='sheets'&&x.active);
+    if(!hasSheets)actions.append(userActionButton('Giao Sheets mẫu',()=>assignSheetsFromRow(a.user_id)));
+    else actions.append(node('span','Sheets đã giao','tp-quiet'));
+    actions.append(userActionButton('Thu hồi',()=>revoke(a.user_id)));
+    return actions;
+   }]
   ],access);
   tableInto($('ta-runs-list'),[
    ['Thời gian',r=>date(r.created_at)],
@@ -195,7 +238,9 @@ $('ta-grant-form').addEventListener('submit',async event=>{
    notes:notes||null
   },{onConflict:'user_id'}),15000);
   if(r.error)throw Error('GRANT_DENIED');
-  status('Yêu cầu cấp quyền đã được backend chấp nhận.','ok');await refresh();
+  let assigned=false;
+  try{await assignSafeSheetsToTester(id);assigned=true;}catch{/* never pretend assignment succeeded */}
+  status(assigned?'Đã cấp quyền và giao module Dữ liệu mẫu cho Tester.':'Đã cấp quyền, nhưng giao module Dữ liệu mẫu chưa thành công. Hãy dùng nút Giao Sheets. ',assigned?'ok':'error');await refresh();
  }catch{status('Không cấp quyền được. Xác minh người dùng đã có trong Supabase Auth và bạn có quyền Super Admin.','error')}
 });
 $('ta-assignment-form').addEventListener('submit',async event=>{
