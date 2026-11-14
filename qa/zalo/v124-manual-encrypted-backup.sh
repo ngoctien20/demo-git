@@ -25,16 +25,16 @@ umask 077
 export PGCONNECT_TIMEOUT=10
 out="$SECURE_BACKUP_DIR/tien404-staging-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
 [ ! -e "$out" ] || die "would overwrite existing backup"
-cleanup(){ status=$?; if [ "$status" -ne 0 ]; then rm -f "$out"; fi; exit "$status"; }
+cleanup(){ status=$?; if [ -n "${toc_file:-}" ]; then rm -f "$toc_file"; fi; if [ "$status" -ne 0 ]; then rm -f "$out"; fi; exit "$status"; }
 trap cleanup EXIT
 pg_dump -w --format=custom --no-owner --no-acl --dbname=postgres |
   age -r "$AGE_RECIPIENT" -o "$out"
 [ -s "$out" ] || die "encrypted backup empty"
-age -d -i "$AGE_IDENTITY_FILE" "$out" | pg_restore --list > /dev/null
-age -d -i "$AGE_IDENTITY_FILE" "$out" | pg_restore --list |
-  grep -q 'tien404_dialogue_private' || die "missing private dialogue schema"
-age -d -i "$AGE_IDENTITY_FILE" "$out" | pg_restore --list |
-  grep -q 'tien404_r1_qa' || die "missing source QA schema"
+toc_file="$(mktemp "$SECURE_BACKUP_DIR/.tien404-qa-toc.XXXXXX")"
+age -d -i "$AGE_IDENTITY_FILE" "$out" | pg_restore --list > "$toc_file"
+grep -F 'tien404_dialogue_private' "$toc_file" >/dev/null || die "missing private dialogue schema"
+grep -F 'tien404_r1_qa' "$toc_file" >/dev/null || die "missing source QA schema"
+rm -f "$toc_file"
 sha256sum "$out"
 echo "BACKUP_TOC_VERIFIED - encrypted archive created; restore rehearsal still required"
 echo "Never upload this backup or its identity key to public GitHub or ChatGPT."
