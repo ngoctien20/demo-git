@@ -258,9 +258,9 @@ try {
   client.auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'){
       lock('Đã đăng xuất. Vui lòng đăng nhập lại.');
-    } else if(event==='SIGNED_IN' && currentUser?.id && currentUser.id!==session?.user?.id){
-      // Account change: remove previous tenant data before revalidating.
-      lock('Đang xác minh tài khoản mới…');
+    } else if(event==='SIGNED_IN' && session?.user?.id && currentUser?.id!==session.user.id){
+      // Account changed, or a new login followed a sign-out.
+      if(currentUser?.id)lock('Đang xác minh tài khoản mới…');
       setTimeout(()=>revalidate(),0);
     } else if(event==='USER_UPDATED'){
       setTimeout(()=>revalidate(),0);
