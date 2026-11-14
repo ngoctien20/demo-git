@@ -11,13 +11,15 @@ async function read(relative, expected=200) {
 }
 test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   const checks=[
-    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js']],
-    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"']],
+    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"']],
+    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"','id="ta-request-list"','id="ta-request-count"']],
     ['/login.html',['id="auth-login"','Supabase']],
-    ['/account.html',['account-protected','tester.html']],
+    ['/account.html',['account-protected','tester.html','href="tester-request.html"']],
     ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
+    ['/tester-request.html',['id="tr-form" class="tp-admin-form" hidden','noindex,nofollow','assets/tester-request.js']],
+    ['/assets/tester-request.js',["from('tien404_tester_requests')",'email_confirmed_at','auth.getUser()']],
     ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()"]],
-    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)"]],
+    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
     ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step']]
@@ -29,7 +31,7 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   }
 });
 test('Private source SQL is not served by Render static preview',async()=>{
-  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
+  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
     const r=await fetch(origin+path,{redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(25000)});
     const body=await r.text();
     assert.notEqual(r.status,200,'private content publicly accessible at '+path);
