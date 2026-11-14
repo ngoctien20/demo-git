@@ -40,14 +40,16 @@ jobs:
           node --check assets/tester-request.js
           node --check assets/tester-report-csv.mjs
           node --check assets/tester-sandbox.mjs
+          node --check assets/tester-qa-pack.mjs
+          node --check assets/tester-ai-studio.mjs
           node --check assets/auth-client.js
           node --check assets/auth-runtime.mjs
       - name: Supabase Auth and Tester security contract
-        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/auth-session-stability.test.mjs
+        run: node --test tests/auth-helpers.test.mjs tests/tester-portal-staging.test.mjs tests/tester-report-csv.test.mjs tests/tester-request-staging.test.mjs tests/tester-safe-practice.test.mjs tests/tester-friend-first.test.mjs tests/tester-ai-studio.test.mjs tests/auth-session-stability.test.mjs
       - name: Build existing strict Render Auth preview
         run: node scripts/build-auth-preview.mjs
       - name: Verify no private files leak and old Auth remains
-        run: node --test tests/auth-preview-build.test.mjs tests/tester-portal-staging.test.mjs tests/tester-request-staging.test.mjs
+        run: node --test tests/auth-preview-build.test.mjs tests/tester-portal-staging.test.mjs tests/tester-request-staging.test.mjs tests/tester-ai-studio.test.mjs
       - name: Anonymous Chromium fail-closed UX (no credentials or external traffic)
         run: |
           python -m pip install playwright==1.58.0
