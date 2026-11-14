@@ -11,24 +11,25 @@ async function read(relative, expected=200) {
 }
 test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   const checks=[
-    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"','data-page="practice"']],
+    ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','class="tp-friends"','id="tp-more"','id="tp-progress-more"','noindex,nofollow','assets/tester-portal.js','href="tester-request.html"','data-page="practice"']],
     ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"','id="ta-request-list"','id="ta-request-count"','Sheets mẫu']],
     ['/login.html',['id="auth-login"','Supabase']],
     ['/account.html',['account-protected','tester.html','href="tester-request.html"']],
     ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
     ['/tester-request.html',['id="tr-form" class="tp-admin-form" hidden','noindex,nofollow','assets/tester-request.js']],
     ['/assets/tester-request.js',["from('tien404_tester_requests')",'email_confirmed_at','auth.getUser()']],
-    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)"]],
+    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)","Một trợ lý bán hàng cho những cửa hàng nhỏ", "SHEET-SIM-004", "Đã nhận góp ý!", "state.client.auth.getUser()"]],
     ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
-    ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step']]
+    ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step','.tp-friends .tp-intro','.tp-friends .tp-quick-choices']]
   ];
   for(const [path,needles] of checks){
     const {body}=await read(path);
     for(const needle of needles)assert.ok(body.includes(needle),path+' missing marker '+needle);
     console.log('VERIFIED HTTP 200 '+path+' '+body.length+' bytes');
+    if(path==='/tester-admin.html')assert.ok(!body.includes('class="tp-friends"'),'Admin must remain unchanged');
   }
 });
 test('Private source SQL is not served by Render static preview',async()=>{
