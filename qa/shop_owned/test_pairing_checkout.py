@@ -1,5 +1,7 @@
 """Disposable PostgreSQL only. Two synthetic shops and simulated subject contexts."""
 from uuid import uuid4
+from secrets import token_bytes
+from zalo_claim import claim_from_fixture
 import psycopg
 from order_preview import preview, confirm
 
@@ -22,14 +24,18 @@ def fixture(db, label):
 
 with psycopg.connect("dbname=tien404_qa",autocommit=True) as db, db.transaction(force_rollback=True):
     shops=[fixture(db,s) for s in ("a","b")]
+    fixture_key=token_bytes(32)
     for i,(shop,owner,route) in enumerate(shops):
         context(db,owner)
         code_id,code=db.execute("select * from tien404_r1_qa.issue_owner_challenge(%s,%s,%s)",route).fetchone()
-        claim="select tien404_r1_qa.claim_owner_pairing_v3_synthetic(%s,%s,%s,%s,%s,%s,%s)"
-        args=(code_id,code,"qa-recipient-"+str(i),"qa-event-"+str(i))
         other=shops[1-i]
-        assert db.execute(claim,(*other[2],*args)).fetchone()==(False,)
-        assert db.execute(claim,(*route,*args)).fetchone()==(True,)
+        event={"stage":"READ_ONLY","accepted":True,"eventName":"message.text.received",
+               "chatType":"PRIVATE","chatId":"qa-chat","messageId":"qa-mid","text":f"GHÉP {code_id} {code}"}
+        assert not claim_from_fixture(db,other[2],event,fixture_key)
+        assert not claim_from_fixture(db,route,{**event,"accepted":False},fixture_key)
+        assert not claim_from_fixture(db,route,{**event,"chatType":"GROUP"},fixture_key)
+        assert claim_from_fixture(db,route,event,fixture_key)
+        assert not claim_from_fixture(db,route,event,fixture_key)
         accept="select tien404_r1_qa.confirm_owner_pairing_v3_qa(%s,%s,%s,%s)"
         context(db,other[1])
         assert db.execute(accept,(*route,code_id)).fetchone()==(False,)
