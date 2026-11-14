@@ -20,8 +20,10 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
     ['/assets/tester-request.js',["from('tien404_tester_requests')",'email_confirmed_at','auth.getUser()']],
     ['/assets/auth-account.js',["verifiedScopeSignature","const check=++verificationSeq","renderGeneration=generation","Date.now()-lastChecked>300000"]],
     ['/assets/merchant-portal.js',["const round=++verificationSeq","Date.now()-lastChecked>300000","Đang kiểm tra quyền trong nền"]],
-    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)","Một trợ lý bán hàng cho những cửa hàng nhỏ", "SHEET-SIM-004", "Đã nhận góp ý!", "state.client.auth.getUser()", "Date.now()-state.lastCheck>300000", "previousSnapshot!==nextSnapshot"]],
+    ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()","calculateDemo","renderDemoPractice(pane)","Một trợ lý bán hàng cho những cửa hàng nhỏ", "SHEET-SIM-004", "Đã nhận góp ý!", "state.client.auth.getUser()", "Date.now()-state.lastCheck>300000", "previousSnapshot!==nextSnapshot", "mountQaStudio(pane,{state,onSaved:()=>progress()})", "tp-quick-details"]],
     ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
+    ['/assets/tester-qa-pack.mjs',["PRIORITY_CHECKS","SHEET-AI-REVIEW-001","reviewPrompt(results)","reportText({notes","containsSensitive(text)"]],
+    ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","UNVERIFIED"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
@@ -35,7 +37,7 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   }
 });
 test('Private source SQL is not served by Render static preview',async()=>{
-  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
+  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/qa/tester_portal/V12_3_AI_REVIEW_SHEETS_CASE_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
     const r=await fetch(origin+path,{redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(25000)});
     const body=await r.text();
     assert.notEqual(r.status,200,'private content publicly accessible at '+path);
