@@ -290,10 +290,12 @@ try{
       generation++;verificationSeq++;
       busy=false;
       requireLogin('Đã đăng xuất khỏi tài khoản.');
-    } else if(event==='SIGNED_IN' && verifiedUserId && session?.user?.id!==verifiedUserId){
-      // A DIFFERENT identity is a security boundary, unlike a token refresh.
-      generation++;verificationSeq++;busy=false;verifiedUserId=null;verifiedScopeSignature=null;
-      resetView();loginLink.hidden=true;
+    } else if(event==='SIGNED_IN' && session?.user?.id && session.user.id!==verifiedUserId){
+      // A different identity must clear previous data; re-login after SIGNED_OUT must also work.
+      if(verifiedUserId){
+        generation++;verificationSeq++;busy=false;verifiedUserId=null;verifiedScopeSignature=null;
+        resetView();loginLink.hidden=true;
+      }
       setTimeout(()=>revalidate(),0);
     } else if(event==='USER_UPDATED'){
       // Profile/claim refresh can change permissions; recheck silently.
