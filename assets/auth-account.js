@@ -247,7 +247,7 @@ const revalidate=async()=>{
       const context = {client:sb, tenantId:t.id, current:()=>renderGeneration===generation};
       addMerchantList(card,'products',context);
       if (['owner','manager'].includes(t.role)) {
-        addPaidOrderReport(card,t,current);
+        addPaidOrderReport(card,t,renderGeneration);
         mountRevenuePanel(card,sb,t.id);
         if (PRODUCT_EDITOR_ENABLED) addProductEditor(card,t.id,sb,context.current);
         for (const table of ['orders','customers','conversations','tenant_agent_configs']) addMerchantList(card,table,context);
@@ -271,12 +271,12 @@ const revalidate=async()=>{
     protectedContent.hidden=false;
     put('Xác minh phiên và quyền truy cập thành công. Chọn dữ liệu cần xem.','ok');
   }catch{
-    if(current===generation){
+    if(current===generation && check===verificationSeq){
       resetView();verifiedScopeSignature=null;
       put('Không kết nối được hệ thống xác thực. Dữ liệu đã được khóa.','error');
     }
   }finally{
-    if(current===generation){busy=false;refreshButton.disabled=false}
+    if(check===verificationSeq){busy=false;refreshButton.disabled=false}
   }
 };
 
@@ -287,12 +287,12 @@ try{
     if(event==='SIGNED_OUT'){
       verifiedUserId=null;verifiedScopeSignature=null;
       refreshButton.disabled=false;
-      generation++;
+      generation++;verificationSeq++;
       busy=false;
       requireLogin('Đã đăng xuất khỏi tài khoản.');
     } else if(event==='SIGNED_IN' && verifiedUserId && session?.user?.id!==verifiedUserId){
       // A DIFFERENT identity is a security boundary, unlike a token refresh.
-      generation++;busy=false;verifiedUserId=null;verifiedScopeSignature=null;
+      generation++;verificationSeq++;busy=false;verifiedUserId=null;verifiedScopeSignature=null;
       resetView();loginLink.hidden=true;
       setTimeout(()=>revalidate(),0);
     } else if(event==='USER_UPDATED'){
