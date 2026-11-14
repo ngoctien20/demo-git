@@ -187,11 +187,11 @@ CREATE TRIGGER tien404_tester_assignment_audit AFTER INSERT OR UPDATE ON public.
 -- SAFE: no tester-admin bootstrapping, no real user assignments, no bot send.
 INSERT INTO public.tien404_tester_modules(module_id,title,summary,channel,readiness,setup_note,sort_order)
 VALUES
-('messenger','Thử AI trên Messenger','Kiểm tra hội thoại, trả lời sản phẩm và phản hồi tự nhiên.','messenger','ready','Chỉ hướng dẫn câu hỏi an toàn; Messenger thật chỉ mở khi Admin xác minh quyền Page và đường dẫn.',10),
+('messenger','Thử AI trên Messenger','Kiểm tra hội thoại, trả lời sản phẩm và phản hồi tự nhiên.','messenger','pending','Đang chờ xác minh link Messenger Page và quyền Tester. Chưa mở bài kiểm thử kênh thật.',10),
 ('telegram','Thử thông báo Telegram','Telegram đang là kênh gửi thông báo, không mặc định là chatbot.','telegram','pending','Không gửi tin tới tài khoản thật; cần bộ nhận QA và phê duyệt gửi riêng.',20),
 ('zalo','Thử Zalo Bot','Kiểm thử nhận tin và ghép nối chủ shop theo trạng thái tích hợp.','zalo','blocked','ZALO_SEND_ENABLED=false; chỉ TEST08/09 một tin từng được xác minh. Không bật auto-reply.',30),
 ('sheets','Dữ liệu sản phẩm và đơn mẫu','Học cách đối chiếu giá, SKU và tồn kho với dữ liệu giả lập.','sheets','ready','Dữ liệu hiển thị chỉ là ví dụ minh họa, không phải catalog Messenger live hay Google Sheets production.',40),
-('ai_sales','Thử AI bán hàng','Tư vấn, giỏ hàng, đổi ý và chặn đơn khi chưa xác nhận.','ai_sales','ready','Bài hướng dẫn tự đánh giá; tạo đơn chỉ ở sandbox riêng khi được xác minh.',50),
+('ai_sales','Thử AI bán hàng','Tư vấn, giỏ hàng, đổi ý và chặn đơn khi chưa xác nhận.','ai_sales','pending','Đang chờ endpoint AI SALES test riêng đã xác minh. Không dùng Messenger live khi chưa có quyền Page.',50),
 ('commerce','Commerce V3','Kiểm tra quy tắc giỏ hàng và đơn sandbox.','commerce','pending','Chờ tích hợp giao diện thực thi sandbox với xác thực Tester và kiểm soát tenant.',60);
 
 INSERT INTO public.tien404_tester_cases(case_id,module_id,title,instructions,sample_prompt,expected_result,readiness,sort_order)
