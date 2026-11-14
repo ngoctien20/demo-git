@@ -146,6 +146,7 @@ export function mountQaStudio(root,{state,onSaved}){
  },'tp-primary');publishBtn.id='tp-ai-submit';publishBtn.disabled=true;
  const submitStatus=el('p','Góp ý AI là bằng chứng tham khảo, không tự động chuyển bài thành PASS.','tp-ai-message');submitStatus.id='tp-ai-submit-status';submitStatus.setAttribute('role','status');submitStatus.setAttribute('aria-live','polite');
  fields.append(submitStatus);stage3.append(fields);
+ mountMessengerCloneQa(root,{state,onSaved});
  mountQaSandbox(root,{state,onSaved});
  root.append(block);
  return block;
