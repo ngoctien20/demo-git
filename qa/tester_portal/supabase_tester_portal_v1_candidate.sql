@@ -132,7 +132,7 @@ CREATE POLICY "tester_modules_assigned_only" ON public.tien404_tester_modules FO
    WHERE s.user_id=(select auth.uid()) AND s.active AND s.staff_role IN('super_admin','qa_manager'))
  OR (readiness='ready' AND EXISTS(
   SELECT 1 FROM public.tien404_tester_assignments a
-  WHERE a.user_id=(select auth.uid()) AND a.module_id=module_id AND a.active)));
+  WHERE a.user_id=(select auth.uid()) AND a.module_id=tien404_tester_modules.module_id AND a.active)));
 
 CREATE POLICY "tester_cases_assigned_only" ON public.tien404_tester_cases FOR SELECT TO authenticated
  USING (EXISTS(SELECT 1 FROM public.tien404_tester_staff s
