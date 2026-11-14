@@ -5,6 +5,7 @@
 import {AI_REVIEW_CASE_ID,runPriorityChecks,reviewPrompt,reportText,containsSensitive} from './tester-qa-pack.mjs';
 import {withDeadline} from './auth-runtime.mjs';
 import {mountQaSandbox} from './tester-qa-writable-sandbox.mjs';
+import {mountMessengerCloneQa} from './tester-messenger-clone-qa.mjs';
 
 function el(tag,text,cls){
  const node=document.createElement(tag);
