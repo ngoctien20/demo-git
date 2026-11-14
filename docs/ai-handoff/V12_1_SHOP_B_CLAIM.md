@@ -43,3 +43,14 @@ Ngày 14/11/2026, Owner báo Dashboard hiện “Đã ghép nối”. Supabase s
 - Code node update tooling báo cảnh báo đã tồn tại `HARDCODED_CREDENTIALS` trên HTTP node `Submit pending claim for Shop B` vì có header apikey cố định; cần audit secret/public publishable key trước release, không tự sửa credential khi chưa kiểm tra.
 
 **Rollback:** Restore Shadow version `2533f350-3053-47f7-8349-59f0e2f4f433` trong n8n history (và publish lại nếu được phê duyệt), không xóa Shop B pairing/QA outbox. Mọi dữ liệu QA hiện hữu giữ nguyên làm bằng chứng.
+
+
+## VERIFIED — Owner đã gửi TEST SHOP B F01 từ Zalo
+
+**14/11/2026 JST, không gửi trả lời Zalo.** Owner xác nhận đã gửi một tin `TEST SHOP B F01` vào Bot Shop B. Đối chiếu trực tiếp n8n Data Table `TIEN404_QA_SHOP_B_PAIRING_TRACE` (`e7eJAGSwzn67aA1z`) thấy dấu `shop_b_owner_probe / eligible` cập nhật `2026-11-14T11:59:24.562Z` (**20:59:24.562 JST**), mới hơn synthetic QA execution `3357` (marker `2026-11-14T11:55:39.991Z`). Dấu inbound `other_text` cập nhật `11:59:24.684Z`, đúng vì đây không phải lệnh GHÉP.
+
+**Chứng cứ:** Bản ghi staging phù hợp với tin nhắn Owner báo vừa gửi, đi qua bước kiểm tra Owner Gate; không có execution chi tiết để định danh một cách độc lập do Shadow cài `saveDataSuccessExecution=none` và `saveManualExecutions=false`. Không tuyên bố đã gửi/phản hồi tin Zalo hoặc nhận tin từ API outbound.
+
+**Read-only Supabase post-check:** `qa-tenant-b/qa-store-b/qa-bot-b` vẫn `paired`, claim `CONFIRMED`, recipient khớp, binding chưa hết hạn; hết hạn 21/11/2026 20:23:15 JST. Shop B vẫn `dry_run`. Số đơn QA Shop B = 2, outbox Shop B = 2, cả 2 `HELD/SEND_DISABLED`. Shop A đơn QA = 2; số outbox khác `HELD/SEND_DISABLED` = 0. Lệnh probe không tạo thêm đơn và không gửi thông báo ra ngoài.
+
+**NEXT:** Thiết kế/kiểm thử chat sản phẩm Shop B phía server dưới Shadow, dùng catalog đúng Shop B (F01 giá 199000 VND, không dùng giá Shop A 159000 VND), rồi xin Owner phê duyệt riêng trước khi bật **một** phản hồi outbound tới tài khoản QA đã xác minh. Không tự bật ZALO_SEND_ENABLED, không dùng OA/business API không đủ quyền, không nối khách thật/production. Rollback n8n Shadow về `2533f350-3053-47f7-8349-59f0e2f4f433` nếu probe lỗi.
