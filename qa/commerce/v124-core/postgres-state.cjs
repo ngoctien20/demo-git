@@ -12,7 +12,7 @@ function createPostgresCustomerSessions({poolForContext, ttlMs=1800000, windowMs
       !Number.isSafeInteger(windowMs) || windowMs<1 || windowMs>3600000 ||
       !Number.isSafeInteger(maxTurns) || maxTurns<1 || maxTurns>100) throw Error('SESSION_POLICY_INVALID');
 
-  return Object.freeze({async process(context, plan) {
+  return Object.freeze({async process(context, plan, replacesSelection) {
     if (!isVerifiedCustomer(context)) throw Error('SESSION_SCOPE_DENIED');
     const key=[context.tenantId,context.storeId,context.channel,context.botRef,context.actorHash];
     const db = await poolForContext(context).connect();
@@ -33,25 +33,40 @@ function createPostgresCustomerSessions({poolForContext, ttlMs=1800000, windowMs
       if (seen.rowCount) {await db.query('COMMIT'); return {status:'DUPLICATE_BLOCKED'};}
       const newWindow = !(row.rate_until > now);
       if (!newWindow && row.turn_count >= maxTurns) {await db.query('COMMIT'); return {status:'RATE_LIMITED'};}
-      await db.query(`INSERT INTO ${receipts} (${fields},receipt_hash,expires_at)
+      const recordReceipt = () => db.query(`INSERT INTO ${receipts} (${fields},receipt_hash,expires_at)
         VALUES (${placeholders},$6,$7)`,[...receiptKey,new Date(now.getTime()+3600000)]);
       const rateUntil = newWindow ? new Date(now.getTime()+windowMs) : row.rate_until;
       const used = newWindow ? 1 : row.turn_count+1;
       if (row.last_event_at && context.issuedAt < row.last_event_at.getTime()) {
+        await recordReceipt();
         // A late unique event consumes quota too, without extending the session or reviving a cancelled quote.
         await db.query(`UPDATE ${sessions} SET rate_until=$6,turn_count=$7 WHERE ${where}`,[...key,rateUntil,used]);
         await db.query('COMMIT'); return {status:'OLDER_EVENT_IGNORED'};
       }
       let prior = {phase:row.phase,sku:row.sku,quantity:row.quantity};
       if (!(row.expires_at > now)) prior = {phase:Number(row.revision) ? 'EXPIRED' : 'NEW',sku:null,quantity:null};
-      const {reply,next} = await plan(prior,db);
+      // A failed explicit switch must not leave the old SKU available for a subsequent bare quantity.
+      // Use a savepoint so a failed SQL catalog read does not prevent safe invalidation of that draft.
+      const switching = replacesSelection?.(prior) === true;
+      if (switching) await db.query('SAVEPOINT product_switch');
+      let next, reply, retryStatus;
+      try {
+        ({reply,next} = await plan(prior,db));
+      } catch (err) {
+        if (!switching || !['CATALOG_UNTRUSTED','MODEL_UNAVAILABLE','MODEL_COST_GATE_UNVERIFIED'].includes(err.message)) throw err;
+        await db.query('ROLLBACK TO SAVEPOINT product_switch');
+        retryStatus = err.message==='MODEL_COST_GATE_UNVERIFIED' ? 'MODEL_BUDGET_BLOCKED' : err.message;
+        next = {phase:'WAITING_FOR_CUSTOMER',sku:null,quantity:null};
+      }
+      // Leave a failed switch retryable. The cleared draft, quota and revision still commit together.
+      if (!retryStatus) await recordReceipt();
       const changed = await db.query(`UPDATE ${sessions} SET phase=$6,sku=$7,quantity=$8,
         revision=revision+1,expires_at=$9,rate_until=$10,turn_count=$11,last_event_at=$12 WHERE ${where}`,
         [...key,next.phase,next.sku,next.quantity,new Date(now.getTime()+ttlMs),
          rateUntil,used,new Date(context.issuedAt)]);
       if (changed.rowCount!==1) throw Error('SESSION_SCOPE_DENIED');
       await db.query('COMMIT');
-      return {reply};
+      return retryStatus ? {status:retryStatus} : {reply};
     } catch (error) {
       try {await db.query('ROLLBACK');} catch {broken=true;}
       throw error;

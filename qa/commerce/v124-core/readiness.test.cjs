@@ -78,3 +78,11 @@ test('Redacted classifier input removes formatted phone and email. Logs never ne
   await f.preview('Vui lòng liên hệ +84 901 234 567 hoặc qa@example.vn');
   assert.match(captured,/\[PHONE\]/);assert.match(captured,/\[EMAIL\]/);assert.doesNotMatch(captured,/901|example/);
 });
+test('The model cannot silently cancel a draft or claim that a catalog instruction was executed',async()=>{
+  const f=fixture({classifier:{classify:()=>({intent:'CANCEL',sku:'UNKNOWN',quantity:null})}});
+  assert.equal((await f.preview('Cho mình xem F01')).status,'NEED_CLARIFICATION');
+  assert.equal((await f.preview('Hủy đơn')).status,'CANCELLED');
+});
+test('A verified plain product label remains visible beside its SKU',async()=>{
+  assert.match((await fixture().preview('Giá F01')).replyCandidate,/F01 · Áo trắng QA/);
+});

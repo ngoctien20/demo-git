@@ -1,7 +1,7 @@
 'use strict';
 const {readFreshQaProduct} = require('./catalog.cjs');
 const {isVerifiedCustomer} = require('./ingress.cjs');
-const {normalise, skusIn, parseQuantity, intents} = require('./intent.cjs');
+const {normalise, skusIn, isCancellation, parseQuantity, intents} = require('./intent.cjs');
 const vnd = amount => amount.toLocaleString('vi-VN')+'đ';
 const redact = text => String(text || '').replace(/(?<![\d+])(?:\+84|0)(?:[ .()-]*\d){9}(?!\d)/g,'[PHONE]')
   .replace(/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/gi,'[EMAIL]');
@@ -35,6 +35,7 @@ function createReadOnlyReplyCore({ingress,repository,classifier,receipts,limiter
   async function plan(e, prior, client) {
     const s = normalise(e.text), denied = guard(s);
     if (denied) return keep(denied, prior);
+    if (isCancellation(s)) return complete('CANCELLED','Shop đã dừng bản nháp của mình. Chưa có đơn nào được tạo.','CANCELLED');
     // Keep service failures retryable in the transactional port. Never store raw text or a model reply.
     const abort = new AbortController();
     const timer = setTimeout(()=>abort.abort(), modelTimeoutMs);
@@ -51,7 +52,7 @@ function createReadOnlyReplyCore({ingress,repository,classifier,receipts,limiter
       return keep('MODEL_SKU_MISMATCH',prior,'Mình xác nhận lại mã sản phẩm giúp shop nhé.');
     if (codes.length > 1 && (intent !== 'COMPARE' || codes.length !== 2))
       return keep('MODEL_SKU_MISMATCH',prior,'Mình muốn xem giá mã nào trước ạ?');
-    if (intent === 'CANCEL') return complete('CANCELLED','Shop đã dừng bản nháp của mình. Chưa có đơn nào được tạo.','CANCELLED');
+    if (intent === 'CANCEL') return keep('NEED_CLARIFICATION',prior,'Mình muốn tiếp tục xem sản phẩm hay dừng bản nháp ạ?');
     if (intent === 'HUMAN') return complete('HUMAN_HANDOFF','Trường hợp này cần nhân viên hỗ trợ. Bản thử nghiệm chưa tự chuyển tin.','HANDOFF_REQUIRED');
     if (intent === 'GREETING') return keep('GREETING',prior,'Chào mình! Mình muốn xem mẫu nào ạ?');
     if (intent === 'PROMOTION') return keep('POLICY_UNVERIFIED',prior,'Shop cần kiểm tra chính sách áp dụng trước khi báo ưu đãi hoặc phí giao hàng.');
@@ -80,8 +81,13 @@ function createReadOnlyReplyCore({ingress,repository,classifier,receipts,limiter
         'Shop chưa có bảng giá sỉ đã xác minh cho '+p.sku+'. Mình cần bao nhiêu sản phẩm ạ?';
       return complete(p.wholesale?'WHOLESALE_PREVIEW':'WHOLESALE_UNVERIFIED',reply,'PRODUCT_SELECTED',p.sku);
     }
-    if (intent==='PRODUCT_QUERY')
-      return complete('PRODUCT_QA_PREVIEW','[QA] '+p.sku+' giá '+vnd(p.priceVnd)+', '+(p.stock?'còn '+p.stock+' sản phẩm.':'đã hết hàng.'),'PRODUCT_SELECTED',p.sku,null,details);
+    if (intent==='PRODUCT_QUERY') {
+      // The renderer may display a plain merchandise label. Catalog prose is never input to the classifier.
+      const plain = /^[\p{L}\p{M}\p{N} ()/-]{1,64}$/u.test(p.name) &&
+        !/\b(?:gia|ton kho|token|secret|admin|chi dan|huong dan|don hang|tao don|mat khau|thanh toan|lien he)\b/.test(normalise(p.name));
+      const label = plain ? p.sku+' · '+p.name : p.sku;
+      return complete('PRODUCT_QA_PREVIEW','[QA] '+label+' giá '+vnd(p.priceVnd)+', '+(p.stock?'còn '+p.stock+' sản phẩm.':'đã hết hàng.'),'PRODUCT_SELECTED',p.sku,null,details);
+    }
     const exact = parseQuantity(s);
     if (!exact || model.quantity !== exact) return complete('QUANTITY_UNVERIFIED','Mình muốn lấy chính xác bao nhiêu sản phẩm ạ?','WAITING_FOR_CUSTOMER',sku);
     if (exact > p.stock) return complete('INSUFFICIENT_STOCK','Số lượng này vượt tồn kho thử nghiệm. Mình muốn chọn lại số lượng không ạ?','WAITING_FOR_CUSTOMER',sku);
@@ -98,7 +104,9 @@ function createReadOnlyReplyCore({ingress,repository,classifier,receipts,limiter
     if (!isVerifiedCustomer(e)) return result('CHANNEL_NOT_INTEGRATED');
     try {
       if (sessions) {
-        const turn = await sessions.process(e, (prior, client)=>plan(e,prior,client));
+        const codes = skusIn(e.text);
+        const turn = await sessions.process(e, (prior, client)=>plan(e,prior,client),
+          prior => !!prior.sku && codes.some(sku=>sku!==prior.sku));
         return turn.reply || result(turn.status);
       }
       if (!await limiter.allow(e)) return result('RATE_LIMITED');

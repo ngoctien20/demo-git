@@ -15,7 +15,7 @@
 
 Supabase `ifxlvrhyjhbzbrkdsida`, 14 migration lúc kiểm. Mới nhất `20261114170717` thuộc Tester. RLS bật trên 20 bảng public, 8 bảng `tien404_r1_qa` và 2 bảng `tien404_dialogue_private` thấy trong truy vấn kiểm kê. `public.products` có policy SELECT cho `authenticated` khi membership còn hiệu lực. Catalog này có tenant, chưa có store. Catalog fixture có khóa tenant/store/bot/SKU; `anon`, `authenticated`, `service_role` đều thiếu quyền USAGE schema và SELECT bảng QA khi kiểm. Giữ quyền hiện tại. Không có bảng customer state của bản này trên Supabase hosted.
 
-Ngày 15/11 lúc **02:58:35 JST** connector đọc trực tiếp bot ở mode `dry_run/synthetic_qa` và đúng mã F01. Kết quả tức thời Shop A **159.000đ, 3**; Shop B **199.000đ, 5**. Bảng QA không có active theo sản phẩm, giá sỉ, size, màu, đơn vị hoặc timestamp xác minh nghiệp vụ. Không suy ra các trường này từ tên. Không cache số liệu này cho câu trả lời sau.
+Ngày 15/11 lúc **02:58:35 JST** connector đọc trực tiếp bot ở mode `dry_run/synthetic_qa` và đúng mã F01. Kết quả tức thời Shop A **159.000đ, 3**, Shop B **199.000đ, 5**. Bảng QA không có active theo sản phẩm, giá sỉ, size, màu, đơn vị hoặc timestamp xác minh nghiệp vụ. Không suy ra các trường này từ tên. Không cache số liệu này cho câu trả lời sau.
 
 | Workflow n8n | ID | Draft đã đọc | Published |
 |---|---|---|---|
@@ -40,11 +40,16 @@ V1 có node gọi router V12.3 và Owner Shadow. Không có đường gọi tớ
 
 | Bộ kiểm | Đầu vào / kết quả đợi | Kết quả đã quan sát |
 |---|---|---|
-| Source và regression | 35 ca Reply Pilot + 48 ca core cũ + 32 ca V12.4R. Giá/tồn, quantity, giới hạn, từ chối cấu hình không hợp lệ, không ghi/gửi | 115/115 PASS local. |
-| PostgreSQL 17.10 cô lập | Hai role A/B, cùng F01, expected 318.000đ và 398.000đ cho hai sản phẩm; không thấy hàng của tenant khác | 17/17 PASS integration bằng driver pg. Có 2 backend thực chờ cùng một khóa; 1 lượt được áp dụng, 1 receipt, lượt còn lại bị chặn. Có rollback/retry, phiên hết hạn, chuyển SKU, đổi giá/tồn, giới hạn cho lượt tới trễ, session mới đọc lại được bản nháp. |
+| Source và regression | 35 ca Reply Pilot + 48 ca core cũ + 34 ca V12.4R. Giá/tồn, quantity, giới hạn, từ chối cấu hình không hợp lệ, không ghi/gửi | 117/117 PASS local. |
+| PostgreSQL 17.10 cô lập | Hai role A/B, cùng F01, expected 318.000đ và 398.000đ cho hai sản phẩm; không thấy hàng của tenant khác | 19/19 PASS integration bằng driver pg. Có 2 backend thực chờ cùng một khóa; 1 lượt được áp dụng, 1 receipt, lượt còn lại bị chặn. Khi đổi mã và truy vấn mới gặp lỗi SQL, savepoint xóa lựa chọn cũ, giữ sự kiện cho retry, lượt “lấy 2” không thể báo lại SKU cũ. Có rollback/retry, phiên hết hạn, chuyển SKU, đổi giá/tồn, giới hạn cho lượt tới trễ, session mới đọc lại được bản nháp. |
 | n8n Reply Guard QA | Manual trigger, 1 lần đọc snapshot và 25 tình huống giả lập; dự kiến không gửi / ghi đơn | [Execution 3671](https://ngoctien20.app.n8n.cloud/workflow/nKNKDLO4l2PXL4tx/executions/3671) trả 25/25 PASS, `real_llm_tested=false`, `external_sends=0`, `orders_written=0`. |
-| Hosted Supabase | CI riêng chạy trên push của chính nhánh. Hai merchant QA đăng nhập, SELECT `public.products`: thấy dòng shop mình, kết quả rỗng cho shop còn lại, đóng phiên vừa mở | Xem kết quả run đã đối chiếu trong phần bằng chứng CI. Quyền merchant khác quyền Customer của core. |
+| Hosted Supabase | CI riêng chạy trên push của chính nhánh. Hai merchant QA đăng nhập, SELECT `public.products`: thấy dòng shop mình, kết quả rỗng cho shop còn lại, đóng phiên vừa mở | [Job 132541340161](https://github.com/ngoctien20/demo-git/actions/runs/43625844898/job/132541340161) đạt 9/9 assertion qua HTTP, gồm anonymous, đăng nhập, đọc đúng shop, lọc shop kia và đóng phiên từng tài khoản. Quyền merchant khác quyền Customer của core. |
 | Core lên kênh thật hoặc model thật | Cần credential truy cập DB theo shop, xác thực provider và giới hạn ngân sách | BLOCKED. Không có phép thử trả lời Zalo, Messenger, Website hay gọi GPT trả phí. |
+
+## Bằng chứng CI
+
+- Commit triển khai đầu tiên `28eb0c4ea8fb8f3b21b8805893261ecf834b0c03`, [push CI](https://github.com/ngoctien20/demo-git/actions/runs/43625844898) và [pull request CI](https://github.com/ngoctien20/demo-git/actions/runs/43625849816) success. Đọc log: 115/115 source, 17/17 PG, hai backend chờ khóa; hosted merchant HTTP 9/9. Bản sau bổ sung 4 regression cho việc đổi SKU khi nguồn đọc lỗi, quyền hủy và nhãn sản phẩm.
+- Không kích hoạt deployment ứng dụng. Nguồn cho CI là nhánh riêng của PR #52. Mọi secret QA chỉ đi vào bước hosted trên push đúng nhánh, kết quả ghi ra trạng thái và số dòng.
 
 ## SECURITY · Cổng nghiệm thu
 
@@ -52,7 +57,7 @@ V1 có node gọi router V12.3 và Owner Shadow. Không có đường gọi tớ
 |---|---|---|
 | P0 | BLOCKED hosting Customer | Phê duyệt quyền DB tối thiểu và backup/rollback trước migration; kiểm E2E adapter bằng đúng identity customer service của hai shop. Không mở quyền cho frontend hay dùng service-role để vượt RLS. |
 | P0 | BLOCKED live channel | HMAC internal QA chưa xác minh chữ ký của provider. Cần mapping bot đã phê duyệt, chính sách lưu giữ/dọn bản ghi và quản lý khóa ổn định, giới hạn gửi, rollback. Chỉ xem xét kết nối sau khi core được duyệt. |
-| P1 | BLOCKED mô hình | Cần chứng cứ giới hạn cứng ở Gateway hoặc phương thức ngân sách tương đương được chủ dự án phê duyệt. Khi đủ điều kiện mới đo chất lượng hội thoại, token và độ trễ bằng model thật. |
+| P1 | BLOCKED mô hình | Cần chứng cứ giới hạn cứng ở Gateway hoặc phương thức ngân sách tương đương được chủ dự án phê duyệt. Khi đủ điều kiện mới đo chất lượng hội thoại, token và độ trễ bằng model thật. |
 | P1 | PROPOSED dọn phiên ngủ | Đã reset logic khi hết hạn và dọn receipt khi có lượt mới. Trước sử dụng lâu dài cần job retention cho các phiên không quay lại, metrics ẩn danh và diễn tập phục hồi. |
 | P2 | PROPOSED dữ liệu sản phẩm | Bổ sung nguồn doanh nghiệp xác minh cho trạng thái bán, bảng sỉ/MOQ, biến thể, freshness và chính sách; chỉ bật câu trả lời khi đủ nguồn. |
 

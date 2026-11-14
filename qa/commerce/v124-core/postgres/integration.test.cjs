@@ -223,3 +223,28 @@ test('Late unique events consume quota but do not keep the old session alive',as
   assert.equal(+after.expires_at,+start.expires_at);assert.equal(after.revision,start.revision);
   assert.equal((await f.preview('F02')).status,'RATE_LIMITED');
 });
+test('Failed switch to another SKU clears the previous selection even when PostgreSQL aborts the catalog query',async()=>{
+  const real=api.createPostgresQaCatalog({poolForContext});let fail=true;
+  const f=setup({repository:{async readProduct(p) {
+    if(fail && p.sku==='F02') await p.client.query('SELECT 1/0');
+    return real.readProduct(p);
+  }}});
+  await f.preview('mua F01 2');
+  const switchEvent=f.event('đổi sang F02');
+  assert.equal((await f.core.preview(switchEvent)).status,'CATALOG_UNTRUSTED');
+  const state=await rowFor(f,switchEvent);assert.equal(state.sku,null);assert.equal(state.quantity,null);
+  assert.equal((await f.preview('lấy 2')).status,'NEED_PRODUCT');
+  fail=false;assert.equal((await f.preview('F02')).sku,'F02');
+  assert.equal((await f.preview('lấy 2')).totalVnd,420000);
+});
+test('A failed explicit switch can retry its exact same event before a later turn',async()=>{
+  const real=api.createPostgresQaCatalog({poolForContext});let fail=true;
+  const f=setup({repository:{async readProduct(p) {
+    if(fail && p.sku==='F02') throw Error('offline');
+    return real.readProduct(p);
+  }}});
+  await f.preview('F01');const e=f.event('đổi sang F02');
+  assert.equal((await f.core.preview(e)).status,'CATALOG_UNTRUSTED');
+  fail=false;assert.equal((await f.core.preview(e)).status,'PRODUCT_QA_PREVIEW');
+  assert.equal((await f.core.preview(e)).status,'DUPLICATE_BLOCKED');
+});
