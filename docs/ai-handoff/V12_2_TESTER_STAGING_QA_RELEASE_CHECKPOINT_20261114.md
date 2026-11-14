@@ -29,6 +29,7 @@
 - `43592970592` SUCCESS: source/Auth/RLS contract, local Chromium, new admin CSV formatter tests, hosted HTTPS.
 - Website navigation regression `43592970569` SUCCESS.
 - `43593212140` SUCCESS: **post-deployment** HTTPS verified 10 hosted routes, including `/tester-admin.html`, `/assets/tester-report-csv.mjs`; 3 private source paths returned 404. Anonymous Chromium desktop/mobile fail-closed passed.
+- Supabase RLS read-only transaction with simulated `authenticated` role and no user claim: `visible_cases_without_grant=0`, `visible_modules_without_grant=0`, `visible_runs_without_grant=0`; transaction rolled back.
 - CI builds and smoke tests cannot substitute for signed-in real-user E2E. Do not mark grant/revoke/expiry or CSV download via real admin account TESTED yet.
 
 ## Production and risk gates
