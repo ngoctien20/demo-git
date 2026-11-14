@@ -7,6 +7,7 @@ import {getAuthClient} from './auth-client.js';
 import {withDeadline} from './auth-runtime.mjs';
 import {guideForModule} from './tester-guides.mjs';
 import {DEMO_CATALOG,calculateDemo,formatVnd} from './tester-sandbox.mjs';
+import {mountQaStudio} from './tester-ai-studio.mjs';
 
 const $=id=>document.getElementById(id);
 const pane=$('tp-panel'),statusNode=$('tp-status'),locked=$('tp-locked'),workspace=$('tp-workspace');
@@ -77,8 +78,12 @@ function renderHome(){
   info(lockedCard,'Nhờ quản trị viên TIEN404 AI giao quyền “Dữ liệu mẫu” cho tài khoản của bạn, sau đó nhấn Tải lại ở đầu trang. Không cần tự cấu hình gì thêm.');
   return;
  }
+ // Default path for expert testers: a short risk-based checklist and an optional external AI reviewer.
+ mountQaStudio(pane,{state,onSaved:()=>progress()});
+ const quickDetails=e('details',null,'tp-quick-details');quickDetails.id='tp-quick-details';
+ quickDetails.append(e('summary','Hoặc thử nhanh 3 tình huống minh hoạ (tuỳ chọn)'));
  const box=e('section',null,'tp-card tp-quick');
- box.append(e('p','BƯỚC 1 / 2 — THỬ NHANH','tp-overline'));
+ box.append(e('p','THỬ NHANH — BỔ SUNG','tp-overline'));
  box.append(e('h2','Nếu bạn là khách mua hàng, điều gì sẽ xảy ra?'));
  box.append(e('p','Chọn 1 trong 3 tình huống dưới đây. Không cần gõ SKU hoặc nhập thông tin cá nhân.','tp-quick-lead'));
  const choiceList=e('div',null,'tp-quick-choices');
@@ -172,9 +177,9 @@ function renderHome(){
  box.append(choiceList);
  if(scenarios.length){box.append(response,review)}
  else info(box,'Chưa có tình huống mẫu phù hợp. Hãy liên hệ quản trị viên hoặc xem bài nâng cao.');
- pane.append(box);
+ quickDetails.append(box);pane.append(quickDetails);
  const more=e('section',null,'tp-small-footer');
- more.append(e('p','Muốn kiểm tra kỹ hơn? Bạn có thể dùng bộ 15 bài chi tiết. Phần này không bắt buộc.','tp-quiet'));
+ more.append(e('p','Cần rà soát từng ca? Bộ bài chi tiết vẫn có trong mục nâng cao, không bắt buộc hoàn thành tất cả.','tp-quiet'));
  button(more,'Xem các bài kiểm tra chi tiết',()=>display('modules'));
  pane.append(more);
 }
