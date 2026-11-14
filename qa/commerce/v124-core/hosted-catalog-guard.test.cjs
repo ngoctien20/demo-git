@@ -71,8 +71,9 @@ test('wrong tenant/store/bot from SQL readback is never silently accepted',async
  for(const field of ['tenant_key','store_key','bot_key']){
   const p={...product,[field]:'qa-attacker'};
   const c=client(checked,p);
+  // The underlying QA repository rejects a wrong bot_key earlier than the wrapper.
   await assert.rejects(guard('core_qa_a').readProduct({context:ctx,sku:'F01',client:c}),
-    /CATALOG_CROSS_SCOPE_REJECTED/);
+    /CATALOG_(?:CROSS_SCOPE_REJECTED|SCOPE_DENIED)/);
   assert.equal(c.calls.length,2);
  }
 });
