@@ -18,6 +18,7 @@ function createQaRetentionMaintenance({pool, sessionRetentionMs = 86400000,
 
   const sessionCutoff = `clock_timestamp() - ($1::bigint * interval '1 millisecond')`;
   const receiptCutoff = `clock_timestamp() - ($2::bigint * interval '1 millisecond')`;
+  const receiptBatchCutoff = `clock_timestamp() - ($1::bigint * interval '1 millisecond')`;
   async function inspect() {
     const client = await pool.connect();
     try {
@@ -68,14 +69,14 @@ function createQaRetentionMaintenance({pool, sessionRetentionMs = 86400000,
         WITH candidates AS (
           SELECT tenant_key,store_key,channel,bot_key,actor_hash,receipt_hash
             FROM ${SCHEMA}.receipts
-           WHERE expires_at < ${receiptCutoff}
+           WHERE expires_at < ${receiptBatchCutoff}
            ORDER BY expires_at
-           LIMIT $3 FOR UPDATE SKIP LOCKED
+           LIMIT $2 FOR UPDATE SKIP LOCKED
         )
         DELETE FROM ${SCHEMA}.receipts r USING candidates c
          WHERE (r.tenant_key,r.store_key,r.channel,r.bot_key,r.actor_hash,r.receipt_hash)=
                (c.tenant_key,c.store_key,c.channel,c.bot_key,c.actor_hash,c.receipt_hash)
-         RETURNING 1`,[sessionRetentionMs,receiptGraceMs,batchSize]);
+         RETURNING 1`,[receiptGraceMs,batchSize]);
       await client.query('COMMIT');
       return Object.freeze({mode:'DISPOSABLE_PG_QA_ONLY',deletedSessions:oldSessions.rowCount,
         deletedReceipts:oldReceipts.rowCount,batchSize,
