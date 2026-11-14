@@ -1,0 +1,7 @@
+{
+  "name": "tien404-customer-core-qa",
+  "version": "12.4.1",
+  "private": true,
+  "description": "PostgreSQL integration tests for the read-only staging customer core",
+  "devDependencies": { "pg": "8.23.1" }
+}

@@ -1,0 +1,76 @@
+name: "V12.4 Public Reply Pilot QA (no outbound)"
+on:
+  push:
+    branches: ["work/v124-public-ai-reply-pilot-*"]
+    paths:
+      - "qa/zalo/public-reply-pilot*"
+      - "qa/commerce/v124-core/**"
+      - ".github/workflows/v124-public-reply-qa.yml"
+  pull_request:
+    branches: ["work/v12-r1-shop-owned"]
+    paths:
+      - "qa/zalo/public-reply-pilot*"
+      - "qa/commerce/v124-core/**"
+      - ".github/workflows/v124-public-reply-qa.yml"
+permissions:
+  contents: read
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tien404_core_ephemeral
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-ephemeral-qa
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source and previous reply regressions
+        run: |
+          for file in qa/commerce/v124-core/*.cjs qa/commerce/v124-core/postgres/*.cjs qa/zalo/public-reply-pilot*.cjs; do node --check "$file"; done
+          node --test --test-reporter=tap qa/zalo/public-reply-pilot.test.cjs qa/commerce/v124-core/*.test.cjs
+      - name: Install locked PostgreSQL test driver
+        working-directory: qa/commerce/v124-core
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Independent PostgreSQL workers and scoped customer roles
+        working-directory: qa/commerce/v124-core
+        env:
+          TIEN404_EPHEMERAL_PG: "yes"
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGDATABASE: tien404_core_ephemeral
+          PGUSER: postgres
+          PGPASSWORD: local-ephemeral-qa
+        run: node --test --test-reporter=tap postgres/integration.test.cjs
+  hosted-catalog-read:
+    # QA credentials are available only on the trusted branch push. PRs run the isolated suites.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/work/v124-public-ai-reply-pilot-20261115'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 219dd0864d4a26500d758edbb803f3b8b5e61f73
+          path: qa-auth-config
+          persist-credentials: false
+      - name: Read-only product visibility via two signed merchant sessions
+        env:
+          TIEN404_QA_A_EMAIL: ${{ secrets.TIEN404_QA_A_EMAIL }}
+          TIEN404_QA_A_PASSWORD: ${{ secrets.TIEN404_QA_A_PASSWORD }}
+          TIEN404_QA_B_EMAIL: ${{ secrets.TIEN404_QA_B_EMAIL }}
+          TIEN404_QA_B_PASSWORD: ${{ secrets.TIEN404_QA_B_PASSWORD }}
+        run: |
+          set -eu
+          QA_PUBLIC_KEY="$(node --input-type=module -e "import {readFileSync} from 'node:fs'; const c=await import('data:text/javascript;base64,'+readFileSync('qa-auth-config/assets/auth-config.js').toString('base64')); console.log(c.SUPABASE_PUBLISHABLE_KEY)")"
+          export QA_PUBLIC_KEY
+          python3 -B qa/commerce/v124-core/hosted-catalog-qa.py
