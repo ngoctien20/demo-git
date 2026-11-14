@@ -11,6 +11,10 @@ const form=document.getElementById('mp-register-form');
 const button=document.getElementById('mp-register-submit');
 const status=document.getElementById('mp-register-notice');
 let busy=false;
+if(!MERCHANT_SELF_SIGNUP_ENABLED){
+  // Do not invite users to type credentials into a form that is not accepting registrations.
+  for(const field of form.elements)field.disabled=true;
+}
 if(MERCHANT_SELF_SIGNUP_ENABLED){
   button.disabled=false;
   button.textContent='Tạo tài khoản staging';
