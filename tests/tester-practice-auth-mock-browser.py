@@ -143,6 +143,17 @@ def run():
         assert page.locator('#tp-ai-copy').is_enabled()
         page.get_by_role('button',name='Xem nội dung gửi AI').click()
         assert 'CHƯA XÁC MINH' in page.locator('#tp-ai-prompt').input_value()
+        page.evaluate("""() => Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
+          writeText:async(value)=>{window.__qaCopiedPrompt=value}
+        }})""")
+        page.locator('#tp-ai-copy').click()
+        page.wait_for_function("window.__qaCopiedPrompt?.includes('CHƯA XÁC MINH')",timeout=8000)
+        assert 'Đã sao chép' in page.locator('#tp-ai-copy-status').inner_text()
+        page.locator('#tp-ai-notes').fill('Bearer abcdefghijklmnopsecret')
+        page.locator('#tp-ai-attest').check()
+        page.locator('#tp-ai-submit').click()
+        assert 'thông tin nhạy cảm' in page.locator('#tp-ai-submit-status').inner_text()
+        assert page.locator('#tp-done').inner_text()=='3'
         page.locator('#tp-ai-notes').fill('Tôi đề xuất thêm kiểm tra lượng tồn vượt 1 tỷ; chưa thử trên bot AI thật.')
         page.locator('#tp-ai-severity').select_option('P1')
         page.locator('#tp-ai-verdict').select_option('needs_review')
