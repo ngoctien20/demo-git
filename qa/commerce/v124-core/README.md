@@ -32,3 +32,17 @@ Lớp session lưu hash, SKU, số lượng, phase, revision và mốc thời gi
 - `sweepDisposableQaOnly()`: chỉ chạy khi cả ba cờ cho phép môi trường PostgreSQL kiểm thử dùng một lần cùng khớp; còn kiểm tra `current_database()` bên trong transaction. Xóa theo từng lô tối đa 250 và dùng `FOR UPDATE SKIP LOCKED`. PostgreSQL 17 CI kiểm chứng hai session QA cũ bị dọn, session còn hạn và receipt hiện hành được giữ, gọi lại không xóa thêm.
 
 **BLOCKED trên Supabase staging và production:** chưa có maintenance role với RLS và quyền xóa tối thiểu, lịch chạy, retention policy được duyệt, backup và giám sát. Không import module này vào API core hoặc webhook; không bật job dọn; không chạy lệnh xóa trên Supabase. Cleanup candidate dùng cho QA PostgreSQL cô lập, không phải session thực thuộc PR #41.
+
+
+## V12.4R.3 — Customer Catalog hosted RLS readiness (source QA, no hosted grants)
+
+Sau khi kiểm tra trực tiếp Supabase `tien404-staging`, `public.products` chỉ có `tenant_id`, không có `store_id`. RLS `public.products` cho tài khoản merchant QA hoạt động: hai tenant thử nghiệm chỉ thấy sản phẩm của mình; unknown user/anon bị chặn; JWT claim `tenant_id` giả không được quyền mở dữ liệu shop khác. Đây chỉ là **SQL role/claim simulation**, không phải Customer backend JWT E2E.
+
+`tien404_r1_qa.catalog` có khóa tenant/store/bot/SKU và dữ liệu Shop A/B; schema/bảng đóng quyền cho `anon`, `authenticated`, `service_role`. Chưa có Customer backend role trong Supabase.
+
+- `hosted-catalog-guard.cjs`: repository QA chọn dùng riêng, **không export trong index.cjs**, yêu cầu context Customer đã HMAC xác thực, DB client thuộc transaction, role đúng tên server map, không superuser/BYPASSRLS, RLS thực sự có hiệu lực ở cả catalog và shop_bots, không SELECT `credential_ref` và không có quyền ghi Catalog. Trước khi trả giá/tồn, từ chối đọc chéo tenant/store/bot/SKU. Role/credential không do dữ liệu chat quyết định.
+- `hosted-rls-readonly-audit.sql`: tái hiện kiểm toán hosted **chỉ đọc** cho hai tenant, user không hợp lệ và anon; không tạo hoặc cấp bất kỳ policy/quyền nào. File này không chạy trong public REST.
+- `hosted-rls-audit.test.cjs`, `hosted-catalog-guard.test.cjs` và PostgreSQL 17 integration bổ sung kiểm tra fail-closed, role mismatch, credential column grants, read-only access thật ở PG17 QA disposable.
+- [Đề xuất role/RLS cần phê duyệt](../../../docs/ai-handoff/V12_4R_3_CUSTOMER_HOSTED_RLS_APPROVAL_PROPOSAL.md): DRAFT SQL cho hai role QA NOLOGIN chỉ đọc; **KHÔNG ĐƯỢC TỰ ÁP DỤNG**. Owner PR #41 không bị sửa. Để triển khai hosted Customer, phải phê duyệt role/credential, policy, backup, rollback và E2E quyền theo shop.
+
+Mọi channel vẫn `RESERVED_NOT_CONNECTED`; không gọi model trả phí, không ghi Orders/Outbox hoặc cấp quyền database trong bản này.
