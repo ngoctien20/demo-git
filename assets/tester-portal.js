@@ -369,8 +369,11 @@ function renderHelp(){
  info(card('Báo lỗi theo bài thử'),'Vào Chọn bài thử → chọn case → Không đạt hoặc Bị chặn → mô tả → Lưu. Không chụp/đính kèm token, mật khẩu, dữ liệu khách thật.');
 }
 async function load(){
- const round=++state.epoch;state.lastCheck=Date.now();workspace.hidden=true;locked.hidden=true;
- status('Đang xác thực tài khoản và quyền riêng của Tester…');$('tp-refresh').disabled=true;
+ if(state.busy)return; // Do not interrupt an active self-report.
+ const round=++state.epoch;state.lastCheck=Date.now();
+ const hadWorkspace=!workspace.hidden && !!state.user?.id;
+ if(!hadWorkspace){workspace.hidden=true;locked.hidden=true;}
+ status(hadWorkspace?'Đang kiểm tra quyền trong nền…':'Đang xác thực tài khoản và quyền riêng của Tester…');$('tp-refresh').disabled=true;
  try{
   const sb=state.client||await withDeadline(getAuthClient(),17000);
   if(round!==state.epoch)return;state.client=sb;
@@ -384,6 +387,7 @@ async function load(){
   ]);
   if(round!==state.epoch)return;
   if(a.error||s.error)throw Error('ACCESS_QUERY_DENIED');
+  const previousSnapshot=JSON.stringify([state.user?.id,state.access,state.staff,state.modules,state.cases,state.runs]);
   state.user=user;state.access=a.data;state.staff=s.data;
   if(!isApproved()&&!isStaff()){reset('Tài khoản đã đăng nhập nhưng chưa được Super Admin phê duyệt thử nghiệm, hoặc quyền đã hết hạn.');return}
   $('tp-admin-link').hidden=!isStaff();
@@ -406,15 +410,25 @@ async function load(){
    if(results.error)throw Error('RUNS_QUERY_DENIED');runs=results.data||[];
   }
   if(round!==state.epoch)return;
-  state.modules=modules;state.cases=cases;state.runs=runs;workspace.hidden=false;locked.hidden=true;render();
-  status('Bạn đã sẵn sàng! Chọn một tình huống bên dưới để trải nghiệm bản mẫu.','ok');
+  state.modules=modules;state.cases=cases;state.runs=runs;
+  const nextSnapshot=JSON.stringify([state.user?.id,state.access,state.staff,state.modules,state.cases,state.runs]);
+  if(!hadWorkspace || previousSnapshot!==nextSnapshot){
+    workspace.hidden=false;locked.hidden=true;render();
+  }
+  // Same authorized session: preserve form, scenario, pending comments and scroll.
+  status('Phiên Tester hợp lệ. Bạn có thể tiếp tục bài đang thử.','ok');
  }catch{if(round===state.epoch)reset('Không thể xác minh quyền hoặc dữ liệu. Không mở bài thử khi kiểm tra quyền thất bại.')}
  finally{if(round===state.epoch)$('tp-refresh').disabled=false}
 }
 nav.addEventListener('click',ev=>{const b=ev.target.closest('button[data-page]');if(b&&nav.contains(b))display(b.dataset.page)});
 $('tp-refresh').addEventListener('click',()=>load());
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-state.lastCheck>30000)load()});
-getAuthClient().then(sb=>{state.client=sb;sb.auth.onAuthStateChange((event)=>{
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-state.lastCheck>300000)load()});
+getAuthClient().then(sb=>{state.client=sb;sb.auth.onAuthStateChange((event,session)=>{
  if(event==='SIGNED_OUT')reset('Phiên đã đăng xuất.');
- if(event==='TOKEN_REFRESHED'||event==='USER_UPDATED')setTimeout(()=>load(),0);
+ if(event==='SIGNED_IN'&&state.user?.id&&state.user.id!==session?.user?.id){
+   reset('Tài khoản đã thay đổi. Đang kiểm tra quyền người mới…');
+   setTimeout(()=>load(),0);
+ }
+ if(event==='USER_UPDATED')setTimeout(()=>load(),0);
+ // TOKEN_REFRESHED and same-user SIGNED_IN are routine SDK events; do not rebuild UI.
 });return load()}).catch(()=>reset('Không thể tải xác thực. Hãy thử lại khi có kết nối.'));
