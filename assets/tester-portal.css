@@ -195,3 +195,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{
  .tp-friends .tp-qa-order-card .tp-ai-fields{grid-template-columns:1fr 1fr}
  .tp-friends .tp-qa-write-section .tp-actions button{flex:1 1 135px}
 }
+
+/* V12.4.1 one-tester Google Sheets pilot; private link only after RLS read. */
+.tp-friends .tp-qa-google-sheet{border-color:#59ae9a;background:linear-gradient(140deg,#123b36,#14283a 80%)}
+.tp-friends .tp-qa-google-sheet .tp-actions{margin:7px 0 4px}
+.tp-friends .tp-qa-google-sheet a.tp-button{display:inline-flex;min-height:45px;align-items:center;justify-content:center;padding:9px 16px;border-radius:10px;background:#7cdec6;color:#072c2b;text-decoration:none;font-weight:750}
+.tp-friends .tp-qa-google-sheet #tp-qa-sheet-status[data-tone=ok]{color:#b7ffdf}
+.tp-friends .tp-qa-local-details{border:1px solid #3b5768;border-radius:14px;padding:0 13px}
+.tp-friends .tp-qa-local-details>summary{cursor:pointer;color:#d5edf0;font-weight:650;font-size:13px;padding:15px 6px;line-height:1.55}
+.tp-friends .tp-qa-local-details>.tp-qa-write-section{margin-bottom:13px}
+.tp-friends .tp-qa-local-details>.tp-qa-write-section:first-of-type{margin-top:5px}

@@ -36,7 +36,8 @@ const tables={
 ],
  tien404_tester_runs:results,
  tien404_qa_sandbox_products:[],
- tien404_qa_sandbox_orders:[]
+ tien404_qa_sandbox_orders:[],
+ tien404_tester_google_sheets:[{user_id:uid,sheet_id:'17rjkZV_u9ye17BLimCePYC7EyZML2GlXSHfX8dFVTgM',access_status:'ready',expires_at:'2027-01-01T00:00:00Z',oauth_verified_at:'2026-11-14T17:06:03.230Z',model_workflow_id:'8HtaQAJuZWKyNhXu'}]
 };
 class Query{
  constructor(name){this.name=name;this.eqFilters=[];this.inFilters=[];this.action='select';this.insertPayload=null;this.max=null;}
@@ -143,8 +144,16 @@ def run():
 
         # QA isolated CRUD and 96 random QA prompts are independent of the model.
         page.locator('#tp-qa-write').wait_for(state='visible',timeout=10000)
+        sheet_link=page.locator('#tp-qa-sheet-link')
+        sheet_link.wait_for(state='visible',timeout=10000)
+        assert '/17rjkZV_u9ye17BLimCePYC7EyZML2GlXSHfX8dFVTgM/edit' in sheet_link.get_attribute('href')
+        assert sheet_link.get_attribute('target')=='_blank'
+        assert 'noopener' in sheet_link.get_attribute('rel')
+        assert 'Google Drive' in page.locator('#tp-qa-sheet-status').inner_text()
+        assert page.locator('#tp-qa-local-details').evaluate('(x)=>x.open') is False
         page.locator('#tp-qa-random-draw').click()
         assert 'QA' in page.locator('#tp-qa-random-prompt').inner_text()
+        page.locator('#tp-qa-local-details > summary').click()
         page.get_by_role('button',name='Nạp 21 sản phẩm mẫu').click()
         page.wait_for_function("document.querySelector('#tp-qa-product-count')?.textContent.includes('21 sản phẩm')",timeout=11000)
         page.locator('#tp-qa-product-select').select_option('A002')
