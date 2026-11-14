@@ -23,7 +23,8 @@ test('Supabase user and tester access are checked before data loading',()=>{
   assert.ok(js.includes(value),value);
  }
  assert.ok(!js.includes('innerHTML'));
- assert.ok(!js.includes('service_role'));
+ assert.ok(!js.includes('supabase.auth.admin.'));
+ assert.ok(!js.includes('sb_secret_'));
 });
 
 test('Tester results are self-reported and saved through Supabase RLS',()=>{
@@ -94,7 +95,7 @@ test('Built preview excludes private SQL and QA fixtures',()=>{
 test('Guidance labels unverified channels, data and images',()=>{
  const js=file('assets/tester-portal.js');
  assert.ok(js.includes('Kill Switch'));
- assert.ok(js.includes('chưa được phê duyệt'));
+ assert.ok(js.includes('Chỉ thử trong môi trường và kênh đã được xác minh'));
  assert.ok(js.includes('không phải giá hoặc tồn kho của cửa hàng thật'));
  assert.ok(js.includes('Ảnh lỗi: chưa có kho lưu ảnh riêng đã nghiệm thu'));
 });
