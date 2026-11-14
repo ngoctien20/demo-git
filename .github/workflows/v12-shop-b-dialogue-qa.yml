@@ -15,6 +15,8 @@ on:
       - "qa/zalo/v124-two-session-lock.sh"
       - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
       - "qa/zalo/v124-manual-encrypted-backup.sh"
+      - "qa/zalo/v124-ephemeral-role-rls.sh"
+      - "docs/ai-handoff/V12_4_REVIEW_ONLY_SHOP_B_ROLE_RLS.sql"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
   pull_request:
     branches:
@@ -31,6 +33,8 @@ on:
       - "qa/zalo/v124-two-session-lock.sh"
       - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
       - "qa/zalo/v124-manual-encrypted-backup.sh"
+      - "qa/zalo/v124-ephemeral-role-rls.sh"
+      - "docs/ai-handoff/V12_4_REVIEW_ONLY_SHOP_B_ROLE_RLS.sql"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
 permissions:
   contents: read
@@ -56,6 +60,7 @@ jobs:
           bash -n qa/zalo/v124-two-session-lock.sh
           bash -n qa/zalo/v124-ephemeral-pg-concurrency.sh
           bash -n qa/zalo/v124-manual-encrypted-backup.sh
+          bash -n qa/zalo/v124-ephemeral-role-rls.sh
           if env -i PATH="$PATH" bash qa/zalo/v124-manual-encrypted-backup.sh; then echo "UNSAFE_BACKUP_WITHOUT_CONFIG"; exit 1; fi
       - name: Run Shop B owner and order-safety cases
         run: node --test qa/zalo/shop-b-conversation.test.cjs qa/zalo/shop-b-session-service.test.cjs qa/zalo/shop-b-postgres-repository.test.cjs qa/zalo/shop-b-trusted-owner-resolver.test.cjs
@@ -92,3 +97,5 @@ jobs:
           bash -n qa/zalo/v124-ephemeral-pg-concurrency.sh
       - name: Two independent connections and atomic receipt QA (EPHEMERAL ONLY)
         run: bash qa/zalo/v124-ephemeral-pg-concurrency.sh
+      - name: Shop B least-privilege role, RLS and deny-by-default (EPHEMERAL ONLY)
+        run: bash qa/zalo/v124-ephemeral-role-rls.sh
