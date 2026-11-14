@@ -54,3 +54,32 @@ Ngày 14/11/2026, Owner báo Dashboard hiện “Đã ghép nối”. Supabase s
 **Read-only Supabase post-check:** `qa-tenant-b/qa-store-b/qa-bot-b` vẫn `paired`, claim `CONFIRMED`, recipient khớp, binding chưa hết hạn; hết hạn 21/11/2026 20:23:15 JST. Shop B vẫn `dry_run`. Số đơn QA Shop B = 2, outbox Shop B = 2, cả 2 `HELD/SEND_DISABLED`. Shop A đơn QA = 2; số outbox khác `HELD/SEND_DISABLED` = 0. Lệnh probe không tạo thêm đơn và không gửi thông báo ra ngoài.
 
 **NEXT:** Thiết kế/kiểm thử chat sản phẩm Shop B phía server dưới Shadow, dùng catalog đúng Shop B (F01 giá 199000 VND, không dùng giá Shop A 159000 VND), rồi xin Owner phê duyệt riêng trước khi bật **một** phản hồi outbound tới tài khoản QA đã xác minh. Không tự bật ZALO_SEND_ENABLED, không dùng OA/business API không đủ quyền, không nối khách thật/production. Rollback n8n Shadow về `2533f350-3053-47f7-8349-59f0e2f4f433` nếu probe lỗi.
+
+
+## TESTED — Shop B một phản hồi Zalo F01 được phê duyệt (14/11/2026)
+
+Owner đã phê duyệt **một** phản hồi thử nghiệm tới chính tài khoản Zalo của Owner Shop B đã ghép; không phê duyệt bật auto-reply hay gửi khách thật. Scope: Cloudflare Worker staging `tien404-zalo-outbound-v1-staging`, Bot Zalo, Supabase `tien404_r1_qa`.
+
+### Audit và tiền kiểm
+
+- Supabase readback: Shop B `paired`, claim `CONFIRMED`, owner recipient khớp, binding còn hạn; Shop B `dry_run`. Catalog F01: **199.000đ**, tồn QA **5**. n8n allowlist Owner và recipient của Shop B đã được so khớp bằng HMAC read-only; không tiết lộ chat ID.
+- Gateway ban đầu: version `38c7df57-8e22-4b79-b5c4-e08b342833c6`, `ZALO_SEND_ENABLED=false`. D1 prior idempotency key cũ đã `SENT` ngày 13/11; quota ngày 14/11 trước test chưa dùng.
+- Đã upload phiên bản mới **chưa triển khai** `1cc39977-a54d-4533-82b2-3ee78003cc48` với 2 endpoint QA riêng: `/v1/shop-b-f01-preflight` (no-send) và `/v1/shop-b-f01-one-shot`; `keep_bindings` secret_text/plain_text/d1, strict inheritance. Metadata readback xác nhận đủ 6 bindings như trước. Không bật khóa gửi chung. Đã triển khai tạm bằng deployment `d8d40e0d-002b-4d6a-8961-400a114a60ad`.
+- Preflight n8n workflow `zuOdXgOg6ZPaTcHR` execution **3360 SUCCESS**: so khớp chat owner, Bot getMe hợp lệ, quota + idempotency còn trống, nội dung F01 chính xác, không gửi.
+
+### Một lần gửi được phê duyệt
+
+- Manual-only QA workflow `Nm2sYvW0cCT2FpWR`, execution **3361 SUCCESS**, Gateway HTTP 200, Zalo Bot API ACK (`provider_message_id=d87d9c1e5d2d0c74553b`). Nội dung cố định:
+
+  `[SANDBOX-ONLY] TIEN404 Shop B: Áo thun đen L (F01), giá thử nghiệm 199.000đ, tồn kho QA 5. Đây là thông tin kiểm thử gửi tới Owner Shop B đã xác minh, không phải đơn hàng thật; bot chưa tự động chốt đơn.`
+
+- D1 readback: `TIEN404_SHOP_B_F01_OWNER_QA_ONCE_20261114` **SENT**, quota 14/11/2026 **1/1**. **Không retry** và không chạy lại workflow gửi.
+- Supabase Shop B outbox vẫn **2/2 HELD / SEND_DISABLED**; không có đơn thật hoặc trừ tồn kho.
+
+### Khóa lại sau nghiệm thu
+
+- Gateway đã **rollback về version gốc** `38c7df57-8e22-4b79-b5c4-e08b342833c6` bằng deployment `93d8dadd-6065-48ae-b61a-ee4da88e8692`. Readback xác nhận active version đúng, đủ 6 bindings, `ZALO_SEND_ENABLED=false`.
+- Shadow `OgDZNSAvKEvhnAvn` vẫn staging active version `3aeabdb0-79b1-4dca-96bb-c5b0c9c2bee6`, không bị sửa trong đợt gửi; Messenger/Orders production không chạm.
+- **Giới hạn bằng chứng:** `SENT` chỉ có nghĩa nhà cung cấp trả API ACK; chưa xác nhận người dùng thấy/đọc tin trên điện thoại. Zalo outbound chưa tự động theo tin nhắn thực tế. Owner kiểm tra tin đã đến và phản hồi kết quả thủ công.
+
+**Next gate:** sau khi Owner xác nhận đã nhận đúng tin, phát triển bot đối thoại sản phẩm từ webhook Zalo với đúng scope Shop B theo cơ chế staging riêng, đánh giá riêng auto-reply, zero-cross-tenant, rate-limit và giới hạn chi phí trước khi xin phép bật. Không gửi thêm trong phiên này.
