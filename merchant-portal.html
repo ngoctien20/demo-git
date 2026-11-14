@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a1020">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="TIEN404 AI Merchant Portal staging — khu vực riêng cho cửa hàng đã xác thực.">
+<title>Quản lý cửa hàng | TIEN404 AI Staging</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/merchant-portal.css">
+</head>
+<body>
+<a href="#merchant-content" class="mp-skip">Bỏ qua đến nội dung chính</a>
+<div id="merchant-app" class="mp-app">
+  <header class="mp-header">
+    <div class="mp-brand"><span class="mp-mark" aria-hidden="true">✦</span><span>TIEN404 <b>AI</b><small>Merchant Portal</small></span></div>
+    <div class="mp-header-right"><span class="mp-stage">STAGING · CHƯA GỬI TIN THẬT</span><a href="account.html" class="mp-link">Tài khoản</a></div>
+  </header>
+  <div class="mp-message" id="merchant-status" role="status" aria-live="polite">Đang xác thực phiên và quyền cửa hàng…</div>
+  <section id="merchant-login" class="mp-locked" hidden aria-label="Đăng nhập">
+    <h1>Đăng nhập để quản lý cửa hàng</h1>
+    <p>Chỉ tài khoản đã được cấp quyền mới được xem dữ liệu. Không sử dụng đăng nhập demo bằng email bất kỳ.</p>
+    <a class="mp-primary-link" href="login.html">Đăng nhập an toàn</a>
+    <p class="mp-dim">Chưa có quyền cửa hàng? Liên hệ quản trị TIEN404 để xác minh tài khoản.</p>
+  </section>
+  <div id="merchant-protected" class="mp-workspace" hidden>
+    <aside class="mp-sidebar" aria-label="Điều hướng quản lý">
+      <div class="mp-shop-picker">
+        <label for="merchant-shop-select">Cửa hàng đang quản lý</label>
+        <select id="merchant-shop-select" aria-label="Chọn cửa hàng đã được cấp quyền"></select>
+        <p id="merchant-shop-role" class="mp-dim"></p>
+      </div>
+      <nav id="merchant-nav" class="mp-nav" aria-label="Các mục quản lý">
+        <button type="button" data-panel="overview" aria-current="page">⌂ <span>Tổng quan</span></button>
+        <button type="button" data-panel="products">▣ <span>Sản phẩm & tồn kho</span></button>
+        <button type="button" data-panel="orders" data-manager-only>▤ <span>Đơn hàng</span></button>
+        <button type="button" data-panel="customers" data-manager-only>♧ <span>Khách hàng & lịch sử mua</span></button>
+        <button type="button" data-panel="care" data-manager-only>☏ <span>Chăm sóc khách</span></button>
+        <button type="button" data-panel="bots" data-manager-only>✧ <span>AI Bot & kênh bán</span></button>
+        <button type="button" data-panel="reports" data-manager-only>▥ <span>Báo cáo</span></button>
+        <button type="button" data-panel="subscriptions">◈ <span>Gói dịch vụ</span></button>
+        <button type="button" data-panel="help">? <span>Hỗ trợ TIEN404</span></button>
+        <button type="button" data-panel="settings">⚙ <span>Cài đặt tài khoản</span></button>
+      </nav>
+      <div class="mp-sidebar-foot">
+        <span>Không giao dịch thật • Dữ liệu Supabase theo RLS</span>
+        <button id="merchant-logout" type="button" class="mp-logout">Đăng xuất phiên này</button>
+      </div>
+    </aside>
+    <main class="mp-content" id="merchant-content" tabindex="-1">
+      <div class="mp-content-top">
+        <div>
+          <p class="mp-eyebrow">QUẢN LÝ KINH DOANH / V12.2</p>
+          <h1 id="merchant-heading">Tổng quan cửa hàng</h1>
+          <p id="merchant-subheading" class="mp-subtitle">Chỉ dữ liệu của cửa hàng được xác minh.</p>
+        </div>
+        <button id="merchant-refresh" class="mp-action" type="button">↻ Làm mới quyền & dữ liệu</button>
+      </div>
+      <div id="merchant-panel" class="mp-panel" aria-live="polite"></div>
+      <p class="mp-footnote">Staging: mọi dữ liệu hiển thị từ Supabase được giới hạn bởi RLS. Không có gửi Zalo/Messenger, thu tiền hoặc ghi Orders từ trang này.</p>
+    </main>
+  </div>
+</div>
+<script type="module" src="assets/merchant-portal.js"></script>
+</body>
+</html>
