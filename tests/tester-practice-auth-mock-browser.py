@@ -34,7 +34,9 @@ const tables={
  {case_id:'SHEET-SIM-011',module_id:'sheets',title:'VND sai',instructions:'Dữ liệu mẫu',expected_result:'invalid_price',readiness:'ready',sort_order:8},
  {case_id:'SHEET-AI-REVIEW-001',module_id:'sheets',title:'Báo cáo AI độc lập',instructions:'Tự đánh giá kết quả mẫu',expected_result:'self reported',readiness:'ready',sort_order:9}
 ],
- tien404_tester_runs:results
+ tien404_tester_runs:results,
+ tien404_qa_sandbox_products:[],
+ tien404_qa_sandbox_orders:[]
 };
 class Query{
  constructor(name){this.name=name;this.eqFilters=[];this.inFilters=[];this.action='select';this.insertPayload=null;this.max=null;}
@@ -44,7 +46,51 @@ class Query{
  order(k,{ascending=false}={}){this.sortField=k;this.asc=ascending;return this}
  limit(v){this.max=v;return this}
  insert(p){this.action='insert';this.insertPayload=p;return this}
+ upsert(p,opt={}){this.action='upsert';this.insertPayload=p;this.ignoreDuplicates=!!opt.ignoreDuplicates;return this}
+ update(p){this.action='update';this.updatePayload=p;return this}
  getData(){
+  if(this.name==='tien404_qa_sandbox_products'||this.name==='tien404_qa_sandbox_orders'){
+   const products=tables.tien404_qa_sandbox_products,orders=tables.tien404_qa_sandbox_orders;
+   const own=(arr)=>arr.filter(x=>this.eqFilters.every(([k,v])=>x[k]===v));
+   const add=(p)=>{
+     if(this.name==='tien404_qa_sandbox_products'){
+      if(products.some(x=>x.sku===p.sku)){if(this.action==='upsert'&&this.ignoreDuplicates)return null;return {error:{message:'Duplicate QA product'}}}
+      const row={...p,owner_id:uid};products.push(row);return row;
+     }
+     const product=products.find(x=>x.sku===p.sku);
+     if(!product)return {error:{message:'QA_SKU_NOT_FOUND'}};
+     const reserved=orders.filter(x=>x.sku===p.sku&&x.status!=='cancelled').reduce((v,x)=>v+x.quantity,0);
+     if(product.unit_price!==p.unit_price)return {error:{message:'QA_PRICE_MISMATCH'}};
+     if(reserved+p.quantity>product.stock)return {error:{message:'QA_STOCK_LIMIT'}};
+     const row={...p,id:'fake-order-'+(orders.length+1),owner_id:uid,total:p.unit_price*p.quantity,created_at:new Date().toISOString()};
+     orders.push(row);return row;
+   };
+   if(this.action==='insert'||this.action==='upsert'){
+     const arr=Array.isArray(this.insertPayload)?this.insertPayload:[this.insertPayload],out=[];
+     for(const p of arr){const result=add(p);if(result?.error)return {data:null,error:result.error};if(result)out.push(result)}
+     return {data:this.selectSingle?out[0]||null:out,error:null};
+   }
+   if(this.action==='update'){
+     const found=own(this.name==='tien404_qa_sandbox_products'?products:orders);
+     if(this.name==='tien404_qa_sandbox_products'){
+      for(const product of found){
+       const reserved=orders.filter(o=>o.sku===product.sku&&o.status!=='cancelled').reduce((n,o)=>n+o.quantity,0);
+       if(this.updatePayload.stock<reserved)return {data:null,error:{message:'QA_RESERVED_STOCK'}};
+       Object.assign(product,this.updatePayload);
+      }
+     }else{
+      for(const order of found){
+       const p=products.find(p=>p.sku===order.sku);
+       const qty=this.updatePayload.quantity;
+       const reserved=orders.filter(o=>o.sku===order.sku&&o.status!=='cancelled'&&o.id!==order.id).reduce((v,x)=>v+x.quantity,0);
+       if(this.updatePayload.unit_price!==p.unit_price)return {data:null,error:{message:'QA_PRICE_MISMATCH'}};
+       if(this.updatePayload.status!=='cancelled'&&reserved+qty>p.stock)return {data:null,error:{message:'QA_STOCK_LIMIT'}};
+       Object.assign(order,this.updatePayload,{total:qty*p.unit_price});
+      }
+     }
+     return {data:this.selectSingle?found[0]||null:found,error:null};
+   }
+  }
   if(this.action==='insert'){
    if(this.name==='tien404_tester_runs'){
      const inserted={...this.insertPayload,run_id:'test-run-local-'+(results.length+1),created_at:new Date().toISOString()};
@@ -61,7 +107,7 @@ class Query{
   return {data,error:null};
  }
  maybeSingle(){const result=this.getData();return Promise.resolve({data:result.data?.[0]||result.data||null,error:null});}
- single(){const result=this.getData();return Promise.resolve({data:result.data?.[0]||result.data||null,error:null});}
+ single(){this.selectSingle=true;const result=this.getData();return Promise.resolve({data:result.data?.[0]||result.data||null,error:result.error||null});}
  then(resolve,reject){return Promise.resolve(this.getData()).then(resolve,reject)}
 }
 export async function getAuthClient(){
@@ -94,6 +140,30 @@ def run():
         assert page.locator('#tp-more').evaluate('(el)=>el.open') is False
         assert page.locator('#tp-total').text_content()=='9'
         assert page.locator('.tp-quick-choice').count()==3
+
+        # QA isolated CRUD and 96 random QA prompts are independent of the model.
+        page.locator('#tp-qa-write').wait_for(state='visible',timeout=10000)
+        page.locator('#tp-qa-random-draw').click()
+        assert 'QA' in page.locator('#tp-qa-random-prompt').inner_text()
+        page.get_by_role('button',name='Nạp 21 sản phẩm mẫu').click()
+        page.wait_for_function("document.querySelector('#tp-qa-product-count')?.textContent.includes('21 sản phẩm')",timeout=11000)
+        page.locator('#tp-qa-product-select').select_option('A002')
+        page.locator('#tp-qa-product-select').dispatch_event('change')
+        assert page.locator('#tp-qa-product-count').is_visible()
+        page.locator('#tp-qa-order-sku').select_option('A002')
+        page.get_by_role('button',name='Tạo đơn QA').click()
+        page.wait_for_function("document.querySelector('#tp-qa-orders')?.textContent.includes('A002')",timeout=10000)
+        assert '318.000đ' not in page.locator('#tp-qa-orders').inner_text() or page.locator('#tp-qa-orders').is_visible()
+        # Guard: reserved inventory cannot be overwritten below existing order quantity.
+        page.locator('#tp-qa-product-select').select_option('A002')
+        page.locator('#tp-qa-product-select').dispatch_event('change')
+        page.locator('#tp-qa-write input[placeholder="Tồn kho QA"]').fill('0')
+        page.get_by_role('button',name='Lưu sửa sản phẩm').click()
+        page.wait_for_function("document.querySelector('#tp-qa-write-status')?.textContent.includes('QA_UPDATE_PRODUCT_FAILED')",timeout=10000)
+        page.locator('#tp-qa-product-select').dispatch_event('change')
+        page.locator('#tp-qa-write input[placeholder="Tồn kho QA"]').fill('30')
+        page.get_by_role('button',name='Lưu sửa sản phẩm').click()
+        page.wait_for_function("document.querySelector('#tp-qa-write-status')?.textContent.includes('đã được xác minh')",timeout=10000)
 
         assert page.locator('#tp-ai-studio').is_visible()
         assert page.locator('#tp-ai-submit').is_disabled()
