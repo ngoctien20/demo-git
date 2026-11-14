@@ -164,3 +164,34 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{
  .tp-friends .tp-ai-step .tp-actions button{flex:1 1 160px}
  .tp-friends .tp-ai-form button{width:100%}
 }
+
+/* V12.4 isolated tester QA writes and randomized cases */
+.tp-friends .tp-qa-write{padding:clamp(17px,3vw,25px);border-color:#477d72;background:linear-gradient(140deg,#102d30,#15243a 72%);display:grid;gap:16px}
+.tp-friends .tp-qa-write>h2{font-size:clamp(22px,3vw,29px);line-height:1.25;letter-spacing:-.025em;margin:0}
+.tp-friends .tp-qa-write>p.tp-ai-description{font-size:13px;max-width:740px}
+.tp-friends .tp-qa-write-section{border:1px solid #365363;background:#0e1b2b;border-radius:13px;padding:15px;display:grid;gap:9px}
+.tp-friends .tp-qa-write-section h3{font-size:18px;margin:0}
+.tp-friends .tp-qa-write-section>.tp-quiet{font-size:12px;line-height:1.55;margin:0 0 7px}
+.tp-friends .tp-qa-write-section .tp-qa-selector{margin:4px 0;display:block}
+.tp-friends .tp-qa-write-section .tp-ai-fields{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tp-friends .tp-qa-write-section .tp-ai-fields label{display:grid;gap:5px;min-width:0}
+.tp-friends .tp-qa-write-section input,.tp-friends .tp-qa-write-section select{min-width:0;width:100%;box-sizing:border-box;min-height:42px;font-size:13px}
+.tp-friends .tp-qa-write-section .tp-actions{display:flex;flex-wrap:wrap;gap:8px}
+.tp-friends .tp-qa-write-section .tp-actions button{min-height:44px}
+.tp-friends .tp-qa-order-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tp-friends .tp-qa-order-list>.tp-quiet{grid-column:1/-1}
+.tp-friends .tp-qa-order-card{border:1px solid #334b5b;border-radius:10px;padding:11px;background:#142b3b;display:grid;gap:8px}
+.tp-friends .tp-qa-order-card .tp-ai-fields{grid-template-columns:1fr 1fr}
+.tp-friends .tp-qa-add-product{border:1px dashed #4e7280;border-radius:10px;padding:10px}
+.tp-friends .tp-qa-add-product>summary{cursor:pointer;font-weight:650;font-size:13px;padding:7px}
+.tp-friends .tp-qa-add-product>button{margin-top:10px}
+.tp-friends .tp-qa-random-prompt{font-size:16px;line-height:1.6;background:#123a3b;color:#f0fff8;padding:14px;border-radius:10px;border:1px solid #5a9292;margin:0}
+.tp-friends #tp-qa-random-expected{color:#bfe3d2;line-height:1.55;font-size:12px}
+.tp-friends .tp-qa-write .tp-ai-message{font-size:12px;margin:0}
+.tp-friends .tp-qa-write .tp-ai-message[data-tone=ok]{color:#affbd7}
+@media(max-width:700px){
+ .tp-friends .tp-qa-write-section .tp-ai-fields{grid-template-columns:1fr}
+ .tp-friends .tp-qa-order-list{grid-template-columns:1fr}
+ .tp-friends .tp-qa-order-card .tp-ai-fields{grid-template-columns:1fr 1fr}
+ .tp-friends .tp-qa-write-section .tp-actions button{flex:1 1 135px}
+}
