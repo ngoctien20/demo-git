@@ -1,0 +1,76 @@
+{
+  "version": "V12.5",
+  "environment": "staging",
+  "released": false,
+  "stage": "CANDIDATE",
+  "sourceWorkflow": {
+    "id": "Z7FdV7uDvApfbURQ",
+    "activeVersionId": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "nodeCount": 27
+  },
+  "qaWorkflow": {
+    "id": "5Sw0ZDFRvrRjEfUZ",
+    "nodeCount": 8,
+    "active": false,
+    "model": "gpt-5-mini",
+    "memoryContextWindow": 14,
+    "tools": [
+      {
+        "name": "Read Products QA ONLY",
+        "operation": "read",
+        "sheet": "Products"
+      },
+      {
+        "name": "Read Orders QA ONLY",
+        "operation": "read",
+        "sheet": "Orders_QA"
+      },
+      {
+        "name": "Create Order QA ONLY",
+        "operation": "append",
+        "sheet": "Orders_QA"
+      },
+      {
+        "name": "Update Order QA ONLY",
+        "operation": "update",
+        "sheet": "Orders_QA"
+      }
+    ],
+    "externalCallsForbidden": [
+      "Facebook Graph send",
+      "Telegram send",
+      "Zalo send",
+      "AI_SALES_DEMO Orders",
+      "Production Commerce"
+    ],
+    "inbound": "private n8n Chat Trigger, no public webhook",
+    "llmExecutionsValidated": 0
+  },
+  "parity": {
+    "retained": [
+      "gpt-5-mini",
+      "14-turn conversation memory",
+      "Vietnamese/English sales and SKU-truth prompt semantics"
+    ],
+    "excluded": [
+      "Meta ingress/HMAC/deduplication",
+      "live create/manage/update/status/support tool workflows",
+      "real customer identity",
+      "Meta reply delivery"
+    ],
+    "note": "Adapted behavior clone; not a byte-for-byte copy of the live Messenger workflow."
+  },
+  "userFacingQA": {
+    "caseId": "SHEET-MESSENGER-CLONE-001",
+    "scenarioCount": 96,
+    "reportType": "human self_reported",
+    "directModelChat": false
+  },
+  "promotionGate": [
+    "authenticated per-user gateway",
+    "hard cost/quota approval",
+    "server side product price-stock order guard",
+    "QA live model comparison",
+    "human acceptance"
+  ]
+}
