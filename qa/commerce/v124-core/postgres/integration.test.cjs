@@ -39,7 +39,7 @@ before(async()=>{
   assert.equal((await admin.query("SELECT current_setting('server_version') AS v")).rowCount,1);
   // Only recreate the audited staging catalog shape in this fresh database. The customer candidate is the actual source under test.
   await admin.query('CREATE SCHEMA '+catalogSchema);
-  await admin.query(`CREATE TABLE tien404_r1_qa.shop_bots (tenant_key text,store_key text,bot_key text,enabled_mode text,identity_status text,
+  await admin.query(`CREATE TABLE tien404_r1_qa.shop_bots (tenant_key text,store_key text,bot_key text,enabled_mode text,identity_status text,credential_ref text NOT NULL DEFAULT 'fixture-private',catalog_source_ref text NOT NULL DEFAULT 'fixture-catalog',
         PRIMARY KEY(tenant_key,store_key,bot_key));
     CREATE TABLE tien404_r1_qa.catalog(tenant_key text,store_key text,bot_key text,sku text,product_name text,price_vnd bigint,stock integer,
         PRIMARY KEY(tenant_key,store_key,bot_key,sku));
