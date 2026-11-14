@@ -4,13 +4,14 @@
  */
 import {getAuthClient} from './auth-client.js';
 import {withDeadline} from './auth-runtime.mjs';
+import {buildTesterCsv} from './tester-report-csv.mjs';
 const $=id=>document.getElementById(id);
-let client=null,user=null,staff=null,loading=false;
+let client=null,user=null,staff=null,loading=false,exporting=false;
 const roleSet=new Set(['super_admin','qa_manager']);
 const status=(t,tone='info')=>{$('ta-status').textContent=t;$('ta-status').dataset.tone=tone};
 const node=(tag,text,cls)=>{const v=document.createElement(tag);if(text!==undefined&&text!==null)v.textContent=String(text);if(cls)v.className=cls;return v};
 const canEdit=()=>staff?.active===true&&staff.staff_role==='super_admin';
-function deny(reason){client=null;user=null;staff=null;$('ta-protected').hidden=true;$('ta-locked').hidden=false;$('ta-locked-reason').textContent=reason;status(reason,'error')}
+function deny(reason){client=null;user=null;staff=null;$('ta-export').disabled=true;$('ta-protected').hidden=true;$('ta-locked').hidden=false;$('ta-locked-reason').textContent=reason;status(reason,'error')}
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
 const short=id=>typeof id==='string'?(id.slice(0,8)+'…'+id.slice(-5)):'—';
 const date=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',timeStyle:'short'}).format(d):'Chưa rõ'};
@@ -53,16 +54,21 @@ async function refresh(){
  if(loading||!user||!staff)return;
  loading=true;$('ta-refresh').disabled=true;
  try{
-  const [access,modules,assignments,runs,audit]=await Promise.all([
+  const [access,modules,assignments,runs,audit,cases]=await Promise.all([
    query('tien404_tester_access','user_id,access_status,expires_at,updated_at',r=>r.order('updated_at',{ascending:false}).limit(120)),
    query('tien404_tester_modules','module_id,title,readiness,sort_order',r=>r.order('sort_order')),
    query('tien404_tester_assignments','user_id,module_id,active',r=>r.limit(500)),
    query('tien404_tester_runs','run_id,user_id,case_id,outcome,created_at,feedback,self_reported',r=>r.order('created_at',{ascending:false}).limit(100)),
-   query('tien404_tester_audit','event_type,actor_user_id,affected_user_id,created_at',r=>r.order('created_at',{ascending:false}).limit(70))
+   query('tien404_tester_audit','event_type,actor_user_id,affected_user_id,created_at',r=>r.order('created_at',{ascending:false}).limit(70)),
+   query('tien404_tester_cases','case_id,module_id,readiness',r=>r.limit(500))
   ]);
   $('ta-access-count').textContent=String(access.length);
   $('ta-run-count').textContent=String(runs.length);
   $('ta-module-count').textContent=String(modules.length);
+  const pending=cases.filter(c=>c.readiness==='pending').length;
+  const ready=cases.filter(c=>c.readiness==='ready').length;
+  $('ta-case-readiness').textContent='Danh mục QA staging: '+pending+' bài CANDIDATE (chưa mở), '+ready+' bài được gắn READY; việc được gắn READY không bảo đảm module đã sẵn sàng hoặc QA PASS.';
+  $('ta-export').disabled=runs.length===0;
   const options=$('ta-module-id');options.replaceChildren();
   for(const m of modules){
    const op=node('option',m.title+' — '+(m.readiness==='ready'?'Sẵn sàng':'Chưa mở'));
@@ -141,5 +147,38 @@ $('ta-assignment-form').addEventListener('submit',async event=>{
   status('Đã giao module qua backend, đang đọc lại quyền.','ok');await refresh();
  }catch{status('Phân công thất bại. Người thử phải được phê duyệt và module phải hợp lệ.','error')}
 });
+
+async function exportLatestCsv(){
+ const control=$('ta-export');
+ if(exporting||!client||!user||!staff?.active||!roleSet.has(staff.staff_role)){
+  status('Không có quyền xuất báo cáo.','error');return;
+ }
+ exporting=true;control.disabled=true;status('Đang xác thực lại quyền trước khi tải CSV…');
+ try{
+  const currentUser=await withDeadline(client.auth.getUser(),12000);
+  if(currentUser.error||currentUser.data?.user?.id!==user.id)throw Error('IDENTITY_CHANGED');
+  const activeStaff=await withDeadline(client.from('tien404_tester_staff')
+   .select('staff_role,active').eq('user_id',user.id).maybeSingle(),12000);
+  if(activeStaff.error||!activeStaff.data?.active||!roleSet.has(activeStaff.data.staff_role))
+   throw Error('ROLE_REVOKED');
+  const report=await withDeadline(client.from('tien404_tester_runs')
+   .select('created_at,run_id,user_id,case_id,outcome,feedback,self_reported')
+   .order('created_at',{ascending:false}).limit(500),15000);
+  if(report.error)throw Error('READ_DENIED');
+  const rows=report.data||[];
+  if(!rows.length){status('Chưa có báo cáo tự đánh giá để xuất.');return;}
+  const blob=new Blob([buildTesterCsv(rows)],{type:'text/csv;charset=utf-8'});
+  const localUrl=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=localUrl;a.download='tien404-tester-self-reports-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(localUrl),4000);
+  status('Đã tạo bản CSV từ '+rows.length+' lượt tự đánh giá do RLS cho phép. Chưa phải QA được xác minh.','ok');
+ }catch{
+  status('Không thể xuất CSV. Kiểm tra phiên, quyền nhân sự và kết nối backend.','error');
+ }finally{exporting=false;control.disabled=false;}
+}
+$('ta-export').addEventListener('click',exportLatestCsv);
+
 $('ta-refresh').addEventListener('click',refresh);
 initialize();
