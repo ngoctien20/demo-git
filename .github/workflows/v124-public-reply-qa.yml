@@ -1,0 +1,41 @@
+name: "V12.4 Public Reply Pilot QA (no outbound)"
+on:
+  push:
+    branches:
+      - "work/v124-public-ai-reply-pilot-*"
+    paths:
+      - "qa/zalo/public-reply-pilot.cjs"
+      - "qa/zalo/public-reply-pilot.test.cjs"
+      - "qa/commerce/v124-core/**"
+      - ".github/workflows/v124-public-reply-qa.yml"
+  pull_request:
+    branches:
+      - "work/v12-r1-shop-owned"
+    paths:
+      - "qa/zalo/public-reply-pilot.cjs"
+      - "qa/zalo/public-reply-pilot.test.cjs"
+      - "qa/commerce/v124-core/**"
+      - ".github/workflows/v124-public-reply-qa.yml"
+permissions:
+  contents: read
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check syntax
+        run: |
+          node --check qa/zalo/public-reply-pilot.cjs
+          node --check qa/zalo/public-reply-pilot.test.cjs
+          node --check qa/commerce/v124-core/ingress.cjs
+          node --check qa/commerce/v124-core/catalog.cjs
+          node --check qa/commerce/v124-core/ports.cjs
+          node --check qa/commerce/v124-core/core.cjs
+          node --check qa/commerce/v124-core/core.test.cjs
+          node --check qa/commerce/v124-core/index.cjs
+      - name: Run public customer policy tests
+        run: node --test qa/zalo/public-reply-pilot.test.cjs qa/commerce/v124-core/core.test.cjs
