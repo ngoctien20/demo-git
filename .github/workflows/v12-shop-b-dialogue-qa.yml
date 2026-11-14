@@ -14,6 +14,7 @@ on:
       - "qa/zalo/shop-b-trusted-owner-resolver.test.cjs"
       - "qa/zalo/v124-two-session-lock.sh"
       - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
+      - "qa/zalo/v124-manual-encrypted-backup.sh"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
   pull_request:
     branches:
@@ -29,6 +30,7 @@ on:
       - "qa/zalo/shop-b-trusted-owner-resolver.test.cjs"
       - "qa/zalo/v124-two-session-lock.sh"
       - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
+      - "qa/zalo/v124-manual-encrypted-backup.sh"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
 permissions:
   contents: read
@@ -53,6 +55,8 @@ jobs:
           node --check qa/zalo/shop-b-trusted-owner-resolver.test.cjs
           bash -n qa/zalo/v124-two-session-lock.sh
           bash -n qa/zalo/v124-ephemeral-pg-concurrency.sh
+          bash -n qa/zalo/v124-manual-encrypted-backup.sh
+          if env -i PATH="$PATH" bash qa/zalo/v124-manual-encrypted-backup.sh; then echo "UNSAFE_BACKUP_WITHOUT_CONFIG"; exit 1; fi
       - name: Run Shop B owner and order-safety cases
         run: node --test qa/zalo/shop-b-conversation.test.cjs qa/zalo/shop-b-session-service.test.cjs qa/zalo/shop-b-postgres-repository.test.cjs qa/zalo/shop-b-trusted-owner-resolver.test.cjs
 
