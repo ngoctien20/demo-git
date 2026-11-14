@@ -53,7 +53,7 @@ export function mountQaStudio(root,{state,onSaved}){
   previewBtn.disabled=checks.length===0;
   publishBtn.disabled=checks.length===0||!caseReady;
  },'tp-primary');
- actions.append(runBtn);
+ runBtn.id='tp-ai-run';actions.append(runBtn);
  const resultStatus=el('p','Chưa chạy. Bộ kiểm tra chỉ sử dụng catalog giả lập.','tp-ai-message');resultStatus.id='tp-ai-run-status';resultStatus.setAttribute('role','status');resultStatus.setAttribute('aria-live','polite');
  const results=el('div',null,'tp-ai-results-wrap');results.id='tp-ai-results';
  stage1.append(actions,resultStatus,results);
