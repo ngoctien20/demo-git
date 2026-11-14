@@ -1,13 +1,13 @@
 name: "V12.4 Public Reply Pilot QA (no outbound)"
 on:
   push:
-    branches: ["work/v124-public-ai-reply-pilot-*"]
+    branches: ["work/v124-public-ai-reply-pilot-*", "work/v124r3-*"]
     paths:
       - "qa/zalo/public-reply-pilot*"
       - "qa/commerce/v124-core/**"
       - ".github/workflows/v124-public-reply-qa.yml"
   pull_request:
-    branches: ["work/v12-r1-shop-owned", "work/v124-public-ai-reply-pilot-20261115"]
+    branches: ["work/v12-r1-shop-owned", "work/v124-public-ai-reply-pilot-20261115", "work/v124-public-ai-reply-pilot-retention-20261115"]
     paths:
       - "qa/zalo/public-reply-pilot*"
       - "qa/commerce/v124-core/**"
