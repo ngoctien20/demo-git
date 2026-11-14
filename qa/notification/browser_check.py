@@ -59,3 +59,20 @@ with sync_playwright() as p:
     page.get_by_role('button',name='Xem báo cáo').click()
     expect(page.get_by_role('status')).to_contain_text('Chọn kỳ báo cáo')
     browser.close()
+
+with sync_playwright() as p:
+    browser=p.chromium.launch()
+    page=browser.new_page(viewport={"width":360,"height":780})
+    page.set_content('<main lang="vi"></main>')
+    page.add_script_tag(content=Path('merchant/owner-confirm.mjs').read_text().replace('export function','function'))
+    for reply,expected in [('PENDING','Chưa xác minh được kết quả'),('PAIRED','Đã ghép nối.')]:
+        page.evaluate("""result => mountOwnerConfirmation(document.querySelector('main'),{
+          status:'PENDING_OWNER_CONFIRMATION',challengeId:'challenge-a',shopName:'Shop A',
+          botName:'Bot A',recipientFingerprint:'0011abcd'}, async id => ({status:result,challengeId:id}))""",reply)
+        expect(page.get_by_text('Shop A · Bot A · Dấu nhận diện 0011abcd')).to_be_visible()
+        button=page.get_by_role('button',name='Xác nhận đúng tài khoản')
+        button.click()
+        expect(page.get_by_role('status')).to_contain_text(expected)
+        expect(button).to_be_disabled()
+    browser.close()
+print("PASS mobile owner-confirm component with synthetic pending/paired responses")
