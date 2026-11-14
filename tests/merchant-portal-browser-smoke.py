@@ -29,7 +29,7 @@ def run():
                     assert page.locator("#merchant-protected").is_hidden()
                     assert page.locator("#merchant-shop-select").is_hidden()
                     assert page.locator("#merchant-panel").is_hidden()
-                    assert "Merchant Portal" in page.title()
+                    assert "Quản lý cửa hàng" in page.title()
                     overflow = page.evaluate("document.documentElement.scrollWidth > innerWidth + 2")
                     assert not overflow, f"Horizontal overflow at {width}px"
                     page.close()
