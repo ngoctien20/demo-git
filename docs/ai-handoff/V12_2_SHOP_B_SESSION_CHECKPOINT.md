@@ -67,3 +67,18 @@ Added new code on `work/v12-shop-b-dialogue-staging-20261114`, preserving prior 
 3. Run no-send Shadow integration in staging with actual Owner inbound, but no order write.
 4. After signed off, separately approve sandbox order commit and Zalo auto-reply Owner allowlist only.
 5. Only then consider Core Bot candidate or non-Owner pilots; no production promotion without manual gate.
+
+
+## Addendum — PostgreSQL adapter candidate QA (116/116)
+
+**Verified code and CI on 14/11/2026 (JST):**
+
+- `qa/zalo/shop-b-postgres-repository.cjs`: *inactive* PostgreSQL transaction adapter implementing `BEGIN`, revalidate current Owner binding/claim/recipient/dry_run, `INSERT ... ON CONFLICT DO NOTHING` session, `SELECT ... FOR UPDATE`, exact tenant-scoped `SELECT catalog ... FOR SHARE`, session revision CAS, unique receipt insert, `COMMIT` / `ROLLBACK` and connection release.
+- `qa/zalo/shop-b-postgres-repository.test.cjs`: 28 mock-pool unit tests of generated SQL and transactional control paths: wrong binding, revoked claim, wrong recipient, stale price/stock, failed DB read, revision conflict, receipt conflict, rollback, QA-only no-send and no-order insert. **Mocks do not exercise actual PostgreSQL RLS, locking or concurrency.**
+- GitHub Actions run **43603975042**, job **132474509888**, commit `c9ec4b66c1f9e6a1a6731aeb9d56e7d12e9de4be`: **116/116 PASS** (44 legacy dialogue + 44 CSPRNG session service + 28 PostgreSQL adapter unit tests). All syntax checks passed.
+- Previous CI **43603874961** failed due to escaped JavaScript template backticks in the *new inactive adapter*. Fixed in commit `c9ec4b66`, rerun passed. No published workflow or database changed because of this fix.
+- Private schema SQL candidate: `docs/ai-handoff/V12_2_SHOP_B_PRIVATE_SESSIONS_REVIEW_ONLY.sql` **not applied**. Before applying: confirm SQL under review, backup staging, verify Supabase API exposure, RLS/grants, tests using concurrent real SQL sessions, rollback, safe ownership and current n8n integration.
+
+**Residual concerns:** pg adapter receives `owner` object from trusted internal resolver that **does not exist as deployed service yet**; never accept these fields from a client or AI agent. No n8n authenticated catalog connector has been installed. Production and live Zalo Bot API remain unchanged; independent approval still required for database migration, sandbox order writes and outbound auto-replies.
+
+**Next:** implement and test signed-provider input adapter + current Owner resolver in an isolated staging service; then apply private schema only following approval, verify real SQL concurrency and attach to existing Shadow through no-send preview.
