@@ -29,6 +29,15 @@ def run():
                     assert 'Tester Portal' in page.title()
                     assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+2')
                     page.close()
+                for w,h in ((390,844),(768,1024),(1440,900)):
+                    page=browser.new_page(viewport={'width':w,'height':h})
+                    page.route('**/*',lambda route:route.continue_() if
+                               route.request.url.startswith(origin+'/') else route.abort())
+                    page.goto(origin+'/tester-request.html',wait_until='domcontentloaded')
+                    assert page.locator('#tr-form').is_hidden()
+                    assert page.locator('#tr-authorized').is_hidden()
+                    assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+2')
+                    page.close()
                 admin=browser.new_page(viewport={'width':390,'height':844})
                 admin.route('**/*',lambda route:route.continue_() if
                             route.request.url.startswith(origin+'/') else route.abort())
@@ -38,7 +47,7 @@ def run():
                 assert admin.locator('#ta-assignment-card').is_hidden()
                 assert not admin.evaluate('document.documentElement.scrollWidth>innerWidth+2')
                 admin.close()
-                print('PASS: 3 viewport private tester + admin locked, no remote requests, zero data')
+                print('PASS: 3 viewport tester + access-request anonymous fail-closed, admin locked, zero remote traffic')
             finally:browser.close()
     finally:
         server.shutdown();server.server_close()

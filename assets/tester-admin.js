@@ -50,19 +50,83 @@ async function revoke(userId){
  if(r.error){status('Thu hồi thất bại. Kiểm tra quyền backend.','error');return}
  status('Đã gửi lệnh thu hồi. Đang kiểm tra readback…','ok');await refresh();
 }
+
+async function reviewRequest(request,decision){
+ if(!canEdit()||!request?.request_id||!request?.user_id||request.status!=='pending'){
+  status('Không thể xét duyệt yêu cầu này.','error');return;
+ }
+ if(!['approved','rejected'].includes(decision))return;
+ const shortId=short(request.user_id);
+ if(!confirm(decision==='approved'
+  ?'Cấp quyền TESTER 7 ngày cho '+shortId+'? Bạn sẽ phân công module an toàn riêng sau khi duyệt.'
+  :'Từ chối đơn đăng ký của '+shortId+'?'))return;
+ status('Đang xét duyệt yêu cầu staging…');
+ try{
+  const checked=await withDeadline(client.auth.getUser(),12000);
+  if(checked.error||checked.data?.user?.id!==user.id)throw Error('SESSION_EXPIRED');
+  const role=await withDeadline(client.from('tien404_tester_staff')
+   .select('staff_role,active').eq('user_id',user.id).maybeSingle(),12000);
+  if(role.error||role.data?.staff_role!=='super_admin'||!role.data.active)
+   throw Error('ROLE_REVOKED');
+  if(decision==='approved'){
+   const now=Date.now();
+   const grant=await withDeadline(client.from('tien404_tester_access').upsert({
+    user_id:request.user_id,access_status:'approved',
+    expires_at:new Date(now+7*86400000).toISOString(),
+    approved_by:user.id,approved_at:new Date(now).toISOString(),updated_at:new Date(now).toISOString(),
+    notes:'Approved from private tester request inbox'
+   },{onConflict:'user_id'}),15000);
+   if(grant.error)throw Error('GRANT_DENIED');
+   const readback=await withDeadline(client.from('tien404_tester_access')
+    .select('access_status,expires_at,approved_by')
+    .eq('user_id',request.user_id).maybeSingle(),13000);
+   if(readback.error||readback.data?.access_status!=='approved'
+      ||Date.parse(readback.data.expires_at)<=Date.now()
+      ||readback.data.approved_by!==user.id)
+     throw Error('GRANT_READBACK_FAILED');
+  }
+  const reviewedAt=new Date().toISOString();
+  const update=await withDeadline(client.from('tien404_tester_requests').update({
+    status:decision,reviewed_at:reviewedAt,reviewed_by:user.id,updated_at:reviewedAt
+  }).eq('request_id',request.request_id).eq('status','pending')
+   .select('request_id,status').maybeSingle(),15000);
+  if(update.error||update.data?.status!==decision)
+   throw Error('REQUEST_UPDATE_DENIED');
+  status(decision==='approved'
+    ?'Đã duyệt 7 ngày và kiểm tra readback. Hãy phân công module an toàn cho Tester.'
+    :'Đã từ chối đơn. Chưa cấp quyền truy cập.','ok');
+  await refresh();
+ }catch{status('Xét duyệt chưa hoàn tất. Kiểm tra danh sách quyền và trạng thái đơn trước khi thử lại.','error');await refresh();}
+}
 async function refresh(){
  if(loading||!user||!staff)return;
  loading=true;$('ta-refresh').disabled=true;
  try{
-  const [access,modules,assignments,runs,audit,cases]=await Promise.all([
+  const [access,modules,assignments,runs,audit,cases,requests]=await Promise.all([
    query('tien404_tester_access','user_id,access_status,expires_at,updated_at',r=>r.order('updated_at',{ascending:false}).limit(120)),
    query('tien404_tester_modules','module_id,title,readiness,sort_order',r=>r.order('sort_order')),
    query('tien404_tester_assignments','user_id,module_id,active',r=>r.limit(500)),
    query('tien404_tester_runs','run_id,user_id,case_id,outcome,created_at,feedback,self_reported',r=>r.order('created_at',{ascending:false}).limit(100)),
    query('tien404_tester_audit','event_type,actor_user_id,affected_user_id,created_at',r=>r.order('created_at',{ascending:false}).limit(70)),
-   query('tien404_tester_cases','case_id,module_id,readiness',r=>r.limit(500))
+   query('tien404_tester_cases','case_id,module_id,readiness',r=>r.limit(500)),
+   query('tien404_tester_requests','request_id,user_id,desired_module,note,status,created_at,reviewed_at',r=>r.order('created_at',{ascending:false}).limit(200))
   ]);
   $('ta-access-count').textContent=String(access.length);
+  $('ta-request-count').textContent=requests.filter(r=>r.status==='pending').length+' đơn chờ';
+  tableInto($('ta-request-list'),[
+   ['Người gửi',r=>short(r.user_id)],
+   ['Ngày gửi',r=>date(r.created_at)],
+   ['Muốn thử',r=>r.desired_module],
+   ['Ghi chú',r=>r.note||'—'],
+   ['Trạng thái',r=>r.status],
+   ['Xét duyệt',r=>{
+    if(!canEdit()||r.status!=='pending')return 'Chỉ xem';
+    const area=node('div',null,'tp-actions');
+    const grant=userActionButton('Duyệt 7 ngày',()=>reviewRequest(r,'approved'));
+    const reject=userActionButton('Từ chối',()=>reviewRequest(r,'rejected'));
+    area.append(grant,reject);return area;
+   }]
+  ],requests);
   $('ta-run-count').textContent=String(runs.length);
   $('ta-module-count').textContent=String(modules.length);
   const pending=cases.filter(c=>c.readiness==='pending').length;
