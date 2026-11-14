@@ -6,10 +6,10 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/tester-portal.css">
 </head>
-<body>
+<body class="tp-friends">
 <a class="tp-skip" href="#tp-main">Chuyển đến nội dung chính</a>
-<header class="tp-top"><div class="tp-brand"><span class="tp-symbol">✦</span><span>TIEN404 <b>AI</b><small>Trung tâm thử nghiệm riêng</small></span></div>
-<div class="tp-top-right"><span class="tp-stage">PRIVATE BETA • STAGING</span><a href="account.html">Tài khoản</a></div></header>
+<header class="tp-top"><div class="tp-brand"><span class="tp-symbol">✦</span><span>TIEN404 <b>AI</b><small>Dùng thử đơn giản</small></span></div>
+<div class="tp-top-right"><span class="tp-stage">BẢN THỬ • STAGING</span><a href="account.html">Tài khoản</a></div></header>
 <div class="tp-status" id="tp-status" role="status" aria-live="polite">Đang kiểm tra tài khoản và quyền thử nghiệm…</div>
 <main id="tp-main">
 <section id="tp-locked" class="tp-locked" hidden>
@@ -20,32 +20,34 @@
 </section>
 <div id="tp-workspace" class="tp-workspace" hidden>
 <aside class="tp-side">
-<div class="tp-welcome"><small>BẠN ĐANG THỬ NGHIỆM</small><h2 id="tp-welcome-name">Tài khoản thử nghiệm</h2>
+<div class="tp-welcome"><small>ĐÃ ĐĂNG NHẬP</small><h2 id="tp-welcome-name">Người thử</h2>
 <p id="tp-expiry">Quyền chỉ có hiệu lực trong thời gian được cấp.</p></div>
-<nav id="tp-nav" aria-label="Điều hướng thử nghiệm">
-<button type="button" data-page="home" aria-current="page">⌂ <span>Trang chủ</span></button>
-<button type="button" data-page="modules">▣ <span>Chọn bài thử</span></button>
-<button type="button" data-page="data">▦ <span>Dữ liệu thử nghiệm</span></button>
-<button type="button" data-page="practice">▤ <span>Thực hành</span></button>
-<button type="button" data-page="progress">◴ <span>Tiến độ của tôi</span></button>
-<button type="button" data-page="help">? <span>Hướng dẫn & báo lỗi</span></button>
-</nav>
+<details id="tp-more" class="tp-more"><summary>Xem thêm bài kiểm thử (không bắt buộc)</summary>
+<nav id="tp-nav" aria-label="Các mục kiểm thử nâng cao">
+<button type="button" data-page="home" aria-current="page">⌂ <span>Giới thiệu</span></button>
+<button type="button" data-page="modules">▣ <span>Bài kiểm tra chi tiết</span></button>
+<button type="button" data-page="data">▦ <span>Dữ liệu mẫu</span></button>
+<button type="button" data-page="practice">▤ <span>Tự nhập số lượng</span></button>
+<button type="button" data-page="progress">◴ <span>Kết quả của tôi</span></button>
+<button type="button" data-page="help">? <span>Cần trợ giúp</span></button>
+</nav></details>
 <a id="tp-admin-link" href="tester-admin.html" class="tp-admin" hidden>♜ Quản lý người thử</a>
-<div class="tp-side-footer">Dữ liệu QA giả lập • Không gửi tin thật • Không dùng Orders production</div>
+<div class="tp-side-footer">Bản dùng thử với dữ liệu mẫu. Không tạo đơn thật.</div>
 </aside>
 <section class="tp-content" tabindex="-1">
-<div class="tp-page-heading"><div><p class="tp-overline">TIEN404 AI / TESTER PORTAL V12.2</p>
-<h1 id="tp-heading">Tổng quan thử nghiệm</h1><p id="tp-subheading">Chọn bài thử đã được cấp quyền để bắt đầu.</p></div>
-<button type="button" id="tp-refresh" class="tp-outline">↻ Cập nhật</button></div>
+<div class="tp-page-heading"><div><p class="tp-overline">DÀNH CHO NGƯỜI BẠN THỬ DỰ ÁN</p>
+<h1 id="tp-heading">Chào mừng bạn!</h1><p id="tp-subheading">Xem nhanh ý tưởng và thử một tình huống bán hàng trong vài giây.</p></div>
+<button type="button" id="tp-refresh" class="tp-outline">↻ Tải lại</button></div>
+<details class="tp-progress-more" id="tp-progress-more"><summary>Xem tiến độ bài kiểm tra chi tiết</summary>
 <div class="tp-summary" aria-label="Tiến độ thử nghiệm">
 <div><span>Bài được giao</span><strong id="tp-total">—</strong></div>
 <div><span>Đã tự đánh giá</span><strong id="tp-done">—</strong></div>
 <div><span>Đang chờ</span><strong id="tp-remaining">—</strong></div>
 </div>
 <div class="tp-progress"><div id="tp-progress-bar" aria-hidden="true"></div></div>
-<p class="tp-progress-caption" id="tp-progress-label">Chưa có kết quả đã xác minh.</p>
+<p class="tp-progress-caption" id="tp-progress-label">Các kết quả người thử tự gửi, không phải QA tự động.</p></details>
 <div id="tp-panel" class="tp-panel" aria-live="polite"></div>
-<p class="tp-footer">Kết quả do bạn tự đánh giá được ghi riêng, không phải QA tự động xác minh. Không gửi mật khẩu, token hoặc ảnh có dữ liệu khách thật.</p>
+<p class="tp-footer">Ý kiến của bạn giúp cải thiện dự án. Đây là bản mô phỏng an toàn; đừng nhập mật khẩu, mã OTP hay dữ liệu khách hàng.</p>
 </section>
 </div></main>
 <script type="module" src="assets/tester-portal.js"></script>
