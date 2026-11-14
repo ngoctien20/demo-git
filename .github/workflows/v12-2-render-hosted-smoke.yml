@@ -1,0 +1,48 @@
+name: TIEN404 V12.2 Render hosted anonymous smoke
+
+on:
+  push:
+    branches:
+      - work/v12-2-merchant-portal
+    paths:
+      - .github/workflows/v12-2-render-hosted-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-staging-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify deployed HTML and assets over HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://tien404-auth-staging.onrender.com"
+          for PATHNAME in merchant-portal.html register-staging.html login.html account.html assets/merchant-portal.js assets/merchant-portal.css assets/merchant-portal-policy.mjs assets/register-staging.js; do
+            FILE="$(mktemp)"
+            CODE="$(curl -L --silent --show-error --max-time 25 --retry 2 -o "$FILE" -w '%{http_code}' "$BASE/$PATHNAME")"
+            if [[ "$CODE" != "200" ]]; then
+              echo "::error::HTTP $CODE on /$PATHNAME"
+              exit 1
+            fi
+            if [[ ! -s "$FILE" ]]; then
+              echo "::error::Empty body /$PATHNAME"
+              exit 1
+            fi
+            case "$PATHNAME" in
+              merchant-portal.html) grep -Fq 'id="merchant-protected" class="mp-workspace" hidden' "$FILE";;
+              register-staging.html) grep -Fq 'id="mp-register-submit" disabled' "$FILE";;
+              assets/register-staging.js) grep -Fq 'MERCHANT_SELF_SIGNUP_ENABLED=false' "$FILE";;
+              assets/merchant-portal.js) grep -Fq 'client.auth.getUser()' "$FILE";;
+              assets/merchant-portal-policy.mjs) grep -Fq 'mayOpenPanel' "$FILE";;
+              assets/merchant-portal.css) grep -Fq '@media(max-width:760px)' "$FILE";;
+              login.html) grep -Fq 'Đăng nhập' "$FILE";;
+              account.html) grep -Fq 'merchant-portal.html' "$FILE";;
+            esac
+            echo "PASS https HTML/asset: /$PATHNAME"
+            rm -f "$FILE"
+          done
+          echo "SUCCESS: V12.2 pages publicly reachable; login protections remain content-gated."
