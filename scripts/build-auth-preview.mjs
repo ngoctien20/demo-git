@@ -15,7 +15,7 @@ const allowList=[
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
   'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/owner-pairing.mjs','assets/owner-confirm.mjs','assets/merchant-product.mjs',
   'assets/auth-runtime.mjs','assets/auth-bootstrap.js',
-  'assets/merchant-portal.js','assets/merchant-portal.css'
+  'assets/merchant-portal.js','assets/merchant-portal-policy.mjs','assets/merchant-portal.css'
 ];
 const production='https://ngoctien20.github.io/demo-git/';
 if(!existsSync(path.join(root,'assets/auth-client.js')))throw Error('Auth source missing');
