@@ -184,7 +184,7 @@ begin
    ' / '||v_total::text||' VND / CHỜ CHỦ SHOP XỬ LÝ');
   return query select 'CREATED'::text,p_order,v_event;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION tien404_r1_qa.pair_owner_qa(p_tenant text, p_store text, p_bot text, p_challenge uuid, p_owner text, p_recipient text, p_code text)
@@ -221,7 +221,7 @@ begin
         paired_at=now(),expires_at=excluded.expires_at;
   return true;
 end;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION tien404_r1_qa.pair_owner_qa(text,text,text,uuid,text,text,text) FROM public,anon,authenticated,service_role;
 REVOKE ALL ON FUNCTION tien404_r1_qa.commit_order_qa(text,text,text,text,text,text,integer,bigint,text,text,boolean) FROM public,anon,authenticated,service_role;

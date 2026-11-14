@@ -2,7 +2,7 @@ name: V11.6 isolated commerce and notification transactions
 on:
   push:
     branches: [work/v11-5-zalo-first-notifications-20261113, work/v12-r1-shop-owned]
-    paths: ['qa/notification/**', 'merchant/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
+    paths: ['qa/shop_owned/**', 'qa/notification/**', 'merchant/**', '.github/workflows/v11-6-outbox.yml', 'docs/ai-handoff/V11_5_NOTIFICATION_V5_POSTGRES_CANDIDATE.sql']
 permissions:
   contents: read
 jobs:
@@ -54,6 +54,11 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f qa/notification/preview.sql
           python qa/notification/test_preview.py
           PYTHONPATH="$PYTHONPATH:qa/notification" python qa/shop_owned/test_postgres_bridge.py
+          psql -X -v ON_ERROR_STOP=1 -c 'CREATE ROLE service_role; CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions'
+          for sql in supabase_r1_postgres_staging_candidate supabase_r1_owner_jwt_gate_candidate supabase_r1_owner_pairing_two_phase_candidate zalo_held; do
+            psql -X -v ON_ERROR_STOP=1 -f "qa/shop_owned/$sql.sql"
+          done
+          PYTHONPATH="$PYTHONPATH:qa/notification" python qa/shop_owned/test_pairing_checkout.py
           python -m unittest discover -s qa/notification -p test_ingress.py
           node --test qa/lab/test_notification_v5.cjs qa/notification/test_zalo_mock.cjs
           node qa/notification/test_period.mjs

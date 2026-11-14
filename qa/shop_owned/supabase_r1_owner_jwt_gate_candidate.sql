@@ -35,7 +35,7 @@ AS $function$
        and b.identity_status='synthetic_qa' and b.enabled_mode='dry_run'
    ),false
  )
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION tien404_r1_qa.pair_owner_authorized_qa(p_tenant text, p_store text, p_bot text, p_challenge uuid, p_recipient text, p_code text)
@@ -53,7 +53,7 @@ begin
    and c.failed_attempts<5;
  if v_owner_ref is null then return false;end if;
  return tien404_r1_qa.pair_owner_qa(p_tenant,p_store,p_bot,p_challenge,v_owner_ref,p_recipient,p_code);
-end $function$
+end $function$;
 
 REVOKE ALL ON FUNCTION tien404_r1_qa.owner_authorized_qa(text,text,text)
   FROM public,anon,authenticated,service_role;

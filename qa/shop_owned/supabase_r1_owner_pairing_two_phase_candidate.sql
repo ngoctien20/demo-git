@@ -72,8 +72,13 @@ BEGIN
   ) VALUES(p_tenant,p_store,p_bot,p_challenge,p_recipient,p_inbound_event)
   ON CONFLICT DO NOTHING RETURNING challenge_id INTO v_new;
   RETURN v_new IS NOT NULL;
-END $function$
+END $function$;
 
+
+ALTER TABLE tien404_r1_qa.owner_bindings ADD COLUMN IF NOT EXISTS confirmed_challenge_id uuid;
+ALTER TABLE tien404_r1_qa.owner_bindings ADD FOREIGN KEY
+ (tenant_key,store_key,bot_key,confirmed_challenge_id) REFERENCES
+ tien404_r1_qa.owner_pairing_claims_v3(tenant_key,store_key,bot_key,challenge_id);
 
 CREATE OR REPLACE FUNCTION tien404_r1_qa.confirm_owner_pairing_v3_qa(p_tenant text, p_store text, p_bot text, p_challenge uuid)
  RETURNS boolean
@@ -97,7 +102,7 @@ BEGIN
    WHERE c.tenant_key=p_tenant AND c.store_key=p_store AND c.bot_key=p_bot
      AND c.challenge_id=p_challenge
      AND c.requester_user_id=auth.uid()
-     AND c.used_at IS NULL AND c.expires_at>now()
+     AND c.used_at IS NULL AND c.expires_at>now() AND c.failed_attempts<5
   RETURNING c.owner_ref INTO v_owner;
   IF v_owner IS NULL THEN RETURN false; END IF;
   UPDATE tien404_r1_qa.owner_pairing_claims_v3
@@ -105,13 +110,13 @@ BEGIN
    WHERE tenant_key=p_tenant AND store_key=p_store AND bot_key=p_bot
      AND challenge_id=p_challenge AND status='PENDING_OWNER_CONFIRMATION';
   INSERT INTO tien404_r1_qa.owner_bindings(
-    tenant_key,store_key,bot_key,owner_ref,recipient_ref,status,paired_at,expires_at
-  ) VALUES(p_tenant,p_store,p_bot,v_owner,v_recipient,'paired',now(),now()+interval '7 days')
+    tenant_key,store_key,bot_key,owner_ref,recipient_ref,status,paired_at,expires_at,confirmed_challenge_id
+  ) VALUES(p_tenant,p_store,p_bot,v_owner,v_recipient,'paired',now(),now()+interval '7 days',p_challenge)
   ON CONFLICT (tenant_key,store_key,bot_key) DO UPDATE
     SET owner_ref=excluded.owner_ref,recipient_ref=excluded.recipient_ref,
-        status='paired',paired_at=now(),expires_at=excluded.expires_at;
+        status='paired',paired_at=now(),expires_at=excluded.expires_at,confirmed_challenge_id=excluded.confirmed_challenge_id;
   RETURN true;
-END $function$
+END $function$;
 
 
 CREATE OR REPLACE FUNCTION tien404_r1_qa.pair_owner_authorized_v2_qa(p_tenant text, p_store text, p_bot text, p_challenge uuid, p_recipient text, p_code text)
@@ -141,7 +146,7 @@ BEGIN
     p_tenant,p_store,p_bot,p_challenge,v_owner_ref,p_recipient,p_code
   );
 END;
-$function$
+$function$;
 
 
 REVOKE ALL ON FUNCTION tien404_r1_qa.pair_owner_authorized_v2_qa(text,text,text,uuid,text,text)
