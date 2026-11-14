@@ -176,7 +176,7 @@ async function exportLatestCsv(){
   status('Đã tạo bản CSV từ '+rows.length+' lượt tự đánh giá do RLS cho phép. Chưa phải QA được xác minh.','ok');
  }catch{
   status('Không thể xuất CSV. Kiểm tra phiên, quyền nhân sự và kết nối backend.','error');
- }finally{exporting=false;control.disabled=false;}
+ }finally{exporting=false;control.disabled=$('ta-run-count').textContent==='0';}
 }
 $('ta-export').addEventListener('click',exportLatestCsv);
 
