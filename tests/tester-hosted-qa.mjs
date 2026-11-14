@@ -24,6 +24,9 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
     ['/assets/tester-sandbox.mjs',["LOCAL QA PRACTICE ONLY","DEMO_CATALOG","calculateDemo","out_of_stock"]],
     ['/assets/tester-qa-pack.mjs',["PRIORITY_CHECKS","SHEET-AI-REVIEW-001","reviewPrompt(results)","reportText({notes","containsSensitive(text)"]],
     ['/assets/tester-ai-studio.mjs',["mountQaStudio(root","navigator.clipboard.writeText(prompt)","Sao chép gói cho AI","tp-ai-submit","self_reported:true"]],
+    ['/assets/tester-qa-writable-sandbox.mjs',["tien404_qa_sandbox_products","tien404_qa_sandbox_orders","QA_PRODUCTS_SNAPSHOT","drawQaCase","QA_CREATE_ORDER_FAILED"]],
+    ['/assets/tester-random-qa-cases.mjs',["QA_RANDOM_CASES","QA96","export function drawQaCase"]],
+    ['/assets/tester-qa-products-snapshot.mjs',["QA_PRODUCTS_SNAPSHOT","A002","159000","21"]],
     ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)","reviewRequest(request,decision)","assignSafeSheetsToTester"]],
     ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
@@ -37,7 +40,7 @@ test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   }
 });
 test('Private source SQL is not served by Render static preview',async()=>{
-  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/qa/tester_portal/V12_3_AI_REVIEW_SHEETS_CASE_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
+  for(const path of ['/qa/tester_portal/supabase_tester_portal_v1_candidate.sql','/qa/tester_portal/V12_2_TESTER_ACCESS_REQUESTS_STAGING.sql','/qa/tester_portal/V12_3_AI_REVIEW_SHEETS_CASE_STAGING.sql','/qa/tester_portal/V12_4_ISOLATED_QA_PRODUCTS_ORDERS_STAGING.sql','/.env','/docs/ai-handoff/V12_2_PRIVATE_TESTER_PORTAL_STAGING_CHECKPOINT_20261114.md']){
     const r=await fetch(origin+path,{redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(25000)});
     const body=await r.text();
     assert.notEqual(r.status,200,'private content publicly accessible at '+path);
