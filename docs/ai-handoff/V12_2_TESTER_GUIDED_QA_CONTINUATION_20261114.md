@@ -2,7 +2,7 @@
 Date: 2026-11-14 JST
 Scope: staging-only code on `work/v12-2-tester-guides-qa-20261114`
 Parent: `work/supabase-auth-staging-v1` (Render Auth staging autoDeploy=off)
-Lifecycle: CANDIDATE; no merge or redeploy by this change.
+Lifecycle: SOURCE MERGED to Render Auth staging branch via PR #37; hosted deployment awaiting explicit workspace selection.
 
 ## Audit (live connectors)
 - GitHub: existing `tester.html`, `tester-admin.html`, Auth PKCE, strict Render allowlist; no need to rebuild.
@@ -25,6 +25,15 @@ Lifecycle: CANDIDATE; no merge or redeploy by this change.
 - No production/public website writes.
 - Rollback: decline/close the PR, or revert the guide-only commit(s) before manually redeploying staging.
 - Existing Merchant Portal, Supabase Auth, Shop A/B, Zalo pairing, n8n and Commerce unchanged.
+
+## Integration checkpoint (2026-11-14 JST)
+- PR #37 merged successfully into `work/supabase-auth-staging-v1`.
+- Merge commit SHA: `d96610669819af47c1842ce23b60ce7fed657120`.
+- GitHub Actions run `43590129694` SUCCESS: source syntax, static security contract, build allowlist, anonymous Chromium fail-closed.
+- A pre-merge rollback branch was created: `checkpoint/render-auth-staging-pre-guided-tester-v12-2-20261114`.
+- Render deploy trigger was rejected because the connector requires explicit user workspace selection. Workspace shown: `My Workspace` (id withheld in report). **No new Render deployment was started**.
+- Hosted site remains at previous live deploy `dep-dbs448ui0phs73c2ikg0` until approved deployment.
+- No real tester Auth users or QA evidence written.
 
 ## Open gates
 1. Approved owner Supabase Auth account + explicit bootstrap of tester Super Admin role by server-side administrator; account identity needs owner review.
