@@ -31,9 +31,15 @@ export function mountQaSandbox(root,{state,onSaved=()=>{}}){
      state.modules.some(x=>x.module_id==='sheets')))return;
  const box=e('section',null,'tp-card tp-qa-write');box.id='tp-qa-write';
  box.append(e('p','V12.4 · DỮ LIỆU QA RIÊNG · CHỈ TRÊN STAGING','tp-overline'),
-  e('h2','Thử tạo/sửa dữ liệu và nhận câu hỏi ngẫu nhiên'),
-  e('p','Mỗi tài khoản có sản phẩm và đơn QA riêng. Không ghi vào DEMO gốc. Dữ liệu tạo/sửa tại đây hiện CHƯA đồng bộ sang Google Sheet mà model QA đọc; kết quả này chưa phải kiểm thử AI thật.','tp-ai-description'));
+  e('h2','Google Sheets QA và câu hỏi kiểm thử'),
+  e('p','Dành cho người thử: chỉnh dữ liệu trực tiếp trong Google Sheets QA được cấp riêng, rồi chọn câu hỏi ngẫu nhiên. Model QA đang ở chế độ CANDIDATE, chưa mở chat công khai.','tp-ai-description'));
  const status=e('p','Đang kiểm tra quyền và tải kho QA…','tp-ai-message');status.id='tp-qa-write-status';status.setAttribute('role','status');
+ const sheetBox=e('section',null,'tp-qa-write-section tp-qa-google-sheet');sheetBox.id='tp-qa-google-sheet';
+ sheetBox.append(e('h3','Google Sheets dành riêng cho bạn'),e('p','Đây là bảng Products và Orders_QA mà công cụ của AI SALES QA CANDIDATE trỏ tới. Chỉ dùng sản phẩm/đơn thử nghiệm, không nhập dữ liệu khách thật.','tp-quiet'));
+ const sheetStatus=e('p','Đang xác minh quyền mở Google Sheets QA…','tp-ai-message');sheetStatus.id='tp-qa-sheet-status';sheetStatus.setAttribute('role','status');
+ const sheetLinks=e('div',null,'tp-actions');sheetLinks.id='tp-qa-sheet-links';
+ const expiry=e('p','Liên kết chỉ xuất hiện khi quyền Tester còn hiệu lực.','tp-quiet');expiry.id='tp-qa-sheet-expiry';
+ sheetBox.append(sheetStatus,sheetLinks,expiry,e('p','Thay đổi trong Google Sheets này sẽ được công cụ QA trên n8n đọc khi phiên chat QA được kích hoạt. Chưa tự đồng bộ với khu vực Supabase thử nghiệm bên dưới.','tp-ai-warning'));
  const productBox=e('section',null,'tp-qa-write-section');
  productBox.append(e('h3','Sản phẩm QA (giá / tồn)'),e('p','Giá và tồn ban đầu lấy từ bản sao Google Sheets QA, sau đó bạn có thể tự chỉnh sửa để thử nghiệm.','tp-quiet'));
  const productsLine=e('p','Chưa tải dữ liệu.','tp-quiet');productsLine.id='tp-qa-product-count';
@@ -80,7 +86,9 @@ export function mountQaSandbox(root,{state,onSaved=()=>{}}){
  const copyStatus=e('p','', 'tp-quiet');copyStatus.setAttribute('role','status');
  randomBox.append(label(e('div',null,'tp-qa-selector'),'Nhóm câu hỏi',categories),prompt,expected,randomButtons,copyStatus,
   e('p','Lưu ý: câu hỏi kiểm thử có thể yêu cầu tạo/sửa đơn, nhưng nút này KHÔNG tự gọi n8n, không cấp quyền cho AI vào đơn thật.','tp-ai-warning'));
- box.append(productBox,orderBox,randomBox,status);root.append(box);
+ const localDetails=e('details',null,'tp-qa-local-details');localDetails.id='tp-qa-local-details';
+ localDetails.append(e('summary','Thử thêm: tạo/sửa dữ liệu trong Supabase QA (độc lập với Google Sheets)'),productBox,orderBox);
+ box.append(sheetBox,randomBox,localDetails,status);root.append(box);
 
  let products=[],orders=[],picked=null,busy=false;
  const alive=()=>state.access?.access_status==='approved'&&Date.parse(state.access.expires_at)>Date.now()&&state.modules.some(m=>m.module_id==='sheets');
@@ -100,13 +108,31 @@ export function mountQaSandbox(root,{state,onSaved=()=>{}}){
  async function load(){
   if(!alive()){show('Quyền Tester đã hết hạn. Không mở dữ liệu QA.');return}
   const uid=await verified();
-  const [pr,or]=await Promise.all([
+  const [pr,or,sh]=await Promise.all([
    withDeadline(state.client.from(PRODUCTS).select('sku,name,unit_price,stock').eq('owner_id',uid).order('sku'),13000),
-   withDeadline(state.client.from(ORDERS).select('id,sku,quantity,unit_price,total,status,created_at').eq('owner_id',uid).order('created_at',{ascending:false}).limit(100),13000)
+   withDeadline(state.client.from(ORDERS).select('id,sku,quantity,unit_price,total,status,created_at').eq('owner_id',uid).order('created_at',{ascending:false}).limit(100),13000),
+   withDeadline(state.client.from('tien404_tester_google_sheets').select('sheet_id,access_status,expires_at,oauth_verified_at,model_workflow_id').eq('user_id',uid).maybeSingle(),13000)
   ]);
   if(pr.error||or.error)throw Error('QA_READBACK_ERROR');
   products=Array.isArray(pr.data)?pr.data:[];orders=Array.isArray(or.data)?or.data:[];
   renderProducts();renderOrders();
+  sheetLinks.replaceChildren();
+  if(sh.error){sheetStatus.textContent='Không xác minh được kết nối Google Sheets QA. Không mở liên kết.';return}
+  const record=sh.data;
+  const authorized=alive()&&state.user?.id===uid&&record?.access_status==='ready'&&Date.parse(record.expires_at)>Date.now()&&
+    /^[A-Za-z0-9_-]{25,90}$/.test(String(record.sheet_id||''))&&record.model_workflow_id==='8HtaQAJuZWKyNhXu';
+  if(!authorized){
+    sheetStatus.textContent='Chưa có Google Sheets riêng được xác minh cho tài khoản này hoặc quyền đã hết hạn.';
+    expiry.textContent='Hãy liên hệ Tester Admin để nhận quyền QA.';
+    return;
+  }
+  const target='https://docs.google.com/spreadsheets/d/'+record.sheet_id+'/edit';
+  const a=e('a','Mở Google Sheets QA của tôi','tp-button');
+  a.id='tp-qa-sheet-link';a.href=target;a.target='_blank';a.rel='noopener noreferrer';
+  sheetLinks.append(a);
+  sheetStatus.textContent='Đã cấp quyền Google Drive riêng cho tài khoản này. n8n đã xác minh đọc 21 sản phẩm QA; cần bạn tự xác nhận đăng nhập Google thành công.';
+  sheetStatus.dataset.tone='ok';
+  expiry.textContent='Quyền Tester trên Portal hết hạn: '+new Date(record.expires_at).toLocaleString('vi-VN')+'. Quyền chia sẻ Google Drive cần được quản trị viên thu hồi riêng khi hết hạn.';
  }
  function renderProducts(){
   const current=productChoices.value;
