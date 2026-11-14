@@ -97,7 +97,10 @@ def main():
        document.dispatchEvent(new Event('visibilitychange'));
      }""")
      page.locator(protected).wait_for(state='hidden',timeout=12000)
-     assert page.locator(lock).is_visible(),(route,'Revoked access not blocked')
+     if route=='account.html':
+      assert 'chưa có quyền cửa hàng' in page.locator('#account-status').inner_text().lower()
+     else:
+      assert page.locator(lock).is_visible(),(route,'Revoked access not blocked')
      assert not errors,(route,errors)
      page.close()
      print('PASS: '+route+' token refresh stable, 5-min RLS check preserves DOM, revoked RLS locks UI')
