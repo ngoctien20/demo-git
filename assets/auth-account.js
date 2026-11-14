@@ -15,6 +15,7 @@ const put=(message,kind='info')=>{status.textContent=message;status.dataset.stat
 
 let sb=null;
 let generation=0;
+let verificationSeq=0;
 let lastChecked=0;
 let verifiedUserId=null;
 let verifiedScopeSignature=null;
@@ -162,7 +163,8 @@ function addMerchantOverview(card, tenant, viewGeneration) {
 const revalidate=async()=>{
   if(!sb || busy)return;
   busy=true;
-  const current=++generation;
+  const current=generation;
+  const check=++verificationSeq;
   lastChecked=Date.now();
   refreshButton.disabled=true;
   // Keep a verified workspace mounted while a silent permissions recheck runs.
@@ -172,7 +174,7 @@ const revalidate=async()=>{
   put(hadWorkspace?'Đang kiểm tra quyền trong nền; bạn có thể tiếp tục xem trang.':'Đang xác minh phiên và quyền thành viên cửa hàng...');
   try{
     const {data,error}=await withDeadline(sb.auth.getUser(),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(error||!data?.user?.id){
       verifiedUserId=null;verifiedScopeSignature=null;
       requireLogin('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
@@ -187,7 +189,7 @@ const revalidate=async()=>{
     const membershipResponse=await withDeadline(sb.from('tenant_memberships')
       .select('tenant_id,user_id,role,active')
       .eq('user_id',user.id).eq('active',true).limit(50),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(membershipResponse.error){
       resetView();verifiedScopeSignature=null;
       put('Không xác minh được quyền cửa hàng. Mọi dữ liệu riêng vẫn bị khóa.','error');
@@ -202,7 +204,7 @@ const revalidate=async()=>{
     const ids=memberships.map(m=>m.tenant_id);
     const tenantsResponse=await withDeadline(sb.from('tenants')
       .select('id,name').in('id',ids).limit(50),13000);
-    if(current!==generation)return;
+    if(current!==generation||check!==verificationSeq)return;
     if(tenantsResponse.error){
       resetView();verifiedScopeSignature=null;
       put('Chưa xác minh được danh sách cửa hàng. Không hiển thị dữ liệu.','error');
@@ -220,6 +222,8 @@ const revalidate=async()=>{
       put('Phiên và quyền cửa hàng vẫn hợp lệ.','ok');
       return;
     }
+    generation++;
+    const renderGeneration=generation;
     resetView();
     verifiedUserId=user.id;
     verifiedScopeSignature=scopeSignature;
@@ -239,8 +243,8 @@ const revalidate=async()=>{
       note.textContent='Dữ liệu staging · chỉ đọc';
       card.append(title,role,note);
       if (t.role==='owner' && qaPairingShops.has(t.id)) removePairing=mountOwnerPairing(card,sb,t);
-      addMerchantOverview(card, t, current);
-      const context = {client:sb, tenantId:t.id, current:()=>current===generation};
+      addMerchantOverview(card, t, renderGeneration);
+      const context = {client:sb, tenantId:t.id, current:()=>renderGeneration===generation};
       addMerchantList(card,'products',context);
       if (['owner','manager'].includes(t.role)) {
         addPaidOrderReport(card,t,current);
@@ -257,7 +261,7 @@ const revalidate=async()=>{
       for (const t of allowed) picker.add(new Option(t.name,t.id));
       picker.addEventListener('change',()=>{
         const selected=allowed.find(t=>t.id===picker.value);
-        if (current===generation && selected) openTenant(selected);
+        if (renderGeneration===generation && selected) openTenant(selected);
       });
       label.append(picker);
       cards.append(label);
