@@ -202,3 +202,39 @@ Các ảnh là n8n workflow Telegram `AI_SALES_V4_3_TELEGRAM_CHAT_DIAGNOSTIC_STA
 - Khi đã xác minh/điều chỉnh secret, refresh QA catalog từ read-only Supabase trước khi chạy lại nếu snapshot hết hạn lúc **15/11/2026 00:41:35 JST**. Sau đó gửi **một** lệnh mới `TEST SHOP B CHAT MUA F01 2`, yêu cầu marker `v1_shop_b_order_cmd` mới + `owner_gate=eligible` + preview `ORDER_DRAFT_PREVIEW` 398000; no-send/no-order-write.
 
 **Rollback:** Cloudflare diagnostic version trước `74a4d872-a1e6-420e-9d9c-2cb92c60dbdc`, original locked Gateway `38c7df57-8e22-4b79-b5c4-e08b342833c6`, Shadow/V1 rollback versions trong V12.1.3. No production, credential, secret, Zalo API webhook configuration or orders touched in this subphase.
+
+
+## V12.1.5 — Owner-device Zalo Shop B inbound QA PASSED (14/11/2026 22:52 JST)
+
+**Owner confirmed:** Chủ dự án đã xác nhận đã gửi chính xác `TEST SHOP B CHAT MUA F01 2` vào cuộc trò chuyện với **Bot TIEN404 AI**, không phải Zalo Bot Manager. Lần gửi trước đó vào nhầm bot là nguyên nhân khả dĩ của việc không thấy trace; **không có bằng chứng lỗi webhook/Secret Token sau lần thử đúng**.
+
+### Read-only live trace QA evidence (n8n connector)
+
+| Stage | Marker / row | Latest observed UTC | Japan local time | Result |
+|---|---|---|---|---|
+| V1 incoming | `v1_ingress_any=ACCEPTED` | `2026-11-14T13:52:30.554Z` | `22:52:30.554 JST` | PASS |
+| V1 specific command | `v1_shop_b_order_cmd=SEEN_AUTHENTICATED_WEBHOOK` | `2026-11-14T13:52:30.554Z` | `22:52:30.554 JST` | PASS |
+| Owner Gate | `owner_gate=eligible` | `2026-11-14T13:52:30.148Z` | `22:52:30.148 JST` | PASS |
+| Shadow inbound | `inbound=other_text` | `2026-11-14T13:52:30.312Z` | `22:52:30.312 JST` | PASS (command not GHÉP) |
+| Shop B preview | `shop_b_chat_preview=ORDER_DRAFT_PREVIEW` | `2026-11-14T13:52:29.943Z` | `22:52:29.943 JST` | PASS |
+
+Readback preview row: `quantity=2`, `unit_price_vnd=199000`, `total_vnd=398000`, `stock=5`, `catalog_mode=QA_SNAPSHOT_ONLY`, text `[SANDBOX-ONLY] Shop B F01: 2 × 199.000đ = 398.000đ. Chỉ là báo giá QA; chưa ghi đơn, chưa trừ kho và chưa phát mã xác nhận.`
+
+**Difference vs previous synthetic tests:** Markers at `13:52:29–30Z` are later than the authenticated synthetic HTTP test at `13:25:48Z`, immediately after Owner reporting a fresh correct Zalo Bot chat command. The exact command was recognized and Owner Gate returned eligible. This supports **end-to-end Owner-device ingress acceptance**. The workflows still have success execution history disabled; there is no separately retained raw provider HTTP request for cryptographic proof. The status therefore reflects correlated Owner confirmation and staging event markers, not an independent delivery receipt.
+
+### Data integrity + no-send readback
+
+- Supabase staging Shop B: owner `paired`, claim `CONFIRMED`, recipient matches, binding currently active (expires `2026-11-21T11:23:15Z`); bot `dry_run`.
+- Still `2` sandbox orders, `2` `HELD/SEND_DISABLED` outbox entries, `0` non-HELD. SKU F01 price `199000 VND`, stock `5`. No order or stock mutation due to this test.
+- Cloudflare Zalo gateway remains diagnostic-only version `ef7b7a33-5551-48e0-954b-646c047b5c6d`; `ZALO_SEND_ENABLED=false`. **No auto reply**.
+- Staging V1 workflow `yIJk8LvJoLF40Z62` published `08f22ee1-cf5a-4459-bd33-bf80ac67af0e`; Shadow `OgDZNSAvKEvhnAvn` published `f00ba506-c52a-4340-9a0c-809fd9c6ea9a`, both active.
+
+### Acceptance scope
+
+**TESTED / ACCEPTED:** Live Owner Zalo Bot chat → V1 authenticated acceptance → Shop B Owner Gate eligible → Shadow creates **read-only** F01 order preview 398000 (2 × 199000), with no send and no order mutation.
+
+**NOT YET IMPLEMENTED / APPROVED:** Persistent two-way conversation, Owner-confirmation challenge on live inbound, real-time authenticated catalog lookup instead of 3-hour QA snapshot, transactional backend order commit from chat, auto-reply/sending to customer, production channels.
+
+**Next staging gates:** (1) refresh/test catalog data TTL before further real tests (original QA snapshot expires 2026-11-14T15:41:35.598Z / 15/11 00:41:35 JST); (2) implement trusted readback and concurrency-safe session/nonce service, negative cross-tenant regression; (3) require distinct Owner approval before enabling any outbound auto reply or creating orders from Zalo.
+
+**Rollback:** No new code/workflow/credential changes as part of acceptance readback. Prior V1 rollback `9ef7342b-0623-4921-9969-7d33d112bbef`, prior Shadow rollback `3aeabdb0-79b1-4dca-96bb-c5b0c9c2bee6`. Preserve QA markers; do not delete.
