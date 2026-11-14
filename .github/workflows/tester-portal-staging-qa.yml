@@ -49,6 +49,7 @@ jobs:
           python -m pip install playwright==1.58.0
           python -m playwright install chromium
           python tests/tester-portal-browser-smoke.py
+          python tests/tester-practice-auth-mock-browser.py
       - name: Hosted HTTPS smoke (anonymous, no credentials or writes)
         run: node --test tests/tester-hosted-qa.mjs
       - name: Document scope
