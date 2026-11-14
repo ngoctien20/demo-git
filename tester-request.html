@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#10192b">
+<meta name="description" content="Đăng ký xin quyền thử nghiệm TIEN404 AI trên staging, có người duyệt.">
+<title>Đăng ký quyền thử nghiệm | TIEN404 AI Staging</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/tester-portal.css">
+</head><body>
+<a class="tp-skip" href="#request-main">Chuyển đến phần đăng ký</a>
+<header class="tp-top"><div class="tp-brand"><span class="tp-symbol">✦</span><span>TIEN404 <b>AI</b><small>Đăng ký quyền thử nghiệm</small></span></div>
+<div class="tp-top-right"><span class="tp-stage">PRIVATE BETA • STAGING</span><a href="tester.html">Trang Tester</a></div></header>
+<p id="tr-status" class="tp-status" role="status" aria-live="polite">Đang kiểm tra phiên và điều kiện đăng ký…</p>
+<main id="request-main" class="tp-request-layout">
+<section class="tp-card">
+<p class="tp-overline">TIEN404 AI / TESTER V12.2</p><h1>Xin tham gia thử nghiệm</h1>
+<p>Chỉ tài khoản Supabase Auth <strong>đã được tạo và xác minh email</strong> mới gửi yêu cầu. Người quản lý dự án phải phê duyệt trước khi bạn được xem bài thử.</p>
+<div class="tp-note">Đây là yêu cầu xin quyền, <strong>không phải đăng ký tài khoản mới</strong>. Không nhập thông tin khách thật, số điện thoại, mật khẩu, token hoặc mã OTP. Chưa hỗ trợ tự tạo tài khoản và chưa gửi email mời tự động.</div>
+<div id="tr-locked" class="tp-request-state" hidden>
+<h2>Vui lòng đăng nhập</h2><p id="tr-locked-reason">Bạn cần tài khoản đã được mời vào Supabase Auth staging.</p>
+<a href="login.html" class="tp-button">Đăng nhập</a>
+<p class="tp-dim">Chưa có tài khoản? Liên hệ người quản lý dự án để được cấp lời mời riêng; hệ thống hiện chưa mở đăng ký công khai.</p>
+</div>
+<div id="tr-authorized" hidden>
+<p class="tp-quiet">Tài khoản xác thực: <strong id="tr-identity">—</strong></p>
+<div id="tr-result" class="tp-request-state" hidden role="status"></div>
+<form id="tr-form" class="tp-admin-form" hidden>
+<div class="tp-field"><label for="tr-module">Chức năng muốn thử</label>
+<select class="tp-select" id="tr-module" required>
+<option value="sheets">Dữ liệu mẫu (ưu tiên an toàn)</option>
+<option value="messenger">Messenger — chờ xác minh sandbox</option>
+<option value="telegram">Telegram — chưa mở</option>
+<option value="zalo">Zalo — chưa mở</option>
+<option value="ai_sales">AI bán hàng — chưa mở</option>
+<option value="commerce">Commerce V3 — chưa mở</option>
+</select></div>
+<div class="tp-field tp-request-full"><label for="tr-note">Bạn muốn kiểm thử điều gì? (không bắt buộc)</label>
+<textarea class="tp-textarea" id="tr-note" maxlength="400" rows="3" placeholder="Ví dụ: cách hỏi giá, xem sản phẩm, gửi phản hồi…"></textarea>
+<span class="tp-quiet">Chỉ gửi nội dung thử nghiệm, tối đa 400 ký tự.</span></div>
+<div class="tp-actions"><button type="submit" class="tp-primary" id="tr-submit">Gửi yêu cầu xét duyệt</button></div>
+</form>
+</div>
+</section>
+<section class="tp-card">
+<h2>Quy trình sau khi đăng ký</h2>
+<ol class="tp-list">
+<li>Đăng nhập bằng tài khoản đã được xác minh.</li>
+<li>Chọn chức năng muốn thử và gửi yêu cầu một lần.</li>
+<li>Tester Super Admin xét duyệt và cấp thời hạn; yêu cầu không tự cấp quyền.</li>
+<li>Khi được duyệt, mở Tester Portal để xem module đã được phân công.</li>
+</ol>
+<p class="tp-quiet">Không gửi tin nhắn Messenger, Telegram, Zalo hoặc ghi đơn hàng từ trang này.</p>
+</section></main>
+<script type="module" src="assets/tester-request.js"></script>
+</body></html>
