@@ -22,3 +22,14 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{
 @media(max-width:700px){.tp-top{min-height:60px;padding:10px 14px}.tp-stage{font-size:9px;max-width:120px;text-align:center}.tp-workspace{display:block}.tp-side{position:sticky;top:0;z-index:5;padding:9px 12px;gap:8px;border-right:0;border-bottom:1px solid #3c4d60;background:#102034f0;backdrop-filter:blur(10px)}.tp-welcome{padding:8px 11px}.tp-welcome h2{font-size:14px;margin:0}.tp-welcome p,.tp-welcome small,.tp-side-footer{display:none}.tp-side nav{display:flex;overflow-x:auto;gap:6px;scrollbar-width:thin}.tp-side nav button{white-space:nowrap;flex:none;padding:9px 10px;min-height:40px}.tp-content{padding:18px 14px}.tp-summary>div{padding:12px}.tp-summary strong{font-size:23px}.tp-admin-form{grid-template-columns:1fr}.tp-admin-form .tp-actions{grid-column:1}.tp-top-right a{display:none}}
 @media(max-width:360px){.tp-brand{font-size:15px}.tp-symbol{width:33px;height:33px}.tp-summary{gap:6px}.tp-summary>div{padding:8px}.tp-summary span{font-size:10px}.tp-summary strong{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.tp-progress>div{transition:none}}
+
+/* Guided steps: local-only checklist, not a QA PASS. */
+.tp-guide-list{display:grid;gap:10px;padding-left:23px;margin:16px 0}
+.tp-guide-list li{padding-left:4px}
+.tp-guide-step{display:flex;align-items:flex-start;gap:12px;border:1px solid #39536a;padding:12px;border-radius:11px;background:#102338;cursor:pointer}
+.tp-guide-step input{flex:0 0 auto;width:20px;height:20px;accent-color:#79e1c7;margin:2px 0 0}
+.tp-guide-step>span{min-width:0;display:grid;gap:3px}
+.tp-guide-step strong{font-size:14px}
+.tp-guide-description{font-size:13px;color:#c2d1e3}
+.tp-guide-step:has(input:checked){border-color:#5eb89d;background:#16332f}
+@media(max-width:700px){.tp-guide-step{padding:11px;gap:9px}}

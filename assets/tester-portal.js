@@ -5,6 +5,7 @@
  */
 import {getAuthClient} from './auth-client.js';
 import {withDeadline} from './auth-runtime.mjs';
+import {guideForModule} from './tester-guides.mjs';
 
 const $=id=>document.getElementById(id);
 const pane=$('tp-panel'),statusNode=$('tp-status'),locked=$('tp-locked'),workspace=$('tp-workspace');
@@ -66,6 +67,30 @@ function renderHome(){
  }
 }
 function moduleCases(id){return state.cases.filter(c=>c.module_id===id&&c.readiness==='ready')}
+function renderGuidedSteps(moduleId){
+ const guide=guideForModule(moduleId);if(!guide)return;
+ const intro=card('Hiểu chức năng này trước khi thử');info(intro,guide.intro);
+ const prep=card('Cần chuẩn bị');
+ const prepList=e('ol',null,'tp-list');
+ for(const item of guide.preparation)prepList.append(e('li',item));
+ prep.append(prepList);
+ const box=card('Làm theo từng bước');
+ info(box,'Đánh dấu các bước để khỏi quên. Checklist này chỉ hiển thị trong phiên đang mở; kết quả QA chỉ được lưu khi bạn hoàn thành form của từng bài.');
+ const list=e('ol',null,'tp-guide-list'),progress=e('p','0 / '+guide.steps.length+' bước đã đánh dấu','tp-quiet');
+ for(const [title,description] of guide.steps){
+  const li=e('li'),label=e('label',null,'tp-guide-step'),tick=e('input');
+  tick.type='checkbox';tick.setAttribute('aria-label','Đã thực hiện: '+title);
+  const words=e('span');words.append(e('strong',title),e('span',description,'tp-guide-description'));
+  label.append(tick,words);li.append(label);list.append(li);
+  tick.addEventListener('change',()=>{
+   const count=list.querySelectorAll('input:checked').length;
+   progress.textContent=count+' / '+guide.steps.length+' bước đã đánh dấu';
+  });
+ }
+ box.append(list,progress);
+ info(card('Nếu chưa thể thực hiện'),guide.blocked);
+}
+
 function renderModules(){
  if(!state.modules.length){info(card('Chưa có module khả dụng'),'Chỉ các module đã được phê duyệt và phân công mới xuất hiện tại đây.');return}
  const root=e('div',null,'tp-grid');pane.append(root);
@@ -83,6 +108,7 @@ function openModule(id){
  state.page='modules';pane.replaceChildren();
  $('tp-heading').textContent=m.title;$('tp-subheading').textContent=m.summary;
  const intro=card('Chuẩn bị');info(intro,m.setup_note);
+ renderGuidedSteps(m.module_id);
  const safety=card('Quan trọng trước khi thử');
  info(safety,'Chỉ thử trong môi trường và kênh đã được xác minh. Nếu không có quyền Page/Bot hoặc chức năng chưa hoạt động, hãy chọn BỊ CHẶN. Không tạo đơn thật hoặc gửi tin thay chủ shop.');
  const examples=card('Bài thử của module');

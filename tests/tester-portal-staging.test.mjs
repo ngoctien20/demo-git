@@ -99,3 +99,20 @@ test('Guidance labels unverified channels, data and images',()=>{
  assert.ok(js.includes('không phải giá hoặc tồn kho của cửa hàng thật'));
  assert.ok(js.includes('Ảnh lỗi: chưa có kho lưu ảnh riêng đã nghiệm thu'));
 });
+
+
+test('Guided playbooks cover six modules with no unsafe live links',()=>{
+ const guides=file('assets/tester-guides.mjs');
+ const js=file('assets/tester-portal.js');
+ for(const id of ['messenger','telegram','zalo','sheets','ai_sales','commerce']){
+  assert.ok(guides.includes('  '+id+': {'),id);
+ }
+ for(const term of ['chưa xác nhận','Bị chặn','Google Sheets','đơn thật']){
+  assert.ok(guides.toLowerCase().includes(term.toLowerCase()),term);
+ }
+ assert.ok(js.includes('guideForModule'));
+ assert.ok(js.includes('renderGuidedSteps(m.module_id)'));
+ for(const banned of ['https://graph.facebook.com','/webhook/','service_role','sb_secret_']){
+  assert.ok(!guides.includes(banned),'unsafe test guide: '+banned);
+ }
+});
