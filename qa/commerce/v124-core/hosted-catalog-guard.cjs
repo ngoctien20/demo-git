@@ -34,7 +34,10 @@ function createRlsEnforcedQaCatalog({roleForContext}={}){
        row.can_read_credential_ref!==false || row.can_insert_catalog!==false ||
        row.can_update_catalog!==false || row.can_delete_catalog!==false)
       throw Error('CATALOG_ROLE_UNSAFE');
-    return repository.readProduct({context,sku,client});
+    const item=await repository.readProduct({context,sku,client});
+    if(item && (item.tenantId!==context.tenantId || item.storeId!==context.storeId ||
+      item.sku!==sku || item.source!=='QA_BACKEND_READBACK'))throw Error('CATALOG_CROSS_SCOPE_REJECTED');
+    return item;
   },kind:'TRANSACTIONAL_QA_RLS_ENFORCED_NOT_HOSTED'});
 }
 module.exports={createRlsEnforcedQaCatalog};
