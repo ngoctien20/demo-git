@@ -9,14 +9,14 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const output=path.join(root,'auth-preview-dist');
 const allowList=[
-  'login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html',
+  'login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html','tester-request.html',
   'assets/style.css','assets/auth.css','assets/favicon.svg',
   'assets/app.js','assets/site-config.js',
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
   'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/owner-pairing.mjs','assets/owner-confirm.mjs','assets/merchant-product.mjs',
   'assets/auth-runtime.mjs','assets/auth-bootstrap.js',
   'assets/merchant-portal.js','assets/merchant-portal-policy.mjs','assets/merchant-portal.css','assets/register-staging.js',
-  'assets/tester-portal.js','assets/tester-portal.css','assets/tester-admin.js','assets/tester-guides.mjs','assets/tester-report-csv.mjs'
+  'assets/tester-portal.js','assets/tester-portal.css','assets/tester-admin.js','assets/tester-guides.mjs','assets/tester-report-csv.mjs','assets/tester-request.js'
 ];
 const production='https://ngoctien20.github.io/demo-git/';
 if(!existsSync(path.join(root,'assets/auth-client.js')))throw Error('Auth source missing');
