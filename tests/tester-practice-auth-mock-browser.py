@@ -12,6 +12,7 @@ ROOT=Path(__file__).resolve().parent.parent/'auth-preview-dist'
 STUB=r"""
 const uid='22222222-2222-4222-8222-222222222222';
 const results=[];
+window.__qaRunCount=()=>results.length;
 const callbacks=[];
 window.__qaUserReads=0;
 window.__qaEmitAuth=(event,session)=>callbacks.forEach(cb=>cb(event,session));
@@ -150,10 +151,11 @@ def run():
         page.wait_for_function("window.__qaCopiedPrompt?.includes('CHƯA XÁC MINH')",timeout=8000)
         assert 'Đã sao chép' in page.locator('#tp-ai-copy-status').inner_text()
         page.locator('#tp-ai-notes').fill('Bearer abcdefghijklmnopsecret')
+        report_count_before=page.evaluate('window.__qaRunCount()')
         page.locator('#tp-ai-attest').check()
         page.locator('#tp-ai-submit').click()
         assert 'thông tin nhạy cảm' in page.locator('#tp-ai-submit-status').inner_text()
-        assert page.locator('#tp-done').inner_text()=='3'
+        assert page.evaluate('window.__qaRunCount()')==report_count_before, 'Sensitive text must not be stored'
         page.locator('#tp-ai-notes').fill('Tôi đề xuất thêm kiểm tra lượng tồn vượt 1 tỷ; chưa thử trên bot AI thật.')
         page.locator('#tp-ai-severity').select_option('P1')
         page.locator('#tp-ai-verdict').select_option('needs_review')
