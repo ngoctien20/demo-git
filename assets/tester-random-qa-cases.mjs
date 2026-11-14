@@ -1,5 +1,5 @@
 /* TIEN404 QA V12.4 — 96 single-turn random questions; source: n8n AI_SALES_QA_CASES.
- * Only case ID, prompt (sanitized), and expected behavior; NEVER actual_output or secrets.
+ * Only case ID, sanitized prompt, and expected behavior. Never bundle old bot answers or secrets.
  * This collection is test data; bot response is not simulated by this module.
  */
 export const QA_RANDOM_CASES=Object.freeze([
