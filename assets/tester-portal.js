@@ -69,6 +69,7 @@ function renderHome(){
   const listCard=card('Những module bạn được phép thử');
   for(const m of state.modules){const box=e('div',null,'tp-compact');box.append(e('strong',m.title));button(box,'Mở hướng dẫn',()=>openModule(m.module_id));listCard.append(box)}
  }
+ info(card('Các kênh bot cần đợt QA riêng'),'Messenger, Zalo, Telegram, AI SALES và Commerce chưa có endpoint thực thi an toàn được xác minh cho tester trong Portal này. Mục Thực hành hiện chỉ dùng dữ liệu MẪU, không chạy AI thật.');
 }
 function moduleCases(id){return state.cases.filter(c=>c.module_id===id&&c.readiness==='ready')}
 function renderGuidedSteps(moduleId){
@@ -96,7 +97,7 @@ function renderGuidedSteps(moduleId){
 }
 
 function renderModules(){
- if(!state.modules.length){info(card('Chưa có module khả dụng'),'Chỉ các module đã được phê duyệt và phân công mới xuất hiện tại đây.');return}
+ if(!state.modules.length){info(card('Chưa có module khả dụng'),'Quyền Tester không đồng nghĩa đã được giao bài. Hãy nhờ Super Admin bấm Giao Sheets mẫu tại Tester Admin và sau đó bấm Cập nhật.');return}
  const root=e('div',null,'tp-grid');pane.append(root);
  for(const m of state.modules){
   const box=e('section',null,'tp-card');const count=moduleCases(m.module_id).length;
