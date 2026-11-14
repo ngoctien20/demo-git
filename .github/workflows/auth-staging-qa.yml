@@ -1,7 +1,7 @@
 name: TIEN404 Supabase staging login security QA
 on:
   push:
-    branches: [work/supabase-auth-staging-v1]
+    branches: [work/supabase-auth-staging-v1, work/v12-2-merchant-portal]
     paths:
       - 'tests/auth_browser_smoke.py'
       - 'login.html'
@@ -12,12 +12,22 @@ on:
       - 'assets/auth-runtime.mjs'
       - 'assets/auth-bootstrap.js'
       - 'assets/auth.css'
+      - 'merchant-portal.html'
+      - 'register-staging.html'
+      - 'assets/merchant-portal*'
+      - 'assets/register-staging.js'
+      - 'tests/merchant-portal*'
       - 'scripts/check-supabase-auth-staging.mjs'
       - 'tests/auth-helpers.test.mjs'
       - 'tests/auth-runtime.test.mjs'
       - 'tests/auth-recovery-guard.test.mjs'
       - 'tests/auth-preview-build.test.mjs'
       - 'scripts/build-auth-preview.mjs'
+      - 'merchant-portal.html'
+      - 'register-staging.html'
+      - 'assets/merchant-portal*'
+      - 'assets/register-staging.js'
+      - 'tests/merchant-portal*'
       - '.github/workflows/auth-staging-qa.yml'
   pull_request:
     paths:
@@ -50,14 +60,17 @@ jobs:
           node --check assets/auth-helpers.mjs
           node --check assets/auth-runtime.mjs
           node --check assets/auth-bootstrap.js
+          node --check assets/merchant-portal.js
+          node --check assets/merchant-portal-policy.mjs
+          node --check assets/register-staging.js
       - name: Auth + no-secret + no-demo-bypass checks
         run: node scripts/check-supabase-auth-staging.mjs
       - name: Isolated security and tenancy helper tests
-        run: node --test tests/auth-helpers.test.mjs tests/auth-runtime.test.mjs tests/auth-recovery-guard.test.mjs
+        run: node --test tests/auth-helpers.test.mjs tests/auth-runtime.test.mjs tests/auth-recovery-guard.test.mjs tests/merchant-portal-v12-2.test.mjs
       - name: Build minimal Render preview
         run: node scripts/build-auth-preview.mjs
       - name: Verify public preview artifact security
-        run: node --test tests/auth-preview-build.test.mjs
+        run: node --test tests/auth-preview-build.test.mjs tests/merchant-portal-v12-2.test.mjs
       - name: Clarify no hosted Auth test was performed
         run: echo "Static only, no sign in, no account created, no customer data or Supabase write."
       - name: Chromium auth staging smoke with isolated transport
@@ -65,3 +78,4 @@ jobs:
           python -m pip install playwright==1.58.0
           python -m playwright install chromium
           python tests/auth_browser_smoke.py
+          python tests/merchant-portal-browser-smoke.py
