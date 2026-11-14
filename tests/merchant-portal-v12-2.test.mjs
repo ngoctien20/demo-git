@@ -55,7 +55,7 @@ test('Data lists reuse existing Commerce/CRM and do not mutate',()=>{
 test('Support and Billing clearly distinguish unimplemented features',()=>{
   const js=text('assets/merchant-portal.js');
   assert.ok(js.includes('Ticket nội bộ chưa tích hợp'));
-  assert.ok(js.includes('Chưa có nguồn API Subscription/Billing'));
+  assert.ok(js.includes('chưa có nguồn API Subscription/Billing'));
   assert.ok(js.includes('Đơn paid mới được xem là đã thanh toán'));
 });
 test('Mobile CSS preserves hidden state, focus and breakpoints',()=>{
