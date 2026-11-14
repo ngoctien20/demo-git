@@ -1,0 +1,13 @@
+CREATE TABLE registry(bot TEXT PRIMARY KEY, tenant TEXT NOT NULL, store TEXT NOT NULL, route TEXT NOT NULL UNIQUE, credential_ref TEXT NOT NULL UNIQUE, proof_hash TEXT NOT NULL, enabled INTEGER NOT NULL, plan TEXT NOT NULL, UNIQUE(tenant,store));
+CREATE TABLE memberships(bot TEXT REFERENCES registry,subject TEXT,role TEXT,active INTEGER,PRIMARY KEY(bot,subject));
+CREATE TABLE sessions(session_hash TEXT PRIMARY KEY,subject TEXT,expires REAL);
+CREATE TABLE challenges(bot TEXT PRIMARY KEY REFERENCES registry,subject TEXT,code_hash TEXT,expires REAL,attempts INTEGER);
+CREATE TABLE bindings(bot TEXT PRIMARY KEY REFERENCES registry,subject TEXT,recipient TEXT,generation TEXT);
+CREATE TABLE catalog(bot TEXT REFERENCES registry,sku TEXT,price INTEGER CHECK(price>=0),stock INTEGER CHECK(stock>=0),PRIMARY KEY(bot,sku));
+CREATE TABLE quotes(id TEXT PRIMARY KEY,bot TEXT REFERENCES registry,actor TEXT,sku TEXT,qty INTEGER,price INTEGER,expires REAL);
+CREATE TABLE orders(id TEXT PRIMARY KEY,quote TEXT UNIQUE REFERENCES quotes,tenant TEXT,store TEXT,bot TEXT REFERENCES registry,actor TEXT,sku TEXT,qty INTEGER,price INTEGER,total INTEGER,confirmed REAL,status TEXT,origin TEXT,UNIQUE(id,bot));
+CREATE TABLE events(order_id TEXT PRIMARY KEY,bot TEXT,kind TEXT,FOREIGN KEY(order_id,bot) REFERENCES orders(id,bot));
+CREATE TABLE outbox(order_id TEXT PRIMARY KEY REFERENCES events,bot TEXT,generation TEXT,recipient TEXT,credential_ref TEXT,state TEXT CHECK(state='HELD'),FOREIGN KEY(order_id,bot) REFERENCES orders(id,bot));
+CREATE TABLE audit(bot TEXT,action TEXT,at REAL);
+CREATE TABLE turns(bot TEXT REFERENCES registry,actor TEXT,mid TEXT,signature TEXT,reply TEXT,PRIMARY KEY(bot,actor,mid));
+CREATE TABLE memory(bot TEXT REFERENCES registry,actor TEXT,sku TEXT,quote TEXT,expires REAL,PRIMARY KEY(bot,actor));

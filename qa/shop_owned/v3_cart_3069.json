@@ -1,0 +1,49 @@
+[
+  {
+    "tenantId": "demo_tien404",
+    "currency": "VND",
+    "environment": "sandbox",
+    "success": true,
+    "subtotalVnd": 607000,
+    "lines": [
+      {
+        "sku": "F-101",
+        "quantity": 2,
+        "unitPriceVnd": 159000,
+        "lineTotalVnd": 318000,
+        "stock": 20
+      },
+      {
+        "sku": "F-102",
+        "quantity": 1,
+        "unitPriceVnd": 289000,
+        "lineTotalVnd": 289000,
+        "stock": 12
+      }
+    ],
+    "requiresHumanQuote": false,
+    "previewOnly": true,
+    "canConfirm": false,
+    "canWrite": false
+  },
+  {
+    "tenantId": "demo_materials_qa",
+    "currency": "VND",
+    "environment": "sandbox",
+    "success": true,
+    "subtotalVnd": 180000,
+    "lines": [
+      {
+        "sku": "VL-102",
+        "quantity": 100,
+        "unitPriceVnd": 1800,
+        "lineTotalVnd": 180000,
+        "stock": 5000
+      }
+    ],
+    "requiresHumanQuote": true,
+    "previewOnly": true,
+    "canConfirm": false,
+    "canWrite": false
+  }
+]

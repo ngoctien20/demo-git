@@ -16,11 +16,12 @@ with sync_playwright() as p:
         if (window.mode==='error') return {error:true};
         if (window.mode==='denied') return {data:[]};
         return name==='merchant_notification_channels' ? {data:[{channel:'zalo',connection_state:'waiting_for_owner'}]}
-          : {data:[{event_id:'e',order_id:'QA-1',created_at:'2026-11-13T00:00:00Z',deliveries:[]}]};
+          : {data:[{event_id:'e',order_id:'QA-1',created_at:'2026-11-13T00:00:00Z',deliveries:[{channel:'zalo_bot',status:'held',attempts:0,last_error_code:'SEND_DISABLED'}]}]};
       }};
       window.unmount=mountNotificationCenter(document.querySelector('main'),client,'A');
     }""")
     expect(page.get_by_text("Zalo · Tùy chọn · Chờ xác minh OA")).to_be_visible()
+    expect(page.get_by_text("Bot Zalo của cửa hàng · Tạm giữ · Số lần thử: 0 · Đang khóa gửi tin")).to_be_visible()
     page.get_by_role("button",name="Đánh dấu đã xem").click()
     expect(page.get_by_role("button",name="Đã xem trong hộp thư")).to_be_disabled()
     for mode, message in [('error','Chưa tải được thông báo.'),('denied','Bạn chưa có quyền')]:
@@ -57,4 +58,46 @@ with sync_playwright() as p:
     page.get_by_label('Đến ngày').fill('2026-11-01')
     page.get_by_role('button',name='Xem báo cáo').click()
     expect(page.get_by_role('status')).to_contain_text('Chọn kỳ báo cáo')
+    browser.close()
+
+with sync_playwright() as p:
+    browser=p.chromium.launch()
+    page=browser.new_page(viewport={"width":360,"height":780})
+    page.set_content('<main lang="vi"></main>')
+    page.add_script_tag(content=Path('merchant/owner-confirm.mjs').read_text().replace('export function','function'))
+    for reply,expected in [('PENDING','Chưa xác minh được kết quả'),('PAIRED','Đã ghép nối.')]:
+        page.evaluate("""result => mountOwnerConfirmation(document.querySelector('main'),{
+          status:'PENDING_OWNER_CONFIRMATION',challengeId:'challenge-a',shopName:'Shop A',
+          botName:'Bot A',recipientFingerprint:'0011abcd'}, async id => ({status:result,challengeId:id}))""",reply)
+        expect(page.get_by_text('Shop A · Bot A · Dấu nhận diện 0011abcd')).to_be_visible()
+        button=page.get_by_role('button',name='Xác nhận đúng tài khoản')
+        button.click()
+        expect(page.get_by_role('status')).to_contain_text(expected)
+        expect(button).to_be_disabled()
+    browser.close()
+print("PASS mobile owner-confirm component with synthetic pending/paired responses")
+
+with sync_playwright() as p:
+    browser=p.chromium.launch()
+    page=browser.new_page(viewport={"width":360,"height":780})
+    page.set_content('<main lang="vi"></main>')
+    for module in ('owner-confirm','owner-pairing'):
+        source=Path(f'merchant/{module}.mjs').read_text()
+        page.add_script_tag(content='\n'.join(s for s in source.splitlines() if not s.startswith("import ")).replace('export function','function'))
+    page.evaluate("""() => {
+      let issued=false;
+      mountOwnerPairing(document.querySelector('main'),{rpc:async(name,args)=>{
+        if(name!=='qa_owner_pairing'||args.p_shop!=='a')throw Error();
+        const common={challengeId:'qa-a',bot:'qa-bot-a',expiresAt:new Date(Date.now()+300000).toISOString()};
+        if(args.p_action==='issue'){issued=true;return {data:{...common,state:'WAITING_FOR_BOT',code:'a'.repeat(32)}};}
+        if(args.p_action==='confirm')return {data:{status:'PAIRED',challengeId:'qa-a'}};
+        return {data:issued?{...common,state:'PENDING_OWNER_CONFIRMATION',recipientFingerprint:'01234567'}:{state:'NO_CURRENT_CHALLENGE'}};
+      }},{id:'a',name:'Shop A'});
+    }""")
+    page.get_by_role('button',name='Tạo mã ghép nối').click()
+    expect(page.locator('code')).to_have_text('GHÉP qa-a '+'a'*32)
+    page.get_by_role('button',name='Kiểm tra trạng thái').click()
+    expect(page.locator('code')).to_be_empty()
+    page.get_by_role('button',name='Xác nhận đúng tài khoản').click()
+    expect(page.get_by_text('Đã ghép nối.',exact=True)).to_be_visible()
     browser.close()

@@ -1,0 +1,5 @@
+import {workflow,node,trigger} from '@n8n/workflow-sdk';
+const start=trigger({type:'n8n-nodes-base.manualTrigger',version:1,config:{name:'Manual QA'}});
+const read=node({type:'n8n-nodes-base.dataTable',version:1.1,config:{name:'Read QA registry',parameters:{resource:'row',operation:'get',dataTableId:{__rl:true,mode:'id',value:'qLf19z9QjEaIHk00'},returnAll:true}}});
+const check=node({type:'n8n-nodes-base.code',version:2,config:{name:'Check shop bindings',parameters:{jsCode:"const rows=$input.all().map(x=>x.json);if(rows.length!==2)throw Error('expected two');for(const s of ['a','b']){const r=rows.find(x=>x.bot_id===s);if(!r||r.tenant_id!=='tenant-'+s||r.store_id!=='shop-'+s||r.credential_ref!=='fixture-ref-'+s||r.catalog_source_ref!=='catalog-'+s||r.webhook_route_ref!=='route-'+s||r.enabled_mode!=='dry_run'||r.identity_status!=='synthetic_qa')throw Error('registry mismatch');}return [{json:{shops:rows.length,mode:'dry_run',separate_routes:true,separate_credentials_refs:true}}];"}}});
+export default workflow('r1-registry','TIEN404_R1_SHOP_REGISTRY_QA').add(start).to(read).to(check);
