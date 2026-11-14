@@ -44,8 +44,8 @@ jobs:
           node --check qa/zalo/shop-b-session-service.cjs
           node --check qa/zalo/shop-b-session-service.test.cjs
           node --check qa/zalo/shop-b-postgres-repository.cjs
-          node --check qa/zalo/shop-b-postgres-repository.test.cjs qa/zalo/shop-b-trusted-owner-resolver.test.cjs
+          node --check qa/zalo/shop-b-postgres-repository.test.cjs
           node --check qa/zalo/shop-b-trusted-owner-resolver.cjs
           node --check qa/zalo/shop-b-trusted-owner-resolver.test.cjs
       - name: Run Shop B owner and order-safety cases
-        run: node --test qa/zalo/shop-b-conversation.test.cjs qa/zalo/shop-b-session-service.test.cjs qa/zalo/shop-b-postgres-repository.test.cjs
+        run: node --test qa/zalo/shop-b-conversation.test.cjs qa/zalo/shop-b-session-service.test.cjs qa/zalo/shop-b-postgres-repository.test.cjs qa/zalo/shop-b-trusted-owner-resolver.test.cjs
