@@ -1,6 +1,6 @@
 // Candidate for the existing signed-in merchant account page. Pass its Supabase client.
 const labels = {
-  zalo:'Zalo · Tùy chọn', telegram:'Telegram', gmail:'Gmail', messenger:'Messenger', dashboard:'Hộp thư',
+  zalo_bot:'Bot Zalo của cửa hàng', held:'Tạm giữ', zalo:'Zalo · Tùy chọn', telegram:'Telegram', gmail:'Gmail', messenger:'Messenger', dashboard:'Hộp thư',
   waiting_for_owner:'Chờ xác minh OA', policy_qa:'Đang kiểm thử chính sách', unconfigured:'Chưa cấu hình',
   disabled:'Đang tắt', internal:'Nội bộ', qa_route_only:'Đã cấu hình thử nghiệm',
   queued:'Đang chờ', sending:'Đang xử lý', accepted:'Đã tiếp nhận', failed:'Thất bại',
@@ -48,7 +48,7 @@ export function mountNotificationCenter(root, client, shop, openOrder) {
         const date=new Date(event.created_at);
         if (!Number.isNaN(date.valueOf())) card.append(element('p',date.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})));
         for (const delivery of event.deliveries) {
-          const error = delivery.last_error_code ? ' · '+delivery.last_error_code : '';
+          const error = delivery.last_error_code === 'SEND_DISABLED' ? ' · Đang khóa gửi tin' : delivery.last_error_code ? ' · '+delivery.last_error_code : '';
           card.append(element('p',(labels[delivery.channel] ?? 'Kênh khác')+' · '+(labels[delivery.status] ?? 'Chưa xác định')
             +' · Số lần thử: '+delivery.attempts+error));
         }

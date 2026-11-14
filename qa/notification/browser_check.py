@@ -16,11 +16,12 @@ with sync_playwright() as p:
         if (window.mode==='error') return {error:true};
         if (window.mode==='denied') return {data:[]};
         return name==='merchant_notification_channels' ? {data:[{channel:'zalo',connection_state:'waiting_for_owner'}]}
-          : {data:[{event_id:'e',order_id:'QA-1',created_at:'2026-11-13T00:00:00Z',deliveries:[]}]};
+          : {data:[{event_id:'e',order_id:'QA-1',created_at:'2026-11-13T00:00:00Z',deliveries:[{channel:'zalo_bot',status:'held',attempts:0,last_error_code:'SEND_DISABLED'}]}]};
       }};
       window.unmount=mountNotificationCenter(document.querySelector('main'),client,'A');
     }""")
     expect(page.get_by_text("Zalo · Tùy chọn · Chờ xác minh OA")).to_be_visible()
+    expect(page.get_by_text("Bot Zalo của cửa hàng · Tạm giữ · Số lần thử: 0 · Đang khóa gửi tin")).to_be_visible()
     page.get_by_role("button",name="Đánh dấu đã xem").click()
     expect(page.get_by_role("button",name="Đã xem trong hộp thư")).to_be_disabled()
     for mode, message in [('error','Chưa tải được thông báo.'),('denied','Bạn chưa có quyền')]:

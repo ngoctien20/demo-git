@@ -32,6 +32,9 @@ jobs:
           ref: ab940a95dae8afdff426bc6ac71693833d5348ce
           path: data
           persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - run: python -m pip install 'psycopg[binary]==3.2.9'
       - run: |
           set -eu
