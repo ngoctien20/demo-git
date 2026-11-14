@@ -4,3 +4,7 @@
 
 ## Shop B sẵn sàng thử từ điện thoại · 14/11/2026 JST
 Vault và credential Header Auth riêng đã được cấu hình cho tenant staging. RPC qa_shop_b_zalo_claim chỉ tạo pending của Shop B. Execution 3346 dùng fixture với credential và database staging thật, đọc lại một pending. Execution 3347 chạy lại cùng sự kiện, số pending vẫn là một. Fixture đã hết hạn trước khi mời Owner thử. Chưa xác nhận từ điện thoại. Shadow published a0542183-67be-461d-9d00-c409ab27d2e6; rollback Shadow về 7f100319-b820-4f02-a52b-85cd8e0c7e25. Render dep-dbs448ui0phs73c2ikg0 live 5f121a6c0c402dc5bde679ef48e4db0725040643; rollback giao diện về dep-dbs36d49v7es73bijjf0. Để khóa riêng RPC, thu hồi EXECUTE của anon. Không có bước gửi Zalo trong nhánh ghép. Bước kế tiếp: Owner Shop B gửi một mã mới, kiểm tra pending và xác nhận trên Dashboard.
+
+## VERIFIED — Owner Shop B xác nhận trên Dashboard
+
+Ngày 14/11/2026, Owner báo Dashboard hiện “Đã ghép nối”. Supabase staging xác nhận lúc 20:23:15 JST: claim CONFIRMED, binding paired còn hiệu lực, đúng yêu cầu và đúng tham chiếu người nhận của qa-bot-b. Binding hết hạn lúc 20:23:15 JST ngày 21/11/2026. Đây là nghiệm thu ghép Owner của Shop B. Mốc tiếp theo là bản xem trước thông báo đơn sandbox tới Owner Shop B với outbox HELD; chưa nghiệm thu gửi thông báo thực tế.
