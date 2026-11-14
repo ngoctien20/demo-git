@@ -39,6 +39,7 @@ def run():
                              else route.abort())
                 signup.goto(base + "/register-staging.html", wait_until="domcontentloaded")
                 assert signup.locator("#mp-register-submit").is_disabled()
+                assert signup.locator('input[name="password"]').is_disabled()
                 assert signup.get_by_text("Đăng ký tự phục vụ chưa được mở").is_visible()
                 assert not signup.evaluate("document.documentElement.scrollWidth > innerWidth + 2")
                 signup.close()
