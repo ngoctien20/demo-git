@@ -153,7 +153,7 @@ def run():
         assert page.locator('#tp-qa-local-details').evaluate('(x)=>x.open') is False
         page.locator('#tp-qa-random-draw').click()
         assert 'QA' in page.locator('#tp-qa-random-prompt').inner_text()
-        page.locator('#tp-qa-local-details summary').click()
+        page.locator('#tp-qa-local-details > summary').click()
         page.get_by_role('button',name='Nạp 21 sản phẩm mẫu').click()
         page.wait_for_function("document.querySelector('#tp-qa-product-count')?.textContent.includes('21 sản phẩm')",timeout=11000)
         page.locator('#tp-qa-product-select').select_option('A002')
