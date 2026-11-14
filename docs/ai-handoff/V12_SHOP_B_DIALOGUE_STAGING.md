@@ -123,3 +123,29 @@ Bot **sẽ không tự phản hồi**. Khi Owner báo “đã gửi”, đối c
 - **Execution 3370: PASS**. Pin bản sao F01 với `snapshot_at=2026-11-10T00:00:00Z` (chỉ dữ liệu giả lập cho test). Workflow ghi `outcome=BLOCKED_STALE_SNAPSHOT`, `catalog_mode=QA_SNAPSHOT_EXPIRED`, giá trả về `0` với nội dung *không báo giá, không tạo đơn*. Đây là chặn dữ liệu cũ, **không phải mức giá của sản phẩm**.
 - **Execution 3371: PASS**. Sau đó bỏ pin snapshot cũ, n8n đọc snapshot staging hiện có, phục hồi đúng `PRICE_PREVIEW`, F01 giá 199.000đ, tồn QA 5; snapshot gốc `2026-11-14T12:41:35.598Z` không bị sửa.
 - Hai bài kiểm thử đều chạy bằng pin input tổng hợp, không gửi Zalo hay gọi Order Service; không làm mất dữ liệu catalog/sandbox.
+
+
+## V12.1.2 — Hai tin Owner gửi từ Zalo: chưa thấy cập nhật trong trace
+
+**Ngày kiểm tra:** 14/11/2026, khoảng **22:05 JST**. Chủ dự án đã xác nhận **"Đã gửi 2 tin"** theo kịch bản `TEST SHOP B CHAT F01` và `TEST SHOP B CHAT MUA F01 2`. Đây là xác nhận thao tác của chủ dự án, **chưa phải bằng chứng webhook đã nhận hoặc xử lý**.
+
+### VERIFIED (read-only connector QA)
+
+- n8n workflow `TIEN404_ZALO_V2_SHADOW_STAGING` `OgDZNSAvKEvhnAvn` **active/published** version `f00ba506-c52a-4340-9a0c-809fd9c6ea9a`. Workflow V1 `yIJk8LvJoLF40Z62` **active/published** `9ef7342b-0623-4921-9969-7d33d112bbef`. V1 webhook `POST tien404-zalo-bot-lab-v1` dùng headerAuth, phản hồi HTTP trước khi gọi subworkflow Shadow.
+- n8n Data Table `TIEN404_ZALO_SHOP_B_CHAT_PREVIEW_QA` `dh0SSc30x3pw4rDx`: vẫn chỉ có **một** row `shop_b_chat_preview`, `outcome=PRICE_PREVIEW`, `quantity=0`, `total=0`, `observed_at=2026-11-14T12:52:22.792Z` (**21:52:22 JST**). Đây là kết quả **execution 3371** mô phỏng trước khi Owner báo gửi tin, không chứng minh bài thử trên điện thoại.
+- n8n Data Table `TIEN404_QA_SHOP_B_PAIRING_TRACE` `e7eJAGSwzn67aA1z`: `slot=inbound` cuối `2026-11-14T12:52:23.041Z`; `slot=owner_gate` cuối `2026-11-14T12:52:22.917Z`. Không thấy cập nhật mới sau bài thử từ điện thoại. Trace `shop_b_owner_probe` vẫn là bài thử cũ ngày 14/11 lúc 20:59 JST.
+- n8n execution search không có execution mới từ webhook: workflow hiện cấu hình `saveDataSuccessExecution=none`, `saveDataErrorExecution=none`, `saveManualExecutions=false`. Do đó không thể lấy execution log làm bằng chứng âm tính về tin nhắn người dùng.
+- Owner allowlist `ALLOWED_STAGING_OWNER` vẫn **còn hiệu lực**, đến `2026-11-20T13:17:32.511Z`. Supabase Shop B Orders vẫn **2** (không tạo đơn từ hai tin). Cloudflare gateway đang ở version `38c7df57-8e22-4b79-b5c4-e08b342833c6` và `ZALO_SEND_ENABLED=false`.
+
+### TEST RESULT & BLOCKER
+
+**Kết quả: BLOCKED / NOT VERIFIED** cho bài thử Owner-device inbound. Không tuyên bố 2/2 tin đến webhook, không đánh dấu PASS, không yêu cầu Owner ghép lại và không gửi phản hồi Zalo. Hai giả thuyết cần phân biệt: (1) nhà cung cấp không gọi/không xác thực được webhook, (2) tin đã đến nhưng lỗi ở chuyển tiếp hoặc ghi trace. Chưa có bằng chứng xác nhận nguyên nhân.
+
+### Khắc phục được đề xuất (chưa thực thi)
+
+1. Kiểm tra cấu hình webhook Bot Zalo trong dashboard/provider, trạng thái subscription, HTTP status/last delivery, đúng địa chỉ HTTPS và headerAuth — **không lộ webhook secret**.
+2. Bổ sung **telemetry chỉ đếm, không ghi nội dung/PII** tại webhook V1 staging để phân biệt HTTP receipt → normalized/accepted → Shadow gate; đảm bảo không thay đổi đáp ứng HTTP, có rollback version và QA riêng.
+3. Chạy lại một sự kiện được Owner chủ động gửi **sau** khi telemetry đã kiểm thử; xác minh cả hai code paths và lúc nhận. Không yêu cầu gửi lại trong khi chưa xác định đường webhook.
+4. Catalog snapshot QA hết hạn `2026-11-14T15:41:35.598Z` (00:41:35 JST ngày 15/11); refresh từ Supabase trước test tiếp theo nếu quá hạn, không tái sử dụng dữ liệu cũ làm giá thật.
+
+**Rollback/production:** Chưa có bất kỳ sửa đổi code, published workflow, credential, dữ liệu đơn thật, gateway hoặc outbox trong lượt đối soát này; chỉ cập nhật checkpoint. Các automation gửi vẫn khóa.
