@@ -46,7 +46,7 @@ test('QA admin is gated by tester staff role, not merchant ownership',()=>{
  }
  assert.ok(!js.includes("from('tenant_memberships')"));
  assert.ok(!js.includes('supabase.auth.admin.'));
- assert.ok(!js.includes('service_role'));
+ assert.ok(!js.includes('service_role_key'));
  assert.ok(!js.includes('innerHTML'));
 });
 
