@@ -32,7 +32,7 @@ export function mountQaSandbox(root,{state,onSaved=()=>{}}){
  const box=e('section',null,'tp-card tp-qa-write');box.id='tp-qa-write';
  box.append(e('p','V12.4 · DỮ LIỆU QA RIÊNG · CHỈ TRÊN STAGING','tp-overline'),
   e('h2','Thử tạo/sửa dữ liệu và nhận câu hỏi ngẫu nhiên'),
-  e('p','Mỗi tài khoản có sản phẩm và đơn QA riêng. Không ghi vào Google Sheets DEMO gốc, không gửi tin và chưa chạy chatbot thật.','tp-ai-description'));
+  e('p','Mỗi tài khoản có sản phẩm và đơn QA riêng. Không ghi vào DEMO gốc. Dữ liệu tạo/sửa tại đây hiện CHƯA đồng bộ sang Google Sheet mà model QA đọc; kết quả này chưa phải kiểm thử AI thật.','tp-ai-description'));
  const status=e('p','Đang kiểm tra quyền và tải kho QA…','tp-ai-message');status.id='tp-qa-write-status';status.setAttribute('role','status');
  const productBox=e('section',null,'tp-qa-write-section');
  productBox.append(e('h3','Sản phẩm QA (giá / tồn)'),e('p','Giá và tồn ban đầu lấy từ bản sao Google Sheets QA, sau đó bạn có thể tự chỉnh sửa để thử nghiệm.','tp-quiet'));
@@ -69,7 +69,7 @@ export function mountQaSandbox(root,{state,onSaved=()=>{}}){
  orderBox.append(orderCreation,createOrder,orderList);
 
  const randomBox=e('section',null,'tp-qa-write-section');
- randomBox.append(e('h3','Câu hỏi ngẫu nhiên cho AI SALES'),e('p','96 tình huống từ bộ QA hiện có. Bạn có thể lấy ngẫu nhiên và sao chép để thử với model QA khi gateway an toàn được mở.','tp-quiet'));
+ randomBox.append(e('h3','Câu hỏi ngẫu nhiên cho AI SALES'),e('p','96 tình huống từ bộ QA hiện có. Lấy ngẫu nhiên và sao chép; chưa gửi câu hỏi trực tiếp đến model cho tới khi cổng xác thực QA được kiểm thử.','tp-quiet'));
  const categories=select();categories.id='tp-qa-random-mode';
  for(const [key,text] of [['all','Tất cả 96 câu'],['catalog','Sản phẩm / giá / tồn'],['consult','Tư vấn'],['language','Ngôn ngữ tự nhiên'],['create','Tạo đơn'],['edit','Sửa đơn'],['security','Bảo mật'],['policy','Chính sách / tình huống']])opt(categories,key,text);
  const prompt=e('p','Bấm Lấy câu hỏi ngẫu nhiên để bắt đầu.','tp-qa-random-prompt');prompt.id='tp-qa-random-prompt';
