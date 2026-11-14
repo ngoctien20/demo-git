@@ -22,6 +22,7 @@
 <div><span>Module</span><strong id="ta-module-count">—</strong></div>
 </div>
 <p class="tp-note">Chỉ dữ liệu staging. Trạng thái “Đạt” do người thử báo cáo <strong>không phải QA tự động PASS</strong>.</p>
+<p class="tp-note" id="ta-case-readiness">Đang kiểm tra số bài QA đang chờ mở…</p>
 <div id="ta-manage" class="tp-grid">
 <section class="tp-card" id="ta-grant-card" hidden>
 <h2>Cấp quyền cho tài khoản đã tồn tại</h2>
@@ -43,7 +44,7 @@
 </form></section></div>
 <section class="tp-card"><div class="tp-compact"><h2>Quyền Tester hiện tại</h2><button type="button" id="ta-refresh" class="tp-outline">↻ Tải lại</button></div>
 <div id="ta-access-list" class="tp-scroll"><p>Đang tải…</p></div></section>
-<section class="tp-card"><h2>Báo cáo tự đánh giá</h2><div id="ta-runs-list" class="tp-scroll"><p>Đang tải…</p></div></section>
+<section class="tp-card"><div class="tp-compact"><h2>Báo cáo tự đánh giá</h2><button type="button" id="ta-export" class="tp-outline">Tải CSV (tối đa 500 lượt)</button></div><div id="ta-runs-list" class="tp-scroll"><p>Đang tải…</p></div></section>
 <section class="tp-card"><h2>Nhật ký thay đổi quyền</h2><div id="ta-audit-list" class="tp-scroll"><p>Đang tải…</p></div></section>
 <section class="tp-card"><h2>Mời Tester bằng email và ảnh bằng chứng</h2>
 <p class="tp-note">BLOCKED: chỉ bật sau khi có SMTP/Auth invitation, danh sách redirect, kho ảnh riêng có RLS, kiểm thử anti-abuse và phê duyệt quyền phù hợp.</p>
