@@ -16,7 +16,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://tien404-auth-staging.onrender.com"
-          for REL in tester.html tester-admin.html account.html login.html merchant-portal.html assets/tester-portal.js assets/tester-admin.js assets/tester-portal.css; do
+          for REL in tester.html tester-admin.html account.html login.html merchant-portal.html assets/tester-portal.js assets/tester-admin.js assets/tester-portal.css assets/tester-guides.mjs; do
             BODY="$(mktemp)"
             CODE="$(curl -LfsS --max-time 30 --retry 2 --retry-all-errors -o "$BODY" -w '%{http_code}' "$BASE/$REL")"
             if [ "$CODE" != "200" ] || [ ! -s "$BODY" ]; then echo "::error::Missing $REL / HTTP $CODE";exit 1;fi
@@ -32,6 +32,13 @@ jobs:
                 grep -Fq 'auth.getUser()' "$BODY";;
               assets/tester-admin.js)
                 grep -Fq "tien404_tester_staff" "$BODY";;
+              assets/tester-guides.mjs)
+                grep -Fq "messenger:" "$BODY"
+                grep -Fq "telegram:" "$BODY"
+                grep -Fq "zalo:" "$BODY"
+                grep -Fq "sheets:" "$BODY"
+                grep -Fq "ai_sales:" "$BODY"
+                grep -Fq "commerce:" "$BODY";;
               account.html)
                 grep -Fq 'href="tester.html"' "$BODY";;
             esac
