@@ -1,0 +1,41 @@
+name: TIEN404 Tester Portal hosted staging smoke
+on:
+  push:
+    branches: [work/v12-2-private-tester-portal]
+    paths: ['.github/workflows/tester-hosted-staging-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-render-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check Render staging over HTTPS with no credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://tien404-auth-staging.onrender.com"
+          for REL in tester.html tester-admin.html account.html login.html merchant-portal.html assets/tester-portal.js assets/tester-admin.js assets/tester-portal.css; do
+            BODY="$(mktemp)"
+            CODE="$(curl -LfsS --max-time 30 --retry 2 --retry-all-errors -o "$BODY" -w '%{http_code}' "$BASE/$REL")"
+            if [ "$CODE" != "200" ] || [ ! -s "$BODY" ]; then echo "::error::Missing $REL / HTTP $CODE";exit 1;fi
+            case "$REL" in
+              tester.html)
+                grep -Fq 'id="tp-workspace" class="tp-workspace" hidden' "$BODY"
+                grep -Fq 'noindex,nofollow' "$BODY";;
+              tester-admin.html)
+                grep -Fq 'id="ta-protected" hidden' "$BODY"
+                grep -Fq 'noindex,nofollow' "$BODY";;
+              assets/tester-portal.js)
+                grep -Fq "tien404_tester_access" "$BODY"
+                grep -Fq 'auth.getUser()' "$BODY";;
+              assets/tester-admin.js)
+                grep -Fq "tien404_tester_staff" "$BODY";;
+              account.html)
+                grep -Fq 'href="tester.html"' "$BODY";;
+            esac
+            echo "PASS HTTPS $REL"
+            rm -f "$BODY"
+          done
+          echo "PASS: Tester Portal and existing Auth pages served over HTTPS; protected content remains default-hidden."
