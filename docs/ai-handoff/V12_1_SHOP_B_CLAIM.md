@@ -27,3 +27,19 @@ Ngày 14/11/2026, Owner báo Dashboard hiện “Đã ghép nối”. Supabase s
 **Rollback:** Đây là dữ liệu chỉ trong schema staging QA, không thực hiện rollback xóa vì cần giữ bằng chứng và đối soát. Không tự thay đổi bảng Production, Zalo sender, credential hoặc outbox state.
 
 **Next gate:** Đọc màn hình preview từ Dashboard dưới session Owner Shop B thật; đảm bảo chỉ Shop B thấy đơn, không lộ Owner A; tiếp tục cơ chế Zalo send disabled cho đến khi có phê duyệt riêng. Không yêu cầu Owner gửi thêm mã Zalo.
+
+
+## READY — TEST SHOP B F01 từ Zalo Bot (14/11/2026 JST)
+
+**Phạm vi:** n8n `TIEN404_ZALO_V2_SHADOW_STAGING` `OgDZNSAvKEvhnAvn` là staging-only Shadow được gọi bởi Webhook V1 `yIJk8LvJoLF40Z62`. Không phát hành production Commerce, không gửi tin bot, không ghi đơn từ lệnh Zalo và không tạo mã ghép mới.
+
+- Pre-change published version `2533f350-3053-47f7-8349-59f0e2f4f433` giữ làm **rollback snapshot**.
+- Chỉ sửa Code node `QA marker 1` sau Owner Gate, thêm **exact text** `TEST SHOP B F01`: lệnh hợp lệ từ chat riêng đã qua allowlist ghi riêng `slot=shop_b_owner_probe`, `outcome=eligible`; otherwise logic cũ `slot=owner_gate` vẫn giữ. Không lưu raw chat ID, token hoặc nội dung tin.
+- QA pure-code: 8/8 case (eligible, deny, lowercase, Shop A, pairing, group, malformed, prompt injection) PASS. n8n synthetic test execution `3357` status SUCCESS; staging trace `shop_b_owner_probe=eligible` đã readback. **Đây là test mô phỏng, không phải tin từ điện thoại.**
+- Published staging Shadow mới: `3aeabdb0-79b1-4dca-96bb-c5b0c9c2bee6`; verified active. Webhook V1 vẫn giữ version cũ, lệnh `GHÉP` và RPC claim không bị sửa.
+- Verified read-only Supabase Vault HMAC comparison: sender của đúng một n8n Owner Allowlist row còn hạn khớp **recipient_ref của Shop B paired**, không tiết lộ người nhận; Shop B binding còn hạn. Database outbox chỉ HELD/SEND_DISABLED; không có outbound.
+- **Owner test:** mở đúng Bot của Shop B trên Zalo, gửi đúng một tin `TEST SHOP B F01`. Không mong bot phản hồi (ZALO_SEND_ENABLED=false). Sau đó đối chiếu `TIEN404_QA_SHOP_B_PAIRING_TRACE` slot `shop_b_owner_probe` có `eligible` và `observed_at` **mới hơn** synthetic test; kiểm outbox đơn QA `QA-B-OWNER-HELD-20261114-01` vẫn HELD. Không gửi lại lệnh GHÉP.
+- Caveat: Đây là acceptance test **webhook ingress + owner gate**; lệnh này không tra catalog/commit order và chưa chứng minh bot hai chiều. Chưa có kết nối Order Service từ lệnh Zalo; muốn bot tự trả lời và tạo đơn cần workflow/app staging riêng, API policy, QA và phê duyệt trước khi bật sender.
+- Code node update tooling báo cảnh báo đã tồn tại `HARDCODED_CREDENTIALS` trên HTTP node `Submit pending claim for Shop B` vì có header apikey cố định; cần audit secret/public publishable key trước release, không tự sửa credential khi chưa kiểm tra.
+
+**Rollback:** Restore Shadow version `2533f350-3053-47f7-8349-59f0e2f4f433` trong n8n history (và publish lại nếu được phê duyệt), không xóa Shop B pairing/QA outbox. Mọi dữ liệu QA hiện hữu giữ nguyên làm bằng chứng.
