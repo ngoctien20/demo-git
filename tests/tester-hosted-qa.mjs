@@ -12,12 +12,13 @@ async function read(relative, expected=200) {
 test('Render HTTPS delivers the actual deployed Tester pages',async()=>{
   const checks=[
     ['/tester.html',['id="tp-workspace" class="tp-workspace" hidden','noindex,nofollow','assets/tester-portal.js']],
-    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js']],
+    ['/tester-admin.html',['id="ta-protected" hidden','noindex,nofollow','assets/tester-admin.js','id="ta-export"','id="ta-case-readiness"']],
     ['/login.html',['id="auth-login"','Supabase']],
     ['/account.html',['account-protected','tester.html']],
     ['/merchant-portal.html',['id="merchant-protected"','id="merchant-login"']],
     ['/assets/tester-portal.js',["renderGuidedSteps(m.module_id)","from './tester-guides.mjs'","getAuthClient()"]],
-    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()"]],
+    ['/assets/tester-admin.js',["tien404_tester_staff","getAuthClient()","buildTesterCsv(rows)"]],
+    ['/assets/tester-report-csv.mjs',["buildTesterCsv","SELF-REPORTED"]],
     ['/assets/tester-guides.mjs',['messenger:', 'telegram:', 'zalo:', 'sheets:', 'ai_sales:', 'commerce:']],
     ['/assets/tester-portal.css',['tp-guide-list','tp-guide-step']]
   ];
