@@ -13,6 +13,7 @@ on:
       - "qa/zalo/shop-b-trusted-owner-resolver.cjs"
       - "qa/zalo/shop-b-trusted-owner-resolver.test.cjs"
       - "qa/zalo/v124-two-session-lock.sh"
+      - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
   pull_request:
     branches:
@@ -27,6 +28,7 @@ on:
       - "qa/zalo/shop-b-trusted-owner-resolver.cjs"
       - "qa/zalo/shop-b-trusted-owner-resolver.test.cjs"
       - "qa/zalo/v124-two-session-lock.sh"
+      - "qa/zalo/v124-ephemeral-pg-concurrency.sh"
       - ".github/workflows/v12-shop-b-dialogue-qa.yml"
 permissions:
   contents: read
@@ -50,5 +52,39 @@ jobs:
           node --check qa/zalo/shop-b-trusted-owner-resolver.cjs
           node --check qa/zalo/shop-b-trusted-owner-resolver.test.cjs
           bash -n qa/zalo/v124-two-session-lock.sh
+          bash -n qa/zalo/v124-ephemeral-pg-concurrency.sh
       - name: Run Shop B owner and order-safety cases
         run: node --test qa/zalo/shop-b-conversation.test.cjs qa/zalo/shop-b-session-service.test.cjs qa/zalo/shop-b-postgres-repository.test.cjs qa/zalo/shop-b-trusted-owner-resolver.test.cjs
+
+  isolated-postgres-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tien404_ephemeral_qa
+          POSTGRES_USER: qa_runner
+          POSTGRES_PASSWORD: ephemeral-ci-only-not-a-project-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qa_runner -d tien404_ephemeral_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGDATABASE: tien404_ephemeral_qa
+      PGUSER: qa_runner
+      PGPASSWORD: ephemeral-ci-only-not-a-project-secret
+      TIEN404_EPHEMERAL_PG_QA: "yes"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PostgreSQL CLI present
+        run: |
+          command -v psql || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+          bash -n qa/zalo/v124-ephemeral-pg-concurrency.sh
+      - name: Two independent connections and atomic receipt QA (EPHEMERAL ONLY)
+        run: bash qa/zalo/v124-ephemeral-pg-concurrency.sh
