@@ -1,0 +1,33 @@
+name: "V12.4 Public Reply Pilot QA (no outbound)"
+on:
+  push:
+    branches:
+      - "work/v124-public-ai-reply-pilot-*"
+    paths:
+      - "qa/zalo/public-reply-pilot.cjs"
+      - "qa/zalo/public-reply-pilot.test.cjs"
+      - ".github/workflows/v124-public-reply-qa.yml"
+  pull_request:
+    branches:
+      - "work/v12-r1-shop-owned"
+    paths:
+      - "qa/zalo/public-reply-pilot.cjs"
+      - "qa/zalo/public-reply-pilot.test.cjs"
+      - ".github/workflows/v124-public-reply-qa.yml"
+permissions:
+  contents: read
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check syntax
+        run: |
+          node --check qa/zalo/public-reply-pilot.cjs
+          node --check qa/zalo/public-reply-pilot.test.cjs
+      - name: Run public customer policy tests
+        run: node --test qa/zalo/public-reply-pilot.test.cjs
