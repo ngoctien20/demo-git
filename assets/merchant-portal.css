@@ -20,3 +20,14 @@
 @media(max-width:760px){.mp-header{min-height:65px;padding:12px 16px}.mp-stage{font-size:9px;padding:6px 8px}.mp-header-right .mp-link{display:none}.mp-workspace{display:flex;flex-direction:column}.mp-sidebar{position:sticky;top:0;z-index:5;padding:10px 12px;gap:8px;border-right:0;border-bottom:1px solid var(--line);background:#101a2bf4;backdrop-filter:blur(12px)}.mp-shop-picker{padding:9px 11px;display:flex;align-items:center;gap:8px}.mp-shop-picker label{flex:1;margin:0}.mp-shop-picker select{flex:2}.mp-shop-picker p,.mp-sidebar-foot{display:none}.mp-nav{flex-direction:row;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}.mp-nav button{flex:0 0 auto;width:auto;min-height:43px;white-space:nowrap}.mp-content{padding:20px 14px}.mp-content-top{margin-bottom:20px}.mp-grid{grid-template-columns:1fr}.mp-stat{padding:14px}.mp-panel li{font-size:13px}}
 @media(max-width:380px){.mp-brand{font-size:15px}.mp-brand .mp-mark{width:33px;height:33px}.mp-stage{max-width:112px;text-align:center;line-height:1.25}.mp-summary{gap:9px}.mp-stat{padding:10px}.mp-stat strong{font-size:22px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* Source-ready self-registration, gated until staging Auth email redirect approval. */
+.mp-register-shell{max-width:780px;margin:0 auto;padding:clamp(24px,6vw,65px) 16px}
+.mp-register-card h1{font-size:clamp(24px,3vw,33px);margin:6px 0}.mp-register-card p{max-width:64ch}
+.mp-register-card form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0}
+.mp-register-card label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#dbe6f6}
+.mp-register-card label input:not([type=checkbox]){width:100%;padding:12px;background:#10192c;border:1px solid #445879;border-radius:9px;color:white}
+.mp-register-card .mp-register-agree{grid-column:1/-1;flex-direction:row;align-items:center}
+.mp-register-card button{grid-column:1/-1;padding:14px 18px;border:1px solid #47677a;border-radius:10px;background:#234057;color:white}
+.mp-register-card button:disabled{opacity:.65}
+@media(max-width:600px){.mp-register-card form{grid-template-columns:1fr}.mp-register-card label{grid-column:1/-1}}
