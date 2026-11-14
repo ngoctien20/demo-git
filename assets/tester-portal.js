@@ -425,8 +425,8 @@ $('tp-refresh').addEventListener('click',()=>load());
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-state.lastCheck>300000)load()});
 getAuthClient().then(sb=>{state.client=sb;sb.auth.onAuthStateChange((event,session)=>{
  if(event==='SIGNED_OUT')reset('Phiên đã đăng xuất.');
- if(event==='SIGNED_IN'&&state.user?.id&&state.user.id!==session?.user?.id){
-   reset('Tài khoản đã thay đổi. Đang kiểm tra quyền người mới…');
+ if(event==='SIGNED_IN'&&session?.user?.id&&state.user?.id!==session.user.id){
+   if(state.user?.id)reset('Tài khoản đã thay đổi. Đang kiểm tra quyền người mới…');
    setTimeout(()=>load(),0);
  }
  if(event==='USER_UPDATED')setTimeout(()=>load(),0);
