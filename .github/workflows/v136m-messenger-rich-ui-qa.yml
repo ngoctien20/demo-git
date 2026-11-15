@@ -1,0 +1,71 @@
+name: TIEN404 V13.6M Messenger Rich UI Offline QA
+on:
+  push:
+    branches:
+      - work/v136m-messenger-rich-ui-offline-staging-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "docs/ai-handoff/V13_6M_*"
+      - ".github/workflows/v136m-messenger-rich-ui-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "docs/ai-handoff/V13_6M_*"
+      - ".github/workflows/v136m-messenger-rich-ui-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rich-payload-security:
+    name: Pure Meta payload and negative trust QA (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source syntax and offline Meta adapter tests
+        run: |
+          node --check qa/messenger-rich-v136m/adapter.cjs
+          node --check qa/messenger-rich-v136m/adapter.test.cjs
+          node --check qa/messenger-rich-v136m/preview.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs
+      - name: Transport forbidden and no real tokens or credentials in demo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("qa/messenger-rich-v136m/adapter.cjs").read_text()
+          assert "fetch(" not in p and "https.request(" not in p
+          assert "axios" not in p and "httpRequest(" not in p
+          assert "PAGE_ACCESS_TOKEN" not in p
+          html=Path("qa/messenger-rich-v136m/preview.html").read_text()
+          assert "connect-src 'none'" in html
+          assert "OFFLINE" in html and "NO SEND" in html
+          print("PASS: offline adapter contains no transport; preview connect-src none")
+          PY
+  rich-mobile-browser:
+    name: Chromium five sizes and four lab modes (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install ephemeral Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Offline demo interactive QA
+        run: |
+          python -m http.server 8080 >/tmp/tien404-messenger-rich-http.log 2>&1 &
+          sleep 2
+          node qa/messenger-rich-v136m/preview.test.cjs
+      - name: Upload preview-only screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v136m-rich-ui-preview-only
+          path: qa-artifacts-messenger-rich/
+          if-no-files-found: ignore

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-src 'none'">
+<title>TIEN404 — Messenger Rich UI Lab (OFFLINE)</title>
+<style>
+:root{color-scheme:dark;font:16px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;background:#0a0d18;color:#edf3ff}*{box-sizing:border-box}body{margin:0;padding:24px 12px}main{max-width:900px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}h1{font-size:clamp(1.35rem,4vw,2rem);margin:12px 0 5px}.sub{color:#b8c4e6;margin:0 0 18px}.pill{font-size:.73rem;padding:5px 10px;border:1px solid #8469ff;border-radius:99px;color:#c6bafe}.tabs{display:flex;gap:7px;overflow:auto;padding:3px 0 12px}.tabs button{white-space:nowrap;flex:1;border:1px solid #36425d;border-radius:11px;background:#141b30;color:#e3e9ff;padding:11px 13px;cursor:pointer}.tabs button[aria-selected="true"]{background:#5544af;border-color:#9586ff}section{display:none;border:1px solid #334062;background:#151b30;border-radius:18px;padding:16px;min-height:300px}section.active{display:block}h2{margin:0 0 9px;font-size:1.1rem}.muted{color:#bbc5df;font-size:.87rem}.scroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px 0}.product{scroll-snap-align:start;flex:0 0 min(75vw,250px);background:#202943;border:1px solid #4b5373;border-radius:13px;overflow:hidden}.art{height:140px;display:grid;place-items:center;background:linear-gradient(135deg,#343e79,#8566c7);font-size:4rem}.info{padding:12px}.price{font-weight:700;color:#e0d3ff}.actions{display:flex;flex-wrap:wrap;gap:8px}.actions button,.actions a{border:1px solid #6c77a5;border-radius:8px;background:#37446c;color:#fff;padding:9px 12px;font-size:.88rem;text-align:center;text-decoration:none;cursor:pointer}.actions button:focus-visible,.tabs button:focus-visible{outline:2px solid #d1afff}.menu{max-width:420px;background:#202943;border:1px solid #525d7b;border-radius:14px;padding:12px}.menu button{display:block;width:100%;margin:8px 0;text-align:left;background:#344167;border-radius:10px;border:1px solid #66769f;color:#fff;padding:12px}.site{border:1px solid #65749b;border-radius:14px;overflow:hidden;max-width:500px}.site>header{background:#374266;padding:12px;font-weight:700}.site .inside{padding:15px;background:#202943}.site .inside button{background:#6557c0;border:0;border-radius:9px;padding:11px;color:white}.box{border:1px dashed #7f8ab5;border-radius:12px;padding:12px;margin-top:14px}#output{white-space:pre-wrap;color:#daeeff;min-height:42px;margin:5px 0}.notice{border-left:3px solid #c9a2ff;background:#232444;padding:10px;margin-top:16px;font-size:.82rem}small{color:#bdc7e4}@media(max-width:520px){body{padding:12px 8px}.tabs button{flex:none}section{padding:12px}.product{flex-basis:225px}}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="pill">MESSENGER RICH UI V13.6M</span><span class="pill">OFFLINE · NO SEND · SYNTHETIC</span></div>
+<h1>Thiết kế hội thoại bán hàng</h1>
+<p class="sub">Bản xem trước cho 4 module tương tác. Mọi thông tin bên dưới chỉ là dữ liệu QA mô phỏng; không có kết nối Messenger, đơn hàng, tài khoản hay thanh toán thật.</p>
+<div class="tabs" role="tablist" aria-label="Chọn module">
+<button role="tab" id="tab-cards" aria-controls="cards" aria-selected="true" data-show="cards">Thẻ sản phẩm</button>
+<button role="tab" id="tab-quick" aria-controls="quick" aria-selected="false" data-show="quick">Lựa chọn nhanh</button>
+<button role="tab" id="tab-menu" aria-controls="menu" aria-selected="false" data-show="menu">Menu cửa hàng</button>
+<button role="tab" id="tab-site" aria-controls="site" aria-selected="false" data-show="site">Website tùy biến</button>
+</div>
+<section id="cards" class="active" role="tabpanel" aria-labelledby="tab-cards">
+<h2>Carousel sản phẩm (mô phỏng)</h2><p class="muted">Meta Generic Template · tối đa 10 thẻ, mỗi thẻ tối đa 3 nút. Giá hiển thị ở đây là QA, không dùng để đặt đơn.</p>
+<div class="scroll" aria-label="Thẻ sản phẩm mô phỏng">
+<article class="product"><div class="art" aria-hidden="true">🛍️</div><div class="info"><strong>SP QA 001</strong><div class="price">Giá QA: 159.000 đ</div><small>Tồn QA: 5</small><div class="actions"><button data-demo="Xem SP QA 001">Xem</button><button data-demo="Chuyển nhân viên">Gặp NV</button><button data-demo="Trang web mô phỏng">Website</button></div></div></article>
+<article class="product"><div class="art" aria-hidden="true">👕</div><div class="info"><strong>SP QA 002</strong><div class="price">Giá QA: 249.000 đ</div><small>Tồn QA: 0</small><div class="actions"><button data-demo="Xem SP QA 002">Xem</button><button data-demo="Chuyển nhân viên">Gặp NV</button><button data-demo="Trang web mô phỏng">Website</button></div></div></article>
+</div></section>
+<section id="quick" role="tabpanel" aria-labelledby="tab-quick" hidden>
+<h2>Quick Replies (mô phỏng)</h2><p>Chào bạn, shop có thể hỗ trợ gì?</p>
+<div class="actions"><button data-demo="Xem sản phẩm">Xem sản phẩm</button><button data-demo="Tra cứu đơn">Tra đơn</button><button data-demo="Gặp nhân viên">Gặp nhân viên</button></div>
+<p class="muted">Nút sẽ biến mất sau khi khách chọn trong Messenger thật. Bản lab chỉ mô phỏng sự kiện và không gọi API.</p></section>
+<section id="menu" role="tabpanel" aria-labelledby="tab-menu" hidden>
+<h2>Persistent Menu (bản cấu hình mẫu)</h2><div class="menu"><strong>Menu trợ lý TIEN404</strong><button data-demo="Menu: danh mục">📦 Xem sản phẩm</button><button data-demo="Menu: nhân viên">💬 Gặp nhân viên</button><button data-demo="Menu: website">🌐 Mở cửa hàng</button></div>
+<p class="muted">Thao tác thật với Messenger Profile API cần phê duyệt Page và không được thực hiện trong lab.</p></section>
+<section id="site" role="tabpanel" aria-labelledby="tab-site" hidden>
+<h2>Website/Webview bán hàng (bản tĩnh)</h2><div class="site"><header>🛍️ TIEN404 — Shop QA</header><div class="inside"><strong>Danh mục cửa hàng</strong><p class="muted">Sản phẩm, chính sách và thông tin công khai của shop. Không chuyển PSID, token, mã đơn hoặc session qua URL.</p><button data-demo="Mở danh mục công khai">Xem danh mục</button></div></div>
+<p class="muted">Khi tích hợp thật: HTTPS allowlist và Auth/RLS riêng cho lịch sử đơn hoặc thông tin cá nhân.</p></section>
+<div class="box" role="status" aria-live="polite"><strong>Hành động mô phỏng</strong><p id="output">Chưa chọn hành động. Không có tin nhắn được gửi.</p></div>
+<p class="notice">EXPERIMENTAL — Đây không phải giao diện native Messenger, không kết nối Meta, không ghi đơn và không cấp quyền shop.</p>
+</main>
+<script>
+'use strict';
+const tabs=[...document.querySelectorAll('[role="tab"]')],panels=[...document.querySelectorAll('[role="tabpanel"]')],out=document.getElementById('output');
+for(const tab of tabs){tab.addEventListener('click',()=>{
+ for(const t of tabs)t.setAttribute('aria-selected',String(t===tab));
+ for(const panel of panels){const active=panel.id===tab.dataset.show;panel.hidden=!active;panel.classList.toggle('active',active)}
+ out.textContent='Đang xem module '+tab.textContent+'. Chưa gửi dữ liệu.';
+});}
+for(const btn of document.querySelectorAll('[data-demo]'))btn.addEventListener('click',()=>{
+ out.textContent='PREVIEW ONLY — '+btn.dataset.demo+'. Không có API gửi, thay đổi đơn hoặc xử lý thanh toán.';
+});
+</script>
+</body>
+</html>
