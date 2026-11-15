@@ -1,0 +1,48 @@
+name: TIEN404 V15 Business Skills and Private Dataset Gate (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503-04-07-skill-and-private-qa-gates-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-agent-core/business-skills-gate*'
+      - 'qa/v15-model-lab/private-dataset-gate*'
+      - '.github/workflows/v15-business-skills-private-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-negative-safety:
+    name: V15.0-04/07 Synthetic Source-Only QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source syntax
+        run: |
+          node --check qa/v15-agent-core/business-skills-gate.cjs
+          node --check qa/v15-model-lab/private-dataset-gate.cjs
+      - name: Business skill authorization negative tests
+        run: node --test qa/v15-agent-core/business-skills-gate.test.cjs
+      - name: Synthetic CSV parser and fixture-integrity negative tests
+        run: node --test qa/v15-model-lab/private-dataset-gate.test.cjs
+      - name: No production send/no dataset upload safety scan
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files=[Path('qa/v15-agent-core/business-skills-gate.cjs'), Path('qa/v15-model-lab/private-dataset-gate.cjs')]
+          forbidden=['fetch(', 'sendMessage(', 'new OpenAI(', 'axios(', 'INSERT INTO', 'UPDATE public.', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY']
+          for file in files:
+              content=file.read_text()
+              for token in forbidden:
+                  assert token not in content, (str(file),token)
+          for name in ('AI_SALES_QA_CASES.csv','AI_SALES_QA_96_SINGLE_TURN.csv','AI_SALES_36_MULTI_TURN_FOR_LATER.csv'):
+              assert not Path(name).exists(), 'Private dataset in repository root'
+          print('PASS: synthetic-only source checks; no provider, DB or credential calls')
+          PY
