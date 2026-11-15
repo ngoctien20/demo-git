@@ -1,0 +1,59 @@
+name: TIEN404 V14.3 Unified Messenger + Website Widget — OFFLINE QA
+on:
+  push:
+    branches:
+      - work/v143-unified-channel-widget-staging-20261115
+  pull_request:
+    paths:
+      - 'qa/channel-v143/**'
+      - '.github/workflows/v143-unified-channel-widget-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V14.3 syntax + contract QA
+        run: |
+          node --check qa/channel-v143/channel-core.cjs
+          node --check qa/channel-v143/widget-gateway.cjs
+          node --check qa/channel-v143/renderers.cjs
+          node --check qa/channel-v143/channel-core.test.cjs
+          node --check qa/channel-v143/widget/embed.js
+          node --test qa/channel-v143/channel-core.test.cjs
+      - name: Inherited V13.6M Messenger source regression
+        run: |
+          find qa/messenger-rich-v136m* -name '*.test.cjs' -print0 | xargs -0 -r node --test
+      - name: Static anti-send checks
+        run: |
+          node -e "const fs=require('node:fs'); const ps=['qa/channel-v143/channel-core.cjs','qa/channel-v143/widget-gateway.cjs','qa/channel-v143/renderers.cjs','qa/channel-v143/widget/embed.js']; for(const p of ps){let c=fs.readFileSync(p,'utf8');if(/fetch\\s*\\(|axios\\s*\\(|PAGE_ACCESS_TOKEN|service_role|ZALO_BOT_TOKEN/.test(c))process.exit(1)}console.log('PASS: no provider, DB, paid model or fetch in V14.3 core')"
+  chromium-responsive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium QA only
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Run browser in synthetic local QA
+        run: |
+          python3 -m http.server 8080 >/tmp/tien404-v143-http.log 2>&1 &
+          sleep 2
+          node qa/channel-v143/browser.test.cjs
+      - name: Upload non-customer screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v143-qa-widget-preview
+          path: qa-artifacts-v143/
+          if-no-files-found: ignore
