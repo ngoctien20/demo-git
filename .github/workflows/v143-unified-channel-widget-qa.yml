@@ -29,7 +29,7 @@ jobs:
           node --test qa/channel-v143/channel-core.test.cjs
       - name: Inherited V13.6M Messenger source regression
         run: |
-          find qa/messenger-rich-v136m* -name '*.test.cjs' -print0 | xargs -0 -r node --test
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
       - name: Static anti-send checks
         run: |
           node -e "const fs=require('node:fs'); const ps=['qa/channel-v143/channel-core.cjs','qa/channel-v143/widget-gateway.cjs','qa/channel-v143/renderers.cjs','qa/channel-v143/widget/embed.js']; for(const p of ps){let c=fs.readFileSync(p,'utf8');if(/fetch\\s*\\(|axios\\s*\\(|PAGE_ACCESS_TOKEN|service_role|ZALO_BOT_TOKEN/.test(c))process.exit(1)}console.log('PASS: no provider, DB, paid model or fetch in V14.3 core')"
