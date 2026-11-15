@@ -37,6 +37,7 @@ function setup({now=NOW,ledger=new Set(),changes={},intentForStore=null}={}){
   async readPublicCatalog(scope){counts.catalog++;
     return {source:'TRUSTED_CATALOG_READBACK',verified:true,
       tenantId:scope.tenantId,storeId:scope.storeId,revision:1,
+      priceVersion:1,stockVersion:1,expiresAt:now+300000,
       products:[{source:'SERVER_VERIFIED_SHOP_CATALOG',verified:true,
         tenantId:scope.tenantId,storeId:scope.storeId,itemId:'sku_a',
         sku:scope.storeId==='store_a'?'QA-A001':scope.storeId==='store_b'?'QA-B001':'QA-C001',
@@ -46,7 +47,8 @@ function setup({now=NOW,ledger=new Set(),changes={},intentForStore=null}={}){
     tenantId:scope.tenantId,storeId:scope.storeId,
     type:'TEXT',text:'Hồ sơ giả lập an toàn, chưa có đơn hàng.',
     dispatch_authorized:false};},
-  async readReviewedTheme(){return {
+  async readReviewedTheme(scope){return {
+    ...scope,
     source:'STAFF_REVIEWED_WIDGET_CONFIG',state:'APPROVED',shopApproved:true,
     primary:'#16A689',secondary:'#143F36',
     assistantName:'Trợ lý QA',welcomeMessage:'Chào bạn.',
@@ -317,4 +319,34 @@ test('Anonymous session does not authorize private Orders even if authentic',asy
  const s=setup(),g=gateway(s),a=await g.issueSession(params('a'));
  assert.equal(a.privateOrderAccess,false);
  assert.equal(g.releaseState.providerSendEnabled,false);
+});
+
+test('Cross-store reviewed branding must never render under another widget',async()=>{
+ const s=setup({changes:{async readReviewedTheme(scope){return {
+  ...scope,storeId:'store_b',
+  source:'STAFF_REVIEWED_WIDGET_CONFIG',state:'APPROVED',shopApproved:true,
+  primary:'#FFFFFF',secondary:'#000000',assistantName:'Wrong shop',
+  welcomeMessage:'Phone leak',position:'right',layout:'compact',
+  suggestedActions:[]};
+ }}}),g=gateway(s),a=await g.issueSession(params('a'));
+ await throws(g.preview({...params('a'),session:a.session,eventId:'event_0020'}),
+  'WIDGET_THEME_CROSS_STORE_READBACK');
+});
+test('Product cards require independently versioned fresh price and stock',async()=>{
+ const productIntent=scope=>({source:'TRUSTED_SALES_CORE',verified:true,
+  tenantId:scope.tenantId,storeId:scope.storeId,type:'PRODUCT_CARD',
+  productIds:['sku_a'],text:'Sản phẩm mẫu',dispatch_authorized:false});
+ const variants=[
+  {priceVersion:undefined,stockVersion:1,expiresAt:NOW+2000},
+  {priceVersion:1,stockVersion:0,expiresAt:NOW+2000},
+  {priceVersion:1,stockVersion:1,expiresAt:NOW-1},
+ ];
+ for(let i=0;i<variants.length;i++){
+   const v=variants[i],s=setup({intentForStore:productIntent});
+   const orig=s.ports.readPublicCatalog;
+   s.ports.readPublicCatalog=async scope=>({...await orig(scope),...v});
+   const g=gateway(s),a=await g.issueSession(params('a'));
+   await throws(g.preview({...params('a'),session:a.session,eventId:'event_002'+i}),
+     'WIDGET_PRICE_STOCK_SNAPSHOT_STALE_OR_UNVERSIONED');
+ }
 });
