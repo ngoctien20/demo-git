@@ -2,7 +2,7 @@
 // Chromium QA for simulated Auth only. This is NOT hosted Supabase RLS or real Access validation.
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 const base=process.env.QA_BASE_URL||'http://127.0.0.1:8080';
-const fakeAuth=String.raw\`export async function getAuthClient(){
+const fakeAuth=String.raw`export async function getAuthClient(){
  const user={id:'user-qa-0001',email:'qa-owner@example.test',user_metadata:{full_name:'Người kiểm thử'}};
  return {
  auth:{getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),
@@ -13,7 +13,7 @@ const fakeAuth=String.raw\`export async function getAuthClient(){
  ? {data:[{tenant_id:'tenant-a',user_id:user.id,active:true,role:'owner'}],error:null}
  :{data:[{id:'tenant-a',name:'Shop A QA'}],error:null});}
  };}};
-}\`;
+}`;
 const widths=[360,390,430,768,1280];
 async function run(browser,width){
  const p=await browser.newPage({viewport:{width,height:850}}),errors=[],writes=[];
