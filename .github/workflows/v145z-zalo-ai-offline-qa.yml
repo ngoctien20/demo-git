@@ -50,6 +50,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/g2-trusted-bot-shop-owner-gate.test.cjs
       - name: G2 signed getMe WebCrypto provider attestor compatibility QA
         run: node --test qa/zalo-live-v145z/g2-provider-identity-attestor.test.mjs
+      - name: G2.1 private read-only getMe attestor endpoint 30 no-send negative QA
+        run: node --test qa/zalo-live-v145z/g21-provider-attestor-route.test.mjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
