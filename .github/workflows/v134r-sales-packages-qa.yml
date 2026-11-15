@@ -1,0 +1,62 @@
+name: TIEN404 V13.4 Revised tier entitlements no-send QA
+on:
+  push:
+    branches:
+      - work/v134r-sales-lite-packages-staging
+    paths:
+      - "qa/sales-lite/v134r/**"
+      - "qa/sales-lite/v133/account/index.html"
+      - "docs/ai-handoff/V13_4R_**"
+      - ".github/workflows/v134r-sales-packages-qa.yml"
+  pull_request:
+    paths:
+      - "qa/sales-lite/v134r/**"
+      - "qa/sales-lite/v133/account/index.html"
+      - "docs/ai-handoff/V13_4R_**"
+      - ".github/workflows/v134r-sales-packages-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tier-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source syntax
+        run: |
+          node --check qa/sales-lite/v134r/merchant-entitlements.cjs
+          node --check qa/sales-lite/v134r/enterprise-oa-contract.cjs
+          node --check qa/sales-lite/v134r/merchant-package-preview.js
+      - name: Revised entitlements and OA negative tests
+        run: node --test qa/sales-lite/v134r/*.test.cjs
+      - name: Previous V13.4 multi-channel contract regression
+        run: node --test qa/sales-lite/v134/*.test.cjs
+      - name: V13.3 security and interface regression
+        run: node --test qa/sales-lite/v133/*.test.cjs
+      - name: V13.2 source regression
+        run: node --test qa/sales-lite/v132/*.test.cjs
+      - name: V13.1 menu and business regression
+        run: node --test qa/sales-lite/v131/*.test.cjs
+
+  tier-mobile-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install ephemeral pinned Chromium
+        run: |
+          cd qa/sales-lite/v134r
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Test Mobile Merchant existing Portal plan preview
+        run: |
+          python -m http.server 8080 > /tmp/tien404-v134r-http.log 2>&1 &
+          sleep 2
+          node qa/sales-lite/v134r/v134r-browser-qa.cjs
