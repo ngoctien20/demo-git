@@ -1,0 +1,376 @@
+{
+  "schema_version": "1.0.0",
+  "menu_version": "1.1.0",
+  "release": "EXPERIMENTAL",
+  "provider_capability_gate": "BOT_SENDMESSAGE_TEXT_ONLY",
+  "send_enabled": false,
+  "order_write_enabled": false,
+  "subscription_write_enabled": false,
+  "menus": [
+    {
+      "menu_id": "customer_main",
+      "actor_role": "CUSTOMER",
+      "title": "Bot cửa hàng — Xin chào!",
+      "actions": [
+        {
+          "action_id": "CUS_CATALOG",
+          "menu_version": "1.1.0",
+          "label": "🛍️ Xem sản phẩm",
+          "description": "Xem danh mục đã được xác minh",
+          "actor_role": "CUSTOMER",
+          "action_type": "READ",
+          "required_permissions": [
+            "catalog:read"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "1",
+          "next_state": "CATALOG",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "CUS_PRICE",
+          "menu_version": "1.1.0",
+          "label": "💰 Hỏi giá",
+          "description": "Hỏi giá chính xác của sản phẩm",
+          "actor_role": "CUSTOMER",
+          "action_type": "READ",
+          "required_permissions": [
+            "catalog:read"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "2",
+          "next_state": "PRICE",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "CUS_ORDER_DRAFT",
+          "menu_version": "1.1.0",
+          "label": "🛒 Đặt hàng",
+          "description": "Tạo yêu cầu mua hàng, chưa ghi đơn",
+          "actor_role": "CUSTOMER",
+          "action_type": "DRAFT",
+          "required_permissions": [
+            "order:draft"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "3",
+          "next_state": "DRAFT",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "CUS_MY_ORDERS",
+          "menu_version": "1.1.0",
+          "label": "📦 Đơn của tôi",
+          "description": "Chỉ đọc đơn của khách đã xác minh",
+          "actor_role": "CUSTOMER",
+          "action_type": "READ",
+          "required_permissions": [
+            "order:read_own"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "4",
+          "next_state": "OWN_ORDERS",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "CUS_EDIT_REQUEST",
+          "menu_version": "1.1.0",
+          "label": "✏️ Sửa yêu cầu",
+          "description": "Đề xuất thay đổi yêu cầu",
+          "actor_role": "CUSTOMER",
+          "action_type": "DRAFT",
+          "required_permissions": [
+            "order:modify_own"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "5",
+          "next_state": "EDIT_REQUEST",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "CUS_SUPPORT",
+          "menu_version": "1.1.0",
+          "label": "💬 Hỗ trợ",
+          "description": "Yêu cầu liên hệ nhân viên",
+          "actor_role": "CUSTOMER",
+          "action_type": "HANDOFF",
+          "required_permissions": [
+            "support:request"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "6",
+          "next_state": "HANDOFF",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        }
+      ]
+    },
+    {
+      "menu_id": "owner_main",
+      "actor_role": "OWNER",
+      "title": "Quản lý cửa hàng",
+      "actions": [
+        {
+          "action_id": "OWN_NEW_ORDERS",
+          "menu_version": "1.1.0",
+          "label": "📥 Đơn mới",
+          "description": "Xem các yêu cầu chờ xử lý",
+          "actor_role": "OWNER",
+          "action_type": "READ",
+          "required_permissions": [
+            "orders:read_shop"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "1",
+          "next_state": "ORDER_INBOX",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "OWN_APPROVE_ORDER",
+          "menu_version": "1.1.0",
+          "label": "✅ Xác nhận đơn",
+          "description": "Yêu cầu xác nhận lại trước khi ghi",
+          "actor_role": "OWNER",
+          "action_type": "WRITE_PROPOSAL",
+          "required_permissions": [
+            "orders:approve"
+          ],
+          "requires_confirmation": true,
+          "idempotency_policy": "RECEIPT_REQUIRED",
+          "fallback_command": "2",
+          "next_state": "OWNER_CONFIRM",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ],
+          "confirm": true
+        },
+        {
+          "action_id": "OWN_REJECT_ORDER",
+          "menu_version": "1.1.0",
+          "label": "❌ Từ chối đơn",
+          "description": "Yêu cầu xác nhận lại trước khi ghi",
+          "actor_role": "OWNER",
+          "action_type": "WRITE_PROPOSAL",
+          "required_permissions": [
+            "orders:reject"
+          ],
+          "requires_confirmation": true,
+          "idempotency_policy": "RECEIPT_REQUIRED",
+          "fallback_command": "3",
+          "next_state": "OWNER_CONFIRM",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ],
+          "confirm": true
+        },
+        {
+          "action_id": "OWN_PAUSE_SHOP",
+          "menu_version": "1.1.0",
+          "label": "🌙 Tạm nghỉ",
+          "description": "Dừng nhận yêu cầu mới sau xác nhận",
+          "actor_role": "OWNER",
+          "action_type": "WRITE_PROPOSAL",
+          "required_permissions": [
+            "shop:status_change"
+          ],
+          "requires_confirmation": true,
+          "idempotency_policy": "RECEIPT_REQUIRED",
+          "fallback_command": "4",
+          "next_state": "OWNER_CONFIRM",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ],
+          "confirm": true
+        },
+        {
+          "action_id": "OWN_OPEN_SHOP",
+          "menu_version": "1.1.0",
+          "label": "🟢 Mở bán",
+          "description": "Cho phép nhận yêu cầu sau xác nhận",
+          "actor_role": "OWNER",
+          "action_type": "WRITE_PROPOSAL",
+          "required_permissions": [
+            "shop:status_change"
+          ],
+          "requires_confirmation": true,
+          "idempotency_policy": "RECEIPT_REQUIRED",
+          "fallback_command": "5",
+          "next_state": "OWNER_CONFIRM",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ],
+          "confirm": true
+        },
+        {
+          "action_id": "OWN_REPORT",
+          "menu_version": "1.1.0",
+          "label": "📊 Báo cáo",
+          "description": "Phân biệt yêu cầu, đơn và doanh thu đã thanh toán",
+          "actor_role": "OWNER",
+          "action_type": "READ",
+          "required_permissions": [
+            "reports:read_shop"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "6",
+          "next_state": "REPORTS",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "OWN_SUPPORT",
+          "menu_version": "1.1.0",
+          "label": "🛟 Hỗ trợ TIEN404",
+          "description": "Yêu cầu hỗ trợ vận hành",
+          "actor_role": "OWNER",
+          "action_type": "HANDOFF",
+          "required_permissions": [
+            "support:request"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "7",
+          "next_state": "HANDOFF",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        }
+      ]
+    },
+    {
+      "menu_id": "support_main",
+      "actor_role": "TIEN404_SUPPORT",
+      "title": "Hỗ trợ TIEN404",
+      "actions": [
+        {
+          "action_id": "SUP_GUIDE",
+          "menu_version": "1.1.0",
+          "label": "Hướng dẫn dùng bot",
+          "description": "Chỉ dẫn kết nối và menu",
+          "actor_role": "TIEN404_SUPPORT",
+          "action_type": "READ",
+          "required_permissions": [
+            "support:read_public"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "1",
+          "next_state": "HELP",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "SUP_PLANS",
+          "menu_version": "1.1.0",
+          "label": "Gói dịch vụ",
+          "description": "Thông tin gói không kèm thanh toán tự động",
+          "actor_role": "TIEN404_SUPPORT",
+          "action_type": "READ",
+          "required_permissions": [
+            "support:read_public"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "2",
+          "next_state": "PLANS",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "SUP_CONNECTION",
+          "menu_version": "1.1.0",
+          "label": "Trạng thái kết nối",
+          "description": "Tra cứu qua dịch vụ đã xác thực",
+          "actor_role": "TIEN404_SUPPORT",
+          "action_type": "READ",
+          "required_permissions": [
+            "support:read_verified"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "3",
+          "next_state": "STATUS",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        },
+        {
+          "action_id": "SUP_TICKET",
+          "menu_version": "1.1.0",
+          "label": "Yêu cầu hỗ trợ",
+          "description": "Đề xuất ticket, không nói đã tạo khi chưa lưu",
+          "actor_role": "TIEN404_SUPPORT",
+          "action_type": "DRAFT",
+          "required_permissions": [
+            "support:request"
+          ],
+          "requires_confirmation": false,
+          "idempotency_policy": "READ_ONLY",
+          "fallback_command": "4",
+          "next_state": "TICKET_DRAFT",
+          "enabled": true,
+          "channel_support": [
+            "ZALO_BOT_TEXT",
+            "MOCK_WEB"
+          ]
+        }
+      ]
+    }
+  ]
+}
