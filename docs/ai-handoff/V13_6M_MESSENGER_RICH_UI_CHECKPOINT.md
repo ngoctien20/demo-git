@@ -54,9 +54,14 @@ Các giới hạn quan trọng:
 
 ## 4. QA acceptance
 
-**Đang chờ bằng chứng CI trên commit HEAD**: chỉ khi cả Node test và Chromium thành công mới ghi **TESTED**. Không tính page đang active hoặc sự tồn tại của fixture là bằng chứng Messenger đã gửi giao diện.
+**TESTED — GitHub Actions [run 43706477065](https://github.com/ngoctien20/demo-git/actions/runs/43706477065), commit `d76876e17d01b53c823c36d92f19ff060ca2e234`:**
+- `Pure Meta payload and negative trust QA (NO SEND)`: **53/53 PASS, 0 FAIL**; source syntax và cấm transport/token đều PASS.
+- `Chromium five sizes and four lab modes (NO SEND)`: **5/5 viewport (360, 390, 430, 768, 1280 px) × 4 tab PASS**; zero external network, zero mutating request, zero Messenger send; 5 screenshot QA tạo trong artifact.
+- 2/2 GitHub Actions jobs SUCCESS.
+- <https://github.com/ngoctien20/demo-git/actions/runs/43706477065/artifacts/14158268141> — ảnh preview offline, chỉ dùng dữ liệu QA.
+- Browser test là **local HTTP + synthetic records**, KHÔNG phải native UI do Meta render và không chứng minh App Review hay delivery thật.
 
-QA kỳ vọng: 53/53 source contract tests; 5/5 viewport × 4 module, không external/mutating requests; không fetch/HTTP send; không có token Meta; không lỗi Chrome.
+Chỉ yêu cầu re-run CI trên HEAD nếu có chỉnh sửa **source** sau commit trên. Bản sửa báo cáo đơn thuần không thay đổi mã adapter/browser.
 
 Meta live delivery status: **NOT TESTED**, không có quyền thử gửi trong giai đoạn này.
 
