@@ -26,7 +26,7 @@ const BLOCKED=new Set([
 ]);
 const SKU_RE=/^[A-Z][A-Z0-9]{1,19}$/;
 const QA_CONFIRM=/^XAC NHAN (QA-[A-F0-9]{12})$/u;
-const REQUEST_RE=/(?:\bdat\b|\bmua\b|\border\b|đặt|mua|đơn)/iu;
+const REQUEST_RE=/^(?:(?:tôi|mình|em)\s+muốn\s+)?(?:đặt|mua)\s+(?:thử\s+)?[1-9][0-9]{0,3}\b/iu;
 const DATA_NOTE='SYNTHETIC_QA_ONLY_NOT_A_REAL_ORDER';
 const DENIAL_NOTE='NO_EXTERNAL_TOOL_CALL_PERFORMED';
 function deny(code){
@@ -205,6 +205,8 @@ function createNoWriteQaDispatch({mode,appSecret,pageRegistry,catalog,now=Date.n
    if(!p||p.code!==args.confirmationCode)return deny('NO_PENDING_QA_REQUEST');
    if(!/^HUY QA-[A-F0-9]{12}$/.test(scope.verifiedText)||scope.verifiedText!=='HUY '+p.code)
      return deny('EXPLICIT_SIGNED_CANCEL_REQUIRED');
+   if(simulated.has(scope.contextKey+'|'+p.code))
+     return deny('MOCK_ALREADY_CONFIRMED_CANNOT_CANCEL');
    pending.delete(scope.contextKey);
    return output('QA_REQUEST_CANCELLED_NOT_SAVED',{physicalStockUnchanged:true});
   }
