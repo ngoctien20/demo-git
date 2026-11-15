@@ -35,6 +35,8 @@ jobs:
           node --test qa/store-rls-v142/hosted-jwt-read-qa.test.cjs
           node --test qa/store-rls-v142/release-safety-static.test.cjs
           node --test qa/shop-onboarding-v142/onboarding-core.test.cjs
+          node --check qa/shop-onboarding-v142/onboarding-scope-service.cjs
+          node --test qa/shop-onboarding-v142/onboarding-scope-service.test.cjs
       - name: Regression — V14.1 Shop Knowledge Engine
         run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
       - name: Regression — V14 multimodal and V13.8 conversation
