@@ -22,3 +22,15 @@ test('HTTP rejects wrong content type and extra args',async()=>{assert.equal((aw
 test('all send provider webhook order routes hard-locked',async()=>{for(const p of ['/v1/send','/v1/provider/test','/webhook/live','/api/order','/api/orders']){const r=await req(p,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});assert.equal(r.status,423);assert.equal((await r.json()).error,'NO_SEND_LOCKED')}});
 test('homepage has user acceptance and clear simulation warnings',async()=>{const r=await req('/'),t=await r.text();assert.equal(r.status,200);assert.match(t,/SYNTHETIC_OFFLINE_UAT/);assert.match(t,/Tải biên bản JSON/);assert.match(t,/BLOCKED/);assert.ok(r.headers.get('content-security-policy'))});
 test('server source has no outbound fetch or provider token access',()=>{const s=readFileSync(new URL('./live04-uat-worker.mjs',import.meta.url),'utf8');const tail=s.slice(s.indexOf("import {MODE,SHOPS"));assert.ok(tail);assert.ok(!/await\s+fetch\(/.test(tail));assert.ok(!/env\.ZALO_BOT_TOKEN|sendMessage\(/.test(tail));assert.equal(MODE.provider_sends,0)});
+
+test('UAT page inline browser JavaScript is syntactically valid',async()=>{
+ const r=await req('/'),html=await r.text();
+ const script=html.match(/<script>([\s\S]*?)<\/script>/);
+ assert.ok(script&&script[1]);
+ const {Script}=await import('node:vm');
+ assert.doesNotThrow(()=>new Script(script[1],{filename:'uat01-browser.js'}));
+});
+test('quick cross-shop button selects Shop A to test Shop B SKU denial',async()=>{
+ const html=await (await req('/')).text();
+ assert.ok(html.includes("if(val==='Giá QA-B-01')$('shop').value='SHOP_A_QA'"));
+});
