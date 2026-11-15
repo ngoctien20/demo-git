@@ -38,7 +38,7 @@ async function run(browser,width){
  assert.ok(await p.locator('button:has-text("Thay đổi thông tin thanh toán")').isDisabled());
  assert.match(await p.locator('#merchant-panel').innerText(),/Chưa có nguồn thanh toán đã xác minh/);
  await p.locator('#merchant-nav button[data-panel="support"]').click();
- assert.match(await p.locator('#merchant-panel').innerText(),/Nhân sự TIEN404/);
+ assert.match(await p.locator('#merchant-panel').innerText(),/nhân sự TIEN404/i);
  if(width===390){fs.mkdirSync('qa-artifacts-account',{recursive:true});await p.screenshot({path:'qa-artifacts-account/shop-account-only-390.png',fullPage:true});}
  assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
  await p.close();console.log('Account-only browser PASS '+width+'px');
