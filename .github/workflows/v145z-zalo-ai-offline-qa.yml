@@ -46,6 +46,8 @@ jobs:
         run: python3 qa/zalo-live-v145z/live03e_verify_n8n_export.test.py
       - name: UAT01 hosted synthetic storefront and browser UI no-send regression tests
         run: node --test qa/zalo-live-v145z/live04-uat-worker.test.mjs
+      - name: G2 trusted Zalo Bot Shop B Owner private 4-root no-send gate QA
+        run: node --test qa/zalo-live-v145z/g2-trusted-bot-shop-owner-gate.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
