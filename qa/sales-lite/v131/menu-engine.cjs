@@ -86,11 +86,15 @@ function createMenuSessionManager({clock=Date.now,ttlMs=30*60000,maxEvents=2500}
   if(events.size>=maxEvents)fail('EVENT_RECEIPTS_FULL');
   events.set(key,clock()+ttlMs);return true;
  }
+ function release(scope,eventRef) {
+  const key=crypto.createHash('sha256').update(scope+'\0'+eventRef).digest('hex');
+  return events.delete(key);
+ }
  function next(scope,phase) {
   const previous=get(scope);
   sessions.set(scope,{...previous,phase,expiresAt:clock()+ttlMs});
  }
- return freeze({mode:'SINGLE_PROCESS_QA_ONLY',get,claim,next,counts:()=>freeze({sessions:sessions.size,receipts:events.size})});
+ return freeze({mode:'SINGLE_PROCESS_QA_ONLY',get,claim,release,next,counts:()=>freeze({sessions:sessions.size,receipts:events.size})});
 }
 function createMenuAnalytics() {
  const counters=new Map();
@@ -128,6 +132,7 @@ function normalizeInput(event,ctx,compiled,verifyCallback) {
    fail('EVENT_INVALID');
  const m=compiled.menus.get(ctx.actorRole);
  if(!m)fail('MENU_ROLE_NOT_SUPPORTED');
+ if(!['ZALO_BOT','MOCK_WEB'].includes(event.channel))fail('UNKNOWN_CHANNEL');
  if(event.kind==='CALLBACK') {
   // No Zalo Bot callback schema has been verified. This path is ONLY for mocked
   // signed callbacks; must be OFF for live Zalo until official support proven.
@@ -189,31 +194,52 @@ function createMenuEngine({menuSource=registry,resolveContext,verifyCallback=nul
   const scope=ctx.scopeKey+':'+ctx.actorRole; // always backend-derived, never from user text
   if(!sessionManager.claim(scope,event.eventRef))return denied('DUPLICATE_EVENT',ctx,action);
   analytics.record(action.action_id,'ACCEPTED');
-  sessionManager.next(scope,action.next_state);
-  if(action.requires_confirmation)
+  if(action.requires_confirmation) {
+    sessionManager.next(scope,action.next_state);
     return denied('CONFIRMATION_REQUIRED',ctx,action,{next_state:action.next_state,
       writeProposed:true,confirmed:false,actionExecuted:false});
-  if(action.action_type==='HANDOFF')
+  }
+  if(action.action_type==='HANDOFF') {
+    sessionManager.next(scope,action.next_state);
     return denied('HANDOFF_NOT_CONNECTED',ctx,action,{next_state:action.next_state,
       handoffConfirmed:false});
-  if(action.action_type==='DRAFT')
+  }
+  if(action.action_type==='DRAFT') {
+    sessionManager.next(scope,action.next_state);
     return denied('DRAFT_ONLY',ctx,action,{next_state:action.next_state,
       note:'Chưa ghi đơn hoặc tạo ticket. Chờ dịch vụ backend đã xác thực.'});
+  }
   if(action.action_type==='READ'){
    const port=readPorts[action.action_id];
-   if(typeof port!=='function')return denied('READ_BACKEND_NOT_CONNECTED',ctx,action);
-   const result=await port({tenantId:ctx.tenantId,storeId:ctx.storeId,botId:ctx.botId,
-    actorRole:ctx.actorRole,actorKey:ctx.scopeKey,clock:clock()});
+   if(typeof port!=='function') {
+     sessionManager.release(scope,event.eventRef);
+     return denied('READ_BACKEND_NOT_CONNECTED',ctx,action);
+   }
+   let result;
+   try {
+     result=await port({tenantId:ctx.tenantId,storeId:ctx.storeId,botId:ctx.botId,
+       actorRole:ctx.actorRole,actorKey:ctx.scopeKey,clock:clock()});
+   } catch {
+     sessionManager.release(scope,event.eventRef);
+     return denied('READ_BACKEND_FAILED',ctx,action);
+   }
    if(!result||result.tenantId!==ctx.tenantId||result.storeId!==ctx.storeId||
-      result.botId!==ctx.botId||result.verified!==true)
-    return denied('READBACK_SCOPE_UNVERIFIED',ctx,action);
+      result.botId!==ctx.botId||result.verified!==true) {
+     sessionManager.release(scope,event.eventRef);
+     return denied('READBACK_SCOPE_UNVERIFIED',ctx,action);
+   }
    if(action.action_id==='CUS_PRICE'||action.action_id==='CUS_CATALOG'){
     if(!Number.isSafeInteger(result.priceVnd)||result.priceVnd<1||
        !Number.isSafeInteger(result.stock)||result.stock<0||
        !Number.isFinite(Date.parse(result.observedAt))||
        clock()-Date.parse(result.observedAt)>60000||
-       result.sku!=='F01')return denied('CATALOG_NOT_FRESH',ctx,action);
-    return denied('READ_ONLY_PREVIEW',ctx,action,{next_state:action.next_state,
+       result.sku!=='F01') {
+         sessionManager.release(scope,event.eventRef);
+         return denied('CATALOG_NOT_FRESH',ctx,action);
+       }
+    sessionManager.next(scope,action.next_state);
+    sessionManager.next(scope,action.next_state);
+   return denied('READ_ONLY_PREVIEW',ctx,action,{next_state:action.next_state,
       replyCandidate:'[QA] F01 · '+safeMoney(result.priceVnd)+', tồn kho '+result.stock+'.',
       catalogMode:'BACKEND_VERIFIED_FIXTURE',observedAt:result.observedAt});
    }
