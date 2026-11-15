@@ -57,7 +57,7 @@ jobs:
           assert "MODE_NOT_APPROVED" not in source
           assert sql.upper().find("RAISE EXCEPTION")>=0
           assert sql.upper().index("RAISE EXCEPTION") < sql.upper().index("ZERO CREATE")
-          assert "DO NOT RUN" in str(Path("qa/messenger-rich-v136m4/PROPOSAL_ONLY_DURABLE_REPLAY_DO_NOT_RUN.sql")).upper()
+          assert "DO_NOT_RUN" in Path("qa/messenger-rich-v136m4/PROPOSAL_ONLY_DURABLE_REPLAY_DO_NOT_RUN.sql").name
           for path in [
            "qa/messenger-rich-v136m3/canonical-pipeline.cjs",
            "qa/messenger-rich-v136m4/event-isolation.cjs"
