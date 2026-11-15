@@ -44,8 +44,8 @@ jobs:
       - name: Install pinned Playwright in ephemeral runner
         run: |
           cd qa/sales-lite/v132
-          npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install chromium
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
       - name: Browser QA across five responsive sizes
         run: |
           python -m http.server 8080 > /tmp/tien404-v132-http.log 2>&1 &
