@@ -36,3 +36,29 @@ jobs:
         run: node --test qa/sales-lite/v132/v132-ui.test.cjs
       - name: V13.1 menu and business regression
         run: node --test qa/sales-lite/v131/*.test.cjs
+
+  v133-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned Chromium Playwright (ephemeral)
+        run: |
+          cd qa/sales-lite/v133
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Browser UI read-only and draft QA
+        run: |
+          python -m http.server 8080 > /tmp/tien404-v133-http.log 2>&1 &
+          sleep 2
+          node qa/sales-lite/v133/v133-browser-qa.cjs
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v133-browser-screenshots
+          path: qa-artifacts-v133/
+          if-no-files-found: ignore
