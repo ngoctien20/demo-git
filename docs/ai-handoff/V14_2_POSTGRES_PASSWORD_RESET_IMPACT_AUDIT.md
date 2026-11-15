@@ -171,3 +171,14 @@ User-provided Windows PowerShell screenshot following read-only `pg_restore --li
 - **Interpretation:** archive header/index is readable; expected application schema declarations and key table data sections exist. `TABLE DATA` listing does NOT verify row content/count, all objects across five schemas, or complete restoration. No archive bytes were uploaded to assistant.
 - **Safe next steps:** compute local SHA-256 checksum, verify local PostgreSQL 17 restore target exists, restore **only to isolated local PostgreSQL** after owner approves the target, inspect errors and compare schema, table counts (Products=2, Orders=2 baseline) and RLS policies; NEVER restore to current Supabase staging.
 - `BACKUP_PROCESS_COMPLETED=VERIFIED_BY_SCREENSHOT`; `ARCHIVE_TOC_READ=PASS`; `ISOLATED_RESTORE_DRILL=NOT_RUN`; `FULL_RESTORE_READINESS=BLOCKED`; `STORE_RLS_MIGRATION=BLOCKED`. No RLS, production, credential, payment, provider send or customer-data mutation was executed by assistant.
+
+
+## Local SHA-256 screenshot verification
+
+The user ran two operator-only PowerShell read-only commands on Windows:
+- `Get-FileHash -Path $backup -Algorithm SHA256` returned a 64-digit SHA-256 for `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`. Screenshot transcript digest: `087EBEA83AE6C3A0563C4E4B0F01EAC7C5C604721C4A8CED777EA81D0308B150`. This is an *operator-reported local checksum*, not cryptographic verification of any uploaded file bytes by the assistant.
+- `Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue | Select-Object Name,Status,DisplayName` produced **no service rows**. No matching local Windows PostgreSQL service is detected. Docker/WSL/nonservice database runtimes were not tested.
+
+**NEXT GATE:** Select a separately isolated, local PostgreSQL 17 target (e.g. Docker container or standalone Windows PostgreSQL 17 with dedicated restore-only database and port). Verify not pointing to Supabase host, then rehearse `pg_restore`, enumerate expected schemas/tables/RLS and compare `public.products=2`, `public.orders=2` against backup checkpoint where applicable. Supabase-managed roles/extensions may need adaptation in isolated restore; document every exception. Do not restore to current `tien404-staging`.
+
+Status `SHA256_OPERATOR_CHECKED=YES`; `LOCAL_WINDOWS_POSTGRES_SERVICE_FOUND=NO`; `ISOLATED_RESTORE=NOT_RUN`; `STORE_RLS_MIGRATION=BLOCKED`. No service/database/RLS/credentials changed.
