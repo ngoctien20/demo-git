@@ -1,0 +1,52 @@
+{
+  "version": "V15.0-01/02",
+  "date_jst": "2026-11-16",
+  "source": "USER_UPLOADS_CHECKED_LOCALLY",
+  "private_data_policy": "NO_RAW_QA_TEXT_OR_PERSONAL_DATA_IN_GITHUB",
+  "datasets": [
+    {
+      "name": "AI_SALES_QA_CASES.csv",
+      "sha256": "544f03c154cbad8718967be34f6f7de613838c9cec21111d2e5f609e17e55519",
+      "rows": 97,
+      "unique_case_id": 96,
+      "duplicate_case_ids": {
+        "QA01": 2
+      },
+      "actual_output_nonempty": 97,
+      "assessment": "HISTORICAL_OUTPUT_NOT_A_FRESH_V15_MODEL_BENCHMARK"
+    },
+    {
+      "name": "AI_SALES_QA_96_SINGLE_TURN.csv",
+      "sha256": "f266447e4be2a9a22733cfa81fb80ace8862d286752b15d2d6d1ffc77c9ba257",
+      "rows": 96,
+      "unique_case_id": 96,
+      "actual_output_nonempty": 0,
+      "assessment": "READY_FOR_SCOPED_OFFLINE_EVAL_NOT_RUN"
+    },
+    {
+      "name": "AI_SALES_QA_96_SINGLE_TURN (1).csv",
+      "sha256": "f266447e4be2a9a22733cfa81fb80ace8862d286752b15d2d6d1ffc77c9ba257",
+      "rows": 96,
+      "identical_to": "AI_SALES_QA_96_SINGLE_TURN.csv",
+      "assessment": "DUPLICATE_COPY_DO_NOT_DOUBLE_COUNT"
+    },
+    {
+      "name": "AI_SALES_36_MULTI_TURN_FOR_LATER.csv",
+      "sha256": "8cfccde67964207e199dc20e911a9e6d4ebcbb8b1e2410526f3b40f5b8a2a1c4",
+      "rows": 36,
+      "unique_case_id": 36,
+      "assessment": "NOT_RUN"
+    }
+  ],
+  "benchmark_eligibility": {
+    "canonical_unique_single_turn": 96,
+    "multi_turn": 36,
+    "real_paid_provider_calls": 0,
+    "selected_model_default": null,
+    "verified_vietnamese_quality": false,
+    "latency_p95_verified": false,
+    "paid_budget_authorized": false,
+    "freeze_catalog_snapshot": "REQUIRED",
+    "model_task_success_per_provider": "UNKNOWN"
+  }
+}

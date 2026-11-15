@@ -1,0 +1,48 @@
+name: TIEN404 V15 AI Core and Model Cost Offline QA
+
+on:
+  push:
+    branches:
+      - work/v1501-02-ai-core-model-evaluation-offline-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-model-lab/**'
+      - 'qa/v15-agent-core/**'
+      - 'docs/ai-handoff/TIEN404_V15_0_**'
+      - '.github/workflows/v15-agent-core-model-offline-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v15-offline-qa:
+    name: V15 Contract Security & Pricing (NO SEND, NO API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+      - name: Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate module syntax
+        run: |
+          node --check qa/v15-model-lab/cost-simulator.cjs
+          node --check qa/v15-agent-core/universal-agent-core.cjs
+      - name: V15 Model Price & Synthetic Cost QA
+        run: node --test qa/v15-model-lab/cost-simulator.test.cjs
+      - name: V15 Universal Agent Identity & Tool Policy QA
+        run: node --test qa/v15-agent-core/universal-agent-core.test.cjs
+      - name: Source-only no live provider and no send gates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths=[Path('qa/v15-agent-core/universal-agent-core.cjs'),Path('qa/v15-model-lab/cost-simulator.cjs')]
+          for p in paths:
+              text=p.read_text()
+              for forbidden in ['sendMessage(', 'new OpenAI(', 'fetch(', 'axios(', '.query(', 'INSERT INTO', 'UPDATE public.', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY']:
+                  assert forbidden not in text, (p,forbidden)
+          print('PASS no provider calls, no database writes, no outbound, no credential handling')
+          PY

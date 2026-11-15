@@ -1,0 +1,205 @@
+{
+  "version": "V15.0-02",
+  "as_of": "2026-11-16 JST",
+  "currency": "USD per 1,000,000 tokens",
+  "pricing_mode": "PAID_STANDARD_TEXT_API",
+  "source_type": "official_provider_documentation",
+  "access_verification": "PUBLIC_DOCS_ONLY_NO_PRIVATE_ACCOUNT_MODEL_LIST",
+  "price_verification": "WEBSITE_DOCUMENTATION_VERIFIED_NOT_LIVE_BILLING",
+  "never_paid_api_called": true,
+  "role_policy": "No default provider until 96 single-turn and 36 multi-turn model benchmark pass security and cost gates",
+  "shortlist": [
+    "gpt-6-luna",
+    "gemini-2.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "claude-haiku-5-5",
+    "deepseek-flash"
+  ],
+  "models": [
+    {
+      "id": "gpt-5-mini",
+      "provider": "openai",
+      "role": "published_baseline",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED_DEPRECATED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.25,
+        "output": 2,
+        "cached_input": 0.025
+      },
+      "context": 400000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Observed Published AI_SALES_DEMO + Messenger; never automatically change. Standard rates only.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5-mini"
+    },
+    {
+      "id": "gpt-5.4-nano",
+      "provider": "openai",
+      "role": "isolated_qa_baseline",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED_DEPRECATED",
+      "entitlement": "OBSERVED_N8N_GATEWAY_QA_ONLY",
+      "standard": {
+        "input": 0.2,
+        "output": 1.25,
+        "cached_input": 0.02
+      },
+      "context": 400000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Observed inactive V14.5Z LIVE01 manual QA, not Published customer production.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.4-nano"
+    },
+    {
+      "id": "gpt-6-luna",
+      "provider": "openai",
+      "role": "shortlist_low_cost",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.1,
+        "output": 0.5,
+        "cached_input": 0.01
+      },
+      "context": 1050000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Responses API for tools. Chat Completions function calls require reasoning_effort=none; caching write surcharge possible.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
+    },
+    {
+      "id": "gemini-2.5-flash-lite",
+      "provider": "google",
+      "role": "shortlist_low_cost",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.1,
+        "output": 0.4,
+        "cached_input": 0.01
+      },
+      "context": 1000000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Output includes thinking. Explicit context cache storage billed separately ($1 per 1M tokens/hour).",
+      "source": "https://ai.google.dev/gemini-api/docs/pricing"
+    },
+    {
+      "id": "gemini-3.1-flash-lite",
+      "provider": "google",
+      "role": "shortlist_balanced",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.25,
+        "output": 1.5,
+        "cached_input": 0.025
+      },
+      "context": 1048576,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Output includes thinking; paid tier; 2026 standard, not image-generation model.",
+      "source": "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite"
+    },
+    {
+      "id": "claude-haiku-5-5",
+      "provider": "anthropic",
+      "role": "shortlist_latency_sensitive",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.1,
+        "output": 0.5,
+        "cached_input": 0.01
+      },
+      "context": 1000000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "ONLY input<=100K tokens: if >100K, input $0.50/MTok output $2.50/MTok; cache hit $0.05/MTok; tokenizer may use ~30% more tokens for same text.",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "long_context": {
+        "input": 0.5,
+        "output": 2.5,
+        "cached_input": 0.05,
+        "threshold": 100000
+      }
+    },
+    {
+      "id": "deepseek-flash",
+      "provider": "deepseek",
+      "role": "shortlist_variable_tariff",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED_ALIAS_TO_V4_1_FLASH",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.3,
+        "output": 1.2,
+        "cached_input": 0.006
+      },
+      "off_peak": {
+        "input": 0.15,
+        "output": 0.6,
+        "cached_input": 0.003
+      },
+      "context": 1000000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "PEAK case used as safe standard scenario. Off-peak time windows separate; latest alias may update underneath, pin actual release for benchmark.",
+      "source": "https://api-docs.deepseek.com/quick_start/pricing/"
+    },
+    {
+      "id": "gpt-6.1-terra",
+      "provider": "openai",
+      "role": "complex_tasks_reference",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 1,
+        "output": 5,
+        "cached_input": 0.05
+      },
+      "context": 1050000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Candidate advanced fallback, expensive relative to high-volume choices; Responses API tool calling.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.1-terra"
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "provider": "openai",
+      "role": "alternate_not_shortlisted",
+      "quality": "NOT_BENCHMARKED",
+      "api_status": "DOCUMENTED_ACCESS_UNCERTAIN",
+      "entitlement": "NOT_VERIFIED",
+      "standard": {
+        "input": 0.2,
+        "output": 1.2,
+        "cached_input": 0.02
+      },
+      "context": 1050000,
+      "tool_calling": true,
+      "structured_output": true,
+      "notes": "Official docs: model may not be available in user's account. Requires API model list entitlement check.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna"
+    }
+  ],
+  "unpriced_overhead": [
+    "provider tool call/search",
+    "n8n executions",
+    "gateway margin",
+    "hosted DB",
+    "notifications",
+    "retry output",
+    "reasoning tokens",
+    "extra cache write/storage",
+    "data residency surcharges"
+  ],
+  "rate_disclaimer": "Do not use free-tier or trial as sustainable SaaS baseline; all costs synthetic until real tokens and invoice reconciliation."
+}
