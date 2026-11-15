@@ -1,6 +1,6 @@
 {
   "project": "TIEN404 AI",
-  "phase": "V14.8-01/02/03",
+  "phase": "V14.8-01/02/03/04",
   "date_jst": "2026-11-16",
   "lifecycle": "CANDIDATE_DRAFT_NO_SEND",
   "contract_version": "v14.8.0-candidate.1",
@@ -48,7 +48,7 @@
     }
   ],
   "qa": {
-    "github_run": 43762821031,
+    "github_run": 43763851730,
     "new_identity_tests": {
       "passed": 68,
       "total": 68
@@ -58,13 +58,21 @@
       "total": 64
     },
     "all_tests": {
-      "passed": 132,
-      "total": 132
+      "passed": 187,
+      "total": 187
     },
     "dry_run_profile_cache_hits": 1188,
     "dry_run_profile_cache_misses": 12,
     "actual_provider_send_tests": 0,
-    "actual_store_rls_tests": 0
+    "actual_store_rls_tests": 0,
+    "synthetic_channel_adapter_tests": {
+      "passed": 43,
+      "total": 43
+    },
+    "owner_preview_source_tests": {
+      "passed": 12,
+      "total": 12
+    }
   },
   "performance": {
     "real_n8n_webhook_success_executions": [
@@ -91,14 +99,17 @@
     ],
     "synthetic_benchmark": {
       "warm_n": 1200,
-      "warm_p50_ms": 0.0589,
-      "warm_p95_ms": 0.2304,
+      "warm_p50_ms": 0.0274,
+      "warm_p95_ms": 0.1071,
+      "warm_p99_ms": 0.194,
       "cold_n": 120,
-      "cold_p50_ms": 0.0783,
-      "cold_p95_ms": 0.1467,
+      "cold_p50_ms": 0.03,
+      "cold_p95_ms": 0.0433,
       "model_calls": 0,
       "provider_sends": 0,
-      "network_requests": 0
+      "network_requests": 0,
+      "scope": "nodejs_local_synthetic_normalized_event_only",
+      "live_slo_certified": false
     },
     "comparison_eligible": false,
     "live_end_to_end_slo_verified": false,
@@ -109,8 +120,17 @@
     "provider_specific_auth": "BLOCKED",
     "shared_verified_customer_identity": "NOT_IMPLEMENTED",
     "order_no_write": "TESTED_SYNTHETIC",
-    "owner_actual_approval": "PENDING",
-    "production": "BLOCKED"
+    "owner_actual_approval": "PENDING_VISUAL_UAT",
+    "production": "BLOCKED",
+    "native_provider_crypto": "NOT_IMPLEMENTED_REAL_PROVIDER"
   },
-  "rollback": "Close Draft PR #121; no hosted or Published state changes in this candidate."
+  "rollback": "Close Draft PR #121; no hosted or Published state changes in this candidate.",
+  "artifacts": {
+    "adr": "docs/ai-handoff/V14_8_01_UNIFIED_IDENTITY_ADR.md",
+    "checkpoint": "docs/ai-handoff/V14_8_01_04_UNIFIED_IDENTITY_CHECKPOINT.md",
+    "core": "qa/v148-unified-identity/identity-core.cjs",
+    "adapters": "qa/v148-unified-identity/provider-adapters.cjs",
+    "owner_preview": "qa/v148-unified-identity/owner-uat.html",
+    "ui_deployed": false
+  }
 }
