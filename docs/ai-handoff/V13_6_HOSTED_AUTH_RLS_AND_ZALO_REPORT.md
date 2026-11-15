@@ -65,6 +65,17 @@ The project owner supplied four screenshots from Cốc Cốc: a normal browser w
 **Next:** first test logout/anonymous read-only denial in an independently logged-out browser. Revocation requires separately approved test-account membership state changes and rollback. Then review Render staging deployment with source/build snapshot; do not auto-trigger the old branch.
 
 
+### A7. 2026-11-15 — Shop B signed-out UI locked
+
+**Evidence:** User-supplied screenshot of the separate Cốc Cốc incognito Shop B browser on the currently deployed `https://tien404-auth-staging.onrender.com/account.html` after the instructed sign-out sequence. The page displays the explicit message `Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.` and a login prompt; there is **no shop identifier, order list, order amount or merchant details visible**.
+
+**QA status:** `PASS — SIGNED_OUT_UI_LOCKED` (visual browser evidence). This supports safe removal of protected UI after the session becomes invalid, together with the previous independent Shop A/B real SELECT RLS tests. It does **not** prove a server-side `anon` PostgREST denial, nor independently establish whether the root cause was sign-out, expiry or token revocation. No screenshot or sensitive session content was committed.
+
+**Next gate:** from this logged-out incognito browser, perform a harmless authenticated Supabase-client `head:true,count:'exact'` SELECT of `orders` and `tenant_memberships`; require `auth.getUser()` to return no current user. A result `count=0` with no error or a recognized privilege-denial response is satisfactory; `count>0` is P0; unexpected network errors are inconclusive, not PASS. Do not use admin/service role and never log access tokens.
+
+**Remaining:** real revoked-membership-while-JWT-valid test (requires separate approval and rollback), then Render staging release review of canonical V13.5R.1. The deployed legacy `account.html` is not the PR #81 Customer Portal.
+
+
 ## B. Zalo Bot — actual progress through V13.8
 
 | Version | Verified and tested | Not proven |
