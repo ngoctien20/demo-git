@@ -296,8 +296,8 @@ test('Knowledge APPROVED PUBLIC PUBLISHED can be previewed, not sent',async()=>{
  assert.equal(r.status,'PREVIEW_ONLY');assert.equal(r.providerSends,0);
 });
 test('Expired themed review blocks rendering',async()=>{
- const s=setup({changes:{async readReviewedTheme(){return {
-  source:'STAFF_REVIEWED_WIDGET_CONFIG',state:'DRAFT',shopApproved:false};
+ const s=setup({changes:{async readReviewedTheme(scope){return {
+  ...scope,source:'STAFF_REVIEWED_WIDGET_CONFIG',state:'DRAFT',shopApproved:false};
  }}}),g=gateway(s),a=await g.issueSession(params('a'));
  await throws(g.preview({...params('a'),session:a.session,eventId:'event_0019'}),
  'WIDGET_CONFIG_NOT_APPROVED');
