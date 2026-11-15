@@ -24,9 +24,10 @@ function createMerchantReadOnlyService({verifySession,listMemberships,readTenant
   if(!Array.isArray(memberships))fail('MEMBERSHIP_UNAVAILABLE');
   const allowed=memberships.filter(m=>normalizedMembership(m,session.userId));
   if(!allowed.length)fail('MEMBERSHIP_DENIED');
-  // A multi-store selection may be provided only by server-validated session, never request query.
-  const chosen=allowed.length===1?allowed[0]:
-    session.selectedTenantId&&session.selectedStoreId?allowed.find(m=>m.tenantId===session.selectedTenantId&&m.storeId===session.selectedStoreId):null;
+  // Server-validated shop selection must match CURRENT membership, even if only one shop remains.
+  const hasSelection=session.selectedTenantId!==undefined||session.selectedStoreId!==undefined;
+  const sessionSelection=hasSelection?allowed.find(m=>m.tenantId===session.selectedTenantId&&m.storeId===session.selectedStoreId):null;
+  const chosen=hasSelection?sessionSelection:(allowed.length===1?allowed[0]:null);
   if(!chosen)fail('SERVER_SHOP_SELECTION_REQUIRED');
   const scope=Object.freeze({tenantId:chosen.tenantId,storeId:chosen.storeId,userId:session.userId});
   let shop,subscription,bot;
