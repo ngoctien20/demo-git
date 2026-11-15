@@ -1,5 +1,5 @@
 /** TIEN404 AI V14.5Z-G2.2 — standalone STAGING / NO SEND resolver. */
-import {resolveG22} from './g22-core.mjs';
+import {resolveG22} from './g22-trusted-bot-resolver-core.mjs';
 const ATTESTOR_PUBLIC_SPKI="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+U0a21Hh6CVxDLPonVXXvhScp9xxCn3c0X3/p1moK4H0iPgeQAWnRHOOXWH+aXHkZiSfy8ntSWq/zjdfJ1jAww==";
 const PINNED_QA_SHOP_B_TENANT_SHA256="81902d42f087c86b28f5d986cce0f2101f79d6c55f7c9a3c3885d317c41fc994";
 const META=Object.freeze({version:'V14.5Z-G2.2',environment:'ISOLATED_QA_STAGING',status:'OWNER_CERTIFICATION_PENDING',can_send:false,provider_sends:0,orders_written:0,customer_data_touched:false,owner_verified:false,real_commerce_ready:false});
