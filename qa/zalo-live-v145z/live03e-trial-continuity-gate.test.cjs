@@ -35,3 +35,29 @@ test('payment requires distinct approval',()=>has({...base,owner_approved_paid_s
 test('self-hosting is not implicitly approved',()=>has({...base,trial_continuity_choice:'DEPLOY_SELF_HOSTED_PROD_NOW'},'TRIAL_EXPIRY_STRATEGY_UNAPPROVED'));
 test('backup_verified false for absent export',()=>assert.equal(judge({...base,cloud_export_downloaded:false}).backup_verified,false));
 test('backup_verified true still does not grant production or send',()=>{const x=judge(base);assert.equal(x.backup_verified,true);assert.equal(x.can_send,false);assert.equal(x.production_changes,0)});
+
+
+test('actual inventory metadata matches 98 workflows and 19 active',()=>{
+ const inventory=require('./live03e-n8n-workflow-inventory.json');
+ assert.equal(inventory.kind,'TIEN404_N8N_METADATA_MANIFEST_NOT_A_BACKUP');
+ assert.equal(inventory.workflows.length,98);
+ assert.equal(inventory.workflows.filter(x=>x.active).length,19);
+ assert.equal(inventory.workflow_count,98);
+ assert.equal(inventory.active_count,19);
+});
+test('Draft/Published 4-way gap is preserved for restore verification',()=>{
+ const inventory=require('./live03e-n8n-workflow-inventory.json');
+ const diff=require('./live03e-active-version-differences.json');
+ assert.equal(diff.different.length,4);
+ assert.equal(diff.different_draft_and_published,4);
+ assert.equal(diff.same_draft_and_published+diff.different.length,19);
+ for(const d of diff.different){
+  assert.ok(inventory.workflows.some(w=>w.id===d.id&&w.active));
+  assert.notEqual(d.draft_version_id,d.published_version_id);
+ }
+});
+test('metadata inventory must never be mistaken for restorable workflow export',()=>{
+ const inventory=require('./live03e-n8n-workflow-inventory.json');
+ assert.match(inventory.warning,/NOT RESTORE-CAPABLE/);
+ assert.ok(inventory.workflows.every(w=>Object.keys(w).every(k=>['id','name','active','updatedAt'].includes(k))));
+});
