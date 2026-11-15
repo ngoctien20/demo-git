@@ -1,0 +1,72 @@
+{
+  "checkpoint": "TIEN404_V14_4_8",
+  "scope": "AGGREGATE_ONLY_NOT_AUTHENTICATION",
+  "sourceQuery": "qa/recovery-owner-v1448/HOSTED_DEPENDENCY_SELECT_ONLY.sql",
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "observationMode": "HOSTED_READ_ONLY_AGGREGATE",
+  "postgresMajor": "17",
+  "authUsers": 3,
+  "authFkGraph": [
+    {
+      "schema": "public",
+      "table": "tenant_memberships",
+      "fkCount": 1
+    },
+    {
+      "schema": "public",
+      "table": "tien404_tester_access",
+      "fkCount": 2
+    },
+    {
+      "schema": "public",
+      "table": "tien404_tester_google_sheets",
+      "fkCount": 1
+    },
+    {
+      "schema": "public",
+      "table": "tien404_tester_requests",
+      "fkCount": 2
+    },
+    {
+      "schema": "public",
+      "table": "tien404_tester_runs",
+      "fkCount": 1
+    },
+    {
+      "schema": "public",
+      "table": "tien404_tester_staff",
+      "fkCount": 1
+    },
+    {
+      "schema": "tien404_r1_qa",
+      "table": "owner_pairing_challenges",
+      "fkCount": 1
+    }
+  ],
+  "products": 2,
+  "orders": 2,
+  "tenantGroups": 2,
+  "anonymousGroups": [
+    {
+      "groupOrdinal": 1,
+      "products": 1,
+      "orders": 1,
+      "activeOwners": 2,
+      "authMatchedOwners": 2
+    },
+    {
+      "groupOrdinal": 2,
+      "products": 1,
+      "orders": 1,
+      "activeOwners": 1,
+      "authMatchedOwners": 1
+    }
+  ],
+  "storesTableExists": false,
+  "storeMembershipsTableExists": false,
+  "sourceStoreOwnershipConfirmed": false,
+  "realMerchantSignaturesVerified": false,
+  "realBackupFullRestoreVerified": false,
+  "realSignedJwtQaVerified": false,
+  "hostedChangeAuthorized": false
+}
