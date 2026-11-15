@@ -34,7 +34,8 @@ Raw Meta webhook + X-Hub-Signature-256
 In this milestone the replay implementation is **in-memory synthetic QA only**. The real transaction-safe unique database claim, persisted event processing statuses, expiry and outbox will require a separately approved private schema and negative concurrency testing with restricted PostgreSQL roles.
 
 ## 4. QA evidence and status
-- Static/Node tests: pending initial GitHub Actions result when checkpoint drafted; report exact job and count only after checking run.
+- **TESTED** on commit `35fa2166db76d7413def1ee69e4c3717f5d8f667`: [V13.6M.4 GitHub Actions run 43712106620](https://github.com/ngoctien20/demo-git/actions/runs/43712106620) **SUCCESS: 211/211 Node tests PASS, 0 FAIL, 0 SKIP**, plus static no-provider-send, no-network, no order-write and fail-closed SQL guards PASS. Includes 53 Rich UI, 41 V13.6M.1 integration, 48 repository, 22 previous resolver, 25 V13.6M.3 canonical and 22 V13.6M.4 event/replay scenarios.
+- Inherited [V13.6M.3 run 43712106648](https://github.com/ngoctien20/demo-git/actions/runs/43712106648) SUCCESS; [V13.6M.2 Store/Catalog run 43712106588](https://github.com/ngoctien20/demo-git/actions/runs/43712106588) SUCCESS. These are synthetic GitHub runner tests, **not** hosted Supabase or real provider QA.
 - Explicit tests must prove that same-Page/different-PSID batch now works without sharing resolver; prior V13.6M.3 fail-closed behavior remains in its historical entrypoint and V13.6M.4 opt-in changes behavior only for this offline candidate.
 - Repeated message IDs from same verified Page/PSID suppressed in synthetic replay; same MID from different sender or store is treated independently.
 - No Meta send, receipt, real customer conversation, real Supabase DB event claim, outbox, n8n publish or production deployment was attempted.
@@ -52,3 +53,10 @@ In this milestone the replay implementation is **in-memory synthetic QA only**. 
 ## 6. Rollback and next step
 - Close/revert this stacked Draft PR; return to PR #90 baseline SHA `7c1acdd...`. No DB restore, message recall or credential rotation required.
 - After offline QA, coordinate V14.2 Store/RLS readiness and prepare an **independent PostgreSQL atomic replay/outbox design review**. Never promote experimental features to Core Bot by implication.
+
+## 7. Release status — source-only
+- **VERIFIED:** Published Messenger n8n graph unchanged; existing inactive QA shadow unchanged.
+- **IMPLEMENTED:** Isolated per-event scope, synthetic replay and guarded durability design.
+- **TESTED:** 211/211 offline Node cases, 0 fail; no messages sent.
+- **BLOCKED:** Durable PostgreSQL claim/outbox, multi-store hosted RLS, verified private Page binding, authenticated subscription source, Meta provider pilot.
+- **Approval required:** separate backup/restore + Store migration/RLS approval; then private Page registry and provider/token live tests after their own approvals. No merge/deploy or Core Bot promotion is authorized by this checkpoint.
