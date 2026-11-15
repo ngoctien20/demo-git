@@ -109,3 +109,12 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - After QA, both `qa_live02_b_%` synthetic grants were marked `QA_STOPPED` on isolated QA D1; 0 remain armed. Temporary QA signing private key was discarded, not persisted anywhere.
 - Detailed authoritative V14.5Z LIVE02 checkpoint: `docs/ai-handoff/TIEN404_V14_5Z_LIVE02_HOSTED_NO_SEND_CHECKPOINT.md`.
 - **Release:** V14.5Z-LIVE02 HOSTED_SIGNED_QA_TESTED, REAL_ZALO_LIVE_SEND_NO_GO. Bot binding, authenticated real ingress, provider dispatcher/outbox, real LLM+money cap and owner final approval are P0 blockers.
+
+## 14. V14.5Z-LIVE03 read-only Zalo identity + n8n Gateway cost certification (2026-11-16)
+- Direct real Zalo read-only checks rerun: n8n `3854` getMe/token VALID and `3855` getWebhookInfo aligned with staging URL; neither discloses full trusted provider Bot ID, nor establishes a real Bot→Shop B→Owner QA server registry binding.
+- Active ingress `yIJk8LvJoLF40Z62` still binds `trusted_bot_id:'b'` with `SINGLE_STAGING_WEBHOOK_TO_SYNTHETIC_SHOP_B`: hard-coded synthetic identity, NOT official provider Bot ID. Existing registry two `synthetic_qa/dry_run` rows; one Owner QA allowlist expires 2026-11-20.
+- Existing Cloudflare old Zalo outbound `ZALO_SEND_ENABLED=false`; LIVE02 no-send Worker has only isolated QA D1 binding; two LIVE02 QA grants remain stopped, no live grant.
+- Current manual QA model `gpt-5.4-nano`, provider direct list $0.20/1M input and $1.25/1M output, theoretical max 2500 all-output tokens $0.003125 USD, but n8n Gateway instance-shared balance, actual n8n rate, Auto top-up and USD owner ceiling are UNKNOWN. Provider direct estimate is not actual account spend.
+- New `qa/zalo-live-v145z/live03-identity-budget-gate.cjs` with 5 independent ECDSA P256 signed-proof roles, source-only fail-closed `can_send:false`, plus 35 negative tests. Initial GitHub run 43736390952 167/167 PASS (old 132 + LIVE03 35).
+- Full evidence and conditions: `docs/ai-handoff/TIEN404_V14_5Z_LIVE03_TRUSTED_IDENTITY_BUDGET_CHECKPOINT.md`.
+- LIVE03 remains BLOCKED for real identity + budget; source-only certification logic never constitutes a live gateway. No credential, billing, Worker, n8n active flow, production or customer changes.
