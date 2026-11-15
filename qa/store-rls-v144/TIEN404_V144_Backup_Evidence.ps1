@@ -43,6 +43,13 @@ $evidence = [ordered]@{
   prod_or_staging_modified = $false
 }
 if($RestoreLocal){
+  # A restore is NOT attempted when the purported full Commerce archive lacks
+  # any of the six required tables. Catalog listing alone is still not proof
+  # of recoverability, and this guard protects against partial archive drills.
+  $missingCoreTables = @($required | Where-Object { -not $objectFlags[$_.Split(' ')[1]] })
+  if($missingCoreTables.Count -gt 0) {
+    Fail 'Incomplete Commerce archive catalog: local restore refused'
+  }
   if($RestoreDatabase -notmatch '^tien404_restore_v144_[a-z0-9_]{4,40}$'){
     Fail 'RestoreDatabase must be a disposable name: tien404_restore_v144_<suffix>'
   }
@@ -56,6 +63,12 @@ if($RestoreLocal){
     Fail 'Could not parse disposable database table count'
   }
   if($count -ne 0){ Fail 'Disposable restore database is not empty. No restore attempted.' }
+  $serverVersion = & $psqlExe -X -A -t -v ON_ERROR_STOP=1 -h '127.0.0.1' -p $PgPort -U $PgUser -d $RestoreDatabase -c 'SHOW server_version_num;'
+  if($LASTEXITCODE -ne 0){ Fail 'Could not verify local PostgreSQL server version' }
+  $versionCode = 0
+  if(-not [int]::TryParse(($serverVersion | Out-String).Trim(), [ref]$versionCode) -or $versionCode -lt 170000 -or $versionCode -ge 180000) {
+    Fail 'Local restore target must be isolated PostgreSQL 17.x'
+  }
   & $restoreExe --exit-on-error --no-owner --no-privileges -h '127.0.0.1' -p $PgPort -U $PgUser -d $RestoreDatabase $backup
   if($LASTEXITCODE -ne 0){ Fail 'Local restore failed. Inspect the local PostgreSQL logs privately; do not treat as verified.' }
   $checks = & $psqlExe -X -A -t -v ON_ERROR_STOP=1 -h '127.0.0.1' -p $PgPort -U $PgUser -d $RestoreDatabase -c "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p');"
