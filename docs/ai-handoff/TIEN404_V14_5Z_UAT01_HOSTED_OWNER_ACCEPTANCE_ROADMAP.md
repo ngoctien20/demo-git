@@ -66,3 +66,11 @@ Owner should open the staging URL, run 12/12 QA, complete at least 8 acceptance 
 - **Real hosted n8n HTTPS regression execution 3864 SUCCESS** after redeploy: 12/12 Worker simulation tests, health 200, draft quote 318,000 VND not persisted, /v1/send HTTP 423, zero provider sends/AI calls/Orders writes. Earlier 3863 also passed on the initial deployment.
 - Latest n8n metadata read after adding the new inactive UAT01 HTTP driver: **100 workflows, 19 active**; not the older 99 pre-driver or 98 earlier backup manifest.
 - The website is ready for **owner-side manual UAT G1**, not authenticated real Zalo/AI certification. No owner acceptance JSON has been submitted at checkpoint time.
+
+## G1 USER-REPORTED ACCEPTANCE RECEIVED — 2026-11-16 04:19:29 JST
+- The user uploaded `TIEN404_UAT01_NGHIEM_THU.json`. Parsed full content and validated **8/8 expected checklist keys PASS**, correct project/version/environment, and explicit `real_zalo_approved:false`, `real_ai_approved:false`, `orders_written:0`, `provider_sends:0`.
+- Submitted `reviewer=USER_UNVERIFIED_LOCAL` and source notice `Self-reported local UAT, not live Bot/AI certification`. No cryptographic signature or per-case browsing proof. This is **user self-reported acceptance of the synthetic G1 portal**, not independent attestation of merchant identity or live AI/Zalo.
+- Independent hosted evidence reconfirmed: n8n manual HTTP execution **3864 SUCCESS**, synthetic 12/12, draft quote 318000 VND not persisted, `/v1/send` 423; GitHub CI **316/316 PASS** run 43749013167. Cloudflare UAT has zero bindings, outbound send flag false, 0 unexpired budget QA grants, n8n 100 workflows / 19 active.
+- **G1 = ACCEPTED (USER_SELF_REPORT, SYNTHETIC_ONLY)**; **G0 = VERIFIED**, **G2–G5 remain BLOCKED**. Do not call G1 real provider commerce acceptance.
+- Sanitized acceptance receipt and SHA fingerprint: `docs/ai-handoff/TIEN404_V14_5Z_UAT01_OWNER_ACCEPTANCE_8_OF_8.md`. Source file deliberately not copied to public GitHub.
+- Next G2 step is to independently attest the real immutable Zalo provider Bot ID and approved Shop B/Owner QA association in a trusted server-only isolated staging component; read-only provider verification and QA possible, but no credentials, Published webhook modifications or real sends without specific approval. Existing synthetic registry must not be promoted to verified.
