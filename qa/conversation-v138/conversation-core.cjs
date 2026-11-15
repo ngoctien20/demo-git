@@ -112,7 +112,8 @@ function transition({binding,event,session=null,actor=null,now=Date.now()}={}){
    ?(customerGuard(event,binding),null):staffGuard(actor,scope,binding,event);
  const freshness=eventEnvelope(event,state,now);
  if(freshness==='REPLAY')return Object.freeze({kind:'DUPLICATE_IGNORED',next_state:state,
-   proposals:[],provider_sends:0,orders_written:0,outbox_written:0,duplicate:true});
+   proposals:[],provider_sends:0,orders_written:0,outbox_written:0,
+   dispatch_authorized:false,production_ready:false,duplicate:true});
  const s={...state,revision:state.revision+1,
    last_ids:[...state.last_ids.slice(-63),event.event_id],
    expires_at_ms:Math.min(now+TTL_MS,binding.expires_at_ms)};
