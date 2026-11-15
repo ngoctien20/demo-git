@@ -34,6 +34,18 @@ test('canonical portal is still Supabase Auth/RLS scoped and no write is enabled
   assert.ok(c.includes("disabled(c,'Xác nhận / thay đổi trạng thái đơn'"));
   assert.doesNotMatch(c,/\.insert\(|\.upsert\(|\.delete\(|\.update\(/);
 });
+test('public customer login and portal do not advertise internal Tester pages',()=>{
+  const customer=[read('account.html'),read('login.html'),read('merchant-portal.html')];
+  for(const html of customer){
+    assert.doesNotMatch(html,/href=["'](?:\/)?tester(?:-admin|-request)?\.html(?:[?#][^"']*)?["']/i);
+  }
+  // Internal QA pages are still shipped as independently authenticated staging tools.
+  assert.match(read('tester.html'),/tester-portal\.js/);
+  assert.match(read('tester-request.html'),/tester-request\.js/);
+  assert.match(build,/'tester\.html'/);
+  assert.match(build,/'tester-request\.html'/);
+});
+
 test('no hard-coded service session, secrets or opaque platform roles',()=>{
  assert.doesNotMatch(html,/sb_secret_|service_role|Bearer\s+|Authorization:|CLIENT_SECRET|\bplatform_owner\b/i);
  assert.doesNotMatch(html,/target="_blank"/);
