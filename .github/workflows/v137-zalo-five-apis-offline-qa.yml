@@ -1,0 +1,35 @@
+name: TIEN404 V13.7 Five Zalo Bot APIs — Read-only & Offline QA
+on:
+  push:
+    branches:
+      - work/v137-zalo-five-apis-offline-qa-staging
+  pull_request:
+    paths:
+      - "qa/zalo-multimedia-v137/**"
+      - ".github/workflows/v137-zalo-five-apis-offline-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate five API mock contracts
+        run: |
+          node --check qa/zalo-multimedia-v137/contracts.cjs
+          node --check qa/zalo-multimedia-v137/contracts.test.cjs
+          node --test qa/zalo-multimedia-v137/contracts.test.cjs
+      - name: Regression - V13.6 Zalo button and V13.5 protected gateway
+        run: |
+          node --test qa/zalo-control-text/button-capability.test.cjs
+          node --test qa/zalo-control-text/zalo-payloads.test.cjs
+          node --test qa/zalo-control-text/worker-qa-richtext-route.test.mjs
+          node --test qa/sales-lite/v131/*.test.cjs
+      - name: Verify production is unreachable from QA contract
+        run: |
+          node -e "const m=require('./qa/zalo-multimedia-v137/contracts.cjs');for(const x of m.draftGallery()){if(x.provider_call_allowed||x.external_sends||!x.dry_run)process.exit(1)};console.log('PASS: 5 API drafts have no-send gate')"
