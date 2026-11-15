@@ -30,7 +30,8 @@ function verifyBinding(b,pageId,psid){
     !ID.test(b.shopSlug||''))failure('TRUSTED_PAGE_SHOP_SCOPE_DENIED');
  return b;
 }
-function mapCatalogRecord(row,b){
+function mapCatalogRecord(row,b,requireStoreScope=false){
+ if(requireStoreScope && row?.store_id!==b.storeId)failure('CATALOG_STORE_ROW_SCOPE_DENIED');
  if(!row||row.tenant_id!==b.tenantId||row.is_active!==true||
     !ID.test(row.sku||'')||typeof row.name!=='string'||
     row.name.trim().length<1||row.name.trim().length>80)failure('CATALOG_TENANT_OR_SKU_DENIED');
@@ -55,12 +56,12 @@ function verifyCatalogResponse(r,b){
  if(!r||r.source!=='SERVER_VERIFIED_TENANT_CATALOG'||
     r.tenantId!==b.tenantId||r.storeId!==b.storeId||
     r.serverAuthorized!==true||r.readOnly!==true||
-    r.isolationProof!=='ONE_STORE_PER_TENANT_VERIFIED'||
+    !['ONE_STORE_PER_TENANT_VERIFIED','STORE_RLS_VERIFIED'].includes(r.isolationProof)||
     !Array.isArray(r.rows))failure('CATALOG_SCOPE_UNVERIFIED');
  if(r.rows.length>100)failure('CATALOG_UNBOUNDED');
  const result=[],ids=new Set();
  for(const raw of r.rows){
-    const mapped=mapCatalogRecord(raw,b);
+    const mapped=mapCatalogRecord(raw,b,r.isolationProof==='STORE_RLS_VERIFIED');
     if(ids.has(mapped.itemId))failure('CATALOG_DUPLICATE_SKU');
     ids.add(mapped.itemId);result.push(mapped);
  }
