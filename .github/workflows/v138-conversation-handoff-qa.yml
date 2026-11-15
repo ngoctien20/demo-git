@@ -31,3 +31,28 @@ jobs:
           node --test qa/zalo-control-text/worker-qa-richtext-route.test.mjs
           node --test qa/zalo-multimedia-v137/contracts.test.cjs
           node --test qa/zalo-multimedia-v137/worker-v137-4call-qa.test.mjs
+          node --test qa/zalo-control-text/zalo-payloads.test.cjs
+  conversation-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Playwright Chromium in ephemeral runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Simulated conversation and staff handoff QA
+        run: |
+          python -m http.server 8080 > /tmp/tien404-v138-http.log 2>&1 &
+          sleep 2
+          node qa/conversation-v138/ui-browser-qa.cjs
+      - name: Upload synthetic mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v138-shopb-conversation-mock-390px
+          path: qa-artifacts-v138/
+          if-no-files-found: ignore
