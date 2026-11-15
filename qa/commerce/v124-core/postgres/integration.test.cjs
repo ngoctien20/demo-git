@@ -315,3 +315,66 @@ test('V12.4R.3 role-bound Customer Catalog verifies RLS and excludes bot credent
  const spoof=setup({repository:createRlsEnforcedQaCatalog({roleForContext:()=> 'core_qa_b'})});
  assert.equal((await spoof.preview('F01')).status,'CATALOG_UNTRUSTED');
 });
+
+
+test('V12.4R.3 owned transaction: two real PG roles cannot see each other even on concurrent F01 reads',async()=>{
+  const {createTransactionalQaCatalog}=require('../transactional-catalog.cjs');
+  const {readFreshQaProduct}=require('../catalog.cjs');
+  const {fixture}=require('../qa-harness.cjs');
+  const f=fixture();
+  const ctxA=f.ingress.verify(f.event('F01', {botRef:'qa-bot-a'}));
+  const ctxB=f.ingress.verify(f.event('F01', {botRef:'qa-bot-b'}));
+  const roleForContext=ctx=>ctx.storeId==='qa-store-a'?'core_qa_a':ctx.storeId==='qa-store-b'?'core_qa_b':null;
+  const poolForContext=ctx=>ctx.storeId==='qa-store-a'?getPool('a'):ctx.storeId==='qa-store-b'?getPool('b'):null;
+  const qa=createTransactionalQaCatalog({roleForContext,poolForContext});
+  const [a,b]=await Promise.all([
+    readFreshQaProduct({repository:qa,context:ctxA,sku:'F01'}),
+    readFreshQaProduct({repository:qa,context:ctxB,sku:'F01'})
+  ]);
+  assert.equal(a.status,'OK');assert.equal(b.status,'OK');
+  assert.equal(a.product.priceVnd,159000);assert.equal(b.product.priceVnd,199000);
+  assert.equal(a.product.stock,3);assert.equal(b.product.stock,5);
+
+  // The same caller cannot pass a session client from an unrelated role.
+  const outside=await getPool('a').connect();
+  try{
+    await assert.rejects(qa.readProduct({context:ctxA,sku:'F01',client:outside}),
+      /CATALOG_EXTERNAL_CLIENT_FORBIDDEN/);
+  }finally{outside.release();}
+
+  // Swapping only a server-configured pool fails its actual current_user check.
+  const swapped=createTransactionalQaCatalog({
+    roleForContext,
+    poolForContext:ctx=>ctx.storeId==='qa-store-a'?getPool('b'):getPool('a')
+  });
+  await assert.rejects(swapped.readProduct({context:ctxA,sku:'F01'}),/CATALOG_ROLE_UNSAFE/);
+  await assert.rejects(swapped.readProduct({context:ctxB,sku:'F01'}),/CATALOG_ROLE_UNSAFE/);
+  for(const shop of ['a','b']){
+    const db=getPool(shop);
+    await assert.rejects(db.query('SELECT credential_ref FROM tien404_r1_qa.shop_bots'),/permission denied/i);
+    await assert.rejects(db.query('SELECT catalog_source_ref FROM tien404_r1_qa.shop_bots'),/permission denied/i);
+    await assert.rejects(db.query("UPDATE tien404_r1_qa.catalog SET stock=99 WHERE sku='F01'"),/permission denied/i);
+  }
+});
+
+test('V12.4R.3 owned transaction: disabling bot mapping hides catalog without rebuilding user pool',async()=>{
+ const {createTransactionalQaCatalog}=require('../transactional-catalog.cjs');
+ const {readFreshQaProduct}=require('../catalog.cjs');
+ const f=fixture();
+ const ctx=f.ingress.verify(f.event('F01', {botRef:'qa-bot-a'}));
+ const qa=createTransactionalQaCatalog({
+   roleForContext:()=> 'core_qa_a',
+   poolForContext:()=> getPool('a')
+ });
+ const before=await readFreshQaProduct({repository:qa,context:ctx,sku:'F01'});
+ assert.equal(before.status,'OK');
+ try{
+   await admin.query("UPDATE tien404_r1_qa.shop_bots SET enabled_mode='disabled' WHERE tenant_key='qa-tenant-a' AND store_key='qa-store-a' AND bot_key='qa-bot-a'");
+   const after=await readFreshQaProduct({repository:qa,context:ctx,sku:'F01'});
+   assert.equal(after.status,'NOT_FOUND');
+ }finally{
+   await admin.query("UPDATE tien404_r1_qa.shop_bots SET enabled_mode='dry_run' WHERE tenant_key='qa-tenant-a' AND store_key='qa-store-a' AND bot_key='qa-bot-a'");
+ }
+ const restored=await readFreshQaProduct({repository:qa,context:ctx,sku:'F01'});
+ assert.equal(restored.status,'OK');
+});
