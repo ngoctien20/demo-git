@@ -3,7 +3,7 @@
 set -euo pipefail
 [[ "$(printenv CI_V1441_DISPOSABLE || true)" == "YES" &&
    "$(printenv PGDATABASE || true)" == "tien404_v1441_ci" &&
-   "$(printenv PGHOST || true)" == "127.0.0.1" &&
+   "$(printenv PGHOST || true)" == "postgres" &&
    "$(printenv PGUSER || true)" == "postgres" ]] || {
   echo 'BLOCKED: V14.4.1 exact disposable PG17 CI only'; exit 2;
 }
