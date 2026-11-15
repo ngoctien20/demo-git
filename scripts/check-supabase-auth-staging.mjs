@@ -21,7 +21,9 @@ if(canonicalAccount){
   assert(!/<script\b|<form\b|auth-account\.js|id="account-tenants"/.test(files.account),
     'Canonical entry may not execute legacy technical account controller');
   assert(files.account.includes('href="merchant-portal.html"'),'Canonical account fallback link missing');
-  assert(files.account.includes('href="tester-request.html"'),'Tester access request continuity missing');
+  assert(!/href="tester(?:-admin|-request)?\.html"/.test(files.account),'Internal Tester links exposed in customer account');
+  assert(read('tester.html').includes('href="tester-request.html"'),'Internal Tester access request continuity missing');
+  assert(build.includes("'tester.html'")&&build.includes("'tester-request.html'"),'Authenticated Tester pages missing from staging build');
   assert(!build.includes("'assets/auth-account.js'"),'Legacy technical account controller still deployed');
   assert(canonicalGuard.includes('auth.getUser()'),'Canonical account missing getUser identity verification');
   assert(canonicalGuard.includes("from('tenant_memberships')"),'Canonical account missing RLS membership read');
