@@ -168,11 +168,9 @@ test('21 · No operator config never reaches transport',async()=>{
   'HOSTED_QA_GATES_CLOSED');
  assert.equal(hit,0);
 });
-test('22 · API table and path cannot be arbitrary or call RPC or mutation',async()=>{
- await expectCode(h.call({path:'/rest/v1/rpc/execute',
-   token:ENV.QA_A_ACCESS_TOKEN,key:ENV.SUPABASE_PUBLISHABLE_KEY,
-   fetchImpl:async()=>{throw Error('network must not execute');}}),
-   'HOSTED_QA_REQUEST_REJECTED');
+test('22 · raw request and query builders are not exported',()=>{
+ assert.equal(h.call,undefined);
+ assert.equal(h.query,undefined);
 });
 test('23 · No DELETE/POST/PUT/PATCH or service role used anywhere in test suite',()=>{
  const fs=require('node:fs');
@@ -188,4 +186,21 @@ test('24 · Normalized success report does not contain row IDs or personal data'
  assert.equal(str.includes(O[0]),false);
  assert.equal(str.includes(U[0]),false);
  assert.equal(str.includes(TENANT_A),false);
+});
+
+test('25 · forged ready:true object cannot bypass opt-in config factory',async()=>{
+ let hit=0;
+ const forged={ready:true,projectRef:h.PROJECT,privateEnv:ENV};
+ await expectCode(h.hostedJwtAcceptance(forged,async()=>{hit++;return {};}),'HOSTED_QA_GATES_CLOSED');
+ assert.equal(hit,0);
+});
+test('26 · post-validation env mutation cannot swap keys or JWT',async()=>{
+ const changed={...ENV};
+ const sealed=h.configFromEnv(changed);
+ changed.QA_A_ACCESS_TOKEN='evil';changed.SUPABASE_PUBLISHABLE_KEY='sb_secret_wrong';
+ assert.equal(Object.isFrozen(sealed.privateEnv),true);
+ assert.equal(sealed.privateEnv.QA_A_ACCESS_TOKEN,ENV.QA_A_ACCESS_TOKEN);
+ assert.equal(sealed.privateEnv.SUPABASE_PUBLISHABLE_KEY,ENV.SUPABASE_PUBLISHABLE_KEY);
+ const api=mock();const r=await h.hostedJwtAcceptance(sealed,api.handler);
+ assert.equal(r.checks,24);
 });
