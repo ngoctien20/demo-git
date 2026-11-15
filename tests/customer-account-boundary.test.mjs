@@ -4,12 +4,12 @@ import fs from 'node:fs';
 import {mayOpenPanel} from '../assets/merchant-portal-policy.mjs';
 const load=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const html=load('merchant-portal.html'),js=load('assets/merchant-account-only.js'),build=load('scripts/build-auth-preview.mjs');
-test('Account portal has only profile, plan, billing, support and overview',()=>{
+test('Customer V13.5 portal has only overview orders profile subscription billing support',()=>{
   const tabs=[...html.matchAll(/data-panel="([^"]+)"/g)].map(m=>m[1]);
-  assert.deepEqual(tabs,['overview','profile','subscription','billing','support']);
+  assert.deepEqual(tabs,['overview','orders','profile','subscription','billing','support']);
 });
-test('Account portal does not expose Bot/CRM/Orders UI',()=>{
-  for(const name of ['data-panel="bots"','data-panel="orders"','data-panel="products"','data-panel="customers"','data-panel="reports"','data-panel="care"'])assert.ok(!html.includes(name),name);
+test('Customer account does not expose Bot technical CRM or product editor UI',()=>{
+  for(const name of ['data-panel="bots"','data-panel="products"','data-panel="customers"','data-panel="reports"','data-panel="care"'])assert.ok(!html.includes(name),name);
   assert.doesNotMatch(html,/assets\/merchant-portal\.js/);
 });
 test('Bot legacy panel is denied to all merchant membership roles',()=>{
@@ -37,6 +37,7 @@ test('Logout and authentication loss clear personal information',()=>{
 });
 test('Build bundles new account controller with allowlist only',()=>{
   assert.ok(build.includes("'assets/merchant-account-only.js'"));
+  assert.ok(build.includes("'assets/merchant-order-readonly.mjs'"));
   assert.ok(build.includes("'merchant-portal.html'"));
   assert.ok(!build.includes('service_role'));
 });
