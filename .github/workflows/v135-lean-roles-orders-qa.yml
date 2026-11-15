@@ -1,0 +1,76 @@
+name: TIEN404 V13.5 lean Customer Orders and Four-Level Role QA
+on:
+  push:
+    branches:
+      - work/v135-lean-roles-orders-staging-20261115
+    paths:
+      - 'merchant-portal.html'
+      - 'assets/merchant-account-only.js'
+      - 'assets/merchant-order-readonly.mjs'
+      - 'scripts/build-auth-preview.mjs'
+      - 'tests/customer-account-*'
+      - 'tests/customer-orders-readonly.test.mjs'
+      - 'qa/v135/**'
+      - 'docs/ai-handoff/V13_5_**'
+      - '.github/workflows/v135-lean-roles-orders-qa.yml'
+  pull_request:
+    paths:
+      - 'merchant-portal.html'
+      - 'assets/merchant-account-only.js'
+      - 'assets/merchant-order-readonly.mjs'
+      - 'scripts/build-auth-preview.mjs'
+      - 'tests/customer-account-*'
+      - 'tests/customer-orders-readonly.test.mjs'
+      - 'qa/v135/**'
+      - 'docs/ai-handoff/V13_5_**'
+      - '.github/workflows/v135-lean-roles-orders-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v135-source-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JS syntax
+        run: |
+          node --check assets/merchant-account-only.js
+          node --check assets/merchant-order-readonly.mjs
+          node --check qa/v135/platform-role-contract.cjs
+          node --check tests/customer-account-browser.cjs
+      - name: V13.5 auth-order-scope-role tests plus inherited
+        run: |
+          node --test tests/customer-orders-readonly.test.mjs tests/customer-account-boundary.test.mjs qa/v135/platform-role-contract.test.cjs
+          node --test tests/merchant-portal-v12-2.test.mjs tests/auth-helpers.test.mjs
+      - name: Strict Render Auth build (local output only)
+        run: |
+          node scripts/build-auth-preview.mjs
+          node --test tests/auth-preview-build.test.mjs
+  v135-mobile-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install temporary pinned Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Synthetic signed-in Shop A account and Orders mobile QA
+        run: |
+          python -m http.server 8080 >/tmp/v135-account-qa.log 2>&1 &
+          sleep 2
+          node tests/customer-account-browser.cjs
+      - name: Upload synthetic screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v135-account-orders-mobile-qa
+          path: qa-artifacts-account/
+          if-no-files-found: ignore
