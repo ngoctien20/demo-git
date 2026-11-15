@@ -5,6 +5,7 @@
 import {getAuthClient} from './auth-client.js';
 import {approvedMemberships,scopedTenantDisplay} from './auth-helpers.mjs';
 import {withDeadline} from './auth-runtime.mjs';
+import {loadShopOrders,canReadShopOrders} from './merchant-order-readonly.mjs';
 
 const byId=id=>document.getElementById(id);
 const statusNode=byId('merchant-status'),locked=byId('merchant-login'),
@@ -14,16 +15,17 @@ const statusNode=byId('merchant-status'),locked=byId('merchant-login'),
   refreshButton=byId('merchant-refresh'),logoutButton=byId('merchant-logout');
 const VIEWS=Object.freeze({
  overview:['Tổng quan tài khoản','Thông tin người dùng và tình trạng gói thuê bao.'],
+ orders:['Đơn hàng cửa hàng','Xem đơn thuộc cửa hàng đã xác minh. Thao tác thay đổi chờ backend an toàn.'],
  profile:['Thông tin cá nhân','Chỉ thông tin của tài khoản đã đăng nhập.'],
  subscription:['Gói đang sử dụng','Quyền sử dụng và thời hạn phải được xác minh từ hệ thống thuê bao.'],
  billing:['Thông tin thanh toán','Cập nhật thanh toán phải đi qua nhà cung cấp được phê duyệt.'],
  support:['Hỗ trợ & liên hệ','Nhân sự TIEN404 hỗ trợ cấu hình Bot và xử lý yêu cầu.']
 });
 const site='https://ngoctien20.github.io/demo-git/';
-let client=null,currentUser=null,shops=[],selected=null,currentView='overview',epoch=0,busy=false,lastChecked=0;
+let client=null,currentUser=null,shops=[],selected=null,currentView='overview',epoch=0,busy=false,lastChecked=0,orderViewSeq=0;
 function message(value,tone='info'){statusNode.textContent=value;statusNode.dataset.tone=tone;}
 function wipe(){
-  epoch++;currentUser=null;shops=[];selected=null;selector.replaceChildren();
+  epoch++;orderViewSeq++;currentUser=null;shops=[];selected=null;selector.replaceChildren();
   roleNode.textContent='';panel.replaceChildren();protectedBox.hidden=true;locked.hidden=false;
 }
 function node(tag,text,className){
@@ -48,6 +50,7 @@ function disabled(where,label,note){
 }
 function show(view,focus=false){
   if(!VIEWS[view]||!currentUser||!selected||protectedBox.hidden)return;
+  const viewSeq=++orderViewSeq;
   currentView=view;panel.replaceChildren();
   [heading.textContent,subheading.textContent]=VIEWS[view];
   for(const button of nav.querySelectorAll('[data-panel]')){
@@ -55,7 +58,37 @@ function show(view,focus=false){
     else button.removeAttribute('aria-current');
   }
   const planUnverified='Chưa kết nối nguồn xác minh Subscription/Billing. Không hiển thị gói, ngày hết hạn hoặc thanh toán giả.';
-  if(view==='overview'){
+  if(view==='orders'){
+    const c=block('Đơn hàng của cửa hàng','Chỉ đọc từ Supabase đã đăng nhập, chịu kiểm tra RLS. Không cho sửa giá hoặc tồn kho.');
+    if(!canReadShopOrders(selected.role)){
+      info(c,'Tài khoản chưa có quyền xem đơn hàng. Vui lòng liên hệ chủ cửa hàng hoặc TIEN404.');
+    }else{
+      const boundShop=selected.id, boundUser=currentUser.id, boundEpoch=epoch;
+      const result=node('div','Đang tải danh sách đơn đã xác minh…','mp-info');
+      c.append(result);
+      loadShopOrders({client,tenantId:boundShop,role:selected.role}).then(orders=>{
+        if(viewSeq!==orderViewSeq||boundEpoch!==epoch||selected?.id!==boundShop||
+           currentUser?.id!==boundUser||protectedBox.hidden)return;
+        result.replaceChildren();
+        if(!orders.length){
+          result.append(node('p','Chưa có đơn hàng trong cửa hàng được chọn.'));
+        }else for(const order of orders){
+          const card=node('article',null,'mp-card');
+          card.append(node('h3','Mã đơn: '+order.id));
+          card.append(node('p','Trạng thái đơn: '+order.statusLabel));
+          card.append(node('p','Tổng giá trị đơn: '+order.totalLabel));
+          card.append(node('p','Thời gian: '+order.createdLabel));
+          result.append(card);
+        }
+        result.append(node('p','Trạng thái đơn không phải xác minh giao dịch thanh toán. Tiền thực thu cần đối soát với nguồn thanh toán chính thức.','mp-info'));
+        disabled(c,'Xác nhận / thay đổi trạng thái đơn','Chưa có API ghi đơn, kiểm tra phiên bản, quyền và audit được nghiệm thu');
+      }).catch(()=>{
+        if(viewSeq!==orderViewSeq||boundEpoch!==epoch||selected?.id!==boundShop||
+           currentUser?.id!==boundUser||protectedBox.hidden)return;
+        result.textContent='Không xác minh được danh sách đơn. Dữ liệu vẫn bị khóa; không hiển thị mẫu thay thế.';
+      });
+    }
+  }else if(view==='overview'){
     const c=block('Tài khoản đang đăng nhập');
     info(c,'Email: '+(currentUser.email||'Không có email được xác minh'));
     info(c,'Cửa hàng được cấp quyền: '+selected.name);
@@ -63,7 +96,7 @@ function show(view,focus=false){
     const s=block('Gói dịch vụ');info(s,planUnverified);
     const next=node('button','Xem thông tin gói','mp-action');next.type='button';next.addEventListener('click',()=>show('subscription',true));s.append(next);
     const help=block('Vận hành Bot & đơn hàng');
-    info(help,'Nhân sự TIEN404 cấu hình và quản lý Bot. Chức năng tiếp nhận, xử lý đơn thuộc hệ thống bán hàng và kênh đã được cấp quyền, không phải trang tài khoản này.');
+    info(help,'Nhân sự TIEN404 cấu hình Bot, sản phẩm và giá. Bạn có thể xem đơn thuộc shop tại mục Đơn hàng; chức năng xác nhận đơn sẽ chỉ mở sau khi backend được nghiệm thu.');
   }else if(view==='profile'){
     const c=block('Hồ sơ cá nhân');
     info(c,'Email xác thực: '+(currentUser.email||'Không có dữ liệu'));

@@ -8,10 +8,10 @@ const fakeAuth=String.raw`export async function getAuthClient(){
  auth:{getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),
  signOut:async()=>({error:null})},
  from(table){return {
- select(){return this;},eq(){return this;},in(){return this;},
- limit(){return Promise.resolve(table==='tenant_memberships'
- ? {data:[{tenant_id:'tenant-a',user_id:user.id,active:true,role:'owner'}],error:null}
- :{data:[{id:'tenant-a',name:'Shop A QA'}],error:null});}
+ select(){return this;},eq(){return this;},in(){return this;},order(){return this;},
+ limit(){return Promise.resolve(table==='orders'?{data:[{id:'30000000-0000-4000-8000-000000000003',tenant_id:'10000000-0000-4000-8000-000000000001',status:'pending',total_vnd:159000,created_at:'2026-11-15T06:00:00Z'}],error:null}:table==='tenant_memberships'
+ ? {data:[{tenant_id:'10000000-0000-4000-8000-000000000001',user_id:user.id,active:true,role:'owner'}],error:null}
+ :{data:[{id:'10000000-0000-4000-8000-000000000001',name:'Shop A QA'}],error:null});}
  };}};
 }`;
 const widths=[360,390,430,768,1280];
@@ -23,12 +23,17 @@ async function run(browser,width){
  await p.goto(base+'/merchant-portal.html',{waitUntil:'networkidle'});
  await p.waitForFunction(()=>document.getElementById('merchant-protected')?.hidden===false,{timeout:12000});
  const ids=await p.locator('#merchant-nav button[data-panel]').evaluateAll(els=>els.map(x=>x.dataset.panel));
- assert.deepEqual(ids,['overview','profile','subscription','billing','support']);
+ assert.deepEqual(ids,['overview','orders','profile','subscription','billing','support']);
  const body=await p.locator('body').innerText();
  assert.doesNotMatch(body,/Sản phẩm & tồn kho|Khách hàng & lịch sử mua|AI Bot & kênh bán|Đơn chờ xử lý/);
  assert.match(body,/Shop A QA/);
  const scroll=await p.evaluate(()=>({doc:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(scroll.doc<=scroll.viewport+1,'overflow '+JSON.stringify(scroll));
+ await p.locator('#merchant-nav button[data-panel="orders"]').click();
+ await p.getByText('Mã đơn: 30000000-0000-4000-8000-000000000003').waitFor();
+ assert.match(await p.locator('#merchant-panel').innerText(),/Tổng giá trị đơn: 159.000/);
+ assert.match(await p.locator('#merchant-panel').innerText(),/chưa đối soát|không phải xác minh giao dịch/i);
+ assert.ok(await p.locator('button:has-text("Xác nhận / thay đổi trạng thái đơn")').isDisabled());
  await p.locator('#merchant-nav button[data-panel="profile"]').click();
  assert.match(await p.locator('#merchant-panel').innerText(),/qa-owner@example.test/);
  assert.ok(await p.locator('button:has-text("Chỉnh sửa thông tin cá nhân")').isDisabled());
