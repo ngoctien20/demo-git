@@ -1,0 +1,40 @@
+{
+  "kind": "TIEN404_N8N_ACTIVE_PUBLISHED_VERSION_DIFFERENCES",
+  "version": "V14.5Z-LIVE03E",
+  "audit_date": "2026-11-16",
+  "source": "n8n connector get_workflow_details (read-only)",
+  "active_workflows_inspected": 19,
+  "same_draft_and_published": 15,
+  "different_draft_and_published": 4,
+  "warning": "Metadata-only version audit, NOT an exported JSON backup or restore test. Never overwrite existing Published version without explicit authorization.",
+  "different": [
+    {
+      "id": "fDB9dvs1qPPVt9Sp",
+      "name": "AI SALES - Manage Order",
+      "draft_version_id": "2e8786fd-e5c5-410f-9d6c-655653c32278",
+      "published_version_id": "137d5689-40c5-4147-9bbc-b22809ad5908",
+      "node_count": 10
+    },
+    {
+      "id": "U2DJsxzSYPH5hRop",
+      "name": "AI SALES - Revenue Report",
+      "draft_version_id": "e4e16b90-1c66-48b9-a9e0-9d8fb6dbc6df",
+      "published_version_id": "978b5a8d-d47b-4783-b27e-96fbc96d5262",
+      "node_count": 5
+    },
+    {
+      "id": "BkAi6TVUKAjCnI7v",
+      "name": "AI SALES - Update Order.",
+      "draft_version_id": "3bd7043f-78e7-4a1c-93e5-2bc9d60ac767",
+      "published_version_id": "93cf227a-ab8a-42c6-9185-7ec44f7aeb00",
+      "node_count": 10
+    },
+    {
+      "id": "KrSn4DNR9ALX5ng4",
+      "name": "Create Order Tool (AI_SALES_DEMO)",
+      "draft_version_id": "af9ee686-2a9f-483e-9622-6e449500ac5e",
+      "published_version_id": "4740251a-cd01-4f7f-b8e1-e300a8393151",
+      "node_count": 8
+    }
+  ]
+}
