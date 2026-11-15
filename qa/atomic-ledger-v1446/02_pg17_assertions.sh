@@ -128,7 +128,7 @@ check "7|0" \
 check "cancelled_replay" \
  "SET tien404.v1446_actor='$OB';SELECT qa_v1446.cancel_order('$TA','$SB','$ORDER_B')" \
  "double cancel causes no duplicate release"
-check "1|1|1" \
+check "2|1|1" \
  "select count(*) filter(where kind='RESERVE'),count(*) filter(where kind='FULFIL'),count(*) filter(where kind='RELEASE') from qa_v1446.inventory_ledger where order_id='$ORDER_A' or order_id='$ORDER_B'" \
  "ledger event partition expected only single relevant kinds"
 echo "V1446_FUNCTIONAL_SQL_CHECKS=$passed"
