@@ -50,7 +50,9 @@ test('Strict Render preview allows only request assets and keeps private SQL out
  assert.equal((build.match(/'tester-request.html'/g)||[]).length,3);
  assert.ok(build.includes("'assets/tester-request.js'"));
  assert.ok(read('tester.html').includes('href="tester-request.html"'));
- assert.ok(read('account.html').includes('href="tester-request.html"'));
+ // Customer navigation is intentionally separate from internal invitation-only Tester.
+ assert.ok(!read('account.html').includes('href="tester-request.html"'));
+ assert.ok(read('tester.html').includes('href="tester-request.html"'));
  const dir=new URL('../auth-preview-dist/',import.meta.url);
  if(fs.existsSync(dir)){
   assert.ok(fs.existsSync(new URL('tester-request.html',dir)));

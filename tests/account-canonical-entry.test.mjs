@@ -14,9 +14,10 @@ test('no legacy merchant CRM, Bot, Orders editor or Supabase request runs on ent
   assert.match(html,/không quản lý bot, giá, tồn kho/i);
   assert.doesNotMatch(html,/data-panel="bots"|data-panel="products"/);
 });
-test('private Tester and safe login routes remain reachable separately',()=>{
-  for(const path of ['tester.html','tester-request.html','login.html','merchant-portal.html'])
+test('customer account entry hides internal Tester routes and retains login and portal',()=>{
+  for(const path of ['login.html','merchant-portal.html'])
     assert.ok(html.includes('href="'+path+'"'),path);
+  assert.doesNotMatch(html,/href="tester(?:-request|-admin)?\.html"|Trung tâm thử nghiệm|Đăng ký quyền Tester/i);
   assert.match(html,/noindex,nofollow/);
 });
 test('retired technical controller is preserved in source but NOT shipped in preview',()=>{
@@ -33,6 +34,18 @@ test('canonical portal is still Supabase Auth/RLS scoped and no write is enabled
   assert.ok(c.includes("disabled(c,'Xác nhận / thay đổi trạng thái đơn'"));
   assert.doesNotMatch(c,/\.insert\(|\.upsert\(|\.delete\(|\.update\(/);
 });
+test('public customer login and portal do not advertise internal Tester pages',()=>{
+  const customer=[read('account.html'),read('login.html'),read('merchant-portal.html')];
+  for(const html of customer){
+    assert.doesNotMatch(html,/href=["'](?:\/)?tester(?:-admin|-request)?\.html(?:[?#][^"']*)?["']/i);
+  }
+  // Internal QA pages are still shipped as independently authenticated staging tools.
+  assert.match(read('tester.html'),/tester-portal\.js/);
+  assert.match(read('tester-request.html'),/tester-request\.js/);
+  assert.match(build,/'tester\.html'/);
+  assert.match(build,/'tester-request\.html'/);
+});
+
 test('no hard-coded service session, secrets or opaque platform roles',()=>{
  assert.doesNotMatch(html,/sb_secret_|service_role|Bearer\s+|Authorization:|CLIENT_SECRET|\bplatform_owner\b/i);
  assert.doesNotMatch(html,/target="_blank"/);
