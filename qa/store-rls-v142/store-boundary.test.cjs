@@ -169,3 +169,16 @@ test('Authorization errors returned as stable codes',()=>{
  const r=b.redactServerError(new b.AccessError('STORE_ASSIGNMENT_NOT_AUTHORIZED',403));
  assert.equal(r.error,'STORE_ASSIGNMENT_NOT_AUTHORIZED');assert.equal(r.status,403);
 });
+
+test('Marker-only forged context cannot call Knowledge backend',async()=>{
+ const forged={source:'SERVER_AUTHENTICATED_STORE_SESSION',
+  user_id:'user-qa-001',tenant_id:'tenant-a',store_id:'shop-a'};
+ await rejects(b.readCustomerKnowledge({context:forged,question:'Tên cửa hàng?',
+  deps:repo('A'),now:fixtures.fixedNow}),'STORE_CONTEXT_REQUIRED');
+});
+test('Cloning valid scoped session strips authorization identity',async()=>{
+ const context=await getContext('A');
+ const clone={...context};
+ await rejects(b.readCustomerKnowledge({context:clone,question:'Tên cửa hàng?',
+   deps:repo('A'),now:fixtures.fixedNow}),'STORE_CONTEXT_REQUIRED');
+});
