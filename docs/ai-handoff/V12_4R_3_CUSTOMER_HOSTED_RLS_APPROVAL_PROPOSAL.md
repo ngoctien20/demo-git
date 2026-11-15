@@ -63,3 +63,12 @@ CREATE POLICY customer_qa_b_bot_read ON tien404_r1_qa.shop_bots FOR SELECT TO ti
 - Restore schema grants/policies from pre-change checkpoint if drift appears. No rollback required today because **nothing was applied**.
 
 Current status: PROPOSED/BLOCKED. Only source-side opt-in candidate and isolated PostgreSQL QA may proceed without approval.
+
+
+## Transaction boundary review — additional pre-approval check
+
+Candidate `qa/commerce/v124-core/transactional-catalog.cjs` now leases a scoped backend-only connection, checks role+RLS+privileges and executes the catalog read in the **same read-only transaction**, then releases or discards the connection on rollback failure. This does **not** provision a hosted role or backend login credential. It refuses to accept another module's borrowed `client`; no dynamic SQL `SET ROLE` is used.
+
+A single PostgreSQL login may not transparently access separate `NOLOGIN` per-shop roles; the credential and role-membership/switching design is still **BLOCKED** and MUST be reviewed independently. The disposable PG17 tests use separate `LOGIN` roles with isolated pools and synthetic data, not a proposed hosted deployment pattern.
+
+Before deployment, decide whether to use separately authorized connection identities, or a backend-only transaction-bound `SET LOCAL ROLE` bridge with reviewed membership/grants, pooler compatibility, and complete rollback tests. Do not expose that decision to browser or channel inputs. In either case, ensure one owner of transaction across Customer session + Catalog ports; never borrow an unrelated session client. No credentials or role grants were modified.
