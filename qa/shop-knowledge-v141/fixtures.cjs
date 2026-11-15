@@ -10,8 +10,8 @@ function binding(letter){const s=S[letter];return {source:'TRUSTED_TENANT_RESOLV
 function entry(letter,topic,value,opts={}){
  const s=S[letter],version='knowledge-'+letter.toLowerCase()+'-1';
  return {entry_id:'e-'+letter.toLowerCase()+'-'+topic.replace(/\./g,'-')+(opts.suffix||''),
-  tenant_id:s.tenant_id,store_id:s.store_id,type:topic.startsWith('policy.')?'policy':'profile',
-  topic,value,visibility:opts.visibility||'PUBLIC',state:opts.state||'PUBLISHED',
+  tenant_id:s.tenant_id,store_id:s.store_id,type:topic==='faq'?'faq':(topic.startsWith('policy.')?'policy':'profile'),
+  topic,value,question:topic==='faq'?opts.question:undefined,visibility:opts.visibility||'PUBLIC',state:opts.state||'PUBLISHED',
   version:opts.version||version,source_ref:'qa-source-'+letter.toLowerCase(),
   source_status:opts.source_status||'VERIFIED',
   merchant_approved:opts.merchant_approved!==undefined?opts.merchant_approved:true,
@@ -30,7 +30,8 @@ function snapshot(letter,options={}){
  entry(letter,'policy.delivery',s.delivery),
  entry(letter,'policy.returns',s.returns),
  entry(letter,'policy.payments',s.payments),
- entry(letter,'policy.wholesale',s.wholesale)
+ entry(letter,'policy.wholesale',s.wholesale),
+ entry(letter,'faq','FAQ gói quà của Shop '+letter+' chưa có dịch vụ xác thực.',{question:'Có gói quà không?'})
  ];
  return {source:'TRUSTED_KNOWLEDGE_READBACK',tenant_id:s.tenant_id,store_id:s.store_id,
    release_state:options.release_state||'PUBLISHED',version,revision:1,entries};
