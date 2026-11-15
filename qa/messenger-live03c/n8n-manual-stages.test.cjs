@@ -105,7 +105,7 @@ test('14 unknown scenario cannot accidentally run a success scenario',()=>{
 test('15 single QA scenario selection is reproducible',()=>{
  for(const r of all){
  const [single]=pipeline(r.scenario);
- if(['CONFIRM_A','REPLAY_A','BLOCK_OTHER_SENDER_CONFIRM'].includes(r.scenario)){
+ if(['CONFIRM_A','REPLAY_A'].includes(r.scenario)){
    // Test depends on preceding PREPARE_A in ALL; isolated execution must fail closed.
    assert.equal(single.actualState,'DENIED');
    assert.equal(single.status,'FAIL');
