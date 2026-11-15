@@ -1,0 +1,73 @@
+-- TIEN404 V14.8-01: REVIEW-ONLY SCHEMA DESIGN SKETCH.
+-- NOT A DEPLOYABLE MIGRATION. NO SQL EXECUTED ON HOSTED SUPABASE.
+-- Every DDL statement below intentionally prefixed with "-- " to prevent
+-- accidental execution. Do not remove comments or run without a separate
+-- owner-approved backup restore, exact FOUR ROW ownership mapping, JWT/RLS
+-- audit, role/GRANT review and independent environment certification.
+--
+-- VERIFIED EXISTING: public.tenants(id uuid), tenant_memberships,
+-- products/orders/conversations currently tenant-scoped; no canonical
+-- public.stores, store_memberships or store_id on those tables.
+-- VERIFIED QA-ONLY: tien404_r1_qa.tenant_identity_map, shop_bots,
+-- owner_bindings, catalog. They are NOT trusted canonical stores.
+--
+-- PROPOSED FUTURE REVIEW — public canonical Stores:
+-- create table public.stores (
+--   id uuid primary key default gen_random_uuid(),
+--   tenant_id uuid not null references public.tenants(id),
+--   slug text not null,
+--   display_name text not null,
+--   status text not null check (status in ('active','suspended','disabled')),
+--   config_version bigint not null default 1,
+--   created_at timestamptz not null default now(),
+--   unique (tenant_id,slug),
+--   unique (tenant_id,id)
+-- );
+-- alter table public.stores enable row level security;
+-- alter table public.stores force row level security;
+--
+-- Proposed canonical Store migration requires independent backfill and
+-- cross-store FK/RLS review. Do not add null/default Store IDs blindly.
+-- A future store_memberships table must authorize user_id to store_id
+-- explicitly and use tenant_id + store_id composite references.
+--
+-- PROPOSED FUTURE REVIEW — PRIVATE identity schema:
+-- create schema if not exists identity_private;
+-- create table identity_private.channel_bindings (
+--   id uuid primary key default gen_random_uuid(),
+--   tenant_id uuid not null,
+--   store_id uuid not null,
+--   channel text not null check (channel in
+--     ('messenger','zalo_bot','zalo_oa','website_widget')),
+--   provider text not null,
+--   environment text not null,
+--   provider_account_ref text not null,
+--   provider_bot_ref text not null,
+--   bot_profile_id uuid not null,
+--   status text not null check (status in ('active','revoked','disabled')),
+--   binding_version bigint not null default 1,
+--   config_version bigint not null default 1,
+--   verified_at timestamptz,
+--   revoked_at timestamptz,
+--   created_at timestamptz not null default now(),
+--   foreign key (tenant_id,store_id)
+--     references public.stores(tenant_id,id)
+-- );
+-- create unique index channel_binding_active_key
+--   on identity_private.channel_bindings
+--   (provider,environment,channel,provider_account_ref,provider_bot_ref)
+--   where status = 'active';
+-- alter table identity_private.channel_bindings enable row level security;
+-- alter table identity_private.channel_bindings force row level security;
+--
+-- NOTE: external_identities should be uniquely scoped by channel_binding_id
+-- and provider_user_ref, and carry only consent-verified internal customer_id
+-- links. Do not merge identities by unverified phone or shared display_name.
+-- Write-once audit metadata should avoid raw customer PII, token and message.
+--
+-- SECURITY REVIEW GATE: do not expose identity_private via Supabase Data API.
+-- Do not create public SECURITY DEFINER RPC without a separately reviewed
+-- authorization proof; explicit EXECUTE grants, immutable search_path and
+-- public/anon/authenticated role checks are required.
+--
+-- NO GRANT / ALTER POLICY / BACKFILL / MIGRATION APPLIED.

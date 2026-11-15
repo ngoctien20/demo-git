@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tien404.ai/contracts/v14.8/identity-resolve-v1.schema.json",
+  "title": "TIEN404 Unified Identity Resolve — QA contract v1.0.0 (No-Send)",
+  "description": "Structure only. An event with correct shape is NOT authenticated by this JSON schema. It must arrive via a provider-specific verified adapter and private internal transport. No real provider attestation exists in V14.8 offline QA.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "trace_id",
+    "channel",
+    "provider",
+    "environment",
+    "provider_account_ref",
+    "provider_bot_ref",
+    "provider_user_ref",
+    "provider_conversation_ref",
+    "event_type",
+    "occurred_at",
+    "text"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "channel": {
+      "enum": [
+        "messenger",
+        "zalo_bot",
+        "zalo_oa",
+        "website_widget"
+      ]
+    },
+    "provider": {
+      "enum": [
+        "meta",
+        "zalo",
+        "firstparty"
+      ]
+    },
+    "environment": {
+      "const": "qa"
+    },
+    "provider_account_ref": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "provider_bot_ref": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "provider_user_ref": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120,
+      "description": "Private input, never copied to public resolver output."
+    },
+    "provider_conversation_ref": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "event_type": {
+      "const": "message"
+    },
+    "occurred_at": {
+      "type": "integer"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "channel": {
+            "const": "messenger"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provider": {
+            "const": "meta"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "channel": {
+            "enum": [
+              "zalo_bot",
+              "zalo_oa"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provider": {
+            "const": "zalo"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "channel": {
+            "const": "website_widget"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provider": {
+            "const": "firstparty"
+          }
+        }
+      }
+    }
+  ],
+  "x-tien404-qa-security": {
+    "originProof": "synthetic HMAC signature over exact normalized event bytes; DOES NOT establish actual Meta, Zalo, or Website authentication",
+    "bindingOwner": "backend private registry, not client-provided tenant/store",
+    "noSend": true,
+    "liveProvider": false,
+    "orderWrites": false,
+    "tenantStoreClaimsInInputForbidden": true,
+    "customerIdentityAutolinkAcrossChannels": false
+  }
+}

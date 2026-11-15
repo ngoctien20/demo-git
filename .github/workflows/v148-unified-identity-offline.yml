@@ -1,0 +1,80 @@
+name: TIEN404 V14.8 Unified Identity Contract + Routing QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v148-unified-identity-fast-routing-offline-20261116
+    paths:
+      - 'qa/v148/**'
+      - 'docs/ai-handoff/V14_8_*'
+      - '.github/workflows/v148-unified-identity-offline.yml'
+  pull_request:
+    paths:
+      - 'qa/v148/**'
+      - 'docs/ai-handoff/V14_8_*'
+      - '.github/workflows/v148-unified-identity-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node syntax and module tests
+        run: |
+          node --check qa/v148/unified-identity-resolver.cjs
+          node --check qa/v148/unified-identity-resolver.test.cjs
+          node --test qa/v148/unified-identity-resolver.test.cjs
+          node --test qa/v148/v147-studio-identity-compat.test.cjs
+          node --test qa/v148/n8n-manual-qa-stages.test.cjs
+      - name: No network, customer data or provider send capabilities
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v148/unified-identity-resolver.cjs').read_text()
+          for s in ['fetch(', 'axios(', 'graph.facebook.com', 'ngoctien20.app.n8n.cloud',
+             'createClient(', 'executeWorkflow(', 'process.env.', 'supabase.from(', 'https://']:
+              assert s not in src, s
+          for s in ['can_send:false','provider_sends:0','order_writes:0','hosted_writes:0',
+            "mode==='OFFLINE_SYNTHETIC_NO_SEND'",'actualMetaZaloSignaturesVerified:false',
+            'durableReplay:false','productionReady:false']:
+              assert s in src,s
+          print('PASS: Identity library has no network, database, provider send, credentials or live access')
+          PY
+      - name: CPU-only 1100 request warm/cold benchmark
+        run: node qa/v148/benchmark-offline.cjs > v148_benchmark.json
+      - name: Print reproducible CPU-only benchmark measurements
+        run: cat v148_benchmark.json
+      - name: Benchmark JSON correctness and read-only invariants
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('v148_benchmark.json'))
+          assert d['sample_count'] >= 1000
+          assert len(d['scenarios']) >= 7
+          for s in d['scenarios']:
+              assert s['error_count']==0,s
+              assert s['p95_ms'] >= s['p50_ms'] and s['p99_ms'] >= s['p95_ms']
+              assert s['provider_messages_sent']==0 and s['hosted_writes']==0 and s['real_llm_requests']==0
+          print('PASS: reproducible synthetic benchmark output (not actual live provider SLO)')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v148-identity-synthetic-cpu-benchmark
+          path: v148_benchmark.json
+  inherited-v147:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retain V14.7 custom bot studio + rich multi-channel experience regressions
+        run: |
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+          node --test qa/v147-custom-studio/messenger-adapter-inheritance.test.cjs
