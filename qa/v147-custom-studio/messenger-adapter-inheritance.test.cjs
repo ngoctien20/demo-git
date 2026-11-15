@@ -38,7 +38,7 @@ test('03 signed postback cannot be verified with another shop binding',()=>{
  const payload=r.body.message.attachment.payload.elements[0].buttons[0].payload;
  const ok=adapter.verifyAction({trusted:a,secret:SECRET,payload,now});
  assert.equal(ok.storeId,a.storeId);assert.equal(ok.allowedMutation,false);
- assert.throws(()=>adapter.verifyAction({trusted:b,secret:SECRET,payload,now),/ACTION_SIGNATURE_INVALID/);
+ assert.throws(()=>adapter.verifyAction({trusted:b,secret:SECRET,payload,now}),/ACTION_SIGNATURE_INVALID/);
 });
 test('04 quick reply supports safe action enum not arbitrary mutation',()=>{
  const r=adapter.buildQuickReplies({trusted:trusted('B'),secret:SECRET,text:'Mời chọn',choices:[
