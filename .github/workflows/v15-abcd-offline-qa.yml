@@ -1,0 +1,49 @@
+name: TIEN404 V15.0 A-B-C-D Offline Integration QA
+
+on:
+  push:
+    branches:
+      - work/v1503-08-agent-skills-router-testlab-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-commerce-core/**'
+      - 'qa/v15-test-lab/**'
+      - 'qa/v15-model-lab/**'
+      - 'qa/v15-agent-core/**'
+      - '.github/workflows/v15-abcd-offline-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v15-abcd-offline:
+    name: A-B-C-D Synthetic / NO SEND QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: A — Universal Core no-send/identity regression
+        run: node --test qa/v15-agent-core/universal-agent-core.test.cjs
+      - name: B-C — Business Skills and Model Router QA
+        run: node --test qa/v15-commerce-core/offline-orchestrator.test.cjs
+      - name: C — Model pricing and budget guard offline
+        run: node --test qa/v15-model-lab/cost-simulator.test.cjs
+      - name: D — Browser Lab contract QA
+        run: node --test qa/v15-test-lab/test-lab.test.cjs
+      - name: Enforce no paid API, provider sends, or production mutations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=[Path('qa/v15-commerce-core/business-skills-registry.cjs'),Path('qa/v15-commerce-core/offline-orchestrator.cjs'),Path('qa/v15-commerce-core/smart-model-router.cjs'),Path('qa/v15-test-lab/index.html')]
+          for p in src:
+              content=p.read_text(encoding='utf-8')
+              for forbidden in ('new OpenAI(', 'axios.post(', 'fetch(', 'sendMessage(', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY', 'DELETE FROM public.', 'UPDATE public.', 'INSERT INTO public.'):
+                  assert forbidden not in content,(str(p),forbidden)
+          assert '<script src="https://' not in src[-1].read_text(encoding='utf-8')
+          print('PASS: no provider API, send, credential or customer data writes')
+          PY
