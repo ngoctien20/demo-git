@@ -5,10 +5,12 @@ on:
       - work/v145-live03b-trusted-no-write-dispatch-gate-20261116
     paths:
       - 'qa/messenger-live03b/**'
+      - 'docs/ai-handoff/V14_5_LIVE03B_*'
       - '.github/workflows/v145-live03b-no-write-gateway.yml'
   pull_request:
     paths:
       - 'qa/messenger-live03b/**'
+      - 'docs/ai-handoff/V14_5_LIVE03B_*'
       - '.github/workflows/v145-live03b-no-write-gateway.yml'
   workflow_dispatch:
 permissions:
