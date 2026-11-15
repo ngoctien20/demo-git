@@ -135,3 +135,11 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - CI for source after new 14-case Worker regression run 43741753066 **203/203 PASS**.
 - Real provider Bot→Shop→Owner and Auto top-up/current account-wide credit/money ceiling still **BLOCKED**; no real sends, no actual model inference, no customer/Orders/billing/credential/production changes.
 - Full evidence + rollback `docs/ai-handoff/TIEN404_V14_5Z_LIVE03C_HOSTED_BUDGET_GATE.md`.
+
+## 17. LIVE03D — server-only Bot Identity provenance and Gateway trial risk (2026-11-16 JST)
+- n8n Cloud Gateway credit page read directly from connected browser tab: $0.59 / $2 free credits updated Nov 16 02:35 JST; 7-day $1.20 spend, last-7-day daily Nov 9 $1.00, Nov 10 $0.07, Nov 11 $0.13, Nov 14 $0.0026, Nov 15 $0.0001. n8n trial banner says '7 days left', operational renewal risk. Account-specific Auto top-up still NOT visible.
+- Official n8n docs clarify free trial can use Gateway credits but cannot top up until paid upgrade; don't infer account auto-topup switch or modify subscription. Exact n8n `gpt-5.4-nano` price $0.20/M input, $1.25/M output remains unchanged.
+- Official Zalo `getMe` response returns `result.id` and `account_name`. Current staging gateway sanitizer exposes only valid token boolean; Bot ID is still unavailable to verifier. Registry still 2 `zalo_bot_fixture / synthetic_qa / dry_run` rows, Owner allowlist status only, no provider pair proof.
+- New **SOURCE ONLY** `qa/zalo-live-v145z/live03d-trusted-identity-preflight.cjs` requires server-owned authenticated `getMe`, exactly one verified real Bot→Shop B mapping and one independently verified Owner association, HMAC digests only; always `can_send:false`, `can_promote_registry:false`.
+- 31 LIVE03D offline negative tests PASS; GitHub CI 43742910640 **234/234 PASS**. No n8n workflow, Cloudflare Worker, D1, customer data, Bot Token, credential, billing or production writes in LIVE03D.
+- Full checkpoint `docs/ai-handoff/TIEN404_V14_5Z_LIVE03D_BOT_ID_TRUST_AND_GATEWAY_TRIAL.md`. Real owner/provider pair and account monetary certifications remain BLOCKED. LIVE ZALO NO-GO.
