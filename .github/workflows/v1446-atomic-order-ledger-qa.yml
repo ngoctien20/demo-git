@@ -51,6 +51,17 @@ jobs:
           bash -n qa/atomic-ledger-v1446/02_pg17_assertions.sh
       - name: Run actual PostgreSQL 17 order and inventory ledger assertions
         run: bash qa/atomic-ledger-v1446/02_pg17_assertions.sh
+      - name: Run genuine concurrent PostgreSQL sessions — last-stock and duplicate-key race
+        run: |
+          bash -n qa/atomic-ledger-v1446/03_pg17_concurrency.sh
+          bash qa/atomic-ledger-v1446/03_pg17_concurrency.sh
+      - name: Publish safe operator-facing QA summary
+        if: success()
+        run: |
+          echo '## TIEN404 V14.4.6 — PostgreSQL 17 thử nghiệm' >> "$GITHUB_STEP_SUMMARY"
+          echo '✅ Request không giữ kho; merchant accept giữ kho; fulfil trừ kho; cancel giải phóng phần giữ.' >> "$GITHUB_STEP_SUMMARY"
+          echo '✅ Chạy 2 phiên PostgreSQL thật đồng thời: không bán vượt tồn kho, không tạo đơn trùng cùng request_key.' >> "$GITHUB_STEP_SUMMARY"
+          echo '🔒 CHỈ CI DATABASE. Không tác động Supabase, n8n, Zalo/Messenger hay dữ liệu khách hàng.' >> "$GITHUB_STEP_SUMMARY"
   source-and-regression:
     name: Static hard-stop + inherited 579 offline safety tests
     runs-on: ubuntu-24.04
