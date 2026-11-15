@@ -74,3 +74,11 @@ Owner should open the staging URL, run 12/12 QA, complete at least 8 acceptance 
 - **G1 = ACCEPTED (USER_SELF_REPORT, SYNTHETIC_ONLY)**; **G0 = VERIFIED**, **G2–G5 remain BLOCKED**. Do not call G1 real provider commerce acceptance.
 - Sanitized acceptance receipt and SHA fingerprint: `docs/ai-handoff/TIEN404_V14_5Z_UAT01_OWNER_ACCEPTANCE_8_OF_8.md`. Source file deliberately not copied to public GitHub.
 - Next G2 step is to independently attest the real immutable Zalo provider Bot ID and approved Shop B/Owner QA association in a trusted server-only isolated staging component; read-only provider verification and QA possible, but no credentials, Published webhook modifications or real sends without specific approval. Existing synthetic registry must not be promoted to verified.
+
+## G2 progress after G1 synthetic owner signoff — 2026-11-16 JST
+- G1 remains `ACCEPTED_BY_USER_SELF_REPORT / SYNTHETIC_OFFLINE_UAT` supported by 8/8 submitted checklist, CI 316/316 and hosted n8n execution 3864. This does NOT change status of real Zalo or real Commerce.
+- G2.0 real Zalo getMe token validity and expected webhook verified read-only, n8n executions **3869** and **3870**, no sends/config changes.
+- G2.1–G2.4 real Bot ID, server Shop B mapping, independent Owner/merchant consent and real trusted ingress **BLOCKED**. Owner allowlist expiry **2026-11-20 22:17:32.511 JST**; do not reuse expired allowlist as proof.
+- New offline 4-root signed provenance + durable replay candidate: 45/45 PASS; standalone WebCrypto provider HMAC/P256 signer adapter: 18/18 PASS. GitHub CI 43753823368 **379/379 PASS**, no live credential access or deployment. Source is NOT a Zalo-signed certificate or deployed provider identity service.
+- G2 review requires separate approval before any change to credential-bound Worker or signer secret. The existing Worker /v1/bot-check only shows boolean, and Published ingress still synthetic; do not grant G4 send permissions as a result of source QA.
+- Detailed G2 checkpoint: `docs/ai-handoff/TIEN404_V14_5Z_G2_BOT_SHOP_OWNER_TRUST_GATE_CHECKPOINT.md`.
