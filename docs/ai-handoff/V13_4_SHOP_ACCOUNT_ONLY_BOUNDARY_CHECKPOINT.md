@@ -44,3 +44,18 @@ No Render deployment, Cloudflare/Access policy, DB migration, RLS, payment, cred
 Close/revert PR #73; preserve V12.5 original branch and existing Render deployment, all CRM/Order/Bot source and data. No database rollback required because no mutations were made.
 
 Status: IMPLEMENTED as isolated source, TESTED only under CI evidence. NOT RELEASED; live Render screenshot can still show old portal.
+
+
+## QA evidence (verified)
+
+- Tested code HEAD: `870dd11d59ea2d321b48c998f7a32dd949aa05cd`.
+- GitHub Actions PR run `43680554295`: `account-source` SUCCESS and `account-browser` SUCCESS.
+  - Node source/legacy/account contract: 28/28 PASS; independent preview/build contracts: 13/13 PASS.
+  - Chromium simulated Auth at 360/390/430/768/1280 px: 5/5 PASS; zero unexpected writes in tested flows.
+  - Screenshot artifact: https://github.com/ngoctien20/demo-git/actions/runs/43680554295/artifacts/14148565870.
+- Existing nav QA run `43680554271` SUCCESS.
+- Private tester regression run `43680554266` SUCCESS after restoring five-minute visibility-based RLS membership recheck and preserving same-session open tab; revoked session is locked.
+- Initial Chromium test failed only due case-sensitive support text assertion, corrected and rerun. Initial private tester regression detected missing 5-minute membership refresh in the new controller; fixed and retested successfully.
+- All hosted Render/real Supabase current login permissions, secure payment update, dedicated staff bot authorization remain NOT VERIFIED. Browser QA used mocked Auth to avoid live customer data.
+
+Release state remains DRAFT / EXPERIMENTAL. The user's current Render merchant-portal URL is not updated by this PR.
