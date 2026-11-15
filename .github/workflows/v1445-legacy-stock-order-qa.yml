@@ -1,0 +1,104 @@
+name: TIEN404 V14.4.5 Legacy Product/Stock/Order Safety QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v1445-legacy-writer-stock-order-audit-20261116
+    paths:
+      - 'qa/legacy-safety-v1445/**'
+      - 'docs/ai-handoff/V14_4_5_*'
+      - '.github/workflows/v1445-legacy-stock-order-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/legacy-safety-v1445/**'
+      - 'docs/ai-handoff/V14_4_5_*'
+      - '.github/workflows/v1445-legacy-stock-order-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  new-safety-contract:
+    name: 52 new legacy writer, stock and order tests (OFFLINE ONLY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and offline safety contract tests
+        run: |
+          node --check qa/legacy-safety-v1445/writer-compatibility.cjs
+          node --check qa/legacy-safety-v1445/order-stock-safety.cjs
+          node --test qa/legacy-safety-v1445/writer-compatibility.test.cjs qa/legacy-safety-v1445/order-stock-safety.test.cjs
+      - name: Verify no network, hosted write, privilege mutation or credentials
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/legacy-safety-v1445')
+          a=(p/'writer-compatibility.cjs').read_text()
+          b=(p/'order-stock-safety.cjs').read_text()
+          for source in (a,b):
+              for bad in ("fetch(", "require('pg')", 'require("pg")',
+                          'axios(', 'process.env', 'supabase_service_role_key',
+                          'page_access_token', 'graph.facebook.com'):
+                  assert bad not in source.lower(),bad
+          assert 'canCallLegacyRpc:false' in a
+          assert 'canWriteHosted:false' in a
+          assert 'hostedForwardAllowed:false' in a
+          assert 'willCreateOrder:false' in b
+          assert 'willReserveStock:false' in b
+          assert 'willDeductStock:false' in b
+          assert 'canAdjustStock:false' in b
+          assert 'canSendNotification:false' in b
+          print('PASS V14.4.5 no SQL/network/credentials and hard no-write posture')
+          PY
+
+  inherited-regression:
+    name: 527 inherited V14.4.4→Messenger tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Store V2 and owner intake
+        run: node --test qa/store-product-v1444/product-v2-offline.test.cjs qa/store-product-v1444/owner-intake-offline.test.cjs
+      - name: Rpc, owner evidence, hosted gates and channel contracts
+        run: |
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+
+  postgres-store-isolation:
+    name: Real disposable PostgreSQL 17 Store A/B permissions and old policy bypass
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1445_disposable_ci_not_real'
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1445_disposable_ci_not_real'
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse exact disposable-only PostgreSQL 17 RLS fixture
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
