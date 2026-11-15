@@ -1,0 +1,40 @@
+name: TIEN404 SALES LITE V1.4 multichannel offline QA
+on:
+  push:
+    branches:
+      - work/v134-sales-lite-multichannel-contracts-staging
+    paths:
+      - "qa/sales-lite/v134/**"
+      - "docs/ai-handoff/V13_4_**"
+      - ".github/workflows/v134-sales-lite-contract-qa.yml"
+  pull_request:
+    paths:
+      - "qa/sales-lite/v134/**"
+      - "docs/ai-handoff/V13_4_**"
+      - ".github/workflows/v134-sales-lite-contract-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v134-no-send-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and safety checks
+        run: |
+          node --check qa/sales-lite/v134/channel-core-bridge.cjs
+          node --check qa/sales-lite/v134/order-request-contract.cjs
+          node --check qa/sales-lite/v134/product-readiness.cjs
+          node --check qa/sales-lite/v134/v134-contracts.test.cjs
+      - name: V13.4 no-send and no-write acceptance tests
+        run: node --test qa/sales-lite/v134/*.test.cjs
+      - name: V13.3 contract and security regressions
+        run: node --test qa/sales-lite/v133/*.test.cjs
+      - name: V13.2 interface regression
+        run: node --test qa/sales-lite/v132/*.test.cjs
+      - name: V13.1 menu and business regression
+        run: node --test qa/sales-lite/v131/*.test.cjs
