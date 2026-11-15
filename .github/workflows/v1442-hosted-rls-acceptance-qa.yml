@@ -1,0 +1,97 @@
+name: TIEN404 V14.4.2 Hosted JWT Acceptance + Migration Preflight (MOCK ONLY)
+on:
+  push:
+    branches:
+      - work/v1442-hosted-rls-acceptance-preflight-20261116
+    paths:
+      - 'qa/hosted-readiness-v1442/**'
+      - 'docs/ai-handoff/V14_4_2_*'
+      - '.github/workflows/v1442-hosted-rls-acceptance-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/hosted-readiness-v1442/**'
+      - 'docs/ai-handoff/V14_4_2_*'
+      - '.github/workflows/v1442-hosted-rls-acceptance-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-acceptance-mock:
+    name: MOCK Auth GET-only + six-phase preflight; NO live Supabase
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and 46 new synthetic acceptance checks
+        run: |
+          node --check qa/hosted-readiness-v1442/hosted-jwt-acceptance.cjs
+          node --check qa/hosted-readiness-v1442/migration-preflight.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+      - name: Verify real network is disabled by default and no write methods exist
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          a=Path('qa/hosted-readiness-v1442/hosted-jwt-acceptance.cjs').read_text()
+          m=Path('qa/hosted-readiness-v1442/migration-preflight.cjs').read_text()
+          sql=Path('qa/hosted-readiness-v1442/PREFLIGHT_READ_ONLY_CATALOG.sql').read_text()
+          assert "method:'GET'" in a and "cache:'no-store'" in a
+          assert 'HOSTED_QA_GATES_CLOSED' in a
+          assert 'OWNER_APPROVED_HOSTED_GET_ONLY' in a
+          assert 'RESTORE_DRILL_AND_RLS_MIGRATION_SEPARATELY_APPROVED' in a
+          assert all(s not in a for s in ("method:'POST'","method:'PATCH'","method:'DELETE'","method:'PUT'"))
+          assert 'canExecuteSql:false' in m and 'canApplyDDL:false' in m
+          assert 'canBackfill:false' in m and 'canAlterRLS:false' in m
+          assert 'WITH' in sql and 'core AS' in sql
+          assert 'SELECT jsonb_build_object' in sql
+          print('PASS SAFE MOCK-ONLY: no secret, customer-data or production network access in CI')
+          PY
+
+  regression-source:
+    name: Existing V14.4.1 + V14.4 + Messenger non-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inherited security and channel regressions
+        run: |
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+  disposable-pg17:
+    name: Disposable PostgreSQL 17 old-permissive-policy regression — NOT hosted JWT
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1442_only_ephemeral_ci_not_real'
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1442_only_ephemeral_ci_not_real'
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse prior V14.4.1 actual PG17 synthetic Store/FK/policy suite
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
