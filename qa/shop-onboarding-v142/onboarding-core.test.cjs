@@ -74,7 +74,7 @@ test('Export complete payload but no real database writes',()=>{
 });
 test('Export cannot claim another tenant by passing forged context',()=>{
  const session=answered(),fake={...ctx(),tenant_id:'tenant-b'};
- reject(()=>o.exportDraft(fake,session),'DRAFT_CROSS_STORE_OR_USER_DENIED');
+ reject(()=>o.exportDraft(fake,session),'VERIFIED_STORE_CONTEXT_REQUIRED');
 });
 test('Export cannot be reattributed to other store',()=>{
  const session=answered();
