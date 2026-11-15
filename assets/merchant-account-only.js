@@ -20,7 +20,7 @@ const VIEWS=Object.freeze({
  support:['Hỗ trợ & liên hệ','Nhân sự TIEN404 hỗ trợ cấu hình Bot và xử lý yêu cầu.']
 });
 const site='https://ngoctien20.github.io/demo-git/';
-let client=null,currentUser=null,shops=[],selected=null,currentView='overview',epoch=0,busy=false;
+let client=null,currentUser=null,shops=[],selected=null,currentView='overview',epoch=0,busy=false,lastChecked=0;
 function message(value,tone='info'){statusNode.textContent=value;statusNode.dataset.tone=tone;}
 function wipe(){
   epoch++;currentUser=null;shops=[];selected=null;selector.replaceChildren();
@@ -100,7 +100,7 @@ function setShop(id){
   show(currentView);
 }
 async function refresh(){
-  if(busy)return;busy=true;refreshButton.disabled=true;const run=++epoch;
+  if(busy)return;busy=true;refreshButton.disabled=true;const run=++epoch;lastChecked=Date.now();
   message('Đang kiểm tra phiên và cửa hàng được cấp quyền…');
   try{
     if(!client)throw Error('AUTH_NOT_READY');
@@ -120,6 +120,14 @@ async function refresh(){
     const available=scopedTenantDisplay(approved,tenants.data);
     if(!available.length)throw Error('NO_ALLOWED_SHOP');
     const oldId=currentUser?.id===user.id?selected?.id:null;
+    const sameUser=currentUser?.id===user.id;
+    const oldScope=JSON.stringify(shops.map(s=>[s.id,s.role,s.name]).sort((a,b)=>a[0].localeCompare(b[0])));
+    const newScope=JSON.stringify(available.map(s=>[s.id,s.role,s.name]).sort((a,b)=>a[0].localeCompare(b[0])));
+    if(sameUser&&oldScope===newScope&&available.some(s=>s.id===selected?.id)&&!protectedBox.hidden){
+      currentUser=user;shops=available;
+      message('Phiên và quyền cửa hàng vẫn hợp lệ.','ok');
+      return; // Keep active tab, scroll and any unsent local UI input intact.
+    }
     currentUser=user;shops=available;
     selector.replaceChildren();for(const s of shops)selector.add(new Option(s.name,s.id));
     protectedBox.hidden=false;locked.hidden=true;
@@ -138,6 +146,9 @@ nav.addEventListener('click',event=>{
 });
 selector.addEventListener('change',()=>setShop(selector.value));
 refreshButton.addEventListener('click',refresh);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&Date.now()-lastChecked>300000)refresh();
+});
 logoutButton.addEventListener('click',async()=>{
  const running=client;wipe();message('Đang đăng xuất…');
  try{if(!running)throw Error('AUTH_NOT_READY');const r=await withDeadline(running.auth.signOut({scope:'local'}),13000);
