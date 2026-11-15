@@ -8,6 +8,13 @@ class SaaSContract(unittest.TestCase):
  def test_six_pages_and_semantics(self):
   for page in ['register','login','checkout','dashboard','billing','invoice']:
    s=BeautifulSoup((ROOT/(page+'.html')).read_text(encoding='utf-8'),'html.parser')
+   if page == 'login':
+    # V13.4 replaces the public demo login with a redirect to verified staging Auth.
+    self.assertIsNone(s.select_one('form, input[type="email"]'))
+    self.assertIsNotNone(s.select_one('meta[http-equiv="refresh"]'))
+    self.assertIn('https://tien404-auth-staging.onrender.com/login.html', str(s.select_one('meta[http-equiv="refresh"]')))
+    self.assertIsNotNone(s.select_one('main a[href="https://tien404-auth-staging.onrender.com/login.html"]'))
+    continue
    self.assertEqual(s.body.get('data-saas-page'),page)
    self.assertIsNotNone(s.select_one('main'))
    self.assertIsNotNone(s.select_one('script[src="assets/saas.js"]'))
@@ -32,5 +39,8 @@ class SaaSContract(unittest.TestCase):
  def test_nav_on_all_pages(self):
   for page in ROOT.glob('*.html'):
    s=BeautifulSoup(page.read_text(encoding='utf-8'),'html.parser')
-   self.assertIsNotNone(s.select_one('#main-menu a[href="login.html"]'),page.name)
+   if page.name == 'login.html':
+    self.assertIsNotNone(s.select_one('main a[href="https://tien404-auth-staging.onrender.com/login.html"]'))
+   else:
+    self.assertIsNotNone(s.select_one('#main-menu a[href="login.html"]'),page.name)
 if __name__=='__main__':unittest.main()
