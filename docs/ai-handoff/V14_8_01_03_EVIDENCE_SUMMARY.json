@@ -1,0 +1,116 @@
+{
+  "project": "TIEN404 AI",
+  "phase": "V14.8-01/02/03",
+  "date_jst": "2026-11-16",
+  "lifecycle": "CANDIDATE_DRAFT_NO_SEND",
+  "contract_version": "v14.8.0-candidate.1",
+  "source_branch": "work/v14801-unified-identity-candidate-nosend-20261116",
+  "parent_pr": 118,
+  "pr_number": 121,
+  "supabase": {
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "status": "ACTIVE_HEALTHY",
+    "pg_version": "17.11",
+    "public_tenants_exists": true,
+    "public_stores_exists": false,
+    "public_store_memberships_exists": false,
+    "hosted_migration_performed": false,
+    "hosted_rls_certification": false
+  },
+  "workflows": [
+    {
+      "name": "Messenger Published",
+      "id": "Z7FdV7uDvApfbURQ",
+      "active": true,
+      "version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+      "modified": false
+    },
+    {
+      "name": "Zalo Ingress",
+      "id": "yIJk8LvJoLF40Z62",
+      "active": true,
+      "version": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+      "modified": false
+    },
+    {
+      "name": "Zalo Router",
+      "id": "sIPs6egzIwOY1GNv",
+      "active": true,
+      "version": "8d91d23c-cd87-462f-a112-9cca2340bec8",
+      "modified": false
+    },
+    {
+      "name": "AI SALES DEMO",
+      "id": "v6PBwcqSapVzACMW",
+      "active": true,
+      "version": "c0f04eb1-9e2b-4b42-bf70-0ce12d5b0c30",
+      "modified": false
+    }
+  ],
+  "qa": {
+    "github_run": 43762821031,
+    "new_identity_tests": {
+      "passed": 68,
+      "total": 68
+    },
+    "inherited_v147_studio_tests": {
+      "passed": 64,
+      "total": 64
+    },
+    "all_tests": {
+      "passed": 132,
+      "total": 132
+    },
+    "dry_run_profile_cache_hits": 1188,
+    "dry_run_profile_cache_misses": 12,
+    "actual_provider_send_tests": 0,
+    "actual_store_rls_tests": 0
+  },
+  "performance": {
+    "real_n8n_webhook_success_executions": [
+      {
+        "id": 3865,
+        "elapsed_ms": 7163,
+        "signature_node_ms": 1686
+      },
+      {
+        "id": 3866,
+        "elapsed_ms": 5296,
+        "signature_node_ms": 1635
+      },
+      {
+        "id": 3867,
+        "elapsed_ms": 15075,
+        "signature_node_ms": 1805
+      },
+      {
+        "id": 3868,
+        "elapsed_ms": 9873,
+        "signature_node_ms": 1701
+      }
+    ],
+    "synthetic_benchmark": {
+      "warm_n": 1200,
+      "warm_p50_ms": 0.0589,
+      "warm_p95_ms": 0.2304,
+      "cold_n": 120,
+      "cold_p50_ms": 0.0783,
+      "cold_p95_ms": 0.1467,
+      "model_calls": 0,
+      "provider_sends": 0,
+      "network_requests": 0
+    },
+    "comparison_eligible": false,
+    "live_end_to_end_slo_verified": false,
+    "measured_cost_usd": null
+  },
+  "requirements": {
+    "cross_store_isolation": "TESTED_SYNTHETIC",
+    "provider_specific_auth": "BLOCKED",
+    "shared_verified_customer_identity": "NOT_IMPLEMENTED",
+    "order_no_write": "TESTED_SYNTHETIC",
+    "owner_actual_approval": "PENDING",
+    "production": "BLOCKED"
+  },
+  "rollback": "Close Draft PR #121; no hosted or Published state changes in this candidate."
+}
