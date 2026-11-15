@@ -19,7 +19,7 @@ test('hosted/prod mode is always unavailable',()=>{
 test('current connector-snapshot documents missing five canonical dependencies',()=>{
  const a=build();
  assert.equal(a.status,'HOSTED_GATE_BLOCKED');
- for(const k of ['store_schema','private_page_binding','private_event_schema']){
+ for(const k of ['store_schema','catalog_store_id','private_page_binding','private_event_schema']){
   assert.ok(a.blocked.includes(k));
   assert.equal(a.gates.find(x=>x.key===k).state,'MISSING');
  }
@@ -67,7 +67,7 @@ test('evidence pack deliberately exports no raw credentials or people data',()=>
 });
 test('all named requirement gates have unique identifiers',()=>{
  assert.equal(new Set(REQUIRED).size,REQUIRED.length);
- assert.equal(REQUIRED.length,15);
+ assert.equal(REQUIRED.length,17);
 });
 test('Supabase backups are UNKNOWN; no backup artifact or restore test invented',()=>{
  assert.equal(snapshot.supabase.backupArtifactVerified,null);
