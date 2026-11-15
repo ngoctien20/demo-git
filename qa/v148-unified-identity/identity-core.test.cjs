@@ -321,3 +321,33 @@ test('052 unknown or unsupported event type rejected',()=>{
  const {engine}=create();
  assert.equal(send(engine,'WEB_WIDGET','A','Xin chào',{event_type:'order_created'}).status,'DENIED');
 });
+
+
+test('053 suspended Shop A blocks all four channels, not just one binding',()=>{
+ const {engine}=create();send(engine,'MESSENGER','A');
+ engine.qaSetStorePolicy('A',{status:'SUSPENDED',subscriptionActive:true});
+ for(const channel of CHANNELS){
+  const r=send(engine,channel,'A','Báo giá A001');
+  assert.equal(r.status,'DENIED');assert.equal(r.reason,'STORE_PAUSED_OR_SUBSCRIPTION_EXPIRED');
+ }
+ assert.equal(send(engine,'MESSENGER','B','Báo giá A001').status,'RESOLVED');
+});
+test('054 expired Shop subscription blocks signed messages before cached price',()=>{
+ const {engine}=create();send(engine,'ZALO_BOT','B','Báo giá A001');
+ engine.qaSetStorePolicy('B',{status:'ACTIVE',subscriptionActive:false});
+ for(const channel of CHANNELS){
+  const r=send(engine,channel,'B','Báo giá A001');
+  assert.equal(r.reason,'STORE_PAUSED_OR_SUBSCRIPTION_EXPIRED');
+  assert.equal(r.unit_price_vnd,undefined);
+ }
+});
+test('055 unknown Store policy changes cannot authorize another Store',()=>{
+ const {engine}=create();
+ assert.throws(()=>engine.qaSetStorePolicy('D',{status:'ACTIVE',subscriptionActive:true}));
+ assert.equal(send(engine,'WEB_WIDGET','C','Xin chào').status,'RESOLVED');
+});
+test('056 missing explicit subscription flag cannot be treated as active',()=>{
+ const {engine}=create();
+ assert.throws(()=>engine.qaSetStorePolicy('A',{status:'ACTIVE'}));
+ assert.equal(send(engine,'MESSENGER','A','Báo giá A001').status,'RESOLVED');
+});
