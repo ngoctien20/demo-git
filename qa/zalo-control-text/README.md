@@ -58,7 +58,7 @@ Rollback: close/revert the new GitHub Draft PR, no n8n/database/Cloudflare chang
 Owner explicitly approved **up to three** isolated QA sends to the previously authorized Shop B Owner QA recipient. This approval is for bounded sends, **not** for changing existing Cloudflare Worker security gates, credentials, webhook, billing, or production services.
 
 Read-only state audit of the existing n8n/Cloudflare delivery path:
-- n8n workflow `TIEN404_ZALO_SHOP_B_F01_PREFLIGHT_STAGING` ID `zuOdXgOg6ZPaTcHR`, version `3fd6c791-326f-4b31-8f94-a2c244eb2153` has read-only allowlist query, guard and preflight endpoint (no send).
+- n8n workflow `TIEN404_ZALO_SHOP_B_F01_PREFLIGHT_STAGING` ID `zuOdXgOg6ZPaTcHR`, version `3fd6c791-326f-4b31-8f94-cdf6370e4d5e` has read-only allowlist query, guard and preflight endpoint (no send).
 - Manual execution `3817` on 2026-11-15 06:12 UTC: allowlist guard **PASS**; Cloudflare Worker preflight request returned **404 NOT_FOUND**, final execution **error**. Because the preflight failed, **zero** new message sends were attempted.
 - Read-only download of current Cloudflare Worker `tien404-zalo-outbound-v1-staging` (last modified 2026-11-14 13:40 UTC): routes include `/v1/send`, `/v1/owner-one-shot`, `/v1/bot-check`, `/health`, but NOT `/v1/shop-b-f01-preflight` or `/v1/shop-b-f01-one-shot`. No `text_styles` support found in live Worker source.
 - Read-only Worker settings: `ZALO_SEND_ENABLED=false` (global kill switch); `ZALO_OWNER_CHAT_ID` remains protected as secret, not exposed. Approval expiry exists but cannot be treated as authorization for fresh send.
