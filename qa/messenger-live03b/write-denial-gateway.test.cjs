@@ -281,3 +281,41 @@ test('55 all inspection flags disclose no real writes or live Messenger activati
  assert.equal(i.actualOrderWrites,0);
  assert.equal(i.providerSends,0);
 });
+
+
+test('56 quote message saying chưa đặt cannot prepare',()=>{
+ const s=system(),h=s.sign('Báo giá 2 áo A002, chưa đặt hàng');
+ checkDenied(s.call(h,'qa.order.prepare',{sku:'A002',quantity:2,expectedTotalVnd:318000}),'NO_SIGNED_USER_ORDER_INTENT');
+});
+test('57 explicit negative đừng đặt cannot prepare',()=>{
+ const s=system(),h=s.sign('Đừng đặt 2 áo A002');
+ checkDenied(s.call(h,'qa.order.prepare',{sku:'A002',quantity:2,expectedTotalVnd:318000}),'NO_SIGNED_USER_ORDER_INTENT');
+});
+test('58 no accidental order request from mixed negation',()=>{
+ const s=system(),h=s.sign('Tôi chỉ muốn xem giá. Không mua 1 áo A002');
+ checkDenied(s.call(h,'qa.order.prepare',{sku:'A002',quantity:1,expectedTotalVnd:159000}),'NO_SIGNED_USER_ORDER_INTENT');
+});
+test('59 cannot cancel a QA mock after confirmation',()=>{
+ const s=system(),p=s.prep(),c=s.confirm(p.r.confirmationCode);
+ checkSafe(c.r);
+ const h=s.sign('HUY '+p.r.confirmationCode);
+ checkDenied(s.call(h,'qa.order.cancel',{confirmationCode:p.r.confirmationCode}),'MOCK_ALREADY_CONFIRMED_CANNOT_CANCEL');
+ assert.equal(s.gateway.inspect().confirmedQaRequestsInMemory,1);
+});
+test('60 signed echo event cannot be used as a new tool session',()=>{
+ const s=system();assert.throws(()=>s.sign('Tin nhắn của Page',{echo:true}),/NO_WRITE_QA_ONE_FRESH_EVENT_REQUIRED/);
+});
+test('61 cannot pass price as string in synthetic quote',()=>{
+ const s=system(),h=s.sign('Báo giá 2 áo A002');
+ checkDenied(s.call(h,'quote.read',{sku:'A002',quantity:'2'}),'INVALID_QTY');
+});
+test('62 a signed confirmation still cannot invoke real create_order',()=>{
+ const s=system(),p=s.prep();
+ const h=s.sign('XAC NHAN '+p.r.confirmationCode);
+ checkDenied(s.call(h,'create_order',{sku:'A002',quantity:2}),'WRITE_OR_EXTERNAL_TOOL_BLOCKED');
+ assert.equal(s.gateway.inspect().confirmedQaRequestsInMemory,0);
+});
+test('63 invalid amount above MAX_SAFE_INTEGER cannot prepare',()=>{
+ const s=system(),h=s.sign('Đặt 2 áo A002');
+ checkDenied(s.call(h,'qa.order.prepare',{sku:'A002',quantity:2,expectedTotalVnd:Number.MAX_SAFE_INTEGER+100}),'EXPECTED_TOTAL_MISMATCH');
+});
