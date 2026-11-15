@@ -12,6 +12,10 @@ const statement=`
     row_security_active('tien404_r1_qa.catalog'::regclass) AS catalog_rls_active,
     row_security_active('tien404_r1_qa.shop_bots'::regclass) AS bot_rls_active,
     has_column_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'credential_ref','SELECT') AS can_read_credential_ref,
+    has_column_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'catalog_source_ref','SELECT') AS can_read_catalog_source_ref,
+    has_table_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'INSERT') AS can_insert_bot,
+    has_table_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'UPDATE') AS can_update_bot,
+    has_table_privilege(current_user,'tien404_r1_qa.shop_bots'::regclass,'DELETE') AS can_delete_bot,
     has_table_privilege(current_user,'tien404_r1_qa.catalog'::regclass,'INSERT') AS can_insert_catalog,
     has_table_privilege(current_user,'tien404_r1_qa.catalog'::regclass,'UPDATE') AS can_update_catalog,
     has_table_privilege(current_user,'tien404_r1_qa.catalog'::regclass,'DELETE') AS can_delete_catalog`;
@@ -31,7 +35,9 @@ function createRlsEnforcedQaCatalog({roleForContext}={}){
     const row=check.rows[0];
     if(row.role_name!==expected || row.bypass_rls!==false || row.is_superuser!==false ||
        row.catalog_rls_active!==true || row.bot_rls_active!==true ||
-       row.can_read_credential_ref!==false || row.can_insert_catalog!==false ||
+       row.can_read_credential_ref!==false || row.can_read_catalog_source_ref!==false ||
+       row.can_insert_bot!==false || row.can_update_bot!==false || row.can_delete_bot!==false ||
+       row.can_insert_catalog!==false ||
        row.can_update_catalog!==false || row.can_delete_catalog!==false)
       throw Error('CATALOG_ROLE_UNSAFE');
     const item=await repository.readProduct({context,sku,client});
