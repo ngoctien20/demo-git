@@ -3,8 +3,9 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const root='http://127.0.0.1:8080';
-const widths=[320,360,390,430,768,1280];
+const root=process.env.T404_QA_BASE||'http://127.0.0.1:8080';
+if(!['http://127.0.0.1:8080','https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev'].includes(root))throw Error('UNAPPROVED_QA_ORIGIN');
+const widths=process.env.T404_QA_BASE?[390,1280]:[320,360,390,430,768,1280];
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
