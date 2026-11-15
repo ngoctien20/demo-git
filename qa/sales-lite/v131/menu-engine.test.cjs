@@ -239,3 +239,35 @@ test('SEC-20 unsupported channel output fails closed',()=>{
  const a=f.createChannelMenuAdapter();
  assert.throws(()=>a.format({channel:'telegram',view:make().render.render({role:'CUSTOMER'})}),{code:'CHANNEL_RENDER_MODE_UNVERIFIED'});
 });
+
+test('CONTRACT-01 TemplateService exports role-specific TEXT_NUMBERED template',()=>{
+ const x=f.createMenuTemplateService().getTemplate({actorRole:'CUSTOMER'});
+ assert.equal(x.mode,'TEXT_NUMBERED');assert.match(x.text,/1 —/);assert.equal(x.sendEnabled,false);
+});
+test('CONTRACT-02 TemplateService does not claim native button availability',()=>{
+ assert.throws(()=>f.createMenuTemplateService().getTemplate({actorRole:'OWNER',mode:'NATIVE_MENU'}),
+ {code:'PROVIDER_MENU_CAPABILITY_UNVERIFIED'});
+});
+test('CONTRACT-03 ActionRouter selects stable action id without sending',async()=>{
+ const x=f.createMenuActionRouter({resolveContext:async()=>customer,clock:()=>now});
+ const r=await x.route(e('3'));assert.equal(r.action_id,'CUS_ORDER_DRAFT');
+ assert.equal(r.ordersWritten,0);assert.equal(r.externalSends,0);
+});
+test('CONTRACT-04 rejected channel is fail-closed',async()=>{
+ await deny('UNKNOWN_CHANNEL',make().handle(e('1',{channel:'TELEGRAM'})));
+});
+test('CONTRACT-05 failed readback releases ephemeral receipt and leaves state idle',async()=>{
+ let calls=0;
+ const m=make(customer,{readPorts:{CUS_PRICE:async()=>{
+  calls++;if(calls===1)throw Error('TEMPORARY_READ_FAILURE');return read;
+ }}});
+ const message=e('2',{eventRef:'retry-read-event'});
+ assert.equal((await m.handle(message)).status,'READ_BACKEND_FAILED');
+ assert.equal(m.sessionManager.counts().receipts,0);
+ assert.equal(m.sessionManager.get('customer-b:CUSTOMER').phase,'IDLE');
+ assert.equal((await m.handle(message)).status,'READ_ONLY_PREVIEW');
+});
+test('CONTRACT-06 future timestamp rejected like stale price',async()=>{
+ const v=await make(customer,{readPorts:{CUS_PRICE:async()=>({...read,observedAt:new Date(now+62000).toISOString()})}}).handle(e('2'));
+ assert.equal(v.status,'CATALOG_NOT_FRESH');
+});
