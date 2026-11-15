@@ -86,3 +86,17 @@ https://github.com/ngoctien20/demo-git/actions/runs/43747334381
 - Post-run n8n READ-ONLY: Published Messenger ID Z7FdV7uDvApfbURQ remains ACTIVE version d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92, 27 nodes. Four-Flow Manual QA jeLqAGOlG06LanDv remains INACTIVE/no Published version. No changes to tokens, webhook, Meta Page or existing customer Orders.
 
 **Outcome: SOURCE SECURITY GATE TESTED + LEGACY MESSENGER HISTORY VERIFIED. REAL PAGE INTEGRATION NOT YET VERIFIED / LIVE SEND NOT AUTHORIZED.** Read-only Meta Page/App ownership and tester permission evidence remain missing. No current Page credentials, secret, token, sender PSID, order content or business data was copied to this checkpoint.
+
+
+## 7. Historical Page/App identity reconciliation (read-only; no token disclosure)
+
+Previous TIEN404 Messenger QA conversations from 9 November 2026 named:
+- QA Facebook Page: **TIEN404 AI**, historical public/non-secret Page ID **2379295362359912**.
+- Meta Developer App: **TIEN404 AI Messenger**, historical App ID **1637989744444198**.
+- pages_messaging and pages_show_list had been recorded in historical checks; pages_manage_metadata was once reported missing, so no permission is assumed to be currently available.
+
+Current read-only n8n execution #2246 (11 November 2026) was inspected WITHOUT returning sender PSID or message content. The received webhook Page ID **matched the historical QA Page ID**, signature verified=true, and Meta Send returned a provider message ID. This **grounds the old Page-to-n8n association**, but does NOT establish present Meta App authorization, tester entitlement, Page task, subscribed_apps, token validity, or permission to send another live message today.
+
+Across 20 sampled earlier Messenger workflow executions, 17 had a successful Send node returning a provider message ID; one ran the read-only Products tool and one ran the support ticket tool. These samples did **not** establish a successful current live Create/Manage/Update Order flow. Do not treat all four sales functions as historically end-to-end certified from these executions.
+
+Target the existing **TIEN404 AI Page/App** for future read-only review, rather than creating another Page or rebuilding the bot. Do not rotate tokens or modify the active webhook during inspection.
