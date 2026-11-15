@@ -1,0 +1,62 @@
+{
+  "version": "V13.6M.7",
+  "source": "READ_ONLY_CONNECTOR_SNAPSHOT",
+  "checkedAt": "2026-11-15T12:48:26.496Z",
+  "environment": "TIEN404 Supabase staging only; no schema writes",
+  "github": {
+    "repository": "ngoctien20/demo-git",
+    "parentPullRequest": 93,
+    "parentHeadSha": "b3636e0da5baf617331c49fdd31d647ab1432fba",
+    "parentDraft": true,
+    "storeRlsPr": 86,
+    "storeRlsPrDraft": true
+  },
+  "supabase": {
+    "stagingProjectRef": "ifxlvrhyjhbzbrkdsida",
+    "postgresVersion": "17.11",
+    "schema": {
+      "stores": false,
+      "storeMemberships": false,
+      "productStoreId": false,
+      "privatePageBinding": false,
+      "privateEventClaims": false
+    },
+    "backupArtifactVerified": null,
+    "restorableBackupVerified": null,
+    "restoreRehearsalVerified": null,
+    "approvedStoreBackfill": null,
+    "actualHostedJwtAB": null,
+    "restrictedRoleGrantProof": null,
+    "privateSchemaExposureAudited": null,
+    "securityAdvisors": {
+      "rlsEnabledNoPolicyInfo": 18,
+      "anonSecurityDefinerWarn": 1,
+      "authenticatedSecurityDefinerWarn": 2,
+      "leakedPasswordProtectionWarn": 1
+    },
+    "migrationLastKnown": "20261114170717"
+  },
+  "n8n": {
+    "publishedWorkflowId": "Z7FdV7uDvApfbURQ",
+    "publishedVersion": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "publishedActive": true,
+    "publishedNodes": 27,
+    "shadowWorkflowId": "X0MwwQ7LRUqfOVjM",
+    "shadowActive": false,
+    "shadowNodes": 5
+  },
+  "testing": {
+    "lastOfflineVersion": "V13.6M.6",
+    "offlineNodeTestsPassed": 280,
+    "ciUrl": "https://github.com/ngoctien20/demo-git/actions/runs/43715530986",
+    "ephemeralPostgres17": null,
+    "hostedPostgresAtomic": null
+  },
+  "guard": "PREP_ONLY_NOT_MIGRATION_AUTHORIZATION",
+  "importantNotes": [
+    "No connected backup listing or tested restore proof was available; UNKNOWN does not mean NO BACKUP.",
+    "Existing pg security advisors are findings for independent review, not proven exploits.",
+    "QA Shop A/B currently distinct tenants; same-tenant two-store hosted QA cannot be inferred.",
+    "No real secrets, customer identities, JWTs or order rows are included."
+  ]
+}
