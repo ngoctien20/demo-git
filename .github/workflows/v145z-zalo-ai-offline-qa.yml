@@ -44,6 +44,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/live03e-trial-continuity-gate.test.cjs
       - name: LIVE03E local Cloud Console JSON/ZIP backup verification QA
         run: python3 qa/zalo-live-v145z/live03e_verify_n8n_export.test.py
+      - name: UAT01 hosted synthetic storefront with 18 no-send regression tests
+        run: node --test qa/zalo-live-v145z/live04-uat-worker.test.mjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
