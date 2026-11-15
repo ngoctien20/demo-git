@@ -94,3 +94,10 @@ Trang đơn giá nguồn: https://app.n8n.cloud/service-pricing
 - Budget risk: recent platform-wide usage about $0.18/day is far higher than the illustrative single three-turn pilot direct-model estimate and may originate from other Gateway-backed usage; **cause is unknown**. Do not conclude an individual workflow is responsible without per-service records. No top-up or billing changes authorized.
 - Recommended owner next UI action (read-only): click `Gateway prices` at top of the Gateway screen to inspect the precise model rates; look for service/model-specific usage, and check whether Auto top-up settings are available without changing them. Record a screenshot with payment information masked. Do NOT press `Top up`.
 - The other identity blockers (provider getMe `result.id`, trusted real Bot→Shop B→Owner mapping, signed actual ingress) are unchanged. **LIVE ZALO SEND: NO-GO**.
+
+## I. Service pricing page screenshot evidence — 2026-11-16 JST
+- Owner supplied a screenshot of authenticated `app.n8n.cloud/service-pricing#openai` showing n8n Cloud **Service pricing**, OpenAI catalogue marked **41 models**, and `Prices per 1M tokens`.
+- The visible rows include `chatgpt-image-latest` **$5.00 input/$10.00 output** (image rates separately shown), `gpt-4.1` **$2.00/$8.00**, `gpt-4o` **$2.50/$10.00**, `gpt-4o-mini` **$0.15/$0.60**. These are **not** the configured synthetic-qa workflow model and must not be used to price its pilot.
+- The active manual QA model in earlier read-only workflow audit was `gpt-5.4-nano`. **Its exact row is not visible in the supplied screenshot**; `COST-02` remains **BLOCKED / awaiting exact n8n service-pricing row**. Do not substitute direct OpenAI API prices or other displayed models.
+- Owner UI step: browser Ctrl+F `gpt-5.4-nano` within the n8n service-pricing page; if absent search `nano`, inspect model availability, and submit only model name and Input/Output unit prices. No secrets/billing changes.
+- Previous Gateway balance evidence $0.59 USD from detail page still stands as an observed snapshot, with Auto top-up/owner monetary cap and actual model spending still unverified. LIVE ZALO SEND remains NO-GO.
