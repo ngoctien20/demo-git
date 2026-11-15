@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="color-scheme" content="light" />
+    <title>TIEN404 Sales Lite · Sổ bán hàng</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="wrap heading">
+        <div><span class="brand">TIEN404</span><span class="brand-sub">Sales Lite</span></div>
+        <button id="settings" class="quiet" type="button">Cài đặt</button>
+      </div>
+    </header>
+    <main class="wrap">
+      <p class="shop" id="shop">Sổ bán hàng · thử nghiệm</p>
+      <h1 id="heading">Đơn mới</h1>
+      <nav aria-label="Sổ bán hàng">
+        <button type="button" data-tab="new" aria-current="page">Đơn mới</button
+        ><button type="button" data-tab="orders">Đơn hàng</button
+        ><button type="button" data-tab="revenue">Doanh thu</button>
+      </nav>
+      <p id="status" role="status" aria-live="polite">Đang tải…</p>
+      <div id="content"></div>
+      <dialog id="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-text">
+        <h2 id="dialog-title">Xử lý yêu cầu</h2>
+        <p id="dialog-text"></p>
+        <div class="actions">
+          <button id="back" type="button" class="quiet">Quay lại</button
+          ><button id="apply" type="button">Đồng ý</button>
+        </div>
+      </dialog>
+    </main>
+  </body>
+</html>
