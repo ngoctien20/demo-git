@@ -6,7 +6,7 @@ REVOKE ALL ON SCHEMA sales_lite_qa FROM PUBLIC;
 -- The pairing code may have expired after it was consumed; the current binding has its own expiry.
 CREATE VIEW sales_lite_qa.verified_owners WITH (security_invoker=true,security_barrier=true) AS
 SELECT b.tenant_key AS tenant,b.store_key AS store,b.bot_key AS bot,b.owner_ref,b.recipient_ref,
-       b.confirmed_challenge_id AS binding_id,c.requester_user_id AS owner_user_id
+       b.confirmed_challenge_id AS binding_id,c.requester_user_id AS owner_user_id,m.auth_tenant_id
 FROM tien404_r1_qa.owner_bindings b
 JOIN tien404_r1_qa.tenant_identity_map m USING(tenant_key,store_key,bot_key)
 JOIN tien404_r1_qa.owner_pairing_challenges c ON (c.tenant_key,c.store_key,c.bot_key,c.challenge_id,c.owner_ref)

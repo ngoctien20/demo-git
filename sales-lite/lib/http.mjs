@@ -46,7 +46,7 @@ async function body(req) {
   reject('BAD_REQUEST');
 }
 // bindOwner returns a function creating a verified event from the *server's* authenticated session.
-export function handler({ service, bindOwner, origin, verifyQaInbound = null }) {
+export function handler({ service, bindOwner, origin, verifyQaInbound = null, readCustomer = null }) {
   return async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -69,6 +69,10 @@ export function handler({ service, bindOwner, origin, verifyQaInbound = null }) 
       if (u.pathname === '/qa/inbound' && verifyQaInbound) {
         if (req.method !== 'POST') return json(405, { error: 'METHOD_DENIED' });
         return json(200, await service.receive(verifyQaInbound(await body(req))));
+      }
+      if (u.pathname === '/api/customer/v1/view' && readCustomer) {
+        const [status, result] = await readCustomer(req, u, service);
+        return json(status, result);
       }
       if (!['/api/view', '/api/decision', '/api/settings'].includes(u.pathname))
         return json(404, { error: 'NOT_FOUND' });

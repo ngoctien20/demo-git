@@ -435,3 +435,30 @@ test('B08. Dashboard subject, current owner membership and binding instance fenc
   await denies(svc.shadow(f.owner('B','shadow'),x.code),'RECIPIENT_UNAVAILABLE');
   assert.equal((await svc.dashboard(owner('/baocao'),{tab:'settings'})).botPaired,true);
 });
+
+test('B09. Portal authenticates the user, verifies the full route and reads the canonical QA ledger', async () => {
+  const {customerPortal} = await import('../lib/customer-portal.mjs');
+  const routes = ['A','B'].map(shop => {
+    const [tenant,store,bot] = f.scopes[shop];
+    return {authTenant:f.authTenants[shop], tenant,store,bot};
+  });
+  for (const shop of ['A','B']) {
+    const peer = shop === 'A' ? 'B' : 'A';
+    const read = customerPortal({routes,key:randomBytes(32),publishableKey:'sb_publishable_isolated_test',
+      fetchUser:async (url,options) => {
+        assert.equal(url,'https://ifxlvrhyjhbzbrkdsida.supabase.co/auth/v1/user');
+        assert.equal(options.redirect,'error');
+        return new Response(JSON.stringify({id:f.subjects[shop]}));
+      }});
+    const view = tenant => new URL('https://preview.test/api/customer/v1/view?tab=orders&shop='+tenant);
+    const req = {method:'GET',headers:{authorization:'Bearer fixture-shadow-session-only'}};
+    const [status,response] = await read(req,view(f.authTenants[shop]),svc);
+    assert.equal(status,200);
+    assert.equal(response.tenant_id,f.authTenants[shop]);
+    assert.equal(response.origin,'synthetic_qa');
+    assert.ok(response.requests.length>0);
+    await denies(read(req,view(f.authTenants[peer]),svc),'OWNER_REQUIRED');
+    assert.equal((await read({method:'GET',headers:{}}, view(f.authTenants[shop]),svc))[0],401);
+    assert.equal((await read({...req,method:'POST'},view(f.authTenants[shop]),svc))[0],405);
+  }
+});

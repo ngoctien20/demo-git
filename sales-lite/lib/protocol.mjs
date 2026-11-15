@@ -137,7 +137,7 @@ export function dashboardEvents(scope, subject, key, clock=Date.now) {
   const {tenant,store,bot}=scope, actorHash=hash(key,JSON.stringify(['dashboard-owner',tenant,store,bot,subject]));
   return (text,event=randomUUID())=>{
     if(typeof text!=='string'||text.length>512||typeof event!=='string'||!opaque.test(event))reject('UNVERIFIED_INPUT');
-    const e=Object.freeze({tenant,store,bot,text,source:'dashboard_session',ownerUserId:subject,actorHash,
+    const e=Object.freeze({tenant,store,bot,text,source:'dashboard_session',ownerUserId:subject,authTenant:scope.authTenant,actorHash,
       eventHash:hash(key,JSON.stringify(['dashboard-event',tenant,store,bot,subject,event])),receivedAt:clock()});
     verified.add(e);return e;
   };

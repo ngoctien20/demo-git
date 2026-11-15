@@ -42,7 +42,7 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
   }
   async function binding(db, e) {
     const { rows } = await db.query(
-      `SELECT tenant,store,bot,owner_ref,recipient_ref,binding_id,owner_user_id FROM sales_lite_qa.verified_owners WHERE (tenant,store,bot)=($1,$2,$3)`,
+      `SELECT tenant,store,bot,owner_ref,recipient_ref,binding_id,owner_user_id,auth_tenant_id FROM sales_lite_qa.verified_owners WHERE (tenant,store,bot)=($1,$2,$3)`,
       route(e)
     );
     return rows.length === 1 ? rows[0] : null;
@@ -50,6 +50,7 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
   async function owner(db, e) {
     const b = await binding(db, e);
     if (!b || (e.source==='dashboard_session' ? b.owner_user_id!==e.ownerUserId : b.recipient_ref!==e.recipientRef)) reject('OWNER_REQUIRED');
+    if (e.authTenant && b.auth_tenant_id !== e.authTenant) reject('OWNER_REQUIRED');
     return b;
   }
   async function product(db, e, sku, quantity) {
