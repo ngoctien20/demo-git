@@ -54,3 +54,7 @@ Live changes, a real provider/owner identity mapping, n8n payment or trial upgra
 
 ## Next checkpoint for owner test
 Owner should open the staging URL, run 12/12 QA, complete at least 8 acceptance checklist items and return the exported JSON. On receiving it, evaluate G1 pass/fail and continue G2 identity and G3 real AI negative tests with specific approvals. Meanwhile, trial review on Nov 22 remains active and separate.
+
+## 2026-11-16 post-driver snapshot correction
+- After adding the new inactive manual-only UAT01 HTTP QA driver `teHbeNGZn7e1TuSy`, n8n MCP reports **100 workflows, 19 Active**, with that driver as latest workflow. The earlier 99/19 inventory in the beginning of this checkpoint is a genuine earlier snapshot taken **before** the driver was created, not the final total. Metadata changes need a fresh inventory before backup validation.
+- This additional workflow remains **INACTIVE** with zero auto-assigned credentials. Real hosted HTTP execution 3863 SUCCESS is already recorded above.
