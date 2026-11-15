@@ -30,6 +30,8 @@ jobs:
         run: python3 qa/zalo-live-v145z/test_live01_d1_atomic.py
       - name: LIVE02 signed no-send Worker contract tests
         run: node --test qa/zalo-live-v145z/live02-nosend-worker.test.mjs
+      - name: LIVE03 signed identity and n8n budget certification negative QA
+        run: node --test qa/zalo-live-v145z/live03-identity-budget-gate.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
