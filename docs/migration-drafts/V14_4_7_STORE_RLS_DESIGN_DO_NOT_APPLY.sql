@@ -1,0 +1,90 @@
+-- TIEN404 AI V14.4.7: DESIGN-ONLY MIGRATION DRAFT, NOT AN APPLICABLE MIGRATION.
+-- LOCATION: docs/migration-drafts/ (deliberately OUTSIDE supabase/migrations).
+-- DO NOT RUN AGAINST HOSTED, LOCAL RESTORE OR PRODUCTION. NEVER COPY INTO db push.
+-- This file intentionally aborts as its FIRST SQL statement. No DDL/DML follows.
+DO $TIEN404_V1447_DRAFT_ONLY$
+BEGIN
+ RAISE EXCEPTION USING
+    ERRCODE='P0001',
+    MESSAGE='TIEN404_V14_4_7_DO_NOT_APPLY: source-only Store RLS migration design; missing FULL restore/Auth, four-row ownership proof, signed JWT acceptance, separate approval';
+END
+$TIEN404_V1447_DRAFT_ONLY$;
+
+-- =========================== REVIEWED DESIGN, NOT SQL =====================
+-- BASELINE (read-only verified 2026-11-16):
+--   public.products and public.orders each have two hosted rows.
+--   public.stores/store_memberships do not exist.
+--   six Commerce tables have ENABLE+FORCE RLS, store_id absent.
+--   each has permissive tenant-membership SELECT policy; adding store policy
+--   would NOT remove old tenant-wide access (PostgreSQL permissive OR).
+--   public.products UNIQUE(tenant_id,sku) is not Store-aware.
+--   save_merchant_product is tenant+sku SECURITY DEFINER with authenticated
+--   EXECUTE and no Store scope. Product V2 does NOT exist on hosted.
+--
+-- HARD M0 GATE (before any implementation):
+--   Verify complete hosted-relevant backup INCLUDING consistent auth.users
+--   dependencies and independent restore+rollback proof. 2026-11-16 operator
+--   evidence currently verifies SCHEMA-ONLY restore of 38 tables, NOT data.
+--   Obtain independent signed owner approval+review for EACH of the existing
+--   2 Product and 2 Order rows (four-row ownership intake).
+--   Snapshot Git HEAD, migration hash, policy/RPC/grants ACLs, affected rows.
+--   Owner approves exact staging change, rollback window and tests separately.
+--   Never derive row Store ownership solely from tenant or synthetic Bot key.
+--
+-- M1 EXPAND design:
+--   public.stores: id UUID PK; tenant_id UUID NOT NULL FK tenants; slug;
+--     active, created_at; UNIQUE(tenant_id,id); UNIQUE(tenant_id,slug).
+--   public.store_memberships: (tenant_id,store_id,user_id) scoped composite
+--     key; FK (tenant_id,store_id) to stores; FK user_id to auth.users;
+--     role owner/manager/staff, active, expiry, permitted actions.
+--   Only authorize using server-verified auth.uid and active memberships;
+--     browser-supplied tenant_id, user_id, JWT user_metadata never authorize.
+--   Restrict schema privileges; use RLS and explicit minimum grants.
+--
+-- M2 EVIDENCE-BOUND DATA design:
+--   Add nullable store_id to Products, Orders, Customers, Conversations,
+--     Messages, Order Items in controlled EXPAND phase.
+--   Use individually validated ownership evidence to attribute four rows;
+--     parent-child relationships must resolve Store consistently.
+--   Never change a price, stock count, order status or customer ownership.
+--   Verify row counts, orphan checks and tenant+Store composite consistency.
+--   Require zero remaining unowned Commerce records before NOT NULL gate.
+--
+-- M3 CONSISTENCY/UNIQUE design:
+--   Add Store-aware FK/UNIQUE on (tenant_id,store_id,id) and child references.
+--   For Products replace UNIQUE(tenant_id,sku) with
+--     UNIQUE(tenant_id,store_id,sku) only after old writer readiness
+--     and an approved compatible read/write transition.
+--   Ensure same SKU in Store A/B of one tenant can have independent price,
+--     stock, audit and order references. Do not rewrite existing IDs.
+--
+-- M4 ATOMIC AUTHORIZATION design:
+--   In ONE separately approved transaction: remove SIX old tenant-wide
+--     PERMISSIVE read policies, replace with Store-scoped policies.
+--   Verify USING and WITH CHECK for writes; no policy OR bypass.
+--   Protect all six tables, role combinations, inactive store/expired
+--     subscription, revoked membership and cross-tenant rejection.
+--   Review SECURITY DEFINER ownership, ACL, search_path and body guards.
+--   Distinguish synthetic QA inbound claim from publicly callable live RPC.
+--
+-- M5 PRODUCT WRITER design:
+--   Add separately reviewed Store-aware Product V2 using strict
+--     tenant_id+store_id+sku, auth.uid and current membership each call.
+--   Preserve integer VND, metadata edit without stock mutation,
+--     expected_updated_at CAS, idempotency and audit scope.
+--   Existing save_merchant_product must be safely retired/compat-gated
+--     with verified published callers BEFORE relaxing old uniqueness.
+--   Atomic Order/Inventory ledger #108 remains draft, NOT hosted contract.
+--
+-- M6 HOSTED QA and rollback design:
+--   Gate real signed JWT A/B SAME TENANT, C different tenant, R revoked;
+--     verify positive-own rows and negative cross-Store rows across all six
+--     tables (plus authorized writes in disposable test only).
+--   Execute no real customer write for QA. Exact bounded staging
+--     negative-write tests need owner-approved synthetic fixtures, separate
+--     transaction isolation and explicit cleanup/evidence.
+--   Compare current Policies/Grants/RPCs to the approved baseline.
+--   Rollback through pre-reviewed reverse migration + independent restore
+--     plan, never blind DELETE or broad policy disable.
+--
+-- PROJECT RELEASE STATUS: BLOCKED. THIS FILE PROVIDES ZERO GRANT TO RUN SQL.
