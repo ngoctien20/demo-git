@@ -68,10 +68,34 @@ if rehearse HEAD "$REPLAY" 'V14.4.1 + PR95'; then
    git commit-tree "$tree_one" -p HEAD -p "$REPLAY" <<< 'ephemeral CI tree; do not push')
   if rehearse "$sandbox_commit" "$STORE" 'synthetic union + PR86'; then
     echo 'TEXT_REHEARSAL_RESULT=NO_TEXT_CONFLICTS_NEEDS_CODE_AND_DB_REVIEW'
+    # Also run existing OFFLINE Node regressions on the exact 3-way
+    # composed tree, WITHOUT changing any real Git branch or public site.
+    # This does not replace hosted Auth/DB tests or explicit PR review.
+    composite=$(GIT_AUTHOR_NAME='TIEN404 CI' GIT_AUTHOR_EMAIL='ci@invalid.example' \
+     GIT_COMMITTER_NAME='TIEN404 CI' GIT_COMMITTER_EMAIL='ci@invalid.example' \
+     git commit-tree "$MERGED_TREE" -p "$sandbox_commit" -p "$STORE" \
+     <<< 'ephemeral three-lineage source QA commit; never push')
+    scratch=$(mktemp -d)
+    trap 'rm -rf "$scratch"' EXIT
+    git archive "$composite" | tar -x -C "$scratch"
+    (
+     cd "$scratch"
+     node --check qa/hosted-readiness-v1441/release-evidence-gate.cjs
+     find qa/store-rls-v142 qa/shop-onboarding-v142 qa/shop-knowledge-v141 \
+       qa/channel-v143 qa/channel-v144 qa/hosted-readiness-v1441 \
+       qa/messenger-rich-v136m* \
+       -type f -name '*.test.cjs' \
+       ! -name 'preview.test.cjs' \
+       ! -name 'browser.test.cjs' \
+       -print0 | xargs -0 -r node --test
+    )
+    echo 'COMBINED_OFFLINE_SOURCE_QA=PASS (synthetic merged tree; NOT HOSTED)'
   else
     echo 'TEXT_REHEARSAL_RESULT=STORE_CONFLICT_MANUAL_PORT_REQUIRED'
+    exit 1
   fi
 else
  echo 'TEXT_REHEARSAL_RESULT=REPLAY_CONFLICT_MANUAL_PORT_REQUIRED'
+ exit 1
 fi
 echo 'HOSTED_RLS_STATUS=BLOCKED; BRANCHES_NOT_MERGED; NO_PROVIDER_SEND'
