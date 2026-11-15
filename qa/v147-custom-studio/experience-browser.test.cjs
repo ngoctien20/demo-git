@@ -17,7 +17,7 @@ const widths=process.env.T404_QA_BASE?[390,1280]:[320,360,390,430,768,1280];
     if(!r.url().startsWith(root+'/'))outside.push(r.url());
     if(!['GET','HEAD'].includes(r.method()))writes.push(r.method());
    });
-   await page.goto(root+'/qa/v147-custom-studio/index.html',{waitUntil:'networkidle'});
+   await page.goto(root+(process.env.T404_QA_BASE?'/':'/qa/v147-custom-studio/index.html'),{waitUntil:'networkidle'});
    await page.locator('[data-experience="CAROUSEL"]').click();
    assert.equal(await page.locator('#experienceOutput .exp-card').count(),3);
    assert.match(await page.locator('#experienceOutput').textContent(),/159.000đ/);
