@@ -42,7 +42,7 @@ function reviewPrGraph(entries,merge={}){
  const byId=new Map();
  for(const x of Array.isArray(entries)?entries:[]){
   if(!x||!Number.isInteger(x.number)||byId.has(x.number))
-    return Object.freeze({state:'INVALID_PR_EVIDENCE',drift:['duplicate_or_invalid_pr'],mergeReady:false});
+    return Object.freeze({status:'INVALID_PR_EVIDENCE',drift:['duplicate_or_invalid_pr'],mergeReady:false,canMerge:false,canDeploy:false});
   byId.set(x.number,x);
  }
  const drift=[];
