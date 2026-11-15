@@ -160,3 +160,20 @@ test('No executable migration/backfill/release code is exported',()=>{
  assert.deepEqual(Object.keys(x).sort(),['summarizeSanitizedCandidates',
  'reviewLocalArchiveReport','privateReviewChecklist','STOP'].sort());
 });
+
+test('Current read-only staging snapshot validates four QA source groups but not actual owners',()=>{
+ const snapshot=require('./four-row-public-sanitized.snapshot.json');
+ assert.equal(snapshot.commerce_row_counts.products,2);
+ assert.equal(snapshot.commerce_row_counts.orders,2);
+ assert.equal(snapshot.backup_archive_bytes_available_to_connector,false);
+ const x=audit(snapshot.aggregate);
+ assert.equal(x.verifiedOwnerRows,0);
+ assert.equal(x.can_backfill,false);
+ assert.equal(snapshot.owner_row_mapping_verified,false);
+});
+test('Versioned public snapshot contains no live UUID, phone, JWT or customer identifier',()=>{
+ const snapshot=require('./four-row-public-sanitized.snapshot.json');
+ const json=JSON.stringify(snapshot);
+ assert.doesNotMatch(json,/([0-9a-f]{8}-){4}[0-9a-f]{12}|@|(?<!\d)\+84\d{9}|access_token|service_role|postgres_password|customer_id/i);
+ assert.equal(snapshot.release_authorized,false);
+});
