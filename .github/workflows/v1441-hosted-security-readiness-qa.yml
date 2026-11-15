@@ -1,0 +1,102 @@
+name: TIEN404 V14.4.1 Hosted Security Readiness — SAFE CI ONLY
+on:
+  push:
+    branches:
+      - work/v1441-hosted-security-pr-reconciliation-staging-20261115
+    paths:
+      - 'qa/hosted-readiness-v1441/**'
+      - 'docs/ai-handoff/V14_4_1_*'
+      - '.github/workflows/v1441-hosted-security-readiness-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/hosted-readiness-v1441/**'
+      - 'docs/ai-handoff/V14_4_1_*'
+      - '.github/workflows/v1441-hosted-security-readiness-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-and-regression:
+    name: Evidence gates + V14.4/V14.3/Messenger regressions (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate synthetic security gate and test semantics
+        run: |
+          node --check qa/hosted-readiness-v1441/release-evidence-gate.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+      - name: Inherited V14.4 and V14.3 Node tests
+        run: |
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+      - name: Inherited canonical Messenger source regressions
+        run: |
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+      - name: Source denial and CI-only SQL static safety check
+        run: |
+          bash -n qa/hosted-readiness-v1441/ci-pg17-rls.sh
+          bash -n qa/hosted-readiness-v1441/ci-merge-tree-audit.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('qa/hosted-readiness-v1441/release-evidence-gate.cjs').read_text()
+          sql=Path('qa/hosted-readiness-v1441/EPHEMERAL_PG17_CI_ONLY.sql').read_text()
+          runner=Path('qa/hosted-readiness-v1441/ci-pg17-rls.sh').read_text()
+          for key in ('canMigrate:false','canBackfill:false','canAlterRls:false','canSendMeta:false','canSendZalo:false','productionReady:false'):
+              assert key in src, key
+          assert 'HOSTED_RELEASE_BLOCKED' in src
+          assert sql.index("current_database()<>'tien404_v1441_ci'") < sql.index('CREATE SCHEMA')
+          assert 'V1441_DISPOSABLE' in sql and 'CI_V1441_DISPOSABLE' in runner
+          assert 'NOBYPASSRLS' in sql
+          assert "DROP POLICY old_tenant_policy_DEMO_DO_NOT_USE" in runner
+          for forbidden in ("fetch(", "axios(", "process.env", "graph.facebook.com",
+                            "SUPABASE_SERVICE_ROLE_KEY", "PAGE_ACCESS_TOKEN"):
+              assert forbidden not in src, forbidden
+          print('PASS — no hosted SQL/credentials/send capability and hard CI Postgres guard')
+          PY
+
+  disposable-pg17-rls:
+    name: Disposable PostgreSQL 17 — tenant/store/permissions/old-policy proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1441_only_ephemeral_ci_not_real'
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1441_only_ephemeral_ci_not_real'
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run disposable CI-only RLS and role tests
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
+
+  pr-dependency-merge-rehearsal:
+    name: Exact HEAD drift + ephemeral Git merge-tree audit (NO MERGE)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify four remote immutable PR Heads and dry-run divergent branches
+        run: bash qa/hosted-readiness-v1441/ci-merge-tree-audit.sh
