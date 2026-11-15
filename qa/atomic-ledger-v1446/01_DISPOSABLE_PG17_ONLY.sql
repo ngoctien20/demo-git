@@ -35,13 +35,10 @@ CREATE TABLE qa_v1446.memberships (
   store_id uuid NOT NULL,
   role text NOT NULL CHECK (role IN ('buyer','owner')),
   active boolean NOT NULL,
-  PRIMARY KEY(actor_id,tenant_id,store_id),
-  FOREIGN KEY(tenant_id,store_id) REFERENCES qa_v1446.products(tenant_id,store_id)
-     DEFERRABLE INITIALLY DEFERRED -- structural fixture only; see note below
+  PRIMARY KEY(actor_id,tenant_id,store_id)
 );
--- The FK above is deliberately replaced below because a membership relates
--- to a Store, not one Product/SKU. This remains entirely within CI.
-ALTER TABLE qa_v1446.memberships DROP CONSTRAINT memberships_tenant_id_store_id_fkey;
+-- Membership belongs to canonical Store, not individual product; there
+-- is no Stores table in this disposable fixture. Hosted FK is blocked.
 CREATE TABLE qa_v1446.orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL,
