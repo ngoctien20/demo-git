@@ -74,7 +74,8 @@ function createTrustedPorts({repository,mode='BLOCKED',now=Date.now}={}){
         rows.some(r=>!r||r.tenant_id!==tenantId||r.store_id!==storeId))
         deny('CROSS_STORE_CATALOG_ROW_DENIED');
       return {source:'SERVER_VERIFIED_TENANT_CATALOG',tenantId,storeId,
-        serverAuthorized:true,readOnly:true,isolationProof:'STORE_RLS_VERIFIED',rows};
+        serverAuthorized:true,readOnly:true,isolationProof:'STORE_RLS_VERIFIED',
+        repositoryScope:'SERVER_STORE_BOUND',rows};
     },
     async checkAndReserveEvent({tenantId,storeId,channel,replayKey,mode:requestMode}={}){
       scope(tenantId,storeId);
