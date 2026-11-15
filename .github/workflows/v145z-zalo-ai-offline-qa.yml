@@ -28,6 +28,6 @@ jobs:
         run: node --test qa/zalo-live-v145z/live01-preflight.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
-      - name: No live outbound or DB mutation in candidate module
+      - name: No live outbound or DB mutation in candidate modules
         run: |
           ! grep -E 'https?://|fetch\(|axios|sendMessage\(|ZALO_SEND_ENABLED *= *true|INSERT INTO|UPDATE public\.orders|DELETE FROM' qa/zalo-live-v145z/ai-pilot.cjs
