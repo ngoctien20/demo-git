@@ -1,0 +1,60 @@
+{
+  "checkpoint": "V14.4A.1",
+  "environment": "Supabase tien404-staging; READ ONLY SELECT",
+  "observed_at_utc": "2026-11-15",
+  "database_version": "17.11",
+  "schema": {
+    "stores": false,
+    "store_memberships": false,
+    "products_store_id": false
+  },
+  "commerce_row_counts": {
+    "products": 2,
+    "orders": 2,
+    "customers": 0,
+    "order_items": 0,
+    "conversations": 0,
+    "messages": 0
+  },
+  "aggregate": [
+    {
+      "qa_tenant_alias": "qa-staging-shop-a-20261110",
+      "kind": "orders",
+      "row_count": 1,
+      "synthetic_candidate_count": 1,
+      "candidate_alias": "qa-store-a"
+    },
+    {
+      "qa_tenant_alias": "qa-staging-shop-a-20261110",
+      "kind": "products",
+      "row_count": 1,
+      "synthetic_candidate_count": 1,
+      "candidate_alias": "qa-store-a"
+    },
+    {
+      "qa_tenant_alias": "qa-staging-shop-b-20261110",
+      "kind": "orders",
+      "row_count": 1,
+      "synthetic_candidate_count": 1,
+      "candidate_alias": "qa-store-b"
+    },
+    {
+      "qa_tenant_alias": "qa-staging-shop-b-20261110",
+      "kind": "products",
+      "row_count": 1,
+      "synthetic_candidate_count": 1,
+      "candidate_alias": "qa-store-b"
+    }
+  ],
+  "security_notes": {
+    "legacy_select_scope": "tenant membership only; permissive SELECT policy; store isolation not established",
+    "security_definer_review": "public qa_shop_b_zalo_claim anon-executable; qa_owner_pairing and save_merchant_product authenticated-executable; no exploit asserted"
+  },
+  "backup_archive_owner_reported": "TIEN404_V142_PRE_RLS.backup",
+  "backup_archive_bytes_available_to_connector": false,
+  "sha256_verified": false,
+  "restore_verified": false,
+  "owner_row_mapping_verified": false,
+  "release_authorized": false,
+  "note": "Aggregate alias is synthetic candidate, NEVER per-row ownership proof; no private row IDs, customer or credential data in this snapshot."
+}
