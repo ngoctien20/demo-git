@@ -69,3 +69,10 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - Job 132853002956: V14.5Z core **28/28 PASS** + V14.5Z LIVE01 preflight **32/32 PASS** + V13.8 regression **44/44 PASS** = **104/104**, no failures. Syntax and static no-send checks PASS.
 - Cloudflare API GET (read-only) on Worker `tien404-zalo-outbound-v1-staging`: script settings reported plain_text `ZALO_SEND_ENABLED=false`. Secret bindings were **not read or displayed**. This verifies the configuration flag at inspection, NOT complete proof of zero possible sending routes.
 - No actual Zalo recipient or Bot ownership has yet been independently authenticated in this LIVE01 session; owner QA allowlist remains an approval blocker.
+
+## 10. Sanitized n8n QA identity checks
+- `TIEN404_ZALO_OWNER_ALLOWLIST_STAGING_V1`: one existing QA Owner allowlist row, status `ALLOWED_STAGING_OWNER`, approved 2026-11-13T13:17:32.511Z, expires 2026-11-20T13:17:32.511Z. **Raw chat_id intentionally not recorded**.
+- `TIEN404_R1_SHOP_BOT_REGISTRY_QA`: two records, BOTH `bot_provider=zalo_bot_fixture`, `enabled_mode=dry_run`, `identity_status=synthetic_qa`. This cannot authorize actual Bot→Store routing or real outbound dispatch.
+- `TIEN404_ZALO_SHOP_B_CATALOG_SNAPSHOT_QA`: one synthetic F01 record with price 199000 VND, stock 5. Must not represent this as real merchant price/stock.
+- Current documented Cloudflare outbound read-only preflight uses POST `/v1/auth-check`, `/v1/bot-check`; do not execute the existing full preflight workflow just to check the token, because it also calls `/v1/owner-one-shot` which is a send-capable operation. Current outbound global kill switch is false; still no sender call was made.
+- Gate: real Bot identity from a trusted read-only getMe/bot-check, exact private binding and one approved QA recipient remain required. Do not promote `synthetic_qa` into `VERIFIED` by editing rows alone.
