@@ -1,0 +1,26 @@
+name: TIEN404 V14 Image-to-SKU Offline QA
+on:
+  push:
+    branches:
+      - work/v140-multimodal-image-sku-offline-staging
+    paths:
+      - qa/multimodal-v14/**
+      - .github/workflows/v140-multimodal-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/multimodal-v14/**
+      - .github/workflows/v140-multimodal-offline-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify offline tests (no credentials, network calls or orders)
+        run: node --test qa/multimodal-v14/core.test.cjs
