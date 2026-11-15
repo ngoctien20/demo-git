@@ -1,0 +1,39 @@
+name: TIEN404 V14.4.9 Private Recovery & Merchant Intake QA
+on:
+  pull_request:
+    paths:
+      - 'qa/private-recovery-v1449/**'
+      - 'docs/ai-handoff/V14_4_9_*.md'
+      - '.github/workflows/v1449-private-recovery-intake-qa.yml'
+permissions:
+  contents: read
+jobs:
+  privacy-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Offline 4-stage recovery, attribution, Store isolation regressions
+        run: |
+          node --test \
+            qa/private-recovery-v1449/private-recovery-intake.test.cjs \
+            qa/recovery-owner-v1448/recovery-owner-gate.test.cjs \
+            qa/security-definer-v1443/four-row-owner-evidence.test.cjs \
+            qa/store-rls-v1447/store-isolation-gate.test.cjs
+      - name: Enforce metadata-only SQL and no private records in intake template
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          sql=Path('qa/private-recovery-v1449/HOSTED_P0_READ_ONLY.sql').read_text()
+          executable='\n'.join(x for x in sql.splitlines() if not x.lstrip().startswith('--'))
+          assert re.search(r'\bWITH\b',executable)
+          assert 'SELECT jsonb_build_object' in executable
+          assert not re.search(r'\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|TRUNCATE|COPY|CALL|EXECUTE)\s+(?:FROM|INTO|TABLE|POLICY|ON|SCHEMA)?',executable,re.I)
+          blank=Path('qa/private-recovery-v1449/PRIVATE_BLANK_INTAKE_TEMPLATE.md').read_text()
+          assert 'DO NOT FILL THIS FILE ON GITHUB' in blank
+          assert not re.search(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b',blank,re.I)
+          assert 'NOT APPROVED' in blank
+          print('PASS: SELECT-only metadata query, blank private template and no direct record UUIDs')
+          PY
