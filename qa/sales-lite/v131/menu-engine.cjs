@@ -251,5 +251,20 @@ function createMenuEngine({menuSource=registry,resolveContext,verifyCallback=nul
  return freeze({handle,render,sessionManager,analytics,compiled,
   runtimeStatus:'NOT_ATTACHED_TO_ZALO',sendEnabled:false,orderWriteEnabled:false});
 }
-module.exports={createMenuRegistry,createMenuRenderer,createMenuSessionManager,
- createMenuAnalytics,createMenuPermissionGuard,createChannelMenuAdapter,createMenuEngine};
+function createMenuTemplateService(source=registry){
+ const compiled=createMenuRegistry(source),renderer=createMenuRenderer(compiled);
+ return freeze({
+  version:compiled.version,
+  getTemplate:({actorRole,mode='TEXT_NUMBERED'})=>renderer.render({role:actorRole,mode}),
+  supportedModes:freeze(['TEXT_NUMBERED','TEXT_COMMAND','MOCK_TESTED']),
+  productionReady:false
+ });
+}
+function createMenuActionRouter(options) {
+ const engine=createMenuEngine(options);
+ return freeze({route:engine.handle,registry:engine.compiled,
+  mode:'NO_SEND_QA_ONLY',orderWriteEnabled:false,sendEnabled:false});
+}
+module.exports={createMenuRegistry,createMenuTemplateService,createMenuActionRouter,
+ createMenuRenderer,createMenuSessionManager,createMenuAnalytics,
+ createMenuPermissionGuard,createChannelMenuAdapter,createMenuEngine};
