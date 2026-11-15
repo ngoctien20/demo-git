@@ -6,6 +6,9 @@
  const api=window.T404Studio;
  if(!api)throw Error('MISSING_SYNTHETIC_CORE');
  let lab=api.createStudio(),shop='A',channel='MESSENGER',flow='CONSULT';
+ const experience=window.T404Experience;
+ if(!experience)throw Error('EXPERIENCE_LAB_REQUIRED');
+ let experienceMode='STANDARD';
  const $=id=>document.getElementById(id);
  const menuPresets={
   basic:[{id:'CATALOG',label:'Xem sản phẩm'},{id:'QUOTE',label:'Hỏi giá'},{id:'ASK_STAFF',label:'Gặp nhân viên'}],
@@ -72,7 +75,75 @@
    for(const a of view.menu)choices.append(element('span',null,a.label+' · preview'));
    chat.append(choices);
   }
+  renderExperience();
  }
+
+ function renderExperience(){
+  const container=$('experienceModes'),target=$('experienceOutput');
+  container.replaceChildren();
+  for(const mode of experience.MODES[channel]){
+   const btn=element('button',null,({
+     STANDARD:'Mặc định',CAROUSEL:'Carousel',QUICK_REPLIES:'Quick Replies',
+     PERSISTENT_MENU:'Menu Page',WEBVIEW:'Webview',RICH_TEXT:'Rich Text',
+     PHOTO_CAPTION:'Ảnh & caption',NUMBERED_MENU:'Menu đánh số',
+     OA_CTA:'OA CTA',OA_MENU:'Menu OA',ZBS_TEMPLATE:'ZBS Template'
+   })[mode]||mode);
+   btn.type='button';btn.dataset.experience=mode;btn.dataset.active=String(mode===experienceMode);
+   btn.setAttribute('aria-pressed',String(mode===experienceMode));
+   btn.addEventListener('click',()=>{experienceMode=mode;renderExperience()});
+   container.append(btn);
+  }
+  target.replaceChildren();
+  const x=experience.build({studio:lab,api,shop,channel,mode:experienceMode});
+  const status=$('experienceStatus');
+  status.textContent=x.providerCapability==='DOCUMENTED_NOT_TESTED'?'API có tài liệu · chưa test tài khoản':
+    x.providerCapability==='ACCOUNT_PERMISSION_REQUIRED'?'Cần quyền provider':
+    x.providerCapability==='APPROVAL_AND_COST_GATE_REQUIRED'?'Cần duyệt mẫu và ngân sách':
+    x.providerCapability==='TEXT_FALLBACK_ONLY'?'Dạng văn bản thay thế':'Chỉ mô phỏng nội bộ';
+  target.append(element('div','exp-title',x.title+' · '+x.status));
+  target.append(element('div','exp-message',x.message));
+  if(x.cards.length){
+   const scroller=element('div','exp-carousel');
+   for(const card of x.cards){
+    const item=element('div','exp-card');
+    item.append(element('div','exp-photo',card.emoji));
+    const body=element('div','exp-cardbody');
+    body.append(element('strong',null,card.title));
+    body.append(element('small',null,'SKU: '+card.sku+' · Sản phẩm QA'));
+    body.append(element('div','exp-price',card.priceLabel));
+    item.append(body);
+    item.append(element('div','exp-cardbtns','Xem giá | Gặp nhân viên · không tương tác'));
+    scroller.append(item);
+   }
+   target.append(scroller);
+  }
+  if(x.buttons.length){
+   const choices=element('div','exp-choices');
+   for(const button of x.buttons)choices.append(element('span','exp-choice',button.label+' · preview'));
+   target.append(choices);
+  }
+  if(x.menu.length){
+   const menu=element('div');
+   for(const item of x.menu)menu.append(element('div','exp-menu-item',item.label+' · không phát hành'));
+   target.append(menu);
+  }
+  if(x.webview){
+   target.append(element('div','exp-webview','Website / Catalog công khai · chưa có URL xác minh · không đọc đơn riêng tư'));
+  }
+  if(x.richRuns.length){
+   target.append(element('div','exp-rich',x.message));
+   target.append(element('div','exp-warning','Rich Text dùng text_styles UTF-16 do Bot API mô tả; đây KHÔNG phải tin đã gửi.'));
+  }
+  if(x.photo){
+   const block=element('div','exp-photo-preview');
+   block.append(element('div','exp-photo',x.photo.emoji));
+   block.append(element('strong',null,x.photo.caption));
+   block.append(element('div','exp-warning','Ảnh biểu tượng synthetic, không có URL ảnh / không gọi sendPhoto'));
+   target.append(block);
+  }
+  target.append(element('div','exp-warning',x.notes.join(' ')));
+ }
+
  function save(){
   try{
    const payload={
@@ -106,8 +177,8 @@
   $('qaOutput').textContent=(passed?'PASS':'FAIL')+' 4/4 luồng QA tổng hợp cho '+api.FIXTURES[shop].name+' · '+channelLabels[channel]+'. Chỉ kiểm thử fixture, chưa kiểm thử AI hoặc provider thật.';
   $('qaOutput').classList.add('show');
  }
- document.querySelectorAll('[data-shop]').forEach(b=>b.addEventListener('click',()=>{shop=b.dataset.shop;loadControls();render()}));
- document.querySelectorAll('[data-channel]').forEach(b=>b.addEventListener('click',()=>{channel=b.dataset.channel;loadControls();render()}));
+ document.querySelectorAll('[data-shop]').forEach(b=>b.addEventListener('click',()=>{shop=b.dataset.shop;experienceMode='STANDARD';loadControls();render()}));
+ document.querySelectorAll('[data-channel]').forEach(b=>b.addEventListener('click',()=>{channel=b.dataset.channel;experienceMode='STANDARD';loadControls();render()}));
  document.querySelectorAll('[data-flow]').forEach(b=>b.addEventListener('click',()=>{flow=b.dataset.flow;render()}));
  $('color').addEventListener('input',()=>{$('colorCode').value=$('color').value.toUpperCase()});
  $('colorCode').addEventListener('input',()=>{const s=$('colorCode').value;if(/^#[a-f0-9]{6}$/i.test(s))$('color').value=s});

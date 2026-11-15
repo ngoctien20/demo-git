@@ -1,0 +1,121 @@
+name: TIEN404 V14.7-04/05 Messenger Zalo Rich Preview No-Send QA
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/**'
+      - 'docs/ai-handoff/V14_7_04_05_*'
+      - '.github/workflows/v14704-05-rich-nosend-qa.yml'
+  push:
+    branches:
+      - work/v14704-05-messenger-zalo-no-send-lab-20261116
+    paths:
+      - 'qa/v147-custom-studio/**'
+      - 'docs/ai-handoff/V14_7_04_05_*'
+      - '.github/workflows/v14704-05-rich-nosend-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adapter-qa:
+    name: 28 experience + 8 inherited Messenger adapter + prior 36 config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax + no send component tests
+        run: |
+          node --check qa/v147-custom-studio/experience-lab.js
+          node --check qa/v147-custom-studio/studio-ui.js
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+          node --test qa/v147-custom-studio/messenger-adapter-inheritance.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v14601/level2-offline-bridge.test.cjs
+      - name: Security guard - source never calls provider or hosted
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          a=Path('qa/v147-custom-studio/experience-lab.js').read_text()
+          b=Path('qa/v147-custom-studio/studio-ui.js').read_text()
+          h=Path('qa/v147-custom-studio/index.html').read_text()
+          assert "providerSends:0" in a
+          assert "orderWrites:0" in a
+          assert "canPublish:false" in a
+          assert "connect-src 'none'" in h
+          for x in ('fetch(', 'XMLHttpRequest','axios(', 'process.env',
+                    'graph.facebook.com', 'service_role', 'localStorage',
+                    'sessionStorage', 'new Function('):
+            assert x not in a+b,x
+          print('PASS synthetic-only no network and no hosted writes')
+          PY
+  browser-qa:
+    name: Playwright Rich UI 6 widths, 3 shops, 4 channels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install chromium QA-only
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Start isolated local fixture server
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v147-rich-http.log 2>&1 &
+          sleep 2
+      - name: Previous visual regression
+        run: node qa/v147-custom-studio/browser.test.cjs
+      - name: New channel experience visual scenarios
+        run: node qa/v147-custom-studio/experience-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v147-rich-studio-synthetic-preview-390px
+          path: qa-artifacts-v147-rich/
+          if-no-files-found: ignore
+
+  hosted-staging-smoke:
+    name: Cloudflare isolated No-Send Worker smoke + Chromium preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      T404_QA_BASE: https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: HTTP verify exact staged source and hard lock
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 4 --retry-delay 3 "$T404_QA_BASE/health" -o /tmp/v147-live-health.json
+          python3 - <<'PY'
+          import json
+          a=json.load(open('/tmp/v147-live-health.json'))
+          assert a["mode"]=="SYNTHETIC_NO_SEND"
+          assert a["version"]=="V14.7-04/05"
+          assert a["sourceCommit"]=="4d2b515e44aed435b687ed3c2a71a767db458f75"
+          assert a["providerSends"]==a["hostedWrites"]==a["aiCalls"]==0
+          print("PASS deployed source fingerprint and NO-SEND counters")
+          PY
+          curl -fsSL "$T404_QA_BASE/" -o /tmp/v147-rich.html
+          grep -q 'experienceModes' /tmp/v147-rich.html
+          curl -fsSL "$T404_QA_BASE/experience-lab.js" -o /tmp/v147-rich.js
+          grep -q 'APPROVAL_AND_COST_GATE_REQUIRED' /tmp/v147-rich.js
+          curl -fsSL "$T404_QA_BASE/studio-ui.js" -o /tmp/v147-ui.js
+          grep -q 'renderExperience' /tmp/v147-ui.js
+          status=$(curl -sS -o /tmp/t404-send.txt -w '%{http_code}' -X POST "$T404_QA_BASE/v1/send")
+          test "$status" = "423"
+          status=$(curl -sS -o /tmp/t404-unknown.txt -w '%{http_code}' "$T404_QA_BASE/v1/orders")
+          test "$status" = "404"
+          echo "PASS staging Rich UI scripts + blocked outgoing endpoints"
+      - name: Install Chromium QA dependency
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Real HTTPS browser visual smoke (2 viewports, 0 external writes)
+        run: node qa/v147-custom-studio/experience-browser.test.cjs
