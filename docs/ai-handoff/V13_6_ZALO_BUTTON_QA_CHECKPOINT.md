@@ -59,3 +59,18 @@ All changes are source / preview only. No Cloudflare Workers, n8n, Supabase, Ren
 - Rollback: close/revert PR #79, leaving previous V13.5 Worker version `21b0580c`, D1 claims, disabled sender, webhook and credentials untouched. No database rollback needed.
 
 **Status:** IMPLEMENTED + TESTED source and Chromium button mock. **Not yet a working native button inside Zalo Bot Creator.**
+
+## 7. Owner follow-up "được hãy thử" — direct native-button feasibility audit (2026-11-15 JST)
+
+The Owner asked to try native buttons following PR #79. **This was a read-only feasibility and safety preflight only; NO additional provider message was sent.**
+
+- **VERIFIED official Bot API** https://docs.zaloplatforms.com/docs/BOT/apis/sendMessage (build 2026-08-06 09:57:04 +07) defines ONLY `chat_id`, `text`, `parse_mode`, `text_styles`. Navigation lists other text/photo/sticker/voice/chat-action and webhook endpoints, but not a documented keyboard/button write endpoint or its callback schema.
+- **VERIFIED Bot overview** https://docs.zaloplatforms.com/docs/BOT still describes button, quick reply and carousel features at a high level; does NOT provide an implementable button request / callback wire contract.
+- **INDEPENDENT non-authoritative sources:** community SDK repository `KaiyoDev/zalo-bot-js` lists `setChatKeyboard` and `deleteChatKeyboard` but those names are not in the official reference. Do NOT send guessed writes or treat a community SDK as proof of allowed provider support.
+- **VERIFIED connected user's OA Manager tab, read-only:** URL `https://oa.zalo.me/manage/register?oasrc=oam_manage` shows a TIEN404 OA **creation form not yet completed**: business-registration and profile steps pending, required brand materials still missing. Therefore there is **no demonstrated approved OA/API credential/entitlement** for an actual button send. No forms were submitted or account state changed.
+- **VERIFIED Cloudflare Worker settings, read-only:** `tien404-zalo-outbound-v1-staging` current version `21b0580c-a76d-4331-bacf-d959e289da6d`; `ZALO_SEND_ENABLED=false`, six existing bindings; no updates, deployment or sends.
+- **VERIFIED n8n:** manual sender `qWMu4n1wLkTZBNpI` remains inactive, all three T1/T2/T3 sends disabled; all previously approved case slots consumed. Active Zalo ingress `yIJk8LvJoLF40Z62` and private router `sIPs6egzIwOY1GNv` have not been changed.
+
+**Acceptance outcome:** Real Zalo Bot Creator native-button test = **BLOCKED before send**, because official protocol is not verified; OA native-button test = **BLOCKED**, because OA registration/API authorization is not complete. Browser-only simulated buttons remain TESTED, but must never be mislabeled as live Zalo buttons. New generic sends or trial-and-error guessed API writes would be outside the approved security scope.
+
+**To unblock:** Ask Zalo Developer Support for a verified Bot keyboard/button method + event callback specification, OR finish TIEN404 OA setup/verification and obtain OA messaging permissions, then build a separate OA adapter with controlled 1-shot QA approval. No new credentials, live API sends or permissions changed in this follow-up.
