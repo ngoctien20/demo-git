@@ -26,6 +26,7 @@ const REQUIRED=Object.freeze([
  'QA_SKU_A','QA_SKU_B','QA_SKU_C',
  'QA_ORDER_A_UUID','QA_ORDER_B_UUID','QA_ORDER_C_UUID'
 ]);
+const VERIFIED_CONFIGS=new WeakSet();
 const ERRORS=new Set([
  'HOSTED_QA_GATES_CLOSED','HOSTED_QA_CONFIG_INVALID','HOSTED_QA_CREDENTIALS_INVALID',
  'HOSTED_QA_TOKEN_REJECTED','HOSTED_QA_REQUEST_REJECTED','HOSTED_QA_INVALID_RESPONSE',
@@ -55,9 +56,12 @@ function configFromEnv(env={}){
     !orders.every(isUuid)||new Set(orders).size!==3||
     !skus.every(x=>/^[A-Za-z0-9_-]{3,40}$/.test(x)))
    return Object.freeze({ready:false,code:'HOSTED_QA_CREDENTIALS_INVALID',missing:[]});
- return Object.freeze({ready:true,projectRef:PROJECT,
+ const validated=Object.freeze(Object.fromEntries(REQUIRED.map(k=>[k,env[k]])));
+ const cfg=Object.freeze({ready:true,projectRef:PROJECT,
    // NEVER serialize this config or print any token/publishable key.
-   privateEnv:env});
+   privateEnv:validated});
+ VERIFIED_CONFIGS.add(cfg);
+ return cfg;
 }
 async function call({path,token,key,fetchImpl}){
  if(!/^\/(?:auth\/v1\/user|rest\/v1\/(?:store_memberships|products|orders)\?.+)$/.test(path))
@@ -83,7 +87,8 @@ function query(table,filters,columns){
 }
 async function hostedJwtAcceptance(cfg,fetchImpl=globalThis.fetch){
  if(cfg?.ready!==true||cfg.projectRef!==PROJECT||
-   typeof fetchImpl!=='function')deny('HOSTED_QA_GATES_CLOSED');
+   !VERIFIED_CONFIGS.has(cfg)||typeof fetchImpl!=='function')
+   deny('HOSTED_QA_GATES_CLOSED');
  const env=cfg.privateEnv;
  const t=[env.QA_A_ACCESS_TOKEN,env.QA_B_ACCESS_TOKEN,env.QA_C_ACCESS_TOKEN,
    env.QA_REVOKED_ACCESS_TOKEN],key=env.SUPABASE_PUBLISHABLE_KEY;
@@ -169,4 +174,4 @@ if(require.main===module){
  });
 }
 module.exports={PROJECT,APPROVAL,RESTORE_GATE,REQUIRED,configFromEnv,
-  hostedJwtAcceptance,query,call};
+  hostedJwtAcceptance};
