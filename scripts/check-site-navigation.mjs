@@ -17,6 +17,20 @@ for(const p of pages){
  const file=path.join(root,p);
  if(!fs.existsSync(file)){errors.push(p+': missing');continue}
  const html=fs.readFileSync(file,'utf8');
+ // This page is a strict external Auth redirect, not a public navigation page.
+ // Validate the exact trusted URL and an accessible fallback instead of requiring a fake demo navbar.
+ if(p==='login.html'){
+   const trusted='https://tien404-auth-staging.onrender.com/login.html';
+   const redirects=fs.readFileSync(path.join(root,'_redirects'),'utf8');
+   if(!html.includes('http-equiv="refresh" content="0;url='+trusted+'"')||
+      !html.includes('href="'+trusted+'"')||
+      !redirects.includes('/login '+trusted+' 302')||
+      !redirects.includes('/login.html '+trusted+' 302')||
+      html.includes('<form')){
+     errors.push('login.html: auth redirect boundary invalid or demo login resurfaced');
+   }
+   continue;
+ }
  const menu=html.match(/<nav aria-label="Điều hướng chính"[\s\S]*?<\/nav>/)?.[0];
  if(!menu){errors.push(p+': navigation missing');continue}
  const labels=[...menu.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)]
