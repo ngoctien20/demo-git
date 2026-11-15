@@ -179,11 +179,11 @@ test('18 · merchant cannot self-review',async()=>{
  await denial(svc.independentReview({bearer:'merchantA',sessionId:a.sessionId,
   decision:'ACCEPT_FOR_ADDITIONAL_HOSTED_VERIFICATION'}),'INTAKE_SELF_REVIEW_DENIED');
 });
-test('19 · outsider cannot act as QA reviewer',async()=>{
+test('19 · outsider cannot impersonate the declared independent QA reviewer',async()=>{
  const {svc}=setup(),a=await staged(svc);
  await merchants(svc,a.sessionId);
  await denial(svc.independentReview({bearer:'outsider',sessionId:a.sessionId,
-  decision:'ACCEPT_FOR_ADDITIONAL_HOSTED_VERIFICATION'}),'INTAKE_ROLE_NOT_AUTHORIZED');
+  decision:'ACCEPT_FOR_ADDITIONAL_HOSTED_VERIFICATION'}),'INTAKE_INDEPENDENT_REVIEWER_MISMATCH');
 });
 test('20 · revoked QA reviewer fails after merchants confirm',async()=>{
  const {svc,perms}=setup(),a=await staged(svc);
