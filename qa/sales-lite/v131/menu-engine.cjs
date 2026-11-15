@@ -232,7 +232,7 @@ function createMenuEngine({menuSource=registry,resolveContext,verifyCallback=nul
     if(!Number.isSafeInteger(result.priceVnd)||result.priceVnd<1||
        !Number.isSafeInteger(result.stock)||result.stock<0||
        !Number.isFinite(Date.parse(result.observedAt))||
-       clock()-Date.parse(result.observedAt)>60000||
+       Math.abs(clock()-Date.parse(result.observedAt))>60000||
        result.sku!=='F01') {
          sessionManager.release(scope,event.eventRef);
          return denied('CATALOG_NOT_FRESH',ctx,action);
