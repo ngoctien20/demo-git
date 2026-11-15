@@ -36,7 +36,9 @@ test('staging pages show safe UX and use relative auth routes',()=>{
   assert.doesNotMatch(login,/qua email đã cấu hình/);
   assert.match(account,/<meta http-equiv="refresh" content="0;url=merchant-portal\.html">/);
   assert.doesNotMatch(account,/assets\/auth-account\.js|id="account-tenants"|id="account-protected"/);
-  assert.match(account,/href="tester\.html"/);
+  assert.doesNotMatch(account,/href="tester(?:-request|-admin)?\.html"/);
+  assert.ok(fs.existsSync(path.join(output,"tester.html")),"Protected internal Tester portal must be preserved");
+  assert.ok(fs.existsSync(path.join(output,"tester-request.html")),"Internal Tester request flow must remain accessible to authorized users");
   assert.match(account,/href="login\.html"/);
   assert.doesNotMatch(login,/assets\/saas\.js/);
 });
