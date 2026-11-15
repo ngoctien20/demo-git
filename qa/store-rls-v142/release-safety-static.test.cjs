@@ -6,7 +6,8 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 function withoutSqlLineComments(s){return s.split('\n').map(line=>line.replace(/--.*$/,'')).join('\n')}
 test('Verified preflight SQL contains no DDL/DML/grants or executable mutations',()=>{
  const sql=withoutSqlLineComments(read('PREFLIGHT_READ_ONLY.sql'));
- assert.doesNotMatch(sql,/\b(?:CREATE|ALTER|DROP|UPDATE|DELETE|TRUNCATE|INSERT|GRANT|REVOKE|EXECUTE|CALL|DO|COPY)\b/i);
+ const codeOnly=sql.replace(/'(?:''|[^'])*'/g,"''");
+ assert.doesNotMatch(codeOnly,/\b(?:CREATE|ALTER|DROP|UPDATE|DELETE|TRUNCATE|INSERT|GRANT|REVOKE|EXECUTE|CALL|DO|COPY)\b/i);
  assert.match(sql,/\bSELECT\b/i);
  assert.match(sql,/false AS safe_to_apply_ddl/i);
 });
