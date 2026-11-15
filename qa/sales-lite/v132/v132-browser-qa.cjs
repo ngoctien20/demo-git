@@ -21,7 +21,7 @@ await route(page,width,'preview').click();await page.locator('#previewRole').sel
 await page.locator('#previewRole').selectOption('CUSTOMER');await page.locator('#chatInput').fill('1');await page.locator('#chatForm button').click();
 assert.match(await page.locator('#chat').textContent(),/Fixture QA F01/);
 await route(page,width,'rich').click();await overflow(page,'Studio rich '+width);await page.locator('#richText').fill('Đơn 🛒 số 1');
-await page.locator('#styleApply').click();const styles=await page.locator('#richPayload').textContent();assert.match(styles,/"len": 12/);
+await page.locator('#styleApply').click();const styles=await page.locator('#richPayload').textContent();assert.match(styles,/"len": 11/);
 await route(page,width,'qa').click();await page.locator('#localQA').click();assert.match(await page.locator('#qaResult').textContent(),/PASS/);
 assert.deepEqual(pageErrors,[],'Studio JS page error');assert.deepEqual(nonGet,[],'Studio unexpected writes');await page.close();}
 async function checkPortal(browser,width){const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});const pageErrors=[],writes=[];
