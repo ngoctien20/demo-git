@@ -13,7 +13,7 @@ const SKILLS=Object.freeze({
  inventory_write:{mode:'AUTHORIZED_EXECUTION',role:['owner','manager']}
 });
 function denied(code){return Object.freeze({status:'DENIED',reason:code,can_send:false,tools_executed:0,orders_written:0,inventory_writes:0,real_data_used:false,synthetic:true})}
-function runOfflineSkill({plan,server,fixtureStore}={}){
+function runOfflineSkill({plan,server,fixtureStore,customerText=''}={}){
  if(!plan||plan.status!=='CANDIDATE_OFFLINE_NO_SEND'||plan.can_send!==false||
     plan.real_llm_calls!==0||plan.tools_executed!==0)return denied('OFFLINE_CORE_PLAN_REQUIRED');
  if(!server||server.source!=='TRUSTED_SERVER_IDENTITY'||server.environment!=='SYNTHETIC_OFFLINE_FIXTURE'||
@@ -33,6 +33,8 @@ function runOfflineSkill({plan,server,fixtureStore}={}){
  if(plan.tool.read_only===true&&skill.mode!=='READ_ONLY')return denied('MODE_CONTRACT_MISMATCH');
  let response='',record=null;
  if(skill.mode==='READ_ONLY'&&(plan.tool.capability==='catalog_read'||plan.tool.capability==='price_quote')){
+   const requestedSku=typeof customerText==='string'?(customerText.toUpperCase().match(/\b[A-Z]\d{3}\b/)||[])[0]:undefined;
+   if(requestedSku&&requestedSku!==f.product.sku)return Object.freeze({status:'SYNTHETIC_QA_RESULT',mode:skill.mode,skill:plan.tool.capability,record:null,response:'[DỮ LIỆU QA] Không tìm thấy mã '+requestedSku+' trong danh mục mô phỏng của cửa hàng này. Chưa báo giá hoặc tồn kho.',store_ref:f.storeId,product_source:'V14_7_STATIC_SYNTHETIC_FIXTURE',synthetic:true,real_data_used:false,can_send:false,tools_executed:0,orders_written:0,inventory_writes:0,provider_sends:0});
    record={sku:f.product.sku,name:f.product.name,price_vnd:f.product.priceVnd,stock:f.product.stock,unit:f.product.unit};
    response=plan.tool.capability==='price_quote'
       ?'[DỮ LIỆU QA] '+f.product.name+' ('+f.product.sku+'): '+money(f.product.priceVnd)+' / '+f.product.unit+'. Tồn kho mô phỏng: '+f.product.stock+'.'
