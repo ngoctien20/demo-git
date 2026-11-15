@@ -10,6 +10,7 @@ const TRANSITIONS=Object.freeze({
   PAID:Object.freeze([]),
   CANCELLED:Object.freeze([])
 });
+const validSku=s=>typeof s==='string'&&s.length>=1&&s.length<=80&&/^[a-zA-Z0-9:_-]+$/.test(s);
 function deny(code){return Object.freeze({status:'DENIED',code,ordersWritten:0,outboxWrites:0,stockChanged:false});}
 const id=x=>typeof x==='string'&&x.length>=4&&x.length<=160&&/^[a-zA-Z0-9:_-]+$/.test(x);
 function createOrderRequestProposal({scope,customer,items,priceSnapshot,providerEventId}={}){
@@ -20,7 +21,7 @@ function createOrderRequestProposal({scope,customer,items,priceSnapshot,provider
      !Array.isArray(items)||items.length===0||items.length>30)return deny('PRICE_SNAPSHOT_UNVERIFIED');
   const bySku=new Map();
   for(const p of priceSnapshot.products||[]){
-    if(!p||!id(p.sku)||p.tenantId!==scope.tenantId||p.storeId!==scope.storeId||
+    if(!p||!validSku(p.sku)||p.tenantId!==scope.tenantId||p.storeId!==scope.storeId||
        !Number.isSafeInteger(p.unitPriceVnd)||p.unitPriceVnd<0||
        !Number.isInteger(p.availableStock)||p.availableStock<0)return deny('PRICE_SNAPSHOT_INVALID');
     if(bySku.has(p.sku))return deny('PRICE_SNAPSHOT_INVALID');
@@ -30,7 +31,7 @@ function createOrderRequestProposal({scope,customer,items,priceSnapshot,provider
   let total=0;
   const seen=new Set();
   for(const line of items){
-    if(!line||!id(line.sku)||!Number.isInteger(line.quantity)||line.quantity<1||
+    if(!line||!validSku(line.sku)||!Number.isInteger(line.quantity)||line.quantity<1||
        line.quantity>10000||seen.has(line.sku))return deny('BASKET_INVALID');
     seen.add(line.sku);
     const product=bySku.get(line.sku);
