@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {FIXTURES}=require('../v147-custom-studio/studio-core.js');
-const html=fs.readFileSync(new URL('./index.html',import.meta.url),'utf8');
+const html=fs.readFileSync(require('node:path').join(__dirname,'index.html'),'utf8');
 test('document is Vietnamese and noindex synthetic-only',()=>{assert.match(html,/<html lang="vi">/);assert.match(html,/noindex,nofollow/);assert.match(html,/Dữ liệu mô phỏng/);});
 test('network connect-src is denied by CSP',()=>assert.match(html,/connect-src 'none'/));
 test('no hosted API, OAuth or session storage',()=>{for(const bad of ['fetch(', 'XMLHttpRequest', 'localStorage.', 'sessionStorage.', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY', 'https://api.openai.com', 'sendMessage('])assert.ok(!html.includes(bad),bad)});
