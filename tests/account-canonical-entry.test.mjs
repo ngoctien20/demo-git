@@ -14,9 +14,10 @@ test('no legacy merchant CRM, Bot, Orders editor or Supabase request runs on ent
   assert.match(html,/không quản lý bot, giá, tồn kho/i);
   assert.doesNotMatch(html,/data-panel="bots"|data-panel="products"/);
 });
-test('private Tester and safe login routes remain reachable separately',()=>{
-  for(const path of ['tester.html','tester-request.html','login.html','merchant-portal.html'])
+test('customer account entry hides internal Tester routes and retains login and portal',()=>{
+  for(const path of ['login.html','merchant-portal.html'])
     assert.ok(html.includes('href="'+path+'"'),path);
+  assert.doesNotMatch(html,/href="tester(?:-request|-admin)?\.html"|Trung tâm thử nghiệm|Đăng ký quyền Tester/i);
   assert.match(html,/noindex,nofollow/);
 });
 test('retired technical controller is preserved in source but NOT shipped in preview',()=>{
