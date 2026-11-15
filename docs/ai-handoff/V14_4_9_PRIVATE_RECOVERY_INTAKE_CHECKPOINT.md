@@ -92,3 +92,20 @@ Adjudication and Hosted JWT Preflight. This is an approval/verification step,
 not auto-deployment. Do not repeat completed local schema-only restore.
 
 QA evidence and final source HEAD to be appended after GitHub Actions completes.
+
+## 7. CI / hosted confirmation (2026-11-16 JST)
+
+- Draft PR: https://github.com/ngoctien20/demo-git/pull/112
+- Latest pre-checkpoint run: https://github.com/ngoctien20/demo-git/actions/runs/43747122792
+- GitHub connector inspected direct job 132912788006: COMPLETED SUCCESS,
+  **107 tests, 107 PASS, 0 FAIL, 0 skipped**, static guard PASS.
+- Breakdown: 35 V14.4.9 new offline; 25 V14.4.8; 36 V14.4.3; 11 V14.4.7.
+- Final hosted Supabase SELECT count check matched baseline:
+  Auth users=3, tenant_memberships=3, Products=2, Orders=2,
+  Stores/Memberships absent, six legacy permissive read policies remain.
+- The standalone future prompt is saved as
+  docs/ai-handoff/V14_4_10_NEXT_AUTONOMOUS_CTO_PROMPT.md.
+- This source-only CI is **not** real backup restoration, authenticated
+  merchant signature verification, Store backfill or hosted JWT acceptance.
+- Final verdict: SOURCE-ONLY IMPLEMENTED/TESTED PASS;
+  actual FULL_RECOVERY + FOUR_ROW_OWNERSHIP + STORE_RLS remain BLOCKED.
