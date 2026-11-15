@@ -72,3 +72,33 @@ jobs:
           name: v147-synthetic-studio-390px
           path: qa-artifacts-v147/
           if-no-files-found: ignore
+
+  isolated-worker-smoke:
+    name: Isolated Cloudflare Worker synthetic GET / blocked POST
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Verify static assets and hard lock of outbound endpoints
+        env:
+          BASE: https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 4 --retry-delay 2 "$BASE/health" -o /tmp/v147-health.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/v147-health.json'))
+          assert j['mode']=='SYNTHETIC_NO_SEND'
+          assert j['providerSends']==0 and j['hostedWrites']==0 and j['aiCalls']==0
+          print('PASS health indicates synthetic no-send worker')
+          PY
+          curl -fsSL --retry 3 "$BASE/" -o /tmp/v147-index.html
+          grep -q "Thiết kế trợ lý AI cho từng cửa hàng" /tmp/v147-index.html
+          curl -fsSL "$BASE/studio-core.js" -o /tmp/v147-core.js
+          grep -q "PUBLISH_REQUIRES_AUTHENTICATED_SERVER_GATE" /tmp/v147-core.js
+          curl -fsSL "$BASE/studio-ui.js" -o /tmp/v147-ui.js
+          grep -q "SYNTHETIC" /tmp/v147-ui.js
+          status=$(curl -sS -o /tmp/v147-post.txt -w '%{http_code}' -X POST "$BASE/v1/send")
+          test "$status" = "423"
+          status=$(curl -sS -o /tmp/v147-missing.txt -w '%{http_code}' "$BASE/v1/orders")
+          test "$status" = "404"
+          echo 'PASS Worker: static GET, no model/backend and all POST 423'
