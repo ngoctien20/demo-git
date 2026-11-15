@@ -1,0 +1,31 @@
+name: TIEN404 SALES LITE V1.1 menu no-send QA
+on:
+  push:
+    branches:
+      - work/v131-sales-lite-menu-staging
+    paths:
+      - "qa/sales-lite/v131/**"
+      - ".github/workflows/v131-sales-lite-menu-qa.yml"
+  pull_request:
+    paths:
+      - "qa/sales-lite/v131/**"
+      - ".github/workflows/v131-sales-lite-menu-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  menu-contract-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and registry contract
+        run: |
+          node --check qa/sales-lite/v131/menu-engine.cjs
+          node --check qa/sales-lite/v131/menu-engine.test.cjs
+          node -e "const r=require('./qa/sales-lite/v131/menu-registry.json');if(r.send_enabled||r.order_write_enabled||r.subscription_write_enabled)process.exit(1)"
+      - name: Menu, customer, owner, notification and security QA
+        run: node --test qa/sales-lite/v131/*.test.cjs
