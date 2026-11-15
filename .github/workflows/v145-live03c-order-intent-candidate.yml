@@ -31,6 +31,8 @@ jobs:
           node --check qa/messenger-live03c/order-intent-candidate.test.cjs
       - name: E2E integration signed fixture tests
         run: node --test qa/messenger-live03c/order-intent-candidate.test.cjs
+      - name: Run exact n8n manual candidate stages regression
+        run: node --test qa/messenger-live03c/n8n-manual-stages.test.cjs
       - name: Guard absent external I/O and false production claims
         run: |
           python3 - <<'PY'
