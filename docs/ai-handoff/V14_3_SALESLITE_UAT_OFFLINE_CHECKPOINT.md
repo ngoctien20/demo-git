@@ -21,7 +21,7 @@ Give the shop owner a manual test that can be opened immediately on Windows/Mac/
 
 ## QA evidence
 - Local Chromium 144 smoke: **5 responsive viewports PASS**; add product, confirm QA order, owner sees exactly own-shop order, Shop B sees no Shop A order, mock revenue after marking done, shop paused blocks new order, markup injection shown safely, no JS errors, zero network requests and no horizontal overflow. Additional Shop C, price spoofing and reset PASS.
-- GitHub Actions: pending when first writing this checkpoint; attach exact run and outcome later. Keep distinction between local success and CI.
+- **TESTED GitHub Actions:** [run 43718756040](https://github.com/ngoctien20/demo-git/actions/runs/43718756040) SUCCESS on source HEAD 584809caac6d454f6364a9a351865b6ea0628eb0. Chromium Playwright 5 responsive viewports plus Shop C price/refusal/reset PASS; zero cross-shop order leaks, zero external network requests, no browser JavaScript errors, static no-credential/no-storage/no-send security gate PASS. Screenshot artifact uploaded. Keep distinction between offline UI and hosted Messenger/Supabase acceptance.
 - No real user JWT, Meta delivery, Zalo notification, AI inference or Supabase write was attempted.
 
 ## One-minute owner test
@@ -42,3 +42,10 @@ Close the new Draft PR; revert the additive HTML, QA script and workflow. Parent
 
 ## Next priority
 Obtain owner feedback from the working pilot: which flow is incorrect, what owner/shop information is missing, how order confirmation should behave; then prioritize **real hosted RLS/backup** and a bounded single-shop staging integration without sending customer messages until approved.
+
+## Acceptance / checkpoint
+- **VERIFIED:** project stays on independent V14.3 Draft lineage, does not modify published n8n, production Pages, credentials or Supabase.
+- **IMPLEMENTED:** owner-operated offline Sales Lite Lab and additive GitHub sources, test.
+- **TESTED:** local Chromium 144 in 5 widths; GitHub Actions #43718756040 SUCCESS.
+- **BLOCKED:** hosted Shop RLS/real JWT, actual AI inference, real Page binding + Messenger send, Supabase real orders/stock, durable replay. Requires owner approvals.
+- **Rollback:** close Draft PR #96; parent PR #94 unchanged. The local HTML is a standalone user artifact and cannot cause DB mutation.
