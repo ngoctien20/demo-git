@@ -4,7 +4,7 @@
  * Never invokes an LLM, writes a database, publishes Knowledge, or sends messages.
  * Each answer is evidence FROM SHOP, not verified truth or an executable prompt.
  */
-const {AccessError}=require('../store-rls-v142/store-boundary.cjs');
+const {AccessError,assertContext}=require('../store-rls-v142/store-boundary.cjs');
 const FIELDS=Object.freeze([
  {id:'shop_name',label:'Tên cửa hàng',question:'Shop mình tên là gì ạ?',required:true,type:'name'},
  {id:'industry',label:'Ngành kinh doanh',question:'Shop mình đang kinh doanh ngành hàng nào?',required:true,type:'text'},
@@ -26,6 +26,7 @@ function checkContext(context){
    typeof context.user_id!=='string'||!context.tenant_id||!context.store_id||
    !['SHOP_OWNER','SHOP_MANAGER','TIEN404_SUPPORT','PLATFORM_SUPER_ADMIN'].includes(context.role))
    issue('VERIFIED_STORE_CONTEXT_REQUIRED');
+ try{assertContext(context)}catch(e){issue('VERIFIED_STORE_CONTEXT_REQUIRED')}
 }
 function start(context){
  checkContext(context);
