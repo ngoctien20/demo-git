@@ -54,8 +54,8 @@ File: qa/store-product-v1444/owner-intake-offline.cjs.
 
 - Reuses existing V14.4.3 \`reviewPrivateEvidence\` validator; does not rebuild private ledger validation.
 - Stages 2 Product + 2 Order private claims in bounded 15-minute in-memory sessions. No file/db/network write, no raw evidence export or record/tenant/store UUID in status.
-- Stage is performed by an independently verified synthetic QA intake operator authorized in BOTH tenants. Merchant per tenant must match exact Store grant; two separate merchants must confirm. A third independent QA reviewer, different from operator/merchants, must have review authorization for BOTH tenants.
-- Prevents missing/malformed evidence, duplicate claims, role spoofing, expired/revoked sessions, cross-tenant merchant reuse, wrong Store, self-approval and unknown reviewer decision.
+- Stage is performed by an independently verified synthetic QA intake operator authorized in BOTH tenants. Merchant per tenant must match exact Store grant; two separate merchants must confirm. A third independent QA reviewer, different from operator/merchants, must have review authorization for BOTH tenants AND match the identical reviewer identity declared across all four private evidence records.
+- Prevents missing/malformed evidence, duplicate claims, role spoofing, expired/revoked sessions, TTL-eviction before capacity checks, cross-tenant merchant reuse, wrong Store, self-approval and unknown reviewer decision.
 - Upon mock positive review returns only \`PRIVATE_QA_REVIEW_COMPLETED_NOT_HOSTED_VERIFIED\`; **realOwnerApprovals=0, actualOwnerSignatureVerified=false, independentHostedReadbackVerified=false, canBackfill=false**.
 - Raw row IDs, merchant IDs and evidence remain only in private temporary process memory until TTL; production requires a separate encrypted restricted storage, signature verification and retention policy. Never upload real evidence to GitHub, CI, chat screenshots or hosted logs.
 
@@ -63,8 +63,8 @@ File: qa/store-product-v1444/owner-intake-offline.cjs.
 
 New tests:
 - qa/store-product-v1444/product-v2-offline.test.cjs: 37 cases on Store/tenant isolation, price VND, integer stock, stale revision and duplicate idempotency.
-- qa/store-product-v1444/owner-intake-offline.test.cjs: 31 cases on two merchant confirmations, independent QA, role and Store scope, snapshot rejection, TTL and redaction.
-- CI workflow: .github/workflows/v1444-store-product-owner-intake-qa.yml. Runs new 68 tests, inherited 457 Node regressions (V14.4.3 back through Messenger), and disposable PostgreSQL 17 Store RLS fixture from V14.4.1. No live JWT, no authenticated Supabase writes, no Meta/Zalo sends. Add exact CI run number after verification.
+- qa/store-product-v1444/owner-intake-offline.test.cjs: 33 cases on two merchant confirmations, independent QA, role and Store scope, snapshot rejection, TTL and redaction.
+- CI workflow: .github/workflows/v1444-store-product-owner-intake-qa.yml. Runs new 70 tests, inherited 457 Node regressions (V14.4.3 back through Messenger), and disposable PostgreSQL 17 Store RLS fixture from V14.4.1. No live JWT, no authenticated Supabase writes, no Meta/Zalo sends. Add exact CI run number after verification.
 
 **No claims of hosted Store/RLS, real Auth/approval, actual price/stock updates or 4-row backfill PASS.**
 
