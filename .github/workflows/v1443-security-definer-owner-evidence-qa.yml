@@ -1,0 +1,108 @@
+name: TIEN404 V14.4.3 RPC Audit & Private Ownership Evidence QA (NO HOSTED WRITES)
+on:
+  push:
+    branches:
+      - work/v1443-security-definer-owner-ledger-20261116
+    paths:
+      - 'qa/security-definer-v1443/**'
+      - 'docs/ai-handoff/V14_4_3_*'
+      - '.github/workflows/v1443-security-definer-owner-evidence-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/security-definer-v1443/**'
+      - 'docs/ai-handoff/V14_4_3_*'
+      - '.github/workflows/v1443-security-definer-owner-evidence-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rpc-and-owner-proof:
+    name: 66 new RPC and per-row ownership tests (MOCK ONLY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax and 66 private RPC/ownership review cases
+        run: |
+          node --check qa/security-definer-v1443/rpc-security-review.cjs
+          node --check qa/security-definer-v1443/four-row-owner-evidence.cjs
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+      - name: Validate audit SQL is read-only and review can never write
+        run: |
+          bash -n qa/security-definer-v1443/ci-definer-pg17.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          d=Path('qa/security-definer-v1443')
+          for filename in ('RPC_AUDIT_READ_ONLY.sql','OWNER_COVERAGE_READ_ONLY.sql'):
+              src=(d/filename).read_text()
+              lines=[x.strip() for x in src.splitlines() if x.strip() and not x.lstrip().startswith('--')]
+              assert lines[0].upper().startswith('WITH ')
+              assert not any(x.upper().startswith(('CREATE ','ALTER ','INSERT ','UPDATE ','DELETE ',
+                                                  'GRANT ','REVOKE ','DROP ','TRUNCATE ','COPY ',
+                                                  'DO ','CALL ')) for x in lines), filename
+          audit=(d/'rpc-security-review.cjs').read_text()
+          owner=(d/'four-row-owner-evidence.cjs').read_text()
+          assert all(x in audit for x in ('canRevokeExecute:false',
+              'canReplaceFunction:false','canApplyRls:false','canDeploy:false'))
+          assert all(x in owner for x in ('canBackfill:false','canChangeRls:false',
+              'recordsWritten:0','containsRecordIdentifiers:false'))
+          for src in (audit,owner):
+              assert all(x not in src for x in ('fetch(', 'axios(', 'require("pg")',
+                  "require('pg')", 'process.env.SUPABASE_SERVICE_ROLE_KEY'))
+          fixture=(d/'EPHEMERAL_PG17_ONLY.sql').read_text()
+          assert fixture.index("current_database()<>'tien404_v1443_definer_ci'") < fixture.index('CREATE SCHEMA')
+          assert 'V1443_EPHEMERAL_PG17_NO_HOSTED_SQL_ALLOWED' in fixture
+          print('PASS — only read-only hosted audit; ephemeral SQL hard guarded; no customer/credential writes')
+          PY
+
+  existing-regressions:
+    name: 391 inherited V14.4.2/4.1/4 and Messenger regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prior acceptance, Widget and Messenger suites
+        run: |
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+
+  disposable-pg17-security-definer:
+    name: Actual PG17 ephemeral SECURITY DEFINER privilege and RLS demonstration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'ephemeral_v1443_ci_only_never_real'
+          POSTGRES_DB: tien404_v1443_definer_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1443_definer_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'ephemeral_v1443_ci_only_never_real'
+      PGDATABASE: tien404_v1443_definer_ci
+      PGOPTIONS: '-c tien404.v1443_ci=ON'
+      CI_V1443_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Demonstrate definer RLS bypass and EXECUTE revoke on disposable database only
+        run: bash qa/security-definer-v1443/ci-definer-pg17.sh
