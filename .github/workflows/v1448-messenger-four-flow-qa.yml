@@ -1,0 +1,100 @@
+name: TIEN404 V14.4.7-9 Messenger Four-Flow Offline Integration QA
+on:
+  push:
+    branches:
+      - work/v1447-v1449-messenger-four-flow-offline-qa-20261116
+    paths:
+      - 'qa/messenger-sales-v1448/**'
+      - 'docs/ai-handoff/V14_4_7_*'
+      - 'docs/ai-handoff/V14_4_8_*'
+      - '.github/workflows/v1448-messenger-four-flow-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/messenger-sales-v1448/**'
+      - 'docs/ai-handoff/V14_4_7_*'
+      - 'docs/ai-handoff/V14_4_8_*'
+      - '.github/workflows/v1448-messenger-four-flow-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  four-flow-offline:
+    name: 33 new Messenger Four-Flow multi-turn tests (NO HTTP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and 33 multi-turn QA scenarios
+        run: |
+          node --check qa/messenger-sales-v1448/messenger-four-flow-offline.cjs
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
+      - name: Static source guard — no Meta, SQL, credentials or live sends
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/messenger-sales-v1448/messenger-four-flow-offline.cjs').read_text()
+          assert 'TRUSTED_FIXTURE_GATE_REQUIRED' in s
+          assert 'MID_PAYLOAD_OR_SENDER_SCOPE_CONFLICT' in s
+          assert 'READY_OFFLINE_NOT_SENT' in s
+          assert 'realMetaHmacVerified:false' in s
+          assert 'realAiAgent:false' in s
+          assert 'realRlsVerified:false' in s
+          for x in ('fetch(', 'axios(', 'process.env', 'require("pg")',
+              "require('pg')", 'graph.facebook.com', 'create policy',
+              'public.orders', 'service_role'):
+              assert x not in s.lower(),x
+          print('PASS source-only / no credentials / no external side effects')
+          PY
+  inherited-safety:
+    name: 579 V14.4.5+Messenger inherited Node regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source regressions
+        run: |
+          node --test qa/legacy-safety-v1445/writer-compatibility.test.cjs qa/legacy-safety-v1445/order-stock-safety.test.cjs
+          node --test qa/store-product-v1444/product-v2-offline.test.cjs qa/store-product-v1444/owner-intake-offline.test.cjs
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+  atomic-pg17-nonregression:
+    name: Recheck 30 functional + 8 genuine PG17 atomic race assertions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1448_ephemeral_only_not_real'
+          POSTGRES_DB: tien404_v1446_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1446_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1448_ephemeral_only_not_real'
+      PGDATABASE: tien404_v1446_ci
+      PGOPTIONS: '-c tien404.v1446_ephemeral=YES'
+      CI_V1446_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atomic request, reservation and race QA
+        run: |
+          bash qa/atomic-ledger-v1446/02_pg17_assertions.sh
+          bash qa/atomic-ledger-v1446/03_pg17_concurrency.sh
