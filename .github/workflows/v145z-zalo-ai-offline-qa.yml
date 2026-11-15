@@ -18,7 +18,7 @@ jobs:
           node-version: '22'
       - name: Syntax check (no provider/model credentials)
         run: |
-          node --check qa/zalo-live-v145z/ai-pilot.cjs qa/zalo-live-v145z/live01-preflight.cjs
+          node --check qa/zalo-live-v145z/ai-pilot.cjs
           node --check qa/zalo-live-v145z/ai-pilot.test.cjs
           node --check qa/zalo-live-v145z/live01-preflight.cjs
           node --check qa/zalo-live-v145z/live01-preflight.test.cjs
@@ -30,4 +30,4 @@ jobs:
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
         run: |
-          ! grep -E 'https?://|fetch\(|axios|sendMessage\(|ZALO_SEND_ENABLED *= *true|INSERT INTO|UPDATE public\.orders|DELETE FROM' qa/zalo-live-v145z/ai-pilot.cjs
+          ! grep -E 'https?://|fetch\(|axios|sendMessage\(|ZALO_SEND_ENABLED *= *true|INSERT INTO|UPDATE public\.orders|DELETE FROM' qa/zalo-live-v145z/ai-pilot.cjs qa/zalo-live-v145z/live01-preflight.cjs
