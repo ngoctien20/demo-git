@@ -74,3 +74,13 @@ Each output flags hostedWrites=0, googleSheetsWrites=0, providerSends=0, isRealO
 Require a separately approved dedicated QA ingress/adapter or deterministic server-side tool-call denial for all write operations; test it without changing the existing Published webhook. Apply signed Page→Tenant→Store routing, durable MID replay and a separately isolated synthetic catalog/order backend. Request separate consent before any Meta live send or provider setting change. Actual hosted Store Order write remains blocked by real backup restore, four-row ownership mapping, Store RLS/JWT, inventory policy and independent merchant approval.
 
 **Rollback:** Close/revert the source-only Draft PR. Separate n8n QA lab stays Inactive (archive only after separate owner approval). No Supabase/Google Sheet/customer data/Published workflow modification made by this task.
+
+
+## 6. Final verification and reproducible source
+
+- The exact source of the n8n Code node was snapshotted from workflow version f2c67cc9-6e69-4717-9f32-8077eba49516 into qa/messenger-live03/live03-dryrun-n8n-code.js (not a replacement for or edit to Published).
+- qa/messenger-live03/live03-dryrun-source.test.cjs executes the source in an isolated Node vm, tests ALL and each scenario, rejects unknown input and asserts zero external I/O.
+- [CI run 43754067663](https://github.com/ngoctien20/demo-git/actions/runs/43754067663): **2/2 jobs SUCCESS**, 13/13 new LIVE03 no-write Node tests PASS + 78/78 inherited Messenger signed-webhook/four-flow Node tests PASS, static no-IO gate PASS.
+- [Inherited CI run 43754067741](https://github.com/ngoctien20/demo-git/actions/runs/43754067741): **3/3 jobs SUCCESS**; 45/45 HMAC QA, 612/612 prior Node regression, 30/30 PostgreSQL 17 business + 8/8 real race checks PASS. Separate and overlapping inherited QA are not counted as all-unique.
+- n8n manual execution #3871: **8/8 scripted in-memory QA outputs PASS**, workflow remains INACTIVE, no credential, no order writer, no webhook or HTTP node.
+- No real Page order confirmation/send or hosted Orders mutation was performed by this phase. Future LIVE03 on Messenger remains BLOCKED until deterministic tool-write disable/gating and separate approval.
