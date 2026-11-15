@@ -1,0 +1,42 @@
+{
+  "version": "V14.5Z-G2.1",
+  "environment": "staging_only",
+  "worker": "tien404-zalo-outbound-v1-staging",
+  "old_deployed_version": "ed172d3c-e1f1-4daa-bc56-643406441091",
+  "old_deployment": "2ce7ea81-3755-47b1-afdd-a799db3da3c8",
+  "old_source_sha256": "b1c58cf85e74b3e235807d4a5d731369bd15579e5076b18d8774f75e9f5351d3",
+  "candidate_version": "3422864f-f095-45b9-85ca-a7d03cb87a3f",
+  "candidate_source_sha256": "33f875985d47738b4a6882a6a231b61d55a7554a05484d55d1bffefa60ec862e",
+  "public_signing_key_spki_base64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+U0a21Hh6CVxDLPonVXXvhScp9xxCn3c0X3/p1moK4H0iPgeQAWnRHOOXWH+aXHkZiSfy8ntSWq/zjdfJ1jAww==",
+  "signature_algorithm": "ECDSA_P256_SHA256_P1363",
+  "bot_id_digest": "HMAC_SHA256_NONCE_BOUND",
+  "bindings_inherited": [
+    "GATEWAY_AUTH_KEY",
+    "REPLAY_DB",
+    "ZALO_BOT_TOKEN",
+    "ZALO_OWNER_APPROVAL_EXPIRES",
+    "ZALO_OWNER_CHAT_ID",
+    "ZALO_SEND_ENABLED"
+  ],
+  "bindings_added": [
+    "G2_PROVIDER_HASH_KEY",
+    "G2_PROVIDER_SIGN_KEY"
+  ],
+  "old_send_enabled": false,
+  "staged_version_uploaded": true,
+  "staged_version_deployed": true,
+  "private_key_logged": false,
+  "source_private_worker_exposed": false,
+  "owner_identity_verified": false,
+  "actual_deployment": "17b7106a-d66a-4e37-a18e-0d8ec97d6f78",
+  "verified_signed_proof_execution": "3874",
+  "proof_signature_verified_with_pinned_public_key": true,
+  "proof_has_raw_bot_id": false,
+  "provider_getme_http_status": 200,
+  "security_negative_execution": "3878",
+  "old_getme_regression_execution": "3875",
+  "old_webhook_diagnostics_execution": "3876",
+  "current_worker_no_send": true,
+  "provider_bot_shop_binding_verified": false,
+  "real_zalo_send_approved": false
+}

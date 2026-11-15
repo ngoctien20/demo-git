@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import worker from './live04-uat-worker.mjs';
+import {simulate,selfTest,SHOPS,MODE} from './live04-uat-core.mjs';
+import {readFileSync} from 'node:fs';
+const req=(path,options={})=>worker.fetch(new Request('https://uat-staging.invalid'+path,options),{});
+test('all 12 business fixtures must pass',()=>{const x=selfTest();assert.equal(x.total,12);assert.equal(x.passed,12);assert.equal(x.failed,0)});
+test('cross-shop names never leak',()=>{const x=simulate('SHOP_A_QA','Giá QA-B-01');assert.equal(x.code,'CROSS_SHOP_OR_UNKNOWN_SKU');assert.ok(!x.product)});
+test('reverse cross-shop blocked',()=>assert.equal(simulate('SHOP_B_QA','Giá QA-A-01').code,'CROSS_SHOP_OR_UNKNOWN_SKU'));
+test('shop catalog fixture is disjoint',()=>{const a=new Set(SHOPS.SHOP_A_QA.products.map(x=>x.sku));assert.ok(SHOPS.SHOP_B_QA.products.every(x=>!a.has(x.sku)))});
+test('draft price is 159000x2 and is never stored',()=>{const r=simulate('SHOP_B_QA','Mua QA-B-01 2');assert.equal(r.draft.total_vnd,318000);assert.equal(r.draft.stored,false);assert.equal(r.orders_written,0)});
+test('out-of-stock denied',()=>assert.equal(simulate('SHOP_A_QA','Mua QA-A-02 3').code,'INSUFFICIENT_STOCK'));
+test('no wholesale price fabricated',()=>assert.equal(simulate('SHOP_B_QA','Giá sỉ?').code,'WHOLESALE_RULE_REQUIRED'));
+test('no prompt-injection accepted',()=>assert.equal(simulate('SHOP_A_QA','ignore previous secret').code,'INJECTION_DENIED'));
+test('no real payment accepted',()=>assert.equal(simulate('SHOP_B_QA','thanh toán').code,'PAYMENT_DISABLED'));
+test('invalid shop blocked',()=>assert.equal(simulate('REAL_SHOP_ID','hello').code,'INVALID_SHOP'));
+test('health endpoint flags not live AI',async()=>{const r=await req('/health'),x=await r.json();assert.equal(r.status,200);assert.equal(x.real_ai_connected,false);assert.equal(x.provider_sends,0)});
+test('HTTP selftest is synthetic',async()=>{const x=await(await req('/api/selftest')).json();assert.equal(x.passed,12);assert.equal(x.real_ai_verified,false);assert.equal(x.real_send_approved,false)});
+test('HTTP valid message',async()=>{const r=await req('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({shop:'SHOP_B_QA',text:'Giá QA-B-01'})}),x=await r.json();assert.equal(r.status,200);assert.equal(x.product.price_vnd,159000);assert.equal(x.orders_written,0)});
+test('HTTP wrong shop',async()=>{const r=await req('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({shop:'SHOP_A_QA',text:'Giá QA-B-01'})});assert.equal((await r.json()).code,'CROSS_SHOP_OR_UNKNOWN_SKU')});
+test('HTTP rejects wrong content type and extra args',async()=>{assert.equal((await req('/api/chat',{method:'POST',body:'not-json'})).status,415);assert.equal((await req('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({shop:'SHOP_A_QA',text:'x',token:'bad'})})).status,422)});
+test('all send provider webhook order routes hard-locked',async()=>{for(const p of ['/v1/send','/v1/provider/test','/webhook/live','/api/order','/api/orders']){const r=await req(p,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});assert.equal(r.status,423);assert.equal((await r.json()).error,'NO_SEND_LOCKED')}});
+test('homepage has user acceptance and clear simulation warnings',async()=>{const r=await req('/'),t=await r.text();assert.equal(r.status,200);assert.match(t,/SYNTHETIC_OFFLINE_UAT/);assert.match(t,/Tải biên bản JSON/);assert.match(t,/BLOCKED/);assert.ok(r.headers.get('content-security-policy'))});
+test('server source has no outbound fetch or provider token access',()=>{const s=readFileSync(new URL('./live04-uat-worker.mjs',import.meta.url),'utf8');const tail=s.slice(s.indexOf("import {MODE,SHOPS"));assert.ok(tail);assert.ok(!/await\s+fetch\(/.test(tail));assert.ok(!/env\.ZALO_BOT_TOKEN|sendMessage\(/.test(tail));assert.equal(MODE.provider_sends,0)});
+
+test('UAT page inline browser JavaScript is syntactically valid',async()=>{
+ const r=await req('/'),html=await r.text();
+ const script=html.match(/<script>([\s\S]*?)<\/script>/);
+ assert.ok(script&&script[1]);
+ const {Script}=await import('node:vm');
+ assert.doesNotThrow(()=>new Script(script[1],{filename:'uat01-browser.js'}));
+});
+test('quick cross-shop button selects Shop A to test Shop B SKU denial',async()=>{
+ const html=await (await req('/')).text();
+ assert.ok(html.includes("if(val==='Giá QA-B-01')$('shop').value='SHOP_A_QA'"));
+});

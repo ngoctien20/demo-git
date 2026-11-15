@@ -1,0 +1,70 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {g2Attest} from './g21-provider-attestor-route.mjs';
+const require=createRequire(import.meta.url);
+const {verifyProof,ISSUER}=require('./live03-identity-budget-gate.cjs');
+globalThis.crypto ||= webcrypto;
+const signing=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+const hashing=await crypto.subtle.generateKey({name:'HMAC',hash:'SHA-256',length:256},false,['sign','verify']);
+const pub=new Uint8Array(await crypto.subtle.exportKey('spki',signing.publicKey));
+const pem='-----BEGIN PUBLIC KEY-----\n'+Buffer.from(pub).toString('base64').match(/.{1,64}/g).join('\n')+'\n-----END PUBLIC KEY-----';
+const token='123456789:TEST_ONLY_NEVER_DEPLOY';
+const id='1234567890123456789', now=1794780000000,challenge='c'.repeat(64);
+const env={ZALO_SEND_ENABLED:'false',ZALO_BOT_TOKEN:token,G2_PROVIDER_SIGN_KEY:signing.privateKey,G2_PROVIDER_HASH_KEY:hashing};
+const response=(data={ok:true,result:{id,account_name:'Fixture Bot'}})=>new Response(JSON.stringify(data),{status:200,headers:{'content-type':'application/json'}});
+const authorized=async r=>r.headers.get('authorization')==='Bearer FIXTURE_ONLY';
+function req(raw=JSON.stringify({challenge}),extra={}){return new Request('https://example.invalid/v1/g2-provider-attest',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer FIXTURE_ONLY',...extra},body:raw});}
+const get=async (r=req(),e=env,auth=authorized,upstream=async()=>response(),clock=()=>now)=>{const out=await g2Attest(r,e,auth,upstream,clock);return {http:out.status,data:await out.json()}};
+test('signed getMe observation is a valid P-256 proof, never real owner or live send',async()=>{
+ const r=await get();assert.equal(r.http,200);assert.equal(r.data.status,'G2_PROVIDER_ID_SERVER_OBSERVED_ONLY');
+ const claims=verifyProof('provider',r.data.proof,{[ISSUER.provider]:pem},now);
+ assert.equal(claims.source,'SERVER_HTTPS_ZALO_GETME');assert.equal(claims.getme_result_id_string,true);
+ assert.equal(claims.bot_digest.length,64);assert.equal(claims.challenge_nonce,challenge);
+ assert.equal(r.data.can_send,false);assert.equal(r.data.can_promote_registry,false);
+ assert.equal(r.data.owner_verified,false);assert.equal(r.data.challenge_replay_prevented,false);
+ assert.equal(r.data.provider_sends,0);
+ assert.ok(!JSON.stringify(r.data).includes(id));assert.ok(!JSON.stringify(r.data).includes(token));
+});
+test('no owner ID or tenant ID is fabricated in provider proof',async()=>{
+ const x=await get();const claims=JSON.parse(x.data.proof.payload).claims;
+ assert.ok(!Object.hasOwn(claims,'owner_digest'));assert.ok(!Object.hasOwn(claims,'store_digest'));
+});
+test('only one read-only upstream request is performed',async()=>{
+ let calls=0;const x=await get(req(),env,authorized,async(url,opts)=>{calls++;assert.match(url,/getMe$/);assert.equal(opts.method,'POST');assert.equal(opts.redirect,'manual');return response()});
+ assert.equal(calls,1);assert.equal(x.http,200);
+});
+test('different challenge yields different HMAC Bot hash',async()=>{
+ const a=await get();const b=await get(req(JSON.stringify({challenge:'e'.repeat(64)})));
+ assert.notEqual(JSON.parse(a.data.proof.payload).claims.bot_digest,JSON.parse(b.data.proof.payload).claims.bot_digest);
+});
+test('different Bot ID yields different HMAC',async()=>{
+ const a=await get();const b=await get(req(),env,authorized,async()=>response({ok:true,result:{id:'2345678901234567890'}}));
+ assert.notEqual(JSON.parse(a.data.proof.payload).claims.bot_digest,JSON.parse(b.data.proof.payload).claims.bot_digest);
+});
+test('GET method denied 405',async()=>{const r=await get(new Request('https://x.invalid/',{method:'GET'}));assert.equal(r.http,405)});
+test('send switch TRUE hard denies',async()=>{const r=await get(req(),{...env,ZALO_SEND_ENABLED:'true'});assert.equal(r.http,423);assert.equal(r.data.provider_sends,0)});
+test('send switch undefined hard denies',async()=>{const r=await get(req(),{...env,ZALO_SEND_ENABLED:undefined});assert.equal(r.http,423)});
+test('missing authorization denies 401',async()=>{const r=await get(new Request('https://x.invalid/',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}));assert.equal(r.http,401)});
+test('wrong authorization denies 401',async()=>{const r=await get(req(),env,async()=>false);assert.equal(r.http,401)});
+test('missing content type denies 415',async()=>{const r=await get(new Request('https://x.invalid/',{method:'POST',headers:{authorization:'Bearer FIXTURE_ONLY'},body:'{}'}));assert.equal(r.http,415)});
+test('JSON malformed denies 400',async()=>{const r=await get(req('{bad'));assert.equal(r.http,400)});
+test('JSON unknown fields denied 422',async()=>{const r=await get(req(JSON.stringify({challenge,shop:'Shop B'})));assert.equal(r.http,422)});
+test('JSON body array denied 422',async()=>{const r=await get(req('[]'));assert.equal(r.http,422)});
+test('JSON no challenge denied 422',async()=>{const r=await get(req('{}'));assert.equal(r.http,422)});
+test('JSON invalid nonce denied 422',async()=>{const r=await get(req('{"challenge":"fake"}'));assert.equal(r.http,422)});
+test('JSON excessive body denied 413',async()=>{const r=await get(req('x'.repeat(201)));assert.equal(r.http,413)});
+test('missing Bot token private binding denied 503',async()=>{const r=await get(req(),{...env,ZALO_BOT_TOKEN:undefined});assert.equal(r.http,503)});
+test('bot token string missing numeric prefix denied 503',async()=>{const r=await get(req(),{...env,ZALO_BOT_TOKEN:'secret_bogus'});assert.equal(r.http,503)});
+test('missing sign key denied 503',async()=>{const r=await get(req(),{...env,G2_PROVIDER_SIGN_KEY:undefined});assert.equal(r.http,503)});
+test('no hash key denied 503',async()=>{const r=await get(req(),{...env,G2_PROVIDER_HASH_KEY:undefined});assert.equal(r.http,503)});
+test('wrong signing key type denied 503',async()=>{const r=await get(req(),{...env,G2_PROVIDER_SIGN_KEY:hashing});assert.equal(r.http,503)});
+test('wrong hash key type denied 503',async()=>{const r=await get(req(),{...env,G2_PROVIDER_HASH_KEY:signing.privateKey});assert.equal(r.http,503)});
+test('upstream 403 denied 502',async()=>{const r=await get(req(),env,authorized,async()=>new Response('blocked',{status:403}));assert.equal(r.http,502)});
+test('getMe id numeric denied 502',async()=>{const r=await get(req(),env,authorized,async()=>response({ok:true,result:{id:Number(id)}}));assert.equal(r.http,502)});
+test('getMe ok=false denied 502',async()=>{const r=await get(req(),env,authorized,async()=>response({ok:false,result:{id}}));assert.equal(r.http,502)});
+test('getMe id missing denied 502',async()=>{const r=await get(req(),env,authorized,async()=>response({ok:true,result:{}}));assert.equal(r.http,502)});
+test('provider exception must redact token',async()=>{const r=await get(req(),env,authorized,async()=>{throw Error('ZALO_TOKEN_123456789:SECRET')});assert.equal(r.http,502);assert.ok(!JSON.stringify(r.data).includes('SECRET'))});
+test('signed proof is not authentic if modified',async()=>{const r=await get();r.data.proof.payload=r.data.proof.payload.replace('SERVER_HTTPS_ZALO_GETME','FAKE_PROVIDER');assert.equal(verifyProof('provider',r.data.proof,{[ISSUER.provider]:pem},now),null)});
+test('header cache control no store',async()=>{const r=await g2Attest(req(),env,authorized,async()=>response(),()=>now);assert.match(r.headers.get('cache-control'),/no-store/)});
