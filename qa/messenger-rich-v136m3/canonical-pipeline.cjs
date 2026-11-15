@@ -55,7 +55,8 @@ function isPreview(x){
 }
 async function previewMessengerV136M3({
  mode='BLOCKED', rawBody,signature,appSecret,actionSecret,siteOrigin,
- db,readEntitlement,readPublicConfig,replayCheck,now=Date.now
+ db,readEntitlement,readPublicConfig,replayCheck,now=Date.now,
+ eventIsolation=false
 }={}){
  // No hosted read switch exists here. Staging integration requires separate
  // explicit approval, schema readiness and actual authenticated RLS QA.
@@ -68,8 +69,23 @@ async function previewMessengerV136M3({
   });
   if(gate.status!=='SCHEMA_READY_FOR_HOSTED_QA'||gate.canSendMessenger!==false||
     gate.canWriteOrders!==false)throw blocked('CANONICAL_REPOSITORY_GATE_DENIED');
+  // V13.6M.4 opt-in: same Meta webhook may contain many Page/PSID events.
+  // The first scoped port is used for exactly one event, then discarded.
+  // Later events receive new resolver maps, even within one Store.
+  let firstPorts=ports;
+  const eventPortsFactory=async()=>{
+   if(firstPorts){const scoped=firstPorts;firstPorts=null;return scoped;}
+   const next=await createTrustedPorts({
+    db,readEntitlement,readPublicConfig,replayCheck,now,mode:'OFFLINE_TEST'
+   });
+   if(next.gate.status!=='SCHEMA_READY_FOR_HOSTED_QA'||
+      next.gate.canSendMessenger!==false||next.gate.canWriteOrders!==false)
+      throw blocked('CANONICAL_REPOSITORY_GATE_DENIED');
+   return next.ports;
+  };
   const result=await processCandidate({
-   rawBody,signature,appSecret,actionSecret,ports,siteOrigin,now
+   rawBody,signature,appSecret,actionSecret,siteOrigin,now,
+   ...(eventIsolation===true?{portsFactory:eventPortsFactory}:{ports})
   });
   if(result.status!=='CANDIDATE_PREVIEW_ONLY'||result.previewOnly!==true||
      result.sendEnabled!==false||!Array.isArray(result.events)||
