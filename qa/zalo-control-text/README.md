@@ -52,3 +52,20 @@ Zalo official Bot API reference: https://docs.zaloplatforms.com/docs/BOT/apis/se
 - **ROLLOUT** none, this is an experimental QA-only Draft PR.
 
 Rollback: close/revert the new GitHub Draft PR, no n8n/database/Cloudflare changes needed.
+
+## 2026-11-15 JST — Owner approval & live preflight outcome
+
+Owner explicitly approved **up to three** isolated QA sends to the previously authorized Shop B Owner QA recipient. This approval is for bounded sends, **not** for changing existing Cloudflare Worker security gates, credentials, webhook, billing, or production services.
+
+Read-only state audit of the existing n8n/Cloudflare delivery path:
+- n8n workflow `TIEN404_ZALO_SHOP_B_F01_PREFLIGHT_STAGING` ID `zuOdXgOg6ZPaTcHR`, version `3fd6c791-326f-4b31-8f94-a2c244eb2153` has read-only allowlist query, guard and preflight endpoint (no send).
+- Manual execution `3817` on 2026-11-15 06:12 UTC: allowlist guard **PASS**; Cloudflare Worker preflight request returned **404 NOT_FOUND**, final execution **error**. Because the preflight failed, **zero** new message sends were attempted.
+- Read-only download of current Cloudflare Worker `tien404-zalo-outbound-v1-staging` (last modified 2026-11-14 13:40 UTC): routes include `/v1/send`, `/v1/owner-one-shot`, `/v1/bot-check`, `/health`, but NOT `/v1/shop-b-f01-preflight` or `/v1/shop-b-f01-one-shot`. No `text_styles` support found in live Worker source.
+- Read-only Worker settings: `ZALO_SEND_ENABLED=false` (global kill switch); `ZALO_OWNER_CHAT_ID` remains protected as secret, not exposed. Approval expiry exists but cannot be treated as authorization for fresh send.
+- No changes to Worker bindings/script/deployments, n8n credentials, workflows, webhook, allowlist records, Bot Token, customer records or Orders. **Sent: 0/3**. Provider API was NOT invoked for T1–T3.
+
+**Why blocked:** Current historical Shop B route is gone and global send is disabled. Calling a different route would bypass preflight/recipient/payload constraints; turning the global kill switch on is not allowed under the send-only approval. The current existing sender has no verified rich-text or 3-message quota route.
+
+**Minimal next approval-gated implementation:** audit and snapshot existing Worker code/settings; create a dedicated staging-only `/v1/qa-richtext` endpoint with strong credentialed access, exact verified Shop B recipient server-side, explicit 3-message lifetime cap, short-lived signed approval token, persisted idempotency and no retries, supported body `{text,text_styles}` or `{text,parse_mode}`, secrets never returned/logged, and scoped per-route switch that does NOT turn global `ZALO_SEND_ENABLED` on. Add negative tests for unknown recipient, expired approval, replay, unsupported style, over-limit, token failures and any production shop route. After separate Owner authorization for the Worker security change, deploy only staging, verify getMe and send preflight, then send one by one and collect screenshots. If unable to enforce all gates, leave the sender disabled.
+
+**Final state for this requested live test:** BLOCKED (safety gate), not TESTED on provider. Existing offline QA remains 14/14 + 53/53 and manual menu QA 16/16. No actual Zalo UI screenshot or provider message ID exists for these samples.
