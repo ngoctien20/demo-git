@@ -69,3 +69,20 @@ LEVEL 4 COMMERCIAL RELEASE: BLOCKED pending backup restore, four-row ownership, 
 **Rollback:** close/revert only this Draft source PR. No Supabase DB/schema/policies, real Page/App, n8n published workflow, credentials, customer data, billing or production resources were altered.
 
 **Next:** owner-approved READ-ONLY Page/App inspection through authenticated Meta UI; then limited SEND approval for tester-only read-only consultation/quotation, with new evidence. Store-specific Order pilot only after actual security and restore gates.
+
+
+## 6. Final CI and post-run evidence (VERIFIED)
+
+GitHub Actions run 43747334381:
+https://github.com/ngoctien20/demo-git/actions/runs/43747334381
+
+- **3/3 jobs COMPLETED SUCCESS**.
+- **45/45** new raw-buffer SHA256 HMAC / Page→Store / time/MID/replay security unit tests PASS.
+- **612/612** inherited Node Messenger+Commerce tests PASS.
+- Total **657/657 Node PASS**, zero FAIL.
+- Disposable **PostgreSQL 17: 30/30** order/stock functional SQL assertions PASS, **8/8** genuine concurrent database session checks PASS. No hosted database.
+- Initial local development test caught a missing-MID type validation bug (2 cases); code fixed and rechecked locally **45/45 PASS** before upload, with CI confirming 45/45.
+- Post-run Supabase READ-ONLY: PG17.11, Products=2, Orders=2, canonical Stores=false, Memberships=false, six old permissive tenant SELECT policies unchanged.
+- Post-run n8n READ-ONLY: Published Messenger ID Z7FdV7uDvApfbURQ remains ACTIVE version d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92, 27 nodes. Four-Flow Manual QA jeLqAGOlG06LanDv remains INACTIVE/no Published version. No changes to tokens, webhook, Meta Page or existing customer Orders.
+
+**Outcome: SOURCE SECURITY GATE TESTED + LEGACY MESSENGER HISTORY VERIFIED. REAL PAGE INTEGRATION NOT YET VERIFIED / LIVE SEND NOT AUTHORIZED.** Read-only Meta Page/App ownership and tester permission evidence remain missing. No current Page credentials, secret, token, sender PSID, order content or business data was copied to this checkpoint.
