@@ -2,10 +2,28 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const o=require('./onboarding-core.cjs');
 const fields=o.FIELDS;
-const ctx=(store='store-a',user='staff-a',role='SHOP_OWNER')=>({
- source:'SERVER_AUTHENTICATED_STORE_SESSION',tenant_id:'tenant-a',store_id:store,
- user_id:user,role
+const {authorizeStore}=require('../store-rls-v142/store-boundary.cjs');
+const contexts=new Map();
+test.before(async()=>{
+ for(const [store,user] of [['store-a','staff-a'],['store-b','staff-a'],['store-a','staff-b']]){
+  const deps={
+   mode:'OFFLINE_TEST',schemaReady:true,
+   verifySession:async()=>({verified_by:'SUPABASE_AUTH_SERVER',
+    user_id:user,expires_at_ms:Date.now()+3600000,anonymous:false}),
+   lookupStoreAssignment:async()=>({source:'AUTHORITATIVE_DATABASE',
+    tenant_id:'tenant-a',store_id:store,user_id:user,role:'SHOP_OWNER',
+    active:true,tenant_membership_active:true}),
+   readPublishedKnowledge:async()=>null
+  };
+  const c=await authorizeStore({headers:{authorization:'Bearer offline_v142_test_session_123456789'},
+   selection:{store_id:store},deps});
+  contexts.set(store+'|'+user+'|SHOP_OWNER',c);
+ }
 });
+const ctx=(store='store-a',user='staff-a',role='SHOP_OWNER')=>contexts.get(
+ store+'|'+user+'|'+role
+)||{source:'SERVER_AUTHENTICATED_STORE_SESSION',tenant_id:'tenant-a',store_id:store,
+ user_id:user,role};
 const values={
  shop_name:'Tạp hóa Demo A',industry:'Tạp hóa',founding_year:'2018',public_phone:'0912345678',
  address:'Địa chỉ QA giả lập A, không có khách hàng thật',
