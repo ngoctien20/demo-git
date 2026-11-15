@@ -34,7 +34,7 @@
 
 ## 4. QA evidence and caveats
 
-**CI pending when the first checkpoint was authored.** Record exact HEAD SHA, run IDs, PASS/FAIL and static job status after completion; synthetic PASS must not be called a hosted DB/RLS test.
+**TESTED:** [GitHub Actions run 43715436829](https://github.com/ngoctien20/demo-git/actions/runs/43715436829) **SUCCESS**, source commit `3565d10183ad1a12167c24cb464262a6ecba9a0c`: **280/280 Node tests PASS, 0 FAIL, 0 SKIP** (244 inherited plus 36 V13.6M.6 tests), 2/2 CI jobs SUCCESS. Static no-network/no-credential/no-send/guarded SQL gate passed. This is a synthetic source-only test; **real hosted Postgres/RLS NOT TESTED**.
 
 The key-rotation index and retention planner are intentionally standalone offline components. No real secrets or PostgreSQL connection are present. No hosted role, backup restoration, server crash/restart, multi-instance transaction, legal retention or Meta 24-hour window has been verified.
 
@@ -53,3 +53,9 @@ Close/revert the stacked Draft PR and return to PR #92 baseline commit `9aa08520
 ## 7. Proposed next milestone
 
 **V13.6M.7 — Hosted Gate Evidence Pack & Atomic Replay Migration Review**, pending explicit approvals and V14.2 backup/RLS gate. Do not automatically merge, deploy, publish or connect real credentials based on offline tests.
+
+## 8. Source-only acceptance record
+- **IMPLEMENTED**: default-deny hosted evidence gate, synthetic HMAC manifest/dual-read & stale worker protection, retention review-only planner.
+- **TESTED**: 280/280 offline, 2/2 CI jobs at run 43715436829; zero provider sends, no external data mutation.
+- **BLOCKED**: real PostgreSQL atomic cross-process locking, schema/RLS, Page consent/ownership, retention legal approval, real key rotation and outbox/Meta sends.
+- **Owner approvals NOT requested as execution:** backup/restore and V14.2 migration; separate private Page binding/Event Store grants; separate credential changes and bounded Meta pilot.
