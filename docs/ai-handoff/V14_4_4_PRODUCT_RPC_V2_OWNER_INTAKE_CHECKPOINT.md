@@ -64,7 +64,7 @@ File: qa/store-product-v1444/owner-intake-offline.cjs.
 New tests:
 - qa/store-product-v1444/product-v2-offline.test.cjs: 37 cases on Store/tenant isolation, price VND, integer stock, stale revision and duplicate idempotency.
 - qa/store-product-v1444/owner-intake-offline.test.cjs: 33 cases on two merchant confirmations, independent QA, role and Store scope, snapshot rejection, TTL and redaction.
-- CI workflow: .github/workflows/v1444-store-product-owner-intake-qa.yml. Runs new 70 tests, inherited 457 Node regressions (V14.4.3 back through Messenger), and disposable PostgreSQL 17 Store RLS fixture from V14.4.1. No live JWT, no authenticated Supabase writes, no Meta/Zalo sends. Add exact CI run number after verification.
+- CI workflow: .github/workflows/v1444-store-product-owner-intake-qa.yml. Runs new 70 tests, inherited 457 Node regressions (V14.4.3 back through Messenger), and disposable PostgreSQL 17 Store RLS fixture from V14.4.1. No live JWT, no authenticated Supabase writes, no Meta/Zalo sends. Final QA evidence: GitHub Actions run 43734326481, 3/3 jobs SUCCESS at source commit 396e2ca467000e8b096a7ef59f27bfa51fe56b17. New 70/70 Node PASS (37 Product V2 + 33 Owner Intake), inherited 457/457 PASS; 527/527 Node PASS total. Disposable PostgreSQL 17: 22 distinct PASS assertions plus 1 suite PASS. All synthetic/offline, NOT hosted Auth or restore proof.
 
 **No claims of hosted Store/RLS, real Auth/approval, actual price/stock updates or 4-row backfill PASS.**
 
@@ -84,3 +84,13 @@ New tests:
 **Rollback:** close/revert only this Draft PR. No hosted rollback required because there are NO Supabase SQL migrations, RLS/GRANT changes, customer or order writes, workflow publishes, paid resources, credential changes or production deployments in this task.
 
 **Next safe version:** independently review a **migration compatibility matrix** for legacy Product writer, Store V2, inventory and Order writer API contracts, and prepare separate approved migration SQL and JWT/write negative suites AFTER recovery and owner mapping gates. Do not perform hosted changes without separate user approval.
+
+
+## 7. Final verification and historical test failure
+
+- [GitHub Actions 43734326481](https://github.com/ngoctien20/demo-git/actions/runs/43734326481): **3/3 jobs COMPLETED SUCCESS**, source commit **396e2ca467000e8b096a7ef59f27bfa51fe56b17**.
+- **70/70 new Node QA** (37 Store Product + 33 Owner Intake), **457/457 inherited** (66 RPC/owner ledger + 48 hosted JWT mock/preflight + 26 V14.4.1 + 37 V14.4 + 36 V14.3 + 244 Messenger). Total **527/527** source tests PASS, 0 failures.
+- Disposable PostgreSQL 17: **22 positive/negative assertions + final PASS**, same-tenant A/B SKU with separate price/stock, cross-tenant C, composite FK, revoked membership, old permissive tenant policy leak and removal; synthetic actor only.
+- Earlier exploratory CI runs 43734185108, 43734215560 and 43734250877 had a test expectation mismatch: newly enforced reviewer identity is denied before the role-check step, but old test expected the role error. Fixed test to assert early identity rejection; latest 43734326481 is GREEN. No customer-data exposure or hosted write resulted.
+- **Supabase POST-RUN read-only confirmation:** PG 17.11, Products=2, Orders=2, canonical Stores=false, Store Memberships=false, six old permissive read policies remain, hosted save_merchant_product_v2 function count=0. No change to hosted database or published workflows. The unchanged counts do not themselves prove all historical customer data is intact; no hosted write was used by this task.
+- Restore of the actual local Windows archive remains **UNTESTED**; all hosted migration/backfill/RLS grant changes remain BLOCKED.
