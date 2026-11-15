@@ -73,9 +73,20 @@ jobs:
         run: node --test tests/auth-preview-build.test.mjs tests/merchant-portal-v12-2.test.mjs
       - name: Clarify no hosted Auth test was performed
         run: echo "Static only, no sign in, no account created, no customer data or Supabase write."
-      - name: Chromium auth staging smoke with isolated transport
+      - name: Auth staging Chromium — canonical Customer or preserved legacy QA
         run: |
-          python -m pip install playwright==1.58.0
-          python -m playwright install chromium
-          python tests/auth_browser_smoke.py
-          python tests/merchant-portal-browser-smoke.py
+          if grep -q 'content="0;url=merchant-portal.html"' account.html; then
+            echo "V13.5R.1 canonical Customer route detected; no legacy CRM browser flow."
+            npm install --no-save --no-package-lock playwright@1.65.1
+            npx playwright install --with-deps chromium
+            python -m http.server 8080 >/tmp/tien404-auth-qa.log 2>&1 &
+            sleep 2
+            node tests/account-canonical-entry-browser.cjs
+            node tests/customer-account-browser.cjs
+          else
+            echo "Legacy Account route detected; preserving historical Auth/CRM browser QA."
+            python -m pip install playwright==1.58.0
+            python -m playwright install chromium
+            python tests/auth_browser_smoke.py
+            python tests/merchant-portal-browser-smoke.py
+          fi
