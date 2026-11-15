@@ -89,3 +89,14 @@ Rollback V14.4: close/revert Draft PR #97 only. No Supabase, n8n, Render, Cloudf
 Pending separate owner approvals: real Supabase RLS/schema/backfill after verified restore; real Meta sends/Page Profile publishing; hosted Widget install on customer websites; new credentials or paid cost; production merge/deploy.
 
 Next: verify latest V14.4 CI, independently reconcile #86/#94/#95 change overlap and prerequisites, schedule operator isolated restore when available; only then start staged RLS hosted migration and user JWT acceptance.
+
+
+## 7. CI final evidence and checkpoints — VERIFIED
+
+- Test source commit: d97a98d8cdd3067868c140f52c269470d403c221.
+- GitHub Actions run https://github.com/ngoctien20/demo-git/actions/runs/43720230060 — COMPLETED SUCCESS, both jobs.
+- SECURITY-CONTRACT: 37/37 NEW V14.4 tests, 36/36 inherited V14.3 channel tests, 244/244 inherited Messenger tests = **317/317 Node PASS**, 0 FAIL. Static anti-network/credential/send checks passed.
+- WIDGET-BROWSER: six prior QA cases passed: widths 360/390/430/768/1280 + a synthetic existing-website iframe embed test. No external network writes in recorded test output.
+- The first attempt during added fresh price/stock versions had 1 fixture assertion failure (cross-store test fixture missing version metadata, so version gate correctly failed first); amended fixture and rerun PASS. Preserve historical failure in audit, do not treat it as product leakage.
+- No hosted JWT/RLS test, cloud domain ownership, hosted quota/replay, real Meta send or actual customer-data path was run. All CI is synthetic/inherited browser.
+- Current branch checkpoint is expected to advance on this document-only commit; inherited source code and final CI evidence are unchanged.
