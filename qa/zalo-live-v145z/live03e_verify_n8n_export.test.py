@@ -109,7 +109,7 @@ class ExportVerifierTests(unittest.TestCase):
 
     def test_missing_export_file_denied(self):
         with self.assertRaisesRegex(ValueError, "EXPORT_PATH_NOT_FOUND"):
-            list(verifier._read_documents(pathlib.Path("/path-not-existing-n8n-qa-01392.json"))
+            list(verifier._read_documents(pathlib.Path("/path-not-existing-n8n-qa-01392.json")))
 
 
 if __name__ == "__main__":
