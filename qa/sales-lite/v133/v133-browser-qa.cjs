@@ -35,7 +35,7 @@ async function account(browser,width){
  await p.goto(host+'/qa/sales-lite/v133/account/',{waitUntil:'networkidle'});
  await p.waitForFunction(()=>document.querySelector('[data-fill="shop"]')?.textContent==='Shop fixture E2E');
  assert.match(await p.locator('#modeBadge').textContent(),/READ-ONLY/);await overflow(p,'Merchant '+width);
- await route(p,width,'subscription').click();assert.match(await p.locator('[data-fill=subscriptionStatus]').first().textContent(),/ACTIVE/);
+ await route(p,width,'subscription').click();assert.match(await p.locator('[data-fill=subscriptionStatus]').first().textContent(),/ACTIVE/);assert.match(await p.locator('#expiryBanner').textContent(),/Chưa có cảnh báo gia hạn/);
  assert.ok(await p.locator('button:has-text("Gia hạn")').isDisabled());
  await p.locator('#previewMode').selectOption('expired');assert.match(await p.locator('#modeBadge').textContent(),/QA FIXTURE/);
  await p.locator('#previewMode').selectOption('live');await p.waitForFunction(()=>document.querySelector('#modeBadge')?.textContent.includes('READ-ONLY'));
