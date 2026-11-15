@@ -3,7 +3,7 @@
 const source=require('../v131/menu-registry.json');
 const {createMenuRegistry}=require('../v131/menu-engine.cjs');
 const ID=/^[A-Z][A-Z0-9_]{2,63}$/;
-const deepCopy=v=>JSON.parse(JSON.stringify(v));
+const deepCopy=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
 const fail=c=>{const e=new Error(c);e.code=c;throw e;};
 function snapshot(registry=source){createMenuRegistry(registry);return deepCopy(registry);}
 function actionMap(r){return new Map(r.menus.flatMap(m=>m.actions.map(a=>[a.action_id,{...a,menu_id:m.menu_id}])));}
