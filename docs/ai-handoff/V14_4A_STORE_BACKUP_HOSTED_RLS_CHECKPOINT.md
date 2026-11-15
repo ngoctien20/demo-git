@@ -9,12 +9,12 @@ Trạng thái: **STAGING PREPARATION / DRAFT / NO DDL, NO BACKFILL, NO RLS CHANG
 - Rows count: Products 2, Orders 2, Customers 0, Order Items 0, Conversations 0, Messages 0.
 - products_member_read, orders_manager_read, customers_manager_read vẫn cấp SELECT theo tenant_memberships: **same-tenant multi-store isolation NOT VERIFIED**.
 - SECDEF advisory: anon EXECUTE qa_shop_b_zalo_claim; authenticated EXECUTE qa_owner_pairing, save_merchant_product. Đây là security review flags, không phải proof of exploitation.
-- V14.2 source PR #86 head 3f74cc36764e350a39009fed6f9d8ffe9af3d4bf; GitHub Actions run 43715788004 SUCCESS (offline only).
+- Latest V14.2.1 source PR #86 head 635e1d8e634556887eb35fd318b892c740177a9e (advanced after this branch was created). GitHub Actions run 43718599637 SUCCESS, 340/340 Node tests and 6/6 browser viewports, ALL OFFLINE. New onboarding-scope-service.cjs already handles scoped draft sessions in OFFLINE_TEST; do not reimplement it.
 - Messenger replay PR #95 head ad35baec097a7e8289518ec66ff74b1a19f1b3d3; its disposable PG17 concurrency tests **do not** substitute for Supabase hosted RLS.
 
 ## Backup/restore gate
-- Owner says local Windows file `TIEN404_V142_PRE_RLS.backup` was created.
-- The backup is NOT accessible in current tool runtime. Its SHA256, pg_restore archive catalog, actual restore and database recoverability are therefore **NOT_VERIFIED**.
+- Owner screenshots in latest V14.2.1 checkpoint verify local Windows `TIEN404_V142_PRE_RLS.backup` on E: (~212 KB), `pg_restore --list` exit 0 with application objects and SHA256 computed. This is **OPERATOR-EVIDENCED INSPECTION**, not a tested restore.
+- The backup bytes and checksum value are not accessible in this session for independent reproduction. Actual restore, row integrity and full Supabase disaster recovery remain **NOT_VERIFIED**. Owner previously deferred isolated restore but this V14.4 request prioritizes attempting it safely when a local isolated database becomes available.
 - This PR adds `qa/store-rls-v144/TIEN404_V144_Backup_Evidence.ps1`: inspect-only by default; optional restore ONLY to existing empty LOCAL database whose name begins `tien404_restore_v144_`.
 - The script enforces 127.0.0.1 destination, excludes --clean/--create, no automatic DROP/CREATE database, outputs SHA256/manifest flags and schema object count only. It has **NOT BEEN EXECUTED** on owner's actual archive or tested on Windows PowerShell here.
 - Successful archive manifest inspection is NOT equivalent to successful restore. Even a successful local restore to plain PG17 may lack Supabase-managed roles, extensions, storage, external credentials or Auth service state: perform comparison before judging disaster recovery.
