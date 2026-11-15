@@ -1,0 +1,42 @@
+name: TIEN404 V14.4.8 Recovery and Four-Row Owner Gate
+on:
+  pull_request:
+    paths:
+      - 'qa/recovery-owner-v1448/**'
+      - 'docs/ai-handoff/V14_4_8_*.md'
+      - '.github/workflows/v1448-recovery-owner-gate-qa.yml'
+permissions:
+  contents: read
+jobs:
+  source-only-gate:
+    name: Offline Auth/Store QA, zero hosted I/O
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recovery gate, existing private evidence and Store A/B regressions
+        run: |
+          node --test \
+            qa/recovery-owner-v1448/recovery-owner-gate.test.cjs \
+            qa/security-definer-v1443/four-row-owner-evidence.test.cjs \
+            qa/store-rls-v1447/store-isolation-gate.test.cjs
+      - name: Enforce metadata-only snapshot and READ-ONLY SQL
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          root=Path("qa/recovery-owner-v1448")
+          sql=(root/"HOSTED_DEPENDENCY_SELECT_ONLY.sql").read_text()
+          executable="\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+          assert "WITH" in executable and "SELECT jsonb_build_object" in executable
+          assert not re.search(r'\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|TRUNCATE|COPY|CALL|EXECUTE)\s',executable,re.I)
+          doc=json.loads((root/"HOSTED_AGGREGATES_REDACTED.json").read_text())
+          assert doc["scope"]=="AGGREGATE_ONLY_NOT_AUTHENTICATION"
+          assert len(doc["authFkGraph"])==7
+          assert sum(row["fkCount"] for row in doc["authFkGraph"])==9
+          assert doc["products"]==doc["orders"]==2
+          assert doc["hostedChangeAuthorized"] is False
+          assert not re.search(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b',json.dumps(doc),re.I)
+          print("PASS: read-only SQL, redacted anonymous aggregate snapshot, no hosted change")
+          PY
