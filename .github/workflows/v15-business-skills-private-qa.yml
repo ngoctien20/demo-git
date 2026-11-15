@@ -29,7 +29,9 @@ jobs:
           node --check qa/v15-agent-core/business-skills-gate.cjs
           node --check qa/v15-model-lab/private-dataset-gate.cjs
       - name: Business skill authorization negative tests
-        run: node --test qa/v15-agent-core/business-skills-gate.test.cjs
+        run: |
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
       - name: Synthetic CSV parser and fixture-integrity negative tests
         run: node --test qa/v15-model-lab/private-dataset-gate.test.cjs
       - name: No production send/no dataset upload safety scan
