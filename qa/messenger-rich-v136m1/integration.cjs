@@ -57,6 +57,7 @@ function verifyCatalogResponse(r,b){
     r.tenantId!==b.tenantId||r.storeId!==b.storeId||
     r.serverAuthorized!==true||r.readOnly!==true||
     !['ONE_STORE_PER_TENANT_VERIFIED','STORE_RLS_VERIFIED'].includes(r.isolationProof)||
+    (r.isolationProof==='STORE_RLS_VERIFIED'&&r.repositoryScope!=='SERVER_STORE_BOUND')||
     !Array.isArray(r.rows))failure('CATALOG_SCOPE_UNVERIFIED');
  if(r.rows.length>100)failure('CATALOG_UNBOUNDED');
  const result=[],ids=new Set();
