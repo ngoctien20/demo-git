@@ -77,3 +77,45 @@ jobs:
           name: v147-rich-studio-synthetic-preview-390px
           path: qa-artifacts-v147-rich/
           if-no-files-found: ignore
+
+  hosted-staging-smoke:
+    name: Cloudflare isolated No-Send Worker smoke + Chromium preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      T404_QA_BASE: https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: HTTP verify exact staged source and hard lock
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 4 --retry-delay 3 "$T404_QA_BASE/health" -o /tmp/v147-live-health.json
+          python3 - <<'PY'
+          import json
+          a=json.load(open('/tmp/v147-live-health.json'))
+          assert a["mode"]=="SYNTHETIC_NO_SEND"
+          assert a["version"]=="V14.7-04/05"
+          assert a["sourceCommit"]=="4d2b515e44aed435b687ed3c2a71a767db458f75"
+          assert a["providerSends"]==a["hostedWrites"]==a["aiCalls"]==0
+          print("PASS deployed source fingerprint and NO-SEND counters")
+          PY
+          curl -fsSL "$T404_QA_BASE/" -o /tmp/v147-rich.html
+          grep -q 'experienceModes' /tmp/v147-rich.html
+          curl -fsSL "$T404_QA_BASE/experience-lab.js" -o /tmp/v147-rich.js
+          grep -q 'APPROVAL_AND_COST_GATE_REQUIRED' /tmp/v147-rich.js
+          curl -fsSL "$T404_QA_BASE/studio-ui.js" -o /tmp/v147-ui.js
+          grep -q 'renderExperience' /tmp/v147-ui.js
+          status=$(curl -sS -o /tmp/t404-send.txt -w '%{http_code}' -X POST "$T404_QA_BASE/v1/send")
+          test "$status" = "423"
+          status=$(curl -sS -o /tmp/t404-unknown.txt -w '%{http_code}' "$T404_QA_BASE/v1/orders")
+          test "$status" = "404"
+          echo "PASS staging Rich UI scripts + blocked outgoing endpoints"
+      - name: Install Chromium QA dependency
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Real HTTPS browser visual smoke (2 viewports, 0 external writes)
+        run: node qa/v147-custom-studio/experience-browser.test.cjs
