@@ -13,7 +13,7 @@ test('Menus are QA only, no provider/browser write operations',()=>{for(const sr
 test('Studio does not mutate immutable Action IDs',()=>{assert.match(studio,/id="actionId"[^>]*readonly/);assert.match(sjs,/const prev=clone\(a\)/);assert.match(sjs,/Object\.assign\(a,prev\)/);});
 test('Studio exports only explicitly disabled payload',()=>{for(const flag of ['send_enabled:false','order_write_enabled:false','subscription_write_enabled:false'])assert.ok(sjs.includes(flag));});
 test('Owner mutation menu remains proposal-only and acknowledges confirmation',()=>{assert.match(sjs,/requires_confirmation/);assert.match(sjs,/không thực hiện thao tác/);});
-test('Both pages label fixtures and never claim a live customer identity',()=>{assert.match(studio,/fixture|Fixture/i);assert.match(portal,/Dữ liệu minh họa/);assert.match(portal,/CHƯA XÁC THỰC/);});
+test('Both pages label fixtures and never claim a live customer identity',()=>{assert.match(studio,/mô phỏng|mẫu/i);assert.match(portal,/Dữ liệu minh họa/);assert.match(portal,/CHƯA XÁC THỰC/);});
 test('Merchant UI blocks user-initiated billing',()=>{assert.match(portal,/Gia hạn — chưa kích hoạt/);assert.match(portal,/disabled/);assert.doesNotMatch(pjs,/fetch\(/);});
 test('Merchant requires backend-verified membership, bot pairing',()=>{assert.match(portal,/membership/);assert.match(portal,/backend/);assert.match(portal,/Bot Token/);});
 test('Merchant exercises empty/error/expired fixture states',()=>{for(const s of ['demo:','empty:','expired:','error:'])assert.ok(pjs.includes(s));});
