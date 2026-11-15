@@ -86,3 +86,14 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - n8n Gateway Credits has instance-shared prepaid spend, but tool access and connected browser tabs do not expose the account's current balance, actual gateway model unit rate or auto-top-up settings. Owner must check n8n Cloud console. Published direct OpenAI API benchmark for gpt-5.4-nano is 0.20 USD/1M input and 1.25 USD/1M output; 3841's estimated 156+42 tokens are about 0.0000837 USD at those provider rates, NOT invoiced n8n charge. For a hypothetically *enforced* aggregate 2500 tokens the all-output benchmark is 0.003125 USD, NOT an approved or audited hard money cap.
 - Full evidence and explicit NO-GO matrix: `docs/ai-handoff/TIEN404_V14_5Z_LIVE01_FINAL_SEND_GATE.md`.
 - **Decision:** read-only staging preflight progressed, LIVE UAT remains blocked. No provider send, no D1 DDL/DML, no customer Orders/Stock write, no production change, no credential/billing change.
+
+## 12. LIVE01 isolated hosted D1 security gate — 2026-11-16
+- User approved only isolated staging D1 replay, CAS, quota with backup/rollback, not send/credentials/production.
+- New isolated Cloudflare D1 `tien404-zalo-live01-security-qa-staging`, UUID d6604745-8f8a-4eac-95a3-83f6e4df0d39, APAC; initial 4 tables and 1 event index, then 5th `atomic_claims` and AFTER INSERT trigger. No Worker binds database (17/17 scripts inspected).
+- Full current checkpoint `docs/ai-handoff/TIEN404_V14_5Z_LIVE01_D1_SECURITY_GATE_EVIDENCE.md` is authoritative for current QA, bookmark, rollback, gaps, and source links.
+- Hosted D1 preliminary 28/28 PASS + atomic trigger 20/20 PASS = **48/48**, uses synthetic offline QA records only.
+- CI run https://github.com/ngoctien20/demo-git/actions/runs/43731907070 **122/122 PASS** (28/32/44/18). New atomic Python SQLite QA is 18/18.
+- Old bound D1 legacy tables remain as before; this session wrote no SQL into the old D1. Old D1 Time Travel bookmark advanced between readings; do NOT infer identical data. SQL export file download via signed URL 403; no independent durable backup file.
+- New isolated D1 clean baseline Time Travel bookmark captured before migration: 00000001-00000000-00005124-7e28fe0e4fa45171fa2d4fcb632f9e1c. Restoring is destructive, restricted to this QA DB, and requires separate approval. No restore/drop was executed.
+- Existing published Zalo ingress/router versions unchanged, global Worker ZALO_SEND_ENABLED=false, new QA workflows inactive. No provider sends, no actual customer Orders data changes, no credential/billing changes.
+- **D1 SECURITY QA VERIFIED, LIVE SEND NO-GO:** real Bot→Shop→recipient bound grant, staging gate/dispatcher integration, aggregate model token hard budgeting and actual Gateway balance/monetary cap, final owner activation approval still missing.
