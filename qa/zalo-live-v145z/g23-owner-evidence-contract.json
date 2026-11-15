@@ -1,0 +1,78 @@
+{
+  "version": "V14.5Z-G2.3",
+  "kind": "PRIVATE_OWNER_PROOF_EVIDENCE_CONTRACT",
+  "environment": "STAGING_NO_SEND",
+  "status": "BLOCKED_MISSING_REAL_OWNER_EVIDENCE",
+  "certified_owner": false,
+  "merchant_authority_verified": false,
+  "provider_sends": 0,
+  "can_send": false,
+  "owner_permissions_changed": false,
+  "candidate_binding_ref": "G22_QA_SHOP_B_PROVIDER_CANDIDATE_V1",
+  "private_required_sources": [
+    {
+      "role": "zalo_user",
+      "issuer": "TIEN404_G23_ZALO_OAUTH_ACCOUNT_ATTESTOR",
+      "required": "authenticated Zalo Social OAuth 2.0 session with PKCE state, verified server-side token exchange, dedicated subject digest and independently verified binding to authenticated Supabase subject",
+      "status": "NOT_CONFIGURED"
+    },
+    {
+      "role": "bot_manager",
+      "issuer": "TIEN404_G23_BOT_CREATOR_CONTROL_REVIEWER",
+      "required": "authenticated Zalo Bot Creator control challenge verified by an independent reviewer; account name, screenshot, Bot Token possession or chat ID alone forbidden",
+      "status": "NOT_ATTESTED"
+    },
+    {
+      "role": "supabase_owner",
+      "issuer": "TIEN404_G23_SUPABASE_AUTH_OWNER_ATTESTOR",
+      "required": "validated current Supabase Auth session, same tenant and subject, active owner role verified by trusted server and signed proof; aggregate owner rows alone insufficient",
+      "status": "AGGREGATE_ONLY"
+    },
+    {
+      "role": "merchant_consent",
+      "issuer": "TIEN404_G23_MERCHANT_CONSENT_ATTESTOR",
+      "required": "authenticated merchant approval click after explicit display of Bot/Store identity, QA-only and no-send, revocation and <=24h expiry; independently signed; cannot be inferred from message",
+      "status": "NOT_COLLECTED"
+    }
+  ],
+  "security_requirements": {
+    "independent_ecdsa_p256_roots": 4,
+    "durable_atomic_nonce_store": true,
+    "server_pinned_tenant_store_bot": true,
+    "live_g22_candidate_required": true,
+    "existing_allowlist_must_be_live_and_same_subject": true,
+    "customer_ids_to_public_logs": false,
+    "raw_zalo_token_to_browser": false,
+    "never_auto_promote_registry": true,
+    "no_live_send_without_G4": true
+  },
+  "observed_private_system_state": {
+    "supabase_tenant_slug": "qa-staging-shop-b-20261110",
+    "active_owner_memberships": 2,
+    "distinct_auth_subjects": 2,
+    "email_confirmed_owner_subjects": 2,
+    "supabase_auth_providers": [
+      "email"
+    ],
+    "zalo_social_identity_provider_configured_in_supabase": false,
+    "existing_zalo_channel_secret_count": 0,
+    "g22_candidate_expires_jst": "2026-11-19T05:33:02+09:00",
+    "existing_n8n_qa_allowlist_expires_jst": "2026-11-20T22:17:32+09:00",
+    "published_ingress_modified": false
+  },
+  "evidence_types_disallowed": [
+    "client supplied verified boolean",
+    "Bot Manager screenshot alone",
+    "chat ID alone",
+    "valid Bot Token alone",
+    "Supabase owner membership count alone",
+    "unauthenticated consent checkbox"
+  ],
+  "before_enrollment_requirements": [
+    "separate approval for OAuth app setup/credentials and any Supabase Auth provider change",
+    "separate approval for real owner permission/allowlist change",
+    "independent bot creator owner challenge and reviewer provenance",
+    "staging-only signed evidence and NO SEND QA first"
+  ],
+  "owner_manual_acceptance_not_certification": true
+}
