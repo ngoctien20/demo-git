@@ -27,7 +27,9 @@ Critical gate: `createTrustedPorts()` defaults to `mode='BLOCKED'`. `SYNTHETIC_Q
 **P0 migration dependency:** V14.2 Draft PR #86 owns canonical Store schema/RLS readiness. Keep Store/Knowledge migration, product ownership mapping and replacement of tenant-wide policies out of this PR. Require backup/restore, owner authorization and hosted user-JWT Shop A/B tests before connecting real DB. Do not bind `public.products` tenant-only data to multiple stores.
 
 ## QA acceptance
-- Offline source and inherited suite: pending GitHub Actions result; only state PASS after checking exact run ID.
+- **TESTED:** [CI V13.6M.2 Store & Catalog 43710021827](https://github.com/ngoctien20/demo-git/actions/runs/43710021827) SUCCESS: 116/116 Node tests incl. 22 new SAME-TENANT Shop A/B cases, static no-send/no-network PASS.
+- **TESTED:** [CI V13.6M.2 private repository 43710021839](https://github.com/ngoctien20/demo-git/actions/runs/43710021839) SUCCESS: 142/142 tests, SQL proposal fail-closed check PASS, Chromium 5 viewport × 4 offline Rich UI modules PASS.
+- **TESTED:** [CI inherited V13.6M.1 43710021807](https://github.com/ngoctien20/demo-git/actions/runs/43710021807) SUCCESS. Initial V13.6M.2 run 43709952588 FAILED (missing repository scope marker); corrected on Draft branch and retested successfully.
 - Hosted Supabase real user-JWT Store A/B catalog: **BLOCKED**, no `store_id` and no approved verified RLS evidence.
 - Messenger real Meta Page/PSID, actual Carousel/UI delivery, persistent menu: **NOT RUN** (approval required).
 - Real persistent replay/outbox: **NOT IMPLEMENTED**, current replay guard is Dry Run in memory only.
@@ -37,3 +39,14 @@ Critical gate: `createTrustedPorts()` defaults to `mode='BLOCKED'`. `SYNTHETIC_Q
 Rollback is to revert/close only the stacked Draft PR/branch; the previous V13.6M.1 commit remains the safe baseline. No DB backup restore or external message recall is needed because this PR contains source and QA only. Keep the existing inactive QA shadow.
 
 Separate approval and VERIFIED evidence needed before moving beyond offline: (1) hosted staging canonical Store/catalog RLS + user JWT A/B isolation, (2) secure persisted Channel/Page→Tenant→Store registry, (3) durable idempotency/outbox, (4) Meta permissions/policy and authorized bounded live test, (5) explicit promotion approval. **Never merge, publish or deploy from this checkpoint alone.**
+
+## Final read-only P0 preflight, 2026-11-15 JST
+SQL-only Supabase metadata probe (no mutation) returned: `public.stores` **false**, `public.store_memberships` **false**, `app_private.messenger_page_bindings` **false**, `public.products.store_id` **false**. `products FORCE RLS` **true**, but this does not establish any **per-store** RLS policy for two stores under one tenant; `stores FORCE RLS` and `store_memberships FORCE RLS` **false** because those tables do not exist. Real catalog remains **BLOCKED**.
+
+### Complementary source-only repository contract (also on this Draft branch)
+- `qa/messenger-rich-v136m2/trusted-repository.cjs`: restricted read-only database interface with canonical Store/Page binding preflight, parameterized tenant+store-scoped catalog SQL, owner membership and entitlement contracts, and explicitly forced RLS requirement.
+- `qa/messenger-rich-v136m2/trusted-repository.test.cjs`: additional offline DB-contract QA, part of 142/142 run.
+- `qa/messenger-rich-v136m2/PROPOSAL_ONLY_PAGE_BINDING_DO_NOT_RUN.sql`: non-executable proposal guarded by `RAISE EXCEPTION` before DDL. **Do not execute.**
+- `.github/workflows/v136m2-trusted-messenger-resolver-qa.yml`: the second independent CI safety suite.
+
+The two currently separate resolver interfaces (`trusted-resolver.cjs` mock contract and `trusted-repository.cjs` restricted SQL contract) **must be consolidated into a single canonical backend port in a later reviewed candidate** before hosted integration or release. Keeping both as offline source is not evidence of end-to-end implementation. No DB or webhook change was made.
