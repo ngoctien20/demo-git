@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>TIEN404 · Zalo Button Lab V13.6 — QA mô phỏng</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#080e19;color:#eff5ff}
+*{box-sizing:border-box}body{margin:0}main{width:min(950px,100%);margin:auto;padding:22px 18px 52px}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;margin:0 0 25px}
+h1{font-size:clamp(1.5rem,3.4vw,2.1rem);line-height:1.25;margin:5px 0}
+.eyebrow{font-size:11px;letter-spacing:2px;font-weight:800;color:#71dec4}.meta{font-size:12px;color:#b7c6da}
+p{line-height:1.55;color:#b7c6da}
+.notice{padding:13px 16px;background:#182a39;border:1px solid #376271;border-radius:14px;color:#c4f7ef;font-size:14px;margin:0 0 16px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+.panel{background:#131e2f;border:1px solid #34445e;border-radius:18px;padding:20px;min-width:0}
+h2{font-size:17px;margin:0 0 9px}h3{font-size:14px;margin:17px 0 8px}
+.switch{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+button{cursor:pointer;font:inherit}button:focus-visible{outline:3px solid #71dec4;outline-offset:3px}
+.mode{border:1px solid #52718a;border-radius:12px;background:transparent;color:#dbeaff;padding:10px 13px;font-size:13px}
+.mode[aria-pressed="true"]{background:#38a58b;color:#071621;border-color:#38a58b;font-weight:700}
+.phone{border:1px solid #34445e;border-radius:23px;background:#0c1523;min-height:300px;padding:15px}
+.chat-title{font-size:13px;font-weight:700;padding:4px 0 13px;border-bottom:1px solid #27394f}
+.bubble{background:#252f40;color:#f5f7fb;padding:16px;border-radius:4px 15px 15px 15px;white-space:pre-wrap;font-size:14px;line-height:1.7;margin-top:15px;overflow-wrap:anywhere}
+.controls{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0}
+.action{width:100%;text-align:left;border:1px solid #46617a;padding:11px 13px;border-radius:11px;color:#d9f4ff;background:#182b42}
+.action:hover{border-color:#72d9c9;background:#234051}
+.action:active{transform:translateY(1px)}
+.tag{display:inline-block;font-size:11px;border-radius:999px;border:1px solid #5d7284;color:#b9c9e0;padding:4px 9px;margin-bottom:14px}
+.result{min-height:72px;background:#101b2c;border:1px dashed #4c6178;padding:13px;border-radius:12px;font-size:14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:9px 7px;border-bottom:1px solid #354354;text-align:left;overflow-wrap:anywhere}th{color:#80ddc9}
+.small{font-size:12px}.warning{color:#ffd994}
+footer{font-size:12px;margin-top:18px;color:#98a9c1;line-height:1.5}
+@media(max-width:670px){.layout{grid-template-columns:1fr}.panel{padding:17px}main{padding:16px 12px 36px}.phone{min-height:225px}}
+</style></head>
+<body>
+<main>
+<header><div><div class="eyebrow">TIEN404 · CHANNEL RESEARCH</div><h1>Zalo Button Lab <span class="meta">V13.6</span></h1><p class="small">Một bộ hành động — hai cách trình bày. Không gửi tin hoặc ghi đơn.</p></div><span class="tag">EXPERIMENTAL · NO SEND</span></header>
+<div class="notice" role="status">Nút trong trang này là bản thử nghiệm tương tác. <b>Zalo Bot Creator chưa xác minh được API nút thật</b>. Chỉ menu văn bản là phương án tương thích đã kiểm thử. OA có khả năng dùng nút nhưng chưa kết nối.</div>
+<div class="layout">
+<section class="panel" aria-label="Mô phỏng cuộc trò chuyện">
+<h2>1. Chọn kênh</h2>
+<div class="switch" role="group" aria-label="Chế độ hiển thị">
+<button id="modeBot" type="button" class="mode" aria-pressed="true">Zalo Bot Creator</button>
+<button id="modeOa" type="button" class="mode" aria-pressed="false">Zalo OA (preview)</button>
+</div>
+<div class="phone">
+<div class="chat-title">🤖 Bot TIEN404 AI <span class="meta">· dữ liệu mẫu</span></div>
+<div id="messageText" class="bubble" aria-label="Tin nhắn xem trước">Đang tải menu QA…</div>
+<div id="modeNote" class="small warning" style="margin-top:12px"></div>
+<div id="buttonArea" class="controls" aria-label="Các nút thử nghiệm"></div>
+</div>
+<h3>2. Thử chọn một mục</h3>
+<div id="selectionResult" class="result" role="status" aria-live="polite">Chọn một nút bên trên để xem Action ID. Không có yêu cầu nào được gửi.</div>
+</section>
+<section class="panel" aria-label="Kết quả và giới hạn">
+<h2>Khả năng được xác minh</h2>
+<table><thead><tr><th>Đặc điểm</th><th>Bot Creator</th><th>OA</th></tr></thead>
+<tbody>
+<tr><td>Văn bản đánh số</td><td>Đã kiểm thử</td><td>Có thể dùng</td></tr>
+<tr><td>Nút bấm API</td><td>Chưa có schema</td><td>Có tài liệu</td></tr>
+<tr><td>Callback của Bot</td><td>Chưa xác minh</td><td>Chưa kết nối</td></tr>
+<tr><td>Quyền và tenant</td><td>Backend chưa nối</td><td>Backend chưa nối</td></tr>
+</tbody></table>
+<h3>Quy tắc bảo mật</h3>
+<p class="small">Các lựa chọn lấy từ <code>menu-registry.json</code> V13.1. Chỉ hiển thị hành động CUSTOMER. Chọn nút chỉ tạo kết quả QA trong trình duyệt, không gọi API Bot, không tạo đơn và không cấp quyền Owner.</p>
+<h3>Giới hạn</h3>
+<p class="small">Nút OA hiện là <b>mock</b> dùng để thiết kế. Không tự động phát hành sang Zalo OA cho đến khi xác minh quyền tích hợp và cấu trúc API chính xác.</p>
+<p class="small">Nút Bot Creator hiển thị bên ngoài bong bóng tin nhắn trong chế độ thử nghiệm, <b>không phải nút hiển thị thực trong Zalo</b>.</p>
+</section>
+</div>
+<footer>TIEN404 AI · Nghiên cứu UI theo kênh. Không có Bot Token, chat ID hoặc tài khoản thật trong trang. Staff Console chỉ được sử dụng khi có xác thực nhân sự phía backend.</footer>
+</main>
+<script type="module" src="./app.js"></script>
+</body></html>
