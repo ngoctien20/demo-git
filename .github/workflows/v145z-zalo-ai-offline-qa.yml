@@ -36,6 +36,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/live03b-price-reconciliation.test.cjs
       - name: LIVE03C signed budget HTTP Worker contract QA
         run: node --test qa/zalo-live-v145z/live03c-budget-worker.test.mjs
+      - name: LIVE03D provider immutable Bot ID, Shop and Owner strict no-send QA
+        run: node --test qa/zalo-live-v145z/live03d-trusted-identity-preflight.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
