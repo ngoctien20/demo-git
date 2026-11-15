@@ -179,7 +179,9 @@ async function createTrustedPorts({db,readEntitlement,readPublicConfig,replayChe
    const proof=scope(tenantId,storeId);
    if(proof.entitlementChecked!==true)reject('ENTITLEMENT_GATE_REQUIRED');
    if(requested!=='DRY_RUN'||!SHA.test(replayKey||''))reject('REPLAY_DRY_RUN_ONLY');
-   const r=await replayCheck({tenantId,storeId,replayKey,mode:'DRY_RUN'});
+   const r=await replayCheck({tenantId,storeId,pageId:proof.pageId,
+     senderPsid:proof.senderPsid,bindingVersion:proof.bindingVersion,
+     replayKey,mode:'DRY_RUN'});
    if(!r||r.mode!=='DRY_RUN'||typeof r.firstSeen!=='boolean'||
       r.externalWriteOccurred!==false)reject('REPLAY_CHECK_NOT_SAFE');
    return {source:'SERVER_VERIFIED_REPLAY_GUARD',tenantId,storeId,
