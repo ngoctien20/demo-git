@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>TIEN404 · Shop Knowledge Manager V14.1 — QA</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#e7edf5;background:#0b1320;--panel:#142033;--border:#33435c;--dim:#a5b5c9;--accent:#43b7a8}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}
+.shell{max-width:1240px;margin:auto;padding:14px}header{padding:20px 0 16px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+.brand{font-size:1.25rem;font-weight:800;letter-spacing:.02em}.eyebrow{color:var(--accent);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
+.sub{color:var(--dim);font-size:.9rem;line-height:1.6}.status{border:1px solid #ad833d;border-radius:999px;color:#f6cf78;padding:5px 10px;font-size:.74rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:18px;margin-bottom:14px;box-shadow:0 7px 22px #0002}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.toolbar select{min-width:240px;flex:1}
+h1{font-size:1.5rem;margin:.35em 0}h2{font-size:1.12rem;margin:0 0 12px}h3{font-size:.98rem;margin:12px 0}
+nav{display:flex;gap:8px;overflow:auto;padding:8px 0 14px;scrollbar-width:thin}
+nav button{white-space:nowrap;padding:11px 14px;border:1px solid var(--border);background:#142033;color:#d7e6fa;border-radius:11px;cursor:pointer}
+nav button[aria-selected="true"]{background:#265b5a;border-color:#3eb9aa;color:#fff}
+.grid{display:grid;gap:14px;grid-template-columns:1fr} .two{display:grid;gap:14px;grid-template-columns:1fr}
+.stat{padding:14px;border-radius:12px;background:#101a2a;border:1px solid #2a3950}
+.stat strong{font-size:1.5rem;display:block;margin-top:4px}.label{font-size:.78rem;color:var(--dim)}
+input,select,textarea{width:100%;color:#f7faff;background:#0e1929;border:1px solid #465a73;border-radius:10px;padding:11px;min-height:44px}
+textarea{min-height:86px;resize:vertical}label{display:block;font-size:.85rem;font-weight:600;margin-bottom:10px}label small{display:block;color:var(--dim);font-weight:400;margin:4px 0}
+button{min-height:42px} .primary{border:0;background:#36af9b;color:#052121;border-radius:10px;font-weight:700;padding:10px 16px;cursor:pointer}
+.ghost{background:transparent;border:1px solid var(--border);border-radius:10px;color:#d5e3f4;padding:10px 14px;cursor:pointer}
+.entry{padding:13px 0;border-bottom:1px solid #344258}.entry:last-child{border-bottom:0}
+.entry p{color:#e4edf8;line-height:1.5;margin:8px 0}.row{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
+.pill{font-size:.7rem;border-radius:6px;border:1px solid #41796e;padding:3px 7px;color:#8be4c8}
+.muted{color:var(--dim)} .warn{background:#342414;border:1px solid #79592c;color:#f0c68a;padding:12px;border-radius:10px}
+.notice{background:#0e292c;border:1px solid #2b796e;border-radius:10px;padding:12px;margin:12px 0;color:#b9f1df}
+.output{white-space:pre-wrap;background:#0e1929;border:1px dashed #537086;padding:14px;border-radius:10px;min-height:75px;line-height:1.7}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+footer{padding:28px 0 32px;color:var(--dim);font-size:.82rem}
+@media(min-width:690px){.shell{padding:24px}.grid{grid-template-columns:repeat(3,1fr)}.two{grid-template-columns:1fr 1fr}h1{font-size:1.85rem}}
+</style></head>
+<body><div class="shell">
+<header><div><div class="eyebrow">TIEN404 AI · Staff Console</div><div class="brand">Shop Knowledge Manager <span class="muted">V14.1</span></div></div>
+<span class="status">DEMO OFFLINE · KHÔNG KẾT NỐI KHÁCH HÀNG</span></header>
+<div class="card"><div class="toolbar"><div><h1>Kiến thức cửa hàng</h1><div class="sub">Một nền tảng, nhiều cửa hàng, dữ liệu tách biệt theo phiên QA.</div></div>
+<label style="flex:1;min-width:200px">Cửa hàng đang xem<select id="storeSelect" aria-label="Chọn cửa hàng QA"></select></label></div>
+<div class="warn">Đây là giao diện QA dùng dữ liệu giả lập A/B/C. Lưu bản nháp chỉ thay đổi dữ liệu bộ nhớ trong trang, không cập nhật Supabase, n8n, Bot, đơn hàng hoặc production.</div></div>
+<nav id="tabs" role="tablist" aria-label="Các phần quản lý kiến thức"></nav>
+<main id="content" aria-live="polite"></main>
+<footer>TIEN404 V14.1 · EXPERIMENTAL · Không lưu thông tin khi tải lại trang · Không cấp quyền duyệt/phát hành thực tế.</footer>
+</div>
+<script>
+"use strict";
+// All names, phones, addresses and policies below are FICTIONAL QA content.
+const DB={
+ A:{name:"Tạp hóa Mẫu A",year:"2018",phone:"000-0000-0101",address:"Địa chỉ mô phỏng Shop A",hours:"07:00–20:00",industry:"Tạp hóa",version:"knowledge-a-1",tone:"friendly",returns:"Đổi trả theo phiếu xác minh A",delivery:"Chỉ giao trong khu vực QA A",payment:"Tiền mặt (giả lập)",faq:[{q:"Có giao trong ngày không?",a:"Shop A chưa xác minh giao trong ngày",state:"PUBLISHED"}]},
+ B:{name:"Thời trang Mẫu B",year:"2021",phone:"000-0000-0202",address:"Địa chỉ mô phỏng Shop B",hours:"09:00–21:00",industry:"Thời trang",version:"knowledge-b-1",tone:"friendly",returns:"Có thể đổi size theo điều kiện QA B",delivery:"Chỉ giao trong khu vực QA B",payment:"COD (giả lập)",faq:[{q:"Có gói quà không?",a:"Chưa có chính sách gói quà được duyệt",state:"PUBLISHED"}]},
+ C:{name:"VLXD Mẫu C",year:"2015",phone:"000-0000-0303",address:"Địa chỉ mô phỏng Shop C",hours:"06:30–18:00",industry:"Vật liệu xây dựng",version:"knowledge-c-1",tone:"formal",returns:"Nhận lại hàng chưa sử dụng theo fixture C",delivery:"Giao công trình theo xác nhận nhân viên",payment:"Tiền mặt hoặc chuyển khoản (giả lập)",faq:[{q:"Có giao tới công trình không?",a:"Shop C có dịch vụ giao công trình theo xác nhận",state:"PUBLISHED"}]}
+};
+const tabs=[["overview","Tổng quan"],["profile","Hồ sơ"],["faq","Câu hỏi thường gặp"],["policy","Chính sách"],["behavior","Phong cách AI"],["test","Thử nghiệm AI"],["history","Lịch sử"]];
+const select=document.getElementById("storeSelect"), nav=document.getElementById("tabs"),out=document.getElementById("content");
+let current="B",tab="overview";
+const localDrafts={A:[],B:[],C:[]},audit={A:[],B:[],C:[]};
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e};
+function add(parent,...children){children.forEach(c=>parent.appendChild(c));return parent}
+function card(title){const e=el("section","card");e.appendChild(el("h2",null,title));return e}
+function row(label,value){const e=el("div","entry"),h=el("div","row");add(h,el("strong",null,label),el("span","pill","QA PUBLISHED"));add(e,h,el("p",null,value));return e}
+function message(text,cls="notice"){out.prepend(el("div",cls,text))}
+function log(action,details){audit[current].unshift({action,details,at:new Date().toLocaleString("vi-VN")})}
+function field(name,value,type="text"){const label=el("label");add(label,el("span",null,name));const input=el(type==="textarea"?"textarea":"input");if(type!=="textarea")input.type=type;input.value=value||"";label.appendChild(input);return {label,input}}
+function heading(parent,text){parent.appendChild(el("h3",null,text))}
+function drawOverview(s){
+ const stats=el("div","grid");
+ for(const [name,val] of [["Knowledge Version",s.version],["FAQ đã phát hành",s.faq.filter(e=>e.state==="PUBLISHED").length],["Bản nháp cục bộ",localDrafts[current].length]]){
+  const x=el("div","stat");add(x,el("span","label",name),el("strong",null,val));stats.appendChild(x)
+ }
+ const c=card("Tình trạng cửa hàng");add(c,stats,el("p","sub","Nguồn: dữ liệu fixture tổng hợp. Bản thử nghiệm này không đọc dữ liệu tenant/store thật."),row("Cửa hàng",s.name),row("Loại hình",s.industry));
+ const blocks=el("div","two"),c2=card("Đã có nền tảng"),c3=card("Chưa mở tính năng thật");
+ c2.appendChild(el("p","sub","Hồ sơ, FAQ, chính sách, phong cách AI mẫu và thử nghiệm ở chế độ offline."));
+ c3.appendChild(el("p","sub","RLS theo cửa hàng, quyền nhân viên hosted, trình duyệt ảnh khách thật, gửi Zalo, cập nhật Knowledge phiên bản vào database."));
+ add(blocks,c2,c3);add(out,c,blocks)
+}
+function saveDraft(kind,key,value){if(typeof value!=="string"||!value.trim()||value.length>1000){message("Nội dung không hợp lệ hoặc quá 1.000 ký tự.","warn");return}
+ localDrafts[current].push({kind,key,value:value.trim(),state:"DRAFT",created_at:new Date().toISOString()});
+ log("DRAFT_CREATED",kind+" / "+key);message("Đã lưu bản nháp trong bộ nhớ trình duyệt. Bản PUBLISHED không đổi.");render()
+}
+function drawProfile(s){const c=card("Hồ sơ công khai đang mô phỏng");
+ const labels=[["name","Tên cửa hàng"],["year","Năm thành lập"],["phone","Số điện thoại công khai"],["address","Địa chỉ"],["hours","Giờ hoạt động"],["industry","Ngành hàng"]];
+ for(const [k,label] of labels)c.appendChild(row(label,s[k]));
+ out.appendChild(c);
+ const edit=card("Tạo bản nháp cập nhật hồ sơ");const form=el("form");
+ const prop=el("label");prop.textContent="Trường thông tin";const sel=el("select");
+ labels.forEach(([k,l])=>{const opt=el("option",null,l);opt.value=k;sel.appendChild(opt)});prop.appendChild(sel);
+ const v=field("Giá trị đề xuất","");
+ const save=el("button","primary","Lưu nháp (không công khai)");save.type="submit";
+ add(form,prop,v.label,save);form.addEventListener("submit",event=>{event.preventDefault();saveDraft("profile",sel.value,v.input.value)});
+ edit.appendChild(form);out.appendChild(edit)
+}
+function drawFAQ(s){const c=card("FAQ của cửa hàng");
+ s.faq.forEach(e=>{const i=el("div","entry");add(i,el("strong",null,e.q),el("p",null,e.a),el("span","pill","PUBLISHED · fixture"));c.appendChild(i)});
+ localDrafts[current].filter(e=>e.kind==="faq").forEach(e=>{const i=el("div","entry");add(i,el("strong",null,e.key),el("p",null,e.value),el("span","status","DRAFT · chỉ ở trình duyệt"));c.appendChild(i)});
+ const form=el("form"),q=field("Câu hỏi mới",""),a=field("Trả lời đề xuất","","textarea"),button=el("button","primary","Lưu FAQ nháp");button.type="submit";
+ add(form,q.label,a.label,button);form.addEventListener("submit",event=>{event.preventDefault();if(!q.input.value.trim()){message("Cần nhập câu hỏi","warn");return}saveDraft("faq",q.input.value,a.input.value)});
+ add(c,el("hr"),form);out.appendChild(c)
+}
+function drawPolicy(s){const c=card("Chính sách công khai — dữ liệu QA");
+ for(const [name,value] of [["Giao hàng",s.delivery],["Đổi trả",s.returns],["Thanh toán",s.payment]])c.appendChild(row(name,value));
+ const form=el("form"),t=el("label",null,"Chọn chính sách"),sel=el("select");
+ ["delivery","returns","payment"].forEach(key=>{const opt=el("option",null,key);opt.value=key;sel.appendChild(opt)});t.appendChild(sel);
+ const v=field("Nội dung đề xuất","", "textarea"),button=el("button","primary","Tạo nháp chính sách");button.type="submit";
+ add(form,t,v.label,button);form.addEventListener("submit",event=>{event.preventDefault();saveDraft("policy",sel.value,v.input.value)});
+ add(c,el("h3",null,"Đề xuất chỉnh sửa"),form);out.appendChild(c)
+}
+function drawBehavior(s){const c=card("Phong cách AI — tùy chọn an toàn");
+ add(c,row("Giọng văn đang phát hành",s.tone==="friendly"?"Thân thiện":"Trang trọng"),el("p","sub","Chỉ hỗ trợ các giá trị được phép. Không cho phép viết prompt hệ thống, cấp quyền tool hay bỏ qua bước xác nhận đơn."));
+ const form=el("form"),label=el("label",null,"Giọng văn đề xuất"),sel=el("select");
+ for(const [v,labelName] of [["friendly","Thân thiện"],["formal","Trang trọng"]]){const opt=el("option",null,labelName);opt.value=v;sel.appendChild(opt)}
+ sel.value=s.tone;label.appendChild(sel);const button=el("button","primary","Lưu tùy chọn nháp");button.type="submit";
+ add(form,label,button);form.addEventListener("submit",e=>{e.preventDefault();saveDraft("behavior","tone",sel.value)});
+ c.appendChild(form);out.appendChild(c)
+}
+function simulate(q,s){
+ const n=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
+ const allowed=[["nam thanh lap",s.year,"profile.founded"],["ten cua hang",s.name,"profile.name"],["so dien thoai",s.phone,"profile.phone"],["gio mo cua",s.hours,"profile.hours"],["doi tra",s.returns,"policy.returns"],["giao hang",s.delivery,"policy.delivery"]];
+ if(/\b(gia|sku|ton kho|don hang)\b/.test(n))return {status:"COMMERCE_DELEGATION",answer:"Cần công cụ Commerce đã xác thực; UI này không đọc giá hoặc tồn kho.",source:"Không có source tại UI mock"};
+ if(/\b(token|gia von|mat khau|system prompt)\b/.test(n))return {status:"RESTRICTED",answer:"Không cung cấp thông tin nội bộ.",source:"Quy tắc mock"};
+ const found=allowed.find(x=>n.includes(x[0]));
+ if(found)return {status:"PREVIEW_MOCK",answer:found[1],source:s.version+" / "+found[2]};
+ return {status:"HANDOFF",answer:"Chưa đủ thông tin xác thực. Chuyển nhân viên hỗ trợ.",source:"Không tìm thấy"};
+}
+function drawTest(s){const c=card("Thử nghiệm câu trả lời (UI mock, không gọi AI Agent)"),form=el("form"),q=field("Nhập câu hỏi thử","Shop có giao hàng không?"),button=el("button","primary","Xem phản hồi mẫu");
+ button.type="submit";const result=el("div","output","Chưa chạy thử."),evidence=el("p","sub","Nguồn: chưa có");
+ add(form,q.label,button);form.addEventListener("submit",ev=>{ev.preventDefault();const x=simulate(q.input.value,s);result.textContent=x.status+"\n"+x.answer;evidence.textContent="Nguồn: "+x.source+" · Shop: "+s.name+" · KHÔNG GỬI"};
+ add(c,form,headingEl("Kết quả xem trước"),result,evidence,el("div","warn","Đây là mô phỏng UI độc lập, không phải AI Vision, n8n, Supabase RLS hoặc QA độ chính xác mô hình."));
+ out.appendChild(c)
+}
+function headingEl(text){return el("h3",null,text)}
+function drawHistory(){const c=card("Lịch sử thay đổi nội bộ phiên QA");if(!audit[current].length)c.appendChild(el("p","sub","Chưa có thay đổi trong phiên trình duyệt hiện tại."));
+ audit[current].forEach(e=>{const i=el("div","entry");add(i,el("strong",null,e.action),el("p","sub",e.details+" · "+e.at));c.appendChild(i)});
+ c.appendChild(el("p","sub","Lịch sử này không được lưu vào audit log backend; đóng tab sẽ mất."));out.appendChild(c)}
+function render(){const s=DB[current];out.replaceChildren();nav.replaceChildren();
+ tabs.forEach(([id,title])=>{const b=el("button",null,title);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",String(tab===id));b.onclick=()=>{tab=id;render()};nav.appendChild(b)});
+ ({overview:drawOverview,profile:drawProfile,faq:drawFAQ,policy:drawPolicy,behavior:drawBehavior,test:drawTest,history:drawHistory})[tab](s)}
+Object.keys(DB).forEach(k=>{const opt=el("option",null,DB[k].name+" · Shop "+k);opt.value=k;select.appendChild(opt)});
+select.value=current;select.addEventListener("change",()=>{current=select.value;tab="overview";render()});render();
+</script></body></html>
