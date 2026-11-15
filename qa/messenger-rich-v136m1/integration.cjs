@@ -122,21 +122,28 @@ function quick(b,actionSecret,now){
    {action:'ASK_STAFF',title:'Gặp nhân viên'}]
  });
 }
-async function processCandidate({rawBody,signature,appSecret,actionSecret,ports,siteOrigin,now=Date.now}={}){
- checkPorts(ports);verifyMetaRaw({rawBody,signature,appSecret});
+async function processCandidate({rawBody,signature,appSecret,actionSecret,ports,portsFactory,siteOrigin,now=Date.now}={}){
+ if(portsFactory!==undefined&&typeof portsFactory!=='function')failure('SERVER_PORT_FACTORY_INVALID');
+ if(portsFactory===undefined)checkPorts(ports);
+ verifyMetaRaw({rawBody,signature,appSecret});
  safeSecret(actionSecret,'SERVER_ACTION_SECRET_MISSING');
  const events=normalize(rawBody),result=[];
  for(const item of events){
+  // A fresh private scope per Meta event prevents Page/PSID context sharing
+  // when different people message the same Page in one signed webhook.
+  // Factory is server-injected and is only called AFTER exact raw HMAC proof.
+  const eventPorts=portsFactory===undefined?ports:await portsFactory();
+  checkPorts(eventPorts);
   const nowMs=now(),e=item.event;
   if(e.timestamp>nowMs+5*60*1000||nowMs-e.timestamp>ONE_DAY)
      failure('MESSENGER_TIME_WINDOW_DENIED');
-  const binding=verifyBinding(await ports.resolveBinding({
+  const binding=verifyBinding(await eventPorts.resolveBinding({
       pageId:item.pageId,senderPsid:item.senderPsid}),item.pageId,item.senderPsid);
-  const status=await ports.readShopStatus({tenantId:binding.tenantId,storeId:binding.storeId});
+  const status=await eventPorts.readShopStatus({tenantId:binding.tenantId,storeId:binding.storeId});
   guardStatus(status,binding,nowMs);
   const intent=detectIntent(e,binding,actionSecret,now);
   const key=replayKey(item.pageId,item.senderPsid,e);
-  const claim=await ports.checkAndReserveEvent({
+  const claim=await eventPorts.checkAndReserveEvent({
     tenantId:binding.tenantId,storeId:binding.storeId,
     channel:'MESSENGER',replayKey:key,mode:'DRY_RUN'});
   if(claim?.source!=='SERVER_VERIFIED_REPLAY_GUARD'||claim.tenantId!==binding.tenantId||
@@ -149,7 +156,7 @@ async function processCandidate({rawBody,signature,appSecret,actionSecret,ports,
   let draft,route=intent.action;
   if(route==='BROWSE_CATALOG'||route==='VIEW_PRODUCT'){
    const catalog=verifyCatalogResponse(
-     await ports.readCatalog({tenantId:binding.tenantId,storeId:binding.storeId,
+     await eventPorts.readCatalog({tenantId:binding.tenantId,storeId:binding.storeId,
        readOnly:true,limit:100}),binding);
    const chosen=route==='VIEW_PRODUCT'?catalog.filter(x=>x.itemId===intent.itemId):catalog;
    if(!chosen.length){
