@@ -175,3 +175,9 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - Trial subscription deferral remains as approved; review scheduled Nov 22 JST. No billing, subscription, credentials, production, Published webhook or customer data modified by UAT01.
 
 - **POST-UAT01 SNAPSHOT** (2026-11-16): n8n search now reports 100 workflows / 19 Active, because an additional inactive QA driver `teHbeNGZn7e1TuSy` was created after the initial 99/19 check. Use 100 as latest read-only count for reporting, and re-inventory when accepting Export backup.
+
+## 21. UAT01 final UI hardening / acceptance handoff (2026-11-16 JST)
+- Existing synthetic UAT staging Worker remains unique with no bindings, no provider, no LLM, no Orders write. UI `Test cách ly` now explicitly chooses Shop A for Shop B SKU to avoid owner test ambiguity.
+- Added 2 extra browser UI regression cases (JavaScript syntax and Shop A selection), bringing UAT01 tests to **20**, inherited tests 296, expected full CI **316/316**. Real hosted n8n execution **3864 SUCCESS** after redeploy (12/12 synthetic, health 200, draft 318000, /v1/send 423).
+- Current UAT Worker version `4a33928c-2395-4d3e-bec7-f8d66001db84`, deployment `dcd273ce-1174-4c3d-947c-acd5877d6a84`; old revision available as rollback checkpoint. No new credential/production/live Bot changes.
+- Latest n8n count **100 workflows / 19 Active** including new inactive HTTP UAT QA. Owner G1 manual acceptance remains PENDING; G2–G5 real identity, AI, limited sends and commerce launch remain gated. Detailed runbook updated in `docs/ai-handoff/TIEN404_V14_5Z_UAT01_HOSTED_OWNER_ACCEPTANCE_ROADMAP.md`.
