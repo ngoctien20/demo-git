@@ -34,7 +34,8 @@ function validate(input){
  if(!['create','update'].includes(action)||!isUuid(storeId)||
    typeof sku!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(sku)||
    typeof name!=='string'||name.trim()!==name||name.length<1||
-   name.length>250||typeof isActive!=='boolean'||
+   name.length>250||/[\u0000-\u001F\u007F]/.test(name)||
+   typeof isActive!=='boolean'||
    typeof priceVnd!=='number'||!Number.isSafeInteger(priceVnd)||
    priceVnd<0||priceVnd>MAX_VND||
    typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{12,80}$/.test(requestId))
@@ -67,7 +68,8 @@ function createOfflineStoreProductV2({mode,ports,maxProducts=1000,maxRequests=30
   if(!grant||grant.source!=='SYNTHETIC_CANONICAL_STORE_REGISTRY'||
     grant.userId!==user.id||grant.storeId!==storeId||
     !isUuid(grant.tenantId)||!grant.tenantActive||
-    grant.storeActive!==true||grant.membershipActive!==true||
+    grant.storeActive!==true||grant.subscriptionActive!==true||
+    grant.membershipActive!==true||
     !ALLOWED_ROLES.has(grant.role)||grant.canEditProducts!==true)
     reject(ERROR_CODES.MEMBERSHIP);
   return Object.freeze({userId:user.id,tenantId:grant.tenantId,storeId});
