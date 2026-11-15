@@ -86,7 +86,7 @@ function createMessengerQaLab(){
    r=reply(e,'CONSULT','Cửa hàng '+p.store+' có '+p.name+' ('+p.sku+
     ') trong catalog QA. Hãy hỏi giá hoặc đặt thử.',{sku:p.sku});
   }else{
-   r=reply(e,'CONSULT','Tôi là bot QA mô phỏng. Bạn có thể hỏi tư vấn, báo giá, đặt hàng hoặc tra cứu đơn.');
+   r=reply(e,'CONSULT','Tôi là bot QA giả lập, chưa kết nối Messenger thật. Bạn có thể hỏi tư vấn, báo giá, đặt hàng hoặc tra cứu đơn.');
   }
   seen.set(ek,{senderId:e.senderId,text:e.text,response:r});return r;
  }
