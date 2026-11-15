@@ -97,3 +97,15 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - New isolated D1 clean baseline Time Travel bookmark captured before migration: 00000001-00000000-00005124-7e28fe0e4fa45171fa2d4fcb632f9e1c. Restoring is destructive, restricted to this QA DB, and requires separate approval. No restore/drop was executed.
 - Existing published Zalo ingress/router versions unchanged, global Worker ZALO_SEND_ENABLED=false, new QA workflows inactive. No provider sends, no actual customer Orders data changes, no credential/billing changes.
 - **D1 SECURITY QA VERIFIED, LIVE SEND NO-GO:** real Bot→Shop→recipient bound grant, staging gate/dispatcher integration, aggregate model token hard budgeting and actual Gateway balance/monetary cap, final owner activation approval still missing.
+
+## 13. V14.5Z-LIVE02 hosted no-send integration checkpoint (2026-11-16 JST)
+- New Cloudflare staging Worker: `tien404-zalo-live02-nosend-gate-staging`; D1 binding `LIVE02_DB` → `d6604745-8f8a-4eac-95a3-83f6e4df0d39`. No secrets, no provider calls. New Worker `workers.dev` QA route enabled; preview URLs disabled.
+- Signed synthetic QA ECDSA-P256 immutable test grant+scope; D1 lookup required BEFORE atomic claim. This is NOT real Zalo Bot→Shop→Owner verification.
+- Existing outbound Worker global `ZALO_SEND_ENABLED=false`; existing Zalo ingress/router versions untouched. New n8n manual QA workflows kept INACTIVE.
+- Hosted n8n HTTP executions 3844–3852 (missing/bad signature, wrong shop, replay, stale CAS, 1000+1000+500 tokens accepted, overage 501 blocked) verified. Three positive claims produced 3/3/2500 and session revision 3 in D1.
+- HTTP execution 3853 SUCCESS: new Worker GET health 200; /v1/send hard denied 423. No real provider send or model inference.
+- Fourth signed HTTP attempt was NOT run, so it is not counted. Code/schema prevents seq4 and D1 hosted trigger enforces quota, corroborated by CI.
+- GitHub run 43734568228 SUCCESS **132/132** (28 Zalo, 32 preflight, 18 D1 atomic, 10 Worker, 44 conversation).
+- After QA, both `qa_live02_b_%` synthetic grants were marked `QA_STOPPED` on isolated QA D1; 0 remain armed. Temporary QA signing private key was discarded, not persisted anywhere.
+- Detailed authoritative V14.5Z LIVE02 checkpoint: `docs/ai-handoff/TIEN404_V14_5Z_LIVE02_HOSTED_NO_SEND_CHECKPOINT.md`.
+- **Release:** V14.5Z-LIVE02 HOSTED_SIGNED_QA_TESTED, REAL_ZALO_LIVE_SEND_NO_GO. Bot binding, authenticated real ingress, provider dispatcher/outbox, real LLM+money cap and owner final approval are P0 blockers.
