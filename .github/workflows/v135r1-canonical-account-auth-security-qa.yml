@@ -1,0 +1,65 @@
+name: TIEN404 V13.5R.1 canonical Auth Account and tenant security QA
+on:
+  push:
+    branches:
+      - work/v135r1-canonical-account-staff-gates-staging-20261115
+    paths:
+      - "account.html"
+      - "scripts/build-auth-preview.mjs"
+      - "tests/account-canonical-entry*"
+      - "tests/auth-preview-build.test.mjs"
+      - "docs/ai-handoff/V13_5R1_*"
+      - "docs/ai-handoff/V13_6_HOSTED_AUTH_RLS_AND_ZALO_REPORT.md"
+      - "qa/v136/**"
+      - ".github/workflows/v135r1-canonical-account-auth-security-qa.yml"
+  pull_request:
+    paths:
+      - "account.html"
+      - "scripts/build-auth-preview.mjs"
+      - "tests/account-canonical-entry*"
+      - "tests/auth-preview-build.test.mjs"
+      - "docs/ai-handoff/V13_5R1_*"
+      - "docs/ai-handoff/V13_6_HOSTED_AUTH_RLS_AND_ZALO_REPORT.md"
+      - "qa/v136/**"
+      - ".github/workflows/v135r1-canonical-account-auth-security-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  canonical-source-and-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Static canonical account safety and inherited no-write tests
+        run: |
+          node --check tests/account-canonical-entry-browser.cjs
+          node --check qa/v136/hosted-rls-browser.mjs
+          node --test qa/v136/hosted-rls-contract.test.mjs
+          node --test tests/account-canonical-entry.test.mjs tests/customer-account-boundary.test.mjs tests/customer-orders-readonly.test.mjs qa/v135/platform-role-contract.test.cjs
+          node --test tests/auth-helpers.test.mjs tests/auth-session-stability.test.mjs tests/tester-request-staging.test.mjs
+      - name: Validate actual strict Auth Preview build
+        run: |
+          node scripts/build-auth-preview.mjs
+          node --test tests/auth-preview-build.test.mjs tests/account-canonical-entry.test.mjs
+  canonical-browser-and-inherited-account:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install ephemeral pinned Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Run 5 responsive entry security tests and 5 signed-in mocked customer tests
+        run: |
+          python -m http.server 8080 >/tmp/tien404-v135r1-http.log 2>&1 &
+          sleep 2
+          node tests/account-canonical-entry-browser.cjs
+          node tests/customer-account-browser.cjs

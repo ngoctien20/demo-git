@@ -34,12 +34,15 @@ test('staging pages show safe UX and use relative auth routes',()=>{
   assert.match(login,/id="auth-forgot-password" disabled/);
   assert.match(login,/<span id="auth-recovery-note">Khôi phục qua email đang tạm khóa/);
   assert.doesNotMatch(login,/qua email đã cấu hình/);
-  assert.match(account,/id="account-protected" hidden/);
+  assert.match(account,/<meta http-equiv="refresh" content="0;url=merchant-portal\.html">/);
+  assert.doesNotMatch(account,/assets\/auth-account\.js|id="account-tenants"|id="account-protected"/);
+  assert.match(account,/href="tester\.html"/);
   assert.match(account,/href="login\.html"/);
   assert.doesNotMatch(login,/assets\/saas\.js/);
 });
 test('preview public content contains no privileged configuration',()=>{
-  for(const asset of ['assets/auth-config.js','assets/auth-client.js','assets/auth-login.js','assets/auth-account.js']){
+  assert.equal(fs.existsSync(path.join(output,'assets/auth-account.js')),false);
+  for(const asset of ['assets/auth-config.js','assets/auth-client.js','assets/auth-login.js']){
     const s=file(asset);
     assert.doesNotMatch(s,/sb_secret_[a-zA-Z0-9]+/);
     assert.doesNotMatch(s,/service_role_key\s*[:=]\s*[^\s]+/);
