@@ -1,0 +1,88 @@
+name: TIEN404 V14.4.6 ATOMIC ORDER REQUEST × INVENTORY LEDGER QA (ISOLATED)
+on:
+  push:
+    branches:
+      - work/v1446-atomic-order-ledger-pg17-qa-20261116
+    paths:
+      - 'qa/atomic-ledger-v1446/**'
+      - 'docs/ai-handoff/V14_4_6_*'
+      - '.github/workflows/v1446-atomic-order-ledger-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/atomic-ledger-v1446/**'
+      - 'docs/ai-handoff/V14_4_6_*'
+      - '.github/workflows/v1446-atomic-order-ledger-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atomic-sql-pg17:
+    name: Disposable PostgreSQL 17 — REAL transactions; NEVER Supabase
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1446_ephemeral_only_not_real'
+          POSTGRES_DB: tien404_v1446_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1446_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1446_ephemeral_only_not_real'
+      PGDATABASE: tien404_v1446_ci
+      PGOPTIONS: '-c tien404.v1446_ephemeral=YES'
+      CI_V1446_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated execution prerequisites
+        run: |
+          test "$PGHOST" = postgres
+          test "$PGDATABASE" = tien404_v1446_ci
+          test "$CI_V1446_DISPOSABLE" = YES
+          bash -n qa/atomic-ledger-v1446/02_pg17_assertions.sh
+      - name: Run actual PostgreSQL 17 order and inventory ledger assertions
+        run: bash qa/atomic-ledger-v1446/02_pg17_assertions.sh
+  source-and-regression:
+    name: Static hard-stop + inherited 579 offline safety tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect SQL hard guard before any DDL
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          sql=Path('qa/atomic-ledger-v1446/01_DISPOSABLE_PG17_ONLY.sql').read_text()
+          required=['current_database()',"'tien404_v1446_ci'",
+            "'tien404.v1446_ephemeral'",'V1446_HARD_STOP_NOT_ISOLATED_POSTGRES17',
+            'CREATE SCHEMA qa_v1446','CREATE TABLE qa_v1446.inventory_ledger',
+            'FOR UPDATE','on_hand-reserved>=v.quantity',
+            'IMMUTABLE_LEDGER_NO_UPDATE_OR_DELETE']
+          assert all(x in sql for x in required)
+          assert sql.index('V1446_HARD_STOP_NOT_ISOLATED_POSTGRES17') < sql.index('CREATE SCHEMA qa_v1446')
+          assert 'public.orders' not in sql and 'public.products' not in sql
+          assert 'service_role' not in sql
+          print('PASS — disposable PG17 hard stop precedes all DDL; no existing hosted table referenced')
+          PY
+      - name: Verify inherited offline safety suites
+        run: |
+          node --test qa/legacy-safety-v1445/writer-compatibility.test.cjs qa/legacy-safety-v1445/order-stock-safety.test.cjs
+          node --test qa/store-product-v1444/product-v2-offline.test.cjs qa/store-product-v1444/owner-intake-offline.test.cjs
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
