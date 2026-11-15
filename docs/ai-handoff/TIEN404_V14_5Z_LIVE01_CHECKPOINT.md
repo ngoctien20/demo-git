@@ -173,3 +173,5 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - n8n live inventory now **99 workflows, 19 active**, compared with 98 at older snapshot; extra unrelated inactive QA workflow. Full Export backup and 4 draft/published drift remain outstanding.
 - Full staged owner acceptance checklist + 6 release gates **G0–G5** at `docs/ai-handoff/TIEN404_V14_5Z_UAT01_HOSTED_OWNER_ACCEPTANCE_ROADMAP.md`. Owner can open site, run synthetic tests, mark 8 checks, download `TIEN404_UAT01_NGHIEM_THU.json`, and return to chat. G1 owner acceptance is PENDING, G2–G5 real identity, cost, Zalo, production are BLOCKED pending independent approvals.
 - Trial subscription deferral remains as approved; review scheduled Nov 22 JST. No billing, subscription, credentials, production, Published webhook or customer data modified by UAT01.
+
+- **POST-UAT01 SNAPSHOT** (2026-11-16): n8n search now reports 100 workflows / 19 Active, because an additional inactive QA driver `teHbeNGZn7e1TuSy` was created after the initial 99/19 check. Use 100 as latest read-only count for reporting, and re-inventory when accepting Export backup.
