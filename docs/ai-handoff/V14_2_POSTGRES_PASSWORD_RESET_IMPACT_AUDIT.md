@@ -128,3 +128,21 @@ Status: `PASSWORD_RESET=USER_REPORTED`, `PGADMIN_SESSION_CONNECTED=SCREENSHOT_VE
 **Next operator-only action:** In pgAdmin, expand Databases, right-click postgres → Backup. Choose Custom format to private local directory, capture all intended project schemas and data. pgAdmin uses pg_dump and may be restricted by Supabase-owned internal schemas; inspect process log and TOC before accepting any backup. Record a successful process completion and separately rehearse an isolated restore. Never restore to connected staging database. Supabase CLI `db dump` is the provider-guided preferred alternative for managed schema filtering.
 
 No credential reading/writing, production deployment, SQL migration, RLS or data mutation performed by this assistant.
+
+
+## Local pgAdmin Custom archive — screenshot evidence, 15 Nov 2026
+
+User-provided screenshots:
+- pgAdmin 4 Processes shows the Backup Object job for `postgres`, started `21:39:26 15/11/2026`, status **Finished**. The detailed pg_dump process log and exit code are **not yet inspected**.
+- Windows File Explorer confirms one local archive at `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`, reported Explorer size **212 KB**, modified `15/11/2026 21:39`. The file itself is **not attached to the conversation**; therefore archive format, content/TOC, completeness and checksum have not been verified.
+- Intended scope from preceding pgAdmin screenshots: `public`, `app_private`, `factory_private`, `tien404_dialogue_private`, `tien404_r1_qa`. These are **intended selected schemas**, not yet proof all are in TOC.
+- File is a **project-schema-scoped application backup**, not an end-to-end Supabase backup of Auth/Storage objects, managed services, role login credentials or all migration history.
+
+QA next steps (operator-only):
+1. Open pgAdmin Processes → document icon for the Backup job; confirm exit code `0` and no fatal pg_dump errors.
+2. On the user's own Windows computer, locate the PostgreSQL 17-compatible `pg_restore.exe` and inspect the Custom archive **read-only** with `pg_restore -l "E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup"`; do not paste any stored customer records, secret contents or the whole backup into chat or GitHub. Confirm expected schemas and tables plus TABLE DATA entries in its TOC.
+3. Optionally record a SHA256 checksum using Windows `Get-FileHash` against the private local archive.
+4. Test a restore on an isolated PostgreSQL instance (not on `tien404-staging`) and compare schema, counts, FKs/RLS definitions. A `pg_restore -l` pass is **not** a restore rehearsal.
+5. Retain backup privately/encrypted; a second safe copy is recommended.
+
+Release flags: `PGADMIN_JOB_FINISHED=SCREENSHOT_VERIFIED`, `LOCAL_BACKUP_FILE_PRESENT=SCREENSHOT_VERIFIED`, `BACKUP_BYTES_INSPECTED=NO`, `ARCHIVE_TOC_VERIFIED=NO`, `RESTORE_DRILL_PASS=NO`, `V14_2_RLS_MIGRATION=BLOCKED`. No Supabase SQL, RLS, credential, Render or n8n configuration changes were made by assistant.
