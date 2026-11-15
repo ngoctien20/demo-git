@@ -115,6 +115,16 @@ ALTER TABLE public.order_items ADD CONSTRAINT order_items_store_product_fk
 -- Then replace tenant-wide products_tenant_id_sku_key with (tenant_id,store_id,sku).
 -- Do not drop original tenant-SKU constraint until contract/integration tests pass.
 
+-- ==== Knowledge schema prerequisite — MUST be separately approved ====
+-- V14.1 proposal creates app_private.shop_knowledge_releases/items but is BLOCKED.
+-- Only after that schema exists, add explicit revision to match the read-only adapter:
+ALTER TABLE app_private.shop_knowledge_releases
+ ADD COLUMN revision integer NOT NULL DEFAULT 1 CHECK(revision>=1);
+-- Release and knowledge items must be bound by composite tenant/store FKs;
+-- publication must be atomic CAS, with independent staff review and merchant signoff.
+-- public.tenant_agent_configs currently tracks knowledge_version by TENANT+CHANNEL,
+-- so store-scoped configuration requires a separate store-aware contract before rollout.
+
 -- ==== PHASE 4 — Atomic RLS policy replacement (requires separate approval) ====
 -- PostgreSQL PERMISSIVE policies combine with OR; simply adding store RLS
 -- alongside existing tenant-wide read policy DOES NOT isolate stores.
