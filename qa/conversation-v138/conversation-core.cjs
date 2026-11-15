@@ -106,6 +106,10 @@ function previewCustomer(event,binding){
 }
 function transition({binding,event,session=null,actor=null,now=Date.now()}={}){
  const scope=serverBinding(binding,now),state=readState(session,scope,now);
+ // Authenticate BEFORE checking deduplication: a forged replay cannot access state.
+ if(!event||!EVENTS.includes(event.type))denied('EVENT_INVALID');
+ const verifiedActor=event.type==='CUSTOMER_MESSAGE'
+   ?(customerGuard(event,binding),null):staffGuard(actor,scope,binding,event);
  const freshness=eventEnvelope(event,state,now);
  if(freshness==='REPLAY')return Object.freeze({kind:'DUPLICATE_IGNORED',next_state:state,
    proposals:[],provider_sends:0,orders_written:0,outbox_written:0,duplicate:true});
@@ -114,7 +118,6 @@ function transition({binding,event,session=null,actor=null,now=Date.now()}={}){
    expires_at_ms:Math.min(now+TTL_MS,binding.expires_at_ms)};
  let kind='NONE',proposals=[];
  if(event.type==='CUSTOMER_MESSAGE'){
-  customerGuard(event,binding);
   if(s.status==='RESOLVED'){s.status='AI_ACTIVE';s.assignee=null;s.handoff_reason=null;}
   if(s.shop_paused){
    kind='SHOP_PAUSED';
@@ -133,7 +136,6 @@ function transition({binding,event,session=null,actor=null,now=Date.now()}={}){
    }else{kind=candidate.intent.intent;proposals=[candidate.proposal];}
   }
  }else{
-  const verifiedActor=staffGuard(actor,scope,binding,event);
   if(event.type==='STAFF_ACCEPT'){
    if(s.status!=='WAITING_STAFF')denied('HANDOFF_NOT_PENDING');
    s.status='HUMAN_ACTIVE';s.assignee=verifiedActor.user_id;kind='STAFF_ASSIGNED';
