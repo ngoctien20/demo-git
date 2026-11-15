@@ -121,7 +121,7 @@ function simulate(q,s){
 }
 function drawTest(s){const c=card("Thử nghiệm câu trả lời (UI mock, không gọi AI Agent)"),form=el("form"),q=field("Nhập câu hỏi thử","Shop có giao hàng không?"),button=el("button","primary","Xem phản hồi mẫu");
  button.type="submit";const result=el("div","output","Chưa chạy thử."),evidence=el("p","sub","Nguồn: chưa có");
- add(form,q.label,button);form.addEventListener("submit",ev=>{ev.preventDefault();const x=simulate(q.input.value,s);result.textContent=x.status+"\n"+x.answer;evidence.textContent="Nguồn: "+x.source+" · Shop: "+s.name+" · KHÔNG GỬI"};
+ add(form,q.label,button);form.addEventListener("submit",ev=>{ev.preventDefault();const x=simulate(q.input.value,s);result.textContent=x.status+"\n"+x.answer;evidence.textContent="Nguồn: "+x.source+" · Shop: "+s.name+" · KHÔNG GỬI"});
  add(c,form,headingEl("Kết quả xem trước"),result,evidence,el("div","warn","Đây là mô phỏng UI độc lập, không phải AI Vision, n8n, Supabase RLS hoặc QA độ chính xác mô hình."));
  out.appendChild(c)
 }
