@@ -60,16 +60,26 @@ def main():
   with sync_playwright() as p:
    browser=p.chromium.launch(headless=True)
    try:
-    for route,protected,lock,content in [
+    # Account entry was consolidated in V13.5R.1; historical branches still run
+    # the original Account Auth regression against their old page.
+    canonical='<meta http-equiv="refresh" content="0;url=merchant-portal.html">' in (ROOT/'account.html').read_text(encoding='utf-8')
+    routes=([
+      ('account.html','#merchant-protected','#merchant-login','#merchant-panel'),
+      ('merchant-portal.html','#merchant-protected','#merchant-login','#merchant-panel')
+    ] if canonical else [
       ('account.html','#account-protected','#account-login-link','#account-tenants'),
       ('merchant-portal.html','#merchant-protected','#merchant-login','#merchant-panel')
-    ]:
+    ])
+    for route,protected,lock,content in routes:
      page=browser.new_page(viewport={'width':390,'height':844})
      errors=[]
      page.on('pageerror',lambda e:errors.append(str(e)))
      page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(origin+'/') else r.abort())
      page.route('**/assets/auth-client.js',lambda r:r.fulfill(status=200,content_type='application/javascript',body=MOCK))
      page.goto(origin+'/'+route,wait_until='domcontentloaded')
+     if canonical and route=='account.html':
+      page.wait_for_url('**/merchant-portal.html',timeout=15000)
+      assert page.locator('#account-protected').count()==0, 'Retired legacy account UI must never execute'
      page.locator(protected).wait_for(state='visible',timeout=15000)
      page.evaluate("selector=>{const x=document.querySelector(selector); const s=document.createElement('span');s.id='qa-preserved';s.textContent='unsent-input';x.append(s)}",content)
      start=page.evaluate('window.__qaAuthReads')
@@ -97,7 +107,7 @@ def main():
        document.dispatchEvent(new Event('visibilitychange'));
      }""")
      page.locator(protected).wait_for(state='hidden',timeout=12000)
-     if route=='account.html':
+     if route=='account.html' and not canonical:
       assert 'chưa có quyền cửa hàng' in page.locator('#account-status').inner_text().lower()
      else:
       assert page.locator(lock).is_visible(),(route,'Revoked access not blocked')
