@@ -14,6 +14,7 @@ function show(view){document.querySelectorAll('.section').forEach(s=>s.classList
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.goto)));
 function paint(v){document.querySelectorAll('[data-fill]').forEach(n=>n.textContent=v[n.dataset.fill]??'—');}
+function banner(text){$('expiryBanner').textContent=text;}
 function fmtDate(s){const v=Date.parse(s);return Number.isFinite(v)?new Date(v).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}):'—';}
 function remaining(s,now=Date.now()){const x=Date.parse(s);if(!Number.isFinite(x))return 'Chưa có dữ liệu';return Math.ceil((x-now)/86400000)>0?Math.ceil((x-now)/86400000)+' ngày':'Đã đến hạn hoặc hết hạn';}
 function derive(result){
@@ -28,7 +29,7 @@ function derive(result){
 let controller=null;
 async function live(){
  if(controller)controller.abort();controller=new AbortController();
- $('modeBadge').textContent='ĐANG TẢI · API CHỈ ĐỌC';$('connectionMessage').textContent='Đang tải thông tin qua API chỉ đọc…';paint(empty);
+ $('modeBadge').textContent='ĐANG TẢI · API CHỈ ĐỌC';$('connectionMessage').textContent='Đang tải thông tin qua API chỉ đọc…';paint(empty);banner('Chưa có thông tin thuê bao đã xác minh.');
  const ctrl=controller;const timer=setTimeout(()=>ctrl.abort(),8000);
  try{
   const r=await fetch('/api/sales-lite/me',{method:'GET',credentials:'same-origin',cache:'no-store',signal:ctrl.signal,redirect:'error',headers:{accept:'application/json'}});
@@ -37,7 +38,16 @@ async function live(){
   if(r.status===403){$('connectionMessage').textContent='Tài khoản không có quyền xem thông tin cửa hàng.';return;}
   if(!r.ok){$('connectionMessage').textContent='Không truy cập được API tài khoản. Dữ liệu không khả dụng.';return;}
   const data=await r.json();if(ctrl!==controller)return;
-  const v=derive(data);paint(v);$('modeBadge').textContent='READ-ONLY · API';$('connectionMessage').textContent='Đã nhận dữ liệu từ API. Quyền và phạm vi cửa hàng phải được kiểm tra phía backend.';
+  const v=derive(data);paint(v);
+  const days=Number.isFinite(Date.parse(data.subscription?.expires_at))?Math.ceil((Date.parse(data.subscription.expires_at)-Date.now())/86400000):null;
+  const sub=v.subscriptionStatus;
+  const hint=sub==='EXPIRED'?'Gói đã hết hạn theo backend. Không có chức năng gia hạn tự động.':
+    sub==='SUSPENDED'?'Gói tạm ngừng. Hãy liên hệ hỗ trợ.':
+    sub==='PAYMENT_PENDING'?'Thanh toán đang chờ xác minh. Chưa tự xác nhận gia hạn.':
+    ['ACTIVE','EXPIRING'].includes(sub)&&days!==null&&days<=0?'Đã tới hạn theo ngày đọc được; backend sẽ quyết định quyền sử dụng.':
+    ['ACTIVE','EXPIRING'].includes(sub)&&days!==null&&days<=7?'Gói còn '+days+' ngày (mốc nhắc trong giao diện, không gửi thông báo).':
+    'Chưa có cảnh báo gia hạn cần thực hiện.';
+  banner(hint);$('modeBadge').textContent='READ-ONLY · API';$('connectionMessage').textContent='Đã nhận dữ liệu từ API. Quyền và phạm vi cửa hàng phải được kiểm tra phía backend.';
  }catch{$('connectionMessage').textContent='Không kết nối được API chỉ đọc. Không dùng dữ liệu mẫu thay thế.';}
  finally{clearTimeout(timer);}
 }
@@ -45,7 +55,7 @@ function render(){
  const mode=$('previewMode').value;
  if(mode==='live'){live();return;}
  if(controller){controller.abort();controller=null;}
- const data=qa[mode]||qa.empty;paint(data);$('modeBadge').textContent='QA FIXTURE · KHÔNG PHẢI DỮ LIỆU THẬT';
+ const data=qa[mode]||qa.empty;paint(data);banner('QA FIXTURE — cảnh báo và thời hạn không phải dữ liệu thật.');$('modeBadge').textContent='QA FIXTURE · KHÔNG PHẢI DỮ LIỆU THẬT';
  $('connectionMessage').textContent='Đang xem dữ liệu mô phỏng riêng cho QA. Không có đăng nhập, dữ liệu shop hoặc thanh toán thực.';
 }
 $('previewMode').addEventListener('change',render);render();
