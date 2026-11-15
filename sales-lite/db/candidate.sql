@@ -2,6 +2,20 @@
 BEGIN;
 CREATE SCHEMA sales_lite_qa;
 REVOKE ALL ON SCHEMA sales_lite_qa FROM PUBLIC;
+-- Resolve an active Owner through the completed R1 challenge, the exact recipient and current membership.
+-- The pairing code may have expired after it was consumed; the current binding has its own expiry.
+CREATE VIEW sales_lite_qa.verified_owners WITH (security_invoker=true,security_barrier=true) AS
+SELECT b.tenant_key AS tenant,b.store_key AS store,b.bot_key AS bot,b.owner_ref,b.recipient_ref,
+       b.confirmed_challenge_id AS binding_id,c.requester_user_id AS owner_user_id
+FROM tien404_r1_qa.owner_bindings b
+JOIN tien404_r1_qa.tenant_identity_map m USING(tenant_key,store_key,bot_key)
+JOIN tien404_r1_qa.owner_pairing_challenges c ON (c.tenant_key,c.store_key,c.bot_key,c.challenge_id,c.owner_ref)
+    =(b.tenant_key,b.store_key,b.bot_key,b.confirmed_challenge_id,b.owner_ref)
+JOIN tien404_r1_qa.owner_pairing_claims_v3 p ON (p.tenant_key,p.store_key,p.bot_key,p.challenge_id,p.recipient_ref)
+    =(b.tenant_key,b.store_key,b.bot_key,b.confirmed_challenge_id,b.recipient_ref)
+JOIN public.tenant_memberships t ON t.tenant_id=m.auth_tenant_id AND t.user_id=c.requester_user_id
+WHERE b.status='paired' AND b.expires_at>clock_timestamp() AND c.used_at IS NOT NULL AND p.status='CONFIRMED'
+  AND p.claimed_at<=c.expires_at AND p.confirmed_at>=p.claimed_at AND t.active AND t.role::text='owner';
 CREATE TABLE sales_lite_qa.shop_access (
   tenant text NOT NULL, store text NOT NULL, bot text NOT NULL, enabled boolean NOT NULL,
   access_until timestamptz NOT NULL, alerts boolean NOT NULL DEFAULT false,
@@ -32,7 +46,8 @@ CREATE TABLE sales_lite_qa.owner_alerts (
   attempt_count int NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3), last_outcome text,
   retry_after timestamptz, created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY(tenant,store,bot,request_id,event_kind),
-  CHECK ((owner_ref IS NULL)=(recipient_ref IS NULL)),
+  binding_id uuid,
+  CHECK ((owner_ref IS NULL)=(recipient_ref IS NULL) AND (owner_ref IS NULL)=(binding_id IS NULL)),
   FOREIGN KEY(tenant,store,bot,request_id) REFERENCES sales_lite_qa.requests(tenant,store,bot,id)
 );
 CREATE TABLE sales_lite_qa.alert_attempts (

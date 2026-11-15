@@ -52,7 +52,7 @@ jobs:
         env:
           PG_CONTAINER: ${{ job.services.postgres.id }}
         run: |
-          docker exec "$PG_CONTAINER" pg_dump -U postgres -Fc -d tien404_sales_lite_ephemeral -n sales_lite_qa -n tien404_r1_qa > "$RUNNER_TEMP/lite-qa.dump"
+          docker exec "$PG_CONTAINER" pg_dump -U postgres -Fc -d tien404_sales_lite_ephemeral -n sales_lite_qa -n tien404_r1_qa -n public > "$RUNNER_TEMP/lite-qa.dump"
           docker exec "$PG_CONTAINER" createdb -U postgres tien404_sales_lite_restored
           docker exec -i "$PG_CONTAINER" pg_restore -U postgres -d tien404_sales_lite_restored --exit-on-error < "$RUNNER_TEMP/lite-qa.dump"
           node qa/restore.mjs | tee "$SALES_LITE_EVIDENCE/restore.txt"

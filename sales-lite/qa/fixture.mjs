@@ -1,7 +1,7 @@
 import pg from 'pg';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { createQaIngress, canonical } from '../lib/protocol.mjs';
+import { createQaIngress, canonical, dashboardEvents } from '../lib/protocol.mjs';
 import { createSalesLite } from '../lib/service.mjs';
 
 const scopes = Object.freeze({
@@ -36,6 +36,8 @@ export async function fixture() {
   );
   if (meta.db !== database || meta.lite || meta.r1)
     throw Error('QA bootstrap requires a fresh empty fixture');
+  const subjects={},authTenants={},dashboardKey=randomBytes(32);
+  const sources=['shop_bots','catalog','owner_bindings','tenant_identity_map','owner_pairing_challenges','owner_pairing_claims_v3'];
   const routes = {},
     pools = {},
     users = {},
@@ -56,10 +58,15 @@ export async function fixture() {
       PRIMARY KEY(tenant_key,store_key,bot_key));
     CREATE TABLE tien404_r1_qa.catalog(tenant_key text,store_key text,bot_key text,sku text,product_name text,price_vnd bigint,stock int,
       PRIMARY KEY(tenant_key,store_key,bot_key,sku), FOREIGN KEY(tenant_key,store_key,bot_key) REFERENCES tien404_r1_qa.shop_bots);
-    CREATE TABLE tien404_r1_qa.owner_bindings(tenant_key text,store_key text,bot_key text,owner_ref text,recipient_ref text,status text,expires_at timestamptz,
+    CREATE TABLE tien404_r1_qa.owner_bindings(tenant_key text,store_key text,bot_key text,owner_ref text,recipient_ref text,status text,expires_at timestamptz,confirmed_challenge_id uuid,
       PRIMARY KEY(tenant_key,store_key,bot_key,owner_ref), FOREIGN KEY(tenant_key,store_key,bot_key) REFERENCES tien404_r1_qa.shop_bots)`);
+  await admin.query(`CREATE TABLE tien404_r1_qa.tenant_identity_map(tenant_key text,store_key text,bot_key text,auth_tenant_id uuid,PRIMARY KEY(tenant_key,store_key,bot_key));
+    CREATE TABLE tien404_r1_qa.owner_pairing_challenges(tenant_key text,store_key text,bot_key text,challenge_id uuid,owner_ref text,requester_user_id uuid,expires_at timestamptz,used_at timestamptz,PRIMARY KEY(tenant_key,store_key,bot_key,challenge_id));
+    CREATE TABLE tien404_r1_qa.owner_pairing_claims_v3(tenant_key text,store_key text,bot_key text,challenge_id uuid,recipient_ref text,status text,claimed_at timestamptz,confirmed_at timestamptz,PRIMARY KEY(tenant_key,store_key,bot_key,challenge_id));
+    CREATE TABLE public.tenant_memberships(tenant_id uuid,user_id uuid,role text,active boolean,PRIMARY KEY(tenant_id,user_id));
+    ALTER TABLE public.tenant_memberships ENABLE ROW LEVEL SECURITY; ALTER TABLE public.tenant_memberships FORCE ROW LEVEL SECURITY`);
   await admin.query(await readFile(new URL('../db/candidate.sql', import.meta.url), 'utf8'));
-  for (const name of ['shop_bots', 'catalog', 'owner_bindings']) {
+  for (const name of sources) {
     await admin.query(
       `ALTER TABLE tien404_r1_qa.${name} ENABLE ROW LEVEL SECURITY; ALTER TABLE tien404_r1_qa.${name} FORCE ROW LEVEL SECURITY`
     );
@@ -69,10 +76,15 @@ export async function fixture() {
       user = 'lite_qa_' + suffix,
       pass = randomBytes(32).toString('hex');
     users[shop] = user;
+    const tenantId=randomUUID(),subject=randomUUID(),challenge=randomUUID();
+    subjects[shop]=subject;authTenants[shop]=tenantId;
+
     // Both values are generated lowercase hex, never caller input; used only by this disposable cluster.
     await admin.query(`CREATE ROLE ${user} LOGIN PASSWORD '${pass}' NOSUPERUSER NOBYPASSRLS;
       GRANT USAGE ON SCHEMA sales_lite_qa,tien404_r1_qa TO ${user};
       GRANT SELECT ON ALL TABLES IN SCHEMA sales_lite_qa,tien404_r1_qa TO ${user};
+      GRANT SELECT ON public.tenant_memberships TO ${user};
+      CREATE POLICY ${user} ON public.tenant_memberships FOR SELECT TO ${user} USING(tenant_id='${tenantId}');
       GRANT INSERT(tenant,store,bot,source,event_hash,quote_event,actor_hash,sku,product_label,quantity,unit_vnd) ON sales_lite_qa.requests TO ${user};
       GRANT INSERT ON sales_lite_qa.decisions,sales_lite_qa.owner_alerts,sales_lite_qa.settings_audit,sales_lite_qa.alert_attempts,sales_lite_qa.chat_sessions,sales_lite_qa.channel_receipts TO ${user};
       GRANT UPDATE(last_ms,pending,until_at,last_code) ON sales_lite_qa.chat_sessions TO ${user};
@@ -86,7 +98,7 @@ export async function fixture() {
         `CREATE POLICY ${user} ON sales_lite_qa.${t} TO ${user} USING (${condition}) WITH CHECK (${condition})`
       );
     }
-    for (const t of ['shop_bots', 'catalog', 'owner_bindings'])
+    for (const t of sources)
       await admin.query(
         `CREATE POLICY ${user} ON tien404_r1_qa.${t} FOR SELECT TO ${user} USING ((tenant_key,store_key,bot_key)=(${values}))`
       );
@@ -100,9 +112,13 @@ export async function fixture() {
       scope
     );
     await admin.query(
-      "INSERT INTO tien404_r1_qa.owner_bindings VALUES ($1,$2,$3,$4,$5,'paired',now()+interval '1 day')",
-      [...scope, 'qa-owner-' + shop, message(shop, 'owner-' + shop, 'QA').recipientRef]
+      "INSERT INTO tien404_r1_qa.owner_bindings VALUES ($1,$2,$3,$4,$5,'paired',now()+interval '1 day',$6)",
+      [...scope, 'qa-owner-' + shop, message(shop, 'owner-' + shop, 'QA').recipientRef,challenge]
     );
+    await admin.query('INSERT INTO tien404_r1_qa.tenant_identity_map VALUES($1,$2,$3,$4)',[...scope,tenantId]);
+    await admin.query("INSERT INTO public.tenant_memberships VALUES($1,$2,'owner',true)",[tenantId,subject]);
+    await admin.query("INSERT INTO tien404_r1_qa.owner_pairing_challenges VALUES($1,$2,$3,$4,$5,$6,now()+interval '5 minutes',now())",[...scope,challenge,'qa-owner-'+shop,subject]);
+    await admin.query("INSERT INTO tien404_r1_qa.owner_pairing_claims_v3 VALUES($1,$2,$3,$4,$5,'CONFIRMED',now(),now())",[...scope,challenge,message(shop,'owner-'+shop,'QA').recipientRef]);
     for (const [sku, name, price, stock] of [
       ['F01', 'Áo thun ' + shop, shop === 'A' ? 159000 : 199000, shop === 'A' ? 3 : 5],
       ['A002', 'Áo thun trắng', 159000, 25],
@@ -136,5 +152,6 @@ export async function fixture() {
     return { event, proof: preview.proof, done: await service.command(event, preview.proof) };
   }
   const close = () => Promise.all([admin, ...Object.values(pools)].map((p) => p.end()));
-  return { admin, pools, scopes, users, signed, verify, message, owner, make, decide, service, close, shift };
+  const dash=(shop,subject=subjects[shop])=>dashboardEvents(routes[shop],subject,dashboardKey,clock);
+  return { admin, pools, scopes, users,subjects,authTenants,dash, signed, verify, message, owner, make, decide, service, close, shift };
 }

@@ -182,7 +182,7 @@ test('C02. Revoked/missing owner or disabled alerts create held intents which ca
     [newRecipient.recipientRef]
   );
   try {
-    await denies(svc.shadow(newRecipient, orig.saved.request.code), 'RECIPIENT_UNAVAILABLE');
+    await denies(svc.shadow(newRecipient, orig.saved.request.code), 'OWNER_REQUIRED');
   } finally {
     await f.admin.query(
       "UPDATE tien404_r1_qa.owner_bindings SET recipient_ref=$1 WHERE store_key='qa-shop-b'",
@@ -406,4 +406,32 @@ test('D04. Separately supplied verified QA receipt posts atomically; replay coun
   const report = await svc.command(f.owner('B', '/doanhthu'));
   assert.equal(report.report.paid_vnd, '10000');
   assert.equal((await svc.command(f.owner('A', '/doanhthu'))).report.verified_vnd, '0');
+});
+
+test('B07. A legacy paired row without a consumed and confirmed challenge has no recipient or revenue access',async()=>{
+  const scope=f.scopes.A,id=(await f.admin.query('SELECT confirmed_challenge_id FROM tien404_r1_qa.owner_bindings WHERE store_key=$1',[scope[1]])).rows[0].confirmed_challenge_id;
+  await f.admin.query('UPDATE tien404_r1_qa.owner_bindings SET confirmed_challenge_id=NULL WHERE store_key=$1',[scope[1]]);
+  let saved;
+  try {
+    await denies(svc.command(f.owner('A','/doanhthu')),'OWNER_REQUIRED');
+    await denies(svc.dashboard(f.dash('A')('/baocao')),'OWNER_REQUIRED');
+    saved=await f.make('A','C20');
+    assert.equal((await svc.command(f.owner('B','/baocao'))).state,'REPORT');
+  } finally {await f.admin.query('UPDATE tien404_r1_qa.owner_bindings SET confirmed_challenge_id=$1 WHERE store_key=$2',[id,scope[1]]);}
+  await denies(svc.shadow(f.owner('A','shadow'),saved.saved.request.code),'RECIPIENT_UNAVAILABLE');
+});
+test('B08. Dashboard subject, current owner membership and binding instance fence every pending action',async()=>{
+  const x=(await f.make('B','C20')).saved.request,owner=f.dash('B'),cmd='/xacnhan '+x.code;
+  await denies(svc.dashboard(f.dash('B',f.subjects.A)('/baocao')),'OWNER_REQUIRED');
+  const q=await svc.command(owner(cmd));
+  await f.admin.query('UPDATE public.tenant_memberships SET active=false WHERE user_id=$1',[f.subjects.B]);
+  try {await denies(svc.command(owner(cmd),q.proof),'OWNER_REQUIRED');await denies(svc.command(f.owner('B','/donmoi')),'OWNER_REQUIRED');}
+  finally {await f.admin.query('UPDATE public.tenant_memberships SET active=true WHERE user_id=$1',[f.subjects.B]);}
+  const id=randomUUID(),scope=f.scopes.B;
+  await f.admin.query("INSERT INTO tien404_r1_qa.owner_pairing_challenges SELECT tenant_key,store_key,bot_key,$1,owner_ref,requester_user_id,now()+interval '5 minutes',now() FROM tien404_r1_qa.owner_pairing_challenges WHERE store_key=$2",[id,scope[1]]);
+  await f.admin.query("INSERT INTO tien404_r1_qa.owner_pairing_claims_v3 SELECT tenant_key,store_key,bot_key,$1,recipient_ref,status,now(),now() FROM tien404_r1_qa.owner_pairing_claims_v3 WHERE store_key=$2",[id,scope[1]]);
+  await f.admin.query('UPDATE tien404_r1_qa.owner_bindings SET confirmed_challenge_id=$1 WHERE store_key=$2',[id,scope[1]]);
+  await denies(svc.command(owner(cmd),q.proof),'INVALID_CONFIRMATION');
+  await denies(svc.shadow(f.owner('B','shadow'),x.code),'RECIPIENT_UNAVAILABLE');
+  assert.equal((await svc.dashboard(owner('/baocao'),{tab:'settings'})).botPaired,true);
 });

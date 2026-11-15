@@ -42,15 +42,14 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
   }
   async function binding(db, e) {
     const { rows } = await db.query(
-      `SELECT tenant_key AS tenant,store_key AS store,bot_key AS bot,owner_ref,recipient_ref FROM tien404_r1_qa.owner_bindings
-      WHERE (tenant_key,store_key,bot_key)=($1,$2,$3) AND status='paired' AND expires_at>clock_timestamp()`,
+      `SELECT tenant,store,bot,owner_ref,recipient_ref,binding_id,owner_user_id FROM sales_lite_qa.verified_owners WHERE (tenant,store,bot)=($1,$2,$3)`,
       route(e)
     );
     return rows.length === 1 ? rows[0] : null;
   }
   async function owner(db, e) {
     const b = await binding(db, e);
-    if (!b || b.recipient_ref !== e.recipientRef) reject('OWNER_REQUIRED');
+    if (!b || (e.source==='dashboard_session' ? b.owner_user_id!==e.ownerUserId : b.recipient_ref!==e.recipientRef)) reject('OWNER_REQUIRED');
     return b;
   }
   async function product(db, e, sku, quantity) {
@@ -130,9 +129,9 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
       const { id, ...request } = saved.rows[0];
       const b = access.alerts ? await binding(db, e) : null;
       await db.query(
-        `INSERT INTO sales_lite_qa.owner_alerts(tenant,store,bot,request_id,owner_ref,recipient_ref)
-          VALUES($1,$2,$3,$4,$5,$6)`,
-        [...route(e), id, b?.owner_ref ?? null, b?.recipient_ref ?? null]
+        `INSERT INTO sales_lite_qa.owner_alerts(tenant,store,bot,request_id,owner_ref,recipient_ref,binding_id)
+          VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [...route(e), id, b?.owner_ref ?? null, b?.recipient_ref ?? null,b?.binding_id??null]
       );
       return { state: 'SAVED', request };
     }
@@ -142,14 +141,14 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
   async function findRequest(db, e, code, lock = false) {
     if (!codePattern.test(code)) reject('REQUEST_NOT_FOUND');
     const { rows } = await db.query(
-      `SELECT id,${exposed} FROM sales_lite_qa.requests WHERE ${scopeClause} AND code=$4 ${lock ? 'FOR UPDATE' : ''}`,
+      `SELECT id,source,${exposed} FROM sales_lite_qa.requests WHERE ${scopeClause} AND code=$4 ${lock ? 'FOR UPDATE' : ''}`,
       [...route(e), code]
     );
     if (rows.length !== 1) reject('REQUEST_NOT_FOUND');
     return rows[0];
   }
   async function commandIn(db, e, actionProof = null, text = e.text) {
-    await owner(db, e);
+    const currentOwner=await owner(db,e);
     const c = parseOwner(text);
     if (!c) reject('UNKNOWN_COMMAND');
     if (['revenue', 'summary'].includes(c.action)) {
@@ -202,12 +201,13 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
           action: c.action,
           code: req.code,
           revision: req.revision,
+          bindingId: currentOwner.binding_id,
           origin: e.eventHash
         })
       };
     }
     const q = proofs.read('owner', e, actionProof);
-    if (q.action !== c.action || q.code !== c.code || q.origin === e.eventHash)
+    if (q.bindingId!==currentOwner.binding_id || q.action !== c.action || q.code !== c.code || q.origin === e.eventHash)
       reject('INVALID_CONFIRMATION');
     const check = await db.query(
       `SELECT request_id,decision,owner_hash FROM sales_lite_qa.decisions WHERE ${scopeClause} AND event_hash=$4`,
@@ -313,8 +313,9 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
         `SELECT * FROM sales_lite_qa.owner_alerts WHERE ${scopeClause} AND request_id=$4 FOR UPDATE`,
         [...route(e), req.id]
       );
+      if(!a||a.binding_id!==bindingNow.binding_id)reject('RECIPIENT_UNAVAILABLE');
       const message = ownerNotice(
-        { ...req, tenant: e.tenant, store: e.store, bot: e.bot, source: e.source },
+        { ...req, tenant: e.tenant, store: e.store, bot: e.bot, source: req.source },
         a,
         bindingNow,
         access.alerts
@@ -417,7 +418,7 @@ export function createSalesLite({ poolFor, proofKey, clock = Date.now }) {
           response = await commandIn(db, e);
           if (response.proof) {
             const p = proofs.read('owner', e, response.proof);
-            pending = { action: p.action, code: p.code, revision: p.revision, origin: p.origin };
+            pending = { action: p.action, code: p.code, revision: p.revision, origin: p.origin,bindingId:p.bindingId };
             until = p.until;
             response.message =
               'Gửi /dongy ' +

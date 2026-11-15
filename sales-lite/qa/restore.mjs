@@ -15,7 +15,7 @@ async function inspect(database) {
     const { rows: tables } =
       await db.query(`SELECT n.nspname AS schema,c.relname AS name,c.relrowsecurity AS rls,c.relforcerowsecurity AS forced
       FROM pg_class c JOIN pg_namespace n ON c.relnamespace=n.oid
-      WHERE c.relkind='r' AND n.nspname IN ('tien404_r1_qa','sales_lite_qa') ORDER BY 1,2`);
+      WHERE c.relkind='r' AND n.nspname IN ('tien404_r1_qa','sales_lite_qa','public') ORDER BY 1,2`);
     const evidence = [];
     for (const t of tables) {
       if (!/^\w+$/.test(t.schema) || !/^\w+$/.test(t.name))
@@ -28,7 +28,7 @@ async function inspect(database) {
       evidence.push({ ...t, ...digest });
     }
     const { rows: policies } = await db.query(
-      "SELECT schemaname,tablename,policyname,roles,cmd,qual,with_check FROM pg_policies WHERE schemaname IN ('sales_lite_qa','tien404_r1_qa') ORDER BY 1,2,3"
+      "SELECT schemaname,tablename,policyname,roles,cmd,qual,with_check FROM pg_policies WHERE schemaname IN ('sales_lite_qa','tien404_r1_qa','public') ORDER BY 1,2,3"
     );
     return { evidence, policies };
   } finally {
@@ -38,12 +38,12 @@ async function inspect(database) {
 const a = await inspect(source),
   b = await inspect(restored);
 assert.deepEqual(a, b);
-assert.equal(a.evidence.length, 12);
+assert.equal(a.evidence.length, 16);
 assert.ok(a.evidence.every((x) => x.rls && x.forced));
 assert.ok(a.evidence.find((x) => x.name === 'owner_alerts').count >= 40);
-assert.equal(a.policies.length, 24);
+assert.equal(a.policies.length, 32);
 console.log(
   'PASS · recovered ' +
     a.evidence.length +
-    ' tables, 24 scope policies; row counts, ordered content digests and RLS flags match.'
+    ' tables, 32 scope policies; row counts, ordered content digests and RLS flags match.'
 );

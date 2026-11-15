@@ -25,7 +25,7 @@ serve = handler({
       .find((p) => p.startsWith('liteqa='))
       ?.slice(7);
     const shop = sessions.get(token);
-    return shop ? (text, event) => f.owner(shop, text, event) : null;
+    return shop ? f.dash(shop) : null;
   }
 });
 for (const shop of ['A', 'B']) {

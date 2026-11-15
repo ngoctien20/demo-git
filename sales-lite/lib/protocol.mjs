@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 
 export function reject(code) {
   throw Object.assign(new Error(code), { code });
@@ -125,5 +125,20 @@ export function createProofs(key, clock = Date.now) {
         reject('INVALID_CONFIRMATION');
       return { ...p, expired: p.until <= clock() };
     }
+  };
+}
+
+// Called by the server only after it authenticates a Dashboard session and resolves the selected shop.
+// The user's verified Supabase subject is compared to the current R1 challenge on every Owner operation.
+export function dashboardEvents(scope, subject, key, clock=Date.now) {
+  if(!scope || ![scope.tenant,scope.store,scope.bot].every(x=>typeof x==='string'&&opaque.test(x))
+    || typeof subject!=='string' || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(subject)
+    ||!Buffer.isBuffer(key)||key.length<32)reject('UNVERIFIED_INPUT');
+  const {tenant,store,bot}=scope, actorHash=hash(key,JSON.stringify(['dashboard-owner',tenant,store,bot,subject]));
+  return (text,event=randomUUID())=>{
+    if(typeof text!=='string'||text.length>512||typeof event!=='string'||!opaque.test(event))reject('UNVERIFIED_INPUT');
+    const e=Object.freeze({tenant,store,bot,text,source:'dashboard_session',ownerUserId:subject,actorHash,
+      eventHash:hash(key,JSON.stringify(['dashboard-event',tenant,store,bot,subject,event])),receivedAt:clock()});
+    verified.add(e);return e;
   };
 }
