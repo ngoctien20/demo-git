@@ -24,6 +24,7 @@ jobs:
           node --check qa/zalo-multimedia-v137/contracts.cjs
           node --check qa/zalo-multimedia-v137/contracts.test.cjs
           node --test qa/zalo-multimedia-v137/contracts.test.cjs
+          node --test qa/zalo-multimedia-v137/worker-v137-4call-qa.test.mjs
       - name: Regression - V13.6 Zalo button and V13.5 protected gateway
         run: |
           node --test qa/zalo-control-text/button-capability.test.cjs
