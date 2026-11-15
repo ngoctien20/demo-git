@@ -38,7 +38,7 @@ function createNoSendChannelBridge({authenticateIngress,resolveChannelBinding,re
          !['ACTIVE','EXPIRING'].includes(subscription.state)||
          !Number.isFinite(Date.parse(subscription.expiresAt))||
          Date.parse(subscription.expiresAt)<=clock()||
-         (Array.isArray(subscription.channels)&&!subscription.channels.includes(channel)))
+         (!Array.isArray(subscription.channels)||!subscription.channels.includes(channel)))
          fail('SUBSCRIPTION_DENIED');
       const catalog=await readCatalog(scope);
       if(!catalog||catalog.verified!==true||catalog.tenantId!==scope.tenantId||
