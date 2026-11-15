@@ -14,7 +14,7 @@
  // Only a local synthetic HTML is allowed. Do not accept iframe URL from user.
  const node=document.createElement('iframe');
  node.title='TIEN404 AI Chat · Mô phỏng';
- node.setAttribute('sandbox','allow-scripts');
+ node.setAttribute('sandbox','allow-scripts allow-forms');
  node.setAttribute('referrerpolicy','no-referrer');
  node.setAttribute('data-tien404-qa-widget','true');
  node.style.position='fixed';
