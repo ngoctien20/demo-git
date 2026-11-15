@@ -1,0 +1,100 @@
+name: TIEN404 V14.5 Messenger Trusted Page Gate (NO SEND)
+on:
+  push:
+    branches:
+      - work/v145-messenger-trusted-page-gate-no-send-20261116
+    paths:
+      - 'qa/messenger-live-gate-v145/**'
+      - 'docs/ai-handoff/V14_5_*'
+      - '.github/workflows/v145-messenger-trusted-page-no-send.yml'
+  pull_request:
+    paths:
+      - 'qa/messenger-live-gate-v145/**'
+      - 'docs/ai-handoff/V14_5_*'
+      - '.github/workflows/v145-messenger-trusted-page-no-send.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v145-raw-signature-gate:
+    name: 45 signed raw HMAC Page-to-Store QA cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax and run all 45 signed event cases
+        run: |
+          node --check qa/messenger-live-gate-v145/trusted-webhook-qa.cjs
+          node --test qa/messenger-live-gate-v145/trusted-webhook-qa.test.cjs
+      - name: Hard guard — no Meta/network/real credential paths
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('qa/messenger-live-gate-v145/trusted-webhook-qa.cjs').read_text()
+          assert "mode!=='OFFLINE_SIGNED_FIXTURE_ONLY'" in src
+          assert "timingSafeEqual" in src and "createHmac('sha256'" in src
+          assert "Buffer.isBuffer(rawBody)" in src
+          assert 'PAGE_BINDING_NOT_FOUND_OR_INACTIVE' in src
+          assert 'WEBHOOK_MID_PAYLOAD_CONFLICT' in src
+          assert 'LIVE_SEND_NOT_AUTHORIZED' in src
+          assert 'permitSend:false' in src and 'canPublish:false' in src
+          for bad in ("fetch(", 'axios(', "require('http')", 'process.env',
+                    'service_role', 'graph.facebook.com', 'public.orders',
+                    'new WebSocket', 'execSync(', 'child_process'):
+              assert bad not in src, bad
+          print('PASS V14.5 raw-HMAC offline no-send boundary')
+          PY
+  inherited-messenger-commerce-qa:
+    name: Inherited 612 Messenger and Commerce regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify 33 Messenger four-flow + 579 previous regressions
+        run: |
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
+          node --test qa/legacy-safety-v1445/writer-compatibility.test.cjs qa/legacy-safety-v1445/order-stock-safety.test.cjs
+          node --test qa/store-product-v1444/product-v2-offline.test.cjs qa/store-product-v1444/owner-intake-offline.test.cjs
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+  disposable-order-stock:
+    name: Isolated real PG17 — 30 functional plus 8 race checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v145_ephemeral_ci_only'
+          POSTGRES_DB: tien404_v1446_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1446_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v145_ephemeral_ci_only'
+      PGDATABASE: tien404_v1446_ci
+      PGOPTIONS: '-c tien404.v1446_ephemeral=YES'
+      CI_V1446_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify real PostgreSQL atomic order and concurrency only inside disposable CI
+        run: |
+          bash qa/atomic-ledger-v1446/02_pg17_assertions.sh
+          bash qa/atomic-ledger-v1446/03_pg17_concurrency.sh
