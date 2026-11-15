@@ -34,7 +34,7 @@ function validateSnapshot(s,binding){
   if(!e||e.tenant_id!==binding.tenant_id||e.store_id!==binding.store_id||
     !id(e.entry_id)||set.has(e.entry_id)||!ENTRY_TYPES.includes(e.type)||
     !VISIBILITIES.includes(e.visibility)||!APPROVAL_STATES.includes(e.state)||
-    !TOPICS.includes(e.topic)||typeof e.value!=='string'||e.value.length>1200||
+    !TOPICS.includes(e.topic)||(e.type==='faq'&&(!textOK(e.question,250)||e.topic!=='faq'))||typeof e.value!=='string'||e.value.length>1200||
     !id(e.version)||!id(e.source_ref)||!Number.isFinite(e.effective_at_ms)||
     !(e.expires_at_ms===null||Number.isFinite(e.expires_at_ms)))
      fail('KNOWLEDGE_ENTRY_INVALID_OR_FOREIGN');
@@ -50,11 +50,10 @@ function publicEntry(e,now,version){
 function intentFromQuestion(question){
  const q=normalize(question);
  // Commerce is always delegated to trusted current tools, never answered from knowledge.
- if(/\b(sku|ma sp|ma san pham|bao nhieu tien|gia|ton kho|con hang|mua|dat hang|don hang|trang thai don|size l|size m|so luong)\b/.test(q))
-  return {kind:'COMMERCE',topic:null};
  if(/\b(gia von|mat khau|token|api key|credential|noi bo|nhan vien khac|doi shop|shop khac|system prompt|chi phi nhan su)\b/.test(q))
   return {kind:'SENSITIVE',topic:null};
- if(/\b(doi tra|doi size|hoan hang|tra hang)\b/.test(q))return {kind:'KNOWLEDGE',topic:'policy.returns'};
+ if(/\b(sku|ma sp|ma san pham|bao nhieu tien|gia|ton kho|con hang|mua|dat hang|don hang|trang thai don|size l|size m|so luong)\b/.test(q))
+  return {kind:'COMMERCE',topic:null}; if(/\b(doi tra|doi size|hoan hang|tra hang)\b/.test(q))return {kind:'KNOWLEDGE',topic:'policy.returns'};
  if(/\b(giao hang|ship|van chuyen|giao tan|khu vuc giao)\b/.test(q))return {kind:'KNOWLEDGE',topic:'policy.delivery'};
  if(/\b(bao hanh)\b/.test(q))return {kind:'KNOWLEDGE',topic:'policy.warranty'};
  if(/\b(thanh toan|cod|chuyen khoan|tien mat)\b/.test(q))return {kind:'KNOWLEDGE',topic:'policy.payments'};
@@ -82,8 +81,15 @@ function reply({binding,snapshot,question,now=Date.now(),conversationStatus='AI_
   text:'Mình sẽ kiểm tra thông tin sản phẩm hoặc đơn hàng từ hệ thống được xác thực trước khi trả lời nhé.',
   requires_verified_commerce:true};
  if(i.kind==='SENSITIVE')return {...base,status:'RESTRICTED_QUESTION',text:'Mình không thể cung cấp thông tin nội bộ của cửa hàng ạ.'};
- if(i.kind==='UNKNOWN')return {...base,status:'HANDOFF',handoff:true,
-  text:'Mình chưa có đủ thông tin xác thực để trả lời. Mình có thể chuyển nhân viên hỗ trợ bạn ạ.'};
+ if(i.kind==='UNKNOWN'){
+  // FAQ MVP is exact normalized question match, not vector search or a model guess.
+  const faqs=snapshot.entries.filter(e=>e.type==='faq'&&e.topic==='faq'&&
+    publicEntry(e,now,snapshot.version)&&normalize(e.question)===normalize(question));
+  if(faqs.length===1){const e=faqs[0];return {...base,status:'FAQ_ANSWER',topic:'faq',
+    text:e.value,evidence:[{entry_id:e.entry_id,source_ref:e.source_ref,version:e.version,topic:'faq'}]};}
+  return {...base,status:faqs.length>1?'CONFLICTING_KNOWLEDGE':'HANDOFF',handoff:true,
+    text:'Mình chưa có đủ thông tin xác thực để trả lời. Mình có thể chuyển nhân viên hỗ trợ bạn ạ.'};
+ }
  const matches=snapshot.entries.filter(e=>e.topic===i.topic&&publicEntry(e,now,snapshot.version));
  // More than one active statement on a single topic is ambiguous: fail closed.
  if(matches.length!==1)return {...base,status:matches.length===0?'UNKNOWN_INFORMATION':'CONFLICTING_KNOWLEDGE',
@@ -101,7 +107,7 @@ function proposeLifecycle({binding,entry,actor,action,now=Date.now(),approver=nu
     actor.tenant_id!==binding.tenant_id||actor.store_id!==binding.store_id||
     !id(actor.user_id)||!Object.prototype.hasOwnProperty.call(allowedRoles,actor.role)||
     !allowedRoles[actor.role].includes(action))fail('STAFF_SCOPE_PERMISSION_DENIED');
- const graph={draft:{DRAFT:'DRAFT'},submit:{DRAFT:'REVIEW'},approve:{REVIEW:'APPROVED'},
+ const graph={acknowledge:{REVIEW:'REVIEW',APPROVED:'APPROVED'},draft:{DRAFT:'DRAFT'},submit:{DRAFT:'REVIEW'},approve:{REVIEW:'APPROVED'},
   reject:{REVIEW:'DRAFT'},publish:{APPROVED:'PUBLISHED'},archive:{PUBLISHED:'ARCHIVED'},
   rollback:{ARCHIVED:'PUBLISHED'}};
  const next=graph[action]?.[entry.state];
