@@ -25,7 +25,12 @@ function createMessengerQaLab(){
  function handle(e){
   if(!branded.has(e))throw Error('TRUSTED_FIXTURE_GATE_REQUIRED');
   const ek=e.pageId+'|'+e.mid;
-  if(seen.has(ek))return Object.freeze({...seen.get(ek),replayed:true});
+  if(seen.has(ek)){
+   const old=seen.get(ek);
+   if(old.senderId!==e.senderId||old.text!==e.text)
+     throw Error('MID_PAYLOAD_OR_SENDER_SCOPE_CONFLICT');
+   return Object.freeze({...old.response,replayed:true});
+  }
   const p=PAGES[e.pageId],n=norm(e.text),owner=e.pageId+'|'+e.senderId;
   const s=pending.get(owner);let r;
   if((n==='xac nhan'||n==='dong y')&&s){
@@ -83,7 +88,7 @@ function createMessengerQaLab(){
   }else{
    r=reply(e,'CONSULT','Tôi là bot QA mô phỏng. Bạn có thể hỏi tư vấn, báo giá, đặt hàng hoặc tra cứu đơn.');
   }
-  seen.set(ek,r);return r;
+  seen.set(ek,{senderId:e.senderId,text:e.text,response:r});return r;
  }
  return Object.freeze({gateway,handle,inspect:()=>Object.freeze({
   mode:'OFFLINE_JS_FIXTURE',requests:requests.size,unsentOutbox:outbox.size,
