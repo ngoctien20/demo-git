@@ -77,7 +77,8 @@ async function call({path,token,key,fetchImpl}){
  return payload;
 }
 function query(table,filters,columns){
- const p=new URLSearchParams({select:columns,...filters,limit:'2'});
+ const {limit='2',...safeFilters}=filters;
+ const p=new URLSearchParams({select:columns,...safeFilters,limit});
  return '/rest/v1/'+table+'?'+p.toString();
 }
 async function hostedJwtAcceptance(cfg,fetchImpl=globalThis.fetch){
@@ -97,11 +98,13 @@ async function hostedJwtAcceptance(cfg,fetchImpl=globalThis.fetch){
    new Set(users.map(u=>u.id)).size!==4)
    deny('HOSTED_QA_IDENTITY_NOT_INDEPENDENT');
  const memberships=await Promise.all(users.map((u,i)=>call({
-   path:query('store_memberships',{user_id:'eq.'+u.id},
+   path:query('store_memberships',{user_id:'eq.'+u.id,
+        store_id:'in.('+stores.join(',')+')',limit:'4'},
       'tenant_id,store_id,user_id,active,role'),
    token:t[i],key,fetchImpl
  })));
- if(!memberships.every(Array.isArray))deny('HOSTED_QA_INVALID_RESPONSE');
+ if(!memberships.every(x=>Array.isArray(x)&&x.length<=3))
+  deny('HOSTED_QA_INVALID_RESPONSE');
  const mine=[];
  for(let i=0;i<3;i++){
   const matched=memberships[i].filter(m=>m.store_id===stores[i]&&
