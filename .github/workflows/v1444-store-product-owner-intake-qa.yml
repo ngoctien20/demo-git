@@ -1,0 +1,95 @@
+name: TIEN404 V14.4.4 Store-Aware Product V2 + Owner Intake (OFFLINE ONLY)
+on:
+  push:
+    branches:
+      - work/v1444-store-product-v2-owner-intake-20261116
+    paths:
+      - 'qa/store-product-v1444/**'
+      - 'docs/ai-handoff/V14_4_4_*'
+      - '.github/workflows/v1444-store-product-owner-intake-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/store-product-v1444/**'
+      - 'docs/ai-handoff/V14_4_4_*'
+      - '.github/workflows/v1444-store-product-owner-intake-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  store-product-owner-intake:
+    name: New Store RPC V2 and two-person owner QA (NO HOSTED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 68 offline QA tests + syntax
+        run: |
+          node --check qa/store-product-v1444/product-v2-offline.cjs
+          node --check qa/store-product-v1444/owner-intake-offline.cjs
+          node --test qa/store-product-v1444/product-v2-offline.test.cjs qa/store-product-v1444/owner-intake-offline.test.cjs
+      - name: Fail-closed static inspection (no production mutations, network, credential use)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/store-product-v1444')
+          products=(p/'product-v2-offline.cjs').read_text()
+          owners=(p/'owner-intake-offline.cjs').read_text()
+          assert 'OFFLINE_SYNTHETIC_QA' in products and 'OFFLINE_SYNTHETIC_QA' in owners
+          assert 'canWriteHosted:false' in products and 'canBackfill:false' in owners
+          assert 'canPublishRpc:false' in products and 'canChangeRls:false' in owners
+          for src in (products,owners):
+              for forbidden in ('fetch(', 'process.env', 'require("pg")',
+                                "require('pg')", 'service_role', 'graph.facebook.com',
+                                'create policy ', 'alter table ', 'grant execute '):
+                  assert forbidden not in src.lower(), forbidden
+          print('PASS — V14.4.4 modules remain offline-only and cannot deploy/write/send')
+          PY
+  inherited-regressions:
+    name: V14.4.3 through V13.6M existing source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 457 inherited source security QA tests
+        run: |
+          node --test qa/security-definer-v1443/rpc-security-review.test.cjs qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1441/release-evidence-gate.test.cjs
+          node --test qa/channel-v144/secure-widget-preview.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          find qa/messenger-rich-v136m* -name '*.test.cjs' ! -name 'preview.test.cjs' -print0 | xargs -0 -r node --test
+  disposable-postgres:
+    name: PostgreSQL 17 same-tenant Store FK and legacy policy regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'v1444_disposable_only_not_hosted'
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'v1444_disposable_only_not_hosted'
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse previously verified disposable PostgreSQL 17 Store RLS fixture
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
