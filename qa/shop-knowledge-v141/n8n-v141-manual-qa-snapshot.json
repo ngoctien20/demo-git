@@ -1,0 +1,107 @@
+{
+  "id": "S6IZJ5q0QFU6pHx5",
+  "name": "TIEN404_SHOP_KNOWLEDGE_ENGINE_V14_1_QA_STAGING",
+  "versionId": "1d8c3529-9d71-4601-88b4-f781a18fa9aa",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "description": "Offline 3 shop knowledge, draft/public, privileged and handoff contract smoke. Inactive/manual, no database, AI model, API, orders or provider sends.",
+  "nodes": [
+    {
+      "id": "0a7c8816-58dc-4f55-9ea7-c0f55a38e3b9",
+      "name": "Manual Shop Knowledge QA Only",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "2ebe1687-0e93-4115-9395-9c6e57391bae",
+      "name": "Generate Three Shop Synthetic Fixtures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const fixtures=[\n {shop:'A',tenant:'tenant-a',store:'shop-a',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Tạp hóa Mẫu A',expected:'ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Thời trang Mẫu B',expected:'ANSWER'},\n {shop:'C',tenant:'tenant-c',store:'shop-c',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'VLXD Mẫu C',expected:'ANSWER'},\n {shop:'A',tenant:'tenant-a',store:'shop-a',q:'year',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'2018',expected:'ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'phone',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'000-0000-0202',expected:'ANSWER'},\n {shop:'C',tenant:'tenant-c',store:'shop-c',q:'delivery',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Giao tới công trình nếu xác nhận',expected:'ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'returns',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Đổi size có điều kiện',expected:'ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'returns',state:'DRAFT',visibility:'PUBLIC',approved:true,verified:true,text:'Nội dung chưa phát hành',expected:'NO_PUBLIC_ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'phone',state:'PUBLISHED',visibility:'STAFF_ONLY',approved:true,verified:true,text:'SECRET INTERNAL',expected:'NO_PUBLIC_ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-a',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Tenant B không thuộc store A',expected:'BLOCKED'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:false,text:'Untrusted webhook',expected:'BLOCKED'},\n {shop:'C',tenant:'tenant-c',store:'shop-c',q:'payment',state:'PUBLISHED',visibility:'PUBLIC',approved:false,verified:true,text:'Chưa được chủ shop duyệt',expected:'NO_PUBLIC_ANSWER'},\n {shop:'A',tenant:'tenant-a',store:'shop-a',q:'price',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Không lấy giá từ knowledge',expected:'COMMERCE_DELEGATE'},\n {shop:'A',tenant:'tenant-a',store:'shop-a',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'AI đang có nhân viên',handoff:true,expected:'NO_AI_REPLY'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'name',state:'PUBLISHED',visibility:'PUBLIC',approved:true,verified:true,text:'Phiên bản sai',version:'old',expected:'NO_PUBLIC_ANSWER'},\n {shop:'B',tenant:'tenant-b',store:'shop-b',q:'name',state:'PUBLISHED',visibility:'RESTRICTED',approved:true,verified:true,text:'PRIVATE SECRET',expected:'NO_PUBLIC_ANSWER'}\n];\nreturn fixtures.map((json)=>({json}));"
+      }
+    },
+    {
+      "id": "1aa95501-3840-4b93-a54f-7268655f4ecc",
+      "name": "Evaluate Knowledge Security Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const canonical={A:['tenant-a','shop-a'],B:['tenant-b','shop-b'],C:['tenant-c','shop-c']};\nreturn $input.all().map(i=>{\n const f=i.json,expected=canonical[f.shop]||[],scopeOK=f.tenant===expected[0]&&f.store===expected[1];\n let actual='NO_PUBLIC_ANSWER';\n if(!scopeOK||f.verified!==true)actual='BLOCKED';\n else if(f.handoff===true)actual='NO_AI_REPLY';\n else if(f.q==='price')actual='COMMERCE_DELEGATE';\n else if(f.state==='PUBLISHED'&&f.visibility==='PUBLIC'&&f.approved===true&&\n   !f.version&&typeof f.text==='string'&&f.text.length>0)actual='ANSWER';\n return {json:{case_id:f.shop+'-'+f.q+'-'+f.expected,actual,expected:f.expected,\n   pass:actual===f.expected,tenants_mixed:false,provider_sends:0,orders_written:0,\n   paid_model_calls:0,storage_writes:0,source:'SYNTHETIC_FIXTURE_ONLY'}};\n});"
+      }
+    },
+    {
+      "id": "2c1f4253-58ed-453f-bb7b-178914ede681",
+      "name": "Assert Three Shop No Send QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const a=$input.all().map(x=>x.json);\nconst invalid=a.filter(x=>!x.pass||x.provider_sends!==0||x.orders_written!==0||\n x.paid_model_calls!==0||x.storage_writes!==0||x.tenants_mixed!==false);\nif(invalid.length)throw new Error('V141_FAIL:'+invalid.map(x=>x.case_id).join(','));\nreturn [{json:{suite:'V14_1_THREE_SHOP_KNOWLEDGE_SMOKE',cases:a.length,passed:a.length,\n failed:0,provider_sends:0,orders_written:0,paid_model_calls:0,storage_writes:0,\n real_provider_tested:false,real_customer_data_used:false,\n real_knowledge_source_tested:false,production_ready:false}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Shop Knowledge QA Only": {
+      "main": [
+        [
+          {
+            "node": "Generate Three Shop Synthetic Fixtures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Three Shop Synthetic Fixtures": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Knowledge Security Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Knowledge Security Contract": {
+      "main": [
+        [
+          {
+            "node": "Assert Three Shop No Send QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "snapshot_type": "SANITIZED_NEW_MANUAL_QA_ONLY",
+  "source": "n8n connector 15 Nov 2026",
+  "note": "Synthetic fixtures only; no customer data or secrets; not a backup of active published workflows."
+}
