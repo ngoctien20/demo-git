@@ -61,7 +61,7 @@ test('missing DB fails closed',async()=>assert.equal((await resolveG22(await pro
 test('missing pinned key fails closed',async()=>assert.equal((await resolveG22(await proof(),db(),now,'',tenantSha)).http_status,503));
 test('missing tenant pinned SHA fails closed',async()=>assert.equal((await resolveG22(await proof(),db(),now,spki,'')).http_status,503));
 test('untrusted server clock fails closed',async()=>assert.equal((await resolveG22(await proof(),db(),-1,spki,tenantSha)).http_status,503));
-test('no signed provider proof rejected',async()=>assert.equal((await check(undefined)).body.ok,true)); // default argument invokes trusted synthetic proof
+test('no signed provider proof rejected',async()=>assert.equal((await resolveG22(undefined,db(),now,spki,tenantSha)).body.reason,'SIGNED_PROVIDER_PROOF_REQUIRED'));
 test('explicit null provider proof rejected',async()=>assert.equal((await check(null)).body.reason,'SIGNED_PROVIDER_PROOF_REQUIRED'));
 test('untrusted signature denied',async()=>{const p=await proof();p.signature=p.signature.slice(0,-1)+(p.signature.at(-1)==='A'?'B':'A');assert.notEqual((await check(p)).http_status,200)});
 test('unsigned payload data modification denied',async()=>{const p=await proof();p.payload=p.payload.replace('zalo_bot_creator','fake_provider');assert.equal((await check(p)).body.reason,'PROVIDER_CLAIMS_UNTRUSTED_OR_EXPIRED')});
