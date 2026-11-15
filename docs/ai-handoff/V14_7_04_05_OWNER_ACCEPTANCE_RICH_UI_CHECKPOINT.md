@@ -60,3 +60,31 @@ P1: signed provider send under approved cap, real bounded AI/catalog/stock trace
 Preserve parent PR #117 unchanged. For code rollback, close this child Draft or revert its diff. If isolated Worker staging receives a new version later, restore prior version `64dba962-42c1-4e58-b1d7-f4169e3f4705` or disable **only** that Worker's workers.dev subdomain. Do not affect production, Zalo, Messenger, Cloudflare routes or existing customer Orders.
 
 No merge, production publish, paid service, credential, GRANT, RLS migration or real send without independent approval.
+
+## 8. V14.7-04/05 isolated staging deployment
+
+After correcting a syntax error in a newly introduced Messenger adapter QA test, GitHub Actions completed SUCCESS at source commit `4d2b515e44aed435b687ed3c2a71a767db458f75`:
+- [43757849360](https://github.com/ngoctien20/demo-git/actions/runs/43757849360): existing V14.7 source, HTTP lock and responsive regression.
+- [43757849372](https://github.com/ngoctien20/demo-git/actions/runs/43757849372): new 28 Experience + 8 inherited V13.6M adapter, plus local Chromium six-width Rich UI tests.
+- Previous red job [43757779743](https://github.com/ngoctien20/demo-git/actions/runs/43757779743): new test-only SyntaxError in adapter QA corrected by commit `4d2b515e`, not a hosted customer failure.
+
+A **staging-only** update was made to the existing isolated Worker `tien404-v147-custom-studio-synthetic-nosend-staging` after passing the above CI. It now serves four GitHub-pinned source assets (HTML, studio-core.js, studio-ui.js, experience-lab.js) plus zero-write /health.
+
+- Public synthetic QA URL: https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev/
+- New Cloudflare deployment: `85ceadd7-d8ee-4939-9314-90e9e2225d62`; version `48bbb714-dc67-4c69-9bd7-055daf1e0347` deployed at 100%.
+- Worker settings verified **0 bindings**, subdomain enabled, no D1, Meta, Zalo, n8n, Supabase or model secrets, no customer data.
+- HEAD/GET only on static files; all POST and other state-change methods HTTP 423; unknown GET routes 404; no CORS open API or external fetch in source; CSP connect-src 'none'.
+- Previous approved synthetic UAT Worker version `64dba962-42c1-4e58-b1d7-f4169e3f4705` and deployment `1b16388b-369b-4c88-8936-beb19db7b60a` preserved as rollback checkpoint.
+
+Final acceptance evidence requires the latest GitHub Actions run on **the document+hosted QA HEAD** (includes actual HTTPS GET assets, POST 423 and real Chromium visual checks against the isolated Worker). Do not mark the final checkpoint TESTED until the complete workflow finishes SUCCESS.
+
+No merge, production publish, provider send, hosted Store schema/data/GRANT or paid feature rollout was performed.
+
+## 9. Owner acceptance scope for new Rich UI Lab
+
+This continues from the **owner-reported 5/5 synthetic acceptance** of V14.7-03. The new V14.7-04/05 Rich UI modes need a separate owner visual review and are not implicitly accepted by the earlier UAT.
+
+- Messenger: preview Carousel (3 QA products), Quick Replies (configured menu), Persistent Menu (Page-level only), Webview (public catalog mock).
+- Zalo Bot: preview Rich Text, Photo Caption using synthetic emoji (not a real image URL), numbered menu fallback.
+- Zalo OA: preview CTA, menu and ZBS locked pending approved template, account eligibility and cost.
+- Verify Shop A/B/C price and UI isolation across four providers; confirm no real send and no hosted order.
