@@ -1,0 +1,53 @@
+name: TIEN404 V13.6M.2 Messenger Store Resolver & Catalog QA
+on:
+  push:
+    branches:
+      - work/v136m2-trusted-messenger-store-resolver-staging-20261115
+    paths:
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - ".github/workflows/v136m2-messenger-store-catalog-qa.yml"
+      - "docs/ai-handoff/V13_6M2_*"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - ".github/workflows/v136m2-messenger-store-catalog-qa.yml"
+      - "docs/ai-handoff/V13_6M2_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  store-resolver-no-send-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and inherited Adapter, Integration, Store Resolver QA
+        run: |
+          node --check qa/messenger-rich-v136m/adapter.cjs
+          node --check qa/messenger-rich-v136m1/integration.cjs
+          node --check qa/messenger-rich-v136m2/trusted-resolver.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs
+      - name: Verify no Meta transport, credentials or mutable SQL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files=[Path('qa/messenger-rich-v136m2/trusted-resolver.cjs'),
+                 Path('qa/messenger-rich-v136m1/integration.cjs')]
+          for p in files:
+            s=p.read_text()
+            for banned in ('fetch(', 'axios(', 'process.env', 'PAGE_ACCESS_TOKEN',
+                           'INSERT INTO', 'UPDATE public.', 'DELETE FROM', 'sendReply(',
+                           'executeWorkflow(', 'httpRequest('):
+              assert banned not in s, (str(p),banned)
+          s=files[0].read_text()
+          assert "mode='BLOCKED'" in s
+          assert 'CROSS_STORE_CATALOG_ROW_DENIED' in s
+          assert 'HOSTED_STORE_RLS_NOT_APPROVED' in s
+          assert 'persistentReplayReady:false,hostedReady:false' in s
+          print('PASS: no network, no secrets, no writes, default DENY, no-send')
+          PY
