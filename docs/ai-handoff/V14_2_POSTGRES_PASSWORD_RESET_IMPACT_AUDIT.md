@@ -146,3 +146,16 @@ QA next steps (operator-only):
 5. Retain backup privately/encrypted; a second safe copy is recommended.
 
 Release flags: `PGADMIN_JOB_FINISHED=SCREENSHOT_VERIFIED`, `LOCAL_BACKUP_FILE_PRESENT=SCREENSHOT_VERIFIED`, `BACKUP_BYTES_INSPECTED=NO`, `ARCHIVE_TOC_VERIFIED=NO`, `RESTORE_DRILL_PASS=NO`, `V14_2_RLS_MIGRATION=BLOCKED`. No Supabase SQL, RLS, credential, Render or n8n configuration changes were made by assistant.
+
+
+## PgAdmin process completion — operator screenshot verified
+
+User-supplied pgAdmin Process Watcher screenshot (15/11/2026, JST):
+- Backup job for Postgres on `tien404_AI_BACKUP` using Session Pooler at port 5432, started **21:39:26 JST**.
+- Screenshot command runs pgAdmin's local `pg_dump.exe` with `--file` pointing to `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`.
+- Process Watcher displays green **"Successfully completed."**, execution time **15.04 seconds**. This is stronger evidence than the previous "Finished" entry; screenshot does not separately display a numeric return code.
+- Visible `pg_dump` log includes dumping TABLE DATA for `tien404_r1_qa.owner_bindings`, `owner_outbox`, `owner_pairing_challenges`, `owner_pairing_claims_v3`, `sandbox_orders`, `shop_bots`, and `tenant_identity_map`.
+- Earlier Windows Explorer screenshot confirmed the archive exists (212 KB).
+- **DO NOT claim** all five project schemas are present before a TOC check using `pg_restore --list`, nor claim a successful restore rehearsal. User's backup remains local and has not been uploaded here. This selected-schema archive is not a complete Supabase Auth/Storage backup.
+- Next operator-only checks: (1) `pg_restore -l` read-only inspect Custom archive for schemas/tables/TABLE DATA and POLICY entries; (2) isolated restore drill and integrity checks. Never restore to live `tien404-staging`.
+- Release flags: `PG_DUMP_EXECUTION=SUCCESS_SCREENSHOT_VERIFIED`, `LOCAL_ARCHIVE_PRESENT=SCREENSHOT_VERIFIED`, `ARCHIVE_TOC_VERIFIED=NO`, `ISOLATED_RESTORE_VERIFIED=NO`, `V14_2_RLS_MIGRATION=BLOCKED`.
