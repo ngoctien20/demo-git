@@ -1,0 +1,599 @@
+{
+  "kind": "TIEN404_N8N_METADATA_MANIFEST_NOT_A_BACKUP",
+  "version": "V14.5Z-LIVE03E",
+  "observed_at_utc": "2026-11-16",
+  "source": "n8n connected read-only search_workflows",
+  "workflow_count": 98,
+  "active_count": 19,
+  "warning": "This is metadata only; not exportable workflow JSON, no nodes, no credentials or database content, NOT RESTORE-CAPABLE. The owner must download Cloud Console → Export backup.",
+  "workflows": [
+    {
+      "id": "fDB9dvs1qPPVt9Sp",
+      "name": "AI SALES - Manage Order",
+      "active": true,
+      "updatedAt": "2026-11-09T21:31:41.078Z"
+    },
+    {
+      "id": "U2DJsxzSYPH5hRop",
+      "name": "AI SALES - Revenue Report",
+      "active": true,
+      "updatedAt": "2026-11-09T14:35:36.334Z"
+    },
+    {
+      "id": "BkAi6TVUKAjCnI7v",
+      "name": "AI SALES - Update Order.",
+      "active": true,
+      "updatedAt": "2026-11-09T14:35:36.225Z"
+    },
+    {
+      "id": "NvQfIffOrZokPBPW",
+      "name": "AI_SALES_AGENT_ISOLATED_READONLY",
+      "active": false,
+      "updatedAt": "2026-11-11T10:07:04.354Z"
+    },
+    {
+      "id": "3MzEyZgbwkRmO4NI",
+      "name": "AI_SALES_AGENT_TEST",
+      "active": false,
+      "updatedAt": "2026-11-09T21:42:40.453Z"
+    },
+    {
+      "id": "v6PBwcqSapVzACMW",
+      "name": "AI_SALES_DEMO - Main Agent",
+      "active": true,
+      "updatedAt": "2026-11-09T15:00:52.095Z"
+    },
+    {
+      "id": "8b6n628JtnoPhfj1",
+      "name": "AI_SALES_MERCHANT_ASSISTANT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:11:48.594Z"
+    },
+    {
+      "id": "WpDIR8n4K7GxFYLd",
+      "name": "AI_SALES_ORDER_NOTIFICATION_V1_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:13:50.891Z"
+    },
+    {
+      "id": "yLQzDjTMTJqqJsVp",
+      "name": "AI_SALES_REPORT_SCHEDULER_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:15:49.351Z"
+    },
+    {
+      "id": "AEFI11cvvBrrYCbu",
+      "name": "AI_SALES_REVENUE_V3_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:17:40.220Z"
+    },
+    {
+      "id": "Zswbbml4W1WkkxYe",
+      "name": "AI_SALES_V45_GMAIL_DISPATCH_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:38:30.432Z"
+    },
+    {
+      "id": "raprJAvUy9ovDm3Q",
+      "name": "AI_SALES_V45_MESSENGER_OWNER_POLICY_GUARD_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:40:22.769Z"
+    },
+    {
+      "id": "E7qjDGggThLpktjL",
+      "name": "AI_SALES_V45_MULTICHANNEL_OUTBOX_PREPARE_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:36:00.154Z"
+    },
+    {
+      "id": "a37OOBI9T4chqVgm",
+      "name": "AI_SALES_V45_NOTIFICATION_RECONCILE_READONLY",
+      "active": false,
+      "updatedAt": "2026-11-12T21:42:18.153Z"
+    },
+    {
+      "id": "spk9Cs62YidlQ1vu",
+      "name": "AI_SALES_V45_TELEGRAM_DISPATCH_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:38:27.556Z"
+    },
+    {
+      "id": "l9XQfL6xEfPFAqfr",
+      "name": "AI_SALES_V4_3_GMAIL_ONE_SHOT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:40:17.031Z"
+    },
+    {
+      "id": "1rkrW7TjZOY3jQLu",
+      "name": "AI_SALES_V4_3_GOOGLE_SHEETS_SCHEMA_READONLY",
+      "active": false,
+      "updatedAt": "2026-11-12T20:37:11.111Z"
+    },
+    {
+      "id": "toKniNHVqj6oSv4k",
+      "name": "AI_SALES_V4_3_OUTBOX_RECONCILE_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T15:44:44.273Z"
+    },
+    {
+      "id": "nAHHoEEMEhYkujys",
+      "name": "AI_SALES_V4_3_TELEGRAM_CHAT_DIAGNOSTIC_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:12:25.141Z"
+    },
+    {
+      "id": "oa2kRIN0w3PGSxPO",
+      "name": "AI_SALES_V4_3_TELEGRAM_FAILURE_REVIEW_QA",
+      "active": false,
+      "updatedAt": "2026-11-12T21:03:55.681Z"
+    },
+    {
+      "id": "C0KFcQtJ6CJtpR4X",
+      "name": "AI_SALES_V4_3_TELEGRAM_ONE_SHOT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T21:01:53.005Z"
+    },
+    {
+      "id": "n5hXw32IFVhEEVp3",
+      "name": "AI_SALES_V4_3_TELEGRAM_ONE_SHOT_STAGING_02",
+      "active": false,
+      "updatedAt": "2026-11-12T21:21:54.025Z"
+    },
+    {
+      "id": "i6rbMFwBac3rbvG6",
+      "name": "AI_SALES_V4_3_TELEGRAM_SEND_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T20:45:43.000Z"
+    },
+    {
+      "id": "KrSn4DNR9ALX5ng4",
+      "name": "Create Order Tool (AI_SALES_DEMO)",
+      "active": true,
+      "updatedAt": "2026-11-09T21:29:31.143Z"
+    },
+    {
+      "id": "7hwH3kW6GtNwpgDk",
+      "name": "TIEN404 DEV FACTORY — V1 On-Demand Staging Inbox (INACTIVE)",
+      "active": false,
+      "updatedAt": "2026-11-11T22:22:24.032Z"
+    },
+    {
+      "id": "221lgBOeCXC5j98h",
+      "name": "TIEN404 QA - Messenger HMAC negative HTTP",
+      "active": false,
+      "updatedAt": "2026-11-11T10:50:03.247Z"
+    },
+    {
+      "id": "fWp1fBImX6K8ihOa",
+      "name": "TIEN404 STAGING — n8n Signed HMAC QA (INACTIVE)",
+      "active": false,
+      "updatedAt": "2026-11-10T14:21:20.343Z"
+    },
+    {
+      "id": "E3He3Kr602j2B0wC",
+      "name": "TIEN404 STAGING — Render data bridge QA (READ-ONLY)",
+      "active": false,
+      "updatedAt": "2026-11-10T14:11:46.070Z"
+    },
+    {
+      "id": "BAOYcw4U9VCkSMdX",
+      "name": "TIEN404 V14.4.6 — Order & Stock QA Lab [OFFLINE MOCK ONLY]",
+      "active": false,
+      "updatedAt": "2026-11-15T17:36:52.374Z"
+    },
+    {
+      "id": "wgkkmT7q4lm4HyuA",
+      "name": "TIEN404 WEBSITE — DEMO & MARKETING AI (QA ISOLATED)",
+      "active": true,
+      "updatedAt": "2026-11-10T11:55:56.469Z"
+    },
+    {
+      "id": "8HtaQAJuZWKyNhXu",
+      "name": "TIEN404_AI_SALES_QA_SANDBOX_V12_4_CANDIDATE",
+      "active": false,
+      "updatedAt": "2026-11-14T17:04:16.404Z"
+    },
+    {
+      "id": "6sdM8zacoYQP1g5X",
+      "name": "TIEN404_AI_SALES_REVENUE_V2_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-09T21:38:28.866Z"
+    },
+    {
+      "id": "gpDYCp4sEzaVvPlb",
+      "name": "TIEN404_COMMERCE_00_START_HERE",
+      "active": false,
+      "updatedAt": "2026-11-10T05:42:52.878Z"
+    },
+    {
+      "id": "Bc7UQjTIthfFB0PT",
+      "name": "TIEN404_COMMERCE_00_WIZARD_NEW_SHOP",
+      "active": false,
+      "updatedAt": "2026-11-09T20:55:49.906Z"
+    },
+    {
+      "id": "Ax9P0JQlQu3gafZw",
+      "name": "TIEN404_COMMERCE_01_SHOP_PREFLIGHT",
+      "active": false,
+      "updatedAt": "2026-11-09T21:00:41.153Z"
+    },
+    {
+      "id": "iyfGUiEsZlNTBWOR",
+      "name": "TIEN404_COMMERCE_AI_AGENT_SANDBOX",
+      "active": false,
+      "updatedAt": "2026-11-10T05:32:41.341Z"
+    },
+    {
+      "id": "igPOsSbEgd4NgtRA",
+      "name": "TIEN404_COMMERCE_CART_PREVIEW",
+      "active": true,
+      "updatedAt": "2026-11-09T20:55:38.129Z"
+    },
+    {
+      "id": "oOOXicKXGkBskKqh",
+      "name": "TIEN404_COMMERCE_CATALOG_QUERY",
+      "active": true,
+      "updatedAt": "2026-11-09T20:55:35.967Z"
+    },
+    {
+      "id": "ZVmMlwe2g0bPjVEq",
+      "name": "TIEN404_COMMERCE_REGRESSION_QA",
+      "active": false,
+      "updatedAt": "2026-11-09T20:55:47.583Z"
+    },
+    {
+      "id": "splyaeQtV719OuAu",
+      "name": "TIEN404_COMMERCE_SHOP_ONBOARDING",
+      "active": true,
+      "updatedAt": "2026-11-09T20:55:45.666Z"
+    },
+    {
+      "id": "jirkuVts1AjIhnPJ",
+      "name": "TIEN404_COMMERCE_SUPPORT_TICKETS_QA",
+      "active": true,
+      "updatedAt": "2026-11-09T20:55:43.318Z"
+    },
+    {
+      "id": "5Eeh8hbpsoNhuiVo",
+      "name": "TIEN404_COMMERCE_TENANT_RESOLVER",
+      "active": true,
+      "updatedAt": "2026-11-09T20:55:33.772Z"
+    },
+    {
+      "id": "Y0WLykMtNAldbgL0",
+      "name": "TIEN404_COMMERCE_V3_BUSINESS_CORE_SANDBOX",
+      "active": true,
+      "updatedAt": "2026-11-10T05:44:59.166Z"
+    },
+    {
+      "id": "QR7aYMpLfKDLVgyH",
+      "name": "TIEN404_COMMERCE_V3_QA_EXTENSION_25",
+      "active": false,
+      "updatedAt": "2026-11-10T05:46:55.148Z"
+    },
+    {
+      "id": "tjsVobfjKLnv0o6b",
+      "name": "TIEN404_COMMERCE_V3_REGRESSION_QA",
+      "active": false,
+      "updatedAt": "2026-11-10T05:31:02.766Z"
+    },
+    {
+      "id": "VBEns4KfWEz9AFgM",
+      "name": "TIEN404_COMMERCE_V3_RULES_EXTENSION_LAB",
+      "active": true,
+      "updatedAt": "2026-11-10T05:46:53.145Z"
+    },
+    {
+      "id": "5Sw0ZDFRvrRjEfUZ",
+      "name": "TIEN404_MESSENGER_CLONE_QA_V12_5_CANDIDATE",
+      "active": false,
+      "updatedAt": "2026-11-14T17:49:44.329Z"
+    },
+    {
+      "id": "4DFFCk60exrzaIl6",
+      "name": "TIEN404_MESSENGER_ORDER_STATUS",
+      "active": true,
+      "updatedAt": "2026-11-09T14:35:39.055Z"
+    },
+    {
+      "id": "X0MwwQ7LRUqfOVjM",
+      "name": "TIEN404_MESSENGER_RICH_UI_CANDIDATE_V13_6M1_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T11:17:02.580Z"
+    },
+    {
+      "id": "KqSuGxCHixc6fsiu",
+      "name": "TIEN404_MESSENGER_SUPPORT_REQUESTS",
+      "active": true,
+      "updatedAt": "2026-11-09T14:35:39.137Z"
+    },
+    {
+      "id": "Z7FdV7uDvApfbURQ",
+      "name": "TIEN404_MESSENGER_TEST",
+      "active": true,
+      "updatedAt": "2026-11-11T10:08:02.474Z"
+    },
+    {
+      "id": "2iF5zAYxuO2AcCb3",
+      "name": "TIEN404_MESSENGER_V4_1_CANDIDATE_FIXTURE_ONLY",
+      "active": false,
+      "updatedAt": "2026-11-12T14:12:18.073Z"
+    },
+    {
+      "id": "8gA4A8TM3Z9waloB",
+      "name": "TIEN404_META_TOKEN_CHECK",
+      "active": false,
+      "updatedAt": "2026-11-09T14:35:45.132Z"
+    },
+    {
+      "id": "9UDajs5gyaasf6XN",
+      "name": "TIEN404_MULTIMODAL_INGRESS_V14_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T09:37:55.090Z"
+    },
+    {
+      "id": "zqrmX4rpztRXfPtw",
+      "name": "TIEN404_QA_GOOGLE_SHEETS_LIVE_HEALTH_V12_4",
+      "active": false,
+      "updatedAt": "2026-11-14T16:59:18.118Z"
+    },
+    {
+      "id": "ZXcKOgawwYPhDUBZ",
+      "name": "TIEN404_QA_HTTP_CLIENT",
+      "active": false,
+      "updatedAt": "2026-11-09T14:35:45.223Z"
+    },
+    {
+      "id": "KKqVV8CtmyXBmI1s",
+      "name": "TIEN404_QA_SIGNATURE_ISOLATED",
+      "active": false,
+      "updatedAt": "2026-11-09T14:35:45.304Z"
+    },
+    {
+      "id": "cflgNO9ezFVgMIWF",
+      "name": "TIEN404_QA_TESTER_PILOT01_SHEET_HEALTH_V12_4",
+      "active": false,
+      "updatedAt": "2026-11-14T17:05:41.953Z"
+    },
+    {
+      "id": "kKIlgIX5olx0CSz5",
+      "name": "TIEN404_R1_SHOP_REGISTRY_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T19:07:29.313Z"
+    },
+    {
+      "id": "zaz2jcxrYXQeFHLL",
+      "name": "TIEN404_R1_SIGNED_JWT_HTTP_NEGATIVE_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T22:11:15.657Z"
+    },
+    {
+      "id": "JsRXB0B9wGkWByW9",
+      "name": "TIEN404_R1_SUPABASE_ADAPTER_CONTRACT_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T19:42:17.610Z"
+    },
+    {
+      "id": "2JUqVjPToWUmLfPL",
+      "name": "TIEN404_SALES_LITE_V11_MENU_SMOKE_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T01:58:18.434Z"
+    },
+    {
+      "id": "Q7h5KLyJJ2SGkkLO",
+      "name": "TIEN404_SALES_LITE_V1_OWNER_NOTICE_SHADOW_QA",
+      "active": false,
+      "updatedAt": "2026-11-15T00:51:26.430Z"
+    },
+    {
+      "id": "S6IZJ5q0QFU6pHx5",
+      "name": "TIEN404_SHOP_KNOWLEDGE_ENGINE_V14_1_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T10:06:48.085Z"
+    },
+    {
+      "id": "hkZzAmv86NoiTFHh",
+      "name": "TIEN404_V11_5_ZALO_POLICY_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-12T22:25:33.516Z"
+    },
+    {
+      "id": "bvk9TtedP5rxtj4u",
+      "name": "TIEN404_V138_CONVERSATION_STAFF_HANDOFF_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T08:05:18.956Z"
+    },
+    {
+      "id": "FIE7nl2vgLXQI7mT",
+      "name": "TIEN404_V142_STORE_RLS_ONBOARDING_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T10:44:19.689Z"
+    },
+    {
+      "id": "KjcnFcdg3lDQcZyW",
+      "name": "TIEN404_V143_UNIFIED_CHANNEL_QA_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T12:58:32.661Z"
+    },
+    {
+      "id": "xayBLEyUwd64mcLK",
+      "name": "TIEN404_V145Z_LIVE01_BOT_READONLY_PREFLIGHT_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T15:17:37.542Z"
+    },
+    {
+      "id": "OMV22pdETQFVU9ru",
+      "name": "TIEN404_V145Z_LIVE01_REAL_AI_MANUAL_QA_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T14:57:23.819Z"
+    },
+    {
+      "id": "mfH7MaI2E4A4TDJn",
+      "name": "TIEN404_V145Z_LIVE02_HEALTH_AND_SEND_LOCK_QA",
+      "active": false,
+      "updatedAt": "2026-11-15T16:14:18.676Z"
+    },
+    {
+      "id": "mJ3PH8qXhXKFh0kS",
+      "name": "TIEN404_V145Z_LIVE02_HTTP_QA_DRIVER_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T16:09:52.420Z"
+    },
+    {
+      "id": "n40yAM3D4zRa1mFk",
+      "name": "TIEN404_V145Z_LIVE03C_BUDGET_HTTP_QA_NO_SEND",
+      "active": false,
+      "updatedAt": "2026-11-15T17:33:51.382Z"
+    },
+    {
+      "id": "F8EYY5KQCJn8Mkck",
+      "name": "TIEN404_V145Z_LIVE03C_HEALTH_SEND_LOCK_QA",
+      "active": false,
+      "updatedAt": "2026-11-15T17:36:38.860Z"
+    },
+    {
+      "id": "7ilAB2bfIvh81H8j",
+      "name": "TIEN404_ZALO_AGENT_LAB_V2_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-13T12:40:34.441Z"
+    },
+    {
+      "id": "9Lmb5f00pOtCNX48",
+      "name": "TIEN404_ZALO_AGENT_V2_1_EXTENDED_REGRESSION_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T15:09:39.776Z"
+    },
+    {
+      "id": "OReQin69kAguuw1q",
+      "name": "TIEN404_ZALO_AGENT_V2_1_OWNER_SHADOW_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-13T15:04:52.831Z"
+    },
+    {
+      "id": "Dy4DYbsL059MLXUi",
+      "name": "TIEN404_ZALO_AGENT_V2_EDITOR_CHAT",
+      "active": false,
+      "updatedAt": "2026-11-13T12:40:36.257Z"
+    },
+    {
+      "id": "yIJk8LvJoLF40Z62",
+      "name": "TIEN404_ZALO_BOT_LAB_V1_STAGING",
+      "active": true,
+      "updatedAt": "2026-11-14T15:25:40.641Z"
+    },
+    {
+      "id": "PLtOVTGYJTcI55I5",
+      "name": "TIEN404_ZALO_ORDERED_MEMORY_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T18:32:31.154Z"
+    },
+    {
+      "id": "Ohwxi8BLMaGLEevj",
+      "name": "TIEN404_ZALO_OUTBOUND_GATEWAY_LOCKED_HTTP_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T14:05:18.491Z"
+    },
+    {
+      "id": "QygL1MepdOiUYU9k",
+      "name": "TIEN404_ZALO_OWNER_ONE_SHOT_MANUAL_SEND_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-13T14:19:09.284Z"
+    },
+    {
+      "id": "pJOeHyRfS3uAjR7T",
+      "name": "TIEN404_ZALO_OWNER_PREFLIGHT_READONLY_QA",
+      "active": false,
+      "updatedAt": "2026-11-13T14:47:16.563Z"
+    },
+    {
+      "id": "HOTkruOTMmat24eT",
+      "name": "TIEN404_ZALO_SHOP_B_CONVERSATION_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T12:26:22.991Z"
+    },
+    {
+      "id": "Nm2sYvW0cCT2FpWR",
+      "name": "TIEN404_ZALO_SHOP_B_F01_APPROVED_ONE_SHOT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T12:14:00.422Z"
+    },
+    {
+      "id": "zuOdXgOg6ZPaTcHR",
+      "name": "TIEN404_ZALO_SHOP_B_F01_PREFLIGHT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T12:12:35.676Z"
+    },
+    {
+      "id": "bD510xyr5jBHQ99K",
+      "name": "TIEN404_ZALO_SHOP_B_WEBHOOK_DIAGNOSTICS_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T13:17:34.156Z"
+    },
+    {
+      "id": "jxq8HxbUZgaEu5UX",
+      "name": "TIEN404_ZALO_TEST11_OWNER_MANUAL",
+      "active": false,
+      "updatedAt": "2026-11-13T18:58:07.354Z"
+    },
+    {
+      "id": "sIPs6egzIwOY1GNv",
+      "name": "TIEN404_ZALO_V123_PRIVATE_CUSTOMER_ROUTER_STAGING",
+      "active": true,
+      "updatedAt": "2026-11-14T15:08:22.225Z"
+    },
+    {
+      "id": "m02agqF95Kg5nyi9",
+      "name": "TIEN404_ZALO_V123_PUBLIC_CUSTOMER_SANDBOX_QA",
+      "active": false,
+      "updatedAt": "2026-11-14T15:08:05.510Z"
+    },
+    {
+      "id": "uGesZLvNkhY4ZO6l",
+      "name": "TIEN404_ZALO_V124_AI_INTENT_DRAFT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T16:02:27.868Z"
+    },
+    {
+      "id": "nKNKDLO4l2PXL4tx",
+      "name": "TIEN404_ZALO_V124_REPLY_GUARD_QA_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T15:55:20.537Z"
+    },
+    {
+      "id": "kRJQAll005V21o5H",
+      "name": "TIEN404_ZALO_V135_SHOP_B_RICHTEXT_PREFLIGHT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T06:33:09.108Z"
+    },
+    {
+      "id": "qWMu4n1wLkTZBNpI",
+      "name": "TIEN404_ZALO_V135_SHOP_B_RICHTEXT_T1_T2_T3_ONCE_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T06:37:16.675Z"
+    },
+    {
+      "id": "VflHQf5OQhMwOqLN",
+      "name": "TIEN404_ZALO_V137_SHOP_B_4_API_ONE_SHOT_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-15T07:48:57.578Z"
+    },
+    {
+      "id": "RnbsXSriPcythZjq",
+      "name": "TIEN404_ZALO_V1_WEBHOOK_HTTP_AUTH_PROBE_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-14T13:25:42.277Z"
+    },
+    {
+      "id": "NZi7gF5B59M1RVlU",
+      "name": "TIEN404_ZALO_V2_2_MEMORY_CAS_STAGING",
+      "active": false,
+      "updatedAt": "2026-11-13T15:27:06.338Z"
+    },
+    {
+      "id": "OgDZNSAvKEvhnAvn",
+      "name": "TIEN404_ZALO_V2_SHADOW_STAGING",
+      "active": true,
+      "updatedAt": "2026-11-14T12:47:23.198Z"
+    }
+  ]
+}
