@@ -5,6 +5,7 @@ export const PANEL_IDS=Object.freeze([
 ]);
 const managerPanels=new Set(['orders','customers','care','bots','reports']);
 export function mayOpenPanel(role,view) {
+  if(view==='bots') return false; // STAFF_ONLY: merchant membership is not TIEN404 staff authorization.
   if(!PANEL_IDS.includes(view)) return false;
   if(!['owner','manager','staff'].includes(role)) return false;
   return !managerPanels.has(view)||role==='owner'||role==='manager';
