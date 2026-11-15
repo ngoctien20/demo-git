@@ -34,7 +34,9 @@ jobs:
       - name: C — Model pricing and budget guard offline
         run: node --test qa/v15-model-lab/cost-simulator.test.cjs
       - name: D — Browser Lab contract QA
-        run: node --test qa/v15-test-lab/test-lab.test.cjs
+        run: node --test qa/v15-test-lab/test-lab.test.cjs qa/v15-test-lab/browser-smoke.test.cjs
+      - name: C — Private CSV dataset readiness parser tests
+        run: node --test qa/v15-model-lab/private-dataset-audit.test.cjs
       - name: Enforce no paid API, provider sends, or production mutations
         run: |
           python - <<'PY'
