@@ -27,7 +27,7 @@ TIEN404 is a **multi-channel AI Sales SaaS**, not a Zalo Bot reseller. A single 
 | Internal AI Studio access | **Never from plan alone** | Never from plan alone | Never from plan alone |
 | Native Zalo buttons and OA capabilities | UNKNOWN | UNKNOWN | Provider-specific verified only |
 
-**Rationale:** Lite must be a *sales-management product*, not only chatbot replies. A Plus merchant receives only narrowly scoped customization, not unrestricted Agent/Studio rights. Enterprise does not get OA/multi-store privileges solely from a displayed subscription label.
+**Compatibility:** Older V13.4 plan identifier `SALES_LITE_PLUS` is normalized to `SALES_PLUS` only after the subscription is returned by a verified backend port. No database plan change occurs.\n\n**Rationale:** Lite must be a *sales-management product*, not only chatbot replies. A Plus merchant receives only narrowly scoped customization, not unrestricted Agent/Studio rights. Enterprise does not get OA/multi-store privileges solely from a displayed subscription label.
 
 ## Implemented, offline/staging only
 
@@ -51,7 +51,7 @@ TIEN404 is a **multi-channel AI Sales SaaS**, not a Zalo Bot reseller. A single 
 
 ## QA acceptance and evidence
 
-At the time of document creation, code and QA workflows have been added. **Do not claim PASS until the final HEAD GitHub Actions run completes successfully.**
+**TESTED — final code HEAD before this documentation-only update:** GitHub Actions [run 43678558926](https://github.com/ngoctien20/demo-git/actions/runs/43678558926): two jobs SUCCESS. New V13.4 Revised 46/46; V13.4 base 44/44; V13.3 53/53; V13.2 19/19; V13.1 116/116. **Total 278/278 source/contract tests PASS**. Chromium existing Merchant Portal package comparison **5/5 viewport QA PASS (360/390/430/768/1280), zero mutation requests**. Independent inherited V13.3 [run 43678559353](https://github.com/ngoctien20/demo-git/actions/runs/43678559353): contracts/browser jobs SUCCESS. Browser uses local HTTP and research fixture, **not hosted Auth/RLS or real merchant data**.
 
 Required before promotion:
 1. Source/negative QA Lite denial of Menu Designer; Plus draft-only; Enterprise provider+contract gates; Shop A/B negative scope, revoked/expired membership/subscription.
