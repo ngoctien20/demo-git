@@ -15,7 +15,7 @@ permissions:
   contents: read
 jobs:
   trusted-gateway:
-    name: Verify 55 signed, scoped and no-write tool dispatcher scenarios
+    name: Verify 63 signed, scoped and no-write tool dispatcher scenarios
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -29,6 +29,8 @@ jobs:
           node --check qa/messenger-live03b/write-denial-gateway.test.cjs
       - name: Run LIVE03B deterministic write-denial acceptance suite
         run: node --test qa/messenger-live03b/write-denial-gateway.test.cjs
+      - name: Run 9 exact-source n8n manual QA contract checks
+        run: node --test qa/messenger-live03b/live03b-n8n-manual-lab.test.cjs
       - name: Guard against external write, provider send and real token access
         run: |
           python3 - <<'PY'
