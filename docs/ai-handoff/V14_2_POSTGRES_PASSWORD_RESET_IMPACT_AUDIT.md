@@ -45,3 +45,32 @@ Supabase documentation:
 - Audit was read-only; no database password reset, no credential values read, no migration/backfill, no Supabase RLS changes or provider sends.
 - All 313/313 prior V14.2 Node CI and n8n 16/16 synthetic QA evidence remain previous checkpoint results, **not rerun as part of this audit**.
 - Current assessment: `RESET=BLOCKED_NEEDS_SEPARATE_APPROVAL`, `RENDER_IMPACT=NOT_VERIFIED_WORKSPACE_CONFIRMATION_REQUIRED`, `BACKUP=NOT_VERIFIED`, `STORE_RLS_MIGRATION=BLOCKED`.
+
+
+## Confirmed Render My Workspace — authorized READ-ONLY audit, 2026-11-15 JST
+
+Owner explicitly confirmed workspace **My Workspace** for a read-only dependency review. No Render setting, environment variable, credential, deployment or production route was modified.
+
+### Live Render resources — VERIFIED
+- Exactly two services found with includePreviews enabled:
+  - `tien404-auth-staging` — Render static_site, GitHub branch `work/supabase-auth-staging-v1`, autoDeploy=no, latest LIVE deploy SHA `b14501a0ebf04d991302cb32b5d548a68d6b39bd` (Nov 14).
+  - `tien404-data-staging` — Render web_service, Python/FastAPI free plan, Singapore, GitHub branch `ops/tenant-data-platform-v1-staging-20261110`, autoDeploy=no, latest LIVE deploy SHA `ab940a95dae8afdff426bc6ac71693833d5348ce` (Nov 12).
+- Render PostgreSQL instance listing returned **No Postgres instances found**; this excludes Render-managed Postgres on this workspace, but not external Supabase DB clients.
+- Live deployment metadata and associated build/deploy events report success. This does NOT prove every route or background process is healthy.
+
+### Analysis from exact deployed commit sources — VERIFIED
+- Data service build starts `uvicorn app.main:app`; deployed `ops/data-platform/app/main.py` reads **code-declared** names:
+  `TIEN404_SUPABASE_URL`, `TIEN404_SUPABASE_PUBLISHABLE_KEY`, `TIEN404_APP_ORIGIN`, `TIEN404_DATA_MODE`, `TIEN404_N8N_STAGING_SECRET`.
+- Its configured reads call Supabase Auth and PostgREST with `httpx` over HTTPS, forwarding the caller's JWT and public/publishable project key. No `psycopg`, `DATABASE_URL`, pooler DSN or raw SQL PostgreSQL connection is referenced in this deployed `main.py`.
+- The source repository also contains `commerce_transactions.py`, a PostgreSQL-transaction implementation, BUT it requires an injected `commerce_connect` adapter. Deployed entrypoint at line 230 calls `app=create_app()` with the default `commerce_connect=None`. Therefore the transactional PostgreSQL path is **not wired in the inspected deployed service**.
+- Static Auth service deployed build `scripts/build-auth-preview.mjs` produces an allowlisted frontend-only artifact. Inspected deployed frontend `assets/auth-client.js`, `assets/auth-config.js`, `assets/merchant-portal.js`, `assets/merchant-product.mjs`, `assets/auth-runtime.mjs`, `assets/site-config.js`: no direct PostgreSQL URI, pooler host or PGHOST/DATABASE_URL/PGPASSWORD references in these files.
+- Crucial limitation: connected Render tools return service/deploy metadata, but do **not expose the actual stored Environment variable name list**. Source-code-declared names are NOT proof of values/names configured in the Render dashboard. Do not say the environment variables have been verified, and do not request or reveal secret values.
+
+### Revised risk / decision
+- **Render direct PostgreSQL password dependency: LOW based on the inspected deployed entrypoints**; residual uncertainty remains until the actual Render Environment **KEY NAMES ONLY** and out-of-band client dependencies are verified.
+- OAuth logins and Supabase Data API via publishable key + JWT typically do not use the `postgres` login password in client code. This does NOT prove reset cannot impact another uninspected third-party DB client.
+- **Decision: DO NOT RESET DATABASE PASSWORD YET**. Confirm actual Render environment KEY names via a redacted screenshot or permitted name-only metadata mechanism; separately authorize any password reset after dependency and reconnection plan acceptance.
+- Staging backup is still NOT verified. Source-code QA and repository checkpoint are not a backup/restore drill. V14.2 database migration, backfill and RLS remain BLOCKED.
+- No credentials or environment values were queried or returned to the assistant. No Render deployment, database changes, customer messages or RLS operations were performed.
+
+QA status: AUDIT_READ_ONLY=VERIFIED; RENDER_SERVICES=2; RENDER_MANAGED_POSTGRES=0; CODE_DECLARED_ENV_NAMES=VERIFIED; RENDER_STORED_ENV_KEY_NAMES=NOT_AVAILABLE_VIA_CONNECTOR; RESET_APPROVED=NO; VERIFIED_BACKUP=NO.
