@@ -1,0 +1,75 @@
+{
+  "project": "TIEN404 AI",
+  "checkpoint": "V15.0 A→B→C→D",
+  "date_jst": "2026-11-16",
+  "environment": "STAGING_QA_NO_SEND",
+  "status": "OFFLINE_AGENT_SKILLS_ROUTER_TESTED_AND_BROWSER_STAGING_HOSTED",
+  "release": "EXPERIMENTAL_NOT_PRODUCTION",
+  "branch": "work/v1503-08-agent-skills-router-testlab-nosend-20261116",
+  "parent_prs": [
+    121,
+    122
+  ],
+  "pr": 123,
+  "qa": {
+    "ci_run_id": 43767413339,
+    "ci_url": "https://github.com/ngoctien20/demo-git/actions/runs/43767413339",
+    "test_breakdown": {
+      "universal_core": 44,
+      "skills_router_integration": 29,
+      "model_pricing": 29,
+      "lab_contract_browser": 28,
+      "private_csv_readiness": 7
+    },
+    "total_tests": 137,
+    "passed_tests": 137,
+    "failures": 0,
+    "source_no_send_scan": "PASS",
+    "raw_customer_or_private_csv_text_in_git": false,
+    "paid_model_benchmark_executed": false
+  },
+  "hosted_test_lab": {
+    "url": "https://tien404-v15-owner-ai-test-lab-nosend-staging.tienmobi208.workers.dev/",
+    "cloudflare_script": "tien404-v15-owner-ai-test-lab-nosend-staging",
+    "version": "4fba3556-5133-4aee-a018-b6dc5409c45e",
+    "deployment": "7c7c6104-c738-426f-923a-6e0ee9be2bb7",
+    "source_sha256": "7e239c7ca744ab81d74c68fa8bad78a28423f04835dc88d8decf7670885b6db8",
+    "bindings_count": 0,
+    "credentials_count": 0,
+    "mode": "BROWSER_ONLY_SYNTHETIC",
+    "connected_to_true_agent_backend": false,
+    "public_http_qa_n8n_workflow": "f0bfCjUE5URqzzfQ",
+    "public_http_qa_execution": "3886",
+    "http_qa_result": "SUCCESS",
+    "http_health": 200,
+    "http_index": 200,
+    "http_send": 405,
+    "csp": "connect-src 'none'",
+    "actual_owner_login": false,
+    "actual_llm_calls": 0,
+    "outbound_messages": 0,
+    "order_writes": 0
+  },
+  "synthetic_catalog_source": "V14.7 FIXTURES QA only, Shop A/B/C",
+  "v148_identity_context": "HMAC signed fixture offline, not real provider signer",
+  "v1503_core": "CANDIDATE_SOURCE_ONLY_NOT_BACKEND_DEPLOYED",
+  "v1504_skills": "CANDIDATE_SOURCE_ONLY_NOT_REAL_TOOL_BACKEND",
+  "v1505_router": "NO_PAID_INFERENCE_OR_LIVE_FALLBACK",
+  "corpus_private_local": {
+    "single_unique": 96,
+    "multi_cases": 36,
+    "multi_total_turns": 71,
+    "copy_duplicate_ignored": true,
+    "quality_scores_measured": false
+  },
+  "blocked_gates": [
+    "Zalo G2.3 real Owner consent",
+    "V14.8 hosted trusted tenant/provider identity",
+    "Store-specific real Orders and products",
+    "Actual multi-model API access and hard budget approval",
+    "Model quality and p95 latency",
+    "Real merchant credential and subscription authorization"
+  ],
+  "current_n8n_trials_policy": "Review on 2026-11-22; no upgrade or payment now",
+  "rollback": "Disable only new Cloudflare static QA Worker subdomain and revert Draft PR #123; preserve parent branches/Published services."
+}
