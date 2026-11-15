@@ -32,6 +32,7 @@ const sizes=[360,390,430,768,1280];
    const host=page.frameLocator('#host');
    await host.locator('[data-tien404-qa-widget]').waitFor({state:'attached',timeout:15000});
    const inner=host.frameLocator('[data-tien404-qa-widget]');
+   console.log('V143_FRAME_VISIBILITY',JSON.stringify(await inner.locator('#bubble').evaluate(el=>({hidden:el.hidden,display:getComputedStyle(el).display,visibility:getComputedStyle(el).visibility,rect:{w:el.getBoundingClientRect().width,h:el.getBoundingClientRect().height},viewport:{w:innerWidth,h:innerHeight}}))));
    await inner.locator('#bubble').click();
    assert.equal(await inner.locator('#panel').isVisible(),true);
    await inner.getByRole('button',{name:'Xem sản phẩm'}).click();
