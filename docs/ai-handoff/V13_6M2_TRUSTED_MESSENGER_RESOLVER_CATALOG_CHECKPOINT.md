@@ -59,7 +59,12 @@ NO_SEND / no order mutation / no Messenger Profile menu publish
 
 ## 4. QA proof and blockers
 
-**Pending at creation:** Wait for GitHub Actions and record exact HEAD/CI run after green. Earlier V13.6M.1 94/94 and 5/5×4 PASS do not prove these new port changes.
+**TESTED source commit `b75d9d91e23755ec46866dbc682936edbcf44ddc`:**
+- [V13.6M.2 restricted repository & Chromium run 43710223892](https://github.com/ngoctien20/demo-git/actions/runs/43710223892): **142/142 Node tests PASS, 0 FAIL** (53 original Rich UI, 41 V13.6M.1, 48 new SQL/Store resolver tests); static no-network/no token/blocked SQL proof PASS; **5/5 viewport × 4 modules** Chromium preview PASS, zero sends/mutations/external requests. Both jobs SUCCESS.
+- [V13.6M.2 high-level interface contract run 43710223860](https://github.com/ngoctien20/demo-git/actions/runs/43710223860): **116/116 Node tests PASS** (53+41+22 independent resolver tests), no network, no sends, default-deny PASS. Job SUCCESS.
+- [Inherited V13.6M.1 run 43710223865](https://github.com/ngoctien20/demo-git/actions/runs/43710223865): both source and Chromium regression jobs SUCCESS.
+- Important: `trusted-resolver.cjs` (abstract repository API, 22 tests) and `trusted-repository.cjs` (parameterized SQL server-port contract, 48 tests) are **two complementary source-only layers**, not yet composed with a real database connection or Page binding. Do not describe either as a production resolver. This remains **EXPERIMENTAL**, not RELEASED.
+- These tests use fictional tenant/store/product and HMAC fixtures. They do not prove hosted Shop A/B store RLS, Meta message delivery or active owner-approved Page mapping.
 **Hosted:** BLOCKED. No `public.stores`, store memberships, product store_id or Page binding registry; no approved backup restore evidence. The code must not be wired to Messenger Published, n8n credential, Supabase HTTP endpoint, Render, Cloudflare or a customer.
 
 **Explicit additional approvals required before live staging read:**
