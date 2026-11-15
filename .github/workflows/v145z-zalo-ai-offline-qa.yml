@@ -54,6 +54,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/g21-provider-attestor-route.test.mjs
       - name: G2.2 signed real-Bot Shop B QA candidate resolver security tests
         run: node --test qa/zalo-live-v145z/g22-trusted-bot-resolver.test.mjs
+      - name: G2.3 independent Owner and merchant consent evidence negative QA
+        run: node --test qa/zalo-live-v145z/g23-independent-owner-consent-gate.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
