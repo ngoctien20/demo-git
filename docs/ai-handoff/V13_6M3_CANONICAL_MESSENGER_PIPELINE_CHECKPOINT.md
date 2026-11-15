@@ -32,7 +32,8 @@ Meta raw body + signature
 All source status strings are contracts tested against fictional fixtures; they **do not** prove a real authenticated server, actual Supabase RLS, Meta Page ownership or Meta send.
 
 ## 4. QA
-- Pending CI at time of initial artifact creation. On successful run, record exact run ID/commit and Node PASS count before claiming TESTED.
+- **TESTED:** [GitHub Actions 43710956069](https://github.com/ngoctien20/demo-git/actions/runs/43710956069) **SUCCESS** on source HEAD `37cae96c87482c3b278d9a3bdf1c3391badbf499`: **189/189 Node tests PASS, 0 FAIL, 0 SKIP**, plus static HMAC-first/no-network/no-credentials/no-send assertions PASS. 53 inherited adapter, 41 V13.6M.1 integration, 48 restricted store repository, 22 previous resolver, 25 canonical pipeline cases.
+- **VERIFIED:** static safety workflow run had 1/1 job SUCCESS; no real Messenger or Supabase API calls in this CI.
 - No real Messenger events, no n8n executions, no actual database Catalog SELECT, no real shop JWT, no sends, no real order changes.
 - Static no-network/no-secret tests must remain clean.
 
@@ -47,3 +48,8 @@ All source status strings are contracts tested against fictional fixtures; they 
 
 ## 6. Next allowed work
 Run offline QA and review; if passed, prepare reviewed plan for V14.2 Store/RLS release gates with explicit owner decisions. Do not bypass V14.2 or turn on Messenger send.
+
+## 7. Owner-facing verdict
+- Status: **SOURCE IMPLEMENTED / OFFLINE TESTED / HOSTED BLOCKED / NOT RELEASED**.
+- Primary remaining blocker: V14.2 Store RLS/backup and private Page binding registry. Not a reason to alter n8n Published or data without explicit approval.
+- Source-only rollback: close Draft PR #90, baseline PR #89 HEAD `917754e2b54707aae80913bfb3817cad26db6626`. No external state mutated.
