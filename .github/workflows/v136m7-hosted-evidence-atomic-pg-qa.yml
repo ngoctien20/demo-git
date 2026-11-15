@@ -1,0 +1,110 @@
+name: TIEN404 V13.6M.7 Evidence & Ephemeral PG17 Atomic Replay QA
+on:
+  push:
+    branches:
+      - work/v136m7-hosted-evidence-atomic-pg-review-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - "qa/messenger-rich-v136m6/**"
+      - "qa/messenger-rich-v136m7/**"
+      - "docs/ai-handoff/V13_6M7_*"
+      - ".github/workflows/v136m7-hosted-evidence-atomic-pg-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - "qa/messenger-rich-v136m6/**"
+      - "qa/messenger-rich-v136m7/**"
+      - "docs/ai-handoff/V13_6M7_*"
+      - ".github/workflows/v136m7-hosted-evidence-atomic-pg-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    name: Nine Node suites — source + migration evidence gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and inherited source security regressions
+        run: |
+          node --check qa/messenger-rich-v136m7/hosted-evidence-pack.cjs
+          node --check qa/messenger-rich-v136m7/hosted-evidence-pack.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m6/security-rotation-retention.test.cjs qa/messenger-rich-v136m7/hosted-evidence-pack.test.cjs
+  ephemeral-postgres:
+    name: Disposable PostgreSQL 17 — 32-session unique/rollback/RLS review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: tien404_ephemeral_ci_only_not_real
+          POSTGRES_DB: tien404_replay_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_replay_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: tien404_ephemeral_ci_only_not_real
+      PGDATABASE: tien404_replay_ci
+      TIEN404_M7_EPHEMERAL_ONLY: "TRUE"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm disposable database and create test-only schema
+        run: |
+          test "$(psql -X -qAt -v ON_ERROR_STOP=1 -c 'select current_database()')" = "tien404_replay_ci"
+          psql -X -qAt -v ON_ERROR_STOP=1 -f qa/messenger-rich-v136m7/EPHEMERAL_CI_POSTGRES_ONLY.sql
+      - name: Atomic replay unique, role and transaction scenarios
+        run: bash qa/messenger-rich-v136m7/ci-ephemeral-postgres-atomic.sh
+  static-review:
+    name: BLOCK unsafe hosted migration and message sends
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static mandatory gates and isolated SQL guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/messenger-rich-v136m7/hosted-evidence-pack.cjs').read_text()
+          sql=Path('qa/messenger-rich-v136m7/PROPOSAL_ONLY_ATOMIC_REPLAY_MIGRATION_DO_NOT_RUN.sql').read_text()
+          fixture=Path('qa/messenger-rich-v136m7/EPHEMERAL_CI_POSTGRES_ONLY.sql').read_text()
+          script=Path('qa/messenger-rich-v136m7/ci-ephemeral-postgres-atomic.sh').read_text()
+          assert 'migrationAuthorized:false' in src
+          assert 'hostedReplayReady:false' in src
+          assert 'canModifyCredentials:false' in src
+          for bad in ('fetch(', 'axios(', 'process.env', 'PAGE_ACCESS_TOKEN',
+                      'service_role', 'graph.facebook.com', 'INSERT INTO ', 'DELETE FROM '):
+              assert bad not in src, bad
+          assert "RAISE EXCEPTION 'TIEN404_V13_6M7_OWNER_APPROVAL_AND_RESTORE_REQUIRED'" in sql
+          active=[line.strip().upper() for line in sql.splitlines()
+                  if line.strip() and not line.lstrip().startswith('--')]
+          assert not any(line.startswith(('CREATE ','ALTER ','INSERT ','DELETE ','DROP ','GRANT ',
+                                          'REVOKE ','UPDATE ')) for line in active)
+          assert fixture.index("current_database() <> 'tien404_replay_ci'") < fixture.index('CREATE SCHEMA')
+          assert 'FORCE ROW LEVEL SECURITY' in fixture
+          assert 'TIEN404_M7_EPHEMERAL_ONLY' in script
+          assert '32 independent PG sessions' in script
+          assert 'production' not in script.lower() or 'not' in script.lower()
+          print('PASS evidence gate, guarded proposal, CI-only SQL and no-send source')
+          PY
