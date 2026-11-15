@@ -97,3 +97,17 @@ The source code for the Render LIVE deployed FastAPI commit `ab940a95dae8afdff42
 - `RESTORABLE_BACKUP=NOT_VERIFIED`; `RESTORE_DRILL=NOT_VERIFIED`; `STORE_RLS_MIGRATION=BLOCKED`.
 
 Next action: operator may separately authorize a staging-only PostgreSQL password rotation after reviewing any out-of-band integrations and a reconnection/rollback plan. Never expose the password in chat, screenshots, or GitHub; owner must manage secrets privately. Rotation does not itself satisfy the backup/restore gate.
+
+
+## Owner approval — staging PostgreSQL password reset
+
+Owner reply: "được phê duyệt" in immediate context of a separate approval request for resetting the `postgres` database role password of Supabase `tien404-staging`.
+
+- **APPROVED:** Password rotation for `postgres` on staging project `ifxlvrhyjhbzbrkdsida` ONLY.
+- **NOT APPROVED:** Resetting Supabase Auth user passwords, Render/n8n credentials, Supabase API keys, RLS changes, migrations, customer data edits, sending real messages, costs, or production configuration.
+- **IMPLEMENTATION BLOCKED BY TOOLING:** Available Supabase connector has no dedicated reset-password operation; connected Browser in Chat supports only read operations. Do not use generic `execute_sql` to set a secret: could leak into tool logs and cannot securely deliver the new password to the owner.
+- **SAFE OWNER ACTION:** Navigate to Supabase Dashboard → tien404-staging → Database → Settings → Reset Database Password. Generate/store new password in private password manager, do not paste into ChatGPT, GitHub, workflow logs or screenshots. No password value stored in this checkpoint.
+- **Official docs (2026-11-15):** https://supabase.com/docs/guides/database/postgres/roles — Supabase-managed PostgREST, PgBouncer and internal services automatically update to latest password; external direct username/password connections need manual update.
+- **POST-RESET QA (PENDING):** Verify project ACTIVE_HEALTHY, Supabase Auth and REST API, Render Auth/data staging status, n8n ingress metadata, and owner-run CLI database backup via Session Pooler; monitor any credential failures. Never invent test evidence.
+- **ROLLBACK:** Old password is unknown so cannot restore it; if needed rotate to another privately known strong password and repair external clients after separately identifying affected integrations. Full database restore is NOT a password rollback.
+- **STATUS:** APPROVED_NOT_EXECUTED. Need user to perform reset in Supabase UI and confirm **without sharing the password** before claiming rotation complete. DB backup and V14.2 Store/RLS migration remain BLOCKED pending restore-test gates.
