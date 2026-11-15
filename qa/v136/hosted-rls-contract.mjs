@@ -6,7 +6,7 @@ const fail=code=>{const e=new Error(code);e.code=code;throw e;};
 export function checkConfig({origin,tenantA,tenantB,stateA,stateB}={}){
  if(origin!==RENDER_AUTH_ORIGIN)fail('WRONG_HOST');
  if(!UUID_RE.test(tenantA||'')||!UUID_RE.test(tenantB||'')||tenantA===tenantB)fail('TENANT_IDS_INVALID');
- if(typeof stateA!=='string'||typeof stateB!=='string'||!stateA.startsWith('/')||!stateB.startsWith('/')||
+ if(typeof stateA!=='string'||typeof stateB!=='string'||!stateA.trim()||!stateB.trim()||
     stateA===stateB)fail('ISOLATED_STATE_FILES_REQUIRED');
  return Object.freeze({origin,tenantA,tenantB});
 }
