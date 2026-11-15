@@ -34,6 +34,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/live03-identity-budget-gate.test.cjs
       - name: LIVE03B exact n8n price row and fail-closed monetary QA
         run: node --test qa/zalo-live-v145z/live03b-price-reconciliation.test.cjs
+      - name: LIVE03C signed budget HTTP Worker contract QA
+        run: node --test qa/zalo-live-v145z/live03c-budget-worker.test.mjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
