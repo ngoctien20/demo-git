@@ -1,0 +1,100 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; frame-src 'self'; connect-src 'none'; img-src 'self' data:; form-action 'none'; base-uri 'none'"/>
+<meta name="robots" content="noindex,nofollow"/><title>TIEN404 V14.3 · Tùy chỉnh kênh AI · STAGING</title>
+<style>:root{font:15px/1.48 system-ui,-apple-system,'Segoe UI',sans-serif;color:#eaf2fa;background:#0b1320}
+*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:0 auto;padding:20px}
+h1{font-size:clamp(22px,3vw,32px);margin:5px 0}h2{font-size:17px;margin:0 0 10px}
+small,p{color:#adbfd4}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;color:#58c6b2}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.badge{border:1px solid #6b877e;color:#b8f4de;border-radius:999px;padding:7px 10px;font-size:12px}
+.notice{background:#243548;border:1px solid #486078;border-radius:13px;padding:12px;margin:16px 0}
+.columns{display:grid;grid-template-columns:310px minmax(0,1fr);gap:15px}
+.panel{background:#142337;border:1px solid #304560;border-radius:17px;padding:17px}
+label{display:block;color:#b3cce0;font-size:13px;margin:10px 0 5px}
+select{color:#efffff;background:#0b182a;border:1px solid #526e86;border-radius:9px;padding:11px;width:100%;font:inherit}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}
+.tabs button{padding:10px 13px;background:#182c42;color:#d5ecf9;border:1px solid #35536e;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected=true]{background:#266d65;border-color:#5de8c8}
+button:focus-visible,select:focus-visible{outline:2px solid #ffcf77}
+.section[hidden]{display:none}
+.car{display:flex;gap:10px;overflow:auto;padding:8px 0 12px;scroll-snap-type:x mandatory}
+.card{flex:0 0 min(210px,70vw);background:#213652;border:1px solid #49647b;border-radius:14px;overflow:hidden;scroll-snap-align:start}
+.art{height:110px;background:linear-gradient(135deg,#33526d,#737dbe);display:grid;place-items:center;font-size:35px}
+.details{padding:12px;font-size:13px}.details strong{display:block;margin-bottom:6px}
+.details small{color:#b7cde5}
+.buttons{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.buttons button{background:#32465e;border:1px solid #5c7893;color:#f4fbff;border-radius:8px;padding:9px;font:inherit;font-size:12px;cursor:pointer}
+#actionlog{background:#101e2b;border-radius:10px;padding:13px;min-height:46px}
+iframe{display:block;width:100%;height:560px;border:1px solid #49647b;border-radius:13px;background:white}
+.info{border-top:1px solid #3d566d;margin-top:18px;padding-top:15px;font-size:13px}
+footer{margin-top:18px;color:#94a6c3;font-size:12px}
+@media(max-width:810px){.columns{grid-template-columns:1fr}main{padding:12px}.panel{padding:12px}}
+</style></head><body><main>
+<div class="top"><div><div class="eyebrow">TIEN404 / STAFF CHANNEL DESIGNER</div><h1>Tùy chỉnh kênh AI</h1><p>Mẫu Messenger và AI Chat Widget sử dụng chung một định hướng Sales Core.</p></div>
+<span class="badge">V14.3 · QA OFFLINE · NO SEND</span></div>
+<div class="notice"><strong>Chỉ dành cho kiểm thử nội bộ.</strong> Chưa có Staff Authentication, Supabase Store RLS, kết nối Messenger Page hay Website Widget Gateway thật. Không nhập dữ liệu khách hàng hoặc bí mật vào trang này.</div>
+<div class="columns"><aside class="panel">
+<h2>Chọn cửa hàng thử nghiệm</h2>
+<label for="shop">Cửa hàng QA</label>
+<select id="shop"><option value="qa_shop_a">Shop A · Tạp hóa</option><option value="qa_shop_b" selected>Shop B · Thời trang</option><option value="qa_shop_c">Shop C · Vật liệu</option></select>
+<div class="info"><strong id="shopname">Thời trang Bình</strong><p>Knowledge: fixture; Catalogue: fixture. Không có giá hoặc tồn kho thật.</p></div>
+<div class="info"><strong>Trạng thái phát hành</strong><p>EXPERIMENTAL · Chỉ xem trước, không tạo tin và không lưu cấu hình.</p></div>
+<div class="info"><strong>Bảo mật</strong><p>Page→Store và Widget→Store phải xác minh phía server. Public Widget ID không cấp quyền đọc đơn hàng.</p></div>
+</aside><div class="panel">
+<div class="tabs" role="tablist" aria-label="Kênh cần xem trước">
+<button id="tabMessenger" type="button" role="tab" aria-selected="true" aria-controls="messenger" data-panel="messenger">Messenger Rich UI</button>
+<button id="tabWebsite" type="button" role="tab" aria-selected="false" aria-controls="website" data-panel="website">Website AI Widget</button>
+<button id="tabSafety" type="button" role="tab" aria-selected="false" aria-controls="safety" data-panel="safety">Bảo mật &amp; QA</button></div>
+<section class="section" id="messenger" role="tabpanel"><h2>Mẫu thẻ sản phẩm và nút chọn</h2><p>Minh họa, không phải giao diện native được gửi đến Meta.</p>
+<div class="car" id="carousel" aria-label="Danh sách sản phẩm giả lập"></div>
+<div class="buttons"><button type="button" data-action="product">Xem sản phẩm</button><button type="button" data-action="size">Chọn biến thể</button><button type="button" data-action="staff">Gặp nhân viên</button><button type="button" data-action="menu">Menu cửa hàng</button></div>
+<div id="actionlog" role="status" aria-live="polite">Chưa chọn hành động.</div>
+<p><small>Rich UI thật phải dùng payload hợp lệ từ adapter V13.6M, chữ ký Postback, Page Store binding và policy gửi tin.</small></p>
+</section>
+<section class="section" id="website" role="tabpanel" hidden><h2>Chatbot nhúng trong website có sẵn</h2>
+<p>Bên dưới là website QA giả lập, không phải dịch vụ thiết kế website. Mở nút “Tư vấn AI” để thử giao diện Widget riêng từng shop.</p>
+<iframe id="host" title="Trang web giả lập có AI Chat Widget" src="./widget/host.html?shop=qa_shop_b" loading="lazy"></iframe>
+</section>
+<section class="section" id="safety" role="tabpanel" hidden><h2>Cổng kiểm tra bắt buộc</h2>
+<p>BLOCKED: Store RLS hosted, Meta permissions/App Review, Widget Domain Verification, Session Rate Limit, Durable Replay/Outbox, Subscription và Staff Authorization.</p>
+<p>Không gửi Messenger/Zalo, không ghi Orders, không xuất bản Widget, không nâng các bản QA thành Core Bot.</p></section>
+</div></div>
+<footer>TIEN404 AI · STAGING · EXPERIMENTAL → CANDIDATE · mọi sản phẩm, thương hiệu và tài khoản trên trang là fixture QA.</footer>
+</main><script>
+'use strict';
+const shops={
+ qa_shop_a:{name:'Tạp hóa An',emoji:'🍚',products:['Gạo đóng gói','Gia vị','Dầu ăn'],sku:'QA-A'},
+ qa_shop_b:{name:'Thời trang Bình',emoji:'👕',products:['Áo thun đen','Áo sơ mi','Quần jean'],sku:'QA-B'},
+ qa_shop_c:{name:'Vật liệu Cường',emoji:'🧱',products:['Gạch xây dựng','Xi măng','Sơn tường'],sku:'QA-C'}
+};
+const $=id=>document.getElementById(id);
+const list=Object.keys(shops);
+function render(){
+ const id=$('shop').value;
+ if(!list.includes(id))return;
+ const s=shops[id];$('shopname').textContent=s.name;
+ const carousel=$('carousel');carousel.replaceChildren();
+ s.products.forEach((name,i)=>{
+  const card=document.createElement('div');card.className='card';
+  const art=document.createElement('div');art.className='art';art.textContent=s.emoji;
+  const details=document.createElement('div');details.className='details';
+  const strong=document.createElement('strong');strong.textContent=name;
+  const subtitle=document.createElement('small');subtitle.textContent='Mã '+s.sku+(i+1)+' · Giá chưa xác minh';
+  details.append(strong,subtitle);card.append(art,details);carousel.append(card);
+ });
+ $('host').src='./widget/host.html?shop='+encodeURIComponent(id);
+ $('actionlog').textContent='Đang xem '+s.name+'. Không thực hiện thay đổi.';
+}
+$('shop').addEventListener('change',render);
+document.querySelectorAll('[role=tab]').forEach(tab=>tab.addEventListener('click',()=>{
+ for(const t of document.querySelectorAll('[role=tab]')){
+ const active=t===tab;t.setAttribute('aria-selected',String(active));
+ $(t.dataset.panel).hidden=!active;
+ }
+}));
+document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>{
+ $('actionlog').textContent='QA PREVIEW: '+button.textContent+
+ '. Nút này không gọi Meta hoặc thay đổi đơn hàng.';
+}));
+render();
+</script></body></html>
