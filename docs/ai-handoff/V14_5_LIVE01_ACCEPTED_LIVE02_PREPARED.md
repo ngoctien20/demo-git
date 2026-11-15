@@ -90,3 +90,41 @@ The owner has APPROVED LIVE01 and confirmed receipt. The request is to PREPARE L
 **Rollback/checkpoint:** This Markdown update is documentation-only on PR #113. Original Published workflow and data unchanged by assistant. Revert the checkpoint file or close Draft PR to undo documentation; no runtime rollback required.
 
 **Next:** Ask user to send only LIVE02-A first; inspect new execution and confirm Messenger receipt before LIVE02-B. Keep Level 3 limited to Messenger tester text consultation/quote; Level 4 Commerce Release remains BLOCKED by actual Restore, Store RLS/JWT, four-row owner evidence, policy and separate approval.
+
+
+## 6. LIVE02 FINAL ACCEPTANCE — 16 Nov 2026 JST (supersedes PREPARED status above)
+
+Both LIVE02-A and LIVE02-B were actually received by the owner's Messenger tester and expressly accepted. **LIVE02-A/B = ACCEPTED / REAL MESSENGER CONSULTATION & QUOTATION QA**, not Commerce multi-Store acceptance.
+
+| Verification | LIVE02-A | LIVE02-B |
+|---|---|---|
+| n8n execution | #3867 | #3868 |
+| Start UTC | 2026-11-15T19:27:25.424Z | 2026-11-15T19:28:01.876Z |
+| Start JST | 2026-11-16 04:27:25 | 2026-11-16 04:28:01 |
+| Webhook signature timing-safe + Meta signature | true + true | true + true |
+| Page | 2379295362359912 | 2379295362359912 |
+| Incoming text | EXACT LIVE02-A | EXACT LIVE02-B |
+| Read-only Products tool | 1 successful run | 1 successful run |
+| Actual tool's Products record | A002 name/159000/25 | A002 name/159000/25 |
+| AI Agent completed with nonempty answer | yes (429 chars) | yes (92 chars) |
+| Price/stock wording | matches Products | matches Products |
+| Meta Send provider message ID | present | present |
+| Verify Send Result matches same ID | yes | yes |
+| Record Successful Messenger MID | yes | yes |
+| create_order, manage_order, update_order_address | 0 calls | 0 calls |
+| Tester confirms received response | yes | yes |
+| Verdict | ACCEPTED | ACCEPTED |
+
+In LIVE02-A, Agent suggested A004 (polo navy size M 289000) and A010 (denim jacket size M 549000); these matched the same read-only Products tool. This is legacy DEMO pricing only. Actual Commerce Store stock remains unverified.
+
+Both tests ran through existing Published Messenger unchanged. Automated execution history, memory and MID ledger may be written normally; no direct assistant DML. No order-writing tool executed in these two runs, but external Sheet mutation auditing is not claimed.
+
+## 7. LIVE03 HAZARD — DO NOT SEND AN ORDER CONFIRMATION TO PUBLISHED BOT
+
+Read-only inspection of Create Order Tool KrSn4DNR9ALX5ng4 confirmed the **Published** graph includes Read Products, Read Orders, Validate Order, Should Create?, and **Append Order** with Google Sheets operation append. Published version 4740251a-cd01-4f7f-b8e1-e300a8393151 differs from Draft af9ee686-2a9f-483e-9622-6e449500ac5e.
+
+Therefore, a real Messenger message requesting products plus confirmation **might invoke the legacy order writer and append an Orders row**. 'For QA only' in the prompt is NOT a trusted no-write guarantee.
+
+**LIVE03 shall use an independent INACTIVE manual Order Request Dry-Run QA workflow with zero credentials, DB/Google Sheets/Meta/HTTP nodes and synthetic in-memory fixtures.** The real Messenger order pilot remains BLOCKED until an independently verified no-write gate or separately authorized isolated Order Request backend, actual scoped tenant/store security and explicit owner approval.
+
+Test scenarios: QUOTE_ONLY; PREPARE; CONFIRM_MOCK; REPLAY; WRONG_TOTAL; NO_STOCK; CROSS_STORE; CANCEL. All synthetic, no real name, phone or address. The historical A002 159000 and stock=25 remain QA reference sentinels only, not verified real Commerce data.
