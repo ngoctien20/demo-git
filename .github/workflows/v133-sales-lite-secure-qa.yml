@@ -1,0 +1,38 @@
+name: TIEN404 SALES LITE V1.3 secure integration no-send QA
+on:
+  push:
+    branches:
+      - work/v133-sales-lite-secure-integration-staging
+    paths:
+      - "qa/sales-lite/v131/**"
+      - "qa/sales-lite/v132/**"
+      - "qa/sales-lite/v133/**"
+      - ".github/workflows/v133-sales-lite-secure-qa.yml"
+  pull_request:
+    paths:
+      - "qa/sales-lite/v133/**"
+      - ".github/workflows/v133-sales-lite-secure-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v133-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax checks
+        run: |
+          node --check qa/sales-lite/v133/merchant-readonly.cjs
+          node --check qa/sales-lite/v133/menu-drafts.cjs
+          node --check qa/sales-lite/v133/menu-core-bridge.cjs
+          node --check qa/sales-lite/v133/rich-text.cjs
+      - name: V13.3 contracts + negative tests
+        run: node --test qa/sales-lite/v133/*.test.cjs
+      - name: V13.2 UI source regression
+        run: node --test qa/sales-lite/v132/v132-ui.test.cjs
+      - name: V13.1 menu and business regression
+        run: node --test qa/sales-lite/v131/*.test.cjs
