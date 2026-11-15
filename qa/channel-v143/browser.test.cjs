@@ -44,6 +44,7 @@ const sizes=[360,390,430,768,1280];
    await inner.locator('#close').click();
    assert.equal(await inner.locator('#panel').isVisible(),false);
    await page.locator('#shop').selectOption('qa_shop_c');
+   await page.waitForFunction(()=>document.getElementById('host')?.contentWindow?.location?.search==='?shop=qa_shop_c');
    await host.locator('[data-tien404-qa-widget]').waitFor({state:'attached',timeout:15000});
    const after=page.frameLocator('#host').frameLocator('[data-tien404-qa-widget]');
    await after.locator('#bubble').click({force:true,timeout:5000});
