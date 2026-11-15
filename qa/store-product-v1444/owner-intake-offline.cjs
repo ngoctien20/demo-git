@@ -52,6 +52,12 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
   if(evidence.issues.length)reject('INTAKE_EVIDENCE_LINT_FAILED');
   const tenants=[...new Set(rows.map(r=>r.tenantId))];
   for(const t of tenants)await right(operator,t,'QA_INTAKE_OPERATOR');
+  // Review a complete pack with ONE independently named QA reviewer.
+  const reviewerIds=new Set(rows.map(r=>r.reviewerActorId));
+  if(reviewerIds.size!==1)reject('INTAKE_INDEPENDENT_REVIEWER_MISMATCH');
+  // Expired sessions must not permanently occupy the bounded QA fixture.
+  for(const [sid,entry] of sessions)
+   if(entry.expiresAt<=now())sessions.delete(sid);
   if(sessions.size>=maxSessions)reject('INTAKE_SESSION_CAP_REACHED');
   const id=randomUUID();
   const merchants=new Map(),merchantTenants=new Map();
@@ -65,7 +71,8 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
       storeId:r.candidateStoreId});
   }
   if(merchants.size!==2)reject('INTAKE_REQUIRES_TWO_INDEPENDENT_TENANT_MERCHANTS');
-  const snapshot={id,createdBy:operator.id,expiresAt:now()+ttlMs,tenants,
+  const snapshot={id,createdBy:operator.id,
+   expectedReviewerId:[...reviewerIds][0],expiresAt:now()+ttlMs,tenants,
    merchants,merchantsConfirmed:new Set(),reviewerActed:false,
    status:'AWAITING_MERCHANT_CONFIRMATIONS'};
   sessions.set(id,snapshot);
@@ -93,6 +100,7 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
    reject('INTAKE_WRONG_STEP');
   if(s.createdBy===actor.id||[...s.merchants.values()].some(m=>m.merchantActorId===actor.id))
    reject('INTAKE_SELF_REVIEW_DENIED');
+  if(s.expectedReviewerId!==actor.id)reject('INTAKE_INDEPENDENT_REVIEWER_MISMATCH');
   for(const t of s.tenants)await right(actor,t,'QA_INDEPENDENT_REVIEWER');
   if(!['ACCEPT_FOR_ADDITIONAL_HOSTED_VERIFICATION','REJECT_INSUFFICIENT_EVIDENCE']
        .includes(decision))reject('INTAKE_DECISION_INVALID');
