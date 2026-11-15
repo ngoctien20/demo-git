@@ -1,0 +1,52 @@
+name: TIEN404 V14.6-01 Messenger L2 No-Send Closure Gate
+on:
+  pull_request:
+    paths:
+      - 'qa/v14601/**'
+      - 'docs/ai-handoff/V14_6_01_*'
+      - '.github/workflows/v14601-messenger-l2-nosend-qa.yml'
+  push:
+    branches:
+      - work/v14601-checkpoint-l2-nosend-gate-20261116
+    paths:
+      - 'qa/v14601/**'
+      - 'docs/ai-handoff/V14_6_01_*'
+      - '.github/workflows/v14601-messenger-l2-nosend-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only-bridge:
+    name: 16 synthetic composition tests and no-send invariants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and local composition tests
+        run: |
+          node --check qa/v14601/level2-offline-bridge.cjs
+          node --check qa/v14601/level2-offline-bridge.test.cjs
+          node --test qa/v14601/level2-offline-bridge.test.cjs
+      - name: Recheck inherited four-flow and channel source
+        run: |
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+      - name: Static NO NETWORK, NO CREDENTIAL, NO HOSTED WRITE guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('qa/v14601/level2-offline-bridge.cjs').read_text()
+          assert 'SYNTHETIC_COMPOSITION_ONLY' in f
+          assert 'canClaimLevel2: false' in f
+          assert 'canMergeOrPublish: false' in f
+          assert 'providerSends: 0, hostedWrites: 0' in f
+          assert 'createMessengerQaLab' in f and 'build({binding, intent})' in f
+          for token in ('fetch(', 'axios(', 'process.env', 'https.request(',
+                        'graph.facebook.com', 'service_role', 'postgres://',
+                        'child_process', 'eval(', 'new Function('):
+            assert token not in f, token
+          print('PASS: source-only, unprivileged composition; no provider, DB, model or external calls')
+          PY
