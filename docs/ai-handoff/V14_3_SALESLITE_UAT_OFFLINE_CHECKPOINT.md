@@ -49,3 +49,19 @@ Obtain owner feedback from the working pilot: which flow is incorrect, what owne
 - **TESTED:** local Chromium 144 in 5 widths; GitHub Actions #43718756040 SUCCESS.
 - **BLOCKED:** hosted Shop RLS/real JWT, actual AI inference, real Page binding + Messenger send, Supabase real orders/stock, durable replay. Requires owner approvals.
 - **Rollback:** close Draft PR #96; parent PR #94 unchanged. The local HTML is a standalone user artifact and cannot cause DB mutation.
+
+## Owner acceptance — 2026-11-15 JST (user-confirmed)
+
+**OWNER ACCEPTED / UAT OFFLINE UI FLOW**. The owner explicitly accepted this Sales Lite pilot after using its locally opened HTML in the Cốc Cốc browser, as shown by an owner-provided screenshot in the conversation. Screenshot review supports the following observed facts only:
+
+- Selected synthetic Shop A, **Tạp hóa An**, in **Chủ shop** mode.
+- Order **QA-A-001** visible with SKU **QA-A01 × 1** and displayed total **125.000 ₫**.
+- Order badge shows **Đã hoàn tất (QA)**; waiting-order count shows **0**.
+- Mock revenue from completed QA orders shows **125.000 ₫**.
+- The UI identifies itself as simulated, no API, with fictional products/orders.
+
+**Acceptance boundary:** This is owner's acceptance of the **local/offline three-shop Sales Lite UX and mock order-management flow** only. The user screenshot does NOT independently prove hosted multi-tenant RLS, Page ownership, Messenger/Zalo sending, AI inference, real price/stock, authenticated staff, durable orders, or recovery. Automated Shop A/B isolation and 5 viewport checks were previously verified separately by GitHub Actions #43718756040. Do not mark those as human-observed from the screenshot. The screenshot contains browser/account context and is intentionally **not uploaded** to a public GitHub repository.
+
+**Release state:** UAT_OFFLINE_OWNER_ACCEPTED; DRAFT_NOT_MERGED; HOSTED_P0_BLOCKED; REAL_PROVIDER_SEND_NOT_APPROVED. No changes to n8n Published, Supabase, credentials, payments or customer records. No promotion to production/Core Bot.
+
+**Next safe engineering gate:** prioritize V14.2 backup/restore evidence + Store ownership/RLS before a hosted, single-shop, no-send candidate, followed by separate explicit bounded Meta/Zalo pilot approval. Close PR #96 to roll back the additive source-only UAT pilot.
