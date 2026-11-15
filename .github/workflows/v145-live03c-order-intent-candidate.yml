@@ -1,0 +1,67 @@
+name: TIEN404 V14.5 LIVE03C Signed Order Intent Candidate QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v145-live03c-order-intent-candidate-offline-20261116
+    paths:
+      - 'qa/messenger-live03c/**'
+      - 'docs/ai-handoff/V14_5_LIVE03C_*'
+      - '.github/workflows/v145-live03c-order-intent-candidate.yml'
+  pull_request:
+    paths:
+      - 'qa/messenger-live03c/**'
+      - 'docs/ai-handoff/V14_5_LIVE03C_*'
+      - '.github/workflows/v145-live03c-order-intent-candidate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-integration:
+    name: Verify signed fixture conversation through hard no-write tool boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax validation
+        run: |
+          node --check qa/messenger-live03c/order-intent-candidate.cjs
+          node --check qa/messenger-live03c/order-intent-candidate.test.cjs
+      - name: E2E integration signed fixture tests
+        run: node --test qa/messenger-live03c/order-intent-candidate.test.cjs
+      - name: Run exact n8n manual candidate stages regression
+        run: node --test qa/messenger-live03c/n8n-manual-stages.test.cjs
+      - name: Guard absent external I/O and false production claims
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/messenger-live03c/order-intent-candidate.cjs').read_text()
+          for forbidden in ['process.env.', 'graph.facebook.com', 'createClient(',
+                            'axios(', 'fetch(', 'executeWorkflow(',
+                            'KrSn4DNR9ALX5ng4', '.app.n8n.cloud']:
+              assert forbidden not in s, forbidden
+          for required in ['OFFLINE_SIGNED_FIXTURE_CANDIDATE_ONLY',
+                           'providerSendTransport:false','actualMessengerWebhook:false',
+                           'realLlmCalls:false','attachedToPublished:false',
+                           'approvalToWireRealPage:false','providerSends:0']:
+              assert required in s,required
+          print('PASS: fixture-only candidate with hard no-transport contract')
+          PY
+  inherited-safety:
+    name: Repeat LIVE03B signed tool-gate and previous offline tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prior no-write safety + HMAC regression
+        run: |
+          node --test qa/messenger-live03b/write-denial-gateway.test.cjs
+          node --test qa/messenger-live03b/live03b-n8n-manual-lab.test.cjs
+          node --test qa/messenger-live03/live03-dryrun-source.test.cjs
+          node --test qa/messenger-live-gate-v145/trusted-webhook-qa.test.cjs
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
