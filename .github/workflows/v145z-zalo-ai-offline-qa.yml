@@ -17,9 +17,15 @@ jobs:
         with:
           node-version: '22'
       - name: Syntax check (no provider/model credentials)
-        run: node --check qa/zalo-live-v145z/ai-pilot.cjs && node --check qa/zalo-live-v145z/ai-pilot.test.cjs
+        run: |
+          node --check qa/zalo-live-v145z/ai-pilot.cjs qa/zalo-live-v145z/live01-preflight.cjs
+          node --check qa/zalo-live-v145z/ai-pilot.test.cjs
+          node --check qa/zalo-live-v145z/live01-preflight.cjs
+          node --check qa/zalo-live-v145z/live01-preflight.test.cjs
       - name: Standalone Zalo AI offline negative QA
         run: node --test qa/zalo-live-v145z/ai-pilot.test.cjs
+      - name: V14.5Z LIVE01 approval preflight negative QA
+        run: node --test qa/zalo-live-v145z/live01-preflight.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate module
