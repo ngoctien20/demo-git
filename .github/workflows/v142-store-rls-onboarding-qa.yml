@@ -29,6 +29,8 @@ jobs:
           node --check qa/store-rls-v142/store-boundary.cjs
           node --check qa/shop-onboarding-v142/onboarding-core.cjs
           node --test qa/store-rls-v142/store-boundary.test.cjs
+          node --check qa/store-rls-v142/postgres-repository.cjs
+          node --test qa/store-rls-v142/postgres-repository.test.cjs
           node --test qa/shop-onboarding-v142/onboarding-core.test.cjs
       - name: Regression — V14.1 Shop Knowledge Engine
         run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
@@ -36,3 +38,27 @@ jobs:
         run: |
           node --test qa/multimodal-v14/core.test.cjs
           node --test qa/conversation-v138/conversation-core.test.cjs
+  onboarding-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright in isolated runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Browser QA — 6 viewports, 11-step guided interview, no network
+        run: |
+          python -m http.server 8080 >/tmp/v142-ui.log 2>&1 &
+          sleep 2
+          node qa/shop-onboarding-v142/ui-browser-qa.cjs
+      - name: Upload synthetic-only QA screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v142-onboarding-mobile-synthetic
+          path: qa-artifacts-v142/
+          if-no-files-found: ignore
