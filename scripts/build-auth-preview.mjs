@@ -13,7 +13,7 @@ const allowList=[
   'assets/style.css','assets/auth.css','assets/favicon.svg',
   'assets/app.js','assets/site-config.js',
   'assets/auth-config.js','assets/auth-client.js','assets/auth-login.js',
-  'assets/auth-account.js','assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/owner-pairing.mjs','assets/owner-confirm.mjs','assets/merchant-product.mjs',
+  /* Legacy account controller preserved in Git source for rollback; not served on Auth staging. */'assets/auth-helpers.mjs','assets/merchant-lists.mjs','assets/merchant-revenue-v3.mjs','assets/owner-pairing.mjs','assets/owner-confirm.mjs','assets/merchant-product.mjs',
   'assets/auth-runtime.mjs','assets/auth-bootstrap.js',
   'assets/merchant-account-only.js','assets/merchant-order-readonly.mjs','assets/merchant-portal.js','assets/merchant-portal-policy.mjs','assets/merchant-portal.css','assets/register-staging.js',
   'assets/tester-portal.js','assets/tester-portal.css','assets/tester-admin.js','assets/tester-guides.mjs','assets/tester-report-csv.mjs','assets/tester-request.js','assets/tester-sandbox.mjs','assets/tester-qa-pack.mjs','assets/tester-ai-studio.mjs','assets/tester-qa-writable-sandbox.mjs','assets/tester-messenger-clone-qa.mjs','assets/tester-random-qa-cases.mjs','assets/tester-qa-products-snapshot.mjs'
