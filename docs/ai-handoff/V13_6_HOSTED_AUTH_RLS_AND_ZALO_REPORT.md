@@ -40,6 +40,15 @@ Rollback target: Render Auth pre-release commit `b14501a0ebf04d991302cb32b5d548a
 - Security Advisor: `public.qa_shop_b_zalo_claim` SECURITY DEFINER `anon EXECUTE` still WARN. Do not revoke/change before callsite inventory + separate approval. <https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable>
 - Subscription, Staff assignment, roles and store-level isolation still need independent server-backed authority. No commercial Staff privilege was added.
 
+
+### A5. 2026-11-15 screenshot manual A/B — observed UI only
+
+The project owner supplied four screenshots from Cốc Cốc: a normal browser window on the deployed `/account.html` with **QA Shop A** displayed as active `owner`, read-only data, and one visible **pending order** totalling **123,000 VND**; plus an isolated incognito browser window showing **QA Shop B**, active `owner`, read-only data, and one distinct **pending order** totalling **456,000 VND**. Both screens display one shop-specific order. Screenshots were inspected in the current conversation; **none uploaded to GitHub** to avoid exposing the visible account/email/order identifiers.
+
+**Status:** `MANUAL_UI_VERIFIED` for visible Shop A/B authorized portal state and one distinct order apiece. **NOT** `HOSTED_RLS_PASS`: no cross-tenant API request/response has yet been observed from either real session; no revocation negative, anonymous API or canonical V13.5 customer-route hosted test has been performed. Both screenshots show the existing deployed `/account.html`, not the PR #81 future static redirect.
+
+**Next strictly read-only check:** in each *separate* authenticated browser console, query existing Supabase client for `orders` and `tenant_memberships` using exact staging tenant IDs, with `count:'exact',head:true`. Only print aggregated counts / error status. Expected for Shop A: own orders >0, foreign orders 0, own membership 1, foreign membership 0; Shop B vice versa. An HTTP error must be treated as `BLOCKED` or `FAIL`, never as 0. Do not paste JWT, user IDs, email or complete API responses into tickets/chat. No writes.
+
 ## B. Zalo Bot — actual progress through V13.8
 
 | Version | Verified and tested | Not proven |
