@@ -87,3 +87,20 @@ Next: obtain independent permission for private consistent full recovery
 rehearsal and merchant-attested per-row Store mapping. Do not repeat the
 successful prior local schema-only restore. Do not advance hosted Store RLS
 until the new recovery and four-row Store ownership gates are certified.
+
+
+## 6. Verified GitHub CI / final hosted read-only recheck
+
+- Draft PR: https://github.com/ngoctien20/demo-git/pull/111
+- GitHub Actions run: https://github.com/ngoctien20/demo-git/actions/runs/43744946738
+- Source-only CI job 132906071280: COMPLETED SUCCESS.
+- **72/72 Node tests PASS** (25 new V14.4.8, 36 inherited private evidence V14.4.3,
+  11 inherited V14.4.7 Store QA); 0 failures/skips.
+- CI metadata-only SQL + anonymous snapshot static guard: PASS.
+- Post-CI Supabase read-only recheck: PostgreSQL 17.11, Auth users 3,
+  Products 2, Orders 2; Stores and Store Memberships absent;
+  6 old permissive tenant-wide SELECT policies still present.
+- No SQL migration or data writes were performed on Supabase hosted.
+- **FINAL VERDICT:** V14.4.8 source-only QA VERIFIED/TESTED PASS;
+  actual full backup+Auth restore, owner-to-Store mapping and hosted JWT
+  Store RLS remain BLOCKED. The project is NOT merchant-ready.
