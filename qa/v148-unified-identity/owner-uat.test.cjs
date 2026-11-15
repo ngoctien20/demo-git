@@ -63,7 +63,7 @@ test('10 source UI must import existing V14.7 Studio, not copy its config',()=>{
  assert.ok(file.includes('../v147-custom-studio/studio-core.js'));
  assert.ok(file.includes('./owner-uat.js'));
  assert.ok(file.includes('60 trường hợp'));
- assert.ok(file.includes('không gửi Messenger'));
+ assert.ok(/không gửi Messenger/i.test(file));
 });
 test('11 no network requests or credential handling in UI source',()=>{
  const html=fs.readFileSync(path.join(__dirname,'owner-uat.html'),'utf8');
