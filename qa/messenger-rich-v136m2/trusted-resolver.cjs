@@ -38,7 +38,8 @@ function createTrustedPorts({repository,mode='BLOCKED',now=Date.now}={}){
       const binding=Object.freeze({
         source:'SERVER_VERIFIED_MESSENGER_BINDING',serverDerived:true,verified:true,
         pageId,recipientPsid:senderPsid,tenantId:b.tenant_id,storeId:b.store_id,
-        shopSlug:b.shop_slug,webOrigins:[...b.web_origins],imageOrigins:[...b.image_origins]
+        shopSlug:b.shop_slug,webOrigins:b.web_origins.map(x=>new URL(x).origin),
+        imageOrigins:b.image_origins.map(x=>new URL(x).origin)
       });
       const key=b.tenant_id+'|'+b.store_id;
       const prior=authorized.get(key);
@@ -94,6 +95,6 @@ async function processV136M2({repository,mode='BLOCKED',rawBody,signature,appSec
     actionSecret,siteOrigin,now});
   return {...preview,stage:'MESSENGER_RICH_UI_V136M2',
     previewOnly:true,sendEnabled:false,allowedOrderWrites:false,
-    persistentReplayReady:false,hostedReady:mode==='HOSTED_STORE_RLS_VERIFIED'};
+    persistentReplayReady:false,hostedReady:false};
 }
 module.exports={createTrustedPorts,processV136M2};
