@@ -1,0 +1,74 @@
+name: Sales Lite V1 · isolated acceptance
+on:
+  push:
+    branches: [work/sales-lite-v1-staging]
+    paths:
+      - 'sales-lite/**'
+      - '.github/workflows/sales-lite-v1.yml'
+      - 'assets/merchant-revenue-v3.mjs'
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tien404_sales_lite_ephemeral
+          POSTGRES_PASSWORD: disposable-fixture-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: postgres
+      PGPORT: 5432
+      PGPASSWORD: disposable-fixture-only
+      PGDATABASE: tien404_sales_lite_ephemeral
+      TIEN404_LITE_QA: 'yes'
+      SALES_LITE_EVIDENCE: /tmp/sales-lite-evidence
+    defaults:
+      run:
+        working-directory: sales-lite
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install locked test dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          python -m pip install --disable-pip-version-check playwright==1.58.0
+          mkdir -p "$SALES_LITE_EVIDENCE"
+      - name: Rule, scope, transaction and concurrency assertions
+        run: node --test --test-reporter=tap qa/rules.test.mjs qa/postgres.test.mjs | tee "$SALES_LITE_EVIDENCE/rules-postgres.tap"
+      - name: Backup and restore rehearsal in a second database
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$PG_CONTAINER" pg_dump -U postgres -Fc -d tien404_sales_lite_ephemeral -n sales_lite_qa -n tien404_r1_qa -n public > "$RUNNER_TEMP/lite-qa.dump"
+          docker exec "$PG_CONTAINER" createdb -U postgres tien404_sales_lite_restored
+          # The archive owns public (including QA memberships). Only remove the empty default schema in this newly created CI database.
+          docker exec "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_sales_lite_restored -c "DROP SCHEMA public RESTRICT"
+          docker exec -i "$PG_CONTAINER" pg_restore -U postgres -d tien404_sales_lite_restored --exit-on-error < "$RUNNER_TEMP/lite-qa.dump"
+          node qa/restore.mjs | tee "$SALES_LITE_EVIDENCE/restore.txt"
+      - name: Mobile dashboard with two independent QA sessions
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+          PGDATABASE: tien404_sales_lite_browser
+        run: |
+          docker exec "$PG_CONTAINER" createdb -U postgres tien404_sales_lite_browser
+          python qa/browser.py
+      - name: Attach QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sales-lite-v1-evidence
+          path: /tmp/sales-lite-evidence
+          retention-days: 7

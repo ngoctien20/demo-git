@@ -1,0 +1,155 @@
+:root {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: #16362e;
+  background: #f3f6f1;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  background: #153f34;
+  color: white;
+}
+.wrap {
+  max-width: 48rem;
+  margin: auto;
+  padding: 1.25rem;
+}
+.heading,
+.actions,
+.split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.brand {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.brand-sub {
+  margin-left: 0.75rem;
+  border-left: 1px solid #82a89a;
+  padding-left: 0.75rem;
+}
+.shop,
+#status {
+  color: #436050;
+}
+.shop {
+  margin: 1rem 0 0.2rem;
+}
+h1 {
+  font-size: clamp(1.95rem, 5vw, 2.7rem);
+  line-height: 1.08;
+  margin: 0.45rem 0 1.3rem;
+}
+h2 {
+  font-size: 1.2rem;
+  margin: 0.25rem 0 0.6rem;
+}
+nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #cad4c9;
+  padding-bottom: 0.7rem;
+}
+button,
+select {
+  font: inherit;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid #668776;
+  background: #fff;
+  color: #174d3c;
+  cursor: pointer;
+}
+button:hover,
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #b56a17;
+  outline-offset: 2px;
+}
+button[aria-current],
+#apply,
+.primary {
+  background: #13583f;
+  color: white;
+}
+.quiet {
+  background: transparent;
+  color: inherit;
+  border-color: currentColor;
+}
+button:disabled {
+  opacity: 0.6;
+}
+.card,
+dialog {
+  background: #fff;
+  border: 1px solid #cbd8ca;
+  border-radius: 0.9rem;
+  padding: 1rem;
+  margin: 0.8rem 0;
+  box-shadow: 0 2px 8px #14392b0c;
+}
+.card p {
+  margin: 0.45rem 0;
+}
+.actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.code {
+  font:
+    600 0.8rem/1.5 ui-monospace,
+    monospace;
+  color: #52665c;
+  overflow-wrap: anywhere;
+}
+.amount {
+  font-size: 1.35rem;
+  font-weight: 750;
+}
+.muted {
+  color: #4c6456;
+}
+dialog {
+  margin: auto;
+  width: min(90vw, 25rem);
+}
+dialog::backdrop {
+  background: #102c2380;
+}
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 420px) {
+  .wrap {
+    padding: 1rem;
+  }
+  .heading {
+    gap: 0.4rem;
+  }
+  .brand-sub {
+    font-size: 0.9rem;
+  }
+  .split {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  nav {
+    gap: 0.25rem;
+  }
+  nav button {
+    padding: 0.45rem 0.65rem;
+  }
+}
