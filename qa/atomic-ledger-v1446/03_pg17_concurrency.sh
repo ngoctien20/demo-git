@@ -36,7 +36,8 @@ p2=$!
 wait "$p1"; r1=$?
 wait "$p2"; r2=$?
 set -e
-if [[ "$r1:$r2" != '0:3' && "$r1:$r2" != '3:0' ]]; then
+if ! { [[ "$r1" -eq 0 && "$r2" -ne 0 ]] ||
+        [[ "$r2" -eq 0 && "$r1" -ne 0 ]]; }; then
  echo "FAIL concurrent accept expected one winner/one insufficient-stock reject (rc1=$r1 rc2=$r2)";exit 1
 fi
 if ! grep -q 'INSUFFICIENT_AVAILABLE_STOCK_AT_ACCEPT' "$TEMP/one.err" &&
