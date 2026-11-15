@@ -62,17 +62,17 @@ function makeCandidate({mode,appSecret,pageRegistry,catalog,now}={}){
       if(!sku)return {kind:'DENY',reason:'ORDER_SKU_REQUIRED'};
       return {kind:'PREPARE',sku,quantity:Number(mQty[1])};
     }
-    if(/\b(?:giá|bao nhiêu|báo giá|còn hàng|tồn kho)\b/iu.test(trimmed)){
+    if(/(?:giá|bao nhiêu|báo giá|còn hàng|tồn kho)/iu.test(trimmed)){
       const sku=(trimmed.match(SKU)||[])[0];
       if(!sku)return {kind:'DENY',reason:'QUOTE_SKU_REQUIRED'};
       return {kind:'TOOL',tool:'quote.read',arguments:{sku,quantity:1}};
     }
-    if(/\b(?:có|sản phẩm|thông tin|tư vấn)\b/iu.test(trimmed)){
+    if(/(?:có|sản phẩm|thông tin|tư vấn)/iu.test(trimmed)){
       const sku=(trimmed.match(SKU)||[])[0];
       if(!sku)return {kind:'DENY',reason:'CATALOG_SKU_REQUIRED'};
       return {kind:'TOOL',tool:'catalog.read',arguments:{sku}};
     }
-    if(/\b(?:xin chào|chào|hello)\b/iu.test(trimmed))return {kind:'GREETING'};
+    if(/(?:xin chào|chào|hello)/iu.test(trimmed))return {kind:'GREETING'};
     return {kind:'DENY',reason:'UNSUPPORTED_QA_INTENT'};
   }
   function replyFor(handled,tool){
