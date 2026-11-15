@@ -7,6 +7,7 @@ const {join}=require('node:path');
 const f=fixture(),ctx=f.ingress.verify(f.event('F01'));
 const checked={role_name:'core_qa_a',bypass_rls:false,is_superuser:false,
  catalog_rls_active:true,bot_rls_active:true,can_read_credential_ref:false,
+ can_read_catalog_source_ref:false,can_insert_bot:false,can_update_bot:false,can_delete_bot:false,
  can_insert_catalog:false,can_update_catalog:false,can_delete_catalog:false};
 const product={tenant_key:ctx.tenantId,store_key:ctx.storeId,bot_key:ctx.botRef,
  sku:'F01',product_name:'Áo trắng QA',price_vnd:159000,stock:3,read_at:new Date()};
@@ -47,7 +48,8 @@ test('wrong role, bypass RLS, privileged superuser, RLS disabled and unneeded gr
  {field:'role_name',value:'core_qa_b'},{field:'role_name',value:'postgres'},
  {field:'bypass_rls',value:true},{field:'is_superuser',value:true},
  {field:'catalog_rls_active',value:false},{field:'bot_rls_active',value:false},
- {field:'can_read_credential_ref',value:true},
+ {field:'can_read_credential_ref',value:true},{field:'can_read_catalog_source_ref',value:true},
+ {field:'can_insert_bot',value:true},{field:'can_update_bot',value:true},{field:'can_delete_bot',value:true},
  {field:'can_insert_catalog',value:true},{field:'can_update_catalog',value:true},
  {field:'can_delete_catalog',value:true}
  ];
