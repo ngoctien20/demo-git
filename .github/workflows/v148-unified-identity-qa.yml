@@ -32,10 +32,13 @@ jobs:
           node --check qa/v148-unified-identity/benchmark.cjs
           node --check qa/v148-unified-identity/provider-adapters.cjs
           node --check qa/v148-unified-identity/provider-adapters.test.cjs
+          node --check qa/v148-unified-identity/owner-uat.js
+          node --check qa/v148-unified-identity/owner-uat.test.cjs
       - name: Unit/security tests
         run: |
           node --test qa/v148-unified-identity/identity-core.test.cjs
           node --test qa/v148-unified-identity/provider-adapters.test.cjs
+          node --test qa/v148-unified-identity/owner-uat.test.cjs
       - name: Run inherited V14.7 Custom Bot Studio tests
         run: |
           node --test qa/v147-custom-studio/studio-core.test.cjs
