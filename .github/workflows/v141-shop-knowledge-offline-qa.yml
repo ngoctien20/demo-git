@@ -23,3 +23,27 @@ jobs:
           node-version: '22'
       - name: Run isolated 3-shop knowledge, permissions and security tests
         run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
+  knowledge-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright on ephemeral runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Test 5 viewports and staff mock interactions
+        run: |
+          python -m http.server 8080 >/tmp/tien404-v141-ui.log 2>&1 &
+          sleep 2
+          node qa/shop-knowledge-v141/ui-browser-qa.cjs
+      - name: Upload synthetic mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v141-knowledge-ui-qa
+          path: qa-artifacts-v141/
+          if-no-files-found: ignore
