@@ -24,8 +24,19 @@
   ],
   "old_send_enabled": false,
   "staged_version_uploaded": true,
-  "staged_version_deployed": false,
+  "staged_version_deployed": true,
   "private_key_logged": false,
   "source_private_worker_exposed": false,
-  "owner_identity_verified": false
+  "owner_identity_verified": false,
+  "actual_deployment": "17b7106a-d66a-4e37-a18e-0d8ec97d6f78",
+  "verified_signed_proof_execution": "3874",
+  "proof_signature_verified_with_pinned_public_key": true,
+  "proof_has_raw_bot_id": false,
+  "provider_getme_http_status": 200,
+  "security_negative_execution": "3878",
+  "old_getme_regression_execution": "3875",
+  "old_webhook_diagnostics_execution": "3876",
+  "current_worker_no_send": true,
+  "provider_bot_shop_binding_verified": false,
+  "real_zalo_send_approved": false
 }
