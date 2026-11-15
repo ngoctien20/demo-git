@@ -267,3 +267,19 @@ test('31 · merchant acknowledgement rejects registry response for wrong Store',
  await denial(svc.merchantConfirm({bearer:'merchantB',sessionId:a.sessionId}),
   'INTAKE_ROLE_NOT_AUTHORIZED');
 });
+
+test('32 · incomplete pack cannot nominate different reviewer for individual order',async()=>{
+ const {svc}=setup(),items=rows();
+ items[3].reviewerActorId=ACTOR.outsider;
+ for(const e of items[3].evidence)
+  if(e.type==='INDEPENDENT_QA_REVIEW')e.actorId=ACTOR.outsider;
+ await denial(svc.stage({bearer:'coordinator',rows:items,baseline}),
+  'INTAKE_INDEPENDENT_REVIEWER_MISMATCH');
+});
+test('33 · TTL eviction frees bounded memory for new private session',async()=>{
+ const {svc,advance}=setup({ttlMs:60000,maxSessions:1});
+ await staged(svc);advance(61000);
+ const r=await staged(svc);
+ assert.equal(r.status,'AWAITING_MERCHANT_CONFIRMATIONS');
+ assert.equal(svc.inspect().activeSessions,1);
+});
