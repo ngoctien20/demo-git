@@ -44,8 +44,8 @@ test('Lite can request customer and order management; implementation remains dis
   assert.equal(r.writesEnabled,false);assert.equal(r.providerSendingEnabled,false);
  }
 });
-test('Lite can manage product scope only through separate write gate',async()=>{
- const r=await make()('products.manage_shop');assert.equal(r.allowed,true);assert.equal(r.writesEnabled,false);
+test('Product editing is not auto-granted until package policy and write gate approved',async()=>{
+ const r=await make()('products.manage_shop');assert.equal(r.reason,'FEATURE_NOT_INCLUDED');
 });
 test('Lite blocked from bot customization',async()=>assert.equal((await make()('bot.customize')).reason,'FEATURE_NOT_INCLUDED'));
 test('Lite blocked from Menu Designer',async()=>assert.equal((await make()('menu.customize')).reason,'FEATURE_NOT_INCLUDED'));
