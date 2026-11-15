@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {mayOpenPanel,selectAuthorizedShop,ownsScope,PANEL_IDS} from '../assets/merchant-portal-policy.mjs';
 const text=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
-test('Owner and Manager may see CRM Orders Care and Bot',()=>{
-  for(const role of ['owner','manager'])for(const view of ['orders','customers','care','bots','reports'])
+test('Legacy CRM panels remain scoped; Bot config is staff-only',()=>{
+  for(const role of ['owner','manager'])for(const view of ['orders','customers','care','reports'])
     assert.equal(mayOpenPanel(role,view),true);
 });
 test('Staff cannot access private customer data or Super Admin',()=>{
+  assert.equal(mayOpenPanel('owner','bots'),false);
+  assert.equal(mayOpenPanel('manager','bots'),false);
   for(const view of ['orders','customers','care','bots','reports'])
     assert.equal(mayOpenPanel('staff',view),false);
   assert.equal(mayOpenPanel('staff','products'),true);
@@ -32,8 +34,8 @@ test('Portal starts hidden with accessible tabs and no-index',()=>{
   const html=text('merchant-portal.html');
   for(const token of ['id="merchant-protected" class="mp-workspace" hidden',
     'id="merchant-login" class="mp-locked" hidden','id="merchant-shop-select"',
-    'aria-label="Các mục quản lý"','data-manager-only','aria-live="polite"',
-    'assets/merchant-portal.js','noindex,nofollow'])
+    'aria-label="Các mục tài khoản"','data-panel="subscription"','data-panel="billing"','aria-live="polite"',
+    'assets/merchant-account-only.js','noindex,nofollow'])
     assert.ok(html.includes(token),token);
 });
 test('Private state requires real Auth user, RLS membership and tenant checks',()=>{
@@ -66,7 +68,7 @@ test('Mobile CSS preserves hidden state, focus and breakpoints',()=>{
 });
 test('Preview build contains only allowlisted portal and existing Auth',()=>{
   const b=text('scripts/build-auth-preview.mjs');
-  for(const token of ["'merchant-portal.html'","'assets/merchant-portal.js'",
+  for(const token of ["'merchant-portal.html'","'assets/merchant-account-only.js'",
     "'assets/merchant-portal-policy.mjs'","'assets/merchant-portal.css'",
     "['login.html','account.html','merchant-portal.html','register-staging.html','tester.html','tester-admin.html','tester-request.html']","auth-preview-dist"])
     assert.ok(b.includes(token),token);
@@ -74,7 +76,7 @@ test('Preview build contains only allowlisted portal and existing Auth',()=>{
 test('Built preview has portal files but no private repository files',()=>{
   const root=new URL('../auth-preview-dist/',import.meta.url);
   if(!fs.existsSync(root))return;
-  for(const name of ['merchant-portal.html','assets/merchant-portal.js',
+  for(const name of ['merchant-portal.html','assets/merchant-account-only.js',
    'assets/merchant-portal-policy.mjs'])assert.ok(fs.existsSync(new URL(name,root)),name);
   for(const name of ['docs','.env','qa','.github'])
     assert.equal(fs.existsSync(new URL(name,root)),false,name);
