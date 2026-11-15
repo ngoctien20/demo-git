@@ -1,0 +1,49 @@
+name: TIEN404 V13.4 post-release Auth redirect regression QA
+on:
+  push:
+    branches: [work/v134-post-release-qa-compat-staging]
+  pull_request:
+    paths:
+      - "tests/test_saas_contract.py"
+      - ".github/workflows/full-browser-audit.yml"
+      - ".github/workflows/v134-post-release-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  saas-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install test support
+        run: python -m pip install beautifulsoup4
+      - name: Validate SaaS and real-auth route
+        run: |
+          python -m unittest discover -s tests -p test_saas_contract.py -v
+          node scripts/check-site-navigation.mjs
+          node --test qa/auth/public-login-redirect.test.cjs
+  browser-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install existing Playwright suite on supported pinned OS
+        run: |
+          npm install --no-save @playwright/test@1.58.2 @axe-core/playwright@4.11.0
+          npx playwright install --with-deps chromium
+      - name: Start static QA server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/qa.log 2>&1 &
+          sleep 2
+      - name: Browser regression
+        run: npx playwright test -c qa/playwright.config.cjs
