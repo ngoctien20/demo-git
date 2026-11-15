@@ -76,6 +76,17 @@ The project owner supplied four screenshots from Cốc Cốc: a normal browser w
 **Remaining:** real revoked-membership-while-JWT-valid test (requires separate approval and rollback), then Render staging release review of canonical V13.5R.1. The deployed legacy `account.html` is not the PR #81 Customer Portal.
 
 
+### A8. 2026-11-15 — Anonymous PostgREST API denial VERIFIED
+
+**Evidence:** Screenshot supplied by the owner from the signed-out Cốc Cốc incognito session on the currently deployed Render `/account.html`. The console runs the previously reviewed read-only Supabase `getAuthClient()`, confirms there is no current authenticated user, then submits `HEAD` with `count:'exact'` to `public.orders` and `public.tenant_memberships` with no elevated role. Browser Network/Console shows **HTTP 401 Unauthorized for each endpoint**, and the summary table shows `PASS: API từ chối` for both. User-visible account panel remains locked with an invalid/expired-session message; no order details appear.
+
+**QA status:** `PASS — ANONYMOUS_ORDERS_API_DENIED`; `PASS — ANONYMOUS_MEMBERSHIP_API_DENIED`; `PASS — SIGNED_OUT_UI_LOCKED`. These are real hosted negative HTTP results, not an offline simulation. Neither screenshot nor cookies/JWT/user identifiers were uploaded to GitHub. The two 401 responses alone do not establish the specific rejection layer (JWT validation, API privileges or RLS); the **observed security outcome** is rejection of anonymous access to both protected tables.
+
+**V13.6 security gate tally:** independent logged-in Shop A/B cross-tenant SELECT counts `1/0` and `0/1` for both `orders` and active `tenant_memberships` PASS; after Shop B sign-out, protected UI locked PASS; anonymous queries to `orders` and `tenant_memberships` each returned HTTP 401 PASS. **Still not verified:** membership revocation while a valid JWT remains; true same-tenant multi-store isolation; `customers`/`messages` scopes; new V13.5R.1 Customer Portal hosted deployment, login/redirect and Tester regression.
+
+**Render release decision:** `NOT_DEPLOYED`. The live Render Auth still uses `work/supabase-auth-staging-v1`, with autoDeploy OFF; current deployment/branch must be checkpointed before any staging switch. PR #81 is stacked on Draft #78 and Draft #73; a naive Render branch switch can omit base features or break legacy Tester. Keep staging unchanged until the owner approves an exact deploy/rollback plan and branch composition is verified.
+
+
 ## B. Zalo Bot — actual progress through V13.8
 
 | Version | Verified and tested | Not proven |
