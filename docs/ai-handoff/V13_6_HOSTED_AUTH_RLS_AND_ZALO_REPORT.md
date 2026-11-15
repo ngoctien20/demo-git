@@ -89,7 +89,7 @@ The n8n execution metadata for 3823 / 3826 / 3827 / 3829 was rechecked on 15 Nov
 
 ## E. Direct runtime and offline QA recheck (2026-11-15 JST)
 
-- Cloudflare staging Worker `tien404-zalo-outbound-v1-staging` read directly: latest deployment `2ce7ea81-3755-47b1-8c48-35611a8f0c54` is **NOT an asserted ID**; canonical returned deployment ID is `2ce7ea81-3755-47b1-afdd-a799db3da3c8`, version `ed172d3c-e1f1-4daa-bc56-643406441091` at 100%, `ZALO_SEND_ENABLED=false`. Bindings names/types confirmed without reading secret values; no change made.
+- Cloudflare staging Worker `tien404-zalo-outbound-v1-staging` read directly: latest verified deployment ID `2ce7ea81-3755-47b1-afdd-a799db3da3c8`, version `ed172d3c-e1f1-4daa-bc56-643406441091` at 100%, `ZALO_SEND_ENABLED=false`. Bindings names/types confirmed without reading secret values; no change made.
 - Current n8n execution metadata read directly: `3823` getWebhookInfo SUCCESS; `3826` media four-call SUCCESS; `3827` Shop B conversation SUCCESS; `3829` handoff fixture SUCCESS.
 - GitHub Actions [run 43694900835](https://github.com/ngoctien20/demo-git/actions/runs/43694900835), source commit `b82da85a795a66c3bedba445f031a5b007c0bfea`: **15/15** new V13.6 hosted test-harness contracts PASS; 54/54 account negative, 16/16 prior security, 9/9 preview build, total **94/94** source/contract checks; 5/5 locked route + 5/5 signed-in mock browser viewports PASS (10/10), both jobs SUCCESS. **None** of these are actual authenticated hosted Shop A/B sessions.
 - Inherited Auth static / Tester / V13.5 / Account and Navigation workflows for same source commit all SUCCESS; no Render deploy.
