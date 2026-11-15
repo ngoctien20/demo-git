@@ -99,3 +99,30 @@ test('revenue counts only backend verified paid orders',()=>{
 test('cross shop revenue is blocked entirely',()=>assert.equal(paidRevenueReadOnly({scope,orders:[{serverVerified:true,tenantId:'tenant-B',storeId:'store-B',status:'PAID',totalVnd:'199000',paymentVerified:true}]}).code,'REVENUE_SCOPE_OR_AMOUNT_INVALID'));
 test('unverified payment excluded from paid revenue',()=>assert.equal(paidRevenueReadOnly({scope,orders:[{serverVerified:true,tenantId:'tenant-A',storeId:'store-A',status:'PAID',totalVnd:'159000',paymentVerified:false}]}).paidTotalVnd,'0'));
 test('revenue rejects malformed money',()=>assert.equal(paidRevenueReadOnly({scope,orders:[{serverVerified:true,tenantId:'tenant-A',storeId:'store-A',status:'PAID',totalVnd:'159.000đ',paymentVerified:true}]}).code,'REVENUE_SCOPE_OR_AMOUNT_INVALID'));
+
+const {PACKAGES,GATES,MERCHANT_SECTIONS,evaluateReadiness}=require('./product-readiness.cjs');
+test('subscription missing allowed channels fails closed',async()=>{
+ const b=bridge({readSubscription:async x=>({...x,source:'SERVER_VERIFIED_SUBSCRIPTION',
+ state:'ACTIVE',expiresAt:new Date(NOW+86400000).toISOString()})});
+ assert.equal((await b.preview(event)).code,'SUBSCRIPTION_DENIED');
+});
+test('product packages are research assumptions, not active billing',()=>{
+ assert.equal(PACKAGES.length,2);
+ assert.deepEqual(PACKAGES.map(x=>x.priceVndHypothesis),[199000,349000]);
+ assert.ok(PACKAGES.every(p=>p.pricingStatus==='ASSUMPTION_ONLY'&&p.unlimitedAI===false));
+});
+test('merchant dashboard capability map reuses one portal',()=>{
+ assert.ok(MERCHANT_SECTIONS.includes('Đơn hàng'));
+ assert.ok(MERCHANT_SECTIONS.includes('Gói thuê bao'));
+ assert.equal(new Set(MERCHANT_SECTIONS).size,MERCHANT_SECTIONS.length);
+});
+test('missing release evidence keeps experimental',()=>{
+ const r=evaluateReadiness({'AUTHENTICATED_MERCHANT':{verified:true,evidenceRef:'test-001'}});
+ assert.equal(r.stage,'EXPERIMENTAL');assert.equal(r.releaseAuthorized,false);
+ assert.ok(r.remainingGates.includes('HOSTED_SHOP_AB_RLS'));
+});
+test('even full evidence cannot automatically release product',()=>{
+ const data=Object.fromEntries(GATES.map(k=>[k,{verified:true,evidenceRef:'qa-evidence-001'}]));
+ const r=evaluateReadiness(data);assert.equal(r.readyForCandidate,true);
+ assert.equal(r.releaseAuthorized,false);assert.equal(r.stage,'EXPERIMENTAL');
+});
