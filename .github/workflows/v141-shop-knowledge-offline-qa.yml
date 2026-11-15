@@ -23,6 +23,10 @@ jobs:
           node-version: '22'
       - name: Run isolated 3-shop knowledge, permissions and security tests
         run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
+      - name: V13.8 Conversation and V14 Image SKU safe regressions
+        run: |
+          node --test qa/conversation-v138/conversation-core.test.cjs
+          node --test qa/multimodal-v14/core.test.cjs
   knowledge-browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
