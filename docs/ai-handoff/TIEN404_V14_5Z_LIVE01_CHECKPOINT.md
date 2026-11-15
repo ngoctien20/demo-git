@@ -63,3 +63,9 @@
 
 ## 8. Next single decision
 Present exact bounded QA recipient/Bot and budget cap to owner for explicit approval; only after verified hosted security prerequisites and a distinct release gate may the limited outgoing Zalo pilot be enabled.
+
+## 9. Verified CI and Cloudflare security follow-up
+- GitHub Actions run **43727656808**: https://github.com/ngoctien20/demo-git/actions/runs/43727656808 — SUCCESS.
+- Job 132853002956: V14.5Z core **28/28 PASS** + V14.5Z LIVE01 preflight **32/32 PASS** + V13.8 regression **44/44 PASS** = **104/104**, no failures. Syntax and static no-send checks PASS.
+- Cloudflare API GET (read-only) on Worker `tien404-zalo-outbound-v1-staging`: script settings reported plain_text `ZALO_SEND_ENABLED=false`. Secret bindings were **not read or displayed**. This verifies the configuration flag at inspection, NOT complete proof of zero possible sending routes.
+- No actual Zalo recipient or Bot ownership has yet been independently authenticated in this LIVE01 session; owner QA allowlist remains an approval blocker.
