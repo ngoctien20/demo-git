@@ -17,8 +17,8 @@ function classify(message){
  if(/(?:hủy đơn|sửa đơn|đổi đơn|thay đơn|xác nhận đơn)/iu.test(m))return 'ORDER_CHANGE';
  if(/(?:đặt|mua|lên đơn|chốt đơn)/iu.test(m))return 'ORDER_DRAFT';
  if(/(?:giá|bao nhiêu|báo giá|giá sỉ|giá lẻ)/iu.test(m))return 'PRICE_QUOTE';
- if(/(?:còn hàng|tồn kho|có mẫu|tìm|có.*không|sản phẩm|mã hàng)/iu.test(m))return 'CATALOG';
  if(/(?:khiếu nại|bảo hành|đổi trả|hỗ trợ)/iu.test(m))return 'SUPPORT';
+ if(/(?:còn hàng|tồn kho|có mẫu|tìm|có.*không|sản phẩm|mã hàng)/iu.test(m))return 'CATALOG';
  if(/^(?:chào|xin chào|hi|hello|shop ơi|alo|hey|chao)\W*$/iu.test(m))return 'GREETING';
  return 'NEEDS_UNDERSTANDING';
 }
