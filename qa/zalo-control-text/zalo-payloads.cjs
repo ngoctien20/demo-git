@@ -38,7 +38,7 @@ function officialSamples(){
  const c='TIEN404 đang hỗ trợ bạn ✅';
  return Object.freeze([
   styledMessage(a,[{start:0,len:7,st:['b','f_18','c_15a85f']}]),
-  styledMessage(b,[{start:0,len:7,st:['b','c_f27806']},{start:24,len:18,st:['i']}]),
+  styledMessage(b,[{start:0,len:7,st:['b','c_f27806']},{start:22,len:19,st:['i']}]),
   styledMessage(c,[{start:0,len:c.length,st:['u','c_db342e']}]),
   markdownMessage('**TIEN404**\n{green}Tư vấn sản phẩm{/green}\n1. Xem hàng\n2. Gửi yêu cầu')
  ]);
