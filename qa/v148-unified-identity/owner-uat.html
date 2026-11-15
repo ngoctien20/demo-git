@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/><title>TIEN404 V14.8 | Identity QA Studio</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;--bg:#080d18;--surface:#111a2a;--edge:#28364e;--text:#e7effe;--muted:#a1b0c8;--accent:#46e0bd}
+*{box-sizing:border-box}body{background:linear-gradient(145deg,#0a1324,var(--bg));color:var(--text);margin:0;min-height:100vh}
+main{max-width:950px;margin:auto;padding:30px 16px 80px}header{padding:12px 0 25px}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent);font-weight:800}
+h1{font-size:clamp(29px,5vw,45px);letter-spacing:-1px;margin:10px 0}h2{font-size:18px;margin:0 0 15px}
+.sub{color:var(--muted);line-height:1.55;margin-top:0}.guard{border:1px solid #5f5226;border-radius:14px;padding:15px;background:#242017;color:#fae7b6;font-size:14px;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+section{background:var(--surface);border:1px solid var(--edge);border-radius:17px;padding:20px}
+label{font-size:13px;font-weight:700;color:#bdcbe1;display:block;margin:15px 0 7px}
+select{width:100%;background:#0b1322;color:white;border:1px solid #34435c;border-radius:9px;padding:13px;font:inherit}
+button{border:0;border-radius:9px;padding:12px 14px;background:var(--accent);color:#092019;font:inherit;font-weight:750;cursor:pointer}
+button.secondary{background:#24344b;color:white}button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}
+.card{background:#0b1322;border:1px solid var(--edge);border-radius:12px;padding:17px;min-height:220px}
+.tag{font-size:11px;color:var(--accent);font-weight:800}.name{font-size:25px;margin:12px 0 9px;font-weight:800}
+.info{font-size:13px;line-height:1.55;color:var(--muted)}.reply{border-left:2px solid var(--accent);padding:10px 12px;background:#101f2e;margin-top:15px;border-radius:0 8px 8px 0;line-height:1.5}
+small{color:var(--muted)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5;background:#080e1a;border:1px solid var(--edge);border-radius:10px;padding:12px;max-height:250px;overflow:auto}
+ol{padding-left:20px;color:var(--muted);line-height:1.7}li{margin:8px 0}.status{font-variant-numeric:tabular-nums;font-weight:850;font-size:23px;margin:6px 0}
+@media(max-width:675px){.grid{grid-template-columns:1fr}section{padding:16px}main{padding-top:18px}}
+</style></head><body>
+<main>
+<header><div class="eyebrow">TIEN404 AI · V14.8 · NO-SEND</div><h1>Trung tâm kiểm thử định danh</h1>
+<p class="sub">Xem cách mỗi Shop và mỗi kênh sử dụng Bot Profile riêng, dựa trên dữ liệu mẫu của Custom Bot Studio V14.7 đã có.</p></header>
+<div class="guard"><strong>Chỉ là giao diện thử nghiệm tổng hợp.</strong> Trình duyệt không xác minh webhook, HMAC thật, chủ sở hữu Page/OA, JWT/RLS hoặc quyền của khách. Không gửi Messenger/Zalo, không gọi AI thật và không ghi đơn hàng. Chọn Shop ở đây <strong>không cấp quyền truy cập</strong> bất kỳ Store nào.</div>
+<div class="grid">
+<section aria-labelledby="config"><h2 id="config">1. Chọn tình huống</h2>
+<label for="shop">Cửa hàng QA</label><select id="shop"><option value="A">Shop A — Tạp hóa An</option><option value="B">Shop B — Thời trang Bình</option><option value="C">Shop C — Vật liệu Cường</option></select>
+<label for="channel">Kênh giao tiếp</label><select id="channel"><option value="MESSENGER">Facebook Messenger</option><option value="ZALO_BOT">Zalo Bot</option><option value="ZALO_OA">Zalo Official Account</option><option value="WEB_WIDGET">Website Chat Widget</option></select>
+<label for="scenario">Luồng hội thoại</label><select id="scenario"><option value="GREETING">Lời chào</option><option value="CATALOG">Tư vấn mã sản phẩm</option><option value="QUOTE">Báo giá</option><option value="AI">Tư vấn nâng cao</option><option value="ORDER">Yêu cầu đặt hàng</option></select>
+<div class="actions"><button id="preview">Xem thử</button><button id="export" class="secondary">Xuất JSON an toàn</button></div>
+</section>
+<section aria-labelledby="result"><h2 id="result">2. Bản xem trước</h2><div class="card"><div class="tag" id="mode">QA · EXPERIMENTAL</div>
+<div class="name" id="botname"></div><div class="info" id="identity"></div>
+<div class="reply" id="message"></div></div></section>
+</div>
+<div class="grid"><section><h2>3. Chạy kiểm thử tất cả Shop/kênh</h2>
+<p class="sub">Kiểm tra tổng hợp 3 Shop × 4 kênh × 5 tình huống = 60 bản xem trước. Chỉ xác minh dữ liệu fixture và chính sách không gửi/không ghi.</p>
+<div class="actions"><button id="matrix">Kiểm tra 60 trường hợp</button></div><div class="status" id="matrixResult" aria-live="polite">Chưa chạy</div>
+<small id="matrixNote">Không thay thế QA HMAC và an ninh backend trên GitHub.</small></section>
+<section><h2>4. Nghiệm thu thủ công</h2><ol>
+<li>Chuyển Shop A → B → C: đúng tên bot và đúng giá từng Shop.</li>
+<li>Chuyển Messenger, Zalo Bot, Zalo OA, Website: kênh và Profile không lẫn nhau.</li>
+<li>Chọn tư vấn nâng cao: không gọi AI thật.</li>
+<li>Chọn đặt hàng: không tạo đơn và không trừ kho.</li>
+<li>Xuất JSON: không có token, PSID hay thông tin riêng tư.</li>
+</ol><small>Chỉ đánh dấu OWNER UAT sau khi bạn tự kiểm tra trên giao diện.</small></section></div>
+<section style="margin-top:16px"><h2>5. JSON xem trước</h2><pre id="json" aria-live="polite"></pre></section>
+</main>
+<script src="../v147-custom-studio/studio-core.js"></script>
+<script src="./owner-uat.js"></script>
+<script>
+(function(){
+'use strict';
+const api=window.T404Studio,u=window.T404IdentityUAT,studio=api.createStudio();
+const $=id=>document.getElementById(id);let last=null;
+function render(){
+try{
+ last=u.build({studio,api,shop:$('shop').value,channel:$('channel').value,scenario:$('scenario').value});
+ $('botname').textContent=last.assistant_name;
+ $('mode').textContent='EXPERIMENTAL · '+last.channel;
+ $('identity').textContent=last.tenant_id+' / '+last.store_id+' / Profile #'+last.bot_profile_version;
+ $('message').textContent=last.preview_text;
+ $('json').textContent=JSON.stringify(last,null,2);
+}catch(e){last=null;$('message').textContent='Không thể dựng bản xem trước: '+e.message;$('json').textContent=''}
+}
+$('preview').addEventListener('click',render);
+for(const id of ['shop','channel','scenario'])$(id).addEventListener('change',render);
+$('export').addEventListener('click',async()=>{
+ if(!last)render();if(!last)return;
+ try{
+ const blob=new Blob([JSON.stringify(last,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='tien404-v148-owner-uat-synthetic.json';a.click();URL.revokeObjectURL(url);
+ }catch(_){$('matrixNote').textContent='Xuất JSON không khả dụng trên trình duyệt này.'}
+});
+$('matrix').addEventListener('click',()=>{
+ let ok=0,failed=0;
+ for(const shop of ['A','B','C'])for(const channel of api.CHANNELS)for(const scenario of u.scenarios){
+  try{
+   const r=u.build({studio,api,shop,channel,scenario});
+   const f=api.FIXTURES[shop];
+   if(r.tenant_id===f.tenantId&&r.store_id===f.storeId&&
+      r.provider_sends===0&&r.order_writes===0&&r.hosted_writes===0&&
+      r.synthetic_only===true&&r.backend_identity_verified===false&&
+      r.can_publish===false)ok++;else failed++;
+  }catch(_){failed++}
+ }
+ $('matrixResult').textContent=ok+'/60 PASS'+(failed?' · '+failed+' FAIL':'');
+});
+render();
+})();
+</script></body></html>
