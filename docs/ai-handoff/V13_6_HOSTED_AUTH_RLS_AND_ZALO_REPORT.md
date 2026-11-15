@@ -49,6 +49,22 @@ The project owner supplied four screenshots from Cốc Cốc: a normal browser w
 
 **Next strictly read-only check:** in each *separate* authenticated browser console, query existing Supabase client for `orders` and `tenant_memberships` using exact staging tenant IDs, with `count:'exact',head:true`. Only print aggregated counts / error status. Expected for Shop A: own orders >0, foreign orders 0, own membership 1, foreign membership 0; Shop B vice versa. An HTTP error must be treated as `BLOCKED` or `FAIL`, never as 0. Do not paste JWT, user IDs, email or complete API responses into tickets/chat. No writes.
 
+### A6. 2026-11-15 — Verified real Shop A/B cross-tenant API reads (manual Console screenshots)
+
+**Evidence:** Two original screenshots supplied in the current user conversation (not committed due to visible order information). Both run the previously reviewed browser-side Supabase `getAuthClient()`, `auth.getUser()`, and real `head:true, count:'exact'` SELECT calls against `orders` and `tenant_memberships`, filtered by the two known QA tenant UUIDs. Session A is the ordinary Cốc Cốc browser; session B is the separately signed-in private browser. Neither console output reports an API error.
+
+| Authenticated browser | Shop A orders | Shop B orders | Shop A active membership | Shop B active membership |
+| --- | ---: | ---: | ---: | ---: |
+| Shop A owner | 1 | 0 | 1 | 0 |
+| Shop B owner | 0 | 1 | 0 | 1 |
+
+**Status: VERIFIED — `HOSTED_REAL_CROSS_TENANT_READ_PASS`** for two distinct QA sessions, direct `orders` and `tenant_memberships` SELECT counts. The documented fixture has a distinct order per shop, so cross-shop `0` is meaningful. No service-role/admin credential was used in these browser calls, and no writes were requested. This closes the *specific* cross-tenant read gate.
+
+**Still not proven:** same-tenant different stores (store-level isolation), `customers`, `conversations` and `messages` cross-scope access, token expiry and membership revocation with an existing JWT, anonymous session API negative case, and the new Customer Portal on Render staging. Current screenshot URL is still the **deployed legacy `/account.html`**, not the Draft PR #81 canonical redirect. Do not elevate the entire Hosted Auth/RLS or V13.6 release gate to PASS.
+
+**Next:** first test logout/anonymous read-only denial in an independently logged-out browser. Revocation requires separately approved test-account membership state changes and rollback. Then review Render staging deployment with source/build snapshot; do not auto-trigger the old branch.
+
+
 ## B. Zalo Bot — actual progress through V13.8
 
 | Version | Verified and tested | Not proven |
