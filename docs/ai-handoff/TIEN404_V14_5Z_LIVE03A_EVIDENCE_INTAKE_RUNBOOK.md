@@ -72,3 +72,14 @@ Trang đơn giá nguồn: https://app.n8n.cloud/service-pricing
 ## F. Rollback và checkpoint
 
 Đây chỉ là tài liệu trong Draft PR, không thay đổi API, D1, n8n workflow, Cloudflare settings, token hay production. Rollback: revert commit tài liệu hoặc đóng PR Draft. Existing outbound Worker giữ `ZALO_SEND_ENABLED=false`; LIVE02 QA grants đã ở trạng thái `QA_STOPPED`. Không có dữ liệu thật được ghi.
+
+## G. Evidence received from owner: Zalo Creator and n8n Cloud screenshots (2026-11-16 JST)
+- Source: four user-provided screenshots in the chat; screenshots were inspected, NOT uploaded to GitHub or persisted in any staging service. Dates of displayed metrics cannot be independently verified from the screenshots, and financial balance may change.
+- Zalo Bot Manager shows **display name `Bot TIEN404 AI`** and **status `Hoạt động`**. Information tab shows **1 user** who has interacted with the Bot. The statistics UI has **Tháng này** selected and a visible bar labelled **3**. These are UI observations, not end-to-end AI model reply evidence.
+- General settings visibly contain a Webhook URL beginning `https://ngoctien20.app.n8n.cloud/w...`, masked Secret Token and masked Bot Token. Only the prior API read-only `getWebhookInfo` execution 3855 provided verified exact hosted webhook path. **Do not infer ID from truncated Deeplink/Invite URLs.** No secrets revealed or changed.
+- Zalo Bot ID / `getMe.result.id` and Bot ownership binding are NOT shown. Keep ID-02, ID-03 and ID-04 BLOCKED; existing registry still synthetic only. Screenshots do not attest provider identity, trusted store relationship or the Owner's account ID.
+- n8n Cloud Overview screenshot of `ngoctien20.app.n8n.cloud` shows **Assistant credits = 0**, **Gateway credits = $0.59** and **129/1000 executions**; instance shown online and 19 active workflows. Distinguish Assistant credits from model/Gateway balance, and executions from model token use. The `$0.59` tile is visual evidence of a Gateway amount, NOT an audit of current available balance, actual model rate, historical spend or Auto top-up policy.
+- COST-01 becomes **EVIDENCE_PARTIAL (UI overview shows $0.59, detail timestamp/ledger not certified)**; COST-02 (specific n8n rate), COST-03 (Auto top-up and owner USD ceiling), COST-04 (real token and payment guard) remain BLOCKED.
+- No instruction to reset Bot Token, reveal Secret Token, click `Lưu thay đổi`/`Xóa Webhook`, or activate sends. No data written to n8n/Cloudflare from this visual intake.
+- Next action requiring owner UI: open Gateway credits `Manage` to inspect current balance, service pricing/usage and Auto top-up (mask billing); then obtain provider immutable Bot ID via trusted `getMe` server-side attestation instead of manually sharing tokens. Do not publish screenshots or sensitive identifiers to public GitHub.
+- Conclusion: evidence completeness improved, **LIVE-01 REAL SEND STILL NO-GO**.
