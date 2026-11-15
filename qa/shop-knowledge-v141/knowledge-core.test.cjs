@@ -167,3 +167,42 @@ test('Super admin can propose publishing verified signed-off knowledge; no actua
  assert.equal(r.to,'PUBLISHED');assert.equal(r.published,false);assert.equal(r.requires_backend_transaction,true);
 });
 test('Invalid transition refused',()=>denied(()=>k.proposeLifecycle({binding:binding('A'),entry:lifecycleEntry('A','DRAFT'),actor:actor('A','PLATFORM_SUPER_ADMIN','admin-qa'),action:'publish',now}),'LIFECYCLE_TRANSITION_DENIED'));
+
+for(const letter of ['A','B','C']){
+ test('Verified exact FAQ for Shop '+letter,()=>{
+  const r=ask(letter,'Có gói quà không?');
+  assert.equal(r.status,'FAQ_ANSWER');assert.equal(r.topic,'faq');
+  assert.equal(r.store_id,S[letter].store_id);assert.ok(r.text.includes('Shop '+letter));assert.equal(r.evidence.length,1);
+ });
+}
+test('Public FAQ never leaks a different shop',()=>{
+ const r=ask('B','Có gói quà không?');
+ assert.equal(r.text.includes('Shop A'),false);assert.equal(r.text.includes('Shop C'),false);
+});
+test('Unapproved FAQ cannot answer',()=>{
+ const s=snapshot('B');s.entries=s.entries.map(e=>e.type==='faq'?{...e,merchant_approved:false}:e);
+ assert.equal(k.reply({binding:binding('B'),snapshot:s,question:'Có gói quà không?',now}).status,'HANDOFF');
+});
+test('Staff-only FAQ cannot answer',()=>{
+ const s=snapshot('B');s.entries=s.entries.map(e=>e.type==='faq'?{...e,visibility:'STAFF_ONLY',value:'SUPPORT SECRET'}:e);
+ const r=k.reply({binding:binding('B'),snapshot:s,question:'Có gói quà không?',now});
+ assert.equal(r.status,'HANDOFF');assert.equal(JSON.stringify(r).includes('SECRET'),false);
+});
+test('Two active FAQs with the same question create conflict',()=>{
+ const s=snapshot('A'),other={...s.entries.find(e=>e.type==='faq'),entry_id:'faq-conflict',value:'Trả lời mẫu khác'};
+ s.entries.push(other);
+ const r=k.reply({binding:binding('A'),snapshot:s,question:'Có gói quà không?',now});
+ assert.equal(r.status,'CONFLICTING_KNOWLEDGE');assert.equal(r.handoff,true);
+});
+test('FAQ missing a question is rejected',()=>{
+ const s=snapshot('C');delete s.entries.find(e=>e.type==='faq').question;
+ denied(()=>k.reply({binding:binding('C'),snapshot:s,question:'Có gói quà không?',now}),'KNOWLEDGE_ENTRY_INVALID_OR_FOREIGN');
+});
+test('Cost/secret knowledge query is restricted before commerce delegation',()=>{
+ const r=ask('B','Giá vốn của Shop B là bao nhiêu?');
+ assert.equal(r.status,'RESTRICTED_QUESTION');assert.equal(r.requires_verified_commerce,undefined);
+});
+test('Verified shop owner can propose acknowledgement without publishing',()=>{
+ const r=k.proposeLifecycle({binding:binding('B'),entry:lifecycleEntry('B','REVIEW'),actor:actor('B','SHOP_OWNER','owner-qa'),action:'acknowledge',now});
+ assert.equal(r.to,'REVIEW');assert.equal(r.published,false);assert.equal(r.database_writes,0);
+});
