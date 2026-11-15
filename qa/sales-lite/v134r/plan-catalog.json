@@ -1,0 +1,154 @@
+{
+  "version": "13.4r.1",
+  "status": "RESEARCH_ONLY",
+  "backend_entitlements_connected": false,
+  "production_billing_enabled": false,
+  "notes": "Giá và đặc quyền là thiết kế sản phẩm; không phản ánh quyền thuê bao thật.",
+  "features": [
+    {
+      "key": "customers.read_shop",
+      "label": "Xem khách hàng của cửa hàng"
+    },
+    {
+      "key": "customers.manage_shop",
+      "label": "Quản lý khách hàng của cửa hàng"
+    },
+    {
+      "key": "orders.read_shop",
+      "label": "Xem đơn của cửa hàng"
+    },
+    {
+      "key": "orders.manage_shop",
+      "label": "Quản lý đơn của cửa hàng"
+    },
+    {
+      "key": "reports.basic",
+      "label": "Báo cáo kinh doanh cơ bản"
+    },
+    {
+      "key": "reports.advanced",
+      "label": "Báo cáo nâng cao"
+    },
+    {
+      "key": "bot.standard",
+      "label": "Kịch bản AI/Bot tiêu chuẩn"
+    },
+    {
+      "key": "bot.customize",
+      "label": "Tùy chỉnh lời chào và phong cách hội thoại"
+    },
+    {
+      "key": "menu.customize",
+      "label": "Tạo bản nháp và xem trước menu"
+    },
+    {
+      "key": "channels.connect",
+      "label": "Yêu cầu kết nối kênh được hỗ trợ"
+    },
+    {
+      "key": "zalo_oa.integration",
+      "label": "Kết nối Zalo OA theo hợp đồng/quyền API"
+    },
+    {
+      "key": "multi_store.manage",
+      "label": "Quản lý nhiều cửa hàng theo hợp đồng"
+    },
+    {
+      "key": "team.manage",
+      "label": "Quản lý nhân viên theo hợp đồng"
+    },
+    {
+      "key": "support.enterprise",
+      "label": "Hỗ trợ kỹ thuật doanh nghiệp theo hợp đồng"
+    },
+    {
+      "key": "notifications.read_shop",
+      "label": "Xem thông báo đúng cửa hàng"
+    },
+    {
+      "key": "subscription.read_shop",
+      "label": "Xem gói và thời hạn"
+    },
+    {
+      "key": "products.read_shop",
+      "label": "Xem danh mục sản phẩm"
+    },
+    {
+      "key": "products.manage_shop",
+      "label": "Đề xuất cập nhật sản phẩm (đòi hỏi write gate riêng)"
+    }
+  ],
+  "plans": [
+    {
+      "code": "SALES_LITE",
+      "label": "Sales Lite",
+      "price_vnd_hypothesis": 199000,
+      "price_status": "ASSUMPTION_ONLY",
+      "features": [
+        "customers.read_shop",
+        "customers.manage_shop",
+        "orders.read_shop",
+        "orders.manage_shop",
+        "reports.basic",
+        "bot.standard",
+        "channels.connect",
+        "notifications.read_shop",
+        "subscription.read_shop",
+        "products.read_shop"
+      ],
+      "conditional_features": [],
+      "overview": "Đầy đủ quản lý khách hàng và đơn cơ bản; dùng mẫu bot chuẩn, không có Menu Designer."
+    },
+    {
+      "code": "SALES_PLUS",
+      "label": "Sales Plus",
+      "price_vnd_hypothesis": 349000,
+      "price_status": "ASSUMPTION_ONLY",
+      "features": [
+        "customers.read_shop",
+        "customers.manage_shop",
+        "orders.read_shop",
+        "orders.manage_shop",
+        "reports.basic",
+        "bot.standard",
+        "channels.connect",
+        "notifications.read_shop",
+        "subscription.read_shop",
+        "products.read_shop",
+        "bot.customize",
+        "menu.customize",
+        "reports.advanced"
+      ],
+      "conditional_features": [],
+      "overview": "Bao gồm Lite; tùy chỉnh nội dung và menu dạng bản nháp trong phạm vi API cho phép."
+    },
+    {
+      "code": "SALES_ENTERPRISE",
+      "label": "Sales Enterprise",
+      "price_vnd_hypothesis": null,
+      "price_status": "QUOTE_ONLY",
+      "features": [
+        "customers.read_shop",
+        "customers.manage_shop",
+        "orders.read_shop",
+        "orders.manage_shop",
+        "reports.basic",
+        "bot.standard",
+        "channels.connect",
+        "notifications.read_shop",
+        "subscription.read_shop",
+        "products.read_shop",
+        "bot.customize",
+        "menu.customize",
+        "reports.advanced"
+      ],
+      "conditional_features": [
+        "zalo_oa.integration",
+        "multi_store.manage",
+        "team.manage",
+        "support.enterprise"
+      ],
+      "overview": "Báo giá theo hợp đồng; OA, nhân viên, nhiều shop và SLA có điều kiện riêng."
+    }
+  ]
+}
