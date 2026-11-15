@@ -31,6 +31,9 @@ jobs:
           node --test qa/store-rls-v142/store-boundary.test.cjs
           node --check qa/store-rls-v142/postgres-repository.cjs
           node --test qa/store-rls-v142/postgres-repository.test.cjs
+          node --test qa/store-rls-v142/predeploy-approval-gates.test.cjs
+          node --test qa/store-rls-v142/hosted-jwt-read-qa.test.cjs
+          node --test qa/store-rls-v142/release-safety-static.test.cjs
           node --test qa/shop-onboarding-v142/onboarding-core.test.cjs
       - name: Regression — V14.1 Shop Knowledge Engine
         run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
