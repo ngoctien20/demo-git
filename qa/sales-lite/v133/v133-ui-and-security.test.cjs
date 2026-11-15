@@ -33,3 +33,9 @@ test('V13.3 Studio uses official st rather than legacy type',()=>{const c=fs.rea
 test('V13.3 Merchant defaults to live API no silent fixture fallback',()=>{const c=fs.readFileSync(path.join(__dirname,'account/app.js'),'utf8'),h=fs.readFileSync(path.join(__dirname,'account/index.html'),'utf8');assert.match(c,/fetch\('\/api\/sales-lite\/me'/);assert.match(h,/<option value="live">/);assert.match(c,/Không dùng dữ liệu mẫu thay thế/);});
 test('Studio versioning comparison and REVIEW gate are memory-only',()=>{const c=fs.readFileSync(path.join(__dirname,'studio/app.js'),'utf8');assert.match(c,/draftDiff/);assert.match(c,/releaseState='REVIEW'/);assert.doesNotMatch(c,/localStorage|sessionStorage|sendMessage\s*\(/);});
 test('Merchant/studio assets share existing design system',()=>{for(const v of ['studio','account']){const h=fs.readFileSync(path.join(__dirname,v,'index.html'),'utf8');assert.match(h,/\.\.\/\.\.\/v132\/design-system\.css/);}});
+
+test('Studio Registry fetch includes same-origin Cloudflare Access credentials',()=>{
+ const src=fs.readFileSync(path.join(__dirname,'studio/app.js'),'utf8');
+ assert.match(src,/fetch\('\.\.\/\.\.\/v131\/menu-registry\.json',\{cache:'no-store',credentials:'same-origin'\}\)/);
+ assert.doesNotMatch(src,/fetch\('\.\.\/\.\.\/v131\/menu-registry\.json',\{cache:'no-store',credentials:'omit'\}\)/);
+});
