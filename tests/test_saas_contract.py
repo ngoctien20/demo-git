@@ -6,7 +6,7 @@ BASE=Path(__file__).resolve().parents[1]
 ROOT=BASE/'site' if (BASE/'site').is_dir() else BASE
 class SaaSContract(unittest.TestCase):
  def test_six_pages_and_semantics(self):
-  for page in ['register','login','checkout','dashboard','billing','invoice']:
+  for page in ['register','checkout','dashboard','billing','invoice']:
    s=BeautifulSoup((ROOT/(page+'.html')).read_text(encoding='utf-8'),'html.parser')
    self.assertEqual(s.body.get('data-saas-page'),page)
    self.assertIsNotNone(s.select_one('main'))
@@ -29,8 +29,20 @@ class SaaSContract(unittest.TestCase):
   self.assertNotIn('n8n.cloud',j)
   self.assertIn('data-saas-output', (ROOT/'checkout.html').read_text())
   self.assertIn("@use 'saas'",((ROOT/'assets/scss/main.scss') if (ROOT/'assets/scss/main.scss').exists() else (ROOT/'src/scss/main.scss')).read_text())
+ def test_auth_redirect_replaces_demo_login(self):
+  s=BeautifulSoup((ROOT/'login.html').read_text(encoding='utf-8'),'html.parser')
+  redirect=s.select_one('meta[http-equiv="refresh"]')
+  target='https://tien404-auth-staging.onrender.com/login.html'
+  self.assertIsNotNone(redirect)
+  self.assertEqual(redirect.get('content'),'0;url='+target)
+  self.assertIsNotNone(s.select_one('a[href="'+target+'"]'))
+  self.assertFalse(s.select('form,input,script'))
+  rules=(ROOT/'_redirects').read_text(encoding='utf-8')
+  self.assertIn('/login '+target+' 302',rules)
+  self.assertIn('/login.html '+target+' 302',rules)
  def test_nav_on_all_pages(self):
   for page in ROOT.glob('*.html'):
+   if page.name=='login.html': continue # Dedicated no-form auth redirect, tested separately.
    s=BeautifulSoup(page.read_text(encoding='utf-8'),'html.parser')
    self.assertIsNotNone(s.select_one('#main-menu a[href="login.html"]'),page.name)
 if __name__=='__main__':unittest.main()
