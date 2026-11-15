@@ -94,8 +94,7 @@
         "channels.connect",
         "notifications.read_shop",
         "subscription.read_shop",
-        "products.read_shop",
-        "products.manage_shop"
+        "products.read_shop"
       ],
       "conditional_features": [],
       "overview": "Đầy đủ quản lý khách hàng và đơn cơ bản; dùng mẫu bot chuẩn, không có Menu Designer."
@@ -116,7 +115,6 @@
         "notifications.read_shop",
         "subscription.read_shop",
         "products.read_shop",
-        "products.manage_shop",
         "bot.customize",
         "menu.customize",
         "reports.advanced"
@@ -140,7 +138,6 @@
         "notifications.read_shop",
         "subscription.read_shop",
         "products.read_shop",
-        "products.manage_shop",
         "bot.customize",
         "menu.customize",
         "reports.advanced"
