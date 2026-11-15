@@ -126,3 +126,12 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - New offline pricing module with no send `qa/zalo-live-v145z/live03b-price-reconciliation.cjs` and 22 negative tests. CI 43740865678 189/189 PASS.
 - COST-02 price row UI VERIFIED; COST-01 UI balance observed; COST-03 Auto topup and money cap unverified; COST-04 hosted trusted shared token-money cap unverified. Real Bot→Shop→Owner mapping still synthetic. Send NO-GO.
 - Detailed corrections are in `docs/ai-handoff/TIEN404_V14_5Z_LIVE03A_EVIDENCE_INTAKE_RUNBOOK.md` Section K and `...LIVE03_TRUSTED_IDENTITY_BUDGET_CHECKPOINT.md`.
+
+## 16. V14.5Z LIVE03C hosted budget atomic guard / no-send QA, 2026-11-16 JST
+- LIVE03C migration on isolated QA D1 new-only tables `z145z_live03c_budget_policies`, `z145z_live03c_budget_events` and trigger; preflight Time Travel bookmark captured, old tables/production untouched.
+- Exact n8n `gpt-5.4-nano` rates in integer nUSD, synthetic $0.01 money ceiling, 3 calls/2500 total token guard: direct hosted D1 **22/22 PASS** including concurrency, replay, CAS, expiry, wrong scope and $ overage.
+- New staging Worker `tien404-zalo-live03c-budget-nosend-staging` one D1 QA binding only, no secret, no sendMessage or outbound fetch; new n8n manual-only inactive QA workflows validated HTTP executions **3856–3860** (401, 403, 200 reserve, 409 money limit, 200 health/423 send denied).
+- All 7 LIVE03C QA grants STOPPED, 0 ARMED. Active Published ingress/private router preserved, outbound Worker ZALO_SEND_ENABLED=false.
+- CI for source after new 14-case Worker regression run 43741753066 **203/203 PASS**.
+- Real provider Bot→Shop→Owner and Auto top-up/current account-wide credit/money ceiling still **BLOCKED**; no real sends, no actual model inference, no customer/Orders/billing/credential/production changes.
+- Full evidence + rollback `docs/ai-handoff/TIEN404_V14_5Z_LIVE03C_HOSTED_BUDGET_GATE.md`.
