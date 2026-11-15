@@ -6,6 +6,8 @@ Date: 2026-11-16 JST | STATUS: SOURCE-ONLY CANDIDATE / NO-SEND
 - V14.7 Custom Bot Studio / Rich UI: Draft PR #118, HEAD 1bdc6f7d74e2e8ea2b2b15651831e50c6b8c980e. Owner synthetic UAT 5/5 (not provider live).
 - V14.8 Unified Identity: Draft PR #121, HEAD a25ad0bab04ffe23d7e0c158abb331cd8078e7a6. Signed fixture-only; not verified Meta/Zalo signatures.
 - V15.0-01/02 Universal AI Core/Cost Lab: Draft PR #122, HEAD 6b677080572d406078b488e4e07d47eed1dc342b, parent of this branch; 73/73 unit tests in earlier CI run 43764702347.
+- V15.0-03→08 A→B→C→D is already implemented in Draft PR #123 (HEAD 5be5625717f65a76e27bf883ad2dc2006772ffe4); this PR is RE-TARGETED as additive security/QA hardening on top of #123. It does not replace #123 Business Skills registry, Smart Model Router or Vietnamese Owner Test Lab.
+- Separate parallel V14.8 PR #124 exists. The V15 inheritance path here uses PR #121; do not combine both V14.8 branches without deliberate reconciliation.
 - This branch adds isolated source-only policy and local QA ingestion, not an alternative AI core.
 
 ## VERIFIED live READ-ONLY audit
@@ -18,9 +20,10 @@ Date: 2026-11-16 JST | STATUS: SOURCE-ONLY CANDIDATE / NO-SEND
 ## IMPLEMENTED (new)
 1. qa/v15-agent-core/business-skills-gate.cjs: six source-only capability plans, strict customer/owner/manager/staff/service role scope; independently injected backend attestation, deny on revoke, expired subscription, crossed channel/session, policy drift, backend send/write permission, tool type mismatch. Zero real tool executions even for allowed decisions. Actual read-only backend adapter and confirmed hosted transaction remain separate future gates.
 2. qa/v15-agent-core/business-skills-gate.test.cjs: 21 local deterministic tests PASS (positive and negative).
+2b. qa/v15-agent-core/business-skills-gate.integration.test.cjs: 8 additional source-only Universal Agent Core → independent Skill Gate integration cases; require exact GitHub CI success before marking TESTED.
 3. qa/v15-model-lab/private-dataset-gate.cjs: local-only CSV parser, exact SHA/row/schema/unique ID/turn structure/status check. Outputs counts/checksum ONLY, never raw messages or model scores; private CSVs never committed.
 4. qa/v15-model-lab/private-dataset-gate.test.cjs: 12 local deterministic tests PASS with synthesized cases; detect malformed input, duplicate IDs, tamper, pre-existing outputs, invalid dialogue.
-5. .github/workflows/v15-business-skills-private-qa.yml: GitHub Actions branch/PR CI, pure Node 22 tests + static no-send check, no credentials/provider APIs.
+5. .github/workflows/v15-business-skills-private-qa.yml: GitHub Actions branch/PR CI, pure Node 22 tests + static no-send check, no credentials/provider APIs. Parent PR #123 itself has successful offline A-B-C-D workflow run #43766891565.
 
 ## PRIVATE LOCAL DATASET QA (structure only, no GitHub upload)
 - 96 single-turn unique case IDs: structure/SHA PASS, actual_output empty.
@@ -44,7 +47,8 @@ P2: Owner UAT private No-Send dashboard and feature selection; operational monit
 - [x] Reuse V14.7/V14.8 and V15 AI Core rather than rebuilding.
 - [x] Local tool policy QA 21/21 (source-only).
 - [x] Local CSV integrity QA 12/12; 96/96 + 36/36 structural checks.
-- [ ] This branch's GitHub CI at exact HEAD success.
+- [ ] This branch's GitHub CI at FINAL exact HEAD success (new integration tests added; previous #43766961524/#43766961536 success at earlier HEAD).
+- [x] Parent #123 A→B→C→D offline CI succeeded, but live capability/merchant consent still BLOCKED.
 - [ ] Real signed provider events + hosted identity ownership proof.
 - [ ] Owner independent UAT and explicit release approval.
 - [ ] Multi-model paid quality comparison (requires hard budget approval).
