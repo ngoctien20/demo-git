@@ -10,6 +10,7 @@ const REQUIRED=Object.freeze([
  'owner_backfill_mapping',
  'store_schema',
  'store_rls',
+ 'catalog_store_id',
  'same_tenant_two_store_jwt',
  'private_page_binding',
  'page_owner_consent',
@@ -19,7 +20,8 @@ const REQUIRED=Object.freeze([
  'atomic_hosted_postgres_qa',
  'distributed_hmac_rotation_qa',
  'retention_tombstone_policy',
- 'messenger_entitlement'
+ 'messenger_entitlement',
+ 'security_definer_rpc_review'
 ]);
 const DENY=Object.freeze({
  migrationAuthorized:false,
@@ -53,6 +55,7 @@ function buildHostedEvidencePack({mode='BLOCKED',snapshot}={}){
   owner_backfill_mapping:null,
   store_schema:d.schema.stores===true&&d.schema.storeMemberships===true,
   store_rls:null,
+  catalog_store_id:d.schema.productStoreId===true,
   same_tenant_two_store_jwt:null,
   private_page_binding:d.schema.privatePageBinding===true,
   page_owner_consent:null,
@@ -62,7 +65,8 @@ function buildHostedEvidencePack({mode='BLOCKED',snapshot}={}){
   atomic_hosted_postgres_qa:null,
   distributed_hmac_rotation_qa:null,
   retention_tombstone_policy:null,
-  messenger_entitlement:null
+  messenger_entitlement:null,
+  security_definer_rpc_review:null
  };
  const gates=Object.freeze(REQUIRED.map(key=>Object.freeze({
   key,
