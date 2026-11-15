@@ -156,3 +156,9 @@ test('backend failures fail closed without leaking details',async()=>{
 test('missing server ports throw before any operation',()=>{
  assert.throws(()=>createMerchantEntitlementService(),/SERVER_PORT_REQUIRED/);
 });
+
+test('legacy Plus code is normalized ONLY after backend subscription verification',async()=>{
+ const r=await make({plan:'SALES_LITE_PLUS'})('menu.customize');
+ assert.equal(r.allowed,true);assert.equal(r.planCode,'SALES_PLUS');
+ assert.equal(r.designMode,'DRAFT_ONLY');
+});
