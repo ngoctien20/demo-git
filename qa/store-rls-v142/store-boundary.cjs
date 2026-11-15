@@ -6,6 +6,8 @@
  * Never trust bot/tenant/store/user/role/verified fields supplied in request JSON.
  */
 const {reply:knowledgeReply}=require('../shop-knowledge-v141/knowledge-core.cjs');
+// Only authorizeStore may mint an internal context. Marker strings are not credentials.
+const ISSUED_CONTEXTS=new WeakSet();
 const STORE_SCHEMA_GATE=Object.freeze([
  'public.stores','public.store_memberships',
  'app_private.shop_knowledge_releases','app_private.shop_knowledge_items'
@@ -48,16 +50,18 @@ async function authorizeStore({headers,selection,deps}={}){
  // is responsible for checking BOTH tenant and store assignment in one trusted query.
  if((assignment.role.startsWith('TIEN404_')||assignment.role==='PLATFORM_SUPER_ADMIN')&&
     assignment.store_staff_assignment_active!==true)deny('STAFF_STORE_ASSIGNMENT_MISSING',403);
- return Object.freeze({
+ const context=Object.freeze({
    source:'SERVER_AUTHENTICATED_STORE_SESSION',
    user_id:actor.user_id,tenant_id:assignment.tenant_id,store_id:assignment.store_id,
    role:assignment.role,session_expires_at_ms:actor.expires_at_ms,
    // never forward raw JWT or other credentials
    _scope_key:assignment.tenant_id+'|'+assignment.store_id
  });
+ ISSUED_CONTEXTS.add(context);
+ return context;
 }
 function assertContext(context){
- if(!context||context.source!=='SERVER_AUTHENTICATED_STORE_SESSION'||
+ if(!context||!ISSUED_CONTEXTS.has(context)||context.source!=='SERVER_AUTHENTICATED_STORE_SESSION'||
     !validId(context.user_id)||!validId(context.tenant_id)||!validId(context.store_id))
    deny('STORE_CONTEXT_REQUIRED',403);
 }
@@ -104,5 +108,5 @@ function redactServerError(e){
  // Do not expose SQL text, key, JWT, query, private knowledge.
  return Object.freeze({ok:false,status,error:code});
 }
-module.exports={authorizeStore,readCustomerKnowledge,assertMigrationSafety,validateReadback,
+module.exports={authorizeStore,assertContext,readCustomerKnowledge,assertMigrationSafety,validateReadback,
  redactServerError,AccessError,STORE_SCHEMA_GATE};
