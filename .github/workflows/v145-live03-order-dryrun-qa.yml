@@ -1,0 +1,58 @@
+name: TIEN404 V14.5 LIVE03 Order Dry Run Safety QA (NO WRITE)
+on:
+  push:
+    branches:
+      - work/v145-live03-order-dryrun-qa-20261116
+    paths:
+      - 'qa/messenger-live03/**'
+      - 'docs/ai-handoff/V14_5_LIVE02_ACCEPTED_LIVE03_*'
+      - '.github/workflows/v145-live03-order-dryrun-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/messenger-live03/**'
+      - 'docs/ai-handoff/V14_5_LIVE02_ACCEPTED_LIVE03_*'
+      - '.github/workflows/v145-live03-order-dryrun-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live03-dryrun:
+    name: Validate 13 LIVE03 synthetic no-write contract tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify offline source syntax
+        run: |
+          node --check qa/messenger-live03/live03-dryrun-source.test.cjs
+      - name: Run 13 dry-run QA assertions
+        run: node --test qa/messenger-live03/live03-dryrun-source.test.cjs
+      - name: Guard no production credentials, network or I/O
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/messenger-live03/live03-dryrun-n8n-code.js').read_text()
+          for bad in ['require(', 'fetch(', 'axios(', 'process.env', 'graph.facebook.com',
+                      'googleSheets.append', 'executeWorkflow(', 'supabase.from(']:
+              assert bad not in s, bad
+          for positive in ['googleSheetsWrites:0', 'hostedWrites:0',
+                           'providerSends:0', 'isRealOrder:false']:
+              assert positive in s,positive
+          print('PASS: LIVE03 dry-run code is mocked, no external APIs/credential paths')
+          PY
+  messenger-regression:
+    name: Verify 45 signed ingress + 33 prior Messenger QA tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run inherited Messenger security and four-flow tests
+        run: |
+          node --test qa/messenger-live-gate-v145/trusted-webhook-qa.test.cjs
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
