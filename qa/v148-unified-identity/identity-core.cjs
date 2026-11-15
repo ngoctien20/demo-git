@@ -75,6 +75,7 @@ function createUnifiedQaRouter({mode,secretByChannel,bindings,studio=createStudi
   const snap=Object.freeze({...b});
   registry.set(scope,snap);byId.set(b.id,scope);
  }
+ const storePolicies=new Map(Object.keys(FIXTURES).map(shop=>[shop,{status:'ACTIVE',subscriptionActive:true,version:1}]));
  const replay=new Map(),profileCache=new Map();
  const counts={accepted:0,denied:0,duplicates:0,cacheHit:0,cacheMiss:0};
  function signFixture(channel,rawBody){
@@ -174,6 +175,10 @@ function createUnifiedQaRouter({mode,secretByChannel,bindings,studio=createStudi
      b.verified_until_ms<=now()){
    counts.denied++;return deny('CHANNEL_BINDING_NOT_ACTIVE_OR_EXPIRED');
   }
+  const storePolicy=storePolicies.get(b.shop);
+  if(!storePolicy||storePolicy.status!=='ACTIVE'||!storePolicy.subscriptionActive){
+   counts.denied++;return deny('STORE_PAUSED_OR_SUBSCRIPTION_EXPIRED');
+  }
   let profile;try{profile=profileFor(b);}
   catch{counts.denied++;return deny('BOT_PROFILE_SCOPE_INVALID');}
   const replayKey=scope+'|'+data.event_id;
@@ -218,6 +223,13 @@ function createUnifiedQaRouter({mode,secretByChannel,bindings,studio=createStudi
   // Test harness only, not a real admin endpoint.
   profileCache.clear();
  }
+ function qaSetStorePolicy(shop,{status,subscriptionActive}={}){
+  if(!Object.hasOwn(FIXTURES,shop)||!['ACTIVE','SUSPENDED'].includes(status)||
+   typeof subscriptionActive!=='boolean')throw new Error('QA_STORE_POLICY_UPDATE_INVALID');
+  const old=storePolicies.get(shop);
+  storePolicies.set(shop,{status,subscriptionActive,version:old.version+1});
+  profileCache.clear();
+ }
  function inspect(){
   return Object.freeze({contract_version:CONTRACT_VERSION,mode:MODE,
    synthetic_channels:CHANNELS.slice(),bindings:registry.size,
@@ -229,6 +241,6 @@ function createUnifiedQaRouter({mode,secretByChannel,bindings,studio=createStudi
    real_llm_calls:0,provider_sends:0,hosted_writes:0,
    durable_replay_across_workers:false,can_publish:false});
  }
- return Object.freeze({processSignedFixture,signFixture,qaSetBindingStatus,inspect});
+ return Object.freeze({processSignedFixture,signFixture,qaSetBindingStatus,qaSetStorePolicy,inspect});
 }
 module.exports={createUnifiedQaRouter,CONTRACT_VERSION,MODE};
