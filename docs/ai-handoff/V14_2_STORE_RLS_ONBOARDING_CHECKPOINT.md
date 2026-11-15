@@ -93,3 +93,47 @@ Database migration rollback planning is required when and only when separately a
 3. Create actual migration with Supabase CLI under owner-approved release process, never copy paste proposal SQL with its stop gate removed.
 4. Implement real hosted repository + Auth verifier and persist drafts in private Knowledge tables **after** schema and permissions are approved.
 5. Connect reviewed Knowledge to Customer Sales Core in **read-only no-send** staging, measure accuracy and handoff; later consider real AI onboarding under separately approved model cost.
+
+
+---
+
+# Addendum — Owner conditional staging approval / 15 Nov 2026 JST
+
+## Permission scope (user-approved, conditional)
+- Approved to PREPARE Store/Knowledge migration and stage RLS conversion, contingent on VERIFIED restorable backup and owner-approved rollback plan.
+- Approved to map 2 Products + 2 Orders ONLY after per-record store ownership verification.
+- Approved to perform hosted JWT QA with two separately authorized Shop A/B sessions, no service-role impersonation.
+- NO permission to change production, customer data outside scope, credentials, paid AI, subscriptions or send real Zalo/Messenger messages.
+
+## VERIFIED new live evidence
+- PR #86 still Draft, stacked on PR #85; no merge.
+- Supabase migration history through 20261114170717; no V14.1/V14.2 migration executed.
+- No public.stores, public.store_memberships or app_private Shop Knowledge release/items tables.
+- Rows products=2/orders=2; remaining four Commerce core tables empty. QA Shop A/B have ONE candidate in tenant_identity_map each; QA shop_bots flags synthetic_qa/dry_run. Candidate keys qa-store-a / qa-store-b are not approved canonical store UUIDs and are NOT ownership verification.
+- Render Account staging tab shows Shop A owner on read-only account page, but not two verifiable authorized JWTs for hosted test. A and B are distinct tenants, so same-tenant two-store QA remains unavailable.
+- Public SECURITY DEFINER save_merchant_product references tenant_id and auth.uid() but not store_id; qa_owner_pairing also not store-scoped. qa_shop_b_zalo_claim is callable by anon and does not mention auth.uid(). These are attack-surface audit flags, not proof of exploit. No changes made.
+- Supabase connector can read SQL and migration history but cannot provide backup artifact/list or restore proof. Actual restorable backup and safe restoration drill NOT verified.
+
+## IMPLEMENTED in same Draft PR
+- docs/ai-handoff/V14_2_P0_MIGRATION_BACKUP_ROLLBACK_RUNBOOK.md: evidence-based backup/restore/mapping/policy transition plan, with stop criteria.
+- qa/store-rls-v142/PREFLIGHT_READ_ONLY.sql: SELECT-only live inspection queries and release gate hard-coded false. NOT a backup.
+- qa/store-rls-v142/predeploy-approval-gates.cjs: fail-closed human-review-only gate, cannot authorize migration even with all mock input flags.
+- qa/store-rls-v142/hosted-jwt-read-qa.cjs: optional two real-user JWT read-only Supabase Auth and Store A/B same-tenant membership and 4 positive/negative Products reads; disabled unless operator explicitly provides sanctioned staging-only environment and private QA sessions. It never uses service_role, only GET. Not executed against hosted.
+- Tests: predeploy-approval-gates.test.cjs, hosted-jwt-read-qa.test.cjs, release-safety-static.test.cjs check no-write SQL, blocked migration proposal, JWT scope and cross-store leak detection.
+
+## QA
+- GitHub Actions run 43707691413: contract PASS (37+12+21+10+5+58+87+39+44 = 313/313) and Chromium browser PASS (320/360/390/430/768/1280) with existing 11-step onboarding.
+- First new static security test initially misread the string literal EXECUTE in a SELECT privilege check as an executable SQL command; test corrected to skip SQL quoted literals and CI rerun PASSED.
+- Previous n8n manual QA workflow FIE7nl2vgLXQI7mT version b24c7a86-66bf-45a2-b48b-a81c54e375bb, exec 3833: SUCCESS 16/16 synthetic. NOT reconfigured.
+
+## Release decision
+- VERIFIED architecture: yes.
+- PREPARED migration + rollback review package: yes.
+- VERIFIED backup: NO (BLOCKED).
+- Owner-approved recovery/rollback evidence: NO (BLOCKED).
+- Per-row canonical store ownership proof for 4 rows: NO (BLOCKED).
+- Hosted JWT RLS QA: NO (BLOCKED).
+- New Supabase DDL/RLS/backfill writes: ZERO.
+- Provider sends / Orders writes / credential changes / production changes: ZERO.
+
+Next safe action: obtain backup evidence and approved restore drill; validate per-row mapping with owner; obtain authorized Shop A/B JWT sessions, plus same-tenant dual-store QA fixtures. Only then request explicit acceptance of rollback plan before beginning staged DDL/RLS execution. No need to repeat any already verified read-only query.
