@@ -50,3 +50,10 @@
 Only new GitHub branch and standalone INACTIVE n8n QA workflow were added. No production rollback or Supabase migration needed for V13.1. To retract Candidate, close/revert the new PR branch; keep the n8n QA workflow inactive (delete only with separate owner approval). Existing PR #41/#52 and Published workflows unaffected.
 
 **Acceptance scope:** Menu Engine code, mock renderer, text fallback, permission/security ports and preliminary business contracts are `IMPLEMENTED + TESTED`; **live Zalo interactive menu and Sales Lite V1.1 release are not accepted**.
+
+
+## Regression extension — V12.4 Reply Guard QA (15/11/2026)
+
+After V13.1 Menu Engine CI, **re-ran** the existing n8n `TIEN404_ZALO_V124_REPLY_GUARD_QA_STAGING` workflow id `nKNKDLO4l2PXL4tx` in MANUAL mode after reviewing all its nodes (Manual Trigger → Data Table read → 3 Code QA nodes, no sending/DB write tools). **Execution 3810 SUCCESS**, `total=25`, `passed=25`, `failed=0`, `allPassed=true`, `real_llm_tested=false`, `orders_written=0`, `external_sends=0`. It covers cross tenant, Owner separation, prompt injection, price/inventory, replay, human handoff, model output and no-order-commit.
+
+This is an **additional independent regression suite** and does not prove the new V13.1 router is attached to V12.4. The existing Commerce Agent Sandbox `iyfGUiEsZlNTBWOR` uses OpenAI model and tool-workflows; it was **not executed** due cost/write gates. Owner Shadow was **not manually exercised** because it is Published and currently handles live Zalo; its version remained unchanged. Core PR #52 CI is existing independent evidence, not rerun or merged in this branch.
