@@ -43,7 +43,7 @@ Folder: Personal / `90_QA - DIAGNOSTICS`.
 | T2 | text_styles bold, 18px, green + italic emoji | API_ACCEPTED | consumed |
 | T3 | parse_mode=markdown, bold/list/green | API_ACCEPTED | consumed |
 
-D1 readback after send confirmed exactly 3 claim keys with status `API_ACCEPTED`. SDK source tested by GitHub Actions before deploy. The provider accepted each send; **no claim that Zalo mobile app rendered colors, sizes or Markdown correctly**. User must inspect the verified Owner QA Shop B chat and, if willing, share a redacted screenshot for final UI acceptance.
+D1 readback after send confirmed exactly 3 claim keys with status `API_ACCEPTED`. SDK source tested by GitHub Actions before deploy. The provider accepted each send; subsequent user-supplied **Zalo desktop screenshot** confirms T1/T2/T3 rendered as described in the visual QA section below. Zalo mobile and precise CSS-like font sizing are still unverified.
 
 ## GitHub and CI
 
@@ -55,10 +55,22 @@ D1 readback after send confirmed exactly 3 claim keys with status `API_ACCEPTED`
 
 ## Remaining gates, rollback and limits
 
-- **BLOCKED / UNVERIFIED:** actual Zalo UI rendering, native Zalo buttons/quick replies/callback (API not confirmed), customer-to-bot reply end-to-end after selecting 1/2/3; Bot Creator supports fixed Rich Text schemas but actual rendering must be viewed on device.
+- **BLOCKED / UNVERIFIED:** Zalo mobile rendering, exact pixel font size, native Zalo buttons/quick replies/callback (API not confirmed), customer-to-bot reply end-to-end after selecting 1/2/3. Zalo desktop actual rendering was separately visually verified from Owner-provided screenshot.
 - Legacy Cloudflare general send kill switch preserved OFF. New QA send gate is exhausted and expires 2026-11-15 10:00Z.
 - Restore prior Worker deployment version `ef7b7a33-5551-48e0-954b-646c047b5c6d` via authorized Cloudflare Worker deployment if immediate rollback is required. Do not blindly reset secret bindings and **do not replay sent messages**.
 - Never delete D1 claims or re-enable T1/T2/T3 to repeat tests without separate explicit approval.
 - No customer Orders/Products, credential changes, Zalo webhook, Billing, or production deployments.
 
-**Status:** LIVE PROVIDER API TEST PASSED for 3/3 requests, APP RENDERING NOT YET VERIFIED, new send permission EXHAUSTED.
+**Status:** LIVE PROVIDER API TEST PASSED 3/3; ZALO DESKTOP VISUAL QA PASSED 3/3 (from Owner-provided screenshot); mobile/interactive controls NOT VERIFIED; send permission EXHAUSTED.
+
+## Additional verified visual QA — Owner-provided Zalo desktop screenshot (2026-11-15 JST)
+
+An image of the authenticated conversation with **Bot TIEN404 AI**, provided by the project Owner in ChatGPT shortly after execution `3821`, visibly shows all **three** QA messages T1/T2/T3 in the same chat, with timestamp **15:35 JST**.
+
+- **T1 / MENU QA — VERIFIED DISPLAY:** multiline plain text with choices `1. Xem sản phẩm`, `2. Hỏi giá`, `3. Yêu cầu mua hàng`; also `Tin kiểm thử, không tạo đơn.`. These are text instructions, **not native tappable buttons**; no response to numbered selections tested.
+- **T2 / RICH TEXT QA — VERIFIED DISPLAY:** prefix `TIEN404` displayed in green bold, subsequent phrase `Chữ nghiêng và emoji 🛒` displayed italic and emoji rendered, final explanatory line displayed. Actual **18px exact font metrics cannot be proven** from screenshot; confirm only visible visual differentiation.
+- **T3 / MARKDOWN QA — VERIFIED DISPLAY:** `TIEN404` visibly bold; `Chữ nghiêng` italic; two items rendered as bullet list; `Chữ xanh` green; no raw Markdown artifacts shown in screenshot. The gaps around bullet list and colored text are relatively large; improve copy compactness before commercialization.
+- Platform visibility scope: **Zalo desktop app**. No separate Zalo mobile screenshot, screen-reader rendering or phone-native button actions have been tested.
+- **Privacy:** screenshot remains in the private conversation, not committed to public GitHub, and no Zalo chat ID, account phone number, user identifier, message ID or token is recorded in this checkpoint.
+
+**Acceptance:** T1/T2/T3 visual desktop content match = 3/3 PASS, native interactive controls = UNKNOWN, mobile = PENDING. This is a user-provided visual observation, not an automated Zalo UI test. There are no additional sends and no modifications to published webhook or Sales Core.
