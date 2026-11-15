@@ -100,6 +100,18 @@ function createOfflineWidgetPreview({mode='DENY',ports,serverSecret,now=Date.now
    // forbidden.  This integration can preview PUBLIC product/Knowledge only.
    if(!ALLOWED_TYPES.has(intent?.type)||intent?.dispatch_authorized!==false)
      reject('WIDGET_PRIVATE_OR_WRITE_INTENT_DENIED');
+   // Even reviewed UI branding can contain a real shop's public phone/address;
+   // reject a staff-reviewed theme fetched from the WRONG store.
+   if(config?.tenantId!==install.tenantId||
+      config?.storeId!==install.storeId||config?.widgetId!==install.widgetId)
+     reject('WIDGET_THEME_CROSS_STORE_READBACK');
+   // Price and stock must share a bounded versioned catalog snapshot.
+   // Existing V14.3 core still validates row scope and integer VND.
+   if(['PRODUCT_CARD','PRODUCT_LIST'].includes(intent.type)&&
+      (!Number.isSafeInteger(catalog?.priceVersion)||catalog.priceVersion<1||
+       !Number.isSafeInteger(catalog?.stockVersion)||catalog.stockVersion<1||
+       !Number.isSafeInteger(catalog?.expiresAt)||catalog.expiresAt<=now()))
+     reject('WIDGET_PRICE_STOCK_SNAPSHOT_STALE_OR_UNVERSIONED');
    const verifiedTheme=theme(config);
    const binding={
      source:'SERVER_VERIFIED_CHANNEL_SCOPE',verified:true,serverDerived:true,
