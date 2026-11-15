@@ -1,0 +1,72 @@
+name: TIEN404 V14.8 Unified Identity & Fast Routing QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v14801-unified-identity-candidate-nosend-20261116
+    paths:
+      - 'qa/v148-unified-identity/**'
+      - '.github/workflows/v148-unified-identity-qa.yml'
+      - 'docs/ai-handoff/V14_8_*'
+  pull_request:
+    paths:
+      - 'qa/v148-unified-identity/**'
+      - '.github/workflows/v148-unified-identity-qa.yml'
+      - 'docs/ai-handoff/V14_8_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    name: Signed multi-channel resolver + Studio compatibility
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node 22 syntax check
+        run: |
+          node --check qa/v148-unified-identity/identity-core.cjs
+          node --check qa/v148-unified-identity/identity-core.test.cjs
+          node --check qa/v148-unified-identity/benchmark.cjs
+      - name: Unit/security tests
+        run: node --test qa/v148-unified-identity/identity-core.test.cjs
+      - name: Run inherited V14.7 Custom Bot Studio tests
+        run: |
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+      - name: Verify ZERO external writer/provider/AI integrations
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("qa/v148-unified-identity/identity-core.cjs")
+          s=p.read_text()
+          for marker in ["fetch(", "axios(", "process.env.", "graph.facebook.com",
+                         "executeWorkflow(", "pg.connect(", "createClient(",
+                         "googleSheets.append(", "ZALO_SEND_ENABLED=true"]:
+            assert marker not in s,marker
+          for marker in ["OFFLINE_SIGNED_FIXTURE_ONLY", "can_send:false",
+                         "actual_order_writes:0", "durable_replay_across_workers:false",
+                         "authenticated_provider_webhooks:false"]:
+            assert marker in s,marker
+          print("PASS: strict synthetic no-send/no-write contract")
+          PY
+  performance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    name: Reproducible in-process p50 p95 p99 microbenchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Benchmark 1,200 warm and 120 cold synthetic requests
+        run: |
+          node qa/v148-unified-identity/benchmark.cjs > v148-benchmark.json
+          node -e 'const r=require("./v148-benchmark.json");if(r.warm.samples<1200||r.cold_including_constructor.samples<120)process.exit(1);console.log("WARM",r.warm,"COLD",r.cold_including_constructor,"CACHE",r.cache_stats)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v148-unified-identity-synthetic-benchmark
+          path: v148-benchmark.json
+          retention-days: 14
