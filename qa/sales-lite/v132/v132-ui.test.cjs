@@ -1,0 +1,25 @@
+'use strict';
+// Deterministic source-level assurance only. Not a replacement for real browser/security QA.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const base=__dirname,read=p=>fs.readFileSync(path.join(base,p),'utf8');
+const studio=read('studio/index.html'),portal=read('account/index.html'),sjs=read('studio/app.js'),pjs=read('account/app.js'),css=read('design-system.css');
+const registry=require('../v131/menu-registry.json');
+test('V13.2 reuses V1.1 canonical registry with 17 actions',()=>{assert.equal(registry.menu_version,'1.1.0');assert.equal(registry.menus.reduce((s,m)=>s+m.actions.length,0),17);assert.match(sjs,/\.\.\/\.\.\/v131\/menu-registry\.json/);});
+test('Studio exposes five independent views',()=>{for(const v of ['overview','designer','preview','rich','qa'])assert.match(studio,new RegExp('id="view-'+v+'"'));});
+test('Merchant Portal exposes five customer-facing sections',()=>{for(const v of ['overview','account','subscription','bot','support'])assert.match(portal,new RegExp('id="view-'+v+'"'));});
+test('Mobile 360/390/430 supported with single column and bottom navigation',()=>{assert.match(css,/@media\(max-width:670px\)/);assert.match(css,/@media\(max-width:860px\)/);assert.match(css,/grid-template-columns:1fr/);for(const h of [studio,portal])assert.match(h,/class="mobile-nav"/);});
+test('Both pages load shared design tokens and local scripts',()=>{for(const h of [studio,portal]){assert.match(h,/\.\.\/design-system\.css/);assert.match(h,/src="app\.js"/);assert.doesNotMatch(h,/<script[^>]*https?:\/\//i);}});
+test('Menus are QA only, no provider/browser write operations',()=>{for(const src of [sjs,pjs]){assert.doesNotMatch(src,/fetch\([^\n]*method\s*:\s*['"](?:POST|PUT|PATCH|DELETE)/i);assert.doesNotMatch(src,/\bXMLHttpRequest\b|\bsendMessage\s*\(/);assert.doesNotMatch(src,/\blocalStorage\b|\bsessionStorage\b/);}});
+test('Studio does not mutate immutable Action IDs',()=>{assert.match(studio,/id="actionId"[^>]*readonly/);assert.match(sjs,/const prev=clone\(a\)/);assert.match(sjs,/Object\.assign\(a,prev\)/);});
+test('Studio exports only explicitly disabled payload',()=>{for(const flag of ['send_enabled:false','order_write_enabled:false','subscription_write_enabled:false'])assert.ok(sjs.includes(flag));});
+test('Owner mutation menu remains proposal-only and acknowledges confirmation',()=>{assert.match(sjs,/requires_confirmation/);assert.match(sjs,/không thực hiện thao tác/);});
+test('Both pages label fixtures and never claim a live customer identity',()=>{assert.match(studio,/mô phỏng|mẫu/i);assert.match(portal,/Dữ liệu minh họa/);assert.match(portal,/CHƯA XÁC THỰC/);});
+test('Merchant UI blocks user-initiated billing',()=>{assert.match(portal,/Gia hạn — chưa kích hoạt/);assert.match(portal,/disabled/);assert.doesNotMatch(pjs,/fetch\(/);});
+test('Merchant requires backend-verified membership, bot pairing',()=>{assert.match(portal,/membership/);assert.match(portal,/backend/);assert.match(portal,/Bot Token/);});
+test('Merchant exercises empty/error/expired fixture states',()=>{for(const s of ['demo:','empty:','expired:','error:'])assert.ok(pjs.includes(s));});
+test('Studio computes JS UTF-16 lengths for formatting',()=>{assert.match(sjs,/selectionStart/);assert.match(sjs,/selectionEnd-start/);assert.match(sjs,/text_styles/);});
+test('Shared CSS avoids horizontal overflow of narrow content',()=>{assert.match(css,/min-width:0/);assert.match(css,/overflow-wrap:anywhere/);assert.match(css,/overflow-x:auto/);});
+test('Safe text rendering for untrusted menu labels',()=>{assert.match(sjs,/textContent/);assert.doesNotMatch(sjs,/\binnerHTML\b|\binsertAdjacentHTML\b/);assert.doesNotMatch(pjs,/\binnerHTML\b|\binsertAdjacentHTML\b/);});
+test('No external assets, tokens or privileged browser values',()=>{for(const src of [studio,portal,sjs,pjs,css])assert.doesNotMatch(src,/(?:service_role|sk_live_|secret[_-]?key|bot\d{8,}:[A-Za-z0-9_-]{20,})/i);});
+test('No UI pretending to be deployed or commercially available',()=>{assert.match(studio,/EXPERIMENTAL/);assert.match(portal,/BẢN XEM THỬ/);assert.match(portal,/chưa mở bán/);});
+test('Page sources are not indexable in static previews',()=>{for(const h of [studio,portal])assert.match(h,/noindex,nofollow/);});
