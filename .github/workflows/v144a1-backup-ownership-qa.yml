@@ -1,0 +1,62 @@
+name: TIEN404 V14.4A.1 Backup & Four-row Ownership Safety QA
+on:
+  push:
+    branches:
+      - work/v144-store-backup-hosted-gate-20261115
+    paths:
+      - 'qa/store-rls-v144/**'
+      - 'docs/ai-handoff/V14_4A_*'
+      - '.github/workflows/v144a1-backup-ownership-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/store-rls-v144/**'
+      - 'docs/ai-handoff/V14_4A_*'
+      - '.github/workflows/v144a1-backup-ownership-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-evidence-gates:
+    name: No-migration, backup archive and four-row ownership QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run inherited Store RLS and 25 new offline gate cases
+        run: |
+          node --check qa/store-rls-v144/owner-backup-evidence-gate.cjs
+          node --check qa/store-rls-v144/owner-backup-evidence.test.cjs
+          node --test qa/store-rls-v142/*.test.cjs qa/store-rls-v144/owner-backup-evidence.test.cjs
+      - name: Validate backup helper and SELECT-only SQL safety
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          shell=Path('qa/store-rls-v144/TIEN404_V144_Backup_Evidence.ps1').read_text()
+          sql=Path('qa/store-rls-v144/READ_ONLY_FOUR_ROW_OWNER_PREFLIGHT.sql').read_text()
+          for a in ("-RestoreLocal", "127.0.0.1", "tien404_restore_v144_",
+                    "pg_restore.exe", "SHOW server_version_num",
+                    "Incomplete Commerce archive catalog",
+                    "--no-owner --no-privileges"):
+              assert a in shell,a
+          for banned in ("Invoke-WebRequest", "Invoke-RestMethod",
+                         "DROP DATABASE", "ALTER SYSTEM", "SUPABASE_SERVICE_ROLE_KEY"):
+              assert banned not in shell,banned
+          active='\n'.join(line for line in sql.splitlines() if not line.lstrip().startswith('--'))
+          import re
+          assert len(re.findall(r'\bSELECT\b',active,re.I)) >= 4
+          assert not re.search(r'\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|DO)\b',active,re.I)
+          assert 'FALSE AS approved_to_apply_migration' in sql
+          assert 'FALSE AS approved_to_backfill' in sql
+          assert 'FALSE AS approved_to_replace_rls' in sql
+          print('PASS: local-only guarded backup helper, no schema writes, no secrets, SQL SELECT-only')
+          PY
+      - name: Optional PowerShell parser syntax check
+        run: |
+          if command -v pwsh >/dev/null 2>&1; then
+            pwsh -NoProfile -Command '$errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("qa/store-rls-v144/TIEN404_V144_Backup_Evidence.ps1", [ref]$null, [ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | Out-String | Write-Error; exit 1 }; Write-Output "PASS PowerShell syntax"'
+          else
+            echo "PowerShell parser unavailable on this runner; source static audit completed"
+          fi
