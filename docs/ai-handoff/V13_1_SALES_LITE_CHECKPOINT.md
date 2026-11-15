@@ -109,3 +109,10 @@ No verified new paid inference, provider messaging, Supabase migration, paid hos
 - E. Live commercial Pilot only after provider policy, QA, cost, send + order permissions explicitly approved.
 
 **Avoid spending on full AI Studio/ERP Dashboard at this stage.**
+
+
+## 10. Additional existing Reply Guard regression
+
+On 15/11/2026, the existing n8n `TIEN404_ZALO_V124_REPLY_GUARD_QA_STAGING` (`nKNKDLO4l2PXL4tx`) was audited and manually executed **3810 SUCCESS**, `25/25 PASS`, `orders_written=0`, `external_sends=0`, `real_llm_tested=false`. This adds independent evidence that the prior read-only Customer reply safety logic still passes its own fixtures. It does **not** demonstrate deployed V13.1 Menu Engine integration or production E2E.
+
+Commerce AI Sandbox was not executed due provider/LLM cost and nested-workflow side-effect risk. No direct testing of Owner Shadow Published workflow was performed in V13.1; it stayed unchanged.
