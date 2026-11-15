@@ -46,3 +46,10 @@ Sau khi kiểm tra trực tiếp Supabase `tien404-staging`, `public.products` c
 - [Đề xuất role/RLS cần phê duyệt](../../../docs/ai-handoff/V12_4R_3_CUSTOMER_HOSTED_RLS_APPROVAL_PROPOSAL.md): DRAFT SQL cho hai role QA NOLOGIN chỉ đọc; **KHÔNG ĐƯỢC TỰ ÁP DỤNG**. Owner PR #41 không bị sửa. Để triển khai hosted Customer, phải phê duyệt role/credential, policy, backup, rollback và E2E quyền theo shop.
 
 Mọi channel vẫn `RESERVED_NOT_CONNECTED`; không gọi model trả phí, không ghi Orders/Outbox hoặc cấp quyền database trong bản này.
+
+
+## V12.4R.3 — Transaction-bound Customer Catalog QA hardening (candidate)
+
+`transactional-catalog.cjs` bổ sung một repository **chủ động thuê và giải phóng PostgreSQL client** qua `poolForContext` server-only. Luồng mỗi lần đọc là `BEGIN READ ONLY` → `SET LOCAL row_security=on`, statement/idle timeout → kiểm tra chính role PostgreSQL/privilege/RLS → SELECT sản phẩm đúng scope → COMMIT, hoặc ROLLBACK khi lỗi. Nếu rollback không thành công, kết nối sẽ bị discard thay vì trả về pool. Trường hợp truyền `client` ngoài vào bị từ chối; không sử dụng `SET ROLE`, không nhận role từ tin nhắn. Bộ bảo vệ kiểm tra thêm cột `catalog_source_ref` và việc ghi vào bảng `shop_bots`.
+
+**Phạm vi:** Chỉ nguồn và PostgreSQL QA dùng một lần. Khác với `sessions.process()` hiện tại: adapter mới không thể lắp trực tiếp vào transaction session do cổng đó truyền `client` riêng — việc tích hợp cả hai phải giữ đúng một chủ sở hữu transaction, cần thiết kế và QA riêng. Không kết nối vào n8n, web, Zalo hoặc Messenger Published. Hosted Supabase vẫn **không có Customer backend role/credential**; đề xuất RLS vẫn chưa được phê duyệt.
