@@ -81,3 +81,16 @@
 **Rollback this PR:** revert/close source-only Draft. No hosted resource, n8n Published workflow, customer row, RLS policy, credential, billing or real message modified. No hosted rollback needed.
 
 **Next proposed version:** V14.4.6 Atomic Order Request & Inventory Ledger Design Gate — offline first, with owner policy options on order confirmation/reservation, disposable PostgreSQL race tests and future separate hosted approval.
+
+
+## 7. CI and post-run evidence — VERIFIED
+
+- [GitHub Actions run 43738673781](https://github.com/ngoctien20/demo-git/actions/runs/43738673781): 3/3 jobs COMPLETED SUCCESS at source checkpoint 556d71adb308f5d0d0934122ddbdae770f8c4ba0.
+- 52/52 NEW Node tests PASS: 20 legacy compatibility and version drift + 32 Store/order/stock/revenue negative/positive safety cases. 0 FAIL.
+- 527/527 inherited Node tests PASS: 70 V14.4.4 + 66 V14.4.3 + 48 V14.4.2 + 26 V14.4.1 + 37 V14.4 + 36 V14.3 + 244 Messenger. 0 FAIL.
+- Total = **579/579 Node tests PASS** (52+527, nonduplicated).
+- Disposable PostgreSQL 17: 22 explicit SQL assertion PASS + final summary PASS. Demonstrates same-tenant Store A/B product/order isolation, duplicate SKU per Store and the leak caused by retaining an old tenant-permissive SELECT policy. Synthetic test actor only: NOT hosted JWT/RLS and NOT backup restore.
+- Post-run Supabase staging READ-ONLY query: PG 17.11, 2 Products, 2 Orders, no Stores or Store Memberships, 6 old tenant-permissive read policies, no hosted Product V2 function. All unchanged since initial audit.
+- Post-run n8n READ-ONLY metadata: published Create Order activeVersion 4740251a-cd01-4f7f-b8e1-e300a8393151; Manage Order 137d5689-40c5-4147-9bbc-b22809ad5908; Revenue Report 978b5a8d-d47b-4783-b27e-96fbc96d5262; no publish or workflow edit during this task.
+- All source results are OFFLINE/SYNTHETIC and do not prove concurrent atomic idempotency of Google Sheets, hosted Stock Order settlement, real billing, actual JWT RLS or business policy acceptance.
+- No real message, stock decrement, order write, Product mutation, database schema/grant, credential, payment or production change.
