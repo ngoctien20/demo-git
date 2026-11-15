@@ -9,6 +9,8 @@ on:
       - "tests/account-canonical-entry*"
       - "tests/auth-preview-build.test.mjs"
       - "docs/ai-handoff/V13_5R1_*"
+      - "docs/ai-handoff/V13_6_HOSTED_AUTH_RLS_AND_ZALO_REPORT.md"
+      - "qa/v136/**"
       - ".github/workflows/v135r1-canonical-account-auth-security-qa.yml"
   pull_request:
     paths:
@@ -17,6 +19,8 @@ on:
       - "tests/account-canonical-entry*"
       - "tests/auth-preview-build.test.mjs"
       - "docs/ai-handoff/V13_5R1_*"
+      - "docs/ai-handoff/V13_6_HOSTED_AUTH_RLS_AND_ZALO_REPORT.md"
+      - "qa/v136/**"
       - ".github/workflows/v135r1-canonical-account-auth-security-qa.yml"
   workflow_dispatch:
 permissions:
@@ -33,6 +37,8 @@ jobs:
       - name: Static canonical account safety and inherited no-write tests
         run: |
           node --check tests/account-canonical-entry-browser.cjs
+          node --check qa/v136/hosted-rls-browser.mjs
+          node --test qa/v136/hosted-rls-contract.test.mjs
           node --test tests/account-canonical-entry.test.mjs tests/customer-account-boundary.test.mjs tests/customer-orders-readonly.test.mjs qa/v135/platform-role-contract.test.cjs
           node --test tests/auth-helpers.test.mjs tests/auth-session-stability.test.mjs tests/tester-request-staging.test.mjs
       - name: Validate actual strict Auth Preview build
