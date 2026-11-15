@@ -1,0 +1,33 @@
+name: TIEN404 V13.8 Conversation & Human Handoff — NO SEND
+on:
+  push:
+    branches:
+      - work/v138-conversation-handoff-qa-staging
+  pull_request:
+    paths:
+      - "qa/conversation-v138/**"
+      - ".github/workflows/v138-conversation-handoff-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  conversation-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax + Conversation state-machine QA
+        run: |
+          node --check qa/conversation-v138/conversation-core.cjs
+          node --check qa/conversation-v138/conversation-core.test.cjs
+          node --test qa/conversation-v138/conversation-core.test.cjs
+      - name: Existing Menu Engine & Zalo security regression
+        run: |
+          node --test qa/sales-lite/v131/*.test.cjs
+          node --test qa/zalo-control-text/button-capability.test.cjs
+          node --test qa/zalo-control-text/worker-qa-richtext-route.test.mjs
+          node --test qa/zalo-multimedia-v137/contracts.test.cjs
+          node --test qa/zalo-multimedia-v137/worker-v137-4call-qa.test.mjs
