@@ -38,6 +38,10 @@ jobs:
         run: node --test qa/zalo-live-v145z/live03c-budget-worker.test.mjs
       - name: LIVE03D provider immutable Bot ID, Shop and Owner strict no-send QA
         run: node --test qa/zalo-live-v145z/live03d-trusted-identity-preflight.test.cjs
+      - name: LIVE03E server-only getMe digest attestation test
+        run: node --test qa/zalo-live-v145z/live03e-readonly-provider-id-attestation.test.cjs
+      - name: LIVE03E trial expiry and private backup continuity gate test
+        run: node --test qa/zalo-live-v145z/live03e-trial-continuity-gate.test.cjs
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
