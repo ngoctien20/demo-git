@@ -30,6 +30,7 @@ jobs:
           node --check qa/v148/unified-identity-resolver.test.cjs
           node --test qa/v148/unified-identity-resolver.test.cjs
           node --test qa/v148/v147-studio-identity-compat.test.cjs
+          node --test qa/v148/n8n-manual-qa-stages.test.cjs
       - name: No network, customer data or provider send capabilities
         run: |
           python3 - <<'PY'
