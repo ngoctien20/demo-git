@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {webcrypto} from 'node:crypto';
+globalThis.crypto ||= webcrypto;
+const source=readFileSync(new URL('./live03c-budget-worker.mjs',import.meta.url),'utf8');
+assert.ok(source.includes('__QA_PUBLIC_JWK__'));
+assert.ok(!source.includes('sendMessage(')&&!source.includes('await fetch('));
+const pair=await webcrypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+const publicJwk=await webcrypto.subtle.exportKey('jwk',pair.publicKey);
+const app=(await import('data:text/javascript;base64,'+Buffer.from(source.replace('__QA_PUBLIC_JWK__',JSON.stringify(publicJwk))).toString('base64'))).default;
+const H=x=>x.repeat(64);
+const id='qa_live03c_test_001';
+const grant={grant_id:id,scope_hash:H('a'),model_id:'gpt-5.4-nano',status:'QA_ARMED',environment:'OFFLINE_QA',trust_level:'SYNTHETIC_QA_ONLY',issued_ms:Date.now()-1000,expires_ms:Date.now()+590000};
+const payload=(extra={})=>JSON.stringify({kind:'TIEN404_LIVE03C_BUDGET_QA_V1',grant_id:id,scope_hash:H('a'),event_hash:H('b'),model_id:'gpt-5.4-nano',ts_ms:Date.now(),expected_revision:0,estimated_input_tokens:300,maximum_output_tokens:700,...extra});
+const fakeDB=(opt={})=>({prepare(sql){return {bind(){return {async first(){if(sql.startsWith('SELECT grant_id'))return {...grant,...opt.grant};return {calls_reserved:1,tokens_reserved:1000,money_reserved_nusd:935000,cap_nusd:10000000,revision:1}},async all(){if(opt.denied)throw Error('D1_GUARD');return {results:opt.duplicate?[]:[{event_hash:H('b')}]}}}}}}});
+async function sign(raw){return Buffer.from(await webcrypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},pair.privateKey,new TextEncoder().encode('TIEN404-LIVE03C-QA-V1\nPOST\n/v1/qa/reserve\n'+raw))).toString('base64url');}
+async function call(path,raw,signature,db=fakeDB(),method='POST'){const headers={'content-type':'application/json'};if(signature)headers['x-tien404-qa-signature']=signature;return app.fetch(new Request('https://staging.invalid/'+path,{method,headers,...(method==='GET'?{}:{body:raw||'{}'})}),{QA_BUDGET_DB:db});}
+test('health reveals no-send and QA D1 binding',async()=>{const r=await call('health',null,null,fakeDB(),'GET'),j=await r.json();assert.equal(r.status,200);assert.equal(j.provider_capable,false);assert.equal(j.d1_bound,true);assert.equal(j.model_calls,0);});
+test('provider and webhook paths hard locked',async()=>{for(const path of ['v1/send','webhook/zalo','v1/provider/send'])assert.equal((await call(path)).status,423);});
+test('unauthorized claim returns 401',async()=>{assert.equal((await call('v1/qa/reserve',payload())).status,401)});
+test('invalid signature rejected 401',async()=>{assert.equal((await call('v1/qa/reserve',payload(),'A'.repeat(86))).status,401)});
+test('tampered payload rejected 401',async()=>{const raw=payload(),sig=await sign(raw);assert.equal((await call('v1/qa/reserve',raw.replace('"estimated_input_tokens":300','"estimated_input_tokens":301'),sig)).status,401)});
+test('valid QA signature reserves budget with 200 response and NO SEND',async()=>{const raw=payload(),r=await call('v1/qa/reserve',raw,await sign(raw)),j=await r.json();assert.equal(r.status,200);assert.equal(j.status,'SYNTHETIC_BUDGET_RESERVED');assert.equal(j.estimate_nusd,935000);assert.equal(j.provider_sends,0);assert.equal(j.verified_real_balance,false);assert.equal(j.authorized_live_send,false)});
+test('signed wrong scope is blocked by D1 policy',async()=>{const raw=payload({scope_hash:H('d')});assert.equal((await call('v1/qa/reserve',raw,await sign(raw))).status,403)});
+test('wrong model identity denied 422',async()=>{const raw=payload({model_id:'gpt-5-nano'});assert.equal((await call('v1/qa/reserve',raw,await sign(raw))).status,422)});
+test('caller quoted price value is not accepted',async()=>{const raw=payload({quoted_nusd:0});assert.equal((await call('v1/qa/reserve',raw,await sign(raw))).status,422)});
+test('expired timestamp is rejected 401 before D1',async()=>{const raw=payload({ts_ms:Date.now()-100000});assert.equal((await call('v1/qa/reserve',raw,await sign(raw))).status,401)});
+test('expired or stopped grant returns 403',async()=>{for(const g of [{expires_ms:Date.now()-200},{status:'QA_STOPPED'}]){const raw=payload();assert.equal((await call('v1/qa/reserve',raw,await sign(raw),fakeDB({grant:g}))).status,403)}});
+test('duplicate event returns 409 without charge',async()=>{const raw=payload();assert.equal((await call('v1/qa/reserve',raw,await sign(raw),fakeDB({duplicate:true}))).status,409)});
+test('D1 rejects cap overage or CAS race as fail-closed 409',async()=>{const raw=payload();assert.equal((await call('v1/qa/reserve',raw,await sign(raw),fakeDB({denied:true}))).status,409)});
+test('extra path 404 and no provider request available',async()=>{const r=await call('v1/qa/send','{}');assert.equal(r.status,404)});
