@@ -1,0 +1,60 @@
+name: TIEN404 V13.4 Shop Account Only Boundary QA
+on:
+  push:
+    branches:
+      - work/v134-shop-account-only-boundary-staging
+  pull_request:
+    paths:
+      - merchant-portal.html
+      - assets/merchant-account-only.js
+      - assets/merchant-portal-policy.mjs
+      - scripts/build-auth-preview.mjs
+      - tests/customer-account-*
+      - tests/merchant-portal-v12-2.test.mjs
+      - .github/workflows/v134-account-boundary-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  account-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and source policy
+        run: |
+          node --check assets/merchant-account-only.js
+          node --check assets/merchant-portal-policy.mjs
+          node --check tests/customer-account-browser.cjs
+          node --test tests/customer-account-boundary.test.mjs tests/merchant-portal-v12-2.test.mjs tests/auth-helpers.test.mjs
+      - name: Strict Auth staging preview build
+        run: node scripts/build-auth-preview.mjs
+      - name: Verify allowlisted preview
+        run: node --test tests/auth-preview-build.test.mjs tests/customer-account-boundary.test.mjs
+  account-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install temporary Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Chromium at 360 390 430 768 1280
+        run: |
+          python -m http.server 8080 > /tmp/tien404-account-qa.log 2>&1 &
+          sleep 2
+          node tests/customer-account-browser.cjs
+      - name: Screenshots (no personal data)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-only-v134-screenshots
+          path: qa-artifacts-account/
+          if-no-files-found: ignore
