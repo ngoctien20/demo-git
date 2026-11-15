@@ -24,10 +24,11 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
    !UUID.test(u.id||''))reject('INTAKE_IDENTITY_UNVERIFIED');
   return u;
  }
- async function right(u,tenant,role){
-  const a=await ports.checkTenantRole({userId:u.id,tenantId:tenant,role});
+ async function right(u,tenant,role,storeId=null){
+  const a=await ports.checkTenantRole({userId:u.id,tenantId:tenant,role,storeId});
   if(!a||a.source!=='SYNTHETIC_PRIVATE_ROLE_REGISTRY'||
-    a.userId!==u.id||a.tenantId!==tenant||a.role!==role||a.active!==true)
+    a.userId!==u.id||a.tenantId!==tenant||a.role!==role||a.active!==true||
+    (storeId!==null&&a.storeId!==storeId))
    reject('INTAKE_ROLE_NOT_AUTHORIZED');
  }
  function session(id){
@@ -53,8 +54,12 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
   for(const t of tenants)await right(operator,t,'QA_INTAKE_OPERATOR');
   if(sessions.size>=maxSessions)reject('INTAKE_SESSION_CAP_REACHED');
   const id=randomUUID();
-  const merchants=new Map();
+  const merchants=new Map(),merchantTenants=new Map();
   for(const r of rows){
+   const prior=merchantTenants.get(r.merchantActorId);
+   if(prior&&prior!==r.tenantId)
+    reject('INTAKE_REQUIRES_TWO_INDEPENDENT_TENANT_MERCHANTS');
+   merchantTenants.set(r.merchantActorId,r.tenantId);
    const k=r.tenantId+'|'+r.merchantActorId;
    merchants.set(k,{tenantId:r.tenantId,merchantActorId:r.merchantActorId,
       storeId:r.candidateStoreId});
@@ -74,7 +79,7 @@ function createOfflineOwnershipIntake({mode,ports,now=Date.now,maxSessions=20,tt
   const entry=[...s.merchants.entries()].find(([,m])=>m.merchantActorId===actor.id);
   if(!entry)reject('INTAKE_MERCHANT_NOT_ASSIGNED');
   const [key,grant]=entry;
-  await right(actor,grant.tenantId,'MERCHANT_OWNER');
+  await right(actor,grant.tenantId,'MERCHANT_OWNER',grant.storeId);
   if(s.merchantsConfirmed.has(key))reject('INTAKE_DUPLICATE_MERCHANT_CONFIRM');
   s.merchantsConfirmed.add(key);
   if(s.merchantsConfirmed.size===s.merchants.size)
