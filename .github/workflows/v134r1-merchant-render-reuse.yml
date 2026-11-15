@@ -1,0 +1,34 @@
+name: TIEN404 V13.4R.1 reuse Render Merchant portal security QA
+on:
+  push:
+    branches:
+      - work/v134r1-merchant-render-reuse-staging
+    paths:
+      - "qa/sales-lite/v134r1/**"
+      - "qa/sales-lite/v133/account/index.html"
+      - "docs/ai-handoff/V13_4R1_**"
+      - ".github/workflows/v134r1-merchant-render-reuse.yml"
+  pull_request:
+    paths:
+      - "qa/sales-lite/v134r1/**"
+      - "qa/sales-lite/v133/account/index.html"
+      - "docs/ai-handoff/V13_4R1_**"
+      - ".github/workflows/v134r1-merchant-render-reuse.yml"
+permissions:
+  contents: read
+jobs:
+  readonly-merchant-link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Link scope and no-token tests
+        run: node --test qa/sales-lite/v134r1/*.test.cjs
+      - name: Tier and inherited security regression
+        run: |
+          node --test qa/sales-lite/v134r/*.test.cjs
+          node --test qa/sales-lite/v134/*.test.cjs
+          node --test qa/sales-lite/v133/*.test.cjs
