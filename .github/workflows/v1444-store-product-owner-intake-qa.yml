@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: 68 offline QA tests + syntax
+      - name: 70 offline QA tests + syntax
         run: |
           node --check qa/store-product-v1444/product-v2-offline.cjs
           node --check qa/store-product-v1444/owner-intake-offline.cjs
