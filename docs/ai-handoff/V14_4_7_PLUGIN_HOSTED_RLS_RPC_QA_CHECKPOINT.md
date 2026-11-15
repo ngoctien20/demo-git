@@ -118,3 +118,19 @@ data-writing tests; no real Meta/Zalo/Messenger sends are authorized.
 Next: accept limited SCHEMA-ONLY restore as checkpoint only (NOT full restore);
 determine approved backup covering auth.users plus dependent application data
 before any hosted Store RLS migration.
+
+
+## 7. CI acceptance evidence (post-PR verification)
+
+- Open Draft PR: https://github.com/ngoctien20/demo-git/pull/109
+- GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/43743597909
+- GitHub connector verified run status COMPLETED, conclusion SUCCESS.
+- Job synthetic-only (job id 132901912042): COMPLETED SUCCESS.
+- Direct job log: **11 tests / 11 PASS / 0 FAIL**; the matrix
+  case asserts 72 synthetic actor × Store × table combinations.
+- Migration guard verification: **PASS**, no executable schema DDL/DML.
+- This is NODE OFFLINE MOCK QA, not real hosted JWT, not real DB RLS,
+  not Auth archive recovery and not hosted writing.
+
+FINAL V14.4.7 VERDICT: SOURCE-ONLY QA TESTED PASS; HOSTED STORE-RLS
+MIGRATION AND REAL MULTI-STORE ACCEPTANCE STILL BLOCKED.
