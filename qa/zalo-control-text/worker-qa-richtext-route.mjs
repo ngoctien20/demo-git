@@ -33,12 +33,14 @@ function qaFixture(id){
     default:return null;
   }
 }
-async function qaRichTextRoute(request,env,path,now=Date.now(),fetchImpl=fetch){
+export async function qaRichTextRoute(request,env,path,now=Date.now(),fetchImpl=fetch){
   if(!['/v1/qa-richtext/preflight','/v1/qa-richtext/send'].includes(path))return null;
   if(request.method!=='POST')return qaJson(405,{ok:false,error:'METHOD_NOT_ALLOWED'});
   // Deliberate exception is ONLY possible while the original global send remains OFF.
   if(env.ZALO_SEND_ENABLED!=='false')return qaJson(423,{ok:false,error:'GLOBAL_SEND_GATE_UNEXPECTED'});
-  if(now>=Date.parse(TIEN404_QA_RICH.expiresAt) || now>=Date.parse(String(env.ZALO_OWNER_APPROVAL_EXPIRES||'')))
+  const qaExpiry=Date.parse(TIEN404_QA_RICH.expiresAt);
+  const approvalExpiry=Date.parse(String(env.ZALO_OWNER_APPROVAL_EXPIRES||''));
+  if(!Number.isFinite(qaExpiry)||!Number.isFinite(approvalExpiry)||now>=qaExpiry||now>=approvalExpiry)
     return qaJson(403,{ok:false,error:'QA_APPROVAL_EXPIRED'});
   const authorization=request.headers.get('authorization')||'';
   if(!authorization.startsWith('Bearer ')||!await qaSafeEqual(authorization.slice(7),env.GATEWAY_AUTH_KEY))
