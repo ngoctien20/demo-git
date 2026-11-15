@@ -26,6 +26,8 @@ jobs:
         run: node --test qa/zalo-live-v145z/ai-pilot.test.cjs
       - name: V14.5Z LIVE01 approval preflight negative QA
         run: node --test qa/zalo-live-v145z/live01-preflight.test.cjs
+      - name: LIVE01 isolated D1 atomic replay CAS quota regression
+        run: python3 qa/zalo-live-v145z/test_live01_d1_atomic.py
       - name: Existing V13.8 handoff regression
         run: node --test qa/conversation-v138/conversation-core.test.cjs
       - name: No live outbound or DB mutation in candidate modules
