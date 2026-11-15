@@ -1,0 +1,184 @@
+# TIEN404 AI V14.2 — PostgreSQL Password Reset Impact Audit
+
+Date: 2026-11-15 JST
+Supabase project: `tien404-staging` (project ref `ifxlvrhyjhbzbrkdsida`)
+GitHub: Draft PR #86, staging branch `work/v142-store-rls-onboarding-staging`
+Status: **READ-ONLY AUDIT / RESET NOT AUTHORIZED / BACKUP NOT VERIFIED**
+
+## Decision
+**DO NOT reset the database `postgres` password yet.** No automatic backup is available under the Free plan shown in the user's Supabase Database > Backups screen, and the legacy password is not known. We still need to confirm whether Render's staging service uses a PostgreSQL connection string/password.
+
+## Evidence — VERIFIED
+1. Supabase project metadata is ACTIVE_HEALTHY / PostgreSQL 17.11. No database/schema/RLS write was attempted during this audit.
+2. The screenshot of the Supabase "Connect" dialog shows a **Session Pooler** at port 5432 with `[YOUR-PASSWORD]` placeholder. This is not an actual credential. Connection UI does not disclose the existing password.
+3. The n8n connector lists **9 credentials**; none has a PostgreSQL credential type. The credential types observed are HTTP header/bearer auth, Gmail OAuth, Google Sheets OAuth, crypto and Telegram; **credential values were never requested**.
+4. Inspected published/current nodes of representative workflows: Zalo Ingress `yIJk8LvJoLF40Z62`, private router `sIPs6egzIwOY1GNv`, Messenger Test `Z7FdV7uDvApfbURQ`, Commerce Tenant Resolver `5Eeh8hbpsoNhuiVo`, Commerce Shop Onboarding `splyaeQtV719OuAu`, AI_SALES_DEMO Main Agent `v6PBwcqSapVzACMW`, TIEN404 V14.2 QA `FIE7nl2vgLXQI7mT`, Render bridge QA `E3He3Kr602j2B0wC`, R1 Supabase adapter QA `JsRXB0B9wGkWByW9`, Website Demo AI `wgkkmT7q4lm4HyuA`. These show n8n Data Table, Google Sheets, code, workflow calls, and/or HTTP nodes; no n8n native PostgreSQL node/credential in this sample. This is not a proof that all external HTTP backends are free of database-password dependencies.
+5. Read-only PostgreSQL `pg_stat_activity` aggregate showed PostgREST, Supabase pooler/admin, monitoring/background sessions. No clearly identified third-party direct PostgreSQL connection in the single sampled instant. **Not proof of absence** of transient, pooled or idle external applications.
+6. Cloudflare connected account Hyperdrive configs GET returned **0** items. The Cloudflare Pages project list request did not succeed, so Page-level secret binding usage remains **not verified**.
+7. GitHub default-branch code search for common connection-variable strings returned no matches; GitHub code indexing coverage and other branches/services are not verified.
+8. Render integration has **no workspace selected**. It lists exactly one available workspace named `My Workspace`, but service-list tool explicitly requires the user to CONFIRM the workspace before further inspection. **NO Render service configuration has been inspected**.
+9. Owner previously authorized conditional preparation of migration, mapping after per-row ownership proof, and two authorized hosted JWT QA sessions. The owner **has not approved credential reset**. PR #86 remains Draft.
+
+## Password-change impact analysis
+- Native PostgreSQL connections authenticated with the current `postgres` password (e.g. `DATABASE_URL`, `POSTGRES_URL`, `PGPASSWORD`, session-pooler URLs): **AT RISK**. New/reconnected sessions can fail after the reset until client configs are updated.
+- Supabase Auth login via GitHub/other OAuth, public Data API/PostgREST with publishable keys/user JWT, RLS and `supabase-js` **do not normally use the application's old `postgres` login password**. These are not expected to require a client password update solely due to a postgres-role reset; hosted availability must still be retested.
+- n8n direct PostgreSQL credential exposure: **NOT FOUND in inspected connector metadata**, not a guarantee for external services reachable from HTTP nodes.
+- Render staging direct DB connection: **UNKNOWN** until authorized workspace is confirmed and environment-variable **NAMES ONLY** (never values) + service dependencies inspected.
+- Cloudflare Hyperdrive: **NOT CONFIGURED in checked account**. Other Workers/Pages bindings remain unconfirmed.
+
+## Recommended free-safe path
+1. Obtain user's explicit confirmation to inspect Render's `My Workspace` (READ-ONLY).
+2. Inspect service list and service/environment **variable names/dependency configuration only**. Search for `DATABASE_URL`, `POSTGRES_URL`, `SUPABASE_DB_URL`, `PGHOST`, `PGPASSWORD`, direct `db.*.supabase.co` or pooler host references without accessing values.
+3. Verify which services use the Supabase Data API/publishable JWT rather than direct Postgres; document affected connections and prepare a rollback/reconnect playbook.
+4. Check the owner's existing password manager/local safe vault for the **old** database password. The shown `[YOUR-PASSWORD]` placeholder cannot be used to connect.
+5. If no retained password exists, present a **separate, explicit reset approval** after dependency audit. Generate a strong new password through password manager; perform a supervised staging-only reset, then promptly update impacted clients in secure configuration without exposing passwords to GitHub/ChatGPT. Validate health and reconnections.
+6. Create an owner-controlled physical/logical backup via official Supabase CLI `db dump` using Session Pooler on a compatible network. Take role, schema and data dumps; avoid printing connection strings or uploading secrets; encrypt backup at rest and store privately.
+7. Test an isolated restore and checksum/table/policy comparisons. Restore tests may require another isolated instance or local Docker, not current staging; any new cloud costs require approval.
+8. Only after **VERIFIED backup + restore rehearsal + owner-accepted rollback plan** revisit Store/RLS migration gate. No change to published workflows, payment, credentials, production, customer data or Zalo sends without their own approval.
+
+Supabase documentation:
+- https://supabase.com/docs/guides/platform/backups
+- https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
+- https://supabase.com/docs/guides/database/connecting-to-postgres
+
+## QA / checkpoint
+- Audit was read-only; no database password reset, no credential values read, no migration/backfill, no Supabase RLS changes or provider sends.
+- All 313/313 prior V14.2 Node CI and n8n 16/16 synthetic QA evidence remain previous checkpoint results, **not rerun as part of this audit**.
+- Current assessment: `RESET=BLOCKED_NEEDS_SEPARATE_APPROVAL`, `RENDER_IMPACT=NOT_VERIFIED_WORKSPACE_CONFIRMATION_REQUIRED`, `BACKUP=NOT_VERIFIED`, `STORE_RLS_MIGRATION=BLOCKED`.
+
+
+## Confirmed Render My Workspace — authorized READ-ONLY audit, 2026-11-15 JST
+
+Owner explicitly confirmed workspace **My Workspace** for a read-only dependency review. No Render setting, environment variable, credential, deployment or production route was modified.
+
+### Live Render resources — VERIFIED
+- Exactly two services found with includePreviews enabled:
+  - `tien404-auth-staging` — Render static_site, GitHub branch `work/supabase-auth-staging-v1`, autoDeploy=no, latest LIVE deploy SHA `b14501a0ebf04d991302cb32b5d548a68d6b39bd` (Nov 14).
+  - `tien404-data-staging` — Render web_service, Python/FastAPI free plan, Singapore, GitHub branch `ops/tenant-data-platform-v1-staging-20261110`, autoDeploy=no, latest LIVE deploy SHA `ab940a95dae8afdff426bc6ac71693833d5348ce` (Nov 12).
+- Render PostgreSQL instance listing returned **No Postgres instances found**; this excludes Render-managed Postgres on this workspace, but not external Supabase DB clients.
+- Live deployment metadata and associated build/deploy events report success. This does NOT prove every route or background process is healthy.
+
+### Analysis from exact deployed commit sources — VERIFIED
+- Data service build starts `uvicorn app.main:app`; deployed `ops/data-platform/app/main.py` reads **code-declared** names:
+  `TIEN404_SUPABASE_URL`, `TIEN404_SUPABASE_PUBLISHABLE_KEY`, `TIEN404_APP_ORIGIN`, `TIEN404_DATA_MODE`, `TIEN404_N8N_STAGING_SECRET`.
+- Its configured reads call Supabase Auth and PostgREST with `httpx` over HTTPS, forwarding the caller's JWT and public/publishable project key. No `psycopg`, `DATABASE_URL`, pooler DSN or raw SQL PostgreSQL connection is referenced in this deployed `main.py`.
+- The source repository also contains `commerce_transactions.py`, a PostgreSQL-transaction implementation, BUT it requires an injected `commerce_connect` adapter. Deployed entrypoint at line 230 calls `app=create_app()` with the default `commerce_connect=None`. Therefore the transactional PostgreSQL path is **not wired in the inspected deployed service**.
+- Static Auth service deployed build `scripts/build-auth-preview.mjs` produces an allowlisted frontend-only artifact. Inspected deployed frontend `assets/auth-client.js`, `assets/auth-config.js`, `assets/merchant-portal.js`, `assets/merchant-product.mjs`, `assets/auth-runtime.mjs`, `assets/site-config.js`: no direct PostgreSQL URI, pooler host or PGHOST/DATABASE_URL/PGPASSWORD references in these files.
+- Crucial limitation: connected Render tools return service/deploy metadata, but do **not expose the actual stored Environment variable name list**. Source-code-declared names are NOT proof of values/names configured in the Render dashboard. Do not say the environment variables have been verified, and do not request or reveal secret values.
+
+### Revised risk / decision
+- **Render direct PostgreSQL password dependency: LOW based on the inspected deployed entrypoints**; residual uncertainty remains until the actual Render Environment **KEY NAMES ONLY** and out-of-band client dependencies are verified.
+- OAuth logins and Supabase Data API via publishable key + JWT typically do not use the `postgres` login password in client code. This does NOT prove reset cannot impact another uninspected third-party DB client.
+- **Decision: DO NOT RESET DATABASE PASSWORD YET**. Confirm actual Render environment KEY names via a redacted screenshot or permitted name-only metadata mechanism; separately authorize any password reset after dependency and reconnection plan acceptance.
+- Staging backup is still NOT verified. Source-code QA and repository checkpoint are not a backup/restore drill. V14.2 database migration, backfill and RLS remain BLOCKED.
+- No credentials or environment values were queried or returned to the assistant. No Render deployment, database changes, customer messages or RLS operations were performed.
+
+QA status: AUDIT_READ_ONLY=VERIFIED; RENDER_SERVICES=2; RENDER_MANAGED_POSTGRES=0; CODE_DECLARED_ENV_NAMES=VERIFIED; RENDER_STORED_ENV_KEY_NAMES=NOT_AVAILABLE_VIA_CONNECTOR; RESET_APPROVED=NO; VERIFIED_BACKUP=NO.
+
+
+## Render Environment key-name evidence — user screenshot 2026-11-15 JST
+
+User supplied a screenshot of Render **My Workspace → tien404-data-staging → Environment**. The screen shows exactly **five environment entries**, with all VALUE cells masked. The visible keys are:
+- `TIEN404_APP_ORIGIN` (fully visible)
+- `TIEN404_DATA_MODE` (fully visible)
+- `TIEN404_N8N_STAGING_SEC...` (truncated in UI; matching `TIEN404_N8N_STAGING_SECRET` source-code reference, not independently observed in full)
+- `TIEN404_SUPABASE_PUBLIS...` (truncated in UI; matching `TIEN404_SUPABASE_PUBLISHABLE_KEY` source-code reference, not independently observed in full)
+- `TIEN404_SUPABASE_URL` (fully visible)
+
+No `DATABASE_URL`, `POSTGRES_URL`, `PGHOST`, `PGPASSWORD`, or `SUPABASE_DB_URL` is shown among those five keys. This directly resolves the former Render stored-key-name visibility blocker **for the inspected web service**. It does NOT prove absence of secrets elsewhere (other apps, runtime jobs, separate credential stores, or credentials embedded in source code).
+
+The source code for the Render LIVE deployed FastAPI commit `ab940a95dae8afdff426bc6ac71693833d5348ce` reads exactly these five environment variable names and uses Supabase Auth/PostgREST via HTTPS; the optional `commerce_connect` SQL transaction adapter is not passed to `create_app()`. The separate Auth static site LIVE commit `b14501a0ebf04d991302cb32b5d548a68d6b39bd` does not use direct PostgreSQL connections in the inspected frontend/build files. Render lists no Render-hosted PostgreSQL instance.
+
+### Updated decision
+- `RENDER_STORED_ENV_KEY_NAMES=VERIFIED_FROM_USER_SCREENSHOT` (two truncated keys corroborated by source; values NOT read).
+- `RENDER_DIRECT_POSTGRES_PASSWORD_DEPENDENCY=NOT_FOUND_IN_INSPECTED_DEPLOYED_RUNTIME`.
+- `DATABASE_PASSWORD_RESET_RISK_TO_INSPECTED_RENDER_SERVICES=LOW` (not zero; external clients unknown).
+- `RESET_APPROVAL=NOT_GRANTED`; `RESET_PERFORMED=NO`.
+- `RESTORABLE_BACKUP=NOT_VERIFIED`; `RESTORE_DRILL=NOT_VERIFIED`; `STORE_RLS_MIGRATION=BLOCKED`.
+
+Next action: operator may separately authorize a staging-only PostgreSQL password rotation after reviewing any out-of-band integrations and a reconnection/rollback plan. Never expose the password in chat, screenshots, or GitHub; owner must manage secrets privately. Rotation does not itself satisfy the backup/restore gate.
+
+
+## Owner approval — staging PostgreSQL password reset
+
+Owner reply: "được phê duyệt" in immediate context of a separate approval request for resetting the `postgres` database role password of Supabase `tien404-staging`.
+
+- **APPROVED:** Password rotation for `postgres` on staging project `ifxlvrhyjhbzbrkdsida` ONLY.
+- **NOT APPROVED:** Resetting Supabase Auth user passwords, Render/n8n credentials, Supabase API keys, RLS changes, migrations, customer data edits, sending real messages, costs, or production configuration.
+- **IMPLEMENTATION BLOCKED BY TOOLING:** Available Supabase connector has no dedicated reset-password operation; connected Browser in Chat supports only read operations. Do not use generic `execute_sql` to set a secret: could leak into tool logs and cannot securely deliver the new password to the owner.
+- **SAFE OWNER ACTION:** Navigate to Supabase Dashboard → tien404-staging → Database → Settings → Reset Database Password. Generate/store new password in private password manager, do not paste into ChatGPT, GitHub, workflow logs or screenshots. No password value stored in this checkpoint.
+- **Official docs (2026-11-15):** https://supabase.com/docs/guides/database/postgres/roles — Supabase-managed PostgREST, PgBouncer and internal services automatically update to latest password; external direct username/password connections need manual update.
+- **POST-RESET QA (PENDING):** Verify project ACTIVE_HEALTHY, Supabase Auth and REST API, Render Auth/data staging status, n8n ingress metadata, and owner-run CLI database backup via Session Pooler; monitor any credential failures. Never invent test evidence.
+- **ROLLBACK:** Old password is unknown so cannot restore it; if needed rotate to another privately known strong password and repair external clients after separately identifying affected integrations. Full database restore is NOT a password rollback.
+- **STATUS:** APPROVED_NOT_EXECUTED. Need user to perform reset in Supabase UI and confirm **without sharing the password** before claiming rotation complete. DB backup and V14.2 Store/RLS migration remain BLOCKED pending restore-test gates.
+
+
+## Operator-reported password reset and pgAdmin reconnection
+
+Date: 2026-11-15 JST. User explicitly reports that the password reset has been completed and provides a screenshot of pgAdmin 4 with server `tien404_AI_BACKUP` expanded and PostgreSQL `Login/Group Roles` populated. This is evidence of **a working pgAdmin database session**, but a screenshot is not an audit trail proving a fresh authentication handshake with the new password. Never record or request the password.
+
+After the user's report, Supabase connector read-only checks:
+- Supabase project `ifxlvrhyjhbzbrkdsida` status: `ACTIVE_HEALTHY`.
+- `current_database()` = `postgres`, PostgreSQL version 17.11.
+- `public.products` rows = 2, `public.orders` rows = 2.
+- `public.stores` still absent, indicating Store RLS migration not applied.
+
+Status: `PASSWORD_RESET=USER_REPORTED`, `PGADMIN_SESSION_CONNECTED=SCREENSHOT_VERIFIED`, `SUPABASE_CONNECTOR_HEALTH=VERIFIED`, `BACKUP_CREATED=NO_EVIDENCE`, `RESTORE_TESTED=NO`, `STORE_RLS_MIGRATION=BLOCKED`.
+
+**Next operator-only action:** In pgAdmin, expand Databases, right-click postgres → Backup. Choose Custom format to private local directory, capture all intended project schemas and data. pgAdmin uses pg_dump and may be restricted by Supabase-owned internal schemas; inspect process log and TOC before accepting any backup. Record a successful process completion and separately rehearse an isolated restore. Never restore to connected staging database. Supabase CLI `db dump` is the provider-guided preferred alternative for managed schema filtering.
+
+No credential reading/writing, production deployment, SQL migration, RLS or data mutation performed by this assistant.
+
+
+## Local pgAdmin Custom archive — screenshot evidence, 15 Nov 2026
+
+User-provided screenshots:
+- pgAdmin 4 Processes shows the Backup Object job for `postgres`, started `21:39:26 15/11/2026`, status **Finished**. The detailed pg_dump process log and exit code are **not yet inspected**.
+- Windows File Explorer confirms one local archive at `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`, reported Explorer size **212 KB**, modified `15/11/2026 21:39`. The file itself is **not attached to the conversation**; therefore archive format, content/TOC, completeness and checksum have not been verified.
+- Intended scope from preceding pgAdmin screenshots: `public`, `app_private`, `factory_private`, `tien404_dialogue_private`, `tien404_r1_qa`. These are **intended selected schemas**, not yet proof all are in TOC.
+- File is a **project-schema-scoped application backup**, not an end-to-end Supabase backup of Auth/Storage objects, managed services, role login credentials or all migration history.
+
+QA next steps (operator-only):
+1. Open pgAdmin Processes → document icon for the Backup job; confirm exit code `0` and no fatal pg_dump errors.
+2. On the user's own Windows computer, locate the PostgreSQL 17-compatible `pg_restore.exe` and inspect the Custom archive **read-only** with `pg_restore -l "E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup"`; do not paste any stored customer records, secret contents or the whole backup into chat or GitHub. Confirm expected schemas and tables plus TABLE DATA entries in its TOC.
+3. Optionally record a SHA256 checksum using Windows `Get-FileHash` against the private local archive.
+4. Test a restore on an isolated PostgreSQL instance (not on `tien404-staging`) and compare schema, counts, FKs/RLS definitions. A `pg_restore -l` pass is **not** a restore rehearsal.
+5. Retain backup privately/encrypted; a second safe copy is recommended.
+
+Release flags: `PGADMIN_JOB_FINISHED=SCREENSHOT_VERIFIED`, `LOCAL_BACKUP_FILE_PRESENT=SCREENSHOT_VERIFIED`, `BACKUP_BYTES_INSPECTED=NO`, `ARCHIVE_TOC_VERIFIED=NO`, `RESTORE_DRILL_PASS=NO`, `V14_2_RLS_MIGRATION=BLOCKED`. No Supabase SQL, RLS, credential, Render or n8n configuration changes were made by assistant.
+
+
+## PgAdmin process completion — operator screenshot verified
+
+User-supplied pgAdmin Process Watcher screenshot (15/11/2026, JST):
+- Backup job for Postgres on `tien404_AI_BACKUP` using Session Pooler at port 5432, started **21:39:26 JST**.
+- Screenshot command runs pgAdmin's local `pg_dump.exe` with `--file` pointing to `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`.
+- Process Watcher displays green **"Successfully completed."**, execution time **15.04 seconds**. This is stronger evidence than the previous "Finished" entry; screenshot does not separately display a numeric return code.
+- Visible `pg_dump` log includes dumping TABLE DATA for `tien404_r1_qa.owner_bindings`, `owner_outbox`, `owner_pairing_challenges`, `owner_pairing_claims_v3`, `sandbox_orders`, `shop_bots`, and `tenant_identity_map`.
+- Earlier Windows Explorer screenshot confirmed the archive exists (212 KB).
+- **DO NOT claim** all five project schemas are present before a TOC check using `pg_restore --list`, nor claim a successful restore rehearsal. User's backup remains local and has not been uploaded here. This selected-schema archive is not a complete Supabase Auth/Storage backup.
+- Next operator-only checks: (1) `pg_restore -l` read-only inspect Custom archive for schemas/tables/TABLE DATA and POLICY entries; (2) isolated restore drill and integrity checks. Never restore to live `tien404-staging`.
+- Release flags: `PG_DUMP_EXECUTION=SUCCESS_SCREENSHOT_VERIFIED`, `LOCAL_ARCHIVE_PRESENT=SCREENSHOT_VERIFIED`, `ARCHIVE_TOC_VERIFIED=NO`, `ISOLATED_RESTORE_VERIFIED=NO`, `V14_2_RLS_MIGRATION=BLOCKED`.
+
+
+## Local TOC verification — pg_restore list exit code 0
+
+User-provided Windows PowerShell screenshot following read-only `pg_restore --list` of local archive `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`, 15 November 2026 JST:
+- Command completed with explicitly printed **`Exit code: 0`**.
+- Visible archive TOC `SCHEMA -` entries for `app_private`, `factory_private`, `tien404_dialogue_private`, and `tien404_r1_qa`.
+- Visible `TABLE DATA` TOC entries for `public.orders`, `public.products`, `tien404_r1_qa.catalog`, `owner_bindings`, `owner_outbox`, `owner_pairing_challenges`, `owner_pairing_claims_v3`, `sandbox_orders`, `shop_bots`, `tenant_identity_map`.
+- Prior TOC screenshot showed `POLICY` entries under `public`, including orders, products, messages and order_items. `SCHEMA - public` may not be separately emitted for the standard built-in schema; public TABLE DATA and POLICY entries are present.
+- **Interpretation:** archive header/index is readable; expected application schema declarations and key table data sections exist. `TABLE DATA` listing does NOT verify row content/count, all objects across five schemas, or complete restoration. No archive bytes were uploaded to assistant.
+- **Safe next steps:** compute local SHA-256 checksum, verify local PostgreSQL 17 restore target exists, restore **only to isolated local PostgreSQL** after owner approves the target, inspect errors and compare schema, table counts (Products=2, Orders=2 baseline) and RLS policies; NEVER restore to current Supabase staging.
+- `BACKUP_PROCESS_COMPLETED=VERIFIED_BY_SCREENSHOT`; `ARCHIVE_TOC_READ=PASS`; `ISOLATED_RESTORE_DRILL=NOT_RUN`; `FULL_RESTORE_READINESS=BLOCKED`; `STORE_RLS_MIGRATION=BLOCKED`. No RLS, production, credential, payment, provider send or customer-data mutation was executed by assistant.
+
+
+## Local SHA-256 screenshot verification
+
+The user ran two operator-only PowerShell read-only commands on Windows:
+- `Get-FileHash -Path $backup -Algorithm SHA256` returned a 64-digit SHA-256 for `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`. Screenshot transcript digest: `087EBEA83AE6C3A0563C4E4B0F01EAC7C5C604721C4A8CED777EA81D0308B150`. This is an *operator-reported local checksum*, not cryptographic verification of any uploaded file bytes by the assistant.
+- `Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue | Select-Object Name,Status,DisplayName` produced **no service rows**. No matching local Windows PostgreSQL service is detected. Docker/WSL/nonservice database runtimes were not tested.
+
+**NEXT GATE:** Select a separately isolated, local PostgreSQL 17 target (e.g. Docker container or standalone Windows PostgreSQL 17 with dedicated restore-only database and port). Verify not pointing to Supabase host, then rehearse `pg_restore`, enumerate expected schemas/tables/RLS and compare `public.products=2`, `public.orders=2` against backup checkpoint where applicable. Supabase-managed roles/extensions may need adaptation in isolated restore; document every exception. Do not restore to current `tien404-staging`.
+
+Status `SHA256_OPERATOR_CHECKED=YES`; `LOCAL_WINDOWS_POSTGRES_SERVICE_FOUND=NO`; `ISOLATED_RESTORE=NOT_RUN`; `STORE_RLS_MIGRATION=BLOCKED`. No service/database/RLS/credentials changed.
