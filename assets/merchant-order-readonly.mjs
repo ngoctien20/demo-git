@@ -4,7 +4,7 @@ export const ORDER_COLUMNS='id,tenant_id,status,total_vnd,created_at';
 export const ORDER_LIMIT=30;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUSES=Object.freeze({
- pending:'Chờ xử lý',confirmed:'Đã xác nhận',paid:'Trạng thái đơn: đã thanh toán',
+ pending:'Chờ xử lý',confirmed:'Đã xác nhận',paid:'Đã đánh dấu thanh toán (chưa đối soát)',
  cancelled:'Đã hủy',refunded:'Đã hoàn tiền',fulfilled:'Đã giao',requested:'Yêu cầu mới'
 });
 const fail=(code)=>{const e=new Error(code);e.code=code;throw e;};
@@ -24,7 +24,7 @@ export function sanitizedOrder(row,tenantId){
  if(!Number.isFinite(stamp))fail('ORDER_DATE_INVALID');
  return Object.freeze({
   id:row.id,
-  statusLabel:STATUSES[row.status]||'Trạng thái khác — cần hỗ trợ xác minh',
+  statusLabel:Object.hasOwn(STATUSES,row.status)?STATUSES[row.status]:'Trạng thái khác — cần hỗ trợ xác minh',
   totalLabel:checkedMoney(row.total_vnd),
   createdLabel:new Date(stamp).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}),
   // Order status PAID is NOT a verified payment transaction or proof of collected revenue.
