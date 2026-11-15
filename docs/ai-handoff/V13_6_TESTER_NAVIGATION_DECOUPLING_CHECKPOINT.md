@@ -24,7 +24,7 @@
 - **Bất kỳ đề xuất xóa hoàn toàn Tester** phải trải qua kiểm kê dependency/caller/CI, snapshot/rollback, bảo đảm các testcase và dữ liệu QA vẫn chạy trong môi trường nội bộ khác. Không tự xóa dựa trên việc link biến mất.
 
 ## QA/checkpoint
-- Cần xác nhận GitHub Actions PASS theo **HEAD cuối** của Draft trước khi đánh dấu TESTED. Không xem screenshot từ bản Render cũ là bằng chứng UI mới đã deploy.
+- **TESTED** trên commit mã nguồn `9301fa610fd6fa3bee6d184fac67cf0210fdcb5a`: [Auth/Customer QA run 43700962683](https://github.com/ngoctien20/demo-git/actions/runs/43700962683) hai jobs SUCCESS (source + Chromium), [Private Tester run 43700962605](https://github.com/ngoctien20/demo-git/actions/runs/43700962605) SUCCESS, [navigation run 43700962610](https://github.com/ngoctien20/demo-git/actions/runs/43700962610) SUCCESS, [Supabase Auth static run 43700962568](https://github.com/ngoctien20/demo-git/actions/runs/43700962568) SUCCESS. Giai đoạn đầu có lỗi regression do kỳ vọng liên kết Tester cũ, đã sửa kiểm thử theo ranh giới quyền mới và chạy lại toàn bộ PASS. Đây là QA source/local/browser mô phỏng; **chưa có deploy Render**, không lấy ảnh website cũ làm bằng chứng UI mới hoạt động trên host.
 - QA Hosted Auth/RLS từ hai phiên trước đó: Shop A và Shop B tách biệt khi đọc `orders` và `tenant_memberships`, anonymous nhận 401; thử thu hồi membership với JWT còn hạn vẫn chưa chạy.
 
 ## Rollback
