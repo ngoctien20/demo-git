@@ -111,3 +111,20 @@ Owner reply: "được phê duyệt" in immediate context of a separate approval
 - **POST-RESET QA (PENDING):** Verify project ACTIVE_HEALTHY, Supabase Auth and REST API, Render Auth/data staging status, n8n ingress metadata, and owner-run CLI database backup via Session Pooler; monitor any credential failures. Never invent test evidence.
 - **ROLLBACK:** Old password is unknown so cannot restore it; if needed rotate to another privately known strong password and repair external clients after separately identifying affected integrations. Full database restore is NOT a password rollback.
 - **STATUS:** APPROVED_NOT_EXECUTED. Need user to perform reset in Supabase UI and confirm **without sharing the password** before claiming rotation complete. DB backup and V14.2 Store/RLS migration remain BLOCKED pending restore-test gates.
+
+
+## Operator-reported password reset and pgAdmin reconnection
+
+Date: 2026-11-15 JST. User explicitly reports that the password reset has been completed and provides a screenshot of pgAdmin 4 with server `tien404_AI_BACKUP` expanded and PostgreSQL `Login/Group Roles` populated. This is evidence of **a working pgAdmin database session**, but a screenshot is not an audit trail proving a fresh authentication handshake with the new password. Never record or request the password.
+
+After the user's report, Supabase connector read-only checks:
+- Supabase project `ifxlvrhyjhbzbrkdsida` status: `ACTIVE_HEALTHY`.
+- `current_database()` = `postgres`, PostgreSQL version 17.11.
+- `public.products` rows = 2, `public.orders` rows = 2.
+- `public.stores` still absent, indicating Store RLS migration not applied.
+
+Status: `PASSWORD_RESET=USER_REPORTED`, `PGADMIN_SESSION_CONNECTED=SCREENSHOT_VERIFIED`, `SUPABASE_CONNECTOR_HEALTH=VERIFIED`, `BACKUP_CREATED=NO_EVIDENCE`, `RESTORE_TESTED=NO`, `STORE_RLS_MIGRATION=BLOCKED`.
+
+**Next operator-only action:** In pgAdmin, expand Databases, right-click postgres → Backup. Choose Custom format to private local directory, capture all intended project schemas and data. pgAdmin uses pg_dump and may be restricted by Supabase-owned internal schemas; inspect process log and TOC before accepting any backup. Record a successful process completion and separately rehearse an isolated restore. Never restore to connected staging database. Supabase CLI `db dump` is the provider-guided preferred alternative for managed schema filtering.
+
+No credential reading/writing, production deployment, SQL migration, RLS or data mutation performed by this assistant.
