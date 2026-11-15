@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'none'; font-src 'none'; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>TIEN404 · Bot Customization Studio V14.7 — Synthetic QA</title>
+<style>
+:root{--bg:#0a0e17;--panel:#121926;--pane2:#171f2e;--stroke:#2b3445;--fg:#eef3fa;--muted:#9baabf;--accent:#16a085;--warn:#efbb64;--radius:17px}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0%,#202c41 0%,transparent 40%),var(--bg);color:var(--fg);font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}button,select{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #62c8e0;outline-offset:2px}
+header{height:auto;min-height:72px;border-bottom:1px solid var(--stroke);display:flex;align-items:center;justify-content:space-between;padding:15px clamp(16px,3vw,46px);gap:12px;flex-wrap:wrap;background:#0e1420e8}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#11c5b3,#3a6ba1);font-weight:900;letter-spacing:-1px}.brand strong{font-size:17px;letter-spacing:.03em}.brand small{display:block;color:var(--muted);font-size:11px}.flags{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.chip{font-size:11px;border:1px solid #38536a;color:#b1d4e6;padding:6px 9px;border-radius:99px;background:#18304480}.danger{color:#ffcc9e;border-color:#78523d;background:#442d2129}
+main{max-width:1560px;padding:25px clamp(16px,3vw,46px) 46px;margin:auto}.heading{display:flex;gap:22px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;margin-bottom:23px}.eyebrow{color:#65d7d1;letter-spacing:.15em;font-size:11px;font-weight:800}h1{font-size:clamp(24px,3vw,33px);line-height:1.18;margin:6px 0 5px;letter-spacing:-.04em}p{margin:0;color:var(--muted)}.subtitle{max-width:670px}.metrics{display:flex;gap:11px;flex-wrap:wrap}.metric{border:1px solid var(--stroke);border-radius:13px;padding:9px 13px;background:#111a2a}.metric strong{display:block;font-size:17px;color:#ecf5f9}.metric span{font-size:11px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(230px,260px) minmax(270px,1fr) minmax(310px,440px);gap:17px;align-items:start}
+.panel{background:linear-gradient(145deg,#161e2d,#111824);border:1px solid var(--stroke);border-radius:var(--radius);overflow:hidden}.panelhead{padding:18px 19px;border-bottom:1px solid var(--stroke);display:flex;align-items:center;justify-content:space-between;gap:8px}.panelhead h2{font-size:14px;margin:0}.panelhead span{color:var(--muted);font-size:11px}.inside{padding:18px 19px}.section-label{font-weight:800;color:#aec5dc;font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin:8px 0 12px}.shoplist{display:grid;gap:8px}.shopcard{width:100%;border:1px solid var(--stroke);border-radius:12px;background:#1b2635;color:var(--fg);padding:11px;text-align:left;display:flex;gap:10px;align-items:center;min-height:68px}.shopcard[data-active=true]{border-color:#45baba;background:#12313b;box-shadow:inset 3px 0 #45baba}.avatar{width:37px;height:37px;flex-shrink:0;border-radius:12px;background:#334354;display:grid;place-items:center;font-weight:800;font-size:12px}.shopcard small{display:block;color:var(--muted);font-size:11px}.sep{height:1px;background:var(--stroke);margin:20px 0}.channelgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.channel{border:1px solid var(--stroke);background:#1b2635;color:#cfdcec;border-radius:10px;min-height:49px;font-size:12px;font-weight:650;padding:8px}.channel[data-active=true]{border-color:#43b6b3;background:#154047;color:white}.tip{font-size:11px;color:#a6bed0;background:#1b2a38;border:1px solid #34475b;border-radius:11px;padding:12px;margin-top:16px}.tip strong{color:#dbeffe}
+label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1ee}.input,textarea,select{display:block;width:100%;background:#0d1521;color:#f5f8fb;border:1px solid #354258;border-radius:10px;padding:10px 12px;min-height:44px}.input:focus,textarea:focus,select:focus{border-color:#3bccb6}textarea{resize:vertical;min-height:102px}.hint{font-size:11px;color:var(--muted);margin:5px 0}.swatch{display:flex;gap:8px;align-items:center}.swatch input{width:60px;height:45px;padding:4px;border:1px solid #354258;background:#0d1521;border-radius:9px}.swatch .input{flex:1}.switchline{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:12px}.switchline input{accent-color:#19c2ad;width:16px;height:16px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.btn{background:#1b2c3b;border:1px solid #42526b;color:#e8f4ff;border-radius:10px;padding:10px 13px;font-weight:750;font-size:12px}.btn.primary{background:linear-gradient(135deg,#0dab9c,#187c94);border-color:#0e9c9f;color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}.note{font-size:11px;color:var(--muted);margin-top:14px}
+.preview-area{padding:18px;background:linear-gradient(#0e1522,#101c2b);display:flex;flex-direction:column;align-items:center;gap:14px}.preview-meta{display:flex;align-items:center;gap:8px;justify-content:space-between;width:100%;font-size:11px;color:var(--muted);flex-wrap:wrap}.preview-meta strong{color:#efc78a}.phone{border:7px solid #2c384b;background:#e8edf4;color:#1c2c38;border-radius:33px;width:min(100%,365px);min-height:510px;overflow:hidden;box-shadow:0 26px 65px #0006}.phone-top{height:17px;background:#192534;display:flex;justify-content:center;align-items:center}.notch{width:68px;height:6px;border-radius:4px;background:#42566a}.chat-head{padding:13px 15px;display:flex;gap:10px;align-items:center;background:#fff;border-bottom:1px solid #e1e6ed}.chatlogo{height:33px;width:33px;border-radius:50%;display:grid;place-items:center;color:white;font-size:11px;font-weight:800;background:var(--accent)}.chat-head strong{display:block;font-size:13px}.chat-head small{display:block;color:#78889a;font-size:10px}.chat{background:linear-gradient(#edf2f7,#e2eaf4);height:390px;overflow:auto;padding:17px 12px;display:flex;gap:12px;flex-direction:column}.date{text-align:center;color:#8391a1;font-size:10px}.bubble{background:white;border-radius:4px 15px 15px 15px;padding:12px;line-height:1.55;box-shadow:0 2px 10px #a0afbd24;max-width:93%;font-size:12px;white-space:pre-line;overflow-wrap:anywhere}.from-user{align-self:flex-end;background:#c9e7fb;border-radius:15px 4px 15px 15px}.qa-stamp{font-size:10px;color:#b65e34;letter-spacing:.04em;font-weight:800;margin-bottom:6px}.product-card{width:94%;background:white;border:1px solid #e3e7ef;border-radius:12px;overflow:hidden;box-shadow:0 5px 12px #b4c0cc44}.product-photo{height:111px;display:grid;place-items:center;background:linear-gradient(135deg,#e4e7ef,#cbd8e6);font-size:49px}.product-info{padding:10px}.product-info strong{font-size:13px;display:block}.product-info small{font-size:10px;color:#69798a}.price{font-weight:900;font-size:14px;color:#bd4a2c;margin-top:4px}.product-buttons{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e6e9ed}.product-buttons button{background:#fff;border:0;padding:10px 3px;font-size:11px;color:#366ca8;font-weight:750;cursor:default}.product-buttons button+button{border-left:1px solid #e6e9ed}.choices{display:flex;flex-wrap:wrap;gap:6px}.choices span{border:1px solid #5da9e0;color:#2679aa;background:white;border-radius:25px;padding:5px 9px;font-size:10px}.chat-input{background:white;border-top:1px solid #e4e9f0;padding:12px;color:#9ba7b4;font-size:11px}.flowtabs{display:flex;gap:7px;width:100%;flex-wrap:wrap;justify-content:center}.flowtabs button{background:#1b2939;border:1px solid #3b4a5f;color:#c9d8e9;border-radius:9px;padding:8px 11px;font-size:11px}.flowtabs button[data-active=true]{background:#144441;border-color:#21a395;color:#fff}.status{margin-top:12px;min-height:25px;font-size:12px;color:#8bd4c7}.qa-status{padding:10px 12px;border-radius:11px;background:#0a2f32;color:#a7f3dc;font-size:11px;display:none}.qa-status.show{display:block}
+@media(max-width:1190px){.layout{grid-template-columns:minmax(250px,1fr) minmax(310px,1.3fr)}.preview-panel{grid-column:2;grid-row:1/span 2}.setting-panel{grid-column:1}}
+@media(max-width:770px){main{padding:20px 12px 30px}.layout{grid-template-columns:1fr}.preview-panel,.setting-panel{grid-column:auto;grid-row:auto}.panelhead{padding:15px}.inside{padding:14px}.preview-area{padding:14px}.phone{min-height:490px}.chat{height:370px}.shoplist{grid-template-columns:repeat(3,minmax(0,1fr))}.shopcard{flex-direction:column;align-items:start;gap:5px;min-height:88px}.shopcard .avatar{width:30px;height:30px}.shopcard span{font-size:11px}.shopcard small{font-size:10px}}
+@media(max-width:370px){.shoplist{grid-template-columns:1fr}.shopcard{flex-direction:row;min-height:58px}.channelgrid{grid-template-columns:repeat(2,1fr)}.metrics{width:100%}.metric{flex:1}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="mark">404</div><div><strong>TIEN404 <span style="color:#5de2ce">AI</span></strong><small>BOT CUSTOMIZATION LAB · V14.7</small></div></div>
+  <div class="flags"><span class="chip">EXPERIMENTAL · STAGING</span><span class="chip danger">KHÔNG GỬI TIN THẬT</span></div>
+</header>
+<main>
+ <div class="heading"><div><div class="eyebrow">MERCHANT EXPERIENCE DESIGNER</div><h1>Thiết kế trợ lý AI cho từng cửa hàng</h1><p class="subtitle">Chọn cửa hàng, tùy biến lời chào và cách nói chuyện. Xem khác biệt giữa Messenger, Zalo và website ngay tại đây — tất cả là dữ liệu mẫu.</p></div>
+ <div class="metrics"><div class="metric"><strong>03</strong><span>Shop QA</span></div><div class="metric"><strong>04</strong><span>Kênh xem trước</span></div><div class="metric"><strong>0</strong><span>Tin thật đã gửi</span></div></div></div>
+ <div class="layout">
+  <section class="panel" aria-label="Chọn cửa hàng và kênh">
+   <div class="panelhead"><h2>01 · Chọn cửa hàng</h2><span>Dữ liệu giả lập</span></div>
+   <div class="inside">
+    <div class="section-label">Cấu hình theo ngành</div>
+    <div class="shoplist">
+     <button type="button" class="shopcard" data-shop="A"><div class="avatar">AN</div><span><strong>Tạp hóa An</strong><small>Shop A · Tenant 1</small></span></button>
+     <button type="button" class="shopcard" data-shop="B"><div class="avatar">BÌ</div><span><strong>Thời trang Bình</strong><small>Shop B · Tenant 1</small></span></button>
+     <button type="button" class="shopcard" data-shop="C"><div class="avatar">CƯ</div><span><strong>Vật liệu Cường</strong><small>Shop C · Tenant 2</small></span></button>
+    </div>
+    <div class="sep"></div>
+    <div class="section-label">Kênh hiển thị</div>
+    <div class="channelgrid">
+     <button type="button" class="channel" data-channel="MESSENGER">Messenger</button>
+     <button type="button" class="channel" data-channel="ZALO_BOT">Zalo Bot</button>
+     <button type="button" class="channel" data-channel="ZALO_OA">Zalo OA</button>
+     <button type="button" class="channel" data-channel="WEB_WIDGET">Web Widget</button>
+    </div>
+    <div class="tip"><strong>Phân biệt:</strong> Zalo Bot và Zalo OA có API và điều kiện sử dụng khác nhau. Các nút/chức năng chưa kiểm chứng chỉ xuất hiện dưới dạng mô phỏng hoặc văn bản thay thế.</div>
+    <div class="sep"></div>
+    <div class="section-label">Tình trạng kỹ thuật</div>
+    <p style="font-size:12px">✓ Cấu hình độc lập theo Shop + Kênh<br>✓ Khóa giá và quy tắc bảo mật<br>✓ Draft riêng, không ghi database<br>○ Chưa có xác minh provider live<br>○ Chưa có AI thật hoặc Store RLS hosted</p>
+   </div>
+  </section>
+  <section class="panel setting-panel" aria-label="Tùy chỉnh bản nháp">
+   <div class="panelhead"><h2>02 · Tùy biến thương hiệu</h2><span id="version">Draft v1</span></div>
+   <div class="inside">
+    <div class="section-label">Cấu hình được cho phép</div>
+    <label for="assistantName">Tên trợ lý</label><input id="assistantName" class="input" maxlength="60" autocomplete="off">
+    <label for="greeting">Lời chào đầu hội thoại</label><textarea id="greeting" maxlength="240" spellcheck="true"></textarea>
+    <label for="tone">Giọng nói AI</label><select id="tone">
+     <option>thân thiện</option><option>cao cấp</option><option>chuyên nghiệp</option><option>ngắn gọn</option><option>kỹ thuật</option>
+    </select>
+    <label for="color">Màu thương hiệu (chỉ áp dụng đầy đủ cho preview/widget)</label>
+    <div class="swatch"><input id="color" type="color" value="#16a085"><input id="colorCode" class="input" maxlength="7" aria-label="Mã màu thương hiệu"></div>
+    <label for="menuPreset">Menu gợi ý</label>
+    <select id="menuPreset"><option value="basic">Cơ bản · Xem hàng / Hỏi giá / Nhân viên</option>
+     <option value="sales">Bán hàng · Xem hàng / Hỏi giá / Đặt thử</option>
+     <option value="support">Hỗ trợ · Chính sách / Nhân viên</option></select>
+    <div class="switchline"><input id="showStock" type="checkbox" checked><label for="showStock" style="display:inline;margin:0">Hiển thị tồn kho giả lập</label></div>
+    <p class="hint">Giá và tồn kho không chỉnh ở đây. Menu chỉ là gợi ý preview, không cấu hình Page/OA thật.</p>
+    <div class="actions"><button type="button" class="btn primary" id="save">Lưu bản nháp</button><button type="button" class="btn" id="reset">Khôi phục mẫu QA</button><button type="button" class="btn" id="export">Xuất JSON thử nghiệm</button></div>
+    <div role="status" id="status" class="status" aria-live="polite"></div>
+    <p class="note">Bản nháp chỉ nằm trong bộ nhớ trang. Tải lại sẽ mất thay đổi. Không có chức năng publish và không kết nối API hoặc lưu trữ khách hàng.</p>
+   </div>
+  </section>
+  <section class="panel preview-panel" aria-label="Mô phỏng hội thoại đa kênh">
+   <div class="panelhead"><h2>03 · Xem trước hội thoại</h2><span id="channelTitle">Messenger</span></div>
+   <div class="preview-area">
+    <div class="preview-meta"><span>Chế độ: <strong>SYNTHETIC NO-SEND</strong></span><span id="capability">Template · chưa xác minh Page</span></div>
+    <div class="flowtabs" aria-label="Kiểm thử bốn luồng">
+     <button data-flow="CONSULT" type="button">Tư vấn</button><button data-flow="QUOTE" type="button">Báo giá</button><button data-flow="ORDER" type="button">Yêu cầu đơn</button><button data-flow="SUPPORT" type="button">Hỗ trợ</button>
+    </div>
+    <div class="phone" id="phone">
+     <div class="phone-top"><div class="notch"></div></div>
+     <div class="chat-head"><div class="chatlogo" id="chatAvatar">AN</div><div><strong id="chatTitle">Tạp hóa An</strong><small id="chatSubtitle">Trang mô phỏng · không phải ứng dụng thật</small></div></div>
+     <div class="chat" id="chat"><div class="date">Hội thoại QA giả lập</div></div>
+     <div class="chat-input">Nhập tin nhắn trong kênh thật chỉ hoạt động sau khi được cấp quyền và nghiệm thu.</div>
+    </div>
+    <button type="button" class="btn" id="runQa">Kiểm tra 4 luồng thử nghiệm</button>
+    <div class="qa-status" id="qaOutput" role="status"></div>
+    <p class="note" style="text-align:center">Màn hình mô phỏng phong cách kênh; không phải bản chụp chính thức của Meta hoặc Zalo.</p>
+   </div>
+  </section>
+ </div>
+</main>
+<script src="./studio-core.js"></script>
+<script src="./studio-ui.js"></script>
+</body></html>
