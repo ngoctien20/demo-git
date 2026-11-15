@@ -124,7 +124,7 @@ $('reviewButton').addEventListener('click',()=>{
  $('reviewButton').disabled=true;$('addDraft').disabled=true;$('editor').querySelector('button[type="submit"]').disabled=true;
  message('Đã chuyển sang REVIEW trong bộ nhớ. APPROVED/RELEASED chỉ được quyết định qua quy trình có quyền.');
 });
-async function init(){try{const r=await fetch('../../v131/menu-registry.json',{cache:'no-store',credentials:'omit'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();state.source=clone(d);state.draft=clone(d);if(valid())throw new Error(valid());
+async function init(){try{const r=await fetch('../../v131/menu-registry.json',{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();state.source=clone(d);state.draft=clone(d);if(valid())throw new Error(valid());
 $('version').textContent=d.menu_version;$('totalActions').textContent=String(d.menus.reduce((n,m)=>n+m.actions.length,0));drawActions();drawChat();rich();message('Registry nguồn đã tải thành công. Bản nháp không được lưu trên máy chủ.');
 }catch(e){message('Không thể tải Menu Registry: '+e.message+' — chạy qua HTTP server với cấu trúc repo đầy đủ.');$('actions').textContent='Lỗi tải Registry. Không tạo menu giả.';}}
 init();
