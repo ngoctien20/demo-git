@@ -49,7 +49,7 @@
 
 ## 3 — QA criteria and remaining gates
 
-**GitHub Actions source and browser QA:** capture final run IDs and pass totals once latest HEAD jobs complete. Do not report CI PASS until confirmed.
+**GitHub Actions TESTED:** [run 43708442661](https://github.com/ngoctien20/demo-git/actions/runs/43708442661), source commit `b424c224c7214335eed28c01b83bc6f7c01a962e`: 2/2 jobs **SUCCESS**. `candidate-source-and-regression` reports **94/94 PASS (53 V13.6M + 41 V13.6M.1), 0 FAIL**; static no-network/no credential assertions PASS. `inherited-rich-ui-chromium` reports **5/5 viewports × 4 modules PASS**, zero external/mutating requests and zero sends. [Legacy PR #87 suite 43708442706](https://github.com/ngoctien20/demo-git/actions/runs/43708442706) ran alongside (separately), not needed to substantiate new source tests. These are synthetic offline tests only, not real Meta delivery.
 **n8n test:** execution `3835` status SUCCESS using pinned *manual trigger only*; Set and Code nodes executed internally. Because input is synthetic, it does NOT verify a real shop, Page, sender, message delivery, Meta UI or Supabase catalog read.
 
 **P0 gaps:**
