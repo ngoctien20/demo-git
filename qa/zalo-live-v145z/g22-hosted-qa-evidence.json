@@ -1,0 +1,66 @@
+{
+  "checkpoint": "V14.5Z-G2.2",
+  "date_jst": "2026-11-16",
+  "state": "SIGNED_PROVIDER_MATCHES_QA_SHOP_B_CANDIDATE_ONLY",
+  "real_owner_certified": false,
+  "actual_zalo_send_approved": false,
+  "provider_sends": 0,
+  "orders_written": 0,
+  "environment": "ISOLATED_STAGING_NO_SEND",
+  "worker": {
+    "name": "tien404-g22-shop-b-map-nosend-staging",
+    "version": "8e458c9c-3231-451c-9229-e26e171d47c3",
+    "deployment": "f7645755-5940-460e-9068-cf831024aa40",
+    "url": "https://tien404-g22-shop-b-map-nosend-staging.tienmobi208.workers.dev",
+    "bindings": [
+      "G22_QA_DB"
+    ],
+    "secret_bindings": 0
+  },
+  "registry": {
+    "database": "tien404-g22-botmap-qa-staging",
+    "database_id": "4453cadb-3f0e-427c-bc7c-57267878230e",
+    "table": "g22_trusted_bot_candidates",
+    "record_count": 1,
+    "binding_ref": "G22_QA_SHOP_B_PROVIDER_CANDIDATE_V1",
+    "record_status": "CANDIDATE",
+    "owner_certified": 0,
+    "tenant_slug": "qa-staging-shop-b-20261110",
+    "store_key": "qa-store-b",
+    "tenant_uuid_public": false,
+    "tenant_id_sha256": "81902d42f087c86b28f5d986cce0f2101f79d6c55f7c9a3c3885d317c41fc994",
+    "expires_at_utc": "2026-11-18T20:33:02.859Z",
+    "renewal_automatic": false
+  },
+  "source": {
+    "getme_provider_attestor_version": "3422864f-f095-45b9-85ca-a7d03cb87a3f",
+    "protected_bot_token_rotated": false,
+    "attestation_execution": "3880",
+    "published_ingress_version_unchanged": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e"
+  },
+  "qa": {
+    "github_run": "43758263470",
+    "offline_case_count": 45,
+    "offline_result": "PASS",
+    "overall_qa_total": 454,
+    "hosted_positive_n8n_execution": "3881",
+    "hosted_negative_n8n_execution": "3882",
+    "http_signed_map": 200,
+    "http_no_proof": 422,
+    "http_cross_shop_override": 422,
+    "http_send": 423,
+    "http_health": 200
+  },
+  "release_gates": {
+    "g21": "VERIFIED_PROVIDER_SIGNED_OBSERVATION",
+    "g22": "STAGING_CANDIDATE_TECHNICAL_MATCH_VERIFIED",
+    "g23": "BLOCKED_OWNER_CONSENT_MISSING",
+    "g24": "BLOCKED_PUBLISHED_INGRESS_SYNTHETIC",
+    "g25": "BLOCKED_SIGNED_FOUR_ISSUER_REPLAY",
+    "g4_real_send": "NO_GO"
+  },
+  "rollback": {
+    "action": "disable only isolated G22 worker or mark isolated candidate REVOKED after approved review; never touch Supabase tenant data or G2.1 Worker",
+    "no_production_changes": true
+  }
+}
