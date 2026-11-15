@@ -1,0 +1,57 @@
+name: TIEN404 V14.3 Sales Lite UAT Pilot — OFFLINE Browser QA
+on:
+  push:
+    branches:
+      - work/v143-saleslite-uat-standalone-pilot-20261115
+    paths:
+      - 'qa/channel-v143/saleslite-uat-pilot.html'
+      - 'qa/channel-v143/saleslite-uat-pilot.browser.cjs'
+      - 'docs/ai-handoff/V14_3_SALESLITE_UAT_*'
+      - '.github/workflows/v143-saleslite-uat-pilot-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/channel-v143/saleslite-uat-pilot.html'
+      - 'qa/channel-v143/saleslite-uat-pilot.browser.cjs'
+      - 'docs/ai-handoff/V14_3_SALESLITE_UAT_*'
+      - '.github/workflows/v143-saleslite-uat-pilot-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  standalone-browser:
+    name: Five responsive viewports and simulated shop/order isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium for QA only
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Offline source security gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/channel-v143/saleslite-uat-pilot.html').read_text()
+          for banned in ['fetch(', 'XMLHttpRequest', 'localStorage', 'sessionStorage', 'navigator.sendBeacon',
+                         'graph.facebook.com', 'PAGE_ACCESS_TOKEN', 'SUPABASE_SERVICE_ROLE', 'eval(']:
+              assert banned not in s,banned
+          assert "default-src 'none'" in s and "connect-src 'none'" in s
+          assert 'QA OFFLINE' in s and 'makeStates' in s
+          print('PASS zero outbound network/credentials/customer data persistence')
+          PY
+      - name: Browser smoke QA with no outbound writes
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/tien404-saleslite-qa.log 2>&1 &
+          sleep 2
+          node qa/channel-v143/saleslite-uat-pilot.browser.cjs
+      - name: Upload synthetic screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-saleslite-uat-synthetic-browser
+          path: qa-artifacts-saleslite/
+          if-no-files-found: ignore
