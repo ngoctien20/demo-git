@@ -1,0 +1,70 @@
+name: TIEN404 V14.5 LIVE03D Real AI Tool Allowlist QA (OFFLINE REGRESSION)
+on:
+  push:
+    branches:
+      - work/v145-live03d-real-ai-allowlist-dryrun-20261116
+    paths:
+      - 'qa/messenger-live03d/**'
+      - 'docs/ai-handoff/V14_5_LIVE03D_*'
+      - '.github/workflows/v145-live03d-real-ai-allowlist-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/messenger-live03d/**'
+      - 'docs/ai-handoff/V14_5_LIVE03D_*'
+      - '.github/workflows/v145-live03d-real-ai-allowlist-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-tool-contract:
+    name: Verify LIVE03D live-model response fixtures and no-write Code Tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and JSON checks
+        run: |
+          node --check qa/messenger-live03d/safe-tools-and-scorer.test.cjs
+          node -e "JSON.parse(require('node:fs').readFileSync('qa/messenger-live03d/candidate-runtime-snapshot.json','utf8'))"
+      - name: Run source and recorded real-AI response regression
+        run: node --test qa/messenger-live03d/safe-tools-and-scorer.test.cjs
+      - name: Enforce only isolated QA tools; no real order action
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          s=json.loads(Path('qa/messenger-live03d/candidate-runtime-snapshot.json').read_text())
+          kinds=[n['type'] for n in s['nodeGraph']]
+          assert s['active'] is False and s['publishedVersionId'] is None
+          assert kinds.count('@n8n/n8n-nodes-langchain.agent')==1
+          assert kinds.count('@n8n/n8n-nodes-langchain.toolCode')==2
+          assert kinds.count('@n8n/n8n-nodes-langchain.lmChatOpenAi')==1
+          assert set(kinds)<=set(s['allowedNodeTypes'])
+          assert s['model']['id']=='gpt-5-nano'
+          for tool in s['tools']:
+              for banned in ('executeWorkflow(', 'graph.facebook.com', 'supabase',
+                             'googleSheets', 'axios(', 'fetch('):
+                  assert banned not in tool['jsCode'], (tool['name'],banned)
+          print('PASS: one real AI model only, two sandbox Code Tools, zero order writers')
+          PY
+  inherited-offline:
+    name: LIVE03C signed fixture and previous no-write regression suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node.js signed fixture and QA tests (no AI provider calls)
+        run: |
+          node --test qa/messenger-live03c/order-intent-candidate.test.cjs
+          node --test qa/messenger-live03c/n8n-manual-stages.test.cjs
+          node --test qa/messenger-live03b/write-denial-gateway.test.cjs
+          node --test qa/messenger-live03b/live03b-n8n-manual-lab.test.cjs
+          node --test qa/messenger-live03/live03-dryrun-source.test.cjs
+          node --test qa/messenger-live-gate-v145/trusted-webhook-qa.test.cjs
+          node --test qa/messenger-sales-v1448/messenger-four-flow-offline.test.cjs
