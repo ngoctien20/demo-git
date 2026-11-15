@@ -117,6 +117,7 @@ function finish(){
 }
 $('begin').addEventListener('click',()=>{
  state={shop:$('store').value,step:0,answers:{},unknown:[],status:'DRAFT'};
+ $('scope').textContent='Shop '+state.shop+' — fixture';
  $('startPanel').hidden=true;$('interview').hidden=false;$('form').hidden=false;$('review').hidden=true;$('output').hidden=true;$('chat').replaceChildren();
  bubble('Xin chào! Tôi sẽ hỏi từng mục để chuẩn bị hồ sơ Shop '+state.shop+'. Không có câu trả lời nào được đưa thẳng cho khách.', 'assistant');question()
 });
