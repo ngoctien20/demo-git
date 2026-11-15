@@ -6,7 +6,7 @@ WITH audited AS (
  SELECT n.nspname as schema_name,p.proname,
         pg_get_function_identity_arguments(p.oid) as args,
         pg_get_userbyid(p.proowner) as owner_name,p.prosecdef,
-        p.proconfig::text as settings,p.proacl,
+        p.proconfig::text as settings,p.proconfig as config_array,p.proacl,
         p.oid,p.proowner,
         lower(pg_get_functiondef(p.oid)) as body
  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
@@ -28,6 +28,7 @@ SELECT jsonb_build_object(
  'setting_search_path',settings,
  'anon_execute',anon_execute,'authenticated_execute',authenticated_execute,
  'public_execute',public_execute,
+ 'locked_empty_search_path',array_position(config_array,'search_path=""') IS NOT NULL,
  'flags',jsonb_build_object(
    'uses_auth_uid',position('auth.uid()' in body)>0,
    'uses_tenant_membership',position('public.tenant_memberships' in body)>0,
