@@ -1,0 +1,106 @@
+{
+  "name": "TIEN404_MULTIMODAL_INGRESS_V14_STAGING",
+  "id": "9UDajs5gyaasf6XN",
+  "versionId": "35d84a17-4945-4b79-bb92-1719c34e9911",
+  "active": false,
+  "nodes": [
+    {
+      "id": "0ddc5b84-624b-451b-a4ae-f7100c93203a",
+      "name": "Manual V14 Multimodal Fixture QA (NO SEND)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ae7302f5-e7b5-44cf-b84f-61bdf3825dc9",
+      "name": "Generate Safe Synthetic Image Cases",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst now=Date.now();\nconst rows=[\n {id:'image_photo_url',kind:'positive',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'EXACT_VERIFIED'},\n {id:'cross_shop',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-a',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'fake_sku',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'FAKE',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'CLARIFY'},\n {id:'url_http',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'http://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'url_localhost',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://localhost/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'webhook_spoof',kind:'negative',verified:false,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'self_bot',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:true,chat:'PRIVATE',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'group_chat',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'GROUP',fresh:true,price:159000,duplicate:false,expected:'BLOCKED'},\n {id:'duplicate_image',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:159000,duplicate:true,expected:'DUPLICATE'},\n {id:'stale_price',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:false,price:159000,duplicate:false,expected:'REVERIFY'},\n {id:'bad_price',kind:'negative',verified:true,store:'shop-b',catalogStore:'shop-b',sku:'F01',catalogSku:'F01',url:'https://cdn.example.test/a',isBot:false,chat:'PRIVATE',fresh:true,price:'159.000',duplicate:false,expected:'BLOCKED'}\n];\nreturn rows.map(json=>({json}));\n"
+      }
+    },
+    {
+      "id": "ac6cba48-7478-4ffa-973e-e412832c37c1",
+      "name": "Evaluate No-Send SKU Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all().map(x=>x.json);\nreturn rows.map(c=>{\n let status='CLARIFY';\n // Offline smoke only. Production URL validation must use an egress proxy with DNS, IP and redirect checks.\n const whitelisted=typeof c.url==='string'&&/^https:\\/\\/cdn\\.example\\.test\\/[a-z0-9/_-]+$/i.test(c.url);\n if(!c.verified||c.store!==c.catalogStore||c.isBot||c.chat!=='PRIVATE'||\n    !whitelisted||!Number.isSafeInteger(c.price)||c.price<0)status='BLOCKED';\n else if(c.duplicate)status='DUPLICATE';\n else if(c.sku===c.catalogSku)status=c.fresh?'EXACT_VERIFIED':'REVERIFY';\n return {json:{id:c.id,expected:c.expected,actual:status,pass:status===c.expected,\n   media_downloaded:0,model_calls:0,provider_sends:0,orders_written:0,production_ready:false}};\n});"
+      }
+    },
+    {
+      "id": "496a090a-2833-480c-85a6-44efeb4d6c37",
+      "name": "Assert V14 Isolated QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst a=$input.all().map(x=>x.json),failed=a.filter(x=>!x.pass||x.provider_sends!==0||x.orders_written!==0||x.model_calls!==0||x.media_downloaded!==0);\nif(failed.length)throw new Error('V14_QA_FAILURE:'+failed.map(x=>x.id).join(','));\nreturn [{json:{suite:'V14_OFFLINE_IMAGE_TO_SKU_CONTRACT_SMOKE',cases:a.length,passed:a.length,failed:0,\n  external_sends:0,orders_written:0,model_calls:0,media_downloads:0,source:'SYNTHETIC_ONLY',provider_tested:false,vision_model_tested:false,production_ready:false}}];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Manual V14 Multimodal Fixture QA (NO SEND)": {
+      "main": [
+        [
+          {
+            "node": "Generate Safe Synthetic Image Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Safe Synthetic Image Cases": {
+      "main": [
+        [
+          {
+            "node": "Evaluate No-Send SKU Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate No-Send SKU Contract": {
+      "main": [
+        [
+          {
+            "node": "Assert V14 Isolated QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "description": "V14 manual synthetic-only Image-to-SKU guard smoke; no webhook, media download, AI model, orders, database or provider sends.",
+  "recordedAt": "2026-11-15",
+  "note": "Sanitized new V14 inactive manual QA workflow. Contains only synthetic fixtures; no credentials, no tokens, no customer data."
+}
