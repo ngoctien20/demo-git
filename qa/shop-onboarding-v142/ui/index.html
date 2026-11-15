@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>TIEN404 · V14.2 Tạo hồ sơ cửa hàng (QA)</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#ecf2fa;background:#0b1320;--panel:#142135;--line:#344761;--mint:#44c6ac;--gray:#b6c5d9}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:840px;margin:auto;padding:14px}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:15px 0}
+.logo{font-weight:800;font-size:1.15rem}.tag{font-size:.7rem;border:1px solid #947333;color:#f3d18d;border-radius:999px;padding:6px 10px}
+h1{font-size:1.65rem;line-height:1.2;margin:12px 0}.sub,.hint{color:var(--gray);line-height:1.6}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px;margin:14px 0}
+.status{padding:10px 12px;background:#29271d;border:1px solid #62522f;color:#f6d497;border-radius:10px;font-size:.86rem;line-height:1.5}
+select,input,textarea{width:100%;background:#0c1929;color:#f1faff;padding:12px;border:1px solid #55718b;border-radius:10px;min-height:45px;font:inherit}
+textarea{min-height:96px;resize:vertical}label{display:block;font-size:.87rem;font-weight:650;margin-bottom:9px}
+button{font:inherit;border:1px solid #516781;border-radius:10px;min-height:44px;padding:10px 13px;cursor:pointer;color:#edf5ff;background:#183047}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mint)}
+button.primary{color:#082324;background:#58d2bb;border-color:#58d2bb;font-weight:750}
+button:disabled{opacity:.55;cursor:not-allowed}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1}.buttons{display:flex;gap:8px;flex-wrap:wrap}.buttons button{flex:1}
+.chat{max-height:400px;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:12px}
+.bubble{padding:12px 14px;max-width:94%;line-height:1.5;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.assistant{align-self:flex-start;border:1px solid #466174;background:#20354c}
+.owner{align-self:flex-end;background:#1a554d;border:1px solid #358b7a}
+.progress{height:8px;border-radius:99px;background:#0a1728;overflow:hidden;margin:12px 0}
+.fill{height:100%;width:0%;background:var(--mint);transition:width .15s}
+.grid{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.item{border-bottom:1px solid var(--line);padding:9px 0;line-height:1.5;overflow-wrap:anywhere}
+.item strong{display:block;font-size:.85rem;color:#c5d8e6}.item span{color:#fff}
+pre{background:#0b1728;color:#d6efff;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:10px;max-height:300px;overflow:auto}
+.error{color:#ffe0cb;background:#462925;padding:10px 12px;border-radius:8px}
+.success{color:#a7f2df;background:#153f3c;padding:12px;border-radius:8px}
+footer{padding:25px 0 35px;color:var(--gray);font-size:.8rem}
+@media(min-width:700px){.shell{padding:22px}.card{padding:24px}}
+</style></head>
+<body><main class="shell">
+<header><div class="logo">TIEN404 AI / Shop Onboarding</div><span class="tag">V14.2 · QA KHÔNG LƯU SERVER</span></header>
+<h1>Thiết lập kiến thức cho cửa hàng</h1>
+<p class="sub">Trả lời từng câu hỏi để tạo <strong>bản nháp</strong> hồ sơ cửa hàng. Nhân viên TIEN404 phải kiểm tra và chủ shop xác nhận trước khi AI được sử dụng.</p>
+<div class="status">Đang chạy bản thử nghiệm offline bằng dữ liệu Shop A/B/C giả lập. Không đăng nhập, không xác thực Store RLS, không gọi AI hay gửi tin nhắn thật. Không dùng để nhập thông tin khách hàng thật.</div>
+<section class="card" id="startPanel">
+ <label for="store">Cửa hàng thử nghiệm</label><select id="store">
+ <option value="A">Shop A — Tạp hóa (giả lập)</option>
+ <option value="B">Shop B — Thời trang (giả lập)</option>
+ <option value="C">Shop C — Vật liệu xây dựng (giả lập)</option>
+ </select><p class="hint">Chọn shop ở đây không cấp quyền truy cập. Backend thực tế phải xác thực qua server.</p>
+ <button class="primary" id="begin" type="button">Bắt đầu tạo hồ sơ nháp</button>
+</section>
+<section class="card" id="interview" hidden>
+ <div class="row"><strong id="scope">Shop A</strong><span id="counter" class="hint">Bước 1/11</span></div>
+ <div class="progress" aria-label="Tiến độ nhập hồ sơ"><div class="fill" id="progress"></div></div>
+ <div class="chat" id="chat" aria-label="Hội thoại hướng dẫn"></div>
+ <form id="form">
+  <label for="answer" id="answerLabel">Câu trả lời</label>
+  <textarea id="answer" maxlength="600" aria-describedby="tip" required placeholder="Nhập câu trả lời của shop..."></textarea>
+  <div class="hint" id="tip">Thông tin chưa được xác minh và chưa được công khai.</div>
+  <p id="error" class="error" role="alert" hidden></p>
+  <div class="buttons"><button type="button" id="skip">Chưa biết / bỏ qua</button><button class="primary" type="submit" id="send">Gửi câu trả lời</button></div>
+ </form>
+ <section id="review" hidden>
+  <h2>Kiểm tra bản nháp</h2>
+  <p class="hint">Những mục còn thiếu sẽ phải xác minh. Nút xuất chỉ hiển thị JSON trong trình duyệt, không ghi Supabase hoặc phát hành cho AI.</p>
+  <div class="grid" id="summary"></div>
+  <p id="missing" class="status"></p>
+  <button type="button" class="primary" id="export">Tạo bản nháp (cục bộ)</button>
+  <div id="output" hidden><h3>Dữ liệu nháp chờ nhân viên kiểm tra</h3><pre id="jsonPreview"></pre></div>
+ </section>
+</section>
+<footer>TIEN404 V14.2 · EXPERIMENTAL · Thoát trang sẽ mất bản nháp. Tuyệt đối không nhập credential, số điện thoại khách hàng hoặc dữ liệu đơn hàng thực.</footer>
+</main>
+<script>
+"use strict";
+const defs=[
+ ['shop_name','Shop mình tên là gì ạ?','Tên cửa hàng',true,'name'],
+ ['industry','Shop mình kinh doanh lĩnh vực nào?','Ngành kinh doanh',true,'text'],
+ ['founding_year','Shop được thành lập năm nào? Nếu không rõ, chọn “Chưa biết”.','Năm thành lập',false,'year'],
+ ['public_phone','Số điện thoại nào chủ shop cho phép công khai?','Số điện thoại công khai',false,'phone'],
+ ['address','Địa chỉ cửa hàng đang ở đâu?','Địa chỉ',true,'text'],
+ ['opening_hours','Shop mở cửa mấy giờ? Ví dụ: 08:00–20:00.','Giờ hoạt động',true,'hours'],
+ ['delivery_area','Shop phục vụ/giao hàng những khu vực nào?','Khu vực giao hàng',false,'text'],
+ ['delivery_policy','Shop áp dụng phí và điều kiện giao hàng thế nào?','Chính sách giao hàng',false,'policy'],
+ ['returns_policy','Shop xử lý đổi trả hàng như thế nào?','Chính sách đổi trả',false,'policy'],
+ ['payment_methods','Shop chấp nhận những phương thức thanh toán nào?','Thanh toán',false,'text'],
+ ['ai_tone','Chọn phong cách tư vấn: thân thiện hoặc trang trọng.','Phong cách AI',false,'tone']
+];
+const $=id=>document.getElementById(id);let state=null;
+function bubble(text,kind){const e=document.createElement('div');e.className='bubble '+kind;e.textContent=text;$('chat').appendChild(e);$('chat').scrollTop=$('chat').scrollHeight}
+function progress(){const n=Math.min(state.step,defs.length);$('counter').textContent='Bước '+Math.min(n+1,defs.length)+'/'+defs.length;$('progress').style.width=(100*n/defs.length)+'%'}
+function question(){progress();const f=defs[state.step];if(!f){finish();return}
+ $('answerLabel').textContent=f[2];$('answer').value='';$('answer').maxLength=f[4]==='policy'?600:250;
+ $('tip').textContent=f[3]?'Thông tin bắt buộc để hoàn thành hồ sơ (có thể đánh dấu chưa biết).':'Thông tin tùy chọn; không tự suy đoán dữ liệu chưa được shop cung cấp.';
+ $('error').hidden=true;bubble(f[1],'assistant');$('answer').focus()}
+function validate(f,text){
+ const v=text.trim();
+ if(!v||v.length>(f[4]==='policy'?600:250))throw Error('Vui lòng nhập nội dung hợp lệ, không vượt quá giới hạn.');
+ if(/ignore previous|system prompt|api key|service role|credential|bỏ qua hướng dẫn|cấp quyền admin/i.test(v))throw Error('Câu trả lời có nội dung cần nhân viên kiểm tra. Không tiếp nhận như lệnh điều khiển AI.');
+ if(f[4]==='year'&&(!/^\d{4}$/.test(v)||+v<1900||+v>new Date().getFullYear()))throw Error('Năm thành lập phải là năm hợp lệ; nếu không rõ, hãy chọn “Chưa biết”.');
+ if(f[4]==='phone'&&!/^(0\d{9}|\+84\d{9})$/.test(v))throw Error('Số điện thoại công khai phải theo mẫu 0xxxxxxxxx hoặc +84xxxxxxxxx.');
+ if(f[4]==='tone'&&!['thân thiện','trang trọng'].includes(v.toLowerCase()))throw Error('Chọn đúng “thân thiện” hoặc “trang trọng”.');
+ if(f[4]==='hours'&&!/^[0-2]\d:[0-5]\d(?:\s*[-–—]\s*[0-2]\d:[0-5]\d)?(?:[ ;,].*)?$/.test(v))throw Error('Nhập giờ mở cửa theo dạng 08:00–20:00.');
+ if(f[4]==='name'&&(v.length<2||v.length>100))throw Error('Tên cửa hàng cần từ 2 đến 100 ký tự.');
+ return v}
+function answer(skip){
+ const f=defs[state.step];if(!f)return;let v=null;
+ try{if(!skip)v=validate(f,$('answer').value);$('error').hidden=true}
+ catch(e){$('error').textContent=e.message;$('error').hidden=false;return}
+ if(skip){state.unknown.push(f[0]);bubble('Chưa biết / cần xác minh','owner')}
+ else{state.answers[f[0]]=v;bubble(v,'owner')}
+ state.step++;question()
+}
+function finish(){
+ progress();$('form').hidden=true;$('review').hidden=false;
+ bubble('Cảm ơn bạn. Mình đã tạo phần xem lại thông tin shop khai báo, chưa xác minh hoặc công khai.', 'assistant');
+ const missing=defs.filter(f=>!state.answers[f[0]]);$('summary').replaceChildren();
+ for(const f of defs){const x=document.createElement('div');x.className='item';
+  const a=document.createElement('strong'),b=document.createElement('span');a.textContent=f[2];b.textContent=state.answers[f[0]]||'Chưa biết / chưa cung cấp';
+  x.append(a,b);$('summary').appendChild(x)}
+ $('missing').textContent='Cần bổ sung/xác minh: '+(missing.length?missing.map(f=>f[2]).join(', '):'Không có trường trống. Tuy nhiên toàn bộ dữ liệu vẫn chưa được xác minh.');
+}
+$('begin').addEventListener('click',()=>{
+ state={shop:$('store').value,step:0,answers:{},unknown:[],status:'DRAFT'};
+ $('startPanel').hidden=true;$('interview').hidden=false;$('form').hidden=false;$('review').hidden=true;$('output').hidden=true;$('chat').replaceChildren();
+ bubble('Xin chào! Tôi sẽ hỏi từng mục để chuẩn bị hồ sơ Shop '+state.shop+'. Không có câu trả lời nào được đưa thẳng cho khách.', 'assistant');question()
+});
+$('form').addEventListener('submit',e=>{e.preventDefault();answer(false)});
+$('skip').addEventListener('click',()=>answer(true));
+$('export').addEventListener('click',()=>{
+ if(!state||state.step!==defs.length)return;
+ const requiredMissing=defs.filter(f=>f[3]&&!state.answers[f[0]]).map(f=>f[0]);
+ const allMissing=defs.filter(f=>!state.answers[f[0]]).map(f=>f[0]);
+ // Browser-only mock. Do not interpret selected shop as a security claim.
+ const draft={schema_version:'v14.2-qa-ui-only',shop_fixture:state.shop,source:'MERCHANT_SELF_REPORTED_QA',
+ state:'DRAFT',visibility:'STAFF_ONLY',verified:false,merchant_approved:false,reviewer_approved:false,
+ published:false,ready_for_staff_review:requiredMissing.length===0,missing_required:requiredMissing,
+ missing_all:allMissing,fields:state.answers,external_sends:0,database_writes:0};
+ $('jsonPreview').textContent=JSON.stringify(draft,null,2);$('output').hidden=false;
+});
+</script></body></html>
