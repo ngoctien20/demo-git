@@ -43,8 +43,9 @@ WARNING: this introduces a distinct long-lived canonical anchor secret whose own
 
 ## 4. QA PROOF AND LIMITS
 
-CI was pending when this checkpoint first authored. Append exact run ID, PASS/FAIL and job conclusions only after verifying.
-A passing GitHub ephemeral PostgreSQL test demonstrates only PostgreSQL mechanics in an isolated CI container; it does NOT establish Supabase 17.11 hosted permissions, real Shop A/B JWT RLS, stable HMAC anchor deployment, customer-data isolation or backup restoration.
+**TESTED:** [V13.6M.7 GitHub Actions 43716661792](https://github.com/ngoctien20/demo-git/actions/runs/43716661792), source HEAD b724a57dbb39d4913cee42d81c24e72c6e48e245: **3/3 jobs SUCCESS**. Nine inherited + V13.6M.7 Node suites **296/296 PASS, 0 FAIL, 0 SKIP** (280 inherited + 16 new). Static deny-deploy/no-secret/guarded-SQL job SUCCESS.
+
+**EPHEMERAL POSTGRESQL 17 VERIFIED IN ISOLATED CI:** independent 32 client sessions => **1 UNIQUE winner / 31 duplicates**. Stable canonical uniqueness blocked duplicate under v2 HMAC metadata; scope separation across same-tenant two Stores, other tenant, Page and sender passed; transaction rollback, abandoned pre-COMMIT session, lease-bound finalize and NO-POLICY/FORCE-RLS read denial passed. No Supabase staging database was used. This is **real PostgreSQL test mechanics in a disposable CI service**, NOT hosted Supabase 17.11 permissions, real Shop A/B JWT RLS, production key lifecycle, customer-data isolation or backup restoration.
 
 ## 5. P0 OWNER APPROVAL CHECKLIST
 
@@ -63,3 +64,10 @@ Without all applicable approvals: MIGRATION_EXECUTION=BLOCKED, HOSTED_REPLAY=BLO
 Close/revert the V13.6M.7 Draft PR, leaving PR #93 at baseline b3636e0d. GitHub Actions ephemeral PostgreSQL service destroys its test-only synthetic data after job. Supabase staging, Meta, n8n Published, credentials, real customers and bills were NOT changed.
 
 NEXT: Prioritize V14.2 Gate 0 verified restorable backup and Gate 1 Store ownership ledger, then explicit migration/RLS review. Do not keep adding offline-only Messenger features when P0 hosted isolation is unresolved.
+
+## 7. Exact TESTED versus BLOCKED acceptance
+- **VERIFIED**: live Supabase schema inventory, PR #93 and #86 draft state, Published n8n unchanged, security-advisor warning counts.
+- **IMPLEMENTED**: read-only evidence snapshot and 17-gate fail-closed evaluator, proposal-only migration review and disposable PostgreSQL CI fixture.
+- **TESTED**: Node 296/296 plus isolated PostgreSQL 17 transactional tests and CI static checks at run 43716661792, all three jobs SUCCESS.
+- **BLOCKED**: restorable backup/restore evidence, approved V14.2 Store RLS/backfill and 2 real Store JWTs in one tenant, private Page binding, restricted hosted DB role and schema, hosted atomic claims, token/credential changes and Messenger sends.
+- **Checkpoint**: parent PR #93 b3636e0da5baf617331c49fdd31d647ab1432fba; no external changes to roll back.
