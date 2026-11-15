@@ -9,6 +9,7 @@ const CAPABILITIES=Object.freeze({
 });
 const SAFE_CODES=new Set(['UNAUTHENTICATED_INGRESS','UNKNOWN_CHANNEL','CHANNEL_BINDING_DENIED','SUBSCRIPTION_DENIED','CATALOG_SCOPE_DENIED','CATALOG_INVALID','CORE_PREVIEW_INVALID','PORT_NOT_CONNECTED']);
 const validId=s=>typeof s==='string'&&s.length>=4&&s.length<=160&&/^[a-zA-Z0-9:_-]+$/.test(s);
+const validSku=s=>typeof s==='string'&&s.length>=1&&s.length<=80&&/^[a-zA-Z0-9:_-]+$/.test(s);
 const fail=code=>{const e=new Error(code);e.code=code;throw e;};
 const isFunction=x=>typeof x==='function';
 const frozen=x=>Object.freeze(x);
@@ -45,7 +46,7 @@ function createNoSendChannelBridge({authenticateIngress,resolveChannelBinding,re
          catalog.products.length>100)fail('CATALOG_SCOPE_DENIED');
       const products=catalog.products.map(p=>{
         if(!p||p.tenantId!==scope.tenantId||p.storeId!==scope.storeId||
-           !validId(p.sku)||typeof p.name!=='string'||!p.name.trim()||
+           !validSku(p.sku)||typeof p.name!=='string'||!p.name.trim()||
            p.name.length>250||!Number.isSafeInteger(p.priceVnd)||p.priceVnd<0||
            !Number.isInteger(p.stockOnHand)||p.stockOnHand<0)fail('CATALOG_INVALID');
         return frozen({sku:p.sku,name:p.name,priceVnd:p.priceVnd,stockOnHand:p.stockOnHand});
