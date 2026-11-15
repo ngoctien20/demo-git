@@ -56,9 +56,10 @@ function setup(options={}){
    return id?{id,active:!perms.get('revoked:'+bearer),
       verifiedBy:'SYNTHETIC_AUTH_SERVER'}:null;
   },
-  async checkTenantRole({userId,tenantId,role}){
+  async checkTenantRole({userId,tenantId,role,storeId}){
    if(!ok(userId,tenantId,role)||perms.get('deny:'+userId+':'+tenantId+':'+role))return null;
-   return {source:'SYNTHETIC_PRIVATE_ROLE_REGISTRY',userId,tenantId,role,active:true};
+   return {source:'SYNTHETIC_PRIVATE_ROLE_REGISTRY',userId,tenantId,role,
+     storeId:perms.get('wrongStore:'+userId)?SA:storeId,active:true};
   }
  };
  const svc=createOfflineOwnershipIntake({mode:'OFFLINE_SYNTHETIC_QA',
@@ -258,4 +259,11 @@ test('30 · unverified private snapshots do not authorize hosted record attribut
  decision:'ACCEPT_FOR_ADDITIONAL_HOSTED_VERIFICATION'});
  assert.equal(r.actualOwnerSignatureVerified,false);
  assert.equal(r.independentHostedReadbackVerified,false);
+});
+
+test('31 · merchant acknowledgement rejects registry response for wrong Store',async()=>{
+ const {svc,perms}=setup(),a=await staged(svc);
+ perms.set('wrongStore:'+ACTOR.merchantB,true);
+ await denial(svc.merchantConfirm({bearer:'merchantB',sessionId:a.sessionId}),
+  'INTAKE_ROLE_NOT_AUTHORIZED');
 });
