@@ -6,6 +6,7 @@ const FEATURE_KEYS=new Set(features.map(f=>f.key));
 const PLAN_BY_CODE=new Map(plans.map(p=>[p.code,Object.freeze({
  ...p,features:Object.freeze([...p.features]),conditional_features:Object.freeze([...p.conditional_features])
 })]));
+const LEGACY_PLAN_ALIASES=Object.freeze({'SALES_LITE_PLUS':'SALES_PLUS'});
 const VALID_STATES=new Set(['ACTIVE','EXPIRING']);
 const MANAGER_ROLES=new Set(['owner','manager']);
 const CONDITIONAL=new Set(['zalo_oa.integration','multi_store.manage','team.manage','support.enterprise']);
@@ -41,7 +42,8 @@ function createMerchantEntitlementService({verifySession,listMemberships,readSub
       sub.tenantId!==scope.tenantId||sub.storeId!==scope.storeId)return DENY('SUBSCRIPTION_UNVERIFIED');
    if(!VALID_STATES.has(sub.state)||!Number.isFinite(Date.parse(sub.expiresAt))||
        Date.parse(sub.expiresAt)<=clock())return DENY('SUBSCRIPTION_INACTIVE');
-   const plan=PLAN_BY_CODE.get(sub.planCode);
+   // Backward compatibility ONLY for a subscription verified by server; never client input.
+   const plan=PLAN_BY_CODE.get(LEGACY_PLAN_ALIASES[sub.planCode]||sub.planCode);
    if(!plan)return DENY('PLAN_UNKNOWN');
    const included=plan.features.includes(feature);
    const conditional=plan.conditional_features.includes(feature);
