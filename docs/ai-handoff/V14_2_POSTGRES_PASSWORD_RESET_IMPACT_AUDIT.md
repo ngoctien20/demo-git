@@ -74,3 +74,26 @@ Owner explicitly confirmed workspace **My Workspace** for a read-only dependency
 - No credentials or environment values were queried or returned to the assistant. No Render deployment, database changes, customer messages or RLS operations were performed.
 
 QA status: AUDIT_READ_ONLY=VERIFIED; RENDER_SERVICES=2; RENDER_MANAGED_POSTGRES=0; CODE_DECLARED_ENV_NAMES=VERIFIED; RENDER_STORED_ENV_KEY_NAMES=NOT_AVAILABLE_VIA_CONNECTOR; RESET_APPROVED=NO; VERIFIED_BACKUP=NO.
+
+
+## Render Environment key-name evidence — user screenshot 2026-11-15 JST
+
+User supplied a screenshot of Render **My Workspace → tien404-data-staging → Environment**. The screen shows exactly **five environment entries**, with all VALUE cells masked. The visible keys are:
+- `TIEN404_APP_ORIGIN` (fully visible)
+- `TIEN404_DATA_MODE` (fully visible)
+- `TIEN404_N8N_STAGING_SEC...` (truncated in UI; matching `TIEN404_N8N_STAGING_SECRET` source-code reference, not independently observed in full)
+- `TIEN404_SUPABASE_PUBLIS...` (truncated in UI; matching `TIEN404_SUPABASE_PUBLISHABLE_KEY` source-code reference, not independently observed in full)
+- `TIEN404_SUPABASE_URL` (fully visible)
+
+No `DATABASE_URL`, `POSTGRES_URL`, `PGHOST`, `PGPASSWORD`, or `SUPABASE_DB_URL` is shown among those five keys. This directly resolves the former Render stored-key-name visibility blocker **for the inspected web service**. It does NOT prove absence of secrets elsewhere (other apps, runtime jobs, separate credential stores, or credentials embedded in source code).
+
+The source code for the Render LIVE deployed FastAPI commit `ab940a95dae8afdff426bc6ac71693833d5348ce` reads exactly these five environment variable names and uses Supabase Auth/PostgREST via HTTPS; the optional `commerce_connect` SQL transaction adapter is not passed to `create_app()`. The separate Auth static site LIVE commit `b14501a0ebf04d991302cb32b5d548a68d6b39bd` does not use direct PostgreSQL connections in the inspected frontend/build files. Render lists no Render-hosted PostgreSQL instance.
+
+### Updated decision
+- `RENDER_STORED_ENV_KEY_NAMES=VERIFIED_FROM_USER_SCREENSHOT` (two truncated keys corroborated by source; values NOT read).
+- `RENDER_DIRECT_POSTGRES_PASSWORD_DEPENDENCY=NOT_FOUND_IN_INSPECTED_DEPLOYED_RUNTIME`.
+- `DATABASE_PASSWORD_RESET_RISK_TO_INSPECTED_RENDER_SERVICES=LOW` (not zero; external clients unknown).
+- `RESET_APPROVAL=NOT_GRANTED`; `RESET_PERFORMED=NO`.
+- `RESTORABLE_BACKUP=NOT_VERIFIED`; `RESTORE_DRILL=NOT_VERIFIED`; `STORE_RLS_MIGRATION=BLOCKED`.
+
+Next action: operator may separately authorize a staging-only PostgreSQL password rotation after reviewing any out-of-band integrations and a reconnection/rollback plan. Never expose the password in chat, screenshots, or GitHub; owner must manage secrets privately. Rotation does not itself satisfy the backup/restore gate.
