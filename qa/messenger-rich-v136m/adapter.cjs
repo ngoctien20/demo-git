@@ -85,14 +85,14 @@ function product(trusted,p,siteOrigin,secret,now){
  const price=new Intl.NumberFormat('vi-VN').format(p.priceVnd)+' đ';
  const stock=p.stock>0?'Còn hàng':'Tạm hết hàng';
  const subtitle=label(price+' • '+stock,MAX.SUBTITLE);
- const image=allowedUrl(p.imageUrl,c.imageOrigins,'IMAGE');
+ const image=p.imageUrl==null?null:allowedUrl(p.imageUrl,c.imageOrigins,'IMAGE');
  const browse={type:'postback',title:'Xem sản phẩm',
    payload:sign({trusted:c,secret,action:'VIEW_PRODUCT',itemId:p.itemId,now})};
  const help={type:'postback',title:'Gặp nhân viên',
    payload:sign({trusted:c,secret,action:'ASK_STAFF',itemId:'NONE',now})};
  const website={type:'web_url',title:'Xem trên web',
    url:sitePage(siteOrigin,c.webOrigins,c.shopSlug,p.itemId),webview_height_ratio:'full'};
- return {title,subtitle,image_url:image,buttons:[browse,help,website]};
+ return {...(image?{image_url:image}:{}),title,subtitle,buttons:[browse,help,website]};
 }
 function buildCarousel({trusted,products,siteOrigin,secret,now=Date.now}={}){
  identity(trusted);secretCheck(secret);
