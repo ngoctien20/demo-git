@@ -66,11 +66,11 @@ function verifyCatalogResponse(r,b){
  }
  return result;
 }
-function guardStatus(v,b){
+function guardStatus(v,b,nowMs){
  if(!v||v.source!=='SERVER_VERIFIED_SHOP_STATUS'||
     v.tenantId!==b.tenantId||v.storeId!==b.storeId)failure('SHOP_STATUS_UNVERIFIED');
  if(v.active!==true||v.botPaused!==false||v.entitlement!=='MESSENGER_RICH_UI_CANDIDATE'||
-    !Number.isFinite(Date.parse(v.expiresAt))||Date.parse(v.expiresAt)<=Date.now())
+    !Number.isFinite(Date.parse(v.expiresAt))||Date.parse(v.expiresAt)<=nowMs)
     failure('SHOP_DISABLED_OR_SUBSCRIPTION_UNVERIFIED');
 }
 function normalize(raw){
@@ -131,7 +131,7 @@ async function processCandidate({rawBody,signature,appSecret,actionSecret,ports,
   const binding=verifyBinding(await ports.resolveBinding({
       pageId:item.pageId,senderPsid:item.senderPsid}),item.pageId,item.senderPsid);
   const status=await ports.readShopStatus({tenantId:binding.tenantId,storeId:binding.storeId});
-  guardStatus(status,binding);
+  guardStatus(status,binding,nowMs);
   const intent=detectIntent(e,binding,actionSecret,now);
   const key=replayKey(item.pageId,item.senderPsid,e);
   const claim=await ports.checkAndReserveEvent({
