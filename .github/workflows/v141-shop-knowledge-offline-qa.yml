@@ -1,0 +1,25 @@
+name: TIEN404 V14.1 Shop Knowledge Offline QA
+on:
+  push:
+    branches: [work/v141-shop-knowledge-brain-offline-staging]
+    paths:
+      - qa/shop-knowledge-v141/**
+      - .github/workflows/v141-shop-knowledge-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/shop-knowledge-v141/**
+      - .github/workflows/v141-shop-knowledge-offline-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  knowledge-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated 3-shop knowledge, permissions and security tests
+        run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
