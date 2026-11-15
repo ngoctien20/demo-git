@@ -63,3 +63,10 @@ The SQLite AFTER INSERT trigger performs a **single statement transaction** for 
 6. No actual Zalo delivery receipt / 3-turn owner phone UAT yet.
 
 **Release decision: D1-QA-APPROVED / LIVE-SEND-NO-GO.**
+
+## Final independent verification (2026-11-16 JST)
+- GitHub Actions run [43731907070](https://github.com/ngoctien20/demo-git/actions/runs/43731907070), job **132865999625**: SUCCESS. Zalo adapter 28/28 + signed-owner preflight 32/32 + inherited V13.8 conversation 44/44 + new D1 atomic SQLite 18/18 = **122/122 PASS**. Static no-send and syntax checks PASS.
+- Cloudflare API inspected settings of **17/17 currently listed Worker scripts**, all accessible. **Zero** scripts bind new D1 UUID d6604745-8f8a-4eac-95a3-83f6e4df0d39. Existing Zalo outbound Worker flag ZALO_SEND_ENABLED=false.
+- n8n active ingress yIJk8LvJoLF40Z62 remains version 8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e, active; private router sIPs6egzIwOY1GNv remains version 8d91d23c-cd87-462f-a112-9cca2340bec8, active.
+- New manual QA workflows OMV22pdETQFVU9ru and xayBLEyUwd64mcLK remain INACTIVE, versions 0bbd2547-e68d-419f-a7cb-3460b38b5528 and 6bf96508-60f6-480a-a5c4-aa8012992a43.
+- Validation boundary: hosted D1 QA passed but no paid model invocation, actual Zalo event ingress, signed live bot/recipient binding or provider receipt was exercised by these database tests.
