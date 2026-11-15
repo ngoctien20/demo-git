@@ -101,3 +101,10 @@ Trang đơn giá nguồn: https://app.n8n.cloud/service-pricing
 - The active manual QA model in earlier read-only workflow audit was `gpt-5.4-nano`. **Its exact row is not visible in the supplied screenshot**; `COST-02` remains **BLOCKED / awaiting exact n8n service-pricing row**. Do not substitute direct OpenAI API prices or other displayed models.
 - Owner UI step: browser Ctrl+F `gpt-5.4-nano` within the n8n service-pricing page; if absent search `nano`, inspect model availability, and submit only model name and Input/Output unit prices. No secrets/billing changes.
 - Previous Gateway balance evidence $0.59 USD from detail page still stands as an observed snapshot, with Auto top-up/owner monetary cap and actual model spending still unverified. LIVE ZALO SEND remains NO-GO.
+
+## J. n8n model price evidence — gpt-5-nano (user transcription, 2026-11-16 JST)
+- User supplied n8n Service Pricing row `gpt-5-nano`, input USD 0.05 per 1M tokens and output USD 0.40 per 1M tokens. The row was transcribed by the user and is not independent account billing reconciliation.
+- Read-only n8n workflow `OMV22pdETQFVU9ru` has configured model `gpt-5.4-nano` (INACTIVE; version `0bbd2547-e68d-419f-a7cb-3460b38b5528`). `gpt-5-nano` is a **different model ID**; this table row must NOT certify the price of `gpt-5.4-nano`. No model has been changed.
+- Hypothetical per-session upper bound for **gpt-5-nano only** if 2,500 actual aggregate tokens are strictly enforced: 2500×USD 0.40/1,000,000 = **USD 0.001** (assuming all billed at output rate). This is a reference bound, not measured n8n spend or a firm monetary cap.
+- Compared with previously shown USD 0.59 Gateway Credits, 0.001 USD is small, but account-wide spending averaged USD 0.18/day in the n8n UI. Concurrent instance usage can consume the shared balance.
+- COST-02 remains **MODEL_MISMATCH** until n8n shows exact `gpt-5.4-nano` pricing or a separately approved candidate uses `gpt-5-nano` with compatibility and QA tests. COST-03 Auto top-up and owner USD hard cap remain unverified; Zalo sending still NO-GO.
