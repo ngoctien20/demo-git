@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101c19">
+<title>TIEN404 Sales Lite V1.1 — Zalo Menu Mock</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#f4faf6;background:#0d1513;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 10% 0%,#214338 0%,#111d19 48%,#0b1210 100%);}
+header{max-width:1120px;margin:0 auto;padding:32px 24px 18px}header p{color:#97b1a7;max-width:620px;line-height:1.6;margin:8px 0 0}
+.kicker{font-size:12px;letter-spacing:2px;color:#89e2b4;font-weight:800}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(28px,4vw,46px);letter-spacing:-1.3px;line-height:1.12;margin:9px 0 0}
+.chip{font-size:11px;letter-spacing:.2px;background:#1e3c31;border:1px solid #4e8c74;color:#afe4cb;padding:8px 11px;border-radius:30px;font-weight:750}
+main{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,420px);gap:22px;padding:10px 24px 56px;align-items:start}
+.panel{background:#15221e;border:1px solid #30493f;border-radius:23px;padding:22px;box-shadow:0 10px 40px #0003}
+h2{font-size:19px;margin:0 0 15px;letter-spacing:-.3px}h3{font-size:14px;color:#8db6a4;margin:24px 0 10px}
+label{display:block;color:#9db4a8;font-size:12px;font-weight:700;margin-bottom:7px}
+select,button,input{font:inherit}select,input{border:1px solid #436358;border-radius:12px;padding:13px;background:#101c17;color:#fff;width:100%;outline-offset:2px}
+select:focus,input:focus{outline:2px solid #6fba92}.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.notice{padding:12px 14px;border:1px solid #745e33;border-radius:13px;background:#292417;color:#f9ddae;margin-top:16px;font-size:12px;line-height:1.55}
+.key{padding:10px 12px;background:#1d3129;border:1px solid #365b4c;border-radius:10px;font-size:12px;color:#acdabf;margin-top:14px}
+.numbered{margin:15px 0;display:flex;flex-direction:column;gap:8px}
+.menu-action{width:100%;background:#20342b;color:#f0fff6;border:1px solid #3d654f;border-radius:12px;text-align:left;padding:13px 15px;cursor:pointer;transition:.15s}
+.menu-action:hover,.menu-action:focus{background:#2b4d39;border-color:#9dd3b0}.menu-action b{color:#93dfb3;margin-right:8px}
+.small{font-size:12px;color:#9bb3a5;line-height:1.6}.danger{color:#ffba9a}.ok{color:#86dfad}
+.info-list{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.info{background:#13231d;border:1px solid #315445;border-radius:13px;padding:13px}
+.info strong{display:block;font-size:15px}.info span{font-size:11px;color:#91ab9f}
+.phone{max-width:420px;width:100%;margin:auto;background:#e9f3ee;color:#163329;border:7px solid #263d35;border-radius:35px;box-shadow:0 20px 60px #0008;overflow:hidden;min-height:650px}
+.phone-top{display:flex;gap:12px;align-items:center;padding:21px 16px;background:#fff;box-shadow:0 1px 8px #0001}
+.avatar{background:#1f9255;color:#fff;display:grid;place-items:center;border-radius:50%;width:41px;height:41px;font-size:19px;font-weight:800}
+.phone-top b{font-size:15px}.phone-top small{display:block;color:#718779;font-size:11px;padding-top:2px}
+.chat{padding:19px 15px;min-height:455px;max-height:490px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:linear-gradient(155deg,#ecf5f0,#daebe1)}
+.bubble{max-width:92%;border-radius:15px;background:#fff;box-shadow:0 2px 7px #0001;padding:11px 13px;font-size:13px;line-height:1.5;white-space:pre-line;align-self:flex-start;color:#23412f}
+.bubble.user{align-self:flex-end;background:#caebd8}.bubble.system{border-left:4px solid #119059}
+.bubble small{display:block;color:#668173;font-size:10px;margin-top:6px}
+.reply-actions{display:flex;gap:6px;flex-wrap:wrap;padding:10px 11px;background:#fff}
+.reply-actions button{border:1px solid #a1c9b1;background:#f0fbf5;color:#11683e;border-radius:20px;font-size:11px;padding:6px 9px;cursor:pointer}
+.reply-actions button:disabled{color:#aaa;border-color:#ddd;background:#f0f0f0;cursor:not-allowed}
+.input-row{padding:12px;background:#fff;display:flex;gap:8px}
+.input-row input{flex:1;background:#f4f8f6;color:#173c28;border:1px solid #c7dcd0;font-size:12px;min-width:0}
+.input-row button{border:none;background:#138f56;color:white;border-radius:12px;cursor:pointer;padding:0 16px;font-weight:700}
+footer{max-width:1120px;padding:0 24px 36px;margin:auto;color:#83a795;font-size:12px}
+@media(max-width:760px){header{padding:22px 16px 14px}main{grid-template-columns:1fr;padding:8px 16px 30px}.panel{padding:16px}h1{font-size:30px}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head"><div><div class="kicker">TIEN404 AI · SALES LITE V1.1</div><h1>Menu bán hàng trên Zalo</h1></div>
+    <span class="chip">MÔ PHỎNG · KHÔNG GỬI TIN</span></div>
+  <p>Thiết kế menu khách hàng, chủ shop và hỗ trợ. Tất cả tương tác chỉ chạy trong trình duyệt để xem trước giao diện; không kết nối tài khoản Zalo hoặc Supabase.</p>
+</header>
+<main>
+ <section class="panel" aria-label="Điều khiển mô phỏng">
+  <h2>Bảng điều khiển bản thử</h2>
+  <div class="controls">
+   <div><label for="role">Vai trò mô phỏng</label><select id="role">
+      <option value="CUSTOMER">Khách hàng</option>
+      <option value="OWNER">Chủ cửa hàng</option>
+      <option value="TIEN404_SUPPORT">Hỗ trợ TIEN404</option>
+   </select></div>
+   <div><label for="shop">Cửa hàng (fixture)</label><select id="shop">
+      <option value="qa-store-b">Shop B · QA</option><option value="qa-store-a">Shop A · QA</option>
+   </select></div>
+  </div>
+  <div class="notice"><b>Mô phỏng giao diện, không phải Zalo Bot thật.</b> Quyền ở đây thay đổi được bằng nút chọn để kiểm thử UI. Quyền của hệ thống thật phải lấy từ backend; không tin bất kỳ vai trò nào do người dùng tự chọn.</div>
+  <div class="key"><b>Khả năng đã xác minh:</b> API Zalo Bot <code>sendMessage</code> hỗ trợ văn bản. Payload nút bấm/quick reply chưa xác minh nên đang khóa.</div>
+  <h3>Hành động theo vai trò</h3><div class="numbered" id="menu"><p class="small">Đang tải menu-registry.json…</p></div>
+  <div class="info-list">
+    <div class="info"><strong id="actions-count">—</strong><span>Hành động hiện có</span></div>
+    <div class="info"><strong>0</strong><span>Tin gửi Zalo / đơn ghi</span></div>
+  </div>
+  <h3>Trạng thái chức năng</h3>
+  <p class="small">Menu văn bản: <b class="ok">MOCK_TESTED</b> · Nút bấm Bot API: <b class="danger">UNKNOWN</b> · Cơ sở dữ liệu thật: <b class="danger">KHÔNG KẾT NỐI</b></p>
+ </section>
+ <div class="phone" aria-label="Điện thoại mô phỏng tin nhắn">
+  <div class="phone-top"><div class="avatar">T</div><div><b>Bot TIEN404 · Mô phỏng</b><small>Không phải cửa sổ chat Zalo thật</small></div></div>
+  <div class="chat" id="chat" aria-live="polite"></div>
+  <div class="reply-actions" id="quickbuttons"><button disabled>Nút quick reply — chưa xác minh API</button></div>
+  <form class="input-row" id="typeform"><input id="text" aria-label="Nhập số menu hoặc câu hỏi" maxlength="120" placeholder="Nhập số 1–7 hoặc câu hỏi…" autocomplete="off"><button type="submit">Gửi</button></form>
+ </div>
+</main>
+<footer>V13.1 · Static client-side demo · Action ID có ý nghĩa ổn định theo registry. Không gửi tin ra ngoài, không ghi đơn, không cấp quyền tài khoản.</footer>
+<script>
+'use strict';
+let registry=null,currentMenu=null,selectedQty=null;
+const byId=id=>document.getElementById(id);
+function bubble(text,user=false){
+ const div=document.createElement('div');
+ div.className='bubble '+(user?'user':'system');
+ div.textContent=text;
+ byId('chat').append(div);byId('chat').scrollTop=byId('chat').scrollHeight;
+}
+function getMenu(){return registry?.menus.find(m=>m.actor_role===byId('role').value)}
+function reset(){
+ byId('chat').replaceChildren();selectedQty=null;currentMenu=getMenu();
+ if(!currentMenu)return;
+ byId('menu').replaceChildren();
+ for(const a of currentMenu.actions){
+  if(!a.enabled)continue;
+  const button=document.createElement('button');
+  button.className='menu-action';button.type='button';
+  const b=document.createElement('b');b.textContent=a.fallback_command;
+  button.append(b,document.createTextNode(' '+a.label));
+  button.onclick=()=>simulate(a.fallback_command);
+  byId('menu').append(button);
+ }
+ byId('actions-count').textContent=String(currentMenu.actions.filter(x=>x.enabled).length);
+ bubble(currentMenu.title+'\n'+currentMenu.actions.filter(a=>a.enabled).map(x=>x.fallback_command+' — '+x.label).join('\n')+'\n\nGửi số để chọn mục.');
+}
+function simulate(text){
+ if(!currentMenu)return;
+ const cmd=String(text).trim();
+ bubble(cmd,true);
+ if(selectedQty!==null&&/^\d+$/.test(cmd)&&Number(cmd)>0&&Number(cmd)<500){
+  const price=byId('shop').value==='qa-store-b'?199000:159000;
+  const total=(price*Number(cmd)).toLocaleString('vi-VN');
+  bubble('Bản nháp minh họa: F01 × '+cmd+' = '+total+'đ.\nChỉ là dữ liệu QA cũ để kiểm tra UI, không phải báo giá thời gian thực; chưa tạo đơn, chưa giữ hàng.');
+  selectedQty=null;return;
+ }
+ const action=currentMenu.actions.find(a=>a.fallback_command===cmd||a.action_id.toLowerCase()===cmd.toLowerCase());
+ if(!action){bubble('Chưa hiểu lựa chọn. Hãy nhắn số trong menu. Đây là mô phỏng, không sử dụng AI trả phí.');return}
+ if(action.action_id==='CUS_ORDER_DRAFT'){selectedQty=0;bubble('Bản mô phỏng: Bạn muốn lấy bao nhiêu sản phẩm F01? Nhập một số. Chưa ghi đơn.');return}
+ if(action.action_id==='CUS_CATALOG'||action.action_id==='CUS_PRICE'){
+  bubble('Ví dụ fixture F01 · '+(byId('shop').value==='qa-store-b'?'199.000đ · tồn QA 5':'159.000đ · tồn QA 3')+'.\nGiá này là dữ liệu minh họa; cần backend đọc lại trước khi báo khách thật.');return
+ }
+ if(action.requires_confirmation){bubble('Yêu cầu '+action.label+' cần xác minh Owner, xác nhận lại và kiểm tra backend. Bản mock KHÔNG thay đổi trạng thái shop/đơn.');return}
+ if(action.action_type==='HANDOFF'){bubble('Chỉ là yêu cầu hỗ trợ mô phỏng; chưa chuyển cho nhân viên.');return}
+ bubble(action.label+' · Backend chưa được kết nối trong bản mock. Không có thông tin đơn hàng cá nhân nào được trả về.');
+}
+byId('typeform').addEventListener('submit',evt=>{evt.preventDefault();const x=byId('text');if(x.value.trim())simulate(x.value);x.value='';});
+byId('role').addEventListener('change',reset);
+byId('shop').addEventListener('change',reset);
+fetch('../menu-registry.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('registry');return r.json()}).then(j=>{
+ if(j.menu_version!=='1.1.0'||j.send_enabled||j.order_write_enabled)throw Error('unsafe-config');
+ registry=j;reset();
+}).catch(()=>{byId('menu').textContent='Không tải được registry. Hãy chạy trên HTTP server, ví dụ python -m http.server 8080 tại thư mục qa/sales-lite/v131.';
+ bubble('Không thể đọc menu-registry.json. Chưa có dữ liệu để mô phỏng.');});
+</script></body></html>
