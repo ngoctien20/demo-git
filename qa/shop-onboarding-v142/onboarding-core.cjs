@@ -18,6 +18,13 @@ const FIELDS=Object.freeze([
  {id:'payment_methods',label:'Phương thức thanh toán',question:'Shop nhận những cách thanh toán nào? Ví dụ: tiền mặt, chuyển khoản, COD.',required:false,type:'text'},
  {id:'ai_tone',label:'Phong cách tư vấn',question:'Bạn muốn trợ lý tư vấn thân thiện hay trang trọng?',required:false,type:'tone'}
 ]);
+const ISSUED_DRAFTS=new WeakSet();
+function mintDraft(value){
+ const x={...value,answers:Object.freeze({...value.answers}),
+  unknown:Object.freeze([...value.unknown]),flags:Object.freeze([...value.flags]),
+  seen_turn_ids:Object.freeze([...value.seen_turn_ids])};
+ Object.freeze(x);ISSUED_DRAFTS.add(x);return x;
+}
 const PROMPT_WARNING=/\b(ignore previous|disregard instructions|system prompt|api key|service role|credential|mat khau|bỏ qua hướng dẫn|bỏ qua quy tắc|cấp quyền admin)\b/i;
 const safeStr=(x)=>typeof x==='string'&&x.trim()&&x.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(x);
 function issue(code){throw new AccessError(code,422);}
@@ -30,13 +37,13 @@ function checkContext(context){
 }
 function start(context){
  checkContext(context);
- return {
+ return mintDraft({
   contract:'V14_2_ONBOARDING_DRAFT_ONLY',tenant_id:context.tenant_id,
   store_id:context.store_id,created_by:context.user_id,
   state:'DRAFT',index:0,answers:{},unknown:[],flags:[],seen_turn_ids:[],
   started_at:new Date().toISOString(),database_writes:0,provider_sends:0,
   bot_tool_calls:0,will_publish:false
- };
+ });
 }
 function validate(field,value,yearNow=new Date().getFullYear()){
  if(!safeStr(value))issue('FIELD_VALUE_INVALID');
@@ -53,7 +60,7 @@ function validate(field,value,yearNow=new Date().getFullYear()){
  return v;
 }
 function current(session){
- if(session?.contract!=='V14_2_ONBOARDING_DRAFT_ONLY'||session.state!=='DRAFT'||
+ if(!ISSUED_DRAFTS.has(session)||session?.contract!=='V14_2_ONBOARDING_DRAFT_ONLY'||session.state!=='DRAFT'||
     !Number.isInteger(session.index)||session.index<0||session.index>FIELDS.length)issue('DRAFT_SESSION_INVALID');
  return FIELDS[session.index]||null;
 }
@@ -61,7 +68,7 @@ function step(session,{field_id,value,turn_id,skip=false}={}){
  const f=current(session);
  if(!f)issue('INTERVIEW_ALREADY_COMPLETE');
  if(typeof turn_id!=='string'||!/^[a-zA-Z0-9_-]{4,60}$/.test(turn_id))issue('TURN_ID_REQUIRED');
- if(session.seen_turn_ids.includes(turn_id))return {...session,duplicate_ignored:true};
+ if(session.seen_turn_ids.includes(turn_id))return mintDraft({...session,duplicate_ignored:true});
  if(session.seen_turn_ids.length>=100)issue('TOO_MANY_TURNS');
  if(field_id!==f.id)issue('UNEXPECTED_FIELD_OR_ORDER');
  const unknown=skip||value===null||(typeof value==='string'&&
@@ -69,9 +76,9 @@ function step(session,{field_id,value,turn_id,skip=false}={}){
  const answers={...session.answers};const missing=[...session.unknown];
  if(unknown){if(!missing.includes(f.id))missing.push(f.id);delete answers[f.id]}
  else{answers[f.id]=validate(f,value);const index=missing.indexOf(f.id);if(index>=0)missing.splice(index,1)}
- return {...session,index:session.index+1,answers,unknown:missing,
+ return mintDraft({...session,index:session.index+1,answers,unknown:missing,
    seen_turn_ids:[...session.seen_turn_ids,turn_id],duplicate_ignored:false,
-   database_writes:0,provider_sends:0,bot_tool_calls:0,will_publish:false};
+   database_writes:0,provider_sends:0,bot_tool_calls:0,will_publish:false});
 }
 function review(session){
  const next=current(session);
