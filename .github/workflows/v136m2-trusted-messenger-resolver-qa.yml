@@ -1,0 +1,78 @@
+name: TIEN404 V13.6M.2 Trusted Messenger Store Resolver QA
+on:
+  push:
+    branches:
+      - work/v136m2-trusted-messenger-store-resolver-staging-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "docs/ai-handoff/V13_6M2_*"
+      - ".github/workflows/v136m2-trusted-messenger-resolver-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "docs/ai-handoff/V13_6M2_*"
+      - ".github/workflows/v136m2-trusted-messenger-resolver-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trusted-resolver-and-regressions:
+    name: Pure Resolver and Messenger integration security tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and all 3 offline contract suites
+        run: |
+          node --check qa/messenger-rich-v136m/adapter.cjs
+          node --check qa/messenger-rich-v136m1/integration.cjs
+          node --check qa/messenger-rich-v136m2/trusted-repository.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs
+      - name: No outbound transport, secrets or executable SQL migration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ['qa/messenger-rich-v136m/adapter.cjs',
+                       'qa/messenger-rich-v136m1/integration.cjs',
+                       'qa/messenger-rich-v136m2/trusted-repository.cjs']:
+            s=Path(name).read_text()
+            assert 'fetch(' not in s and 'axios' not in s and 'httpRequest(' not in s
+            assert 'process.env' not in s and 'PAGE_ACCESS_TOKEN' not in s
+          sql=Path('qa/messenger-rich-v136m2/PROPOSAL_ONLY_PAGE_BINDING_DO_NOT_RUN.sql').read_text().upper()
+          assert sql.index('RAISE EXCEPTION') < sql.index('CREATE TABLE')
+          assert sql.index('RAISE EXCEPTION') < sql.index('ALTER TABLE')
+          assert 'V13_6M2_PAGE_BINDING_NOT_APPROVED' in sql
+          print('PASS: fail-closed SQL proposal, no network transport, no token exposure')
+          PY
+  legacy-offline-mobile-qa:
+    name: Inherited four tab preview Chromium QA no sends
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned preview-only browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Preview five viewports and four modules
+        run: |
+          python -m http.server 8080 >/tmp/tien404-v136m2.log 2>&1 &
+          sleep 2
+          node qa/messenger-rich-v136m/preview.test.cjs
+      - name: Upload synthetic UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v136m2-messenger-preview-only
+          path: qa-artifacts-messenger-rich/
+          if-no-files-found: ignore
