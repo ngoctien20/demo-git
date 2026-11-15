@@ -1,0 +1,29 @@
+name: TIEN404 Zalo Bot Control & Rich Text QA — Offline Only
+on:
+  push:
+    branches:
+      - work/v135-zalo-text-controls-qa-no-send
+  pull_request:
+    paths:
+      - "qa/zalo-control-text/**"
+      - ".github/workflows/v135-zalo-control-text-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  text-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax
+        run: |
+          node --check qa/zalo-control-text/zalo-payloads.cjs
+          node --check qa/zalo-control-text/zalo-payloads.test.cjs
+      - name: Rich Text and menu negative QA — no external sends
+        run: node --test qa/zalo-control-text/*.test.cjs
+      - name: Existing V13.3 regression
+        run: node --test qa/sales-lite/v133/*.test.cjs
