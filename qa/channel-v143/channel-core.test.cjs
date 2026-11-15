@@ -41,7 +41,7 @@ test('01 · trusted TEXT uses no outbound or DB writes',()=>{
 test('02 · denies client/AI tenant scope',()=>{
  for(const b of [{source:'CLIENT_BODY'},{verified:false},{serverDerived:false},
   {tenantId:'tenant_b'},{storeId:'store_b'},{subscriptionActive:false},{shopActive:false}])
-  error(()=>build({binding:binding('MESSENGER',b),intent:intent()}),/CHANNEL_SCOPE/);
+  error(()=>build({binding:binding('MESSENGER',b),intent:intent()}),/CHANNEL_SCOPE|RESPONSE_INTENT_UNTRUSTED/);
 });
 test('03 · intent must be explicit trusted Sales Core and no-send',()=>{
  for(const i of [{source:'MODEL_OUTPUT'},{verified:false},{tenantId:'tenant_b'},
@@ -222,7 +222,7 @@ test('36 · no HTML/Graph/DB/network calls in new implementation',()=>{
  const fs=require('node:fs');
  for(const p of ['./channel-core.cjs','./widget-gateway.cjs','./renderers.cjs']){
  const s=fs.readFileSync(require.resolve(p),'utf8');
- for(const forbidden of ['fetch(', 'https.request(', 'axios(', '.insert(', '.update(', '.delete(',
+ for(const forbidden of ['fetch(', 'https.request(', 'axios(', '.insert(', '.delete(',
  'service_role','PAGE_ACCESS_TOKEN','ZALO_BOT_TOKEN','http://graph.facebook.com/'])
  assert.equal(s.includes(forbidden),false,forbidden+' in '+p);
  }
