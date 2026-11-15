@@ -49,3 +49,11 @@ The owner requested to continue LIVE03 after V14.5Z-LIVE02. Read-only validation
 - Revert only new GitHub source/test/doc changes if needed; keep PR #103 Draft.
 - Existing LIVE02 staging Worker remains no-send, isolated D1 QA grants remain STOPPED.
 - **Decision: LIVE03 PARTIAL VERIFICATION + FAIL-CLOSED GATE TESTED; IDENTITY/BUDGET CERTIFICATION BLOCKED.** Do not present LIVE03 as READY_TO_SEND.
+
+## LIVE03A — Approval to proceed with safe evidence intake (2026-11-16 JST)
+- User has approved continuation, but the approval does **not** identify an exact Bot ID, Owner QA recipient, USD monetary limit, or provide permission to send real Zalo messages. Continue under staging no-send restrictions.
+- Repeat READ-ONLY audit: both live Zalo registry rows remain `zalo_bot_fixture / synthetic_qa / dry_run`; allowlist has one Owner QA row with chat ID hidden; n8n Gateway service coverage is available, account balance and Auto top-up unavailable to connector; connected browser has no authenticated n8n Cloud Console/Bot Manager tab with evidence.
+- Official Zalo docs https://docs.zaloplatforms.com/docs/BOT/apis/getMe show response `result.id`, `account_name`, `account_type`; existing staging gateway route returns only token validity boolean, cannot independently attest official provider bot ID. Do not send Bot Token to user or reclassify fixture as verified.
+- n8n official docs https://docs.n8n.io/deploy/use-n8n-cloud/gateway-credits/ confirm Gateway credits balance shared by instance, real rates taken from n8n's own service-pricing page, and in-flight requests can complete after balance reaches zero. Need account console screenshot and pre-inference budget guard before certification.
+- Created `docs/ai-handoff/TIEN404_V14_5Z_LIVE03A_EVIDENCE_INTAKE_RUNBOOK.md`: exact nonsecret Bot Manager and Gateway evidence instructions, ID-01..GO-01 acceptance gates and rollback/no-send rules.
+- This approval stage changed **only GitHub Draft documentation**; no Cloudflare/n8n/D1 writes, no provider sends, credential or billing changes, no merge. LIVE03 remains IDENTITY_BUDGET_BLOCKED, LIVE_SEND_NO_GO.
