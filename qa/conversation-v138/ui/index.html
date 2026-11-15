@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>TIEN404 · Conversation & Staff Handoff Lab V13.8</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#090f1b;color:#eff5fd}
+*{box-sizing:border-box}body{margin:0}
+main{max-width:1160px;margin:0 auto;padding:20px 18px 40px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px 22px}
+.kicker{color:#61d5bc;font-weight:800;letter-spacing:.13em;font-size:12px}
+h1{font-size:clamp(23px,3vw,34px);margin:4px 0 7px}
+p{margin:0;color:#aebbd0;line-height:1.6;font-size:14px}
+.secure{font-size:12px;color:#b2f5e5;border:1px solid #326c61;background:#102e2b;border-radius:11px;padding:10px 13px}
+.disclaimer{padding:12px 15px;margin:0 0 16px;background:#1c2a3d;border:1px solid #354e69;border-radius:12px;line-height:1.5;color:#e0edff;font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.panel{background:#141f30;border:1px solid #2b4057;border-radius:18px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.panelhead{padding:16px 19px;border-bottom:1px solid #2d435a;display:flex;align-items:center;justify-content:space-between;gap:8px}
+h2{font-size:16px;margin:0}.muted{font-size:12px;color:#a0b3cd}
+.pill{padding:5px 8px;border:1px solid #426071;border-radius:999px;font-size:11px;white-space:nowrap;color:#c8f4ef}
+.talk{padding:18px 15px;min-height:330px;max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:11px}
+.bubble{padding:11px 14px;border-radius:15px;max-width:86%;white-space:pre-wrap;line-height:1.55;font-size:14px;overflow-wrap:anywhere}
+.bubble.customer{align-self:flex-end;background:#267965;color:#fff;border-bottom-right-radius:4px}
+.bubble.ai{align-self:flex-start;background:#293952;border-bottom-left-radius:4px}
+.bubble.staff{align-self:flex-start;background:#304371;border-bottom-left-radius:4px}
+.sender{font-size:10px;font-weight:700;letter-spacing:.03em;margin-bottom:4px;opacity:.85}
+.composer{display:flex;gap:8px;padding:14px;border-top:1px solid #2b4057;align-items:center}
+input[type=text]{flex:1;min-width:0;color:#eff9ff;background:#0c1523;border:1px solid #4a617d;border-radius:10px;padding:11px;font:inherit;font-size:13px}
+input:focus{outline:2px solid #56cfb9;outline-offset:1px}
+button{cursor:pointer;color:#eaf4ff;background:#243750;border:1px solid #465d76;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px}
+button:hover:not(:disabled){background:#33516e;border-color:#65dac8}
+button.primary{background:#1f967d;color:#061c17;border-color:#1f967d;font-weight:800}
+button.primary:hover:not(:disabled){background:#4bcaaf}
+button:disabled{opacity:.38;cursor:not-allowed}
+button:focus-visible{outline:2px solid #56cfb9;outline-offset:2px}
+.summary{margin:16px 18px 5px;padding:13px;border:1px solid #3f5874;border-radius:13px;background:#1a2d41}
+.summary strong{display:block;font-size:13px;margin-bottom:5px}
+.summary code{display:inline-block;color:#9ff7dc;font-size:11px}
+.meta{font-size:12px;line-height:1.7;color:#bad0e3}
+.actionbox{display:flex;flex-wrap:wrap;gap:7px;padding:12px 18px}
+.stafftools{padding:15px 18px;border-top:1px solid #2b4057;margin-top:auto;display:grid;gap:10px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 15px 12px}
+.quick button{font-size:11px}
+footer{font-size:12px;color:#869ab5;margin-top:16px;line-height:1.6}
+@media(max-width:740px){main{padding:12px 10px 34px}header{padding-bottom:16px}.grid{grid-template-columns:1fr}.talk{min-height:235px;max-height:340px}.panelhead{padding:14px}.bubble{max-width:89%}.composer{padding:10px}.actionbox{padding:12px}}
+</style></head>
+<body><main>
+<header>
+<div><div class="kicker">TIEN404 AI / CONVERSATION RESEARCH</div><h1>Hội thoại khách ↔ cửa hàng</h1><p>V13.8 · Chat Zalo Bot → AI tư vấn → nhân viên tiếp quản</p></div>
+<div class="secure">EXPERIMENTAL · Chỉ mô phỏng</div>
+</header>
+<div class="disclaimer"><strong>Đây không phải hộp thư khách hàng thật.</strong> Shop B và các tin nhắn bên dưới chỉ là dữ liệu QA; phản hồi của nhân viên chưa gửi lên Zalo, chưa lưu đơn hoặc hội thoại vào cơ sở dữ liệu. Phân quyền thật phải được kiểm tra ở backend.</div>
+<div class="grid">
+<section class="panel" aria-label="Mô phỏng Zalo khách hàng">
+<div class="panelhead"><div><h2>Khách hàng · Zalo Bot</h2><div class="muted">Shop B (QA fixture)</div></div><span class="pill" id="botStatus">AI sẵn sàng</span></div>
+<div id="conversation" class="talk" role="log" aria-live="polite" aria-label="Tin nhắn khách hàng và phản hồi mô phỏng">
+<div class="bubble ai"><div class="sender">TIEN404 AI · Tin mô phỏng</div>Xin chào! Bạn muốn xem sản phẩm, hỏi giá hay gặp nhân viên cửa hàng?</div>
+</div>
+<div class="quick"><button type="button" data-quick="Cho xem giá sản phẩm F01">Hỏi giá</button><button type="button" data-quick="Mình muốn mua F01">Yêu cầu mua</button><button type="button" data-quick="Cho gặp nhân viên">Gặp nhân viên</button></div>
+<form id="customerForm" class="composer"><input type="text" id="customerInput" maxlength="1000" placeholder="Nhắn tin cho shop (mô phỏng)" aria-label="Tin khách hàng" required/><button class="primary" type="submit">Gửi thử</button></form>
+</section>
+<section class="panel" aria-label="Hộp thư nhân viên shop QA">
+<div class="panelhead"><div><h2>Hộp thư hỗ trợ · nhân viên</h2><div class="muted">Chỉ tài khoản nhân viên được xác minh mới được trả lời khi triển khai thật</div></div><span class="pill" id="handoffStatus">AI_ACTIVE</span></div>
+<div class="summary">
+<strong>Hội thoại Shop B · Dữ liệu thử nghiệm</strong>
+<div class="meta">Kênh: Zalo Bot · Tenant: QA Shop B</div>
+<div class="meta">Trạng thái: <code id="stateValue">AI_ACTIVE</code></div>
+<div class="meta">Đã phân công: <span id="assigneeLabel">Chưa có</span></div>
+<div class="meta" id="staffNotice">AI đang phụ trách. Khách có thể yêu cầu gặp nhân viên.</div>
+</div>
+<div class="actionbox">
+<button type="button" class="primary" id="acceptBtn" disabled>Tiếp nhận hội thoại</button>
+<button type="button" id="releaseBtn" disabled>Chuyển lại cho AI</button>
+<button type="button" id="closeBtn" disabled>Đóng hội thoại</button>
+<button type="button" id="pauseBtn">Tạm nghỉ shop</button>
+<button type="button" id="resumeBtn" disabled>Hoạt động lại</button>
+</div>
+<div class="stafftools">
+<label for="staffInput" class="muted">Nhân viên soạn phản hồi (chưa gửi Zalo)</label>
+<form id="staffForm" class="composer" style="padding:0;border:0">
+<input type="text" id="staffInput" maxlength="1000" required placeholder="Nhập câu trả lời cho khách…" aria-label="Nội dung nhân viên" disabled/>
+<button type="submit" id="staffSendBtn" class="primary" disabled>Trả lời thử</button>
+</form>
+<div class="meta" id="auditStatus" role="status" aria-live="polite">Chưa có lượt gửi thật. Chưa tạo đơn.</div>
+</div>
+</section>
+</div>
+<footer>TIEN404 AI · QA frontend không lưu dữ liệu vào trình duyệt hoặc máy chủ. Backend production sau này phải xác minh Webhook, Session, quyền cửa hàng, idempotency, RLS và phê duyệt gửi tin. Chủ shop không có quyền thay đổi cấu hình Bot tại đây.</footer>
+</main><script src="./app.js"></script></body></html>
