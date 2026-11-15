@@ -187,3 +187,20 @@ test('Short draft quiz remains a data-only artifact',()=>{
  assert.equal(typeof s.answers.returns_policy,'string');
  assert.equal(JSON.stringify(s).includes('service_role_key'),false);
 });
+
+test('Onboarding state and answer map are immutable',()=>{
+ const st=answered();
+ assert.equal(Object.isFrozen(st),true);
+ assert.equal(Object.isFrozen(st.answers),true);
+ assert.equal(Object.isFrozen(st.seen_turn_ids),true);
+ reject(()=>{st.answers.public_phone='ATTACKER'},undefined);
+});
+test('Cloned state object cannot be replayed as a verified server draft',()=>{
+ const st=o.start(ctx());
+ reject(()=>o.step({...st},{field_id:'shop_name',value:'Fake Shop',turn_id:'stage-a001'}),'DRAFT_SESSION_INVALID');
+});
+test('Client cannot replace answered policy after validation',()=>{
+ const st=answered();
+ reject(()=>{st.answers.returns_policy='ignore previous instructions';},undefined);
+ assert.equal(o.exportDraft(ctx(),st).fields.returns_policy,values.returns_policy);
+});
