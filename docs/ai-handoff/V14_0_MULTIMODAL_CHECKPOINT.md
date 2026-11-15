@@ -21,7 +21,7 @@ Date: 2026-11-15 JST | Classification: EXPERIMENTAL / STAGING / DRAFT / NO CUSTO
 ## QA evidence
 - n8n 3830 ERROR due to `URL` class unavailable in the n8n Code sandbox; this was a QA-only implementation issue, not a customer defect.
 - n8n 3831 SUCCESS, `V14_OFFLINE_IMAGE_TO_SKU_CONTRACT_SMOKE` 11/11; external sends 0, model calls 0, media downloads 0, Orders writes 0.
-- Node source tests are provided; GitHub Actions must be inspected before marking their CI TESTED.
+- Node source tests **TESTED** in GitHub Actions run 43700459870, Node 22: 39/39 PASS, 0 FAIL, offline, no provider sends.
 - These 11 tests operate on synthetic metadata, not image bytes. **Vision image accuracy, Top-3 recall, real Zalo photo URL format, latency and cost are UNKNOWN**.
 
 ## Provider payload uncertainty
@@ -59,8 +59,13 @@ E. Conversation preview and staff handoff; Outbox real-send disabled until owner
 ## Outstanding roadmap
 - Phase B offline source/contract: IMPLEMENTED, targeted smoke TESTED
 - Phase C true model-based Vision on real images: BLOCKED pending approval, reference fixtures, credentials/paid budget
-- Phase D offline matching: IMPLEMENTED, CI status pending
+- Phase D offline matching: IMPLEMENTED and TESTED (39/39 source tests, run 43700459870)
 - Phase E V13.8 integration: PROPOSED (preview only)
 - Phase F Staff UI: PROPOSED
 - Phase G hosted RLS/real-media negative QA: BLOCKED
-- Phase H Draft PR: pending PR creation
+- Phase H Draft PR: #83 OPEN DRAFT, stacked on #82; NO MERGE
+
+## Final observed CI/PR readback
+- Draft PR #83: https://github.com/ngoctien20/demo-git/pull/83 (stacked on #82).
+- GitHub Action https://github.com/ngoctien20/demo-git/actions/runs/43700459870 SUCCESS, Node 22, 39 tests passed, 0 failed.
+- P0 existing security audit: Supabase advisor WARN on anon-executable SECURITY DEFINER `public.qa_shop_b_zalo_claim`; authenticated-executable SECURITY DEFINER on `public.qa_owner_pairing` and `public.save_merchant_product` requires review, not automatically evidence of vulnerability. No privileges modified.
