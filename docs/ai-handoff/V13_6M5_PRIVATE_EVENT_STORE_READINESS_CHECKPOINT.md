@@ -33,7 +33,7 @@ If a crash happens after a committed CLAIMED, it remains pending, not silently r
 - Event claim does NOT authorize order writes or Messenger sends. Outbox/delivery/acknowledgement policy needs separate approval.
 
 ## 5. QA
-At initial checkpoint writing, new CI results pending. Record exact run ID and counts after checking. A source-only SUCCESS must NOT be described as real durable store readiness.
+**TESTED** on commit b312476128030a81ce0ddca0552eabd891ca61d7: GitHub Actions run https://github.com/ngoctien20/demo-git/actions/runs/43713967238 **SUCCESS**. Seven-suite Node regression **244/244 PASS, 0 FAIL, 0 SKIP** (211 inherited plus 33 V13.6M.5 cases). Separate static safety/release-gate job also SUCCESS, **2/2 jobs**. No network send or real DB write in QA. A source-only SUCCESS must NOT be described as real durable PostgreSQL readiness.
 
 ## 6. Separate owner approvals required before hosted implementation
 - [ ] Restorable Supabase staging backup and rehearsed rollback.
@@ -47,3 +47,9 @@ At initial checkpoint writing, new CI results pending. Record exact run ID and c
 Close this new Draft PR; return to V13.6M.4 baseline SHA 4e7c08d2c4a3a5cbc576205a921a6cc5e5d51e55. No DB restore or message recall is necessary as nothing external was modified.
 
 Next proposed milestone: V13.6M.6 — Authorized Hosted Replay Gate / Key Rotation & Retention, after V14.2 and independent owner approval. Do not merge or deploy on QA PASS alone.
+
+## 9. Final source-only verification
+- Re-checked existing n8n Messenger Published `Z7FdV7uDvApfbURQ` ACTIVE unchanged at `d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92`, 27 nodes.
+- Re-checked offline Rich UI shadow `X0MwwQ7LRUqfOVjM` INACTIVE, 5 nodes.
+- PR #92 OPEN DRAFT, stacked on PR #91, not merged/deployed.
+- Status: VERIFIED metadata / IMPLEMENTED source / TESTED synthetic / BLOCKED hosted database / NOT RELEASED.
