@@ -45,3 +45,36 @@ Close this isolated stacked Draft PR or revert only V14.7 files. No hosted rollb
 ## 8. Approval scope
 
 The current request authorizes source-only staging, QA and Draft PR. It **does not** authorize Meta/Zalo sends, hosted Store migrations, credential/GRANT updates, n8n Published changes, billing actions or production promotion.
+
+## 9. Hosted synthetic preview — VERIFIED
+
+A **new isolated Cloudflare Worker** was created for owner visual QA:
+
+- Worker name: `tien404-v147-custom-studio-synthetic-nosend-staging`
+- URL: https://tien404-v147-custom-studio-synthetic-nosend-staging.tienmobi208.workers.dev/
+- Deployment ID: `1b16388b-369b-4c88-8936-beb19db7b60a`
+- Version ID: `64dba962-42c1-4e58-b1d7-f4169e3f4705` (100% deployment)
+- Account-level Workers subdomain enabled **only for this new Worker**; no custom production routes changed.
+- Verified settings: **zero bindings**, no D1, R2, Supabase, AI model, Meta/Zalo tokens, or customer Orders.
+- Worker static GET endpoints are `/`, `/studio-core.js`, `/studio-ui.js`; `GET /health` reports synthetic no-send zeros. **All POST and other non-GET/HEAD return HTTP 423**. Unknown paths 404; CSP blocks external connect.
+- GitHub Actions [43756529465](https://github.com/ngoctien20/demo-git/actions/runs/43756529465) verified all three jobs SUCCESS at source HEAD `8cec8e389d36923faf5a027a37f81343a6ce53a4`: Node contract/security, Chromium six viewports, live HTTP GET health/assets and POST 423.
+- Any future updates to this Worker must be pinned to verified GitHub source and re-run smoke; the Worker is not part of commercial product release.
+
+### Owner manual checklist for synthetic demo
+
+1. Open the isolated staging URL; verify **EXPERIMENTAL** and **KHÔNG GỬI TIN THẬT** labels.
+2. Select Shop A and Shop B (same tenant), then C (other tenant); observe unique product name/price.
+3. Choose Messenger; verify card and preview actions. Choose Zalo Bot; see numbered **text fallback**, no imaginary native buttons.
+4. Switch Zalo OA and Website Widget; check distinct provider label and preview.
+5. Change assistant name, greeting, tone, theme, menu; press **Lưu bản nháp**, then check visual output. Switch to another shop/channel and confirm it retains independent settings.
+6. Try **Tư vấn / Báo giá / Yêu cầu đơn / Hỗ trợ**, then **Kiểm tra 4 luồng thử nghiệm**; this tests only scripted fixtures.
+7. Export JSON to inspect synthetic draft. Reload to confirm no backend/persistent storage; optionally use **Khôi phục mẫu QA**.
+8. Confirm no genuine Messenger/Zalo messages or Orders are produced; only a user-visible simulation.
+
+### Security note
+
+The worker URL is publicly reachable and **has no authentication**; only synthetic data and in-memory per-browser drafts may be used. Never insert merchant secrets or real customer information. Internal Studio authentication, Store JWT/RLS, real AI inference, provider account permissions, subscription enforcement and merchant release UI remain BLOCKED.
+
+### QA evidence caveat
+
+The run above applies to source head `8cec8e389d36923faf5a027a37f81343a6ce53a4`; this documentation-only commit will have a newer SHA. Re-verify the new HEAD workflow before claiming final QA.
