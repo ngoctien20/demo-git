@@ -29,6 +29,7 @@ jobs:
           node --check qa/v148/unified-identity-resolver.cjs
           node --check qa/v148/unified-identity-resolver.test.cjs
           node --test qa/v148/unified-identity-resolver.test.cjs
+          node --test qa/v148/v147-studio-identity-compat.test.cjs
       - name: No network, customer data or provider send capabilities
         run: |
           python3 - <<'PY'
@@ -45,6 +46,8 @@ jobs:
           PY
       - name: CPU-only 1100 request warm/cold benchmark
         run: node qa/v148/benchmark-offline.cjs > v148_benchmark.json
+      - name: Print reproducible CPU-only benchmark measurements
+        run: cat v148_benchmark.json
       - name: Benchmark JSON correctness and read-only invariants
         run: |
           python3 - <<'PY'
