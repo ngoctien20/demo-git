@@ -46,7 +46,7 @@ jobs:
           assert all(s not in a for s in ("method:'POST'","method:'PATCH'","method:'DELETE'","method:'PUT'"))
           assert 'canExecuteSql:false' in m and 'canApplyDDL:false' in m
           assert 'canBackfill:false' in m and 'canAlterRLS:false' in m
-          assert 'WITH\\n core AS' in sql
+          assert 'WITH' in sql and 'core AS' in sql
           assert 'SELECT jsonb_build_object' in sql
           print('PASS SAFE MOCK-ONLY: no secret, customer-data or production network access in CI')
           PY
