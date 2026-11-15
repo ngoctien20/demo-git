@@ -1,0 +1,82 @@
+name: TIEN404 V13.6M.6 Replay Security Rotation & Retention OFFLINE QA
+on:
+  push:
+    branches:
+      - work/v136m6-hosted-replay-keyrotation-retention-offline-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - "qa/messenger-rich-v136m6/**"
+      - "docs/ai-handoff/V13_6M6_*"
+      - ".github/workflows/v136m6-replay-rotation-retention-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - "qa/messenger-rich-v136m6/**"
+      - "docs/ai-handoff/V13_6M6_*"
+      - ".github/workflows/v136m6-replay-rotation-retention-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-regression:
+    name: Eight suites — HMAC rotation, retention and 100-way replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and inherited V13.6M through V13.6M.6 tests
+        run: |
+          node --check qa/messenger-rich-v136m6/hosted-security-gate.cjs
+          node --check qa/messenger-rich-v136m6/key-rotation.cjs
+          node --check qa/messenger-rich-v136m6/retention-gate.cjs
+          node --check qa/messenger-rich-v136m6/security-rotation-retention.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m6/security-rotation-retention.test.cjs
+  static-deny:
+    name: Deny schema migration, key leaks and provider sends
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: No I/O, no deployment authorization and guarded SQL proposal
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files=[Path("qa/messenger-rich-v136m6/hosted-security-gate.cjs"),
+                 Path("qa/messenger-rich-v136m6/key-rotation.cjs"),
+                 Path("qa/messenger-rich-v136m6/retention-gate.cjs")]
+          allsrc="\n".join(f.read_text() for f in files)
+          for path in files:
+              content=path.read_text()
+              for bad in ("fetch(", "axios(", "process.env", "graph.facebook.com",
+                          "PAGE_ACCESS_TOKEN", "createClient(", "require('pg')",
+                          "INSERT INTO ", "DELETE FROM ", "ALTER TABLE ",
+                          "UPDATE app_private.", "service_role SELECT"):
+                  assert bad not in content,(path,bad)
+          assert "M6_HOSTED_GATE_UNAVAILABLE" in allsrc
+          assert "hostedReplayEnabled:false" in allsrc
+          assert "deletionAuthorized:false" in allsrc
+          assert "allowAutomaticKeyDrop:false" in allsrc
+          assert "M6_ROTATION_WORKER_STALE" in allsrc
+          assert "M6_ROTATION_HISTORY_LOST" in allsrc
+          sql=Path("qa/messenger-rich-v136m6/PROPOSAL_ONLY_HOSTED_ROTATION_RETENTION_DO_NOT_RUN.sql").read_text()
+          assert "RAISE EXCEPTION 'TIEN404_V13_6M6_HOSTED_MIGRATION_NOT_APPROVED'" in sql
+          active=[x.strip().upper() for x in sql.splitlines()
+                  if x.strip() and not x.lstrip().startswith("--")]
+          assert any(x.startswith("RAISE EXCEPTION") for x in active)
+          assert not any(x.startswith(("CREATE ","ALTER ","INSERT ","UPDATE ","DELETE ",
+                                       "DROP ","GRANT ","REVOKE ")) for x in active)
+          print("PASS: offline-only, no provider send, no credential, guarded SQL")
+          PY
