@@ -267,7 +267,8 @@ test('Product price and stock are sourced only from verified store catalog',asyn
 test('Cross-store catalog row denied by existing V14.3 Sales Core',async()=>{
  const s=setup({changes:{async readPublicCatalog(scope){
   return {source:'TRUSTED_CATALOG_READBACK',verified:true,
-    tenantId:scope.tenantId,storeId:'store_b',revision:1,products:[]};
+    tenantId:scope.tenantId,storeId:'store_b',revision:1,
+     priceVersion:1,stockVersion:1,expiresAt:NOW+300000,products:[]};
  }},intentForStore:scope=>({
   source:'TRUSTED_SALES_CORE',verified:true,tenantId:scope.tenantId,storeId:scope.storeId,
   type:'PRODUCT_CARD',text:'Xem mẫu',productIds:['sku_a'],dispatch_authorized:false
