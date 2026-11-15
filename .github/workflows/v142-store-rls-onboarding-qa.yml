@@ -1,0 +1,38 @@
+name: TIEN404 V14.2 Store RLS Boundary & Shop Onboarding Offline QA
+on:
+  push:
+    branches:
+      - work/v142-store-rls-onboarding-staging
+    paths:
+      - 'qa/store-rls-v142/**'
+      - 'qa/shop-onboarding-v142/**'
+      - '.github/workflows/v142-store-rls-onboarding-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/store-rls-v142/**'
+      - 'qa/shop-onboarding-v142/**'
+      - '.github/workflows/v142-store-rls-onboarding-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Store boundary and guided onboarding positive/negative QA
+        run: |
+          node --check qa/store-rls-v142/store-boundary.cjs
+          node --check qa/shop-onboarding-v142/onboarding-core.cjs
+          node --test qa/store-rls-v142/store-boundary.test.cjs
+          node --test qa/shop-onboarding-v142/onboarding-core.test.cjs
+      - name: Regression — V14.1 Shop Knowledge Engine
+        run: node --test qa/shop-knowledge-v141/knowledge-core.test.cjs
+      - name: Regression — V14 multimodal and V13.8 conversation
+        run: |
+          node --test qa/multimodal-v14/core.test.cjs
+          node --test qa/conversation-v138/conversation-core.test.cjs
