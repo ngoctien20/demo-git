@@ -33,7 +33,8 @@ async function proof(over={}){
  const signature=Buffer.from(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},kp.privateKey,new TextEncoder().encode(payload))).toString('base64url');
  return {payload,signature};
 }
-async function check(proofData=await proof(),row=baseRow,ts=now,key=spki,expected=tenantSha){
+async function check(proofData,row=baseRow,ts=now,key=spki,expected=tenantSha){
+ if(arguments.length===0)proofData=await proof();
  return resolveG22(proofData,db(row),ts,key,expected);
 }
 async function denied(over,reason){
