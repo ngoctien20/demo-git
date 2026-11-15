@@ -1,0 +1,27 @@
+name: TIEN404 V14.5Z Zalo Real AI Offline Pilot QA
+on:
+  pull_request:
+    paths:
+      - 'qa/zalo-live-v145z/**'
+      - '.github/workflows/v145z-zalo-ai-offline-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check (no provider/model credentials)
+        run: node --check qa/zalo-live-v145z/ai-pilot.cjs && node --check qa/zalo-live-v145z/ai-pilot.test.cjs
+      - name: Standalone Zalo AI offline negative QA
+        run: node --test qa/zalo-live-v145z/ai-pilot.test.cjs
+      - name: Existing V13.8 handoff regression
+        run: node --test qa/conversation-v138/conversation-core.test.cjs
+      - name: No live outbound or DB mutation in candidate module
+        run: |
+          ! grep -E 'https?://|fetch\(|axios|sendMessage\(|ZALO_SEND_ENABLED *= *true|INSERT INTO|UPDATE public\.orders|DELETE FROM' qa/zalo-live-v145z/ai-pilot.cjs
