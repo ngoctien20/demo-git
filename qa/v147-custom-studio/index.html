@@ -21,6 +21,30 @@ label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1
 @media(max-width:1190px){.layout{grid-template-columns:minmax(250px,1fr) minmax(310px,1.3fr)}.preview-panel{grid-column:2;grid-row:1/span 2}.setting-panel{grid-column:1}}
 @media(max-width:770px){main{padding:20px 12px 30px}.layout{grid-template-columns:1fr}.preview-panel,.setting-panel{grid-column:auto;grid-row:auto}.panelhead{padding:15px}.inside{padding:14px}.preview-area{padding:14px}.phone{min-height:490px}.chat{height:370px}.shoplist{grid-template-columns:repeat(3,minmax(0,1fr))}.shopcard{flex-direction:column;align-items:start;gap:5px;min-height:88px}.shopcard .avatar{width:30px;height:30px}.shopcard span{font-size:11px}.shopcard small{font-size:10px}}
 @media(max-width:370px){.shoplist{grid-template-columns:1fr}.shopcard{flex-direction:row;min-height:58px}.channelgrid{grid-template-columns:repeat(2,1fr)}.metrics{width:100%}.metric{flex:1}}
+
+/* V14.7-04/05 custom provider experience preview extensions */
+.exp-wrap{width:100%;border:1px solid #34465a;background:#111e2e;border-radius:13px;padding:12px}
+.exp-head{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:9px}
+.exp-head strong{font-size:12px}.exp-head small{font-size:10px;color:#a7bccb}
+.exp-modes{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+.exp-modes button{border:1px solid #42617a;background:#172c3f;color:#d8eafb;border-radius:8px;padding:7px 10px;font-size:11px}
+.exp-modes button[data-active=true]{border-color:#29bea8;color:#fff;background:#17544e}
+.exp-output{min-height:70px;border:1px solid #334456;border-radius:11px;background:#0b1826;padding:12px;font-size:12px;color:#d8e7f4}
+.exp-title{font-size:11px;font-weight:800;color:#75e4cf;margin-bottom:8px}
+.exp-message{white-space:pre-line;overflow-wrap:anywhere;margin-bottom:9px}
+.exp-carousel{display:flex;gap:9px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:9px}
+.exp-card{min-width:180px;max-width:195px;background:#f6f9fc;color:#24313b;border-radius:9px;overflow:hidden;scroll-snap-align:start}
+.exp-photo{background:linear-gradient(135deg,#b8cede,#e8f4f4);font-size:38px;text-align:center;padding:19px}
+.exp-cardbody{padding:9px}.exp-cardbody strong{font-size:11px}.exp-cardbody small{display:block;color:#67798a}
+.exp-price{color:#ab4b34;font-weight:800}
+.exp-cardbtns{border-top:1px solid #dfe8f0;padding:8px 9px;font-size:10px;color:#476d91}
+.exp-choices{display:flex;gap:7px;flex-wrap:wrap}.exp-choice{border:1px solid #598fbb;color:#cbecff;background:#1b3247;padding:6px 9px;border-radius:18px;font-size:11px}
+.exp-menu-item{padding:9px;margin:5px 0;border:1px solid #435267;border-radius:8px}
+.exp-webview{border:1px dashed #6c8caa;padding:16px;border-radius:9px;text-align:center}
+.exp-rich{border-left:3px solid #47cba8;background:#18302b;padding:12px;border-radius:7px;font-weight:750;overflow-wrap:anywhere}
+.exp-photo-preview{border:1px solid #456177;border-radius:10px;padding:12px}.exp-photo-preview strong{display:block}
+.exp-warning{font-size:10px;color:#f2c78e;white-space:normal;margin-top:12px}
+
 </style>
 </head>
 <body>
@@ -90,6 +114,7 @@ label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1
      <div class="chat" id="chat"><div class="date">Hội thoại QA giả lập</div></div>
      <div class="chat-input">Nhập tin nhắn trong kênh thật chỉ hoạt động sau khi được cấp quyền và nghiệm thu.</div>
     </div>
+    <div class="exp-wrap" aria-label="Thiết kế trải nghiệm Messenger và Zalo"><div class="exp-head"><strong>04 · Rich UI Lab (chỉ xem trước)</strong><small id="experienceStatus">Không gửi provider</small></div><div class="exp-modes" id="experienceModes" aria-label="Chọn kiểu giao diện"></div><div class="exp-output" id="experienceOutput"><span>Chọn một kiểu giao diện để thử</span></div></div>
     <button type="button" class="btn" id="runQa">Kiểm tra 4 luồng thử nghiệm</button>
     <div class="qa-status" id="qaOutput" role="status"></div>
     <p class="note" style="text-align:center">Màn hình mô phỏng phong cách kênh; không phải bản chụp chính thức của Meta hoặc Zalo.</p>
@@ -98,5 +123,6 @@ label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1
  </div>
 </main>
 <script src="./studio-core.js"></script>
+<script src="./experience-lab.js"></script>
 <script src="./studio-ui.js"></script>
 </body></html>
