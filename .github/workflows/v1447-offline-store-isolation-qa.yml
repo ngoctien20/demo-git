@@ -1,0 +1,29 @@
+name: TIEN404 V14.4.7 Offline Store Isolation Gate
+on:
+  pull_request:
+    paths:
+      - 'qa/store-rls-v1447/**'
+      - 'docs/migration-drafts/V14_4_7_STORE_RLS_DESIGN_DO_NOT_APPLY.sql'
+      - '.github/workflows/v1447-offline-store-isolation-qa.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 11 synthetic-only test cases, 72 actor/store/table assertions
+        run: node --test qa/store-rls-v1447/store-isolation-gate.test.cjs
+      - name: Fail if the migration draft does not abort before any design notes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("docs/migration-drafts/V14_4_7_STORE_RLS_DESIGN_DO_NOT_APPLY.sql")
+          s=p.read_text(encoding="utf-8")
+          assert "RAISE EXCEPTION" in s and "TIEN404_V14_4_7_DO_NOT_APPLY" in s
+          assert "DO $TIEN404_V1447_DRAFT_ONLY$" in s
+          assert "CREATE TABLE" not in s and "DROP POLICY" not in s
+          print("PASS: non-applicable migration draft; no executable DDL/DML")
+          PY
