@@ -159,3 +159,15 @@ User-supplied pgAdmin Process Watcher screenshot (15/11/2026, JST):
 - **DO NOT claim** all five project schemas are present before a TOC check using `pg_restore --list`, nor claim a successful restore rehearsal. User's backup remains local and has not been uploaded here. This selected-schema archive is not a complete Supabase Auth/Storage backup.
 - Next operator-only checks: (1) `pg_restore -l` read-only inspect Custom archive for schemas/tables/TABLE DATA and POLICY entries; (2) isolated restore drill and integrity checks. Never restore to live `tien404-staging`.
 - Release flags: `PG_DUMP_EXECUTION=SUCCESS_SCREENSHOT_VERIFIED`, `LOCAL_ARCHIVE_PRESENT=SCREENSHOT_VERIFIED`, `ARCHIVE_TOC_VERIFIED=NO`, `ISOLATED_RESTORE_VERIFIED=NO`, `V14_2_RLS_MIGRATION=BLOCKED`.
+
+
+## Local TOC verification — pg_restore list exit code 0
+
+User-provided Windows PowerShell screenshot following read-only `pg_restore --list` of local archive `E:\\pgadmin\\tien404_backup\\TIEN404_V142_PRE_RLS.backup`, 15 November 2026 JST:
+- Command completed with explicitly printed **`Exit code: 0`**.
+- Visible archive TOC `SCHEMA -` entries for `app_private`, `factory_private`, `tien404_dialogue_private`, and `tien404_r1_qa`.
+- Visible `TABLE DATA` TOC entries for `public.orders`, `public.products`, `tien404_r1_qa.catalog`, `owner_bindings`, `owner_outbox`, `owner_pairing_challenges`, `owner_pairing_claims_v3`, `sandbox_orders`, `shop_bots`, `tenant_identity_map`.
+- Prior TOC screenshot showed `POLICY` entries under `public`, including orders, products, messages and order_items. `SCHEMA - public` may not be separately emitted for the standard built-in schema; public TABLE DATA and POLICY entries are present.
+- **Interpretation:** archive header/index is readable; expected application schema declarations and key table data sections exist. `TABLE DATA` listing does NOT verify row content/count, all objects across five schemas, or complete restoration. No archive bytes were uploaded to assistant.
+- **Safe next steps:** compute local SHA-256 checksum, verify local PostgreSQL 17 restore target exists, restore **only to isolated local PostgreSQL** after owner approves the target, inspect errors and compare schema, table counts (Products=2, Orders=2 baseline) and RLS policies; NEVER restore to current Supabase staging.
+- `BACKUP_PROCESS_COMPLETED=VERIFIED_BY_SCREENSHOT`; `ARCHIVE_TOC_READ=PASS`; `ISOLATED_RESTORE_DRILL=NOT_RUN`; `FULL_RESTORE_READINESS=BLOCKED`; `STORE_RLS_MIGRATION=BLOCKED`. No RLS, production, credential, payment, provider send or customer-data mutation was executed by assistant.
