@@ -30,8 +30,8 @@ function ports(){
     const role=roles[storeId]||'owner';
     return {source:'SYNTHETIC_CANONICAL_STORE_REGISTRY',userId,
       storeId,tenantId:storeId===STORE_C?OTHER_TENANT:TENANT,
-      tenantActive:true,storeActive:true,membershipActive:true,
-      role,canEditProducts:true};
+      tenantActive:true,storeActive:true,subscriptionActive:!roles.noSubscription,
+      membershipActive:true,role,canEditProducts:true};
   }
  };
 }
@@ -235,4 +235,14 @@ test('35 · no hosted RPC, stock update, order write or provider dispatch exists
   'updateStock','revokePrivilege','alterRls'])assert.equal(s[k],undefined);
  assert.equal(s.inspect().hostedWrites,0);
  assert.equal(s.inspect().canPublishRpc,false);
+});
+
+test('36 · inactive subscription blocks a previously authorized shop write',async()=>{
+ const {s,p}=service();p.roles.noSubscription=true;
+ await denied(s.apply({bearer:'qaA',body:create()}),ERROR_CODES.MEMBERSHIP);
+});
+test('37 · newlines and control characters in product names are denied',()=>{
+ for(const name of ['X\nAnother line','X\tY','X\u0000Y']){
+  assert.throws(()=>validate(create(STORE_A,{name})),e=>e.code===ERROR_CODES.INPUT);
+ }
 });
