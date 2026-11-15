@@ -58,3 +58,11 @@ Owner should open the staging URL, run 12/12 QA, complete at least 8 acceptance 
 ## 2026-11-16 post-driver snapshot correction
 - After adding the new inactive manual-only UAT01 HTTP QA driver `teHbeNGZn7e1TuSy`, n8n MCP reports **100 workflows, 19 Active**, with that driver as latest workflow. The earlier 99/19 inventory in the beginning of this checkpoint is a genuine earlier snapshot taken **before** the driver was created, not the final total. Metadata changes need a fresh inventory before backup validation.
 - This additional workflow remains **INACTIVE** with zero auto-assigned credentials. Real hosted HTTP execution 3863 SUCCESS is already recorded above.
+
+## Final UAT01 UI hardening + hosted QA (2026-11-16 JST, supersedes earlier QA counts)
+- Detected and fixed a **cross-shop quick test UX ambiguity**: when clicking `Test cách ly`, the browser now sets Shop A before asking about Shop B SKU; this reliably expects a cross-shop denial rather than a legitimate Shop B price.
+- Added **two extra CI checks**: browser-inline JavaScript parses cleanly and the cross-shop shortcut selects Shop A. UAT01 Worker test count **20** (previous 18). With inherited 296 cases, the combined CI target is **316/316** when the last run completes.
+- Redeployed only the isolated UAT staging Worker (no production) version `4a33928c-2395-4d3e-bec7-f8d66001db84`, deployment `dcd273ce-1174-4c3d-947c-acd5877d6a84`; post-deploy bindings still exactly zero, old outbound flag remains false. Previous Worker version `4dee23ca-2e18-4f57-9f4c-f5371711aa6a` retained as possible rollback checkpoint.
+- **Real hosted n8n HTTPS regression execution 3864 SUCCESS** after redeploy: 12/12 Worker simulation tests, health 200, draft quote 318,000 VND not persisted, /v1/send HTTP 423, zero provider sends/AI calls/Orders writes. Earlier 3863 also passed on the initial deployment.
+- Latest n8n metadata read after adding the new inactive UAT01 HTTP driver: **100 workflows, 19 active**; not the older 99 pre-driver or 98 earlier backup manifest.
+- The website is ready for **owner-side manual UAT G1**, not authenticated real Zalo/AI certification. No owner acceptance JSON has been submitted at checkpoint time.
