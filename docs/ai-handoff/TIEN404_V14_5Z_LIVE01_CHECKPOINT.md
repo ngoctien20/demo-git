@@ -118,3 +118,11 @@ Present exact bounded QA recipient/Bot and budget cap to owner for explicit appr
 - New `qa/zalo-live-v145z/live03-identity-budget-gate.cjs` with 5 independent ECDSA P256 signed-proof roles, source-only fail-closed `can_send:false`, plus 35 negative tests. Initial GitHub run 43736390952 167/167 PASS (old 132 + LIVE03 35).
 - Full evidence and conditions: `docs/ai-handoff/TIEN404_V14_5Z_LIVE03_TRUSTED_IDENTITY_BUDGET_CHECKPOINT.md`.
 - LIVE03 remains BLOCKED for real identity + budget; source-only certification logic never constitutes a live gateway. No credential, billing, Worker, n8n active flow, production or customer changes.
+
+## 15. V14.5Z-LIVE03B — model price matching and budget quote QA (2026-11-16 JST)
+- Owner's exact n8n service pricing screenshot now confirms configured `gpt-5.4-nano` Input $0.20/1M, Output $1.25/1M. `gpt-5-nano` $0.05/$0.40 is NOT the configured QA model.
+- Existing inactive QA workflow `OMV22pdETQFVU9ru` read-only rechecked, unchanged version `0bbd2547-e68d-419f-a7cb-3460b38b5528`. No model switch.
+- 2500 total token strict envelope all-output reference estimate $0.003125; 2× buffer $0.00625. Current n8n console UI snapshot $0.59 of shared Gateway credits, not a reserved pilot wallet.
+- New offline pricing module with no send `qa/zalo-live-v145z/live03b-price-reconciliation.cjs` and 22 negative tests. CI 43740865678 189/189 PASS.
+- COST-02 price row UI VERIFIED; COST-01 UI balance observed; COST-03 Auto topup and money cap unverified; COST-04 hosted trusted shared token-money cap unverified. Real Bot→Shop→Owner mapping still synthetic. Send NO-GO.
+- Detailed corrections are in `docs/ai-handoff/TIEN404_V14_5Z_LIVE03A_EVIDENCE_INTAKE_RUNBOOK.md` Section K and `...LIVE03_TRUSTED_IDENTITY_BUDGET_CHECKPOINT.md`.
