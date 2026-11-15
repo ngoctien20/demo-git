@@ -34,7 +34,7 @@ Proposed controlled acceptance: owner sends at least 3 multi-turn Zalo QA messag
 ## 5. Status
 - Verified ingress/router: VERIFIED / ACK_ONLY
 - Local adapter: IMPLEMENTED / PRELIMINARY_OFFLINE_TESTED
-- GitHub CI: PENDING until actual run is inspected
+- GitHub CI: TESTED 28/28 V14.5Z + 44/44 V13.8 PASS, run 43725773261
 - Real AI model-to-Zalo response: BLOCKED (not yet wired)
 - Live provider send: NOT AUTHORIZED
 - Hosted Store RLS: BLOCKED
@@ -42,3 +42,12 @@ Proposed controlled acceptance: owner sends at least 3 multi-turn Zalo QA messag
 
 ## 6. Rollback
 Close this Draft PR / delete only new V14.5Z branch. Published n8n workflows, Supabase staging and Zalo provider remain untouched. Do **not** merge this dependency-stacked branch to gh-pages without an explicit integration review.
+
+## 7. GitHub Actions evidence (verified)
+- PR #100: https://github.com/ngoctien20/demo-git/pull/100
+- Action run 43725773261: https://github.com/ngoctien20/demo-git/actions/runs/43725773261
+- Job 132847259186 conclusion: SUCCESS
+- V14.5Z adapter tests **28/28 PASS**, 0 failures.
+- Inherited V13.8 conversation/handoff tests **44/44 PASS**, 0 failures.
+- Node 22 syntax check and static no-send/no-DB-mutation check: PASS.
+- Evidence is CI offline only, NOT a real AI Zalo reply, not real customer ingress, not provider receipt, and not hosted multi-shop JWT RLS.
