@@ -45,6 +45,27 @@ label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1
 .exp-photo-preview{border:1px solid #456177;border-radius:10px;padding:12px}.exp-photo-preview strong{display:block}
 .exp-warning{font-size:10px;color:#f2c78e;white-space:normal;margin-top:12px}
 
+
+/* V15.2 ADV4 isolated optional experience lab */
+.adv4{margin-top:22px;background:#112131;border:1px solid #3e697e;border-radius:17px;overflow:hidden}
+.adv4-head{padding:16px 19px;border-bottom:1px solid #365568;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.adv4-head strong{font-size:16px}.adv4-head small{display:block;color:#afc6d7}
+.adv4-body{padding:18px;display:grid;grid-template-columns:minmax(250px,1fr) minmax(260px,1fr);gap:18px}
+.adv4-panel{min-width:0}.adv4-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.adv4-grid label{min-width:0}.adv4-grid select{margin-top:7px}
+.adv4-btns{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
+.adv4-btns button{padding:8px 11px;min-height:42px;background:#23495a;color:#f0faff;border:1px solid #438b91;border-radius:9px}
+.adv4-btns button:first-child{background:#176459}
+.adv4-preview{padding:14px;background:#0c1b29;border:1px solid #455b6b;border-radius:12px;min-height:150px}
+.adv4-stamp{font-weight:700;font-size:11px;color:#ffcc86}
+.adv4-bubble{white-space:pre-wrap;overflow-wrap:anywhere;background:#253c4c;border-radius:13px;padding:12px;margin:10px 0}
+.adv4-action{margin-top:10px;border:1px solid #477687;border-radius:10px;background:#304558;color:#d0dce5;padding:9px}
+.adv4-meta,.adv4-note{font-size:11px;color:#b5ceda}
+.adv4-evidence{white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:260px;overflow:auto;background:#0c1825;padding:10px;border-radius:9px}
+.adv4-scope{font-weight:700;color:#8ce1cf;font-size:12px}
+.adv4-status{font-size:12px;color:#ffca92;margin:8px 0;min-height:20px}
+@media(max-width:770px){.adv4-body{grid-template-columns:1fr;padding:14px}}
+@media(max-width:390px){.adv4-grid{grid-template-columns:1fr}.adv4-btns button{flex:1}}
 </style>
 </head>
 <body>
@@ -121,8 +142,54 @@ label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px;color:#d7e1
    </div>
   </section>
  </div>
+<section class="adv4" id="advancedStudioV4" aria-label="Tùy biến Bot nâng cao Draft QA">
+ <div class="adv4-head"><div><strong>05 · Advanced Custom Bot Studio — ADV.4</strong>
+ <small>Gói nâng cao riêng, không thuộc Sales Lite mặc định</small></div>
+ <span class="chip danger">DRAFT · KHÔNG GỬI</span></div>
+ <div class="adv4-body">
+  <div class="adv4-panel">
+   <p id="adv4Scope" class="adv4-scope"></p>
+   <p class="adv4-note">Cấu hình gắn với Shop/kênh đang chọn. Đổi bot nền cần đồng bộ revision.</p>
+   <div class="adv4-grid">
+    <label for="adv4Preset">Kiểu trình bày<select id="adv4Preset">
+     <option value="BALANCED">Cân bằng</option><option value="PRODUCT_FIRST">Ưu tiên sản phẩm</option>
+     <option value="TEXT_FIRST">Ưu tiên văn bản</option></select></label>
+    <label for="adv4CTA">Nút gợi ý (chưa kích hoạt)<select id="adv4CTA">
+     <option value="VIEW_CATALOG">Xem sản phẩm</option><option value="REQUEST_QUOTE">Hỏi giá</option>
+     <option value="ASK_STAFF">Gặp nhân viên</option><option value="VIEW_POLICY">Chính sách</option>
+     <option value="ORDER_REQUEST_DRAFT">Yêu cầu đặt đơn</option><option value="TRACK_ORDER">Tra đơn có xác minh</option>
+     <option value="OPEN_VERIFIED_LINK">Mở link đã duyệt</option></select></label>
+    <label for="adv4Media">Ảnh từ thư viện QA<select id="adv4Media"><option value="NONE">Không ảnh</option></select></label>
+    <label for="adv4Link">Liên kết từ thư viện QA<select id="adv4Link"><option value="NONE">Không link</option></select></label>
+    <label for="adv4Intent">Loại hội thoại<select id="adv4Intent">
+     <option value="DISCOVER">Tư vấn</option><option value="QUOTE">Báo giá</option>
+     <option value="LOW_STOCK">Tồn kho</option><option value="POLICY">Chính sách</option>
+     <option value="ORDER_LOOKUP">Tra đơn</option><option value="ORDER_REQUEST">Yêu cầu đơn</option>
+     <option value="SUPPORT">Hỗ trợ</option><option value="GREETING">Chào hỏi</option>
+     <option value="ABSTAIN">Cần làm rõ</option></select></label>
+   </div>
+   <div class="adv4-btns"><button type="button" id="adv4Save">Lưu Draft</button>
+    <button type="button" id="adv4Rollback">Hoàn tác v1</button>
+    <button type="button" id="adv4Rebase">Đồng bộ bot nền</button>
+    <button type="button" id="adv4Export">Xuất JSON thử</button></div>
+   <p id="adv4Status" class="adv4-status" role="status" aria-live="polite"></p>
+   <p class="adv4-note">Chỉ bộ nhớ trang · không có URL ảnh/link đã duyệt, chữ ký thực thi, quyền tài khoản hay tin nhắn thật.</p>
+  </div>
+  <div class="adv4-panel"><div id="adv4Canvas" class="adv4-preview" aria-live="polite"></div>
+   <p id="adv4History" class="adv4-note"></p>
+   <p class="adv4-note">Dữ liệu xem trước — không phải payload gửi Meta/Zalo</p>
+   <pre id="adv4Evidence" class="adv4-evidence"></pre>
+  </div>
+ </div>
+</section>
 </main>
 <script src="./studio-core.js"></script>
 <script src="./experience-lab.js"></script>
 <script src="./studio-ui.js"></script>
+<script src="./advanced-presentation-policy.js"></script>
+<script src="./advanced-channel-registry.js"></script>
+<script src="./advanced-ai-intelligence.js"></script>
+<script src="./advanced-studio-integration.js"></script>
+<script src="./advanced-adapter-contracts.js"></script>
+<script src="./advanced-studio-ui.js"></script>
 </body></html>

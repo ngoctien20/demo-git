@@ -186,5 +186,10 @@
  $('reset').addEventListener('click',reset);
  $('export').addEventListener('click',exportDraft);
  $('runQa').addEventListener('click',runQa);
+ // Read-only bridge to the optional ADV4 synthetic overlay; no privileged writes.
+ Object.defineProperty(window,'T404AdvancedLabBridge',{value:Object.freeze({
+  getActive:()=>({shop,channel,flow}),
+  getBaseDraft:(s,c)=>lab.get(s,c)
+ }),writable:false});
  loadControls();render();
 })();
