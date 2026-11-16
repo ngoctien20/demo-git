@@ -29,7 +29,7 @@ All features are server contracts running with pre-enrolled **QA-only synthetic*
 - Real-time hard cost cap needs durable transactional reservation/refund and reconciliation with provider usage/pricing/billing before GO. In-memory mock cannot enforce multi-instance cap.
 
 ## 4. QA and release gates
-- New 70-case offline synthetic positive/negative suite + inherited V16.2 (37) + V16.1 (42). CI result must be attached for the exact PR HEAD.
+- New 75-case offline synthetic positive/negative suite + inherited V16.2 (37) + V16.1 (42). CI result must be attached for the exact PR HEAD.
 - P0: hosted tenant and Store ownership, independent Owner A/B JWT-RLS, public RPC risk, actual provider verification, human approval; production Commerce remains NO-GO.
 - P1: actual Queue fairness, cross-process atomic cost ledger, real deliverability/handoff acknowledgement, model ID/price/RPM/TPM/cost per resolved conversation, 132-case actual scored QA.
 - GO: review Draft PR and continue QA-only source-first trials. NO-GO: publish real Worker/webhook, n8n Published, paid model, live send, Order write, Supabase RLS/GRANT/RPC or customer rollout.
@@ -63,4 +63,11 @@ Changes are additive and isolated under \`qa/v163-studios/\`, \`.github/workflow
 - Read historical \`AI_SALES_QA_CASES.csv\`: 97 rows / 96 unique IDs (QA01 duplicate); historical responses are not independent V16.3 model evaluations.
 - New metadata-only \`qa/v163-studios/manifest-132.mjs\` mirrors case counts and turn counts, without conversation text. Source CSV remains private (not committed).
 - Browser-only QA preview has five responsive tabs; owner/reviewer/staff actors are synthetic fixtures, NOT merchant login or real role enforcement.
-- New unit tests include an exact 9 anomalous / 71 turns integrity assertion and Shop-scoped FAQ greetings. **Expected 70 new tests**, inherited 37 + 42 = 149 if all CI jobs pass at exact HEAD.
+- New unit tests include an exact 9 anomalous / 71 turns integrity assertion and Shop-scoped FAQ greetings. **Expected 75 new tests**, inherited 37 + 42 = 154 if all CI jobs pass at exact HEAD.
+
+## 9. V16.3 follow-up QA hardening
+- Synthetic FAQ greeting cannot be reused across Shop A/B/C; revisions retain a local immutable state snapshot for each draft/review event. Owner and reviewer can inspect version history, no production publish.
+- Synthetic role context rejects unrecognized fields such as raw JWT, customer text or injected metadata. This is a schema guard, not production identity verification.
+- Safety intent forces handoff preview without any actual staff/channel notification.
+- CI expected at final HEAD: **75 new V16.3 tests**, plus 37 V16.2 and 42 V16.1 inherited = **154 offline assertions**, all source-only. If CI has not run at latest SHA, do NOT claim TESTED.
+- Preview UI is mobile-first local HTML/CSS with JS modules, no network, storage or production credentials; functional browser QA remains separate from unit tests.
