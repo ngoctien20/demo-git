@@ -108,6 +108,21 @@ assert_actor "$A" 1 'select count(*) from qa_rpc8.store_memberships;' 'A sees ow
 assert_actor "$B" 1 'select count(*) from qa_rpc8.store_memberships;' 'B sees own membership only'
 assert_actor "$A" 1 'select count(*) from qa_rpc8.products;' 'legacy products still Tenant-scoped, NOT release proof'
 assert_actor "$B" 1 'select count(*) from qa_rpc8.products;' 'legacy staff product read unchanged, NOT Store isolation'
+# P0 red-team: hypothetical M2 row in Store B while tenant-wide
+# legacy SELECT policy is active leaks to A. Both rows are synthetic CI only.
+psql -X -v ON_ERROR_STOP=1 -q -c "
+ INSERT INTO qa_rpc8.products(id,tenant_id,sku,price_vnd,stock_on_hand,store_id)
+ VALUES('bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',
+ '11111111-1111-4111-8111-111111111111',
+ 'QA-STORE-B-NO-CUTOVER',189000,9,
+ 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')" >/dev/null
+assert_actor "$A" 2 'select count(*) from qa_rpc8.products;' \
+ 'RED-TEAM: adding same-Tenant Store B row before M4 leaks to Owner A'
+psql -X -v ON_ERROR_STOP=1 -q -c "
+ DELETE FROM qa_rpc8.products
+ WHERE id='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb'" >/dev/null
+assert_actor "$A" 1 'select count(*) from qa_rpc8.products;' \
+ 'rollback of synthetic M2 row restores original Tenant read result'
 psql -X -v ON_ERROR_STOP=1 -q -c "UPDATE qa_rpc8.store_memberships SET active=false WHERE user_id='$B'" >/dev/null
 assert_actor "$B" 0 'select count(*) from qa_rpc8.stores;' 'revoked B sees no stores'
 assert_actor "$B" 0 'select count(*) from qa_rpc8.store_memberships;' 'revoked B sees no memberships'
