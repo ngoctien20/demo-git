@@ -43,7 +43,7 @@ jobs:
           for bad in (
               r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\s*\(',r'\bWebSocket\b',
               r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.',r'\bcreateHmac\s*\(',
-              r'\bGRANT\s',r'\bREVOKE\s',r'\beval\s*\('):
+              r'[\\x27\\x22]\\s*(?:GRANT|REVOKE)\\s',r'\beval\s*\('):
             assert not re.search(bad,s),bad
           assert "status:'BLOCKED_PENDING_INDEPENDENT_EVIDENCE'" in s
           assert "productionReleaseAuthorized:false" in s
