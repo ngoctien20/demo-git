@@ -75,7 +75,8 @@ function blocked(name,edit,reason){
  });}
 blocked('no project-controller signoff',b=>b.approvals.splice(0,1),'TWO_INDEPENDENT_APPROVERS_REQUIRED');
 blocked('no security signoff',b=>b.approvals.splice(1,1),'TWO_INDEPENDENT_APPROVERS_REQUIRED');
-blocked('three approvals rejected',b=>b.approvals.push(b.approvals[0]),'TWO_INDEPENDENT_APPROVERS_REQUIRED');
+blocked('three approvals rejected',b=>b.approvals.push({...b.approvals[0]}),'TWO_INDEPENDENT_APPROVERS_REQUIRED');
+blocked('aliased repeated approval object rejected',b=>b.approvals.push(b.approvals[0]),'UNTRUSTED_OR_SENSITIVE_INPUT');
 blocked('same issuer cannot sign twice',b=>{b.approvals[1].signerRef=ID_CONTROLLER},'SIGNER_ROLE_SCOPE_OR_TIME_INVALID');
 blocked('self-approved role duplication rejected',b=>{b.approvals[1].role='project_data_controller'},'SIGNER_ROLE_SCOPE_OR_TIME_INVALID');
 blocked('unknown signer rejected',b=>{b.approvals[1].signerRef='QA_ATTACKER_UNKNOWN'},'UNTRUSTED_OR_REVOKED_SIGNER');
