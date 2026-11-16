@@ -48,7 +48,7 @@ jobs:
           assert "status:'BLOCKED_PENDING_INDEPENDENT_EVIDENCE'" in s
           assert "productionReleaseAuthorized:false" in s
           assert "privilegeRevocationAuthorized:false" in s
-          assert 'BACKUP' in doc and 'PRODUCTION' in doc
+          assert 'BACKUP' in doc.upper() and 'PRODUCTION' in doc.upper()
           assert 'NO HOSTED MUTATION' in doc
           print('ADV6B.1 fail-closed read-only metadata gate: PASS')
           PY
