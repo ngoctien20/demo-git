@@ -1,0 +1,113 @@
+{
+  "checkpoint": "V15.0-03H.1_04H.1",
+  "observed_at_jst": "2026-11-16",
+  "project": "TIEN404 AI",
+  "environment": "SUPABASE_STAGING_READ_ONLY",
+  "source_of_truth": "mcp__Supabase__execute_sql/get_advisors; GitHub Draft PR",
+  "project_id": "ifxlvrhyjhbzbrkdsida",
+  "identity_scope": {
+    "supabase_auth_identity_providers": [
+      "email"
+    ],
+    "email_identities": 3,
+    "zalo_auth_linked_identity_count": 0,
+    "zalo_channel_secrets": 0,
+    "staging_qa_shop_a_active_owner_count": 1,
+    "staging_qa_shop_b_active_owner_count": 2,
+    "real_zalo_owner_certified": false
+  },
+  "database_policy": {
+    "public_products": {
+      "rls_enabled": true,
+      "force_rls": true,
+      "policy_name": "products_member_read",
+      "role": "authenticated",
+      "command": "SELECT",
+      "memberships_active_required": true,
+      "auth_uid_required": true
+    },
+    "public_tenants": {
+      "rls_enabled": true,
+      "force_rls": true,
+      "select_policy_count": 1
+    },
+    "public_tenant_memberships": {
+      "rls_enabled": true,
+      "force_rls": true,
+      "select_policy_count": 1
+    },
+    "grants": {
+      "anon_select_products": false,
+      "authenticated_select_products": true,
+      "authenticated_insert_products": false,
+      "authenticated_update_products": false,
+      "authenticated_delete_products": false
+    },
+    "real_authenticated_jwt_data_api_test": "NOT_RUN",
+    "audit_cannot_certify_real_member_access": true
+  },
+  "catalog_sources": {
+    "supabase_staging": {
+      "shop_a": {
+        "product_count": 1,
+        "active_count": 1,
+        "sku_namespace": "QA-A001"
+      },
+      "shop_b": {
+        "product_count": 1,
+        "active_count": 1,
+        "sku_namespace": "QA-B001"
+      }
+    },
+    "test_lab_v147_fixture": {
+      "shop_a": {
+        "sku_namespace": "A001"
+      },
+      "shop_b": {
+        "sku_namespace": "A001"
+      }
+    },
+    "data_source_mismatch": true,
+    "never_automatically_map_v147_to_supabase_sku": true,
+    "price_and_stock_values_not_published_in_manifest": true
+  },
+  "supabase_advisors": {
+    "security_anon_definer_rpc": {
+      "function": "public.qa_shop_b_zalo_claim",
+      "role": "anon",
+      "advisor_level": "WARN",
+      "vault_header_gate_observed": true,
+      "delegated_private_helper": "tien404_r1_qa.claim_owner_pairing_v3_synthetic",
+      "private_helper_direct_anon_execute": false,
+      "private_helper_expiry_replay_logic_observed": true,
+      "atomic_replay_behavior_tested": false,
+      "security_vulnerability_exploitable": "NOT_DETERMINED",
+      "remediation_url": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+    },
+    "authenticated_definer_rpc": [
+      "public.qa_owner_pairing",
+      "public.save_merchant_product"
+    ],
+    "auth_leaked_password_protection_warning": true,
+    "private_schema_rls_no_policy_info_count": 18,
+    "recommendation": "Review privilege/code audit; do not change GRANT or DEFINER under current scope"
+  },
+  "release_gates": {
+    "offline_jwt_rls_catalog_adapter": "IMPLEMENTED_SOURCE_ONLY",
+    "source_mismatch_guard": "IMPLEMENTED",
+    "real_user_jwt_rls_select": "BLOCKED_TEST_NOT_RUN",
+    "public_chat_trusted_bot_to_tenant": "BLOCKED_V14_8_G2_3",
+    "actual_provider_credential": "NOT_PROVISIONED",
+    "raw_customer_data_uploaded": false,
+    "real_catalog_backend_deployed": false,
+    "real_orders_written": 0,
+    "real_provider_sends": 0,
+    "real_model_api_calls": 0,
+    "production_changed": false
+  },
+  "next_actions": [
+    "Owner authenticated Shop A/B JWT read-only positive and cross-shop negative QA (no tokens in chat)",
+    "Independent review of publicly executable SECURITY DEFINER RPC permission and Vault guard",
+    "Separate authenticated public bot product read policy after certified Bot→Store and Merchant consent"
+  ]
+}
