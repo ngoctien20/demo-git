@@ -190,3 +190,20 @@ test('Redacted live topology and patch specification contain no Page/PSID/token 
   assert.equal(rendered.includes(k),false,k);
  }
 });
+
+
+test('real Meta Send loops back to next inbound item; per-message boundary is mandatory',()=>{
+ const c=baseline.connections;
+ assert.deepEqual(c['Send Messenger Reply - CONFIGURE TOKEN'].main[0].map(x=>x.node),
+  ['Verify Messenger Send Result']);
+ assert.deepEqual(c['Verify Messenger Send Result'].main[0].map(x=>x.node),
+  ['Record Successful Messenger MID']);
+ assert.deepEqual(c['Record Successful Messenger MID'].main[0].map(x=>x.node),
+  ['Loop One Message']);
+ const r=patched();noGo(r);
+ // Each canary reply ends at the shared Send, then the loop begins a NEW
+ // message. This assertion does NOT certify cross-message concurrency.
+ assert.equal(r.canary_path_reaches_ai_agent,false);
+ assert.equal(r.canary_path_reaches_single_sender,true);
+ assert.equal(r.atomic_one_shot_guard_implemented,false);
+});
