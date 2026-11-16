@@ -59,7 +59,7 @@ jobs:
           cli=(base/'private-operator-cli.mjs').read_text()
           tests=(base/'private-m0-owner-native-gates.test.mjs').read_text()
           manifest=json.loads((base/'actual-hosted-operator-checkpoint.json').read_text())
-          assert tests.count("test('")==44
+          assert tests.count("test('")==46
           assert 'T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_V1' in src
           assert 'STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED' in src
           assert 'LOCAL_ARCHIVE_TOC_REVIEW_ONLY' in src
