@@ -1,0 +1,421 @@
+{
+  "contract": "T404_CBOT_CANARY03_REDACTED_ACTUAL_TOPOLOGY_ONLY",
+  "source": "CONNECTED_N8N_READ_ONLY_SNAPSHOT_20261116",
+  "id": "Z7FdV7uDvApfbURQ",
+  "activeVersionId": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+  "active": true,
+  "nodes": [
+    {
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "parameters": {}
+    },
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "tien404-messenger-qa"
+      }
+    },
+    {
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "parameters": {}
+    },
+    {
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {}
+    },
+    {
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {}
+    },
+    {
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "tien404-messenger-qa",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "name": "Respond to Webhook2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {}
+    },
+    {
+      "name": "Crypto",
+      "type": "n8n-nodes-base.crypto",
+      "parameters": {}
+    },
+    {
+      "name": "Verify Meta Signature",
+      "type": "n8n-nodes-base.if",
+      "parameters": {}
+    },
+    {
+      "name": "Respond to Webhook3",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {}
+    },
+    {
+      "name": "Verify Signature Timing-Safe",
+      "type": "n8n-nodes-base.code",
+      "parameters": {}
+    },
+    {
+      "name": "Extract Messenger Text",
+      "type": "n8n-nodes-base.code",
+      "parameters": {}
+    },
+    {
+      "name": "Skip Duplicate Message ID",
+      "type": "n8n-nodes-base.dataTable",
+      "parameters": {}
+    },
+    {
+      "name": "Loop One Message",
+      "type": "n8n-nodes-base.splitInBatches",
+      "parameters": {}
+    },
+    {
+      "name": "Messenger AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "parameters": {}
+    },
+    {
+      "name": "Messenger OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "parameters": {}
+    },
+    {
+      "name": "Messenger Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "parameters": {}
+    },
+    {
+      "name": "Read Products - Messenger Read Only",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "parameters": {}
+    },
+    {
+      "name": "Prepare Messenger Reply",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const incoming=$input.first().json; const current=$('Loop One Message').first(1, $('Loop One Message').context.currentRunIndex).json; const reply=incoming.output; return [{json:{replyText:reply}}];"
+      }
+    },
+    {
+      "name": "Send Messenger Reply - CONFIGURE TOKEN",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {}
+    },
+    {
+      "name": "Record Successful Messenger MID",
+      "type": "n8n-nodes-base.dataTable",
+      "parameters": {}
+    },
+    {
+      "name": "Verify Messenger Send Result",
+      "type": "n8n-nodes-base.code",
+      "parameters": {}
+    },
+    {
+      "name": "create_order",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "parameters": {}
+    },
+    {
+      "name": "update_order_address",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "parameters": {}
+    },
+    {
+      "name": "manage_order",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "parameters": {}
+    },
+    {
+      "name": "get_order_status",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "parameters": {}
+    },
+    {
+      "name": "create_support_ticket",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Meta Signature": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature Timing-Safe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature Timing-Safe": {
+      "main": [
+        [
+          {
+            "node": "Verify Meta Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Extract Messenger Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Messenger Text": {
+      "main": [
+        [
+          {
+            "node": "Skip Duplicate Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Duplicate Message ID": {
+      "main": [
+        [
+          {
+            "node": "Loop One Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop One Message": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Messenger OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Messenger Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Products - Messenger Read Only": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Messenger AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Messenger Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Messenger Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Messenger Reply - CONFIGURE TOKEN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Successful Messenger MID": {
+      "main": [
+        [
+          {
+            "node": "Loop One Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Messenger Reply - CONFIGURE TOKEN": {
+      "main": [
+        [
+          {
+            "node": "Verify Messenger Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Messenger Send Result": {
+      "main": [
+        [
+          {
+            "node": "Record Successful Messenger MID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_order": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_order_address": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_order": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_order_status": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_support_ticket": {
+      "ai_tool": [
+        [
+          {
+            "node": "Messenger AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
