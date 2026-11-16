@@ -152,7 +152,7 @@ export function createQaIntakeLedger(){
    total:REQUIRED_PROOFS.length,
    metadata_reviewed:evidence.filter(x=>x.state==='QA_METADATA_REVIEWED_ONLY').length,
    evidence:Object.freeze(evidence),real_evidence_count:0,
-   real_jwt_rsl:'NOT_RUN',hosted_backup:'NOT_RUN',
+   real_jwt_rls:'NOT_RUN',hosted_backup:'NOT_RUN',
    prod_approval:false,release:RELEASE});
  }
  function auditForStore({scope,store}){
