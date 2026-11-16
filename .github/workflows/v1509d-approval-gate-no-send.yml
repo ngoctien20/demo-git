@@ -1,0 +1,60 @@
+name: TIEN404 V15.0-09D Private Owner & Real Backup Approval Gate (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1509d-owner-intake-real-backup-authorization-gate-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1509d-owner-backup/**'
+      - 'docs/ai-handoff/V15_09D_*'
+      - '.github/workflows/v1509d-approval-gate-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-authorization-policy:
+    name: Dual Signature Synthetic Rehearsal and Prior Security QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and approved zero-write test environment
+        run: |
+          node --check qa/v1509d-owner-backup/backup-authorization-gate.cjs
+          node --check qa/v1509d-owner-backup/backup-authorization-gate.test.cjs
+      - name: V15.0-09D dual Ed25519 synthetic human approval review negative matrix
+        run: node --test qa/v1509d-owner-backup/backup-authorization-gate.test.cjs
+      - name: V15.0-09C synthetic Owner G2.3 and recovery regression
+        run: node --test qa/v1509c-owner-recovery/evidence-gates.test.cjs
+      - name: V15.0-09B four row Ownership QA regression
+        run: node --test qa/v1509b-hosted-rls/owner-proof-gate.test.cjs
+      - name: V15.0-09 cross-Store and SQL review safety regression
+        run: |
+          node --test qa/v1509-hosted-store/store-security-contract.test.cjs
+          node --test qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: V15 prior AI Skills hardening regression
+        run: |
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
+      - name: Deny external SDKs, payment, credentials, hosted write and sending
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          d=Path('qa/v1509d-owner-backup')
+          source='\n'.join(p.read_text() for p in d.glob('*.cjs') if not p.name.endswith('.test.cjs'))
+          for string in ('fetch(', 'axios(', 'sendMessage(', 'new OpenAI(', 'process.env.',
+                         'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_DB_PASSWORD',
+                         'ZALO_BOT_TOKEN', 'pg_dump ', 'pg_restore ', 'DELETE FROM ',
+                         'UPDATE public.', 'ALTER TABLE ', 'GRANT '):
+              assert string not in source, f'Forbidden active function or credential: {string}'
+          assert 'allowedToExport:false' in source
+          assert 'approvedForRestore:false' in source
+          assert 'realSignatureCertified:false' in source
+          print('PASS ZERO REAL AUTHORIZATION / ZERO HOSTED DATA ACCESS / ZERO SEND')
+          PY
