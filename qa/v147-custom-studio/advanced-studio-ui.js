@@ -9,7 +9,8 @@
  const api=window.T404Studio;
  const engine=window.T404PresentationEvaluator;
  const registry=window.T404ChannelRegistry;
- if(!api||!engine||!registry)throw Error('ADV4_REQUIRED_DEPENDENCIES_MISSING');
+ const safeAdapter=window.T404SafeChannelAdapter;
+ if(!api||!engine||!registry||!safeAdapter)throw Error('ADV5_REQUIRED_DEPENDENCIES_MISSING');
  const $=id=>document.getElementById(id);
  const el=(tag,text,className)=>{
    const node=document.createElement(tag);
@@ -150,7 +151,7 @@
    }
    return line;
  }
- function paintDecision(result){
+ function paintDecision(result,channelPreview){
    const {shop,channel}=current();
    const cfg=liveStudio().get(shop,channel);
    const fixture=api.FIXTURES[shop];
@@ -200,15 +201,20 @@
      selectedEmphasis:result.decision.selectedEmphasis,fallbackReasons:result.decision.fallbackReasons,
      actionExecutable:result.decision.actionExecutable,orderLookupAuthorized:result.orderLookupAuthorized,
      providerSends:result.providerSends,hostedWrites:result.hostedWrites,
-     realModelCalls:result.realModelCalls,releaseAuthorized:result.releaseAuthorized
+     realModelCalls:result.realModelCalls,releaseAuthorized:result.releaseAuthorized,
+     adapterContract:channelPreview.contract,adapterKind:channelPreview.adapterKind,
+     safeMessagePreview:channelPreview.message,delivery:channelPreview.delivery,
+     signedActionPreview:channelPreview.actionProposal
    },null,2);
  }
  function render(){
    const {shop,channel}=current();
    $('colorLabel').textContent=$('color').value.toUpperCase();
    try{
-     const result=engine.decide({raw:proposal(),shop,channel,studio:liveStudio(),api});
-     paintDecision(result);
+     const structured=proposal(),ephemeralStudio=liveStudio();
+     const result=engine.decide({raw:structured,shop,channel,studio:ephemeralStudio,api});
+     const preview=safeAdapter.build({raw:structured,shop,channel,studio:ephemeralStudio,api});
+     paintDecision(result,preview);
      $('status').dataset.error='false';
    }catch(err){
      $('chat').replaceChildren(el('div','Không thể xem trước: '+err.message,'bubble'));
