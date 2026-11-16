@@ -29,6 +29,8 @@ jobs:
           node --check qa/cbot-messenger-canary03/exact-locked-graph-patch.mjs
           node --check qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
           node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+      - name: Actual n8n execution #4181 exact Loop+Prepare recipient pairing receipt
+        run: node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
       - name: Regression parent 209 actual-source and manual QA contracts
         run: |
           node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
