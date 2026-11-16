@@ -1,0 +1,186 @@
+{
+  "contract": "T404_V169_PRIVATE_MERCHANT_AUTHORITY_INTAKE_V1",
+  "state": "PROPOSED_NOT_EXTERNAL_VERIFIED",
+  "scope": "PER_TENANT_PER_STORE",
+  "storage": "PRIVATE_OPERATOR_VAULT_NOT_GITHUB",
+  "prohibition": "NO_REAL_IDENTITIES_TOKENS_PII_OR_FILE_BYTES_IN_SOURCE",
+  "provenance": {
+    "baseline_pr": 203,
+    "baseline_head": "20d51ffad8c03977901ad2e92f9dbe50d45fa133",
+    "host_project": "ifxlvrhyjhbzbrkdsida",
+    "verification": "read-only schema and security advisors only"
+  },
+  "actors": [
+    {
+      "role": "MERCHANT_OWNER",
+      "required": true,
+      "can_attest": [
+        "store_authority",
+        "legitimate_catalog_source",
+        "privacy_scope",
+        "intent_to_import"
+      ],
+      "cannot_certify": [
+        "JWT_RLS",
+        "security_reviewer",
+        "database_backup"
+      ]
+    },
+    {
+      "role": "TIEN404_ONBOARDING_OPERATOR",
+      "required": true,
+      "can_attest": [
+        "form_validation",
+        "submitted_metadata",
+        "review_request"
+      ],
+      "cannot_certify": [
+        "merchant_consent",
+        "hosted_security"
+      ]
+    },
+    {
+      "role": "SECURITY_REVIEWER_INDEPENDENT",
+      "required": true,
+      "can_attest": [
+        "hosted_rbac_rls_test_evidence",
+        "revocation_security_review"
+      ],
+      "cannot_certify": [
+        "merchant_business_authority_without_owner"
+      ]
+    },
+    {
+      "role": "BACKUP_RECOVERY_OPERATOR",
+      "required": true,
+      "can_attest": [
+        "disposable_restore_checksum",
+        "rollback_drill"
+      ],
+      "cannot_certify": [
+        "merchant_business_authority"
+      ]
+    },
+    {
+      "role": "PROVIDER_CHANNEL_OPERATOR",
+      "required": true,
+      "can_attest": [
+        "verified_Page_OA_owner_proof"
+      ],
+      "cannot_certify": [
+        "hosted_db_rls"
+      ]
+    }
+  ],
+  "evidence_request": [
+    {
+      "kind": "MERCHANT_AUTHORITY",
+      "proof": "verified business account owner and contract signature",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "OWNER_JWT_SESSION",
+      "proof": "independent authenticated JWT evidence (not SQL editor postgres)",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "CHANNEL_PAGE_OA_OWNER",
+      "proof": "provider-native Page/OA owner and scoped authorization",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "STORE_RECORD_MAPPING",
+      "proof": "validated 4-row ownership and all legacy rows",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "RESTORE_DRILL",
+      "proof": "approved encrypted backup and disposable restore evidence",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "RLS_CROSS_STORE",
+      "proof": "same-Tenant Shop A/B real JWT positive and cross-store negative tests",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "RPC_CALLER_INVENTORY",
+      "proof": "per-RPC authenticated caller map and independently authorized revoke plan",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "DATA_PROCESSING_AGREEMENT",
+      "proof": "signed data scope/retention/subprocessor and privacy terms",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    },
+    {
+      "kind": "N8N_SAAS_LICENSE",
+      "proof": "written n8n Cloud license fit for TIEN404 multi-merchant business",
+      "private_evidence_ref": null,
+      "status": "MISSING"
+    }
+  ],
+  "private_file_controls": {
+    "uploaded_bytes_allowed_now": false,
+    "proposed_bucket_visibility": "private",
+    "proposed_path": "opaque_versioned_object_key_computed_server_side",
+    "signed_url": "issue_after_owner_JWT_and_Store_authorization_only",
+    "signed_url_ttl_seconds_policy": "short_ttl_operator_review; NOT VERIFIED",
+    "cache_behavior": "short cacheControl and authorized re-check for sensitive files",
+    "supported_data_first": "PRODUCT_CATALOG_ONLY",
+    "customer_pii_import": "SEPARATE LEGAL_AND_RLS_GATE",
+    "review_state_machine": [
+      "REQUESTED",
+      "PRIVATE_QUARANTINE",
+      "CONTENT_SNIFFED",
+      "ANTIMALWARE_VERIFIED",
+      "SCHEMA_VALIDATED",
+      "DIFF_READY",
+      "OWNER_APPROVED",
+      "INDEPENDENT_REVIEW",
+      "COMMIT_APPROVAL_REQUIRED",
+      "COMMITTED"
+    ],
+    "prohibited_shortcuts": [
+      "client_supplied_store_id",
+      "plaintext_credentials",
+      "public_bucket",
+      "blind_upsert",
+      "auto_delete_missing_sku",
+      "unverified_scanner_mock_as_approval",
+      "unsigned_owner_self_report"
+    ]
+  },
+  "hosted_test_matrix": {
+    "same_tenant_shop_A_owner_reads_shop_B": false,
+    "same_tenant_shop_B_owner_reads_shop_A": false,
+    "same_tenant_shop_A_owner_writes_shop_B": false,
+    "same_tenant_shop_B_owner_writes_shop_A": false,
+    "different_tenant_shop_C_cross_access": false,
+    "revoked_owner_session_access": false,
+    "anon_rpc_privilege_without_permitted_caller": false,
+    "duplicate_order_effect": false,
+    "unknown_legacy_owner_mapping_is_quarantined": true,
+    "status": "NOT_RUN_REAL_JWT"
+  },
+  "formal_go_gates": {
+    "independent_authentication": "BLOCKED",
+    "backup_restore": "BLOCKED",
+    "per_rpc_security_review": "BLOCKED",
+    "per_shop_legal_consent": "BLOCKED",
+    "private_storage_malware_scanning": "BLOCKED",
+    "real_jwt_rls": "BLOCKED",
+    "licensing": "BLOCKED",
+    "written_release_authorization": "BLOCKED"
+  },
+  "final_release_status": "NO_GO",
+  "rollback": "close source-only Draft PR; no hosted state changed"
+}

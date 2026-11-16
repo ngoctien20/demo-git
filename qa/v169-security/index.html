@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'">
+<title>TIEN404 V16.9 — Merchant Onboarding Security Readiness</title>
+<link rel="stylesheet" href="../v168-merchant/studio.css">
+<script type="module" defer src="./readiness-ui.mjs"></script></head>
+<body><div class="shell">
+<header class="top"><div class="brand"><div class="mark">T<span>404</span></div><div><p class="eyebrow">TIEN404 / SECURITY GATES</p><h1>Kiểm tra điều kiện mở cửa hàng</h1></div></div><span class="status">SYNTHETIC · NO HOSTED AUTH · NO SEND</span></header>
+<div class="notice" role="note"><strong>Chưa nhận khách thương mại:</strong> Đơn vị kiểm thử bên ngoài và chủ cửa hàng thật chưa xác minh JWT, Page/OA, backup/restore và quyền dữ liệu. Không nhập file, số điện thoại, chứng cứ hay tài liệu thật vào màn hình này.</div>
+<div class="layout">
+<aside><div class="sidehead">QUYỀN SHOP — QA FIXTURES</div>
+<label for="shop">Cửa hàng</label><select id="shop"><option value="A">Shop A · Tenant 1</option><option value="B">Shop B · Tenant 1</option><option value="C">Shop C · Tenant 2</option></select>
+<div class="scope" id="scope"></div><div class="rule"></div>
+<p class="small muted">Mỗi Shop có mock Owner, người kiểm tra metadata và người mô phỏng quét file khác nhau. Quyền giả lập này không tạo ra Supabase JWT thật.</p>
+<div class="rule"></div>
+<p class="eyebrow">Cổng phát hành</p>
+<p class="tag warn">PRODUCTION: BLOCKED</p>
+</aside>
+<main>
+<section class="panel active">
+<div class="heading"><div><p class="eyebrow">01 / OWNERSHIP</p><h2>Chứng cứ quyền sở hữu</h2><p class="muted">Chỉ ghi mã tham chiếu QA; không thu nhận credential, mã OTP, JWT hay hình ảnh giấy tờ.</p></div><span class="tag">METADATA ONLY</span></div>
+<div class="two"><div class="card">
+<h3>Nộp và rà soát metadata</h3>
+<label for="evidenceType">Loại chứng cứ</label><select id="evidenceType"></select>
+<div class="actions"><button class="primary" id="submitProof">Ghi nhận tham chiếu QA</button><button class="secondary" id="reviewProof">Người kiểm tra rà soát metadata</button></div>
+<pre id="evidenceResult" class="output" aria-live="polite"></pre>
+</div><div class="card"><h3>Ma trận theo Shop</h3><div id="evidenceMatrix" class="connections"></div><p class="muted small">Ngay cả khi 9/9 mục được đánh dấu metadata reviewed, trạng thái xác minh hosted vẫn BLOCKED.</p></div></div>
+</section>
+<section class="panel active">
+<div class="heading" style="margin-top:28px"><div><p class="eyebrow">02 / PRIVATE FILE</p><h2>Cách ly file nhập hàng</h2><p class="muted">Quy trình mẫu: quarantine → quét giả lập → so sánh sản phẩm → Owner duyệt → reviewer rà soát.</p></div><span class="tag">NO UPLOAD</span></div>
+<div class="card">
+<div class="actions">
+<button id="startImport" class="secondary">1. Khởi tạo metadata</button>
+<button id="scanImport" class="secondary">2. Mô phỏng quét file</button>
+<button id="previewImport" class="secondary">3. Xem trước sản phẩm</button>
+<button id="ownerApprove" class="secondary">4. Owner duyệt bản xem trước</button>
+<button id="reviewImport" class="secondary">5. Kiểm tra metadata</button>
+</div><pre id="importResult" class="output" aria-live="polite"></pre>
+<button id="attemptCommit" class="primary">Thử ghi thật (phải bị BLOCKED)</button>
+</div>
+</section>
+<section class="panel active">
+<div class="heading" style="margin-top:28px"><div><p class="eyebrow">03 / RELEASE GATE</p><h2>Điều kiện chưa hoàn thành</h2><p class="muted">Tất cả cổng có thể yêu cầu chứng cứ độc lập. Mô phỏng không được mở chúng.</p></div><span class="tag warn">NO-GO</span></div>
+<div class="card"><div id="blockedGates" class="connections"></div>
+<pre id="releaseResult" class="output" aria-live="polite"></pre></div>
+</section>
+</main></div>
+<footer>TIEN404 V16.9 · SOURCE-ONLY · ZERO BYTES UPLOADED · NO CREDENTIAL · NO HOSTED SQL · ZERO PROVIDER SEND</footer>
+</div></body></html>
