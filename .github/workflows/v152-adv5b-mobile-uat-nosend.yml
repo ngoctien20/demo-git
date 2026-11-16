@@ -1,0 +1,103 @@
+name: TIEN404 V15.2 ADV5B Mobile Merchant UAT Cards QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv5b-merchant-uat-mobile-cards-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5B_*'
+      - '.github/workflows/v152-adv5b-mobile-uat-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5B_*'
+      - '.github/workflows/v152-adv5b-mobile-uat-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-contract-and-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check ADV5B syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-merchant-uat-view.js
+          node --check qa/v147-custom-studio/advanced-merchant-uat-mobile-cards.test.cjs
+          node --check qa/v147-custom-studio/advanced-merchant-uat-mobile-cards-browser.test.cjs
+      - name: ADV5B focused mobile card source/logic tests
+        run: node --test qa/v147-custom-studio/advanced-merchant-uat-mobile-cards.test.cjs
+      - name: Inherited ADV5 to V14.7 regression, no business logic changes
+        run: |
+          for name in \
+            advanced-canonical-registry-rc.test.cjs \
+            advanced-merchant-uat.test.cjs \
+            advanced-custom-studio.test.cjs \
+            advanced-ai-presentation-evaluator.test.cjs \
+            advanced-secure-action-registry.test.cjs \
+            advanced-channel-registry.test.cjs \
+            advanced-presentation-policy.test.cjs \
+            studio-core.test.cjs; do
+            node --test qa/v147-custom-studio/"$name"
+          done
+      - name: Static No-Send No-Hosted-Write No-Live-Signer gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          html=(root/'advanced-custom-studio.html').read_text()
+          js=(root/'advanced-merchant-uat-view.js').read_text()
+          for x in ['connect-src \\'none\\'','img-src \\'none\\'','form-action \\'none\\'',
+               'frame-src \\'none\\'','script-src \\'self\\'','id="uatRows"',
+               '@media(max-width:600px)']:
+           assert x in html,x
+          for x in ["statusLabel.htmlFor=select.id","noteLabel.htmlFor=note.id",
+                    "form.update(id,select.value,note.value)"]:
+           assert x in js,x
+          for source in [js,(root/'advanced-custom-studio.js').read_text()]:
+           for patt in [r'\\bfetch\\s*\\(',r'\\bXMLHttpRequest\\b',r'\\bWebSocket\\b',
+                        r'\\b(localStorage|sessionStorage|indexedDB)\\b',
+                        r'\\binnerHTML\\b',r'\\bnew Function\\s*\\(']:
+             assert not re.search(patt,source),patt
+          print('PASS NO SEND, NO LIVE WRITES, SINGLE UAT DOM')
+          PY
+  mobile-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install disposable Chromium
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Start local test server (loopback only)
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-adv5b-mobile.log 2>&1 &
+          sleep 2
+      - name: Verify nine responsive widths and no state loss on resizing
+        run: node qa/v147-custom-studio/advanced-merchant-uat-mobile-cards-browser.test.cjs
+      - name: Existing Merchant UAT browser regression
+        run: node qa/v147-custom-studio/advanced-merchant-uat-browser.test.cjs
+      - name: Rebuild SHA256-CSP offline HTML from actual source
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - name: Existing four-width file protocol regression
+        run: node qa/v147-custom-studio/advanced-merchant-uat-standalone-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv5b-merchant-uat-mobile-cards-320-390-412
+          path: qa-artifacts-v152-adv5b/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v152-adv5b-mobile-merchant-uat-single-html
+          path: |
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline.html
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline_MANIFEST.json
+          if-no-files-found: error
