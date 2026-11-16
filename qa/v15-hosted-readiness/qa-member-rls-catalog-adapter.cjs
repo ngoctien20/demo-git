@@ -17,15 +17,18 @@ const UUID=/^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$
 const QA_SHOP_SLUG=new Set(['qa-staging-shop-a-20261110','qa-staging-shop-b-20261110']);
 const PRODUCT_SKU=/^QA-[A-Z]\d{3}$/;
 const MEMBER_ROLES=new Set(['owner','manager','staff']);
+// Actual Supabase products_price_vnd_check: 0 <= price_vnd <= 1,000,000,000,000.
+// This QA selling-price adapter additionally rejects zero until free-item policy is approved.
+const MAX_QA_PRICE_VND=1000000000000;
 const DENY=(reason)=>Object.freeze({status:'BLOCKED',reason,can_send:false,provider_sends:0,orders_written:0,stock_writes:0,real_model_calls:0,production_catalog_access:false});
 function safePrice(value){
  if(typeof value==='number'){
-   if(!Number.isSafeInteger(value)||value<=0)return null;
+   if(!Number.isSafeInteger(value)||value<=0||value>MAX_QA_PRICE_VND)return null;
    return value;
  }
  if(typeof value==='string'&&/^[1-9][0-9]{0,15}$/.test(value)){
    const number=Number(value);
-   return Number.isSafeInteger(number)?number:null;
+   return Number.isSafeInteger(number)&&number<=MAX_QA_PRICE_VND?number:null;
  }
  return null;
 }
