@@ -60,6 +60,7 @@ jobs:
                             'api.supabase.co', 'app.n8n.cloud', 'execute_workflow('):
               assert forbidden not in src, forbidden
           assert 'DISPOSABLE_SQLITE_ONLY' in src
-          assert 'V14_8_SIGNED_SYNTHETIC_FIXTURE_ONLY' not in src or True
+          assert 'DISPOSABLE_SQLITE_ONLY' in src
+          assert 'model_calls:0' in src
           print('PASS: no external provider, no paid model calls, no hosted DB, no real customer orders')
           PY
