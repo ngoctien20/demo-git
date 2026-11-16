@@ -29,7 +29,7 @@ Version correction: User-pasted "V15.0-09C REAL AI CAPABILITY" is renamed V15.0-
 ## 4. QA evidence / semantics
 - GitHub Action initial verified at commit 6715396c12aa5bfcf7c6de98ce8ff168dc5ce9b0:
   #43795187093 SUCCESS, with 20 new Node Knowledge QA, 45 new Python SQLite QA, 78 inherited V15/Skills/Sales Lite/dataset synthetic tests = 143/143 PASS.
-- After initial CI, additional Shop client claim allowlisting hardening and locale test were added to source. The exact final HEAD must be verified with new CI before claiming final 144/144 QA.
+- After initial CI, client claim hardening and locale test were added. At commit fd60ba13897faa72385d33551476c11268019b2b, GitHub Action #43795536679 SUCCESS: 21 Node Shop-Knowledge tests + 45 actual disposable SQLite tests + 78 inherited tests = 144/144 PASS. V15 AI Core/Model Cost offline regression #43795536749 SUCCESS. These are OFFLINE/SYNTHETIC/SQLITE metrics ONLY. This checkpoint text commit itself must have green CI at exact HEAD before final TESTED claim.
 - E2E is SIMULATED CHANNEL ingress with real DISPOSABLE SQLite persistence, not real hosted Messenger/Zalo provider data. Test proves synthetic post-link order lookup from same DB, not any real order or provider-native identity.
 - 96+36 AI cases: DATASET STRUCTURE VERIFIED LOCALLY, REAL MODEL SCORE NOT RUN. No meaningful P50/P95, tool-call accuracy, hallucination rate or real token-cost metrics calculated.
 - Legacy 5-case GPT5-nano QA verdict is not independent benchmark and does not certify tool call correctness. D05 toolHealthy is P1 to audit.
