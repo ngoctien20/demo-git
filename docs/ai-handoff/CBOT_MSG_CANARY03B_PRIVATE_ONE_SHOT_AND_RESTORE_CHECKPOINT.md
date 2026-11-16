@@ -67,8 +67,21 @@ Source-only `qa/cbot-messenger-canary03b/private-evidence-redacted-status.json` 
 - **VERIFIED:** n8n Published and latest Canary QA workflow remain as in PR #221. No existing global claim table evidence or real private PSID authorization was obtained.
 - **IMPLEMENTED:** synthetic at-most-one claim engine; review-only transactional SQL; private proof intake gate; in-memory topology restore rehearsal; dedicated tests and GitHub CI.
 - **TESTED:** offline CI at exact HEAD once complete; real LIVE02 is **NOT RUN**.
-- **LIVE CHANGES IN THIS MILESTONE:** None (no n8n workflow creation/execute/publish, no database write, no Meta API/provider send, no token, no customer Order). Prior QA workflows stay Inactive.
+- **LIVE / QA CHANGE LEDGER:** No Messenger Published change, no Meta send/credential, no database write or customer Order. One NEW **INACTIVE** manual 2-node n8n QA workflow `o8pUHiUpiQG1TLxS` was created in Personal/`90_QA - DIAGNOSTICS` and executed once as synthetic QA #4190. It remains Inactive and retains normal n8n execution history. Prior QA workflows stay Inactive.
 - **RELEASE:** NO-GO.
 - **Next:** `CBOT-MSG-CANARY-03C — Private One-Recipient Attestation × Durable Atomic Backend Approval × Full Backup/Restore Operator Acceptance`. Owner should provide only redacted native Page role/QA recipient confirmation; all PSID/token/backup paths remain PRIVATE. A future real cutover requires *new*, narrow consent for the exact reviewed patch and live send.
 
 **Checkpoint:** `CBOT-MSG-CANARY-03B — Atomic Source Contract × Redacted Restore QA × Private Authority Pending × LIVE02 NO-GO`.
+
+
+### 7. New real n8n QA execution #4190 — source simulation, NOT hosted atomicity
+
+One new **INACTIVE** workflow `TIEN404 Canary-03B Atomic Source QA — INACTIVE NO SEND`, ID `o8pUHiUpiQG1TLxS` in Personal / `90_QA - DIAGNOSTICS`, **2 nodes** Manual Trigger → Code and **0** webhook, credentials, HTTP request, AI model, business tools or Meta send nodes. SDK validation and inactive/scope inspections passed.
+
+A single manual n8n execution **#4190 SUCCESS** (2026-11-16T15:29:53.275Z–15:29:55.022Z, corresponding to **17 Nov 2026 JST**) has 2/2 successful nodes. The synthetic Code ran **100 competing Promise.all attempts** on one in-memory grant, got **1 approved preview / 99 denied**, and denied a second distinct Message ID. It returned `backend=MEMORY_ONLY_NOT_DURABLE`; zero real Meta Sends, zero Orders writes, zero paid model, zero Published changes. This **cannot** prove multi-worker/hosted transactional exclusivity, real Page/PSID identity or delivery.
+
+New privacy-safe file `qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.json` plus 7 tests captures the observed runtime. It contains no raw Page ID, PSID, token, message or customer data. **No LIVE02 message** was initiated.
+
+**Rollback distinction:** Close Draft PR #235 to remove source-only changes. This does NOT delete the independently created inactive n8n QA workflow or its audit execution #4190; retain until a separately approved cleanup. No Published workflow rollback is needed because production is untouched.
+
+**CI truth:** The GitHub connector currently has not surfaced a PR-triggered workflow run for the 03B exact HEAD. Do not mark the new source suite PASS without a confirmed GitHub Actions result. The manual n8n #4190 result is independently verified and PASS.
