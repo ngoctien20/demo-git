@@ -54,3 +54,17 @@ For each Product/Order, independently inspect primary Store/merchant origin, Ten
 - Mark actual test pass only after checking exact commit GitHub Actions evidence.
 
 Rollback of Draft PR: close it; no hosted restoration required because **no Supabase hosted DDL, GRANT, RLS policy, merchant row mutation, actual backup, webhook send, n8n Published edit, credential access, provider traffic or merge occurred**.
+
+
+## 6. Independent CI acceptance receipt — 16 November 2026 JST
+
+**Tested source commit:** `fb0069c2840616cc4825079f0df47e5f764a940c`  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/43889148687
+
+- `RPC.9 privacy and 140 Node source tests`: **SUCCESS** — new RPC.9 14/14 plus inherited RPC.7/M0/H11R 28+14, RPC.6 24, V14.4.3 Owner linter 36, ADV6C backup denial 6, RPC.5 security 18 = **140/140 Node PASS**; static NO-HOSTED SQL/network check **PASS**.
+- `RPC.9 PG17 atomic M2M4`: **SUCCESS** — actual disposable PostgreSQL 17 synthetic A/B same Tenant and C separate Tenant. OLD Tenant policy demonstrates A↔B Product/Order visibility; `BEGIN ... atomic M2+M4 ... ROLLBACK` proves both backfill and policies restored; injected row-count drift aborts without partial data/policy effects; `COMMIT` applies Store scope in disposable DB only; A/B cross-store Product and Order reads denied, C isolated, unassigned denied, revoked Manager B denied. No synthetic Product/Order lost.
+- `RPC.9 HOSTED M0/M1/M2M4 AUTHORITY — NO-GO`: expected **FAIL/exit 3**. M0 actual recovery, Owner-to-Store original proof, M1 actual hosted schema and independently authorized cutover remain **BLOCKED**. Overall workflow FAILURE is intentional hosted release rejection, not a failed offline QA suite.
+- This confirms **transactional test logic on synthetic PostgreSQL**, not real hosted traffic concurrency, latency budget, approved maintenance window, Auth JWT, independent restore, M3 composite FK, privileged caller compatibility or full production rollback.
+- User-accepted **limited** H11R application archive acceptance is preserved without retry, re-export or modified files. Auth/Storage recovery still deferred by user, and remains incomplete for any full-service recovery claim.
+
+**Checkpoint:** `RPC9_DISPOSABLE_ATOMIC_M2M4_TESTED_HOSTED_NO_GO`. **No live writes, no Supabase hosted DDL/RLS, no n8n Published edits, no RPC REVOKE, no real provider send**. Closing child Draft PR rolls back source-only work.
