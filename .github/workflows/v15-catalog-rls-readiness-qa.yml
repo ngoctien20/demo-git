@@ -1,0 +1,51 @@
+name: TIEN404 V15.03H.1-04H.1 Supabase RLS Catalog Readiness QA
+
+on:
+  push:
+    branches:
+      - work/v1503h1-04h1-auth-rls-catalog-readiness-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-hosted-readiness/**'
+      - 'docs/ai-handoff/TIEN404_V15_03H1_04H1*'
+      - '.github/workflows/v15-catalog-rls-readiness-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-rls-readiness:
+    name: Supabase QA Catalog user-JWT/RLS offline gates (NO SEND)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Catalog and identity gate syntax
+        run: |
+          node --check qa/v15-hosted-readiness/trusted-ingress-gate.cjs
+          node --check qa/v15-hosted-readiness/authorized-business-tools.cjs
+          node --check qa/v15-hosted-readiness/qa-member-rls-catalog-adapter.cjs
+          node --check qa/v15-hosted-readiness/qa-member-rls-catalog-adapter.test.cjs
+      - name: Previous V15.03H/04H signed proof and tool-security regression
+        run: node --test qa/v15-hosted-readiness/hosted-readiness-gates.test.cjs
+      - name: V15.03H.1/04H.1 user-JWT RLS Catalog source and cross-Shop negative QA
+        run: node --test qa/v15-hosted-readiness/qa-member-rls-catalog-adapter.test.cjs
+      - name: Verify no production network, service-role or write paths in candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v15-hosted-readiness/qa-member-rls-catalog-adapter.cjs')
+          s=p.read_text(encoding='utf8')
+          for bad in ['fetch(', 'axios(', 'new OpenAI(', 'sendMessage(', 'service_role_token', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY', 'INSERT INTO', 'DELETE FROM', 'UPDATE public.', 'DROP TABLE']:
+              assert bad not in s, bad
+          import re
+          assert not re.search(r'(?im)^\s*GRANT\s+\w+', s), 'ACTIVE_SQL_GRANT_STATEMENT_FOUND'
+          assert "hasServiceRoleKey===false" in s
+          assert "backend.allowWrite===false" in s
+          assert "CATALOG_SOURCE_MISMATCH" in s
+          print('PASS: source-only authorized user JWT member QA gate, no writes')
+          PY
