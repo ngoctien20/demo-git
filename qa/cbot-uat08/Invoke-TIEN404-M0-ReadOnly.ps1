@@ -135,8 +135,59 @@ try {
   $summary = @{}
   foreach ($line in $output) {
     $raw = [string]$line
-    if ($raw -notmatch '^([A-Za-z]+)=([A-Za-z0-9_+-]{0,100})$') { continue }
-    $key = [string]$matches[1]; $value = [string]$matches[2]
+    $separator = $raw.IndexOf('=')
+    if ($separator -lt 1) { continue }
+    $key = $raw.Substring(0,$separator)
+    $value = $raw.Substring($separator+1)
+    if ($key -notmatch '^[A-Za-z]+
+  $archiveStage = "RPC7_SAFE_RECEIPT"
+  if ($summary["receiptSavedLocally"] -ne "true" -or
+      $summary["m0Approved"] -ne "false" -or
+      $summary["m1Authorized"] -ne "false") {
+    Write-Output ("CBOT08_SAFE_RECEIPT_FIELD_COUNT=" + $summary.Count)
+    Stop-Safely "RPC7_READ_ONLY_RECEIPT_NOT_CONFIRMED"
+  }
+  Write-Output "CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED"
+  foreach ($key in $allowed) {
+    if ($summary.ContainsKey($key)) {
+      Write-Output ("CBOT08_" + $key + "=" + $summary[$key])
+    }
+  }
+  Write-Output "CBOT08_PRIVATE_RESTORE_WITNESSED=false"
+  Write-Output "CBOT08_M0_ACCEPTED=false"
+  Write-Output "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false"
+  Write-Output "CBOT08_NEXT=INDEPENDENT_PRIVATE_AUTH_STORAGE_ACL_OFFHOST_RESTORE"
+} catch {
+  # Report only a constant stage and exception class, not path/message/hash.
+  $safeErrorClass = [regex]::Replace([string]$_.Exception.GetType().Name,'[^A-Za-z0-9]','')
+  Write-Output ("CBOT08_INSPECT_EXCEPTION_CLASS=" + $safeErrorClass)
+  Stop-Safely ("RPC7_LOCAL_INSPECTION_FAILURE_" + $archiveStage)
+}
+ -or
+        $value -notmatch '^[A-Za-z0-9_+-]{0,100}
+  $archiveStage = "RPC7_SAFE_RECEIPT"
+  if ($summary["receiptSavedLocally"] -ne "true" -or
+      $summary["m0Approved"] -ne "false" -or
+      $summary["m1Authorized"] -ne "false") {
+    Stop-Safely "RPC7_READ_ONLY_RECEIPT_NOT_CONFIRMED"
+  }
+  Write-Output "CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED"
+  foreach ($key in $allowed) {
+    if ($summary.ContainsKey($key)) {
+      Write-Output ("CBOT08_" + $key + "=" + $summary[$key])
+    }
+  }
+  Write-Output "CBOT08_PRIVATE_RESTORE_WITNESSED=false"
+  Write-Output "CBOT08_M0_ACCEPTED=false"
+  Write-Output "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false"
+  Write-Output "CBOT08_NEXT=INDEPENDENT_PRIVATE_AUTH_STORAGE_ACL_OFFHOST_RESTORE"
+} catch {
+  # Report only a constant stage and exception class, not path/message/hash.
+  $safeErrorClass = [regex]::Replace([string]$_.Exception.GetType().Name,'[^A-Za-z0-9]','')
+  Write-Output ("CBOT08_INSPECT_EXCEPTION_CLASS=" + $safeErrorClass)
+  Stop-Safely ("RPC7_LOCAL_INSPECTION_FAILURE_" + $archiveStage)
+}
+) { continue }
     if ($allowed -contains $key) { $summary[$key] = $value }
   }
   $archiveStage = "RPC7_SAFE_RECEIPT"
