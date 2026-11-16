@@ -11,7 +11,7 @@ const PRICE_USD_PER_M=Object.freeze({
 });
 const deny=reason=>Object.freeze({status:'BLOCKED',reason,
   can_call_provider:false,can_write_hosted:false,can_send:false,authorized_spend_usd:0});
-const cents8=n=>Math.ceil((n-1e-14)*1e8)/1e8;
+const cents8=n=>n<=0?0:Math.max(0,Math.ceil((n-1e-14)*1e8)/1e8);
 
 class CappedOfflineBudgetLedger{
   #config;#spent=0;#reserved=0;#requests=0;#seen=new Map();#halt=null;
