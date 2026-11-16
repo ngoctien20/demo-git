@@ -21,8 +21,9 @@ function id(v){return typeof v==='string'&&/^[A-Za-z0-9_:-]{4,100}$/.test(v);}
 function sha(v){return typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);}
 function rejectSensitive(v) {
   const forbidden=/(raw.?jwt|access.?token|refresh.?token|service.?role|password|credential|secret|phone|psid|recipient.?id|email|private.?key|pairing.?code)/i;
+  if(Array.isArray(v))return v.some(rejectSensitive);
   if(!plain(v))return false;
-  return Object.keys(v).some(k=>forbidden.test(k))||Object.values(v).some(x=>plain(x)&&rejectSensitive(x));
+  return Object.keys(v).some(k=>forbidden.test(k))||Object.values(v).some(rejectSensitive);
 }
 function inspectG23Intake(entry,{now=()=>Date.now()}={}) {
   if(!plain(entry)||rejectSensitive(entry))return BLOCK('INVALID_OR_SENSITIVE_INPUT');
