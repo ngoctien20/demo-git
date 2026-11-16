@@ -1,0 +1,93 @@
+name: TIEN404 V15.2 ADV.5 Safe Adapters and Signed Action QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-safe-channel-*'
+      - 'qa/v147-custom-studio/advanced-studio.html'
+      - 'qa/v147-custom-studio/advanced-studio-ui.js'
+      - 'qa/v152-advanced-actions/**'
+      - 'docs/ai-handoff/V15_2_ADV5_*'
+      - '.github/workflows/v152-adv5-channel-actions-nosend-qa.yml'
+  push:
+    branches:
+      - work/v152adv5-safe-adapters-signed-actions-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    name: Server signed actions and provider preview security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-safe-channel-adapters.js
+          node --check qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+          node --check qa/v152-advanced-actions/signed-action-registry.cjs
+          node --check qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Secure action receipts
+        run: node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Four channel preview QA
+        run: node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Inherited ADV.2/3/4 contracts
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Static no sender / no credential / no storage gates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          ui=(root/'advanced-studio-ui.js').read_text()
+          adapter=(root/'advanced-safe-channel-adapters.js').read_text()
+          html=(root/'advanced-studio.html').read_text()
+          sign=Path('qa/v152-advanced-actions/signed-action-registry.cjs').read_text()
+          assert 'connect-src ' + chr(39) + 'none' in html
+          assert 'frame-src ' + chr(39) + 'none' in html
+          assert 'img-src ' + chr(39) + 'none' in html
+          assert 'form-action ' + chr(39) + 'none' in html
+          assert 'advanced-safe-channel-adapters.js' in html
+          assert 'T404SafeChannelAdapter' in adapter and 'T404SafeChannelAdapter' in ui
+          assert 'providerPayload:null' in adapter and 'canSend:false' in adapter
+          assert 'signedToken:null' in adapter and 'providerSends:0' in adapter
+          assert 'timingSafeEqual' in sign and 'claimOnce' in sign
+          assert 'MAX_TTL_MS' in sign and 'resolveVerifiedContext' in sign
+          assert 'BUSINESS_EXECUTION_DISABLED' in sign and 'PROVIDER_SEND_DISABLED' in sign
+          for src in [ui,adapter]:
+            for banned in ('innerHTML', 'insertAdjacentHTML', 'localStorage', 'sessionStorage',
+              'XMLHttpRequest', 'WebSocket', 'EventSource', 'eval(', 'new Function(',
+              'api.openai.com', 'graph.facebook.com', 'service_role'):
+              assert banned not in src, banned
+            assert not re.search(r'\bfetch\s*\(',src)
+          assert 'signed-action-registry.cjs' not in html, 'server-only signing code leaked to browser'
+          print('ADV5 SOURCE SECURITY NO-SEND PASS')
+          PY
+  local-browser:
+    name: Playwright no-send adapter, inherited ADV.4 responsive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA Chromium
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Start loopback-only fixture server
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-adv5-local.log 2>&1 &
+          sleep 2
+      - name: Four channel browser preview
+        run: node qa/v147-custom-studio/advanced-safe-channel-browser.test.cjs
+      - name: Inherited 6-viewport Studio browser suite
+        run: node qa/v147-custom-studio/advanced-studio-browser.test.cjs
