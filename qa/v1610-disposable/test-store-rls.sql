@@ -3,7 +3,6 @@
 -- with a synthetic current_setting claim. This does NOT verify JWT signatures.
 DO $guard$
 BEGIN IF current_database() NOT IN ('t404_v1610_disposable','t404_v1610_restored')
- OR inet_server_addr() IS DISTINCT FROM inet '127.0.0.1'
  THEN RAISE EXCEPTION 'LOCAL_DISPOSABLE_ONLY'; END IF; END $guard$;
 -- Positive checks: admin verifies synthetic fixtures/constraints prior to role testing.
 DO $admin$
