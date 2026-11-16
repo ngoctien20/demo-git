@@ -21,7 +21,7 @@ const levels=Object.freeze([
  {name:'L6',concurrent:100,requests:200}
 ]);
 const quantile=(xs,p)=>{const a=xs.toSorted((a,b)=>a-b),i=(a.length-1)*p,
- lo=Math.floor(i),hi=Math.ceil(i);return a[lo]*(hi-i)+a[hi]*(i-lo)};
+ lo=Math.floor(i),hi=Math.ceil(i);return lo===hi?a[lo]:a[lo]*(hi-i)+a[hi]*(i-lo)};
 const round=x=>Math.round(x*100)/100;
 function sanitizeFinite(v){return Number.isFinite(v)?round(v):null}
 async function runLevel(cfg){
