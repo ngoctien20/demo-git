@@ -1,0 +1,140 @@
+name: TIEN404 V15.2 ADV5 Canonical Registry RC and Merchant UAT (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv5-canonical-registry-merchant-uat-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5_*'
+      - '.github/workflows/v152-adv5-merchant-uat-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5_*'
+      - '.github/workflows/v152-adv5-merchant-uat-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-candidate-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax of source modules
+        run: |
+          for f in qa/v147-custom-studio/advanced-*.js qa/v147-custom-studio/advanced-*.cjs; do node --check "$f"; done
+      - name: ADV5 canonical RC and human Merchant UAT gates
+        run: |
+          node --test qa/v147-custom-studio/advanced-canonical-registry-rc.test.cjs
+          node --test qa/v147-custom-studio/advanced-merchant-uat.test.cjs
+      - name: ADV4 and inherited ADV3/ADV2/ADV1/V14.7 regressions
+        run: |
+          node --test qa/v147-custom-studio/advanced-custom-studio.test.cjs
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-action-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Static no-send and no-persistence candidate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          html=(root/'advanced-custom-studio.html').read_text()
+          for s in ("connect-src 'none'","img-src 'none'","form-action 'none'",
+              "frame-src 'none'","default-src 'none'","script-src 'self'"):
+              assert s in html,s
+          for name in ('advanced-merchant-uat.js','advanced-merchant-uat-view.js',
+              'advanced-canonical-registry-rc.cjs','advanced-studio-capability-crosswalk.js'):
+              assert (root/name).is_file(),name
+          body='\n'.join((root/x).read_text() for x in
+               ['advanced-merchant-uat.js','advanced-merchant-uat-view.js',
+                'advanced-custom-studio.js','advanced-studio-capability-crosswalk.js'])
+          for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',r'\bEventSource\b',
+              r'\b(localStorage|sessionStorage|indexedDB)\b',r'\binnerHTML\b',
+              r'\bnew Function\s*\(',r'\beval\s*\(']:
+              assert not re.search(pattern,body),pattern
+          assert 'selfReportedComplete' in body
+          assert 'merchantUatApproved:false' in body
+          assert 'releaseAuthorized:false' in body
+          assert 'NOT_ISSUED_BROWSER' in body
+          print('PASS ADV5 source only; no live send/write/storage/Owner attestation')
+          PY
+  browser-merchant-uat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install isolated Chromium QA dependency
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Start local read-only test server
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-adv5-local.log 2>&1 &
+          sleep 2
+      - name: Existing ADV4 Studio interaction regressions
+        run: node qa/v147-custom-studio/advanced-custom-studio-browser.test.cjs
+      - name: New Merchant UAT UX 320 390 768 1280px
+        run: node qa/v147-custom-studio/advanced-merchant-uat-browser.test.cjs
+      - name: Build verified hash-pinned single HTML for offline merchant testers
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - name: Offline file protocol UAT across 4 viewports
+        run: node qa/v147-custom-studio/advanced-merchant-uat-standalone-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv5-merchant-uat-390px
+          path: qa-artifacts-v152-adv5/
+          if-no-files-found: ignore
+  qa-preview-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bundle immutable local-only source for reviewer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile,hashlib,json
+          root=Path('qa/v147-custom-studio')
+          files=['advanced-custom-studio.html','studio-core.js','advanced-presentation-policy.js',
+           'advanced-channel-registry.js','advanced-ai-presentation-evaluator.js',
+           'advanced-studio-capability-crosswalk.js','advanced-custom-studio.js',
+           'advanced-merchant-uat.js','advanced-merchant-uat-view.js']
+          out=Path('qa-artifacts-v152-adv5-package')
+          out.mkdir(exist_ok=True)
+          archive=out/'TIEN404_ADV5_MERCHANT_UAT_SOURCE_ONLY.zip'
+          with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as zipf:
+           for f in files:
+            p=root/f
+            assert p.exists(),f
+            zipf.write(p,arcname=f)
+           zipf.writestr('README_UAT_VI.txt',
+            'TIEN404 ADV5 - thu nghiem voi du lieu gia lap A/B/C.\\n'
+            'Khong ket noi Messenger, Zalo, Supabase hoac AI model.\\n'
+            'Mo advanced-custom-studio.html bang HTTP server tai localhost.\\n'
+            'Khong su dung voi du lieu khach hang that.\\n'
+            'Danh gia UAT chi la tu khai; can nghiem thu doc lap.\\n')
+          print('UAT ZIP',archive,'SHA256',hashlib.sha256(archive.read_bytes()).hexdigest())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v152-adv5-offline-source-package
+          path: qa-artifacts-v152-adv5-package/TIEN404_ADV5_MERCHANT_UAT_SOURCE_ONLY.zip
+          if-no-files-found: error
+      - name: Build standalone HTML + CSP integrity manifest
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v152-adv5-single-html-merchant-uat
+          path: |
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline.html
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline_MANIFEST.json
+          if-no-files-found: error
