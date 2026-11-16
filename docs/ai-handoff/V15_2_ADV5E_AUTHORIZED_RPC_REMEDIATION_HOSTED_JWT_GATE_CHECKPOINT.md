@@ -99,3 +99,13 @@ Các thao tác yêu cầu **năm phê duyệt riêng**, không gộp: (a) sửa 
 **PROPOSED V15.2 ADV.5F:** Independent RPC Caller Evidence × Hosted Store Migration Dry-Run & Private Approval Ledger. Tuyệt đối không tự gộp/merge các Draft PR, không bật kênh LIVE.
 
 Nguồn tài liệu Supabase: [Securing your API](https://supabase.com/docs/guides/api/securing-your-api), [Postgres RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+
+## VII. ADV.5E QA tại commit mã nguồn — cập nhật 16/11/2026 JST
+
+- Lượt CI đầu tiên **FAIL ở bước Node syntax** vì hai mục `Object.freeze` trong danh mục phương án chưa đóng ngoặc. Đây là lỗi cú pháp nguồn, **không phải lỗi trên Supabase hay provider**.
+- Đã sửa trên commit `53b5da125165b47ecfb95199c1e4cf6ab3d5924c`, không nới bất kỳ release gate nào.
+- [ADV.5E CI #43814808008](https://github.com/ngoctien20/demo-git/actions/runs/43814808008): **SUCCESS 1/1 job**; **32/32** test ADV.5E + **30/30** ADV.5D + **30/30** ADV.5C = **92/92**; static NO-SEND/NO-EXEC PASS.
+- Các workflow kế thừa ADV.4/5/5B/5C được kích hoạt riêng trên nhánh; phải đối chiếu kết quả đúng HEAD cuối sau cập nhật tài liệu.
+- Kết quả chỉ chứng minh **mã nguồn chặn tự khai phê duyệt và chức năng ghi**, không chứng minh JWT thật hay RPC đã được sửa.
+
+**Không có lần gọi Supabase mutation, real Auth JWT, RPC CALL, Vault, backup/restore hoặc production publish.**
