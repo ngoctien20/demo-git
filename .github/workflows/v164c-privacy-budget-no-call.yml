@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   canary-readiness-offline:
-    name: 63 V16.4C security cases + 323 inherited tests (no API, no data)
+    name: 64 V16.4C security cases + 323 inherited tests (no API, no data)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: V16.4C 63 privacy/entitlement/budget-gated canary tests
+      - name: V16.4C 64 privacy/entitlement/budget-gated canary tests
         run: |
           node --check qa/v164c-canary/private-acceptance.mjs
           node --check qa/v164c-canary/canary-budget.mjs
