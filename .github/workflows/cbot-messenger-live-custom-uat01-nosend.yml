@@ -1,0 +1,57 @@
+name: TIEN404 CBOT-MSG-UAT-01 Published Baseline × Merchant Custom Draft (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/cbot-messenger-live-custom-uat-preflight-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-live-uat/**'
+      - 'docs/ai-handoff/CBOT_MSG_UAT01_*'
+      - '.github/workflows/cbot-messenger-live-custom-uat01-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-published-preflight:
+    name: Messenger Published actual metadata + Custom Bot draft QA (NO LIVE API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax, actual read-only published snapshot and custom draft tests
+        run: |
+          node --check qa/cbot-messenger-live-uat/messenger-custom-preflight.mjs
+          node --check qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+      - name: Existing V16.7 shared merchant configuration / CBOT-UAT-02 identity regression
+        run: |
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Reject client/provider, hosted and write tools in new source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re,json
+          src=Path('qa/cbot-messenger-live-uat/messenger-custom-preflight.mjs').read_text()
+          src=re.sub(r'/\*[\s\S]*?\*/','',src)
+          snapshot=json.loads(Path('qa/cbot-messenger-live-uat/actual-published-messenger-metadata-20261116.json').read_text())
+          for x in ('fetch(', 'axios(', 'process.env.', 'child_process', 'https.request(', 'http.request(',
+            'SUPABASE_SERVICE_ROLE_KEY', 'sendMessage(', 'apply_migration(', 'INSERT INTO ', 'pg_dump '):
+            assert x not in src,x
+          for x in ('page_access_token','psid','customer_name','customer_phone','secret','app_secret','credential'):
+            assert x not in snapshot,x
+          assert snapshot['published_prompt_has_dynamic_profile_binding'] is False
+          assert snapshot['live_custom_profile_applied']=='NOT_VERIFIED'
+          assert snapshot['published_has_legacy_demo_order_tools'] is True
+          doc=Path('docs/ai-handoff/CBOT_MSG_UAT01_LIVE_CUSTOMIZATION_BASELINE_AND_OPERATOR_PLAN.md').read_text()
+          assert 'NOT DEPLOYED' in doc
+          assert 'LIVE_CUSTOMIZATION_PASS' in doc
+          assert 'no-write tool fence' in doc
+          print('PASS: actual Published metadata only, custom draft no-send, no production changes')
+          PY
