@@ -2,7 +2,7 @@
 **Date:** 2026-11-16 JST
 **Phase:** V15.0-09C
 **Parent:** Draft PR #129 V15.0-09B @ 2991cf9d62bf856b23c0ddbcb53d7a426cefd99d
-**Classification:** VERIFIED READ-ONLY | IMPLEMENTED SOURCE-ONLY | TESTED pending exact HEAD CI | HOSTED OWNER/RECOVERY BLOCKED
+**Classification:** VERIFIED READ-ONLY | IMPLEMENTED SOURCE-ONLY | TESTED DISPOSABLE POSTGRES 17 (CI) | HOSTED OWNER/RECOVERY BLOCKED
 **Release:** NO-GO / NO SEND / NO HOSTED MUTATION
 
 ## 1. VERIFIED DIRECT EVIDENCE
@@ -29,7 +29,8 @@
 - Offline fixture "ready" means source shape only; not a real signature, Auth session, independently signed owner approval, or tenant/store owner certificate.
 - Synthetic PG17 snapshot is generated with manufactured QA-only data and deleted, never a Supabase hosted copy.
 - Any pg_dump/pg_restore success proves a TECHNIQUE within a disposable Postgres17 container only. It does not prove Supabase Auth, Storage, external n8n/Cloudflare integrations or future migration recovery.
-- Current exact SHA and GitHub Actions must be checked after the final file commit and workflow completion. Do not cite previous commit's test run as current result.
+- CI at source HEAD a4421ba1327def034aa98f75f355d9b4a25c315c: GitHub Actions #43790185889 SUCCESS (45 new cases + 117 inherited = 162/162 PASS); V15 Core/Model #43790185954 SUCCESS. Evidence logs prove successful disposable pg_dump/pg_restore, SHA256 match, restored 2 Tenants/3 Stores/4 Store Memberships/3 Products/2 Orders and mock claim A vs B isolation. One additional sensitive-array negative test added afterwards; verify the latest exact HEAD CI before final acceptance.
+- All such tests are local/ephemeral and do not imply true merchant account, provider-native G2.3 or hosted backup restoration.
 
 ## 4. G0–G3 RELEASE GATES
 G0 Owner Proof = BLOCKED: trusted canonical Store+Store Membership, merchant independent signature, provider ownership, correct real Shop→Bot and private evidence receipts. Cannot substitute QA paired/confirmed claims.
