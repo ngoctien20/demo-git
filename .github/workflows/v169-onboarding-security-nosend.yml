@@ -10,6 +10,8 @@ on:
       - 'qa/v1611-hosted-gates/**'
       - 'qa/v1611p-private/**'
       - 'qa/v1611p1-operator/**'
+      - 'qa/v1611p2-authority/**'
+      - 'docs/ai-handoff/V16_11P2_*'
       - 'docs/ai-handoff/V16_11P1_*'
       - 'docs/ai-handoff/V16_11P_*'
       - 'docs/ai-handoff/V16_11_*'
@@ -21,7 +23,7 @@ permissions:
   contents: read
 jobs:
   synthetic-security:
-    name: 522 V16.11P.1 quote-only + inherited Node QA (NO SEND)
+    name: 572 V16.11P.2 quoted-authorization + inherited Node QA (NO SEND)
     runs-on: ubuntu-24.04
     timeout-minutes: 14
     steps:
@@ -36,6 +38,45 @@ jobs:
           node --check qa/v169-security/readiness-ui.mjs
           node --check qa/v169-security/browser.test.cjs
           node --check qa/v169-security/v169-security.test.mjs
+      - name: V16.11P.2 source and browser syntax
+        run: |
+          node --check qa/v1611p2-authority/approval-gate.mjs
+          node --check qa/v1611p2-authority/approval-gate.test.mjs
+          node --check qa/v1611p2-authority/operator-ui.mjs
+          node --check qa/v1611p2-authority/browser.test.cjs
+      - name: V16.11P.2 fifty confidential assignment, cost quote and one-action gate tests
+        run: node --test qa/v1611p2-authority/approval-gate.test.mjs
+      - name: V16.11P.2 source-only, quote not queried, no secret, no hosted change
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          base=Path('qa/v1611p2-authority')
+          d=json.loads(Path('docs/ai-handoff/V16_11P2_CONFIDENTIAL_QUOTE_ONE_ACTION_PACKET.json').read_text())
+          assert d['release_decision']=='NO_GO'
+          assert d['one_action']['organization_confirmation']=='PENDING_USER_CONFIRMATION'
+          assert d['one_action']['actual_provider_query_status']=='NOT_RUN'
+          assert d['one_action']['new_project_create'] is False
+          assert d['one_action']['branch_create'] is False
+          assert d['one_action']['hosted_backup'] is False
+          assert d['one_action']['hosted_restore'] is False
+          assert d['one_action']['payment_authorized'] is False
+          assert d['written_authorization']['status']=='DRAFT_UNSIGNED'
+          assert len(d['confidential_operator_roles'])==6
+          assert all(x['private_signed_attestation_locator'] is None for x in d['confidential_operator_roles'])
+          assert len(d['account_specific_quotes'])==2
+          assert all(x['get_cost_called'] is False and x['provider_cost'] is None for x in d['account_specific_quotes'])
+          assert len(re.findall(r"test\('",(base/'approval-gate.test.mjs').read_text()))==50
+          html=(base/'index.html').read_text()
+          assert "connect-src 'none'" in html and "script-src 'self'" in html
+          for path in [base/'approval-gate.mjs',base/'operator-ui.mjs']:
+            t=path.read_text()
+            for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\blocalStorage\b',
+              r'\bsessionStorage\b',r'\bprocess\.env\b',r'\bcreateClient\s*\(',
+              r'graph\.facebook\.com',r'api\.openai\.com']:
+              assert not re.search(pattern,t),(path,pattern)
+          print('V16.11P.2 PUBLIC PROOF ABSENT / ORG NOT CONFIRMED / NO PRICE API / NO HOSTED ACTION: PASS')
+          PY
       - name: V16.11P.1 source/QA/UI syntax
         run: |
           node --check qa/v1611p1-operator/quote-gate.mjs
@@ -206,6 +247,8 @@ jobs:
         run: node qa/v1611p-private/browser.test.cjs
       - name: V16.11P.1 quote and authorization Chromium QA (72 checks)
         run: node qa/v1611p1-operator/browser.test.cjs
+      - name: V16.11P.2 localhost Chromium 68 checks
+        run: node qa/v1611p2-authority/browser.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -214,6 +257,7 @@ jobs:
             qa-artifacts-v169/
             qa-artifacts-v1611p/
             qa-artifacts-v1611p1/
+            qa-artifacts-v1611p2/
           if-no-files-found: ignore
 
   v1610-disposable-postgres:
