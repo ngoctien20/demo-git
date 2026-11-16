@@ -1,0 +1,70 @@
+{
+  "contract": "T404_RPC4_READONLY_PRIVATE_ACCEPTANCE_BASELINE_V1",
+  "recorded_at_jst": "2026-11-16",
+  "source_sha": "7300d9e6feaaf9d8601721bd544d73c1d36f80a0",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "verification_mode": "READ_ONLY_AGGREGATES_AND_PUBLISHED_METADATA",
+  "rpc": {
+    "signature": "public.qa_shop_b_zalo_claim(uuid,text,text,text)",
+    "anon_execute": true,
+    "authenticated_execute": false,
+    "security_advisor_anon_definer_warnings": 1,
+    "security_advisor_authenticated_definer_warnings": 2,
+    "pg_track_functions": "none",
+    "real_invocation_count_certified": false
+  },
+  "published_caller": {
+    "upstream_workflow": "yIJk8LvJoLF40Z62",
+    "upstream_version": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+    "pairing_workflow": "OgDZNSAvKEvhnAvn",
+    "pairing_version": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+    "pairing_rpc_node": "Submit pending claim for Shop B",
+    "both_active": true,
+    "provider_real_signature_certified": false
+  },
+  "hosted": {
+    "public_stores_exists": false,
+    "public_store_memberships_exists": false,
+    "private_qa_pairing_functions_present": 2,
+    "owner_a_b_real_jwt_rls_proof": false,
+    "private_two_step_pairing_hosted_accepted": false,
+    "backup_restore_verified": false,
+    "replacement_private_writer_approved": false,
+    "real_single_writer_canary_verified": false
+  },
+  "observation": {
+    "start": "2026-11-15T07:30:00Z",
+    "end": "2026-11-16T07:30:00Z",
+    "postgres_logs_total": 46,
+    "postgres_rpc_literal_marker_events": 3,
+    "postgrest_logs_total": 7,
+    "postgrest_rpc_literal_marker_events": 0,
+    "edge_logs_total": 157,
+    "edge_rpc_literal_marker_events": 0,
+    "classification": "UNCLASSIFIED_LOG_MARKERS_MAY_BE_READONLY_AUDIT_QUERIES",
+    "exact_external_caller_attribution_verified": false,
+    "observation_window_complete_for_all_external_clients": false
+  },
+  "known_unverified_domains": [
+    "external PostgREST clients and operator scripts",
+    "historical and dynamic n8n callers",
+    "Cloudflare Worker dynamic paths across accounts",
+    "real provider webhook signatures and replay receipts",
+    "private owner and store JWT/RLS negative tests",
+    "approved backup and independent restore"
+  ],
+  "approvals": {
+    "private_independent_controller": false,
+    "private_independent_security_reviewer": false,
+    "named_database_operator": false,
+    "signed_exact_rpc_revoke": false,
+    "signed_one_time_nonce_consumed": false,
+    "user_explicit_operation_approval": false
+  },
+  "release": {
+    "signed_intent_only": true,
+    "privilege_revocation_executed": false,
+    "production_published_modified": false,
+    "release_allowed": false
+  }
+}

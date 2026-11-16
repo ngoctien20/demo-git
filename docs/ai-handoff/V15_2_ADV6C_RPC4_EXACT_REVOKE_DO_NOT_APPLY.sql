@@ -1,0 +1,52 @@
+-- TIEN404 V15.2 ADV.6C-RPC.4 — ONE-TIME RPC REVOKE
+-- SOURCE-ONLY REVIEW CHECKLIST / DO NOT APPLY.
+-- All proposed SQL actions are commented and require separate approvals.
+--
+-- Project: staging ifxlvrhyjhbzbrkdsida
+-- Exact signature: public.qa_shop_b_zalo_claim(uuid,text,text,text)
+-- PRECONDITION: Controller + independently enrolled Security Reviewer +
+-- DB Operator attest to caller inventory, provider signatures, same-tenant
+-- Store JWT/RLS, backup and restore, shadow parity and single-writer canary.
+-- No unsigned request, synthetic test or one-time intent JSON is approval.
+--
+-- 0. Privately snapshot exact function definition, ownership, and ACL:
+-- -- SELECT pg_get_functiondef(
+-- --   'public.qa_shop_b_zalo_claim(uuid,text,text,text)'::regprocedure
+-- -- );
+-- -- SELECT has_function_privilege('anon',
+-- --   'public.qa_shop_b_zalo_claim(uuid,text,text,text)','EXECUTE');
+--
+-- 1. Independently approved alternative route MUST already be ready:
+-- -- Data API public RPC caller (n8n OgDZNSAvKEvhnAvn) has been migrated
+-- -- off the public function; upstream yIJk8LvJoLF40Z62 stays responding.
+-- -- Private pairing claim and separate authenticated Owner confirm proven.
+-- -- Current and historic external consumers privately examined.
+-- -- All event write paths share one authoritative idempotent transaction.
+--
+-- 2. SEPARATE single-operation approval: exact project/function/role
+-- -- whitelist, TTL, expiry, nonce, reviewer + operator identity and safe
+-- -- rollback plan. Durable ledger consumption must be atomic with the
+-- -- privileged operation in an authorized executor, NOT implemented here.
+--
+-- 3. Only after external independent approval (DO NOT RUN):
+-- -- REVOKE EXECUTE ON FUNCTION
+-- -- public.qa_shop_b_zalo_claim(uuid,text,text,text) FROM PUBLIC, anon;
+-- -- Examine remaining authenticated and role inheritance grants separately.
+--
+-- 4. Revalidate:
+-- -- SELECT has_function_privilege('anon',
+-- -- 'public.qa_shop_b_zalo_claim(uuid,text,text,text)','EXECUTE');
+-- -- EXPECT false.
+-- -- Real public REST attempt must be permission denied.
+-- -- Legitimately signed Zalo event still creates *pending* claim through
+-- -- the new private gateway, not an automatic confirmed binding.
+-- -- Independently authenticated owner confirms once, and wrong owner /
+-- -- wrong Store / revoked JWT / replay / expired challenge are all denied.
+-- -- Check Supabase Advisor 0028 for function-specific clearance.
+--
+-- 5. Emergency:
+-- -- Do NOT automatically regrant anon EXECUTE. Restore through an
+-- -- approved incident rollback and tested route, preserving immutable
+-- -- operator and security review receipts.
+--
+-- This file has no executable DDL/DML. No hosted changes authorized.
