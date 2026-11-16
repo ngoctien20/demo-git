@@ -1,0 +1,27 @@
+{
+  "contract": "TIEN404_PUBLISHED_MESSENGER_READONLY_20261116",
+  "workflow_id": "Z7FdV7uDvApfbURQ",
+  "workflow_name": "TIEN404_MESSENGER_TEST",
+  "published_active": true,
+  "published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+  "published_node_count": 27,
+  "published_system_prompt_length": 6984,
+  "published_prompt_has_dynamic_profile_binding": false,
+  "published_prompt_mentions_bot_profile_version": false,
+  "published_has_legacy_demo_order_tools": true,
+  "published_uses_demo_google_sheets": true,
+  "published_has_meta_signature_verifier": true,
+  "published_extracts_postbacks": true,
+  "app_level_messages_subscription": "NOT_VERIFIED",
+  "app_level_postbacks_subscription": "NOT_VERIFIED",
+  "page_level_subscription": "NOT_VERIFIED",
+  "page_owner_consent": "NOT_VERIFIED",
+  "trusted_page_to_store_binding": "NOT_VERIFIED",
+  "live_custom_profile_applied": "NOT_VERIFIED",
+  "recent_webhook_success_ids": [
+    3865,
+    3866,
+    3867,
+    3868
+  ]
+}
