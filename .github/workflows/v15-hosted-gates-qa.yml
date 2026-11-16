@@ -1,0 +1,47 @@
+name: TIEN404 V15.03H-04H Trusted Core Readiness Security QA
+
+on:
+  push:
+    branches:
+      - work/v1503h-04h-trusted-core-business-gates-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-hosted-readiness/**'
+      - 'docs/ai-handoff/TIEN404_V15_03H_04H*'
+      - '.github/workflows/v15-hosted-gates-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-trust-readiness:
+    name: P256 Identity & Business Tool Gates (NO PROVIDER / NO SEND)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate signed proof and business gate syntax
+        run: |
+          node --check qa/v15-hosted-readiness/trusted-ingress-gate.cjs
+          node --check qa/v15-hosted-readiness/authorized-business-tools.cjs
+          node --check qa/v15-hosted-readiness/hosted-readiness-gates.test.cjs
+      - name: Verify 03H/04H security test suite
+        run: node --test qa/v15-hosted-readiness/hosted-readiness-gates.test.cjs
+      - name: No external API, database writes, provider sends or privileged secrets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files=[Path('qa/v15-hosted-readiness/trusted-ingress-gate.cjs'),Path('qa/v15-hosted-readiness/authorized-business-tools.cjs')]
+          for file in files:
+              text=file.read_text(encoding='utf-8')
+              for forbidden in ['fetch(', 'new OpenAI(', 'axios(', 'sendMessage(', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY', 'INSERT INTO', 'UPDATE public.', 'DELETE FROM', 'CREATE TABLE', 'DROP TABLE']:
+                  assert forbidden not in text, (str(file),forbidden)
+              assert 'can_send:false' in text
+              assert 'orders_written:0' in text
+          print('PASS: code-only private gate, no live sends or persistent writes')
+          PY
