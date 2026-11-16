@@ -37,7 +37,9 @@ jobs:
           from pathlib import Path
           import re
           files=list(Path('qa/v164-private-ab').glob('*.mjs'))
-          assert len(files)==2
+          assert len(files)>=2
+          assert (Path('qa/v164-private-ab')/'private-readiness.mjs') in files
+          assert (Path('qa/v164-private-ab')/'private-readiness.test.mjs') in files
           for f in files:
             s=f.read_text()
             for p in [r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
