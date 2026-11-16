@@ -1,0 +1,42 @@
+name: TIEN404 V15.0-03H.6 Backup Coverage Preflight (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503h6-private-backup-coverage-preflight-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1503h6-backup-preflight/**'
+      - 'docs/ai-handoff/V15_03H6_*'
+      - '.github/workflows/v1503h6-coverage-no-send.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pure-offline-coverage-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Coverage preflight source tests (no hosted action)
+        run: |
+          node --check qa/v1503h6-backup-preflight/backup-coverage-preflight.cjs
+          node --test qa/v1503h6-backup-preflight/backup-coverage-preflight.test.cjs
+      - name: Static hard stop against network, backup executor or credential access
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v1503h6-backup-preflight/backup-coverage-preflight.cjs').read_text()
+          for forbidden in ('fetch(', 'https.request', 'http.request', 'axios(', 'process.env.',
+              'child_process', 'pg_dump ', 'pg_restore ', 'SUPABASE_SERVICE_ROLE',
+              'SERVICE_ROLE_KEY', 'ALTER TABLE ', 'GRANT ', 'sendMessage(', 'DELETE FROM '):
+              assert forbidden not in src, f'Forbidden live action in review-only module: {forbidden}'
+          for required in ('allowedToExport:false','allowedToRestore:false',
+                           'allowedToMigrate:false','allowedToSend:false'):
+              assert required in src, f'Missing fail-closed result {required}'
+          print('PASS: review-only source; no backup executor and no hosted access')
+          PY
