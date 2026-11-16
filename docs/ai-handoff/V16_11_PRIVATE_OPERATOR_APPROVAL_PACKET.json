@@ -1,0 +1,108 @@
+{
+  "contract": "T404_V1611_PRIVATE_OPERATOR_APPROVAL_PACKET_V1",
+  "version": "16.11.0-draft",
+  "prepared_on": "2026-11-16",
+  "scope": "SOURCE_ONLY_PLANNING_NOT_EXECUTION",
+  "target": {
+    "supabase_project_ref": "ifxlvrhyjhbzbrkdsida",
+    "environment": "STAGING",
+    "hosted_migration_authorized": false
+  },
+  "approval": {
+    "explicit_user_hosted_backup_approval": false,
+    "explicit_user_restore_approval": false,
+    "explicit_user_hosted_migration_approval": false,
+    "security_reviewer_signed": false,
+    "merchant_owner_verified": false,
+    "legal_data_processing_approved": false,
+    "cost_approved": false,
+    "downtime_window_approved": false
+  },
+  "authority": {
+    "business_owner_evidence": "MISSING",
+    "internal_platform_operator": "NOT_ASSIGNED",
+    "independent_security_reviewer": "NOT_ASSIGNED",
+    "backup_recovery_operator": "NOT_ASSIGNED",
+    "external_channel_owner": "NOT_VERIFIED",
+    "production_release_owner": "NOT_ASSIGNED"
+  },
+  "exact_action_scopes": [
+    {
+      "action": "CATALOG_METADATA_READ_ONLY",
+      "status": "OBSERVED_CONNECTOR_ONLY",
+      "sensitive_rows": false
+    },
+    {
+      "action": "BACKUP_HOSTED_DATABASE",
+      "status": "NOT_AUTHORIZED",
+      "destination": "UNSPECIFIED",
+      "budget": "UNAPPROVED"
+    },
+    {
+      "action": "RESTORE_HOSTED_BACKUP_TO_DISPOSABLE_TARGET",
+      "status": "NOT_AUTHORIZED",
+      "target": "NOT_PROVISIONED"
+    },
+    {
+      "action": "BACKUP_STORAGE_OBJECT_BYTES",
+      "status": "NOT_AUTHORIZED",
+      "destination": "UNSPECIFIED"
+    },
+    {
+      "action": "RESTORE_STORAGE_OBJECT_BYTES",
+      "status": "NOT_AUTHORIZED",
+      "target": "NOT_PROVISIONED"
+    },
+    {
+      "action": "MIGRATE_HOSTED_STORE_JWT_RLS",
+      "status": "DO_NOT_APPLY",
+      "backup_gate": "NOT_MET"
+    },
+    {
+      "action": "REVOKE_PUBLIC_PRIVILEGED_RPC",
+      "status": "NOT_AUTHORIZED",
+      "caller_inventory": "MISSING"
+    },
+    {
+      "action": "CONNECT_PROVIDER_OR_SEND_MESSAGE",
+      "status": "NOT_AUTHORIZED",
+      "provider_ownership": "MISSING"
+    },
+    {
+      "action": "IMPORT_REAL_MERCHANT_DATA",
+      "status": "NOT_AUTHORIZED",
+      "data_processing_agreement": "MISSING"
+    }
+  ],
+  "recovery_coverage": {
+    "database_schema_data": false,
+    "storage_objects_metadata": false,
+    "storage_object_bytes": false,
+    "auth_sessions_and_roles": false,
+    "custom_role_password_recovery": false,
+    "pg_logical_replication_review": false,
+    "encrypted_backup_digest": false,
+    "independent_disposable_restore": false,
+    "checksum_compared": false,
+    "measured_rpo": false,
+    "measured_rto": false
+  },
+  "jwt_rls_acceptance": {
+    "real_auth_jwt_owner_A": false,
+    "real_auth_jwt_owner_B": false,
+    "signed_issuer_and_audience_verified": false,
+    "same_tenant_different_store_schema": false,
+    "shop_A_read_only_A": false,
+    "shop_B_read_only_B": false,
+    "shop_A_write_only_A": false,
+    "shop_B_write_only_B": false,
+    "revoked_session_denied": false,
+    "support_without_grant_denied": false,
+    "anon_access_denied": false,
+    "service_role_not_exposed": false,
+    "cross_store_order_customer_fk": false
+  },
+  "release_decision": "NO_GO",
+  "security_note": "No raw credential, JWT, PII, backup file or private evidence should be written to GitHub.",
+  "rollback": "Close Draft PR. No hosted resource modified. Future hosted rollback requires a separate independently verified restore plan."
+}
