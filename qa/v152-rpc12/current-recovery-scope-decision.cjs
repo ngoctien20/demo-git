@@ -51,10 +51,14 @@ function reviewRecoveryScope({scope='UNDECIDED',currentSnapshot,h11rReceipt,clai
   h11rReceipt?.operatorReported!==true)
   issues.push('H11R_LIMITED_ACCEPTANCE_NOT_RECONCILED');
  if(scope==='UNDECIDED')issues.push('MIGRATION_RECOVERY_SCOPE_NOT_YET_CHOSEN_BY_OWNER');
+ // Historical H11R gaps are non-transferable LIMITATIONS. A separately
+ // verified CURRENT recovery point could supersede them; never describe
+ // the old archive itself as a current full-system backup.
+ const limitations=[];
  if(scope==='FULL_SERVICE'&&h11rReceipt?.authEntries===0)
-  issues.push('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH');
+  limitations.push('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH');
  if(scope==='APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN')
-  issues.push('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_AND_INDEPENDENT_RESTORE_MISSING');
+  limitations.push('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_REQUIRES_SEPARATE_REAL_PROOF');
  const x=plain(claimedEvidence)?claimedEvidence:{};
  for(const key of CLAIMS)if(x[key]!==true)issues.push('INDEPENDENT_PRIMARY_'+key.toUpperCase()+'_UNVERIFIED');
  // Even a complete self-reported packet has no source authentication.
@@ -66,6 +70,7 @@ function reviewRecoveryScope({scope='UNDECIDED',currentSnapshot,h11rReceipt,clai
     'CURRENT_M0_RECOVERY_NO_GO',
   scope:SCOPE.includes(scope)?scope:'INVALID',
   blockers:distinct(issues),
+  historicalScopeLimitations:distinct(limitations),
   historicalH11rAcceptedWithLimitations:true,
   historicalH11rAcceptsCurrentHostedRestore:false,
   observedAuthUsers:3,observedStorageMetadataObjects:0,
