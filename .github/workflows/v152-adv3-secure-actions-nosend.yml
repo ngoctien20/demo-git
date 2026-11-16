@@ -1,0 +1,56 @@
+name: TIEN404 V15.2 ADV3 Secure Action Registry QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv3-structured-presentation-eval-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-secure-action-registry*'
+      - 'docs/ai-handoff/V15_2_ADV3_SECURE_ACTION_*'
+      - '.github/workflows/v152-adv3-secure-actions-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-secure-action-registry*'
+      - 'docs/ai-handoff/V15_2_ADV3_SECURE_ACTION_*'
+      - '.github/workflows/v152-adv3-secure-actions-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secure-actions-and-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and synthetic signed action controls
+        run: |
+          node --check qa/v147-custom-studio/advanced-secure-action-registry.cjs
+          node --check qa/v147-custom-studio/advanced-secure-action-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-action-registry.test.cjs
+      - name: Inherited structured output and channel capability QA
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: Prohibit external side effects and provider-specific privileges
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('qa/v147-custom-studio/advanced-secure-action-registry.cjs').read_text()
+          assert 'SYNTHETIC_QA_ONLY' in p
+          assert 'IN_MEMORY_SYNTHETIC_QA' in p
+          assert "T404_SYNTHETIC_ACTION_QA_NO_SEND" in p
+          for banned in [
+              r'\bfetch\s*\(', r'\bXMLHttpRequest\b', r'\bWebSocket\b',
+              r'\bEventSource\b', r'\bprocess\.env\b', r'\bchild_process\b',
+              r'\bhttps?\.request\s*\(', r'\bfs\.(?:write|append|unlink)',
+              r'\bsupabase\.', r'\bn8n\.', r'\bsendMessage\s*\(',
+          ]:
+              assert not re.search(banned,p),banned
+          assert 'canSend:false' in p and 'ordersWritten:0' in p
+          assert 'hostedWrites:0' in p and 'paidSpendVnd:0' in p
+          print('PASS: Secure Actions synthetic/no-send/no-write/no-paid')
+          PY

@@ -1,0 +1,53 @@
+name: TIEN404 V15.2 AI Presentation Structured Output QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-ai-presentation-*'
+      - 'docs/ai-handoff/V15_2_ADV3_*'
+      - '.github/workflows/v152-advanced-ai-presentation-eval-nosend.yml'
+  push:
+    branches:
+      - 'work/v152adv3-structured-presentation-eval-nosend-20261116'
+    paths:
+      - 'qa/v147-custom-studio/advanced-ai-presentation-*'
+      - 'docs/ai-handoff/V15_2_ADV3_*'
+      - '.github/workflows/v152-advanced-ai-presentation-eval-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  structured-output-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-ai-presentation-evaluator.js
+          node --check qa/v147-custom-studio/advanced-ai-presentation-corpus.cjs
+          node --check qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+      - name: Synthetic structured output and security evaluations
+        run: node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+      - name: Inherited Advanced and Channel Registry regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: Static sandbox guarantees
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          src=''.join((root/f).read_text() for f in
+            ['advanced-ai-presentation-evaluator.js','advanced-ai-presentation-corpus.cjs'])
+          assert not re.search(r'\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b',src)
+          assert not re.search(r'\b(localStorage|sessionStorage)\b',src)
+          assert not re.search(r'process\.env|child_process|https?\.request\s*\(',src)
+          assert 'providerSends:0' in src and 'hostedWrites:0' in src
+          assert 'realModelCalls:0' in src and 'releaseAuthorized:false' in src
+          assert "PUBLIC_SYNTHETIC_LABELED_NOT_REAL_MODEL_OUTPUT" in src
+          print('ADV.3 MODEL-FREE / NO-SEND / NO-WRITE STATIC QA PASS')
+          PY
