@@ -54,3 +54,14 @@ IMPLEMENTED: offline budget/trace gate and private manifest.
 TESTED: only when GitHub CI finishes.
 BLOCKED: paid 132 case actual model run until exact amount, live billing controls, safe stateful test tool and credential selection are verified.
 No Supabase hosted mutations, n8n Published edits, new Meta/Zalo messages, credential changes or customer Order/Stock writes. Rollback closes child Draft PR.
+
+
+## 7. QA 36 multi-turn sandbox policy and measured CI
+- qa/v15010c-capped-run/multi-case-sandbox-policy.cjs and .test.cjs added after the first 100-case QA:
+  36/36 multi case IDs QA01..QA36 have explicit READ_ONLY, ONE_SANDBOX_WRITE, CONDITIONAL_LITERAL_OR_REJECT, or FAULT_DETECTION policies.
+  The policy NEVER permits hosted writes or provider sends; write-permitted cases can commit at most one QA-only record and need independent commit evidence.
+  Price/stock race QA23/24 and concurrency QA25..29 require zero committed QA changes; QA31/32 formula text must be rejected or stored literally; QA33/34 fault injected cannot claim success; QA35 may persist one QA order then lose response, but must not duplicate; QA36 cannot send external notifications.
+  This is a side-effect policy checker, NOT a real model pass verdict or stateful n8n execution.
+- At Git commit 11d992569f601179a6788d48faa0161b2b7d4e3e, GitHub Actions #43800919602 SUCCESS: 29 budget tests + 18 trace tests + 19 multi-case safety tests + 26+6+21 inherited tests = 119/119 PASS. #43800919556 V15 Agent Core/Model Cost offline regression SUCCESS.
+- A small intermediate CI failure from JS negative-zero reserve state was fixed in commit 94b8a2a5eb5db3a5874832422cc39d5d43b7758e. Final passed; no billing/hosted effect.
+- This checkpoint document revision is source-only; latest final commit CI must be rechecked before terminal pass claim.
