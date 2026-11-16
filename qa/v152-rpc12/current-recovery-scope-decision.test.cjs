@@ -28,13 +28,16 @@ test('02 owner has not yet chosen migration current-recovery scope',()=>{
  assert.equal(r.status,'OWNER_RECOVERY_SCOPE_DECISION_PENDING');
  assert(r.blockers.includes('MIGRATION_RECOVERY_SCOPE_NOT_YET_CHOSEN_BY_OWNER'));
 });
-test('03 full-service selection fails because historical Auth is absent',()=>{
- const r=reviewRecoveryScope(packet('FULL_SERVICE'));
+test('03 full-service selection fails when current Auth recovery claim missing',()=>{
+ const p=packet('FULL_SERVICE');p.claimedEvidence.authUserRecoveryIndependentlyTested=false;
+ const r=reviewRecoveryScope(p);
  assert.equal(r.status,'CURRENT_M0_RECOVERY_NO_GO');
  assert(r.historicalScopeLimitations.includes('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH'));
 });
 test('04 app-only scope still demands external Auth/Storage and independent restore',()=>{
- const r=reviewRecoveryScope(packet('APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN'));
+ const p=packet('APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN');
+ p.claimedEvidence.storageMetadataAndObjectBytesCoveredOrProvenNotApplicable=false;
+ const r=reviewRecoveryScope(p);
  assert.equal(r.status,'CURRENT_M0_RECOVERY_NO_GO');
  assert(r.historicalScopeLimitations.includes('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_REQUIRES_SEPARATE_REAL_PROOF'));
 });
