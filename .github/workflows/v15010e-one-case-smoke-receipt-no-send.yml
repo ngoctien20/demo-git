@@ -1,0 +1,45 @@
+name: TIEN404 V15.0-10E Real AI Single-Case Smoke Receipt (NO SEND)
+on:
+  push:
+    branches:
+      - work/v15010e-first-real-model-smoke-no-send-20261116
+  pull_request:
+    paths:
+      - 'qa/v15010e-real-smoke/**'
+      - '.github/workflows/v15010e-one-case-smoke-receipt-no-send.yml'
+      - 'docs/ai-handoff/TIEN404_V15_0_10E_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-receipt-shape-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax and sanitized offline 10E smoke evidence
+        run: |
+          node --check qa/v15010e-real-smoke/one-case-receipt-gate.cjs
+          node --test qa/v15010e-real-smoke/one-case-receipt-gate.test.cjs
+      - name: Existing $1 cap and 36 case side-effect safety
+        run: |
+          node --test qa/v15010d-gateway/gateway-hard-cap-certification.test.cjs
+          node --test qa/v15010c-capped-run/budget-guard.test.cjs
+          node --test qa/v15010c-capped-run/independent-tool-trace-gate.test.cjs
+          node --test qa/v15010c-capped-run/multi-case-sandbox-policy.test.cjs
+      - name: No new paid model, n8n call, cross-store access, provider send or hosted write
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v15010e-real-smoke/one-case-receipt-gate.cjs').read_text()
+          for bad in ('fetch(', 'axios(', 'new OpenAI(', 'process.env.',
+                     'sendMessage(', 'getCredential(', 'http.request(', 'https.request('):
+              assert bad not in s,bad
+          assert 'canRun132:false' in s
+          assert 'actualGatewayCostUsd:null' in s
+          assert 'benchmarkCasesCompleted:0' in s
+          print('PASS: sanitized receipt only; no new API usage')
+          PY
