@@ -13,6 +13,9 @@ Sales Lite minimum scope: basic store profile, one approved messaging channel fo
 - PR #126 HEAD 328720b09d27a80530fbc01eaca3d825e62f7109 is based on #125, so inherits the old checkpoint.
 - This new branch starts from the current #127 HEAD, and ADDS the seven previously-only #125 files and seven previously-only #126 files. The original source files and PRs were not modified and no merge was performed. PR #124 remains a PARALLEL V14.8 line and is not silently integrated.
 
+## Concurrent upstream preservation (read-only source delta)
+During this consolidation, parent #127 moved from cbbd06377 to a6622240 (two additive commits). The NEW branch keeps its original ancestry but copies those two exact additive files: trusted-gate Owner UAT checkpoint and review-only D1 replay draft. GitHub compare can still show behind=2 due to ancestry, although those two files are also present in the candidate. Never imply a Git merge/rebase occurred. Recheck upstream on final PR review.
+
 ## Hosted audit (READ ONLY, independently reconfirmed)
 - Supabase staging project ifxlvrhyjhbzbrkdsida, public.stores count 0, public.store_memberships count 0; store_id among public Products/Orders/Conversations/Messages/TenantAgentConfig = 0. Hosted authenticated Store A/B isolation is NOT certified.
 - Security Advisor 2026-11-16 still warns publicly anon-executable SECURITY DEFINER public.qa_shop_b_zalo_claim; no exploit claimed, but independent security assessment and owner-approved privilege correction needed.
