@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   five-studios-offline-qa:
-    name: 69 offline security and functional assertions + 79 inherited
+    name: 75 offline security and functional assertions + 79 inherited
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -37,6 +37,8 @@ jobs:
           root=pathlib.Path('qa/v163-studios')
           sources=list(root.glob('*.mjs'))
           assert len(sources)>=9
+          assert (root/'preview.html').exists()
+          assert 'https://api.' not in (root/'preview.html').read_text()
           forbidden=[
             r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
             r'\bprocess\.env\b',r'\bchild_process\b',
