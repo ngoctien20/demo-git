@@ -35,12 +35,20 @@ function assertAction(action,resourceId,ctx){
  if(!Object.hasOwn(ACTIONS,action))deny('ACTION_NOT_ALLOWLISTED');
  if(!ACTIONS[action].roles.includes(ctx.role))deny('ACTION_ROLE_DENIED');
  if(!id(resourceId))deny('RESOURCE_REFERENCE_INVALID'); // ID only, never URL/PII
- if(action==='TRACK_ORDER'&&ctx.role==='CUSTOMER'&&ctx.orderOwnershipVerified!==true)
-  deny('CUSTOMER_ORDER_OWNERSHIP_REQUIRED');
- if(action==='ORDER_REQUEST_DRAFT'&&ctx.explicitCustomerConfirmation!==true)
-  deny('CUSTOMER_CONFIRMATION_REQUIRED');
- if(action==='OPEN_VERIFIED_LINK'&&ctx.approvedLinkRegistryMatch!==true)
-  deny('VERIFIED_LINK_REGISTRY_REQUIRED');
+ if(action==='TRACK_ORDER'){
+  if(ctx.authorizedOrderId!==resourceId||ctx.authorizedOrderStoreId!==ctx.storeId)
+   deny('ORDER_RESOURCE_SCOPE_REQUIRED');
+  if(ctx.role==='CUSTOMER'&&ctx.orderOwnershipVerified!==true)
+   deny('CUSTOMER_ORDER_OWNERSHIP_REQUIRED');
+ }
+ if(action==='ORDER_REQUEST_DRAFT'){
+  if(ctx.explicitCustomerConfirmation!==true)deny('CUSTOMER_CONFIRMATION_REQUIRED');
+  if(ctx.confirmedDraftId!==resourceId)deny('CONFIRMED_DRAFT_SCOPE_REQUIRED');
+ }
+ if(action==='OPEN_VERIFIED_LINK'){
+  if(ctx.approvedLinkRegistryMatch!==true)deny('VERIFIED_LINK_REGISTRY_REQUIRED');
+  if(ctx.approvedLinkRef!==resourceId)deny('APPROVED_LINK_RESOURCE_SCOPE_REQUIRED');
+ }
 }
 function canonical(payload){
  if(!payload||typeof payload!=='object'||Array.isArray(payload))deny('QA_PAYLOAD_INVALID');
