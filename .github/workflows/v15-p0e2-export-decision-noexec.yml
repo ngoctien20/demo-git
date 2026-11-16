@@ -1,0 +1,67 @@
+name: TIEN404 V15 Sales Lite P0-E.2 One-Time Export NO-GO Decision (NO EXECUTION)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0e2-one-time-export-decision-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0e2/**'
+      - 'docs/ai-handoff/V15_P0E2_*'
+      - '.github/workflows/v15-p0e2-export-decision-noexec.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-export-decision:
+    name: One-Time Export Decision & Sales Lite Security Regression (NO-GO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate only pure decision code
+        run: |
+          node --check qa/v15-sales-lite-p0e2/one-time-export-decision.cjs
+          node --check qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: P0-E.2 manual-authorization and one-time-lease decision QA
+        run: node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: Inherited private authorization and backup coverage regression
+        run: |
+          node --test qa/v15-sales-lite-p0e1/export-authorization-evidence.test.cjs
+          node --test qa/v15-sales-lite-p0e/backup-coverage-gate.test.cjs
+          node --test qa/v15-sales-lite-p0e/verify-local-sql-artifacts.test.cjs
+          node --test qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: SOURCE-ONLY hard ban on actual exporter capabilities
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v15-sales-lite-p0e2/one-time-export-decision.cjs').read_text()
+          source=re.sub(r'/\*[\s\S]*?\*/','',s)
+          for token in ('fetch(', 'process.env.', 'child_process', 'fs.writeFile',
+            'pg_dump ', 'pg_restore ', 'supabase db dump', 'axios(', 'sendMessage(',
+            'apply_migration(', 'SUPABASE_SERVICE_ROLE_KEY', 'INSERT INTO', 'UPDATE public.'):
+            assert token not in source, token
+          for statement in ('can_export:false','can_restore:false',
+             'real_approval_issued:false','lease_real_persisted:false',
+             "operation:'ONE_TIME_STAGING_LOGICAL_EXPORT_REVIEW'"):
+            assert statement in s, statement
+          print('PASS: source-only manual decision; zero operational authorization')
+          PY
+      - name: Actual NO-GO decision for absent private authorizations
+        run: |
+          node - <<'NODE'
+          const {decideOneTimeExport}=require('./qa/v15-sales-lite-p0e2/one-time-export-decision.cjs');
+          const d=decideOneTimeExport();
+          if(d.status!=='NO_GO'||d.can_export||d.can_restore||d.can_apply_migration)process.exit(9);
+          console.log('VERIFIED_OFFLINE_NO_GO: missing independently verified operator/vault/controller approval');
+          NODE
