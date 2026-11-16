@@ -154,3 +154,36 @@ The output is only generic lint status. **Never create Store ownership by guessi
 - No change to Supabase hosted permissions, RLS, database, n8n Published, Cloudflare, production credentials or Zalo sends.
 
 **Checkpoint remains OPEN DRAFT / SOURCE-ONLY TESTED / HOSTED M0-M1 NO-GO.**
+
+
+## 10. RPC.7 M0 existing local archive — operator self-report intake (16/11/2026 JST)
+
+**Source:** User-supplied PowerShell **summary output** from `Inspect-TIEN404-RPC7-M0.ps1` after running against their existing private H11R archive. This is **MERCHANT/OPERATOR SELF-REPORTED LOCAL EVIDENCE — NOT INDEPENDENTLY VERIFIED**. No raw TOC, archive file, private receipt, byte content, owner ID or credential was uploaded or inspected by ChatGPT. Checkpoint only records the non-sensitive classification and comparison booleans:
+
+| Local field | Reported output | Interpretation |
+|---|---|---|
+| `classification` | `PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY` | App-only TOC coverage |
+| `localEvidenceStatus` | `LOCAL_ARCHIVE_TOC_REVIEW_ONLY` | Structural TOC receipt only |
+| `referenceHashMatches` | `True` | Local hash agrees with historical reference entered in script |
+| `referenceBytesMatches` | `True` | Local size agrees with historical reference entered in script |
+| `applicationEntries` | `5` | All five required application TABLE DATA entries represented |
+| `authEntries` | `0` | None of three required Auth TABLE DATA entries represented |
+| `storageEntries` | `0` | None of two required Storage TABLE DATA entries represented |
+| `receiptSavedLocally` | `true` | Operator reports receipt stored locally; its actual existence not independently inspected |
+| `m0Approved` / `m1Authorized` | `false` / `false` | No operational authorization |
+
+**Acceptance outcome:**
+- `H11R_LOCAL_ARCHIVE_CHECKSUM_MATCH=SELF_REPORTED`
+- `APPLICATION_TOC_COVERAGE=SELF_REPORTED_5_OF_5`
+- `FULL_AUTH_STORAGE_RECOVERY=NOT_PROVEN`
+- `OFF_HOST_INDEPENDENT_RESTORE=NOT_PROVEN`
+- `FOUR_ROW_CANONICAL_STORE_OWNERSHIP=NOT_PROVEN`
+- `M0_REAL_RECOVERY_ACCEPTANCE=BLOCKED`
+- `M1_HOSTED_SCHEMA_EXPAND_AUTHORIZATION=NO_GO`
+- `PUBLIC_RPC_REVOKE=NO_GO`
+
+SHA/byte match establishes local consistency only with reference values submitted to the command, not identity or freshness of the hosted Supabase source or successful restore. TOC entries are not row-level restore evidence. Storage object **bytes** require separate recovery irrespective of database metadata. The `APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN` scope must still have a separately approved and independently tested Auth and Storage dependency recovery plan and residual-risk review; selecting the scope in a CLI is not an approval.
+
+**Next operational dependency:** independent H11R archive provenance/source freshness review; Store-to-row owner proof reviewed privately (2 Products + 2 Orders); Auth/Storage recovery dependency proposal; explicit encrypted recovery authorization and real isolated restore if the selected migration requires a new valid snapshot. Do not automatically make a new backup or run M1. Keep the archive and receipt local.
+
+This section supersedes only the earlier statement that the local Windows tool run was outstanding. It does **not** supersede NO-GO for real M0/M1 or certify full-service restoration.
