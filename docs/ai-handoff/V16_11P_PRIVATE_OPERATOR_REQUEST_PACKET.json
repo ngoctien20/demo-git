@@ -1,0 +1,232 @@
+{
+  "contract": "T404_V1611P_PRIVATE_OPERATOR_APPROVAL_REQUEST_PACKET_V1",
+  "stage": "PRIVATE_OPERATOR_EVIDENCE_REQUEST_PREPARATION",
+  "release": "NO_GO",
+  "source_control": "PUBLIC_METADATA_ONLY_DO_NOT_UPLOAD_PROOF",
+  "environment": {
+    "name": "tien404-staging",
+    "supabase_project_ref": "ifxlvrhyjhbzbrkdsida",
+    "pg_major": 17,
+    "store_schema_present": false,
+    "real_jwt_owner_A_B_test": "NOT_RUN",
+    "n8n_published_changed": false
+  },
+  "actors": [
+    {
+      "role": "MERCHANT_OWNER_A",
+      "assignment": "UNVERIFIED",
+      "proof_ref": null
+    },
+    {
+      "role": "MERCHANT_OWNER_B",
+      "assignment": "UNVERIFIED",
+      "proof_ref": null
+    },
+    {
+      "role": "TIEN404_PLATFORM_REQUESTER",
+      "assignment": "NOT_FORMALLY_ASSIGNED",
+      "proof_ref": null
+    },
+    {
+      "role": "BACKUP_RECOVERY_OPERATOR",
+      "assignment": "NOT_ASSIGNED",
+      "proof_ref": null
+    },
+    {
+      "role": "INDEPENDENT_SECURITY_REVIEWER",
+      "assignment": "NOT_ASSIGNED",
+      "proof_ref": null
+    },
+    {
+      "role": "RELEASE_AUTHORITY",
+      "assignment": "NOT_ASSIGNED",
+      "proof_ref": null
+    }
+  ],
+  "evidence_specs": [
+    {
+      "kind": "MERCHANT_OWNER_A_AUTHORITY",
+      "source": "Native merchant/legal proof in secure vault",
+      "status": "MISSING"
+    },
+    {
+      "kind": "MERCHANT_OWNER_B_AUTHORITY",
+      "source": "Separate owner proof, not A's credentials",
+      "status": "MISSING"
+    },
+    {
+      "kind": "NATIVE_PAGE_OA_OWNERSHIP",
+      "source": "Provider native ownership evidence, scoped asset",
+      "status": "MISSING"
+    },
+    {
+      "kind": "REAL_SUPABASE_JWT_A_B",
+      "source": "JWT issuer/session verified via private API testing; token never logged",
+      "status": "MISSING"
+    },
+    {
+      "kind": "SAME_TENANT_STORE_RLS_READ_WRITE",
+      "source": "Independent reviewer, real JWT, isolated safe rows only",
+      "status": "BLOCKED_BY_SCHEMA"
+    },
+    {
+      "kind": "LEGACY_ROW_STORE_MAPPING",
+      "source": "Every inherited row owner mapped by merchant authority; unknown quarantine",
+      "status": "MISSING"
+    },
+    {
+      "kind": "DATABASE_ENCRYPTED_BACKUP_PLAN",
+      "source": "Exact operator, approved method, encryption key custody, offsite retention",
+      "status": "MISSING"
+    },
+    {
+      "kind": "DATABASE_PRIVATE_DISPOSABLE_RESTORE",
+      "source": "Separately approved isolated target and data minimization",
+      "status": "MISSING"
+    },
+    {
+      "kind": "STORAGE_OBJECT_BYTES_AND_METADATA_BACKUP",
+      "source": "Separate physical object bytes + metadata, checksum and ACL test",
+      "status": "MISSING"
+    },
+    {
+      "kind": "STORAGE_OBJECT_RESTORE",
+      "source": "Object bytes, keys, ACL, consistency and restore check",
+      "status": "MISSING"
+    },
+    {
+      "kind": "AUTH_SESSIONS_AND_CUSTOM_ROLES_RECOVERY",
+      "source": "Custom role password/session/recovery coverage, explicit verification",
+      "status": "MISSING"
+    },
+    {
+      "kind": "RPC_CALLER_INVENTORY",
+      "source": "All real callers and privilege attestation before any revoke",
+      "status": "MISSING"
+    },
+    {
+      "kind": "MERCHANT_DPA_PRIVACY_SCOPE",
+      "source": "Signed merchant data processing agreement/retention",
+      "status": "MISSING"
+    },
+    {
+      "kind": "N8N_SAAS_LICENSE_WRITTEN",
+      "source": "Written permitted Cloud SaaS use scope with multiple merchants",
+      "status": "MISSING"
+    },
+    {
+      "kind": "INDEPENDENT_SECURITY_REVIEWER",
+      "source": "Authenticated external reviewer identity and signoff",
+      "status": "MISSING"
+    },
+    {
+      "kind": "EXPLICIT_COST_AND_DOWNTIME_APPROVAL",
+      "source": "Quote amount, billing, maintenance window, downtime and decision",
+      "status": "MISSING"
+    },
+    {
+      "kind": "INDEPENDENT_RELEASE_AUTHORITY",
+      "source": "Separate approved release authority after security gate",
+      "status": "MISSING"
+    },
+    {
+      "kind": "COMMERCE_NO_DUAL_WRITER",
+      "source": "Canonical writer and rollback / idempotency acceptance",
+      "status": "MISSING"
+    }
+  ],
+  "action_requests": [
+    {
+      "action": "HOSTED_BACKUP_DB",
+      "state": "NOT_AUTHORIZED",
+      "operator": "NOT_ASSIGNED",
+      "encryption": "NOT_VERIFIED",
+      "destination": "NOT_CONFIGURED",
+      "cost_quote": "NOT_OBTAINED"
+    },
+    {
+      "action": "HOSTED_BACKUP_STORAGE_OBJECTS",
+      "state": "NOT_AUTHORIZED",
+      "operator": "NOT_ASSIGNED",
+      "destination": "NOT_CONFIGURED"
+    },
+    {
+      "action": "RESTORE_TO_DISPOSABLE_PRIVATE_TARGET",
+      "state": "NOT_AUTHORIZED",
+      "target": "NOT_PROVISIONED",
+      "data_reduction": "NOT_APPROVED"
+    },
+    {
+      "action": "STORE_RLS_MIGRATION",
+      "state": "DO_NOT_APPLY",
+      "backup_attested": false,
+      "jwt_acceptance": "NOT_RUN"
+    },
+    {
+      "action": "REAL_OWNER_JWT_UAT",
+      "state": "NOT_AUTHORIZED",
+      "real_test_accounts": "NOT_PROVISIONED"
+    },
+    {
+      "action": "RPC_GRANT_REVOKE",
+      "state": "NOT_AUTHORIZED",
+      "all_callers_attested": false
+    },
+    {
+      "action": "PAID_SUPABASE_BRANCH_OR_PROJECT",
+      "state": "NOT_AUTHORIZED",
+      "cost_quote": "NOT_OBTAINED"
+    },
+    {
+      "action": "MERCHANT_DATA_INGESTION",
+      "state": "NOT_AUTHORIZED",
+      "dpa_signed": false
+    },
+    {
+      "action": "PUBLISH_N8N_AND_PROVIDER_SEND",
+      "state": "NOT_AUTHORIZED",
+      "channel_owner_verified": false
+    }
+  ],
+  "recovery_coverage": {
+    "database_schema_and_rows": "NOT_VERIFIED",
+    "storage_object_metadata": "NOT_VERIFIED",
+    "storage_object_bytes": "NOT_VERIFIED",
+    "auth_sessions_custom_roles": "NOT_VERIFIED",
+    "rpc_permissions_and_callers": "NOT_VERIFIED",
+    "channel_bindings_and_credential_rotation": "NOT_VERIFIED",
+    "independent_restore_measurement": "NOT_VERIFIED",
+    "rollback_proof": "NOT_VERIFIED",
+    "encrypted_backup_artifact_digest": "NOT_VERIFIED",
+    "last_recoverable_point": "UNDEFINED",
+    "rpo_rto": "UNMEASURED"
+  },
+  "legal_and_policy": {
+    "lawful_basis": "NOT_REVIEWED",
+    "dpa_signed": false,
+    "merchant_consent_authority": false,
+    "public_evidence_storage_permitted": false,
+    "retention_policy_signed": false
+  },
+  "budget": {
+    "quote_required": true,
+    "quote_received": false,
+    "proposed_max_vnd": null,
+    "user_approved_max_vnd": null,
+    "payment_incurred": false,
+    "storage_restore_target_id": null,
+    "maintenance_window": null
+  },
+  "approvals": {
+    "hosted_backup": false,
+    "hosted_restore": false,
+    "hosted_migration": false,
+    "permissions_change": false,
+    "real_jwt_access": false,
+    "paid_resources": false,
+    "merchant_data": false,
+    "commerce_release": false
+  },
+  "next_action": "Private operator identifies roles and obtains costed, data-minimized backup/restore request before any hosted action",
+  "rollback": "Close Draft PR; no Supabase/n8n/Cloudflare host mutations to reverse"
+}

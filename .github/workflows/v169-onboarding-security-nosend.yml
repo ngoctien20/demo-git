@@ -8,6 +8,8 @@ on:
       - 'qa/v169-security/**'
       - 'qa/v1610-disposable/**'
       - 'qa/v1611-hosted-gates/**'
+      - 'qa/v1611p-private/**'
+      - 'docs/ai-handoff/V16_11P_*'
       - 'docs/ai-handoff/V16_11_*'
       - 'docs/ai-handoff/V16_10_*'
       - 'docs/ai-handoff/V16_9_*'
@@ -17,7 +19,7 @@ permissions:
   contents: read
 jobs:
   synthetic-security:
-    name: 75 new V16.9 security tests and 235 inherited Node regressions
+    name: 460 V16.11P private operator and inherited Node QA (NO SEND)
     runs-on: ubuntu-24.04
     timeout-minutes: 14
     steps:
@@ -32,6 +34,42 @@ jobs:
           node --check qa/v169-security/readiness-ui.mjs
           node --check qa/v169-security/browser.test.cjs
           node --check qa/v169-security/v169-security.test.mjs
+      - name: Syntax check V16.11P request and browser fixture
+        run: |
+          node --check qa/v1611p-private/operator-intake.mjs
+          node --check qa/v1611p-private/operator-intake.test.mjs
+          node --check qa/v1611p-private/operator-ui.mjs
+          node --check qa/v1611p-private/browser.test.cjs
+      - name: V16.11P 68 new private request / recovery gate tests
+        run: node --test qa/v1611p-private/operator-intake.test.mjs
+      - name: V16.11P NO REAL HOSTED AUTH / NO BILLING / NO PRIVATE PROOF gate
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('qa/v1611p-private')
+          packet=json.loads(Path('docs/ai-handoff/V16_11P_PRIVATE_OPERATOR_REQUEST_PACKET.json').read_text())
+          source=(root/'operator-intake.mjs').read_text()
+          ui=(root/'operator-ui.mjs').read_text()
+          test=(root/'operator-intake.test.mjs').read_text()
+          html=(root/'index.html').read_text()
+          assert packet['release']=='NO_GO'
+          assert len(packet['evidence_specs'])==18 and len(packet['action_requests'])==9
+          assert packet['budget']['quote_received'] is False
+          assert packet['budget']['payment_incurred'] is False
+          assert packet['budget']['user_approved_max_vnd'] is None
+          assert all(v is False for v in packet['approvals'].values())
+          assert all(x['state'] in ('NOT_AUTHORIZED','DO_NOT_APPLY') for x in packet['action_requests'])
+          assert len(re.findall(r"test\('",test))==68
+          assert "connect-src 'none'" in html and "script-src 'self'" in html
+          for f in (source,ui):
+            for p in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\blocalStorage\b',
+                      r'\bsessionStorage\b',r'\bprocess\.env\b',r'\bcreateClient\s*\(',
+                      r'graph\.facebook\.com',r'api\.openai\.com']:
+              assert not re.search(p,f),p
+          assert not list(root.glob('wrangler.*'))
+          print('V16.11P SOURCE-ONLY / PRIVATE EVIDENCE MISSING / NO AUTH / NO HOSTED RESTORE / NO SEND: PASS')
+          PY
       - name: V16.11 new private hosted authority / recovery acceptance contract tests (58)
         run: node --test qa/v1611-hosted-gates/v1611-gate.test.mjs
       - name: V16.11 source-only no-secrets / verified baseline / NOT-AUTHORIZED gate
@@ -126,11 +164,15 @@ jobs:
           sleep 2
       - name: Run browser acceptance with network and overflow assertions
         run: node qa/v169-security/browser.test.cjs
+      - name: V16.11P private operator Chromium localhost-only UAT (72 checks)
+        run: node qa/v1611p-private/browser.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v169-private-owner-synthetic-readiness-screenshots
-          path: qa-artifacts-v169/
+          path: |
+            qa-artifacts-v169/
+            qa-artifacts-v1611p/
           if-no-files-found: ignore
 
   v1610-disposable-postgres:

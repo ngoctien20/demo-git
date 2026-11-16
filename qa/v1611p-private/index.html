@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'">
+<title>TIEN404 V16.11P — Hồ sơ vận hành khôi phục</title>
+<link rel="stylesheet" href="../v168-merchant/studio.css">
+<link rel="stylesheet" href="./operator.css">
+<script type="module" defer src="./operator-ui.mjs"></script>
+</head>
+<body><div class="shell">
+<header class="top"><div class="brand">
+<div class="mark">T<span>404</span></div>
+<div><p class="eyebrow">TIEN404 AI / PRIVATE OPERATOR PREPARATION</p><h1>Hồ sơ nghiệm thu khôi phục</h1></div>
+</div><div class="status">NO-GO · SOURCE-ONLY</div></header>
+<div class="notice" role="note"><strong>Chỉ là bản QA ngoại tuyến.</strong> Không nhập tên, số điện thoại, giấy phép kinh doanh, file, JWT, token, mật khẩu hoặc chứng cứ thật. Bản nháp không lưu hay gửi đi đâu. Quyền riêng tư và backup hosted chưa được cấp.</div>
+<div class="layout">
+<aside><div class="sidehead">PHẠM VI TIÊN 404</div>
+<label for="shop">Shop giả lập</label>
+<select id="shop"><option value="A">QA Shop A — Tenant 1</option><option value="B">QA Shop B — Tenant 1</option></select>
+<div class="scope" id="shopScope"></div>
+<div class="rule"></div>
+<p class="eyebrow">HẠ TẦNG THẬT</p>
+<p class="small muted">Supabase staging: đã bật RLS, nhưng chưa có bảng Store và quyền riêng từng Store.</p>
+<div class="rule"></div>
+<p class="eyebrow">TRẠNG THÁI HIỆN TẠI</p>
+<p class="tag warn">NO-GO: REAL JWT / RECOVERY</p>
+</aside>
+<main>
+<section class="panel active">
+<div class="heading"><div><p class="eyebrow">01 / OPERATOR REQUEST</p><h2>Đề nghị chuẩn bị khôi phục</h2>
+<p class="muted">Tạo phiếu yêu cầu QA; không phải phê duyệt backup/restore hay chi phí.</p></div><span class="tag">DRAFT · CHI PHÍ CHƯA ĐƯỢC BÁO GIÁ</span></div>
+<div class="card">
+<div class="info"><strong>Project</strong><span>tien404-staging / ifxlvrhyjhbzbrkdsida</span></div>
+<div class="info"><strong>Backup operator</strong><span>CHƯA PHÂN CÔNG</span></div>
+<div class="info"><strong>Security reviewer độc lập</strong><span>CHƯA PHÂN CÔNG</span></div>
+<div class="info"><strong>Giá và nơi restore</strong><span>CHƯA BÁO GIÁ / CHƯA TẠO</span></div>
+<div class="actions"><button id="draft" class="primary">Tạo đề nghị chuẩn bị QA</button><button id="tryBackup" class="secondary">Thử cấp quyền backup (phải chặn)</button></div>
+<pre class="output" aria-live="polite" id="requestResult"></pre>
+</div>
+</section>
+<section class="panel active">
+<div class="heading"><div><p class="eyebrow">02 / EVIDENCE METADATA</p><h2>Danh mục chứng cứ</h2>
+<p class="muted">Chỉ tiếp nhận mã giả lập. Nội dung chứng cứ thật phải nằm ngoài repository, tại nơi riêng tư được phê duyệt.</p></div><span class="tag">NO REAL EVIDENCE</span></div>
+<div class="two">
+<div class="card"><h3>Phiếu QA cho từng Shop</h3>
+<label for="kind">Loại chứng cứ</label><select id="kind"></select>
+<div class="actions"><button id="ask" class="secondary">Yêu cầu chứng cứ QA</button><button id="receive" class="secondary">Ghi metadata QA</button><button id="review" class="secondary">Reviewer QA xem metadata</button></div>
+<pre id="evidenceResult" class="output" aria-live="polite"></pre>
+</div>
+<div class="card"><h3>Ma trận chứng cứ</h3><div id="evidenceMatrix" class="connections"></div></div>
+</div>
+</section>
+<section class="panel active">
+<div class="heading"><div><p class="eyebrow">03 / RECOVERY COVERAGE</p><h2>Phạm vi bảo vệ dữ liệu</h2><p class="muted">Database, Storage file bytes, Auth/session/role, RPC và cấu hình kênh phải có kế hoạch khôi phục riêng.</p></div><span class="tag warn">0 PROOF VERIFIED</span></div>
+<div class="card"><div id="recoveryMatrix" class="connections"></div>
+<pre id="goResult" class="output" aria-live="polite"></pre></div>
+</section>
+</main>
+</div>
+<footer>TIEN404 V16.11P · LOCAL SYNTHETIC METADATA · NO STORAGE · NO JWT · NO PAID RESOURCES · NO SEND</footer>
+</div></body></html>

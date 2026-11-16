@@ -1,0 +1,19 @@
+/* V16.11P add-on only; never hide security status or evidence labels.
+ * Long evidence IDs must wrap on narrow merchant phones. */
+.shell,.layout,main,aside,.panel,.card,.brand,.top,.heading{min-width:0;max-width:100%}
+.connections>div,.scope,.info span,.status,.eyebrow,
+.heading p,.card p,.card pre,footer{overflow-wrap:anywhere;word-break:break-word}
+.connections{min-width:0}
+@media(max-width:900px){
+ .layout{grid-template-columns:minmax(0,1fr)}
+ .two{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:570px){
+ .shell{padding-left:12px;padding-right:12px}
+ .top{flex-wrap:wrap;gap:10px}
+ .top .status{white-space:normal;max-width:100%}
+ .brand{min-width:0}
+ .brand>div:last-child{min-width:0;flex:1}
+ .eyebrow{line-height:1.5}
+ .info span{max-width:100%}
+}
