@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'none'; img-src 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'">
+<title>TIEN404 V16.11P.1 — Operator & Recovery Quote</title>
+<link rel="stylesheet" href="./quote.css"><script type="module" defer src="./quote-ui.mjs"></script></head>
+<body><div class="shell">
+<header><div><p class="eyebrow">TIEN404 AI / PRIVATE OPERATOR · V16.11P.1</p><h1>Phê duyệt khôi phục — bản chuẩn bị</h1></div><strong class="tag">NO-GO · QUOTE ONLY</strong></header>
+<p class="notice"><b>Chỉ dùng dữ liệu synthetic.</b> Không nhập tên người thật, số điện thoại, token, JWT, giấy tờ, số tài khoản, mật khẩu hay nội dung backup vào trang này. Không có khả năng gửi/tải/lưu dữ liệu.</p>
+<div class="layout"><aside class="panel">
+<h2>Phạm vi QA</h2><label for="shop">Shop giả lập</label><select id="shop"><option value="A">Shop A · Tenant 1</option><option value="B">Shop B · Tenant 1</option></select>
+<p id="scope" class="muted"></p>
+<hr><b>Cổng hiện tại</b><p class="status-blocked">Backup hosted: BLOCKED</p><p class="status-blocked">JWT-RLS thật: BLOCKED</p><p class="status-blocked">Chi phí: CHƯA PHÊ DUYỆT</p>
+<p class="muted">Supabase staging chưa có Store schema. Quyền của Shop thật không thể được xác nhận qua UI QA.</p>
+</aside>
+<main>
+<section class="panel"><p class="eyebrow">01 / RECOVERY TARGET</p><h2>So sánh phương án chỉ báo giá</h2>
+<label for="hours">Thời gian dự kiến</label><select id="hours"><option value="8">8 giờ</option><option value="24" selected>24 giờ</option><option value="72">72 giờ</option></select>
+<div id="quotes" class="quotes"></div>
+<p class="muted">USD — chỉ tham chiếu Micro compute công khai; chưa gồm Storage, disk, egress, giá gói, thuế hay chi phí vận hành. Không phải báo giá tài khoản.</p>
+<div class="actions"><button id="draftQuote">Lập đề nghị lấy báo giá QA</button><button id="tryProvision" class="secondary">Thử tạo resource (phải chặn)</button></div>
+<pre id="quoteResult" aria-live="polite"></pre>
+</section>
+<section class="panel"><p class="eyebrow">02 / OPERATOR ASSIGNMENT</p><h2>Danh sách trách nhiệm, chưa phân công người thật</h2>
+<label for="role">Vai trò cần xác minh</label><select id="role"></select>
+<div class="actions"><button id="nominate">Đề xuất vai trò QA</button><button id="review">Rà soát metadata QA</button></div>
+<pre id="operatorResult" aria-live="polite"></pre><div id="roles" class="roles"></div>
+</section>
+<section class="panel"><p class="eyebrow">03 / AUTHORIZATION</p><h2>Văn bản xin phê duyệt — chưa ký</h2>
+<p class="muted">Cần xác minh hai Owner, Backup Operator, Security Reviewer độc lập, ngân sách trần, thời gian bảo trì, nơi phục hồi và rollback trước khi được phép thao tác hosted.</p>
+<div class="actions"><button id="draftAuthorization">Lập bản nháp xin phê duyệt</button></div>
+<pre id="authorizationResult" aria-live="polite"></pre>
+<div id="gate" class="status-blocked" aria-live="polite"></div>
+</section>
+</main></div><footer>TIEN404 V16.11P.1 · LOCAL QA ONLY · NO REAL IDENTITIES · NO API · NO STORAGE · NO CHARGE · NO SEND</footer></div>
+</body></html>
