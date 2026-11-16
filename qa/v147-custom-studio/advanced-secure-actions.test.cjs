@@ -107,7 +107,7 @@ test('26 signed order lookup requires actual customer ownership',()=>{
  const x=setup(),token=x.t({action:'TRACK_ORDER',resourceId:'qa_order_1'}).token;
  assert.throws(()=>x.registry.inspectAndConsumeQa({token,context:fixture({orderOwnershipVerified:false})}),/CUSTOMER_ORDER_OWNERSHIP_REQUIRED/);
 });
-test('27 can't issue order lookup for other customer',()=>{
+test('27 cannot issue order lookup for other customer',()=>{
  const x=setup();
  assert.throws(()=>x.t({action:'TRACK_ORDER',resourceId:'qa_order_other',context:fixture({orderOwnershipVerified:false})}),/ORDER_RESOURCE_SCOPE_REQUIRED/);
 });
