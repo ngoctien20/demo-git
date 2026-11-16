@@ -34,7 +34,7 @@ There are **two existing Product records and two existing Order records**. None 
 
 ## 2. IMPLEMENTED in this Draft
 
-- `qa/v15-sales-lite-p0b/ownership-evidence-gate.cjs`: metadata-only strict private proof packet validator. One independent ticket for each of the 13 evidence categories below. No PII/credential field accepted in the proof packet. **Even a syntactically complete packet has `approved_migration=false`, `can_change_rls=false`, `can_write_real_order=false` and `can_send_provider=false`.**
+- `qa/v15-sales-lite-p0b/ownership-evidence-gate.cjs`: metadata-only strict private proof packet validator. A structured packet for **14 evidence classes**, split into 9 PRE-EXPAND review prerequisites and 5 POST-EXPAND certification prerequisites. There is no circular demand for a Store row before the approved Store-schema expansion. No PII/credential field accepted in the proof packet. **Even a syntactically complete packet has `approved_migration=false`, `can_change_rls=false`, `can_write_real_order=false` and `can_send_provider=false`.**
 - `ownership-evidence-gate.test.cjs`: negative cases for fake PASS, no Store proof, missing independent consent, duplicate evidence, privacy, restore omission and attempted hosted writes.
 - `docs/ai-handoff/V15_P0B_HOSTED_OWNER_EVIDENCE_PREFLIGHT_READ_ONLY.sql`: aggregate/schema/RPC privilege metadata SELECT-only preflight, wrapped in read-only transaction. Do not use it for actual owner certification.
 - `qa/v15-sales-lite-p0b/preflight-contract.test.cjs`: rejects DDL/DML/RPC and unauthorized data outputs in the preflight source.
@@ -42,21 +42,29 @@ There are **two existing Product records and two existing Order records**. None 
 
 ## 3. Owner evidence required — PRIVATE repository, never public GitHub
 
-For one candidate pilot Store, independent reviewer must reconcile all the following using real authenticated read-only evidence:
+For one candidate pilot Store, independent reviewer must reconcile the following in a PRIVATE system. The first nine proofs support a **pre-expand review request only**; the remaining five require post-expand certification:
 
-1. **Auth user:** merchant's live session and auth account verified via Supabase Auth, not user metadata or self-declared user ID.
-2. **Tenant membership:** active `tenant_memberships` for that Auth user and exact Tenant.
-3. **Canonical Store:** approved Store row under that exact Tenant — currently missing.
-4. **Store membership:** explicit active record for that user, Tenant and Store — currently missing.
-5. **Provider owner consent:** independent signed/native proof for Page/Bot/OA or Web Widget binding and authorization to operate/send; Zalo G2.3 is not certified.
-6. **Legacy products attribution:** independently determine each of the 2 existing Products' correct Store, or quarantine unassigned rows; no default-backfill.
-7. **Legacy orders attribution:** independently determine each of the 2 existing Orders' correct Store, or quarantine unassigned rows; no default-backfill.
-8. **Private backup snapshot:** authorized backup with timestamp, retention, location, scope, integrity evidence and security controls.
-9. **Isolated restore drill:** successful restore of the authorized snapshot into an isolated target; confirm schema, counts, RLS, functions, extensions, encryption/Vault dependencies and safe control of outgoing jobs. No actual restore was executed in P0-B.
-10. **Rollback plan:** explicit migration reverse strategy that does not DROP/DELETE data blindly and includes a go/no-go condition.
-11. **Privileged RPC review:** independent review of `SECURITY DEFINER` and role `EXECUTE`, with specific owner-approved change plan.
-12. **Hosted JWT RLS QA:** fresh signed-in actual Auth tests for A/B same Tenant and C across Tenants, anon, revoked, read/write, Store foreign keys and service_role bypass. Currently **BLOCKED** until canonical Store migration approval.
-13. **Merchant pilot approval:** explicit consent for real pilot scope, allowed communications and data use, independently verifiable.
+**Pre-expand review — 9 required classes (still NOT owner approval to apply DDL):**
+
+1. **Auth user:** Supabase Auth user/session validated independently; no user-supplied JWT claims as authority.
+2. **Tenant membership:** active Auth user → existing Tenant membership (matching user/tenant) verified in a protected channel.
+3. **Proposed Store owner intake:** verified merchant submits request to create a new Store under an owned Tenant; **proposed Store identity, NOT a database row**. Prevents a circular dependency.
+4. **Legacy Products attribution:** private inventory of the 2 existing Products; each assigned only with explicit independent provenance or remains quarantined/unassigned.
+5. **Legacy Orders attribution:** private inventory of the 2 existing Orders, with the same rule; no default-Store backfill.
+6. **Private backup snapshot:** independent backup time/location/scope and integrity proof.
+7. **Isolated restore drill:** restore and validate the snapshot with outbound actions disabled/contained, documented recovery.
+8. **Rollback plan:** versioned, reviewed, migration-specific reversal without blind DROP/DELETE.
+9. **Privileged RPC review:** independent review of SECURITY DEFINER/EXECUTE and any grant change plan.
+
+**Post-expand certification — 5 additional required classes before live merchant pilot:**
+
+10. **Canonical Store:** actual Store row exists under exactly the authorized Tenant after a **separately approved** schema expansion.
+11. **Store membership:** actual active user/Tenant/Store membership and exact role verified using Auth/JWT; not synthetic QA mapping.
+12. **Native provider merchant consent:** authenticated Page/Bot/OA/widget binding and independent owner permission; Zalo G2.3 must pass if using Zalo.
+13. **Hosted JWT/RLS QA:** A/B same-Tenant, C other-Tenant, anon, revoked roles, SELECT/INSERT/UPDATE/FK and service_role boundary.
+14. **Merchant pilot approval:** separate explicit permission for genuine channel traffic and real business data.
+
+**Important:** Even if all 9 pre-expand evidence references have valid shape, `inspectOwnershipPacket(packet,'PRE_EXPAND_REVIEW')` returns only `INDEPENDENT_PRE_EXPAND_REVIEW_REQUIRED` — **never** migration authorization. Post-expand packet returns `INDEPENDENT_REVIEW_REQUIRED`; neither status certifies submitted claims or authorizes DB changes.
 
 **Proof packet:** Store ticket IDs only (e.g. `EV-...` and `SEC-...`) and approved source category, always `SUBMITTED_NOT_VERIFIED`. Actual evidence is stored in protected private storage. A public PR MUST NOT contain tokens, Auth IDs, raw JWT, telephone, email, order data, screenshots of secrets or live provider content.
 
@@ -79,7 +87,7 @@ Official clone limitations: https://supabase.com/docs/guides/platform/clone-proj
 
 **Gate M0 — source-only audit:** PASS once this Draft CI is green. No hosted write.
 
-**Gate M1 — private evidence intake:** BLOCKED until merchant ownership and row attribution independently reviewed. Cannot be satisfied by synthetic fixture-only HMAC/Zalo mapping.
+**Gate M1 — pre-expand evidence intake:** BLOCKED until the nine PRE-EXPAND classes are independently validated. This includes an owner-backed proposed Store request, NOT a requirement that `public.stores` already exists.
 
 **Gate M2 — private backup and independent restore:** BLOCKED; must have snapshot checksum, tested restore, side-effect prevention and written rollback.
 
@@ -87,7 +95,7 @@ Official clone limitations: https://supabase.com/docs/guides/platform/clone-proj
 
 **Gate M4 — separate owner approval for each hosted change:** NOT APPROVED. Request explicit permission for: (a) creation of canonical Store/StoreMembership schema, (b) backed-up legacy row backfill, (c) changes to hosted RLS/GRANT/RPC and dependent app code, (d) live provider send & real Orders writes (independently later). **P0-B task name is not authorization** for these operations.
 
-**Gate M5 — hosted authenticated QA:** BLOCKED. After specifically approved staged migration, verify real JWT A/B/C, negatives and rollback. Never treat disposable PG17 PASS as hosted proof.
+**Gate M5 — post-expand hosted authentication QA:** BLOCKED. After separately approved Store schema expansion and explicit Store membership provisioning, collect the remaining five POST-EXPAND proof classes. Verify real JWT A/B/C, negative cases and rollback. Never treat disposable PG17 PASS as hosted proof.
 
 **Gate M6 — real Commerce/pilot:** BLOCKED; provider native identity, confirmed order, transactional idempotent pending+Outbox and verified recipient, merchant UAT and live budget gate.
 
