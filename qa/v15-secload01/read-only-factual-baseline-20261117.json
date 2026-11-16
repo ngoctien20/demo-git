@@ -1,0 +1,104 @@
+{
+  "contract": "TIEN404_V15_SECLOAD01_EXTERNAL_READONLY_BASELINE_V1",
+  "date_jst": "2026-11-17",
+  "github": {
+    "repo": "ngoctien20/demo-git",
+    "checkpoint_prs": [
+      235,
+      239
+    ],
+    "pr239_head": "fb4a85139acfdb3116dc44f4476eb70205f87855",
+    "pr239_ci_run": 43901431570,
+    "pr239_ci_result": "SUCCESS",
+    "inherited_pg_disposable_connections": 64,
+    "pg_claim_wins": 1,
+    "pg_claim_denied": 63,
+    "inherited_source_regressions_passed": 294,
+    "production_load_evidence": false
+  },
+  "n8n": {
+    "workflow_id": "Z7FdV7uDvApfbURQ",
+    "published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "active": true,
+    "node_count": 27,
+    "agent_writable_tool_links": [
+      "create_order",
+      "manage_order",
+      "update_order_address",
+      "get_order_status",
+      "create_support_ticket"
+    ],
+    "catalog_read_tool_attached": true,
+    "executions_total_available": 28,
+    "webhook_executions_with_duration": 25,
+    "webhook_success_in_sample": 25,
+    "webhook_execution_wallclock_min_ms": 59,
+    "webhook_execution_wallclock_p50_ms": 9081,
+    "webhook_execution_wallclock_p95_ms": 15391,
+    "webhook_execution_wallclock_p99_ms": 16305,
+    "webhook_execution_wallclock_max_ms": 16589,
+    "sample_window_utc": [
+      "2026-11-11T10:38:00.818Z",
+      "2026-11-16T11:31:09.716Z"
+    ],
+    "methodology": "LINEAR_INTERPOLATION_SORTED_WALLCLOCK",
+    "does_not_measure": [
+      "REAL_CONCURRENCY_CAPACITY",
+      "RPS",
+      "PROVIDER_DELIVERY_TIME",
+      "AI_PROVIDER_TOKEN_COST",
+      "QUEUE_WAIT",
+      "BOT_CORRECTNESS"
+    ],
+    "all_execution_status_count": {
+      "success": 26,
+      "error": 2
+    },
+    "errors_in_manual_mode": 2
+  },
+  "supabase": {
+    "project": "tien404-staging",
+    "postgres_version": "17.11",
+    "public_stores_table_exists": false,
+    "public_store_memberships_exists": false,
+    "commerce_store_id_columns": 0,
+    "store_qualified_public_rls_policies": 0,
+    "one_shot_claim_rpc_exists": false,
+    "security_definer_functions_needing_review": [
+      {
+        "function": "qa_shop_b_zalo_claim",
+        "anon_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "function": "qa_owner_pairing",
+        "anon_execute": false,
+        "authenticated_execute": true
+      },
+      {
+        "function": "save_merchant_product",
+        "anon_execute": false,
+        "authenticated_execute": true
+      }
+    ],
+    "advisory_rls_enabled_no_policy_count": 18,
+    "note": "PRIVATE SCHEMAS MAY INTENTIONALLY DENY ALL; SECURITY DEFINER WARNINGS ARE NOT PROOF OF EXPLOITABILITY"
+  },
+  "qa_csv": {
+    "single_turn_rows": 96,
+    "single_turn_unique_ids": 96,
+    "single_turn_actual_outputs_present": 0,
+    "multi_turn_rows": 36,
+    "multi_turn_unique_ids": 36,
+    "multi_turn_not_run": 36,
+    "historic_qa_responses_rows": 97,
+    "historic_qa_responses_unique_ids": 96,
+    "historic_duplicate_id": "QA01",
+    "actual_132_model_benchmark_certified": false
+  },
+  "provider_live_benchmark": false,
+  "real_webhook_load_test_executed": false,
+  "authorization": "READ_ONLY_CONNECTED_AUDIT_PLUS_DISPOSABLE_SOURCE_ONLY_QA",
+  "owner_secrets_customer_ids_exported": false,
+  "live_changed": false
+}
