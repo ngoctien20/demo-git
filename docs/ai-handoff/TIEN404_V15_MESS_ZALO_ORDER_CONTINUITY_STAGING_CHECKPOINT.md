@@ -40,3 +40,14 @@
 ## Safety / rollback
 
 No n8n workflows, hosted Supabase, secret, customer order, provider send, billing, Cloudflare deployment or production branch are modified by these source-only files. In a GitHub Draft PR, rollback is close PR/revert the additive commit. In local workspace, remove `qa/v15-cross-channel/`, its new CI YAML and this checkpoint. Do not promote until independent CI and owner UAT.
+## QA acceptance update — exact CI evidence 2026-11-16 JST
+
+- Draft PR: https://github.com/ngoctien20/demo-git/pull/137
+- Initial source HEAD `56c07d523b46f4c3fdcd491558f4feae7c2a3790`.
+- GitHub Actions [#43793523667](https://github.com/ngoctien20/demo-git/actions/runs/43793523667): **COMPLETED SUCCESS**, both jobs green at that exact HEAD.
+- Node22 synthetic E2E checks: **26/26 PASS**, 0 failed, using existing V15 P256 signed synthetic gate from repository. Tested consent, one-time challenge, expiry/replay/3 attempts, cross-Store denial, same ID on two channels after link, idempotent order and no PII leak; no inference API.
+- PostgreSQL17: parent `PASS_DISPOSABLE_POSTGRES17_RLS_ISOLATION_NOT_HOSTED` and new `PASS_DISPOSABLE_CROSS_CHANNEL_DB_NO_HOSTED_JWT` both printed in disposable DB job. Actual SQL inserts/selects executed only against throwaway GitHub Actions Postgres; NOT Supabase hosted and NOT validated with a real provider or signed Auth JWT.
+- Security static NO-SEND / NO HOSTED dependency check PASS.
+- GitHub CI initially failed to parse a workflow step name (colon without quoting), then failed to initialize the PostgreSQL service due to Docker health-command quoting. Both were corrected in Draft before the first SUCCESS. No production impact.
+
+This approval is for **SOURCE-ONLY SYNTHETIC/DISPOSABLE QA**, not for hosted RLS, business operations, real identity verification or messaging. Production **NO-GO**.
