@@ -165,7 +165,7 @@ export function auditPrivateOperatorPacket(packet,{nowMs=()=>Date.now()}={}){
   business_rows_missing_review:rows.unreviewed_rows,
   meta_proof_domain_count:meta.covered,
   zalo_proof_domain_count:zalo.covered,
-  missing_evidence:frozen([...new Set(gaps)]),
+  missing_evidence:freeze([...new Set(gaps)]),
   // All evidence refs/digests remain private and never leave the interpreter.
   actual_archive_read_by_this_code:false,
   external_witness_identity_authenticated:false,
