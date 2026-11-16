@@ -8,7 +8,7 @@
   "qa_consent": "PRIVATE_EVIDENCE_NOT_PRESENT",
   "independent_reviewer": "PRIVATE_EVIDENCE_NOT_PRESENT",
   "owner_final_patch_approval": "PRIVATE_EVIDENCE_NOT_PRESENT",
-  "exact_published_sha": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+  "exact_published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
   "rollback_private_snapshot": "PRIVATE_EVIDENCE_NOT_PRESENT",
   "atomic_backend_verified": "PRIVATE_EVIDENCE_NOT_PRESENT",
   "live_canary_sent": false
