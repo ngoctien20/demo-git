@@ -1,0 +1,73 @@
+name: TIEN404 CBOT-UAT-05 Real Evidence Native Authority NO-GO QA
+on:
+  push:
+    branches:
+      - work/cbot-uat05-real-evidence-native-authority-gated-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat05/**'
+      - '.github/workflows/cbot-uat05-real-evidence-no-hosted-write.yml'
+      - 'docs/ai-handoff/CBOT_UAT05_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-observation-source-audit:
+    name: 31 new evidence intake plus 238 inherited source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax + real evidence reference boundary cases
+        run: |
+          node --check qa/cbot-uat05/real-evidence-intake.mjs
+          node --check qa/cbot-uat05/report-cli.mjs
+          node --test qa/cbot-uat05/real-evidence-intake.test.mjs
+      - name: Inherit UAT04 UAT03 UAT02 UAT01 V16.7 safety suite
+        run: |
+          node --test qa/cbot-uat04/trusted-rpc-replacement.test.mjs
+          node --test qa/cbot-uat04/private-recovery-hosted-preflight.test.mjs
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs
+          node --test qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Generate redacted offline NO-GO operator report
+        run: |
+          node qa/cbot-uat05/report-cli.mjs > /tmp/cbot05-report.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/cbot05-report.json'))
+          assert j['release']=={'hosted_order_lookup':False,'rpc_revoke':False,'production':False}
+          assert j['staging_auth_user_count']==3 and j['staging_auth_session_count']==5
+          assert j['cloudflare_worker_source_read']==23
+          assert j['unclosed_evidence_count']==8
+          assert len(j['blockers'])>=8
+          print('CBOT05 redacted evidence classification: NO-GO for hosted Store Order READ / RPC REVOKE / PRODUCTION')
+          PY
+      - name: Static privacy and mutation scan
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          root=Path('qa/cbot-uat05')
+          src=(root/'real-evidence-intake.mjs').read_text()+'\n'+(root/'report-cli.mjs').read_text()
+          tests=(root/'real-evidence-intake.test.mjs').read_text()
+          assert tests.count("test('")==31
+          for pattern in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+                          r'\bprocess\.env\b',r'new\s+WebSocket',r'\bchild_process\b',
+                          r'graph\.facebook\.com',r'api\.openai\.com',r'\/rest\/v1\/rpc\/']:
+              assert not re.search(pattern,src),f'Forbidden network/credential source: {pattern}'
+          assert 'REAL_OWNER_JWT_STORE_RLS_AND_RECOVERY_GATE_BLOCKED' in src
+          assert 'RPC_SIX_DOMAIN_CALLER_CUTOVER_NOT_ATTESTED' in src
+          j=json.loads((root/'observed-hosted-authority-metadata.json').read_text())
+          assert j['data_safety']['raw_customer_records_accessed'] is False
+          assert j['data_safety']['hosted_sql_mutation'] is False
+          assert j['data_safety']['provider_tokens_accessed'] is False
+          assert j['supabase']['legacy_claim_anon_execute'] is True
+          assert j['supabase']['canonical_stores_present'] is False
+          print('CBOT05 source code and observed baseline cannot deploy, write, send or revoke')
+          PY
