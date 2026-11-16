@@ -24,9 +24,10 @@ function fixture(){
   captured_at_ms:NOW-3000,expires_at_ms:NOW+120000,
   roles:REQUIRED_ROLES.map((role,i)=>({role,actor_digest:dig(1+i),source_ref:ref(i+1)})),
   existing_archive:{
-   rpc7_contract:'T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_INPUT_V1',
+   rpc7_contract:'T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_V1',
    receipt_ref:ref(80),existing_archive_sha256:dig(80),archive_bytes:123456,
-   scope:'FULL_SERVICE',local_toc_classification:'FULL_TOC_COVERAGE',
+   scope:'FULL_SERVICE',rpc7_receipt_status:'LOCAL_ARCHIVE_TOC_REVIEW_ONLY',
+   local_toc_classification:'STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED',
    prior_sha_match:true,prior_size_match:true,
    actual_offhost_restore_ref:ref(81),
    actual_restore_independent_reviewer_ref:ref(82)
@@ -107,14 +108,14 @@ test('15 TTL beyond 15 minutes rejected',()=>{
 });
 test('16 negative prior SHA/size comparison produces real blocker',()=>{
  const f=fixture();f.existing_archive.prior_sha_match=false;
- const r=audit(f);assert.ok(r.missing_evidence.includes('PREVIOUS_ARCHIVE_BASELINE_MISMATCH'));alwaysNoGo(r);
+ const r=audit(f);assert.ok(r.missing_evidence.includes('PREVIOUS_ARCHIVE_SHA_OR_SIZE_MATCH_MISSING_OR_FAILED'));alwaysNoGo(r);
 });
 test('17 app-only archive remains incomplete even with all TOC claims',()=>{
  const f=fixture();f.existing_archive.scope='APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN';
  const r=audit(f);assert.equal(r.archive_partial_coverage_possible,true);
 });
 test('18 partial archive TOC remains incomplete',()=>{
- const f=fixture();f.existing_archive.local_toc_classification='PARTIAL';
+ const f=fixture();f.existing_archive.local_toc_classification='PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY';
  const r=audit(f);assert.ok(r.missing_evidence.includes('ARCHIVE_SCOPE_OR_TOC_PARTIAL'));
 });
 test('19 even full TOC cannot certify live backup restore',()=>{
@@ -204,4 +205,18 @@ test('40 private packet cannot revoke existing anon RPC',()=>{
 });
 test('41 private packet cannot start real backup restore',()=>{
  fail(authorizeActualRestore,'REAL_BACKUP_OPERATOR_APPROVAL_REQUIRED');
+});
+
+test('42 exact RPC7 output receipt contract is mandatory',()=>{
+ const f=fixture();f.existing_archive.rpc7_contract='T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_INPUT_V1';
+ fail(()=>audit(f),'RPC7_ARCHIVE_METADATA_UNVERIFIED');
+});
+test('43 actual RPC7 output may report prior hash comparison unknown, stay NO-GO',()=>{
+ const f=fixture();f.existing_archive.prior_sha_match=null;
+ const r=audit(f);assert.ok(r.missing_evidence.includes('PREVIOUS_ARCHIVE_SHA_OR_SIZE_MATCH_MISSING_OR_FAILED'));
+ alwaysNoGo(r);
+});
+test('44 actual RPC7 LOCAL_ARCHIVE_SCOPE_INCOMPLETE cannot promote M0',()=>{
+ const f=fixture();f.existing_archive.rpc7_receipt_status='LOCAL_ARCHIVE_SCOPE_INCOMPLETE';
+ const r=audit(f);assert.ok(r.missing_evidence.includes('ARCHIVE_SCOPE_OR_TOC_PARTIAL'));
 });
