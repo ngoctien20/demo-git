@@ -1,4 +1,11 @@
 'use strict';
+/* ADV.4: expose the same ADV.2 registry to offline browser Studio; no behavior change. */
+(function(factory){
+ const api=factory();
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ if(typeof window!=='undefined')Object.defineProperty(window,'T404Adv2Registry',{value:api,writable:false,configurable:false});
+})(function(){
+
 /* V15.2-ADV.2: documentation-backed, NO-SEND component registry.
  * Capability metadata is informational, never a provider entitlement.
  * Must be consumed by a server-authorized renderer before any real send.
@@ -77,4 +84,5 @@ function resolve({channel,componentId,tenant_id,store_id}={}){
 function capabilities(channel){
   return Object.freeze(REGISTRY.filter(x=>x.channel===channel));
 }
-module.exports=Object.freeze({VERSION,CHANNELS,REGISTRY,resolve,capabilities,DOCUMENTED_BOT_TYPES});
+return Object.freeze({VERSION,CHANNELS,REGISTRY,resolve,capabilities,DOCUMENTED_BOT_TYPES});
+});
