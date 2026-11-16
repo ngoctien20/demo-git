@@ -1,6 +1,6 @@
 /**
  * V16.8 local-only synthetic Merchant Setup Studio.
- * NO fetch / XHR / server upload / localStorage / cloud credentials.
+ * NO network calls, browser persistence, server upload or cloud credentials.
  */
 import {createStagingSession,planCosts,studioConnections} from './integration.mjs';
 import {parseCsv,parseXlsx,previewImport,sampleCsvForStore,MAX_SOURCE_BYTES} from './import-preview.mjs';
