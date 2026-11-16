@@ -85,3 +85,21 @@ New privacy-safe file `qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.jso
 **Rollback distinction:** Close Draft PR #235 to remove source-only changes. This does NOT delete the independently created inactive n8n QA workflow or its audit execution #4190; retain until a separately approved cleanup. No Published workflow rollback is needed because production is untouched.
 
 **CI truth:** The GitHub connector currently has not surfaced a PR-triggered workflow run for the 03B exact HEAD. Do not mark the new source suite PASS without a confirmed GitHub Actions result. The manual n8n #4190 result is independently verified and PASS.
+
+
+### 8. VERIFIED native signed LIVE01→Meta recipient correlation (no private IDs released)
+
+New **direct read-only** inspection of actual Messenger execution `#4176` on 2026-11-17 JST, with *only derived booleans output*, compared:
+1. `Verify Signature Timing-Safe` and `Verify Meta Signature` both `verified=true`.
+2. `Extract Messenger Text` contained the exact `TIEN404-CUSTOM-LIVE01` marker, a syntactically valid Page ID, Page-scoped sender PSID and inbound Message ID.
+3. Exact Page, sender and inbound Message ID each **matched** the `Prepare Messenger Reply` values for this execution.
+4. Page and sender **matched** `Verify Messenger Send Result`; the original sender PSID **matched** `Send Messenger Reply - CONFIGURE TOKEN.recipient_id`.
+5. Meta returned an outbound MID, which **matched** the verification node's `metaMessageId`. User previously confirmed the reply was visible.
+
+**Accepted finding:** `LIVE01_SIGNED_SENDER_TO_META_SEND_CORRELATION_VERIFIED` for **that one previously executed QA conversation**. It is actual technical signed Page→sender→reply correlation, not merely a fabricated fixture; does not require another LIVE01 message.
+
+**No public identifier disclosure:** Neither actual Page ID, PSID, inbound MID, outbound MID nor token has been exported into the GitHub receipt; only booleans, workflow ID and execution ID. See `qa/cbot-messenger-canary03b/live01-signed-sender-send-match-4176.json` and six tests.
+
+**Not equivalent to a new LIVE02 authorization:** A validated *historical* signed sender can identify the intended QA conversation, but it does not by itself prove the current native Page administrator permission, time-limited owner consent for a new LIVE02 send, protected QA recipient allowlist, a one-use grant in a durable private database, independent security review or backup/restore. The public ledger's `qa_recipient_binding=PRIVATE_EVIDENCE_NOT_PRESENT` means there is **no deployed expiring allowlist/consent**, not that the historical signed sender was never seen.
+
+The current release decision remains **NO-GO LIVE02**; no Meta provider send or Published workflow change was undertaken.
