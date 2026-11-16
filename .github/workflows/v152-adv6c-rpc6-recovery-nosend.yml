@@ -1,0 +1,139 @@
+name: TIEN404 V15.2 RPC.6 Four-Row Ownership × Recovery Restore × M1 Preflight (NO EXPORT)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc6/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC6_*'
+      - '.github/workflows/v152-adv6c-rpc6-recovery-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc6-fourrow-recovery-migration-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc6-offline-ownership-and-backup-gates:
+    name: Four-row private ledger, pre-M1 recovery and M1 NO-GO source QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New RPC6 24 negative and source-only acceptance cases
+        run: |
+          node --check qa/v152-rpc6/fourrow-recovery-migration-gate.cjs
+          node --check qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+      - name: Reuse prior four-row Owner evidence private linter
+        run: node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+      - name: Reuse ADV6C independent backup DENY and RPC5 migration readiness
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+          node --test qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs
+      - name: Static no-network/no-export/no-DDL/no-sensitive-Public-Repo gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          root=Path('qa/v152-rpc6')
+          b=json.loads((root/'hosted-fourrow-recovery-baseline.json').read_text())
+          assert b['entity_counts']['products']==2
+          assert b['entity_counts']['orders']==2
+          assert b['tenant_shape']['tenants_each_with_one_product_and_one_order']==2
+          assert b['tenant_shape']['tenants_with_active_owner']==2
+          assert b['current_schema']['stores_exists'] is False
+          assert b['recovery_evidence']['current_real_restore_verified'] is False
+          assert b['allowed_actions']['export_real_backup'] is False
+          assert b['allowed_actions']['change_hosted_schema'] is False
+          src=(root/'fourrow-recovery-migration-gate.cjs').read_text()
+          assert "const {reviewPrivateEvidence}" in src
+          assert "canExportBackup:false" in src
+          assert "canApplyM1:false" in src
+          assert "resolvesArchitecturalOwnerJwtBeforeBackupDeadlockInPolicy:true" in src
+          for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+            r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.(?:write|append|unlink)',
+            r'\bexecuteQuery\s*\(',r'\bhttps?\.request\s*\(']:
+            assert not re.search(pattern,src),pattern
+          sh=(root/'ci-disposable-restore-drill.sh').read_text()
+          assert 'RPC6_DISPOSABLE_RESTORE_ONLY' in sh
+          assert 'tien404_v1441_ci' in sh and 't404_rpc6_restore_ci' in sh
+          assert 'pg_dump --dbname=tien404_v1441_ci' in sh
+          assert 'pg_restore --exit-on-error' in sh
+          assert 'NOT real hosted' in sh or 'NOT independent restore' in sh
+          print('PASS: only source/checkpoint and disposable CI backup mechanics')
+          PY
+
+  rpc6-disposable-pg17-backup-restore:
+    name: PostgreSQL17 disposable Store RLS → Customer FK → synthetic archive/restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc6_synthetic_disposable_pg17_only
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: rpc6_synthetic_disposable_pg17_only
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash safety syntax checks
+        run: |
+          bash -n qa/hosted-readiness-v1441/ci-pg17-rls.sh
+          bash -n qa/v152-rpc5/ci-pg17-customer-store-fk.sh
+          bash -n qa/v152-rpc6/ci-disposable-restore-drill.sh
+      - name: Reuse V14.4.1 Store tenant/cross-store/RLS PG17 tests
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
+      - name: Reuse RPC5 same-Store FK and privacy boundary PG17
+        run: bash qa/v152-rpc5/ci-pg17-customer-store-fk.sh
+      - name: RPC6 synthetic-only pg_dump and restore to second disposable DB
+        run: bash qa/v152-rpc6/ci-disposable-restore-drill.sh
+
+  rpc6-hosted-m1-authorization-no-go:
+    name: RPC.6 HOSTED BACKUP+M1 AUTHORIZATION — NO GO (expected BLOCKED)
+    needs: [rpc6-offline-ownership-and-backup-gates,rpc6-disposable-pg17-backup-restore]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Privileged backup and schema changes require real independent operator
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc6/hosted-fourrow-recovery-baseline.json');
+          const x=require('./qa/v152-rpc6/fourrow-recovery-migration-gate.cjs');
+          const owner=x.reviewPrivateFourRow({snapshot:b});
+          const backup=x.reviewPreMigrationBackup({snapshot:b});
+          const restore=x.reviewRestoreReceipt({snapshot:b});
+          const m1=x.reviewM1Authorization({
+            snapshot:b,ownerReview:owner,backupReview:backup,restoreReview:restore
+          });
+          console.log(JSON.stringify({owner:owner.status,backup:backup.status,
+            restore:restore.status,migration:m1.status,blockers:m1.blockers.length,
+            canApplyM1:m1.canApplyM1}));
+          if(owner.canBackfill||backup.canExportBackup||restore.canApplyMigration||
+            m1.canApplyM1||m1.status!=='MIGRATION_M1_NO_GO')
+            throw new Error('UNSAFE_M1_GATE');
+          console.error('RPC6_HOSTED_M1_NO_GO_PRIVATE_OWNER_BACKUP_RESTORE_APPROVAL_MISSING');
+          process.exitCode=3;
+          NODE
