@@ -1,0 +1,66 @@
+name: TIEN404 CBOT-MSG-CANARY-01 User Receipt × Isolated No-Write Greeting QA
+
+on:
+  push:
+    branches:
+      - work/cbot-msg-live01-receipt-custom-canary-isolated-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-canary/**'
+      - 'docs/ai-handoff/CBOT_MSG_LIVE01_USER_ACCEPTANCE_AND_CANARY_CUTOVER_PLAN.md'
+      - '.github/workflows/cbot-msg-canary-owner-receipt-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-canary-security:
+    name: Actual LIVE01 user receipt + source-only Shop A/B canary (No Send)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify new canary source syntax and importable manual JSON
+        run: |
+          node --check qa/cbot-messenger-canary/isolated-canary-guard.mjs
+          node --check qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node -e "JSON.parse(require('node:fs').readFileSync('qa/cbot-messenger-canary/NO_SEND_MANUAL_N8N_CANARY_WORKFLOW.json','utf8'))"
+      - name: Run new no-write graph isolation and user receipt contracts
+        run: node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+      - name: Actual inactive n8n manual QA execution #4177 evidence (not a provider send)
+        run: node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+      - name: Regression prior real Messenger receipt, Merchant configuration and CBOT identity
+        run: |
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Independent source scan — zero live webhook, credential, order, Meta send
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          source=Path('qa/cbot-messenger-canary/isolated-canary-guard.mjs').read_text()
+          code=re.sub(r'/\*[\s\S]*?\*/','',source)
+          graph=json.loads(Path('qa/cbot-messenger-canary/NO_SEND_MANUAL_N8N_CANARY_WORKFLOW.json').read_text())
+          receipt=json.loads(Path('qa/cbot-messenger-canary/live01-user-receipt-20261116.json').read_text())
+          assert graph['active'] is False
+          assert len(graph['nodes'])==2
+          assert {n['type'] for n in graph['nodes']}=={
+              'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
+          assert not any('credentials' in n for n in graph['nodes'])
+          for bad in ('fetch(', 'axios(', 'process.env.', 'child_process', 'http.request(',
+              'https.request(', 'SUPABASE_SERVICE_ROLE_KEY', 'pg_dump ',
+              'apply_migration(', 'sendMessage('):
+              assert bad not in code, bad
+          for key in ('can_send:false','can_publish:false','can_write_order:false',
+              'provider_messages_sent:0','orders_written:0','can_apply_n8n_patch:false'):
+              assert key in code,key
+          assert receipt['final_live01_status']=='ACCEPTED_USER_CONFIRMED'
+          assert receipt['studio_custom_greeting_live'] is False
+          print('PASS — User-confirmed LIVE01 evidence; isolated manual candidate NO SEND/NO WRITER')
+          PY

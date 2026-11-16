@@ -1,0 +1,21 @@
+{
+  "contract": "TIEN404_CBOT_MSG_LIVE01_USER_RECEIPT_V1",
+  "source_class": "USER_DIRECT_CONFIRMATION_IN_CHAT",
+  "reference_real_execution": "4176",
+  "reference_workflow": "Z7FdV7uDvApfbURQ",
+  "confirmed_match_to_execution": true,
+  "user_reported_response_visible": true,
+  "user_reported_response_matches_execution": true,
+  "independent_device_screenshot_audited": false,
+  "observed_technical_receipt_source": "CONNECTED_N8N_READ_ONLY_EXECUTION_4176",
+  "technical_pass": true,
+  "final_live01_status": "ACCEPTED_USER_CONFIRMED",
+  "app_page_owner_rights_independently_attested": false,
+  "studio_custom_greeting_live": false,
+  "live_canary_published": false,
+  "actual_live_custom_test_passed": false,
+  "can_publish": false,
+  "can_reconfigure_n8n": false,
+  "can_write_orders": false,
+  "can_send_provider": false
+}
