@@ -40,7 +40,7 @@ function createIntake({trustAnchors,claimNonce,now=()=>Date.now()}={}){
  if(!Array.isArray(trustAnchors)||trustAnchors.length!==5||
     typeof claimNonce!=='function'||typeof now!=='function')
     no('INDEPENDENT_ANCHORS_AND_NONCE_LEDGER_REQUIRED');
- const anchors=new Map(),actors=new Set(),roles=new Set();
+ const anchors=new Map(),actors=new Set(),roles=new Set(),publicKeys=new Set();
  for(const a of trustAnchors){
   if(!pure(a,['keyId','role','actorDigest','publicKey']) ||
     typeof a.keyId!=='string'||!/^[A-Z0-9_-]{8,60}$/.test(a.keyId)||
@@ -49,6 +49,9 @@ function createIntake({trustAnchors,claimNonce,now=()=>Date.now()}={}){
     a.publicKey.type!=='public'||a.publicKey.asymmetricKeyType!=='ed25519'||
     actors.has(a.actorDigest)||roles.has(a.role)||anchors.has(a.keyId))
     no('INDEPENDENT_TRUST_ANCHOR_INVALID');
+  const publicFingerprint=crypto.createHash('sha256').update(a.publicKey.export({format:'der',type:'spki'})).digest('hex');
+  if(publicKeys.has(publicFingerprint))no('INDEPENDENT_TRUST_ANCHOR_INVALID');
+  publicKeys.add(publicFingerprint);
   anchors.set(a.keyId,a);actors.add(a.actorDigest);roles.add(a.role);
  }
  const required=new Set(Object.values(KINDS).flat());
