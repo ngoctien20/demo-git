@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>TIEN404 V16.3 — QA Preview | No Send</title>
+<style>
+:root{color-scheme:dark;--bg:#070e19;--panel:#111f30;--panel2:#172a3d;--text:#eff6fb;--muted:#a1b5c4;--aqua:#49e0d2;--border:#284259;--warn:#f2c46d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#143449,transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.shell{max-width:1120px;margin:auto;padding:26px 20px 60px}.top{display:flex;gap:16px;justify-content:space-between;align-items:center;flex-wrap:wrap}.brand{font-weight:800;font-size:22px;letter-spacing:.05em}.brand span{color:var(--aqua)}.badge{display:inline-block;border:1px solid #886c37;border-radius:999px;padding:6px 10px;font-size:12px;color:var(--warn);background:#41342155;font-weight:700}
+h1{font-size:clamp(24px,4vw,36px);margin:24px 0 6px}p{margin:0 0 16px;color:var(--muted)}.layout{display:grid;grid-template-columns:215px minmax(0,1fr);gap:18px;margin-top:24px}.side,.card{background:linear-gradient(145deg,var(--panel),#0f1a2a);border:1px solid var(--border);border-radius:17px;padding:18px}
+.side{align-self:start;position:sticky;top:16px}.side button{width:100%;background:transparent;color:var(--muted);border:0;border-radius:9px;text-align:left;padding:12px;font:inherit;cursor:pointer}.side button[aria-selected=true]{background:#1b3b4b;color:var(--aqua);font-weight:700}.panel{display:none}.panel.active{display:block}.meta{font-size:12px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.row>div{flex:1;min-width:150px}.card h2{font-size:23px;margin:0 0 4px}.card h3{font-size:16px;margin:18px 0 8px}label{display:block;color:var(--muted);font-size:13px;margin-bottom:5px}select,button.action{border:1px solid var(--border);border-radius:10px;padding:11px 13px;font:inherit;color:var(--text);background:var(--panel2);min-height:42px}select{width:100%;max-width:400px}button.action{cursor:pointer;background:#0b736e;font-weight:700;border:0}button.action:hover{background:#0e8c85}button.action:focus-visible,.side button:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}.small{font-size:13px;color:var(--muted)}.pill{display:inline-block;padding:3px 8px;background:#1c4651;color:#93ecdf;border-radius:6px;font-size:12px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.metric{padding:14px;border:1px solid var(--border);background:#0c1a28;border-radius:12px}.metric b{font-size:26px;display:block;color:var(--aqua)}pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);background:#071420;padding:15px;border-radius:10px;font-size:12px;max-height:260px;overflow:auto}.footer{font-size:12px;color:var(--muted);margin:24px 0}#notice{color:var(--warn);font-size:13px;margin:12px 0;min-height:20px}
+@media(max-width:720px){.shell{padding:18px 13px}.layout{display:block}.side{display:flex;gap:7px;overflow-x:auto;position:static;margin-bottom:13px;padding:8px;scrollbar-width:thin}.side button{white-space:nowrap;width:auto;flex:none;font-size:12px;padding:11px 10px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:15px}.top{align-items:start}}
+</style>
+</head>
+<body><main class="shell">
+ <header class="top"><div class="brand">TIEN<span>404</span> <small style="font-size:12px;font-weight:500;color:var(--muted)">/ V16.3 Studio QA</small></div><span class="badge">LOCAL SYNTHETIC · NO SEND · NOT PRODUCTION</span></header>
+ <h1>Quản lý AI bán hàng theo từng cửa hàng</h1>
+ <p>Giao diện kiểm thử chức năng — toàn bộ dữ liệu ở đây là synthetic, không kết nối tài khoản thật. Không nhập dữ liệu khách hàng hoặc thông tin bí mật.</p>
+ <div class="row"><div><label for="store">Cửa hàng QA đang xem</label><select id="store"><option value="QA_STORE_A">Shop QA A</option><option value="QA_STORE_B">Shop QA B</option><option value="QA_STORE_C">Shop QA C (tenant khác)</option></select></div><div><span class="pill" id="store-scope">Chế độ cách ly Shop</span></div></div>
+ <div class="layout">
+  <nav class="side" aria-label="Chức năng kiểm thử">
+   <button data-tab="faq" aria-selected="true">FAQ Studio</button><button data-tab="cost" aria-selected="false">Cost Center</button><button data-tab="queue" aria-selected="false">Priority Queue</button><button data-tab="handoff" aria-selected="false">Human Handoff</button><button data-tab="lab" aria-selected="false">Model A/B Lab</button>
+  </nav>
+  <section>
+   <div class="card panel active" id="panel-faq"><div class="meta">01 · Nội dung Shop đã kiểm tra</div><h2>FAQ Studio</h2><p>Chỉnh sửa bản nháp, yêu cầu người duyệt độc lập và kiểm tra hạn sử dụng.</p>
+    <div class="row"><div><label for="faq-key">Loại thông tin</label><select id="faq-key"><option value="GREETING">Lời chào</option><option value="HOURS">Giờ hoạt động</option><option value="SHOP_STATUS">Tạm nghỉ / mở cửa</option><option value="SUPPORT_POLICY">Chuyển nhân viên</option></select></div><div><label for="faq-val">Giá trị synthetic</label><select id="faq-val"></select></div></div>
+    <button class="action" id="faq-draft">Lưu bản nháp QA</button> <button class="action" id="faq-review">Xác minh bằng reviewer QA</button> <button class="action" id="faq-preview">Xem kết quả</button> <button class="action" id="faq-history">Lịch sử phiên bản</button><pre id="faq-result">Chưa thực hiện</pre>
+   </div>
+   <div class="card panel" id="panel-cost"><div class="meta">02 · Không dùng ngân sách thật</div><h2>Cost Center</h2><p>Hạn mức theo Shop, khóa đặt trước chi phí và cảnh báo 70% / 90% / 100%.</p>
+     <div class="metrics"><div class="metric"><span class="small">Ngân sách QA</span><b>1.000</b><span class="small">micro-USD</span></div><div class="metric"><span class="small">Cảnh báo</span><b>70/90/100</b><span class="small">mức</span></div></div>
+     <button class="action" id="cost-configure">Tạo hạn mức QA</button> <button class="action" id="cost-reserve">Giả lập gọi AI 350 micro-USD</button><pre id="cost-result">Chưa cấu hình</pre>
+   </div>
+   <div class="card panel" id="panel-queue"><div class="meta">03 · Tải mô phỏng, không có Cloudflare Queue</div><h2>Priority Queue Dashboard</h2><p>So sánh Economy / Standard / Priority, tuổi hàng đợi và quyết định nhận xử lý theo quota mô phỏng.</p>
+     <button class="action" id="queue-preview">Xem hàng đợi Shop QA</button><pre id="queue-result">Chưa kiểm tra hàng đợi</pre>
+   </div>
+   <div class="card panel" id="panel-handoff"><div class="meta">04 · Không gửi tin tới nhân viên</div><h2>Human Handoff</h2><p>Tạo phiếu preview khi khách yêu cầu nhân viên, AI không chắc chắn hoặc có khiếu nại.</p>
+     <button class="action" id="handoff-open">Tạo phiếu QA</button> <button class="action" id="handoff-assign">Giao nhân viên QA</button> <button class="action" id="handoff-close">Đánh dấu đã xử lý</button><pre id="handoff-result">Chưa có phiếu</pre>
+   </div>
+   <div class="card panel" id="panel-lab"><div class="meta">05 · Không gọi model trả phí</div><h2>Model A/B Lab</h2><p>96 ca một lượt và 36 ca nhiều lượt, ba nhãn ứng viên chưa được xác minh model ID chính thức.</p>
+     <div class="metrics"><div class="metric"><span class="small">Ca kiểm thử</span><b>132</b></div><div class="metric"><span class="small">Ứng viên</span><b>3</b></div><div class="metric"><span class="small">Dự kiến</span><b>396</b><span class="small">NOT_RUN</span></div></div>
+     <button class="action" id="lab-preview">Tạo scorecard chưa chạy</button><pre id="lab-result">Chưa tạo kế hoạch</pre>
+   </div>
+   <div id="notice" role="status" aria-live="polite"></div>
+  </section>
+ </div><p class="footer">Giao diện mô phỏng được phân phối dưới dạng mã nguồn review trong Draft PR, không được nhúng vào website production. Không có đăng nhập, lưu trữ từ xa, API model hay gửi thông báo.</p>
+</main><script type="module" src="./preview-ui.mjs"></script></body></html>
