@@ -1,0 +1,151 @@
+-- TIEN404 V15.2-ADV.6C-RPC.5 — STORE-SCOPED COMMERCE
+-- DESIGN DRAFT ONLY. DO NOT APPLY TO SUPABASE / DO NOT RUN AS MIGRATION.
+-- Executable-looking SQL below is COMMENTED. NO hosted DDL is authorized.
+--
+-- Grounded baseline:
+--   tenants 2 | tenant_memberships 3 | products 2 | orders 2 | customers 0
+--   products/orders/customers are FORCE RLS but only tenant-scoped.
+--   products UNIQUE(tenant_id,sku); orders FK(tenant_id,customer_id).
+--   public.stores and public.store_memberships ABSENT.
+--
+-- M0 / RECONCILIATION (blocked until Controller-approved private evidence):
+--   snapshot DDL, policies, grants, Published n8n versions, and rollback files;
+--   one-time encrypted backup/export + independent isolated restore (separate approval);
+--   classify each of the two product rows and two order rows using verified
+--   owner/source data, with row-id mapping ONLY in private evidence storage.
+--   Do not infer Shop from SKU, order_source, session flags, or the LLM.
+--   Fail if any row cannot be assigned to exactly one validated Store.
+--
+-- M1 / EXPAND (approval needed, not executed):
+-- -- BEGIN;
+-- -- CREATE TABLE public.stores (
+-- --   id uuid PRIMARY KEY,
+-- --   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE RESTRICT,
+-- --   code text NOT NULL,
+-- --   active boolean NOT NULL DEFAULT true,
+-- --   UNIQUE(tenant_id,id), UNIQUE(tenant_id,code)
+-- -- );
+-- -- CREATE TABLE public.store_memberships (
+-- --   tenant_id uuid NOT NULL,
+-- --   store_id uuid NOT NULL,
+-- --   user_id uuid NOT NULL,
+-- --   role text NOT NULL CHECK(role IN ('owner','manager','staff')),
+-- --   active boolean NOT NULL DEFAULT true,
+-- --   PRIMARY KEY(tenant_id,store_id,user_id),
+-- --   FOREIGN KEY(tenant_id,store_id) REFERENCES public.stores(tenant_id,id),
+-- --   FOREIGN KEY(tenant_id,user_id)
+-- --     REFERENCES public.tenant_memberships(tenant_id,user_id)
+-- -- );
+-- -- ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
+-- -- ALTER TABLE public.stores FORCE ROW LEVEL SECURITY;
+-- -- ALTER TABLE public.store_memberships ENABLE ROW LEVEL SECURITY;
+-- -- ALTER TABLE public.store_memberships FORCE ROW LEVEL SECURITY;
+-- -- REVOKE ALL ON public.stores,public.store_memberships FROM PUBLIC,anon,authenticated;
+-- -- GRANT SELECT ON public.store_memberships TO authenticated;
+-- -- CREATE POLICY store_membership_self_read ON public.store_memberships
+-- --   FOR SELECT TO authenticated
+-- --   USING (user_id=(SELECT auth.uid()) AND active AND EXISTS (
+-- --     SELECT 1 FROM public.tenant_memberships tm
+-- --     WHERE tm.tenant_id=store_memberships.tenant_id
+-- --       AND tm.user_id=store_memberships.user_id AND tm.active
+-- --   ));
+-- -- ALTER TABLE public.products ADD COLUMN store_id uuid NULL;
+-- -- ALTER TABLE public.orders ADD COLUMN store_id uuid NULL;
+-- -- ALTER TABLE public.customers ADD COLUMN store_id uuid NULL;
+-- -- COMMIT;
+--
+-- M2 / PRIVATE OWNER MAPPING AND NON-DESTRUCTIVE BACKFILL (not authorized):
+--   Owner A/B independently attest exact store ownership of all 2 products
+--   and all 2 orders. Compare product SKU, price and stock before/after without
+--   exposing rows or personal data in GitHub or ChatGPT.
+--   Explicitly approve any Store migration for existing customer records;
+--   current hosted customers=0, but this must be rechecked at change time.
+--   Use prepared UPDATE statements only from a separately authorized operator.
+--   Do NOT assign all rows to Shop A as a shortcut. Leave null/ambiguous rows
+--   quarantined and block write-path cutover; NEVER turn null into an open scope.
+--
+-- M3 / COMPOSITE KEYS AND FKs (run only after trusted backfill and writer compatibility):
+-- -- BEGIN;
+-- -- ALTER TABLE public.stores ... [none; exact tenant/store keys from M1];
+-- -- ALTER TABLE public.products
+-- --   ADD CONSTRAINT products_tenant_store_fk FOREIGN KEY(tenant_id,store_id)
+-- --   REFERENCES public.stores(tenant_id,id) NOT VALID;
+-- -- ALTER TABLE public.orders
+-- --   ADD CONSTRAINT orders_tenant_store_fk FOREIGN KEY(tenant_id,store_id)
+-- --   REFERENCES public.stores(tenant_id,id) NOT VALID;
+-- -- ALTER TABLE public.customers
+-- --   ADD CONSTRAINT customers_tenant_store_fk FOREIGN KEY(tenant_id,store_id)
+-- --   REFERENCES public.stores(tenant_id,id) NOT VALID;
+-- -- ALTER TABLE public.customers
+-- --   ADD CONSTRAINT customers_tenant_store_id_unique
+-- --   UNIQUE(tenant_id,store_id,id);
+-- -- ALTER TABLE public.orders
+-- --   ADD CONSTRAINT orders_customer_same_store_fk
+-- --   FOREIGN KEY(tenant_id,store_id,customer_id)
+-- --   REFERENCES public.customers(tenant_id,store_id,id) NOT VALID;
+-- -- ALTER TABLE public.products
+-- --   ADD CONSTRAINT products_unique_tenant_store_sku
+-- --   UNIQUE(tenant_id,store_id,sku);
+-- -- COMMIT;
+--   Validate FKs separately when backfill complete:
+-- -- ALTER TABLE public.products VALIDATE CONSTRAINT products_tenant_store_fk;
+-- -- ALTER TABLE public.orders VALIDATE CONSTRAINT orders_tenant_store_fk;
+-- -- ALTER TABLE public.customers VALIDATE CONSTRAINT customers_tenant_store_fk;
+-- -- ALTER TABLE public.orders VALIDATE CONSTRAINT orders_customer_same_store_fk;
+--   Note: FK NULL behaviour permits store_id=NULL, so enforce NOT NULL only
+--   after verifying all existing and new rows have canonical Store attribution.
+--   DO NOT drop products_tenant_id_sku_key until all readers/writers adopt
+--   (tenant_id,store_id,sku). Keeping both constraints temporarily is safer,
+--   but SAME SKU ACROSS TWO STORES will remain blocked by legacy unique key.
+--   Existing order customer FK(tenant_id,customer_id) should be retained until
+--   composite FK validated; then review removing redundant FK separately.
+--
+-- M4 / ATOMIC POLICY REPLACEMENT (one approved, rehearsed transaction):
+--   DANGER: existing SELECT policies are PERMISSIVE. Adding Store-only SELECT
+--   policies without dropping the OLD tenant-only policies makes them OR
+--   together, leaking another Shop within the SAME tenant.
+-- -- BEGIN;
+-- -- DROP POLICY products_member_read ON public.products;
+-- -- DROP POLICY orders_manager_read ON public.orders;
+-- -- DROP POLICY customers_manager_read ON public.customers;
+-- -- CREATE POLICY products_store_member_read ON public.products
+-- -- FOR SELECT TO authenticated
+-- -- USING (store_id IS NOT NULL AND EXISTS(
+-- --   SELECT 1 FROM public.store_memberships sm
+-- --   WHERE sm.tenant_id=products.tenant_id AND sm.store_id=products.store_id
+-- --     AND sm.user_id=(SELECT auth.uid()) AND sm.active
+-- -- ));
+-- -- CREATE POLICY orders_store_manager_read ON public.orders
+-- -- FOR SELECT TO authenticated
+-- -- USING (store_id IS NOT NULL AND EXISTS(
+-- --   SELECT 1 FROM public.store_memberships sm
+-- --   WHERE sm.tenant_id=orders.tenant_id AND sm.store_id=orders.store_id
+-- --     AND sm.user_id=(SELECT auth.uid())
+-- --     AND sm.active AND sm.role IN ('owner','manager')
+-- -- ));
+-- -- CREATE POLICY customers_store_manager_read ON public.customers
+-- -- FOR SELECT TO authenticated
+-- -- USING (store_id IS NOT NULL AND EXISTS(
+-- --   SELECT 1 FROM public.store_memberships sm
+-- --   WHERE sm.tenant_id=customers.tenant_id AND sm.store_id=customers.store_id
+-- --     AND sm.user_id=(SELECT auth.uid())
+-- --     AND sm.active AND sm.role IN ('owner','manager')
+-- -- ));
+-- -- COMMIT;
+--   Each SELECT policy must be verified against actual roles, RLS and grants.
+--   Existing INSERT/UPDATE grants are denied to authenticated, so keep them
+--   denied. A future writer needs its own independent capability and explicit
+--   USING/WITH CHECK policies or dedicated scoped RPC (not shared service_role).
+--   Ensure dependent views use security_invoker and no legacy reader bypasses RLS.
+--
+-- M5 / WIRE, CANARY, RELEASE (not authorized):
+--   Confirm accepted Store A positive + Shop B same-tenant negative + Shop C
+--   cross-tenant negative + revoked staff; server-validated Auth real JWT only.
+--   Prove composite FK blocks cross-store order/customer references even if
+--   the application makes a mistake. Check two-store duplicate SKU prices.
+--   Keep one pairing writer at all times, shadow without dual-write.
+--   Track 401/403, provider acks, replay, pending/confirmed claim, mismatch.
+--   Only after separate approved canary and backup restore may change n8n
+--   Published, and only later independently authorize public RPC privilege REVOKE.
+--
+-- NO EXECUTABLE SQL in this file; no real data has been migrated.

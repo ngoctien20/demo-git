@@ -1,0 +1,98 @@
+{
+  "contract": "T404_RPC5_HOSTED_STORE_REMEDIATION_BASELINE_V1",
+  "observed_at_jst": "2026-11-16",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "inherited_head": "ad48f13e0394e527202a27c0a145a9368942c844",
+  "scope": "READ_ONLY_SCHEMA_AND_AGGREGATE_METADATA_NO_CUSTOMER_ROWS",
+  "postgres_major": 17,
+  "tables": {
+    "tenants": {
+      "exists": true,
+      "row_count": 2
+    },
+    "tenant_memberships": {
+      "exists": true,
+      "row_count": 3
+    },
+    "products": {
+      "exists": true,
+      "row_count": 2,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "old_select_policy": "products_member_read",
+      "legacy_unique_tenant_sku": true
+    },
+    "orders": {
+      "exists": true,
+      "row_count": 2,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "old_select_policy": "orders_manager_read",
+      "legacy_customer_fk": "(tenant_id,customer_id)"
+    },
+    "customers": {
+      "exists": true,
+      "row_count": 0,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "old_select_policy": "customers_manager_read"
+    },
+    "stores": {
+      "exists": false
+    },
+    "store_memberships": {
+      "exists": false
+    }
+  },
+  "direct_table_access": {
+    "anon_select_allowed": false,
+    "authenticated_read_only": true,
+    "current_business_select_policies": "TENANT_MEMBERSHIP_ONLY",
+    "current_product_sku_scope": "(tenant_id,sku)"
+  },
+  "n8n_published": {
+    "z1": "yIJk8LvJoLF40Z62",
+    "z1_version": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+    "z2": "OgDZNSAvKEvhnAvn",
+    "z2_version": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+    "direct_rpc_post_node": "Submit pending claim for Shop B",
+    "active_and_enabled": true
+  },
+  "rpc": {
+    "function": "public.qa_shop_b_zalo_claim(uuid,text,text,text)",
+    "anon_execute": true,
+    "function_calls_tracked": false,
+    "public_rpc_revoke_approved": false
+  },
+  "operator_evidence": {
+    "observed_current_schema": "VERIFIED_AGGREGATE_READ_ONLY",
+    "observed_current_n8n": "VERIFIED_PUBLISHED_GRAPH_METADATA",
+    "external_caller_inventory": "NOT_VERIFIED",
+    "real_postgrest_request_attribution": "NOT_VERIFIED",
+    "owner_to_store_backfill_mapping": "NOT_VERIFIED",
+    "independent_private_reviewer": "NOT_ENROLLED",
+    "encrypted_backup_and_independent_restore": "NOT_VERIFIED",
+    "separate_hosted_migration_approval": "NOT_APPROVED",
+    "hosted_owner_a_b_jwt_rls_proof": "NOT_VERIFIED",
+    "real_canary_approval": "NOT_APPROVED",
+    "production_nonce_or_owner_auth": "NOT_VERIFIED"
+  },
+  "permitted_actions": {
+    "read_only_metadata": true,
+    "source_only_draft": true,
+    "disposable_pg17_qa": true,
+    "hosted_sql_mutation": false,
+    "private_backup_export": false,
+    "jwt_live_test": false,
+    "n8n_published_edit": false,
+    "provider_send": false,
+    "rpc_revoke": false,
+    "merge": false
+  }
+}

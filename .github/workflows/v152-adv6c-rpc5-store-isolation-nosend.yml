@@ -1,0 +1,126 @@
+name: TIEN404 V15.2 RPC.5 Store Isolation × Private Evidence × Canary Preflight (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc5/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC5_*'
+      - '.github/workflows/v152-adv6c-rpc5-store-isolation-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc5-store-isolation-canary-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc5-hosted-readonly-evidence-and-canary:
+    name: RPC.5 actual schema baseline, four-row ledger and NO-GO canary contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source check + new RPC5 cases
+        run: |
+          node --check qa/v152-rpc5/hosted-store-remediation-preflight.cjs
+          node --check qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Reuse V14.4.2 migration and hosted JWT opt-in offline tests
+        run: |
+          node --test qa/hosted-readiness-v1442/migration-preflight.test.cjs
+          node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs
+      - name: Reuse RPC4/RPC3/RPC2 security and no-send policy
+        run: |
+          node --test qa/v152-rpc4/private-signed-revocation-intent.test.cjs
+          node --test qa/v152-rpc3/private-caller-attestation.test.cjs
+          node --test qa/v152-rpc3/hosted-two-step-revocation-decision.test.cjs
+          node --test qa/v152-rpc2/zero-downtime-cutover-review.test.cjs
+      - name: Verify no hosted write or executable migration
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('qa/v152-rpc5')
+          b=json.loads((root/'hosted-schema-readonly-baseline.json').read_text())
+          assert b['project_ref']=='ifxlvrhyjhbzbrkdsida'
+          assert b['tables']['products']['row_count']==2
+          assert b['tables']['orders']['row_count']==2
+          assert b['tables']['customers']['row_count']==0
+          assert b['tables']['stores']['exists']==False
+          assert b['tables']['store_memberships']['exists']==False
+          assert b['permitted_actions']['hosted_sql_mutation']==False
+          assert b['permitted_actions']['rpc_revoke']==False
+          s=(root/'hosted-store-remediation-preflight.cjs').read_text()
+          assert 'RPC5_REAL_CANARY_REQUIRES_SEPARATE_CONTROLLER_APPROVAL' in s
+          assert 'canaryAuthorized:false' in s
+          for p in [r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+           r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.(?:write|append|unlink)',
+           r'\bexecuteQuery\s*\(']:
+            assert not re.search(p,s),p
+          sql=Path('docs/ai-handoff/V15_2_ADV6C_RPC5_STORE_ISOLATION_MIGRATION_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          assert 'DROP POLICY products_member_read' in sql
+          assert 'products_tenant_id_sku_key' in sql
+          assert 'orders_customer_same_store_fk' in sql
+          for p in [r'^\s*CREATE\s+',r'^\s*ALTER\s+',r'^\s*DROP\s+',
+            r'^\s*REVOKE\s+',r'^\s*GRANT\s+',r'^\s*INSERT\s+',
+            r'^\s*UPDATE\s+',r'^\s*DELETE\s+']:
+            assert not re.search(p,sql,re.I|re.M),p
+          print('PASS: reviewed store migration is comments only, no SQL mutation')
+          PY
+
+  rpc5-disposable-pg17-crossstore:
+    name: PostgreSQL17 real ephemeral same-tenant RLS + Customer/Order composite FK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 'rpc5_disposable_pg17_ci_only'
+          POSTGRES_DB: tien404_v1441_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1441_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: 'rpc5_disposable_pg17_ci_only'
+      PGDATABASE: tien404_v1441_ci
+      PGOPTIONS: '-c tien404.qa_ephemeral=V1441_DISPOSABLE'
+      CI_V1441_DISPOSABLE: 'YES'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run inherited V14.4.1 Store A/B actual disposable PG17 test
+        run: bash qa/hosted-readiness-v1441/ci-pg17-rls.sh
+      - name: Extend with actual same-Store Customer/Order FK and negative RLS
+        run: bash qa/v152-rpc5/ci-pg17-customer-store-fk.sh
+
+  rpc5-hosted-canarystatus-no-go:
+    name: RPC.5 HOSTED CANARY AUTHORIZATION — NO GO (expected BLOCKED)
+    needs: [rpc5-hosted-readonly-evidence-and-canary,rpc5-disposable-pg17-crossstore]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce no real canary without separately approved restore/JWT
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc5/hosted-schema-readonly-baseline.json');
+          const g=require('./qa/v152-rpc5/hosted-store-remediation-preflight.cjs');
+          const r=g.inspectCanaryPreflight({baseline:b});
+          console.log(JSON.stringify({status:r.status,blocked:r.blockers.length,
+           canaryAuthorized:r.canaryAuthorized,rpcRevokeAuthorized:r.rpcRevokeAuthorized}));
+          if(r.status!=='NO_GO'||r.canaryAuthorized)throw Error('UNSAFE_CANARY_PROMOTION');
+          console.error('RPC5_HOSTED_CANARY_NO_GO_INDEPENDENT_EVIDENCE_AND_APPROVAL_REQUIRED');
+          process.exitCode=3;
+          NODE
