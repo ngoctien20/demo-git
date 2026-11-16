@@ -93,7 +93,11 @@ function reviewFourRowBackfill({baseline,ledger=[]}={}){
       typeof x.ownerVerified!=='boolean'||typeof x.reviewerVerified!=='boolean'||
       keys.has(x.table+':'+x.rowDigest))
        errors.push('LEDGER_RECORD_INVALID_OR_DUPLICATE');
-   else{keys.add(x.table+':'+x.rowDigest);counts[x.table]++;}
+   else{
+      keys.add(x.table+':'+x.rowDigest);counts[x.table]++;
+      if(x.ownerVerified!==true||x.reviewerVerified!==true)
+       errors.push('OWNER_OR_REVIEWER_CLAIM_NOT_PROVIDED');
+     }
   }
   if(counts.products!==2||counts.orders!==2)
    errors.push('EXACT_TWO_PRODUCTS_TWO_ORDERS_REQUIRED');
