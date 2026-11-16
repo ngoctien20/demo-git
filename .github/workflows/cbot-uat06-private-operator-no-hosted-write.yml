@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   private-intake-source-qa:
-    name: 44 new UAT06 plus 269 inherited no-send source regression
+    name: 46 new UAT06 plus 269 inherited no-send source regression
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate source and 44 NEW private operator preflight cases
+      - name: Validate source and 46 NEW private operator preflight cases
         run: |
           node --check qa/cbot-uat06/private-m0-owner-native-gates.mjs
           node --check qa/cbot-uat06/private-operator-cli.mjs
