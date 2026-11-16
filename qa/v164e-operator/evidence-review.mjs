@@ -11,7 +11,7 @@ const CASE_PLAN=canaryPlan();
 const IDS=new Set(CASE_PLAN.cases.map(x=>x.case_key));
 const SHA=/^[a-f0-9]{64}$/;
 const QA=/^QA_[A-Z0-9_]{2,48}$/;
-const KEY_LIST=['case_key','source_sha256','redacted_sha256','gold_sha256',
+const KEY_LIST=['case_key','turn_count','source_sha256','redacted_sha256','gold_sha256',
  'runner_id','privacy_reviewer_1_id','privacy_reviewer_2_id',
  'reviewer_1_receipt_sha256','reviewer_2_receipt_sha256',
  'privacy_classification','consent_basis','manual_context_reviewed',
@@ -37,6 +37,7 @@ export function createPrivateReviewerTemplate(){
 export function inspectCaseReview(x){
  ok(exact(x,KEY_LIST),'EXACT_PRIVATE_REVIEW_FIELDS_REQUIRED');
  ok(IDS.has(x.case_key),'CANARY_CASE_OUTSIDE_8_ALLOWED');
+ ok(Number.isSafeInteger(x.turn_count)&&x.turn_count===CASE_PLAN.cases.find(c=>c.case_key===x.case_key).turn_count,'CANARY_TURN_COUNT_MISMATCH');
  for(const k of ['source_sha256','redacted_sha256','gold_sha256',
   'reviewer_1_receipt_sha256','reviewer_2_receipt_sha256','notes_hash_sha256'])
   ok(hashOrNull(x[k]),'REVIEW_HASH_OR_NULL_REQUIRED');
