@@ -16,7 +16,7 @@ function recovery(){
   h11rReceipt:{status:HISTORICAL,localArchiveShaMatch:true,
    localArchiveBytesMatch:true,applicationEntries:5,authEntries:0,
    storageEntries:0,operatorReported:true},
-  claimedEvidence:Object.fromEntries(CLAIMS.map(k=>[k:false]))};
+  claimedEvidence:Object.fromEntries(CLAIMS.map(k=>[k,false]))};
 }
 const invoke=args=>spawnSync(process.execPath,[cli,...args],
  {encoding:'utf8',timeout:10000});
