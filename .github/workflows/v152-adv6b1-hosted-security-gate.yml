@@ -1,0 +1,54 @@
+name: TIEN404 V15.2 ADV6B.1 Hosted Metadata No-Go & P0 Security Review (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/hosted-metadata-triage*'
+      - 'docs/ai-handoff/V15_2_ADV6B1_*'
+      - '.github/workflows/v152-adv6b1-hosted-security-gate.yml'
+  push:
+    branches:
+      - work/v152-adv6b1-hosted-metadata-security-gates-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  security-evidence:
+    name: 28 metadata negative checks + existing ADV6B Owner proof gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax
+        run: |
+          node --check qa/v152-advanced-actions/hosted-metadata-triage.cjs
+          node --check qa/v152-advanced-actions/hosted-metadata-triage.test.cjs
+      - name: 28 No-Go metadata security tests
+        run: node --test qa/v152-advanced-actions/hosted-metadata-triage.test.cjs
+      - name: Original ADV6B independent Owner/backup/DB role gate
+        run: node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+      - name: Canonical Gateway / Signed Actions inherited QA
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Static privacy / no-execution lint
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v152-advanced-actions/hosted-metadata-triage.cjs').read_text()
+          doc=Path('docs/ai-handoff/V15_2_ADV6B1_HOSTED_METADATA_SECURITY_CHECKPOINT.md').read_text()
+          for bad in (
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\s*\(',r'\bWebSocket\b',
+              r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.',r'\bcreateHmac\s*\(',
+              r'[\\x27\\x22]\\s*(?:GRANT|REVOKE)\\s',r'\beval\s*\('):
+            assert not re.search(bad,s),bad
+          assert "status:'BLOCKED_PENDING_INDEPENDENT_EVIDENCE'" in s
+          assert "productionReleaseAuthorized:false" in s
+          assert "privilegeRevocationAuthorized:false" in s
+          assert 'BACKUP' in doc.upper() and 'PRODUCTION' in doc.upper()
+          assert 'NO HOSTED MUTATION' in doc
+          print('ADV6B.1 fail-closed read-only metadata gate: PASS')
+          PY
