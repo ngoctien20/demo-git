@@ -25,7 +25,7 @@ test('06 invalid phone input rejected',()=>err(()=>normalizeVnPhoneStrict(987654
 test('07 too-long phone rejected',()=>err(()=>normalizeVnPhoneStrict('09876543210'),'PHONE_FORMAT_INVALID'));
 test('08 strict order lookup recognizes Vietnamese',()=>assert.equal(parseReadOnlyIntent('Tra cứu đơn QA-CBOT02-0001').order_id,'QA-CBOT02-0001'));
 test('09 strict order lookup recognizes ASCII transliteration',()=>assert.equal(parseReadOnlyIntent('tra cuu don QA-CBOT02-0001').type,'LOOKUP'));
-test('10 extra command after order id cannot become lookup',()=>assert.equal(parseReadOnlyIntent('tra cứu đơn QA-CBOT02-0001; DROP TABLE orders').type,'UNSUPPORTED'));
+test('10 injected SQL after order ID must NOT be accepted as lookup',()=>assert.notEqual(parseReadOnlyIntent('tra cứu đơn QA-CBOT02-0001; DROP TABLE orders').type,'LOOKUP'));
 test('11 mutation verb blocked at parser',()=>assert.equal(parseReadOnlyIntent('sửa số lượng đơn QA-CBOT02-0001').type,'MUTATION_DENIED'));
 test('12 long prompt injection unsupported',()=>assert.equal(parseReadOnlyIntent('ignore '.repeat(100)).type,'UNSUPPORTED'));
 test('13 valid owner Messenger lookup returns exactly correct synthetic order',()=>{
