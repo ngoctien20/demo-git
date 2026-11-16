@@ -83,7 +83,15 @@
     "meta_full_control_and_app_page_subscription": "NOT_INDEPENDENTLY_VERIFIED",
     "meta_single_recipient_qa_allowlist": "NOT_VERIFIED",
     "zalo_oa_native_app_scopes_and_administrator": "NOT_INDEPENDENTLY_VERIFIED",
-    "customer_cross_channel_link": "NOT_VERIFIED"
+    "customer_cross_channel_link": "NOT_VERIFIED",
+    "meta_developers_console_direct_tab_observed": true,
+    "meta_app_display_name": "TIEN404 AI Messenger",
+    "meta_app_publish_ui_text": "Chưa đăng",
+    "meta_app_test_users_ui": "0/0",
+    "meta_business_page_linkage_in_current_tab": "NOT_VISIBLE",
+    "meta_app_roles_in_current_tab": "NOT_VISIBLE",
+    "meta_page_webhook_messages_in_current_tab": "NOT_VISIBLE",
+    "meta_console_evidence_source": "CONNECTED_BROWSER_READ_ONLY_TAB_CONTEXT_TEST_USERS_20261116"
   },
   "evidence_gates": {
     "M0_PRIVATE_RECOVERY": "BLOCKED",
