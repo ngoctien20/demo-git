@@ -47,22 +47,21 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           root=Path('qa/v147-custom-studio')
           html=(root/'advanced-custom-studio.html').read_text()
           js=(root/'advanced-merchant-uat-view.js').read_text()
-          for x in ['connect-src \\'none\\'','img-src \\'none\\'','form-action \\'none\\'',
-               'frame-src \\'none\\'','script-src \\'self\\'','id="uatRows"',
-               '@media(max-width:600px)']:
-           assert x in html,x
-          for x in ["statusLabel.htmlFor=select.id","noteLabel.htmlFor=note.id",
-                    "form.update(id,select.value,note.value)"]:
-           assert x in js,x
-          for source in [js,(root/'advanced-custom-studio.js').read_text()]:
-           for patt in [r'\\bfetch\\s*\\(',r'\\bXMLHttpRequest\\b',r'\\bWebSocket\\b',
-                        r'\\b(localStorage|sessionStorage|indexedDB)\\b',
-                        r'\\binnerHTML\\b',r'\\bnew Function\\s*\\(']:
-             assert not re.search(patt,source),patt
+          for marker in ("connect-src 'none'", "img-src 'none'", "form-action 'none'",
+                         "frame-src 'none'", "script-src 'self'", 'id="uatRows"',
+                         '@media(max-width:600px)'):
+              assert marker in html, marker
+          for marker in ('statusLabel.htmlFor=select.id','noteLabel.htmlFor=note.id',
+                         'form.update(id,select.value,note.value)'):
+              assert marker in js, marker
+          for source in (js,(root/'advanced-custom-studio.js').read_text()):
+              for forbidden in ('fetch(', 'XMLHttpRequest', 'WebSocket',
+                                'localStorage', 'sessionStorage','indexedDB',
+                                'innerHTML', 'new Function('):
+                  assert forbidden not in source, forbidden
           print('PASS NO SEND, NO LIVE WRITES, SINGLE UAT DOM')
           PY
   mobile-browser:
