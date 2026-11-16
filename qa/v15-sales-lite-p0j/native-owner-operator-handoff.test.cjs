@@ -8,7 +8,8 @@ const doc=fs.readFileSync(path.join(dir,
  'V15_P0J_NATIVE_PAGE_OA_PRIVATE_BACKUP_OPERATOR_HANDOFF.md'),'utf8');
 const src=fs.readFileSync(path.join(__dirname,'operator-offline-preflight.cjs'),'utf8');
 test('native Meta ownership is not inferred from successful n8n webhook',()=>{
- assert.match(doc,/native Meta Page\/admin/i);
+ assert.match(doc,/Native Meta Page/i);
+ assert.match(doc,/Page administrator/i);
  assert.match(doc,/webhook executions #3865–3868/);
  assert.match(doc,/NOT Meta Page admin/i);
  assert.match(doc,/Page-level subscription/i);
@@ -48,7 +49,7 @@ test('explicit no hosted migration, provider send, Orders or production publishi
  assert.match(doc,/NO-GO/);
  assert.match(doc,/No backup\/export\/restore operation is authorized/i);
  assert.match(doc,/Rollback/);
- assert.match(doc,/PR #189/);
+ assert.match(doc,/pull\/189/);
 });
 test('operator binary execution is locked to safe local inspection only',()=>{
  const code=src.replace(/\/\*[\s\S]*?\*\//g,'');
