@@ -54,9 +54,22 @@ a{color:#9ce4d3}
 <p class="caption">Nguồn: tài liệu API và policy nội bộ. Trạng thái mô tả khả năng thiết kế, không phải quyền gửi tin đã được duyệt.</p>
 <div class="capability-scroll"><table><thead><tr><th>Thành phần</th><th>Trạng thái</th><th>Fallback QA</th><th>Tham khảo</th></tr></thead>
 <tbody id="capabilityRows"></tbody></table></div>
+</section>
+<section class="panel capability-panel" aria-labelledby="adv3Heading">
+<h2 id="adv3Heading">4. AI Presentation Intelligence — kiểm tra ý định</h2>
+<p class="caption">Bộ phân loại theo quy tắc thử nghiệm — KHÔNG phải model đã huấn luyện. Không gửi tin, không tạo đơn.</p>
+<div class="badge" id="heuristicStatus">OFFLINE</div>
+<p id="heuristicDecision" aria-live="polite"></p>
+<label for="modelProposal">Thử đầu ra JSON do model đề xuất (chỉ kiểm tra schema)</label>
+<textarea id="modelProposal" spellcheck="false">{"schema_version":"t404-adv3-intent-v1","intent":"QUOTE"}</textarea>
+<button id="validateProposal" type="button" style="background:#29435a;color:#f4f7fa;border:1px solid #7abcae;padding:10px 14px;border-radius:10px;cursor:pointer">Kiểm tra JSON an toàn</button>
+<p id="proposalStatus" aria-live="polite"></p>
+<p class="caption">Không cho model tự đặt giá, chỉnh màu, tạo link hoặc lệnh gọi tool. Nút đặt hàng/tra cứu phải có danh tính, phân quyền và chữ ký backend được xác minh lại. Secure Action Registry hiện chỉ hoạt động trong QA Node, không đưa khóa ký xuống trình duyệt.</p>
 </section></main>
 <footer>TIEN404 R&amp;D · Không gửi Meta/Zalo · Không đọc/ghi Supabase · Không tạo đơn · Không tiết lộ thông tin khách hàng.</footer>
 <script src="./studio-core.js" defer></script><script src="./advanced-presentation-policy.js" defer></script><script src="./advanced-channel-registry.js" defer></script>
 <script src="./advanced-preview.js" defer></script>
 <script src="./advanced-registry-view.js" defer></script>
+<script src="./advanced-ai-intelligence.js" defer></script>
+<script src="./advanced-intelligence-view.js" defer></script>
 </body></html>
