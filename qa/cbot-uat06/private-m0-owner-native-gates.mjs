@@ -95,25 +95,31 @@ function inspectRows(rows){
 }
 function inspectArchive(archive){
  const keys=['rpc7_contract','receipt_ref','existing_archive_sha256','archive_bytes',
-   'scope','local_toc_classification','prior_sha_match','prior_size_match',
+   'scope','rpc7_receipt_status','local_toc_classification','prior_sha_match','prior_size_match',
    'actual_offhost_restore_ref','actual_restore_independent_reviewer_ref'];
- if(!pure(archive,keys)||archive.rpc7_contract!=='T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_INPUT_V1'||
+ if(!pure(archive,keys)||archive.rpc7_contract!=='T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_V1'||
  !safeRef(archive.receipt_ref)||!hash(archive.existing_archive_sha256)||
  !Number.isSafeInteger(archive.archive_bytes)||archive.archive_bytes<=0||
  !['FULL_SERVICE','APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN'].includes(archive.scope)||
- !['PARTIAL','INCOMPLETE','FULL_TOC_COVERAGE','UNKNOWN'].includes(archive.local_toc_classification)||
- ![archive.prior_sha_match,archive.prior_size_match].every(x=>typeof x==='boolean')||
+ !['APP_RECOVERY_COVERAGE_INCOMPLETE',
+    'PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY',
+    'STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED',
+    'NO_PG_RESTORE_TOC_ENTRIES','INVALID_OR_EMPTY_TOC'].includes(archive.local_toc_classification)||
+ !['LOCAL_ARCHIVE_BASELINE_MISMATCH','LOCAL_ARCHIVE_SCOPE_INCOMPLETE',
+    'LOCAL_ARCHIVE_TOC_REVIEW_ONLY'].includes(archive.rpc7_receipt_status)||
+ ![archive.prior_sha_match,archive.prior_size_match].every(x=>x===null||typeof x==='boolean')||
  !(archive.actual_offhost_restore_ref===null||safeRef(archive.actual_offhost_restore_ref))||
  !(archive.actual_restore_independent_reviewer_ref===null||safeRef(archive.actual_restore_independent_reviewer_ref)))
  fail('RPC7_ARCHIVE_METADATA_UNVERIFIED');
  return {
   local_receipt_shape_valid:true,
-  prior_reference_matches:archive.prior_sha_match&&archive.prior_size_match,
+  prior_reference_matches:archive.prior_sha_match===true&&archive.prior_size_match===true,
   // Full TOC coverage is not an independent Auth+Storage offsite restore.
   actual_restore_reference_present:!!archive.actual_offhost_restore_ref &&
        !!archive.actual_restore_independent_reviewer_ref,
   possible_partial_scope:archive.scope!=='FULL_SERVICE'||
-       archive.local_toc_classification!=='FULL_TOC_COVERAGE'
+       archive.local_toc_classification!=='STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED'||
+       archive.rpc7_receipt_status!=='LOCAL_ARCHIVE_TOC_REVIEW_ONLY'
  };
 }
 export function auditPrivateOperatorPacket(packet,{nowMs=()=>Date.now()}={}){
@@ -137,7 +143,7 @@ export function auditPrivateOperatorPacket(packet,{nowMs=()=>Date.now()}={}){
  const meta=inspectDomains(packet.meta_page,META_DOMAINS,'META');
  const zalo=inspectDomains(packet.zalo_oa,ZALO_DOMAINS,'ZALO');
  const gaps=[];
- if(!archive.prior_reference_matches)gaps.push('PREVIOUS_ARCHIVE_BASELINE_MISMATCH');
+ if(!archive.prior_reference_matches)gaps.push('PREVIOUS_ARCHIVE_SHA_OR_SIZE_MATCH_MISSING_OR_FAILED');
  if(archive.possible_partial_scope)gaps.push('ARCHIVE_SCOPE_OR_TOC_PARTIAL');
  if(!archive.actual_restore_reference_present)gaps.push('REAL_OFFHOST_RESTORE_WITNESS_REFERENCE_MISSING');
  if(m0.missing_review.length)gaps.push('M0_PRIVATE_COVERAGE_UNREVIEWED');
