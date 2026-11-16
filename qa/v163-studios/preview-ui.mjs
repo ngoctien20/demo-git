@@ -23,7 +23,8 @@ const values={
 };
 function options(){
  const key=byId('faq-key').value;
- byId('faq-val').replaceChildren(...values[key].map(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;return o}));
+ const opts=key==='GREETING'?values[key].filter(v=>v.endsWith(store().slice(-1))):values[key];
+ byId('faq-val').replaceChildren(...opts.map(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;return o}));
 }
 options();byId('faq-key').addEventListener('change',options);
 for(const b of document.querySelectorAll('button[data-tab]')){
@@ -34,7 +35,7 @@ for(const b of document.querySelectorAll('button[data-tab]')){
 }
 byId('store').addEventListener('change',()=>{
  byId('store-scope').textContent='Shop synthetic: '+store()+' / '+tenant();
- byId('notice').textContent='Đã chuyển Shop QA, chưa có thay đổi dữ liệu thật.';
+ options();byId('notice').textContent='Đã chuyển Shop QA, chưa có thay đổi dữ liệu thật.';
 });
 const safe=(fn)=>()=>{try{byId('notice').textContent='';fn()}catch(e){byId('notice').textContent=String(e?.message||'QA_DENIED')}};
 byId('faq-draft').addEventListener('click',safe(()=>{
