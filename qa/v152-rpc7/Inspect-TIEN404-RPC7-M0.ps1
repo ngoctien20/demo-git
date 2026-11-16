@@ -28,8 +28,10 @@ if ($null -ne $ExpectedBytes -and [long]$ExpectedBytes -le 0) {
 }
 $archive = Get-Item -LiteralPath $ArchivePath
 if ($archive.Length -le 0) { Deny "ARCHIVE_EMPTY" }
-if (-not (Test-Path -LiteralPath "$PSScriptRoot\local-archive-coverage-cli.cjs" -PathType Leaf) -or
-    -not (Test-Path -LiteralPath "$PSScriptRoot\local-m0-archive-receipt-cli.cjs" -PathType Leaf)) {
+$coverageCli = Join-Path $PSScriptRoot "local-archive-coverage-cli.cjs"
+$receiptCli = Join-Path $PSScriptRoot "local-m0-archive-receipt-cli.cjs"
+if (-not (Test-Path -LiteralPath $coverageCli -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $receiptCli -PathType Leaf)) {
   Deny "RPC7_SOURCE_PACKAGE_INCOMPLETE"
 }
 try {
@@ -53,7 +55,7 @@ if ($restoreExit -ne 0 -or $toc.Count -eq 0) {
   Deny "PG_RESTORE_LIST_FAILED"
 }
 $coverageText = ($toc -join [Environment]::NewLine) |
-  & $nodeTool "$PSScriptRoot\local-archive-coverage-cli.cjs"
+  & $nodeTool $coverageCli
 if ($LASTEXITCODE -ne 0) { Deny "LOCAL_ARCHIVE_COVERAGE_REJECTED" }
 try { $coverage = $coverageText | ConvertFrom-Json } catch {
   Deny "LOCAL_ARCHIVE_COVERAGE_JSON_INVALID"
@@ -84,7 +86,7 @@ $payload = [ordered]@{
   tocResult = $tocContract
 }
 $receiptText = ($payload | ConvertTo-Json -Depth 12 -Compress) |
-  & $nodeTool "$PSScriptRoot\local-m0-archive-receipt-cli.cjs"
+  & $nodeTool $receiptCli
 if ($LASTEXITCODE -ne 0) { Deny "RPC7_LOCAL_RECEIPT_REJECTED" }
 try { $receipt = $receiptText | ConvertFrom-Json } catch {
   Deny "RPC7_LOCAL_RECEIPT_JSON_INVALID"
