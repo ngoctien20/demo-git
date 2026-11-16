@@ -36,7 +36,8 @@ export function createQACommerce({
   mockModelMs=0,
   rateLimit=10000,
   rateWindowMs=1000,
-  failModel=false
+  failModel=false,
+  failBackend=false
 }={}){
  const routeIndex=new Map(Object.entries(routes));
  const productIndex=new Map();
@@ -78,6 +79,7 @@ export function createQACommerce({
  }
  function quote(ctx,sku){
   if(!safe(ctx))return{status:403,reason:'UNTRUSTED_CONTEXT'};
+  if(failBackend)return{status:503,reason:'BACKEND_UNAVAILABLE_HANDOFF'};
   const p=productIndex.get(getKey(ctx)).get(sku);
   return p?{status:200,price:p.price,stock:p.stock,sku:p.sku,store:ctx.store}:
    {status:404,reason:'PRODUCT_NOT_FOUND'};
@@ -92,6 +94,7 @@ export function createQACommerce({
  }
  function mockCreateOrder(ctx,permit,idempotencyKey){
   if(!safe(ctx)||!permits.has(permit)||permit.ctx!==ctx)return{status:403,reason:'NO_SERVER_APPROVAL'};
+  if(failBackend)return{status:503,reason:'BACKEND_UNAVAILABLE_NO_WRITE'};
   if(!marker.test(idempotencyKey||''))return{status:400,reason:'BAD_IDEMPOTENCY'};
   const ref=getKey(ctx)+'|'+ctx.sender+'|'+idempotencyKey;
   if(orders.has(ref))return{status:200,replay:true,order:clone(orders.get(ref))};
