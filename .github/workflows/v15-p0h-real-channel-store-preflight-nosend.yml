@@ -1,0 +1,108 @@
+name: TIEN404 V15 P0-H Hosted Metadata Read-Only Preflight (NO SEND / NO WRITE)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0h-real-channel-store-hosted-readonly-preflight-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0h/**'
+      - 'docs/ai-handoff/V15_P0H_*'
+      - '.github/workflows/v15-p0h-real-channel-store-preflight-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-evidence-and-fail-closed:
+    name: Actual Hosted Metadata Snapshot × Read-Only Safety × P0 Security Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check preflight source syntax and JSON
+        run: |
+          node --check qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.cjs
+          node --check qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.test.cjs
+          node --check qa/v15-sales-lite-p0h/hosted-preflight-sql-source-contract.test.cjs
+          node -e "JSON.parse(require('node:fs').readFileSync('qa/v15-sales-lite-p0h/hosted-observed-metadata-20261116.json','utf8'))"
+      - name: P0-H real aggregate evidence and fail-closed readiness tests
+        run: |
+          node --test qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.test.cjs
+          node --test qa/v15-sales-lite-p0h/hosted-preflight-sql-source-contract.test.cjs
+      - name: Inherited four-channel A/B/C, Zalo and Commerce NO-SEND regression
+        run: |
+          node --test qa/v15-sales-lite-p0g/channel-store-readonly-contract.test.cjs
+          node --test qa/v15-sales-lite-p0f/zalo-claim-threat-model.test.cjs
+          node --test qa/v15-sales-lite-p0f/p0f-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-security-review/security-review-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: Static no hosted-API, send or credential access on new P0-H code
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          f=Path('qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.cjs')
+          js=re.sub(r'/\*[\s\S]*?\*/','',f.read_text())
+          sql=Path('docs/ai-handoff/V15_P0H_HOSTED_METADATA_ONLY_PREFLIGHT.sql').read_text()
+          sql='\n'.join(s for s in sql.splitlines() if not s.strip().startswith('--'))
+          for forbidden in ('fetch(', 'axios(', 'process.env.', 'child_process',
+             'fs.writeFile', 'sendMessage(', 'apply_migration(', 'pg_dump ',
+             'SUPABASE_SERVICE_ROLE_KEY', 'INSERT INTO ', 'UPDATE public.',
+             'DELETE FROM', 'DROP TABLE', 'GRANT EXECUTE', 'REVOKE EXECUTE'):
+            assert forbidden not in js,(f,forbidden)
+          for forbidden in ('INSERT INTO', 'UPDATE public.', 'DELETE FROM',
+             'DROP TABLE', 'ALTER TABLE', 'GRANT ', 'REVOKE ', 'pg_get_functiondef'):
+            assert forbidden not in sql, forbidden
+          for expected in ('can_read_hosted_catalog:false','can_send:false',
+             'can_write_orders:false','real_provider_account_verified:false'):
+            assert expected in js, expected
+          assert 'BEGIN TRANSACTION READ ONLY;' in sql
+          assert 'COMMIT;' in sql
+          print('PASS: hosted preflight source uses read-only aggregates, no provider/DB writer')
+          PY
+
+  disposable-pg17-security-regression:
+    name: Inherited Store RLS/Price Write Negative QA on Disposable PG17
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: p0h_disposable_only
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: qa_synthetic_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d p0h_disposable_only"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Repeat inherited Store-A/B/C transaction rollback QA only
+        env:
+          PGPASSWORD: qa_synthetic_disposable
+        run: |
+          psql -h 127.0.0.1 -U postgres -d p0h_disposable_only -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql
+      - name: Guarantee no hosted project used for disposable SQL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql').read_text()
+          assert 'ROLLBACK;' in s
+          assert 'ifxlvrhyjhbzbrkdsida' not in s
+          assert 'PASS_DISPOSABLE_PG17_SECURITY_INVOKER_STORE_PRODUCT_FK_RLS_NO_HOSTED' in s
+          print('PASS: isolated PostgreSQL17 only, transaction rolled back')
+          PY

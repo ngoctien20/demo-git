@@ -1,0 +1,33 @@
+{
+  "source": "SUPABASE_STAGING_METADATA_READ_ONLY_EXECUTE_SQL",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "observed_date_jst": "2026-11-16",
+  "evidence_class": "REAL_HOSTED_AGGREGATE_METADATA_NOT_PROVIDER_OR_OWNER_PROOF",
+  "sql_source": "docs/ai-handoff/V15_P0H_HOSTED_METADATA_ONLY_PREFLIGHT.sql",
+  "snapshot": {
+    "preflight_contract": "V15_P0H_HOSTED_METADATA_V1",
+    "tenant_rows": 2,
+    "active_membership_rows": 3,
+    "product_rows": 2,
+    "order_rows": 2,
+    "private_channel_binding_rows": 0,
+    "tenant_agent_config_rows": 1,
+    "preview_lab_config_rows": 1,
+    "qa_bot_rows": 2,
+    "qa_synthetic_bot_rows": 2,
+    "qa_identity_map_rows": 2,
+    "canonical_store_tables": 0,
+    "store_membership_tables": 0,
+    "products_store_id_columns": 0,
+    "orders_store_id_columns": 0,
+    "tenant_scoped_product_select_policies": 1,
+    "store_scoped_product_select_policies": 0,
+    "legacy_tenant_platform_pk": 1,
+    "provider_account_unique_constraints": 1,
+    "duplicate_provider_account_bindings": 0,
+    "orphan_provider_tenant_bindings": 0,
+    "private_channel_rls_enabled": true,
+    "private_channel_anon_select": false,
+    "private_channel_authenticated_select": false
+  }
+}
