@@ -12,7 +12,7 @@ permissions:
   contents: read
 jobs:
   freeze-review-offline:
-    name: V16.4E 27 private-freeze checks + 445 inherited synthetic tests
+    name: V16.4E 28 private-freeze checks + 445 inherited synthetic tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
