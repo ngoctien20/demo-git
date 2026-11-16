@@ -92,3 +92,19 @@ test('68 Lab: flags one-turn pack cases, no invented memory evaluation',()=>{con
 test('69 Lab: malformed zero-turn case denied',()=>fail(()=>build132Manifest({single,multi:[{...multi[0],turn_count:0},...multi.slice(1)]}),/INVALID_TURN_COUNT/));
 
 test('70 FAQ: cannot cross-assign Shop A greeting to B',()=>{const s=createFaqStudio();fail(()=>s.edit(ownerB,{key:'GREETING',value:'Xin chao tu Shop QA A',expected_version:0}),/CROSS_STORE_GREETING/) });
+
+test('71 QA context cannot include JWT or unexpected fields',()=>fail(()=>qaContext({...owner,jwt:'DO_NOT_STORE'}),/EXTRA_FIELD/));
+test('72 FAQ audit trail retains draft and reviewed synthetic version',()=>{
+ const f=createFaqStudio();f.edit(owner,{key:'HOURS',value:'QA_OPEN_08_20',expected_version:0});
+ f.review(reviewer,{key:'HOURS',version:1,approved:true,now_ms:1,valid_until_ms:100});
+ assert.deepEqual(f.revisions(owner,{key:'HOURS'}).map(x=>x.status),['DRAFT_QA','QA_REVIEWED']);
+});
+test('73 Safety intent routes to human, never sends notification',()=>{
+ assert(shouldHandoff({intent:'SAFETY',confidence:1}).reasons.includes('SAFETY'));
+ assert.equal(shouldHandoff({intent:'SAFETY',confidence:1}).send_notification,false);
+});
+test('74 QA role context cannot include raw customer text',()=>fail(()=>qaContext({...owner,customer_message:'hello'}),/EXTRA_FIELD/));
+test('75 FAQ revisions isolated across Store scopes',()=>{
+ const f=createFaqStudio();f.edit(owner,{key:'HOURS',value:'QA_OPEN_08_20',expected_version:0});
+ assert.equal(f.revisions(ownerB,{key:'HOURS'}).length,0);
+});
