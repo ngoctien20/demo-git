@@ -1,0 +1,14 @@
+{
+  "contract": "T404_CANARY03B_RECOVERY_PUBLIC_RECEIPT_V1",
+  "workflow_id": "Z7FdV7uDvApfbURQ",
+  "version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+  "scope": "PUBLIC_STATUS_ONLY",
+  "archive_location": "PRIVATE_NOT_DISCLOSED",
+  "operator_authorized": false,
+  "full_node_parameters": false,
+  "credential_reference_inventory": false,
+  "encrypted_archive_verified": false,
+  "restore_dry_run": false,
+  "reviewer_independent": false,
+  "production_backup_performed": false
+}
