@@ -28,6 +28,13 @@ Project `ifxlvrhyjhbzbrkdsida`: 3 auth users, 2 Tenants, 3 active Tenant members
 - `.github/workflows/v15-p0-disposable-pg17-no-send.yml`: uses ephemeral `postgres:17` service and two GitHub CI jobs. CI has no Supabase secrets, merchant data, n8n, provider or paid model calls.
 - Reuses existing guarded NON-EXECUTABLE migration sketch `docs/ai-handoff/V15_09_CANONICAL_STORE_EXPAND_REVIEW_ONLY.sql`, security contract and pilot release gate from #128; no new production migration promoted.
 
+## P0-B Commerce integration additions — SOURCE-ONLY / DISPOSABLE
+- `qa/v15-sales-lite-p0/commerce-preview-bridge.cjs` composes the **existing** V15 P256 signed synthetic context and strict legacy fixture reader. It is a thin integration seam, not another AI Agent or separate source of price.
+- `commerce-preview-bridge.test.cjs` checks Shop-specific QA price, absent SKU, insufficient stock, mismatched `expected_total_vnd`, forged Store/client confirmation, invalid VND/quantity and zero provider/hosted/Orders/notifications.
+- Extended PG17 disposable QA includes a synthetic atomic transaction saving `Order + Order Item + provider-qualified Replay Key + Owner Outbox (pending)` together, duplicate event conflict and composite FK denial of wrong-Store owner notification; stock is not deducted.
+- **No actual pending Order, Outbox or stock is written to Supabase hosted**. The QA outbox has no provider sender or verified owner recipient; this is a transaction-design test only.
+- Real webhook signature, Meta/Zalo send permissions, merchant owner proof, authenticated hosted JWT/RLS, true Order writer and delivery are NOT tested by these fixture cases.
+
 ## Approval / implementation gates (P0→P1)
 ### Gate P0-A — Private owner attribution — BLOCKED
 Independent `auth.users → tenant_memberships → canonical stores → store_memberships` evidence for a real owned Shop; explicit provider account ownership and consent proof. Because canonical stores do not exist, create/store mapping must be reviewed before it can be certified. Existing 2 Products/2 Orders need provenance, original source and explicit assignment decisions. Never dump personal data to a public PR.
