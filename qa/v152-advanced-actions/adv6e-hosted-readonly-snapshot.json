@@ -1,0 +1,52 @@
+{
+  "contract": "T404_ADV6E_HOSTED_READ_ONLY_METADATA_SNAPSHOT_V1",
+  "scope": "SUPABASE_STAGING_METADATA_ONLY_NOT_AUTH_PROOF",
+  "observedAtUtc": "2026-11-16T06:19:03.070Z",
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "postgresVersion": "17.11",
+  "sqlAuditRole": "postgres",
+  "storeTablesPresent": 0,
+  "storeColumnsOnOrdersAndMemberships": 0,
+  "actionNoncePrivateSchemaPresent": false,
+  "rpc": [
+    {
+      "name": "qa_owner_pairing",
+      "args": "p_shop uuid, p_action text, p_challenge uuid",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "restrictedSearchPath": true,
+      "anonExecute": false,
+      "authenticatedExecute": true,
+      "mentionsAuthUid": true,
+      "mentionsVault": false
+    },
+    {
+      "name": "qa_shop_b_zalo_claim",
+      "args": "p_challenge uuid, p_code text, p_sender text, p_event text",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "restrictedSearchPath": true,
+      "anonExecute": true,
+      "authenticatedExecute": false,
+      "mentionsAuthUid": false,
+      "mentionsVault": true
+    },
+    {
+      "name": "save_merchant_product",
+      "args": "p_tenant uuid, p_sku text, p_name text, p_price bigint, p_active boolean, p_initial_stock integer, p_expected_updated_at timestamp with time zone",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "restrictedSearchPath": true,
+      "anonExecute": false,
+      "authenticatedExecute": true,
+      "mentionsAuthUid": true,
+      "mentionsVault": false
+    }
+  ],
+  "alerts": {
+    "anonSecurityDefinerCallable": 1,
+    "authenticatedSecurityDefinerCallable": 2,
+    "leakedPasswordProtectionDisabled": true
+  },
+  "evidenceCaveat": "CATALOG_METADATA_NOT_SIGNED_NO_FUNCTION_BODY_REVIEW_NO_OWNER_JWT_PROOF"
+}

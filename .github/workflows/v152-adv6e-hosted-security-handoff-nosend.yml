@@ -1,0 +1,88 @@
+name: TIEN404 V15.2 ADV6E Hosted Security Readiness Handoff (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/adv6e-*'
+      - 'docs/ai-handoff/V15_2_ADV6E_*'
+      - '.github/workflows/v152-adv6e-hosted-security-handoff-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6e-hosted-security-handoff-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-security-handoff:
+    runs-on: ubuntu-24.04
+    name: Actual sanitized hosted ACL baseline / 30 fail-closed tests / inherited Advanced QA
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and JSON contract
+        run: |
+          node --check qa/v152-advanced-actions/adv6e-hosted-readiness.cjs
+          node --check qa/v152-advanced-actions/adv6e-hosted-readiness.test.cjs
+          node -e "let v=require('./qa/v152-advanced-actions/adv6e-hosted-readonly-snapshot.json');if(v.rpc.length!==3)process.exit(1)"
+      - name: 30 ADV6E actual-metadata baseline assessment and negative tests
+        run: node --test qa/v152-advanced-actions/adv6e-hosted-readiness.test.cjs
+      - name: Inherited ADV6D signer authority and one-time approval gates
+        run: node --test qa/v152-advanced-actions/adv6d-private-authority-decision.test.cjs
+      - name: Inherited ADV6C receipts plus ADV6B hosted No-Go
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+          node --test qa/v152-advanced-actions/hosted-metadata-triage.test.cjs
+      - name: Inherited ADV6 gateway and ADV5 signed-action contracts
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Verify hosted certification refuses even clean metadata
+        run: |
+          node - <<'NODE'
+          const q=require('./qa/v152-advanced-actions/adv6e-hosted-readiness.cjs');
+          const x=require('./qa/v152-advanced-actions/adv6e-hosted-readonly-snapshot.json');
+          const r=q.assess(x,{now:Date.parse('2026-11-16T06:24:00.000Z')});
+          if(r.status!=='SECURITY_REVIEW_REQUIRED_NO_GO'||
+              r.productionReleaseAuthorized!==false||
+              r.hostedCertificationIssued!==false||
+              r.actualHostedOwnerRlsCertified!==false||
+              r.metadataSourceCryptographicallyVerified!==false)
+            throw Error('ADV6E_MUST_NEVER_SELF_CERTIFY');
+          console.log(JSON.stringify({
+            contract:r.contract,
+            status:r.status,
+            findings:r.findings,
+            actualIndependentApproval:false,
+            hostedDatabaseChanged:false,
+            externalProviderSends:0
+          }));
+          NODE
+      - name: Static no external data, tokens, credentials, migration or network
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          root=Path('qa/v152-advanced-actions')
+          js=(root/'adv6e-hosted-readiness.cjs').read_text()
+          snap=json.loads((root/'adv6e-hosted-readonly-snapshot.json').read_text())
+          doc=Path('docs/ai-handoff/V15_2_ADV6E_HOSTED_SECURITY_AUTHORITY_CHECKPOINT.md').read_text()
+          assert 'READ-ONLY' in doc and 'NO-GO' in doc
+          assert len(snap['rpc'])==3
+          assert snap['storeTablesPresent']==0
+          assert snap['actionNoncePrivateSchemaPresent'] is False
+          assert 'private' not in json.dumps(snap).lower() or 'tien404_action_private' not in json.dumps(snap)
+          for pattern in (
+            r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\s*\(',
+            r'\bWebSocket\b',r'\bprocess\.env\b',r'\bchild_process\b',
+            r'\bfs\.',r'\bcreatePrivateKey\s*\(',r'\bcreateHmac\s*\(',
+            r'\blocalStorage\b',r'\binnerHTML\b'):
+            assert not re.search(pattern,js),pattern
+          assert 'ADV6E_HOSTED_EXECUTION_NOT_IMPLEMENTED' in js
+          assert 'hostedCertificationIssued:false' in js
+          assert 'productionReleaseAuthorized:false' in js
+          assert 'INDEPENDENT_PRIVATE_AUTHORITY_AND_REAL_HOSTED_PROOFS_MISSING' in js
+          print('ADV6E source-only hosted/no-send privacy gate PASS')
+          PY
