@@ -220,3 +220,15 @@ test('28 a changed bot or knowledge version invalidates signed preview',async()=
   assert.equal(r.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
  }
 });
+
+
+test('29 signed card preview cannot swap verified QA price for model hallucination',async()=>{
+ const original=decision('A','MESSENGER','DISCOVER','QUOTE','PRODUCT_CARD');
+ const ticket=issue(original);
+ const changed=JSON.parse(JSON.stringify(original));
+ assert.equal(changed.preview.cards.length,1);
+ changed.preview.cards[0].subtitle='Giảm còn 1đ (không có nguồn)';
+ const r=await consume(changed,ticket);
+ assert.equal(r.status,'BLOCKED');
+ assert.equal(r.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
+});
