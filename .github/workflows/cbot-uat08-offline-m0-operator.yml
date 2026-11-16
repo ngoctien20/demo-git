@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: 12 new source checks
+      - name: 13 new source checks
         run: node --test qa/cbot-uat08/launcher-safety.test.mjs
       - name: Inherit 341 source and synthetic regressions
         run: |
@@ -75,6 +75,26 @@ jobs:
           echo "$result" | grep -q 'CBOT08_REASON=RPC7_PINNED_COMMIT_MISMATCH'
           echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
           echo 'CBOT08 mismatched source rejected before archive read'
+      - name: Reject uncommitted source changes at pinned HEAD BEFORE archive read
+        shell: bash
+        run: |
+          set -euo pipefail
+          marker="$GITHUB_WORKSPACE/rpc7/CBOT08_TEMP_LOCAL_SOURCE_INJECTION"
+          printf 'not-a-legitimate-rpc7-source-file\n' > "$marker"
+          set +e
+          result=$(pwsh -NoProfile -NonInteractive -File \
+            qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
+            -Mode Preflight -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
+            -PgRestoreExe pg_restore -NodeExe node 2>&1)
+          code=$?
+          set -e
+          rm -f "$marker"
+          test "$code" = "3"
+          echo "$result" | grep -q 'CBOT08_REASON=RPC7_PINNED_CHECKOUT_NOT_CLEAN'
+          echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
+          ! echo "$result" | grep -q "$marker"
+          echo 'CBOT08 dirty pinned checkout denied; marker removed'
+
       - name: Exercise original RPC7 code with SYNTHETIC local TOC fixture only
         shell: bash
         run: |
