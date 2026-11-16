@@ -90,3 +90,5 @@ test('66 file structure: 27 genuinely multi-turn cases',()=>assert.equal(MANIFES
 test('67 file structure: 71 dialogue turns, not 72',()=>assert.equal(MANIFEST_METADATA.total_turns_in_multi_pack,71));
 test('68 Lab: flags one-turn pack cases, no invented memory evaluation',()=>{const m=build132Manifest({single,multi});assert.equal(m.single_turn_cases_in_multi_pack,9);assert.equal(m.true_multi_turn_count,27)});
 test('69 Lab: malformed zero-turn case denied',()=>fail(()=>build132Manifest({single,multi:[{...multi[0],turn_count:0},...multi.slice(1)]}),/INVALID_TURN_COUNT/));
+
+test('70 FAQ: cannot cross-assign Shop A greeting to B',()=>{const s=createFaqStudio();fail(()=>s.edit(ownerB,{key:'GREETING',value:'Xin chao tu Shop QA A',expected_version:0}),/CROSS_STORE_GREETING/) });
