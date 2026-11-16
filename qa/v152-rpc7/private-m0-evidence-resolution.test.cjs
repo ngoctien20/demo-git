@@ -116,7 +116,7 @@ test('08 partial existing local H11R-style archive cannot be treated as full M0 
  assert(x.blockers.includes('OLD_ARCHIVE_IS_PARTIAL_OR_UNPARSEABLE'));
 });
 test('09 archive SHA and source snapshot binding are separate requirements',()=>{
- const q=all();q.archiveProvenance.sourceSnapshotDigest='not-a-digest';
+ const q=all();q.archiveProvenance.hostedReadOnlySnapshotDigest='not-a-digest';
  const x=reviewM0Evidence(q);
  assert(x.blockers.includes('EXACT_HOSTED_ARCHIVE_OR_SOURCE_SNAPSHOT_PROVENANCE_MISSING'));
 });
