@@ -144,3 +144,10 @@ test('60 ledger explicitly not durable',()=>assert.equal(newSyntheticBudget({glo
 test('61 paid executor hard disabled',()=>thrown(executePaidCanary,/NO_PAID_CANARY_EXECUTOR/));
 test('62 provider private prompt upload hard disabled',()=>thrown(allowProviderPromptUpload,/NO_CUSTOMER_PROMPT_UPLOAD/));
 test('63 production promotion hard disabled',()=>thrown(updatePublishedModel,/NO_PRODUCTION_MODEL_PROMOTION/));
+
+test('64 same idempotency key with changed tokens and colliding quote is denied',()=>{
+ const b=newSyntheticBudget({global_cap_micro_usd:10000,provider_caps_micro_usd:{openai:10000,google:10000}});
+ b.reserve({event_id:'QA_CANARY_001',model_id:'gpt-6-luna',max_input_tokens:2000,max_output_tokens:500});
+ // 2000*.1+500*.5 = 450; 2500*.1+400*.5 = 450, but request differs.
+ thrown(()=>b.reserve({event_id:'QA_CANARY_001',model_id:'gpt-6-luna',max_input_tokens:2500,max_output_tokens:400}),/IDEMPOTENCY_KEY_CONFLICT/);
+});
