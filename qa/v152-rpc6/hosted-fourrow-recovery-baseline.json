@@ -1,0 +1,81 @@
+{
+  "contract": "T404_RPC6_HOSTED_FOUR_ROW_RECOVERY_BASELINE_V1",
+  "observed_date_jst": "2026-11-16",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "parent_sha": "33b3c85013f4fc034261de8eb114537bf8e6c368",
+  "provenance": "SUPABASE_READ_ONLY_AGGREGATE_SQL_NO_ROW_IDS",
+  "entity_counts": {
+    "tenants": 2,
+    "tenant_memberships": 3,
+    "products": 2,
+    "orders": 2,
+    "customers": 0
+  },
+  "tenant_shape": {
+    "distinct_tenants": 2,
+    "tenants_each_with_one_product_and_one_order": 2,
+    "tenants_with_active_owner": 2,
+    "tenants_without_active_owner": 0,
+    "tenants_without_customers": 2
+  },
+  "order_customer_links": {
+    "total_orders": 2,
+    "linked_customer_rows": 0
+  },
+  "current_schema": {
+    "stores_exists": false,
+    "store_memberships_exists": false,
+    "products_store_id_exists": false,
+    "orders_store_id_exists": false,
+    "customers_store_id_exists": false,
+    "product_sku_unique_tenant_only": true,
+    "order_customer_fk_tenant_only": true,
+    "products_orders_customers_force_rls": true,
+    "existing_business_rls_scope": "TENANT_MEMBERSHIP"
+  },
+  "published_rpc": {
+    "signature": "public.qa_shop_b_zalo_claim(uuid,text,text,text)",
+    "anon_execute": true,
+    "n8n_v1": "yIJk8LvJoLF40Z62",
+    "n8n_shadow_v2": "OgDZNSAvKEvhnAvn",
+    "verified_external_caller_completeness": false
+  },
+  "owner_evidence": {
+    "four_row_private_ledger_inspected": false,
+    "independent_reviewer_inspected": false,
+    "canonical_store_memberships_exist": false,
+    "real_hosted_owner_jwt_proven": false,
+    "store_owner_attribution_certified": false
+  },
+  "recovery_evidence": {
+    "current_real_hosted_export_verified": false,
+    "current_real_restore_verified": false,
+    "pre_migration_scoped_backup_approved": false,
+    "real_backup_operator_enrolled": false,
+    "real_security_reviewer_enrolled": false,
+    "encrypted_destination_approved": false,
+    "retention_and_budget_approved": false
+  },
+  "migration_evidence": {
+    "m0_recovery_gate_passed": false,
+    "m1_expand_authorized": false,
+    "m2_backfill_authorized": false,
+    "m3_constraints_authorized": false,
+    "m4_atomic_rls_authorized": false,
+    "hosted_migration_executed": false
+  },
+  "allowed_actions": {
+    "metadata_read": true,
+    "draft_source": true,
+    "synthetic_pg17_tests": true,
+    "read_real_customer_records": false,
+    "export_real_backup": false,
+    "restore_hosted_data": false,
+    "change_hosted_schema": false,
+    "update_customer_rows": false,
+    "publish_n8n": false,
+    "live_canary": false,
+    "revoke_rpc": false,
+    "merge": false
+  }
+}
