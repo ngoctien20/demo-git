@@ -1,0 +1,78 @@
+{
+  "contract": "T404_CBOT_UAT05_OBSERVED_METADATA_V1",
+  "observation_date_jst": "2026-11-16",
+  "source_class": "DIRECT_CONNECTED_READ_ONLY_OBSERVATIONS_WITH_EXPLICIT_LIMITS",
+  "supabase": {
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "status": "ACTIVE_HEALTHY",
+    "postgres_major": 17,
+    "tenant_count": 2,
+    "product_count": 2,
+    "order_count": 2,
+    "customer_count": 0,
+    "auth_user_count": 3,
+    "auth_session_count": 5,
+    "storage_bucket_count": 0,
+    "storage_object_metadata_count": 0,
+    "tenant_membership_count": 3,
+    "canonical_stores_present": false,
+    "store_memberships_present": false,
+    "orders_store_id_present": false,
+    "products_store_id_present": false,
+    "legacy_claim_security_definer": true,
+    "legacy_claim_anon_execute": true,
+    "real_owner_jwt_rls_test": "NOT_RUN",
+    "real_full_auth_storage_acl_offsite_restore": "NOT_VERIFIED"
+  },
+  "n8n": {
+    "messenger_published_workflow": "Z7FdV7uDvApfbURQ",
+    "messenger_published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "live_messenger_execution": "4176",
+    "live_messenger_webhook": "SUCCESS",
+    "live_messenger_hmac_verified": true,
+    "live_messenger_meta_send_receipt": true,
+    "live_messenger_order_tool_calls": 0,
+    "live_messenger_user_visible_receipt": "USER_CONFIRMED_PRIOR_CHECKPOINT_PR211",
+    "native_meta_page_store_owner": "NOT_VERIFIED",
+    "zalo_v1_workflow": "yIJk8LvJoLF40Z62",
+    "zalo_v2_workflow": "OgDZNSAvKEvhnAvn",
+    "zalo_v2_active_legacy_rpc_post": true,
+    "native_zalo_oa_app_owner": "NOT_VERIFIED",
+    "n8n_active_graphs_scanned_prior_checkpoint": 19,
+    "scope_note": "PR206 inspected all 19 Active workflow graphs on the same instance; no completeness beyond that instance."
+  },
+  "cloudflare": {
+    "connected_account_worker_scripts_listed": 23,
+    "script_source_downloaded": 23,
+    "literal_legacy_qa_shop_b_zalo_claim_matches": 0,
+    "generic_rest_rpc_path_script_matches": 13,
+    "target_supabase_project_reference_script_matches": 5,
+    "scope_note": "One connected account, raw current script downloads scanned for exact literal only; route/external deployment and dynamic call coverage NOT certified."
+  },
+  "logs": {
+    "period": "DEFAULT_CONNECTOR_LAST_24_HOURS",
+    "postgrest_event_count": 7,
+    "edge_event_count": 14,
+    "legacy_rpc_path_mentions_in_selected_log_attributes": 0,
+    "scope_note": "Selected log attributes and bounded retained events; not a signed proof of zero real callers."
+  },
+  "private_operator_evidence": {
+    "real_existing_archive_inspected_this_turn": false,
+    "real_complete_offsite_restore_receipt": false,
+    "real_controller_identity_verified": false,
+    "real_independent_security_reviewer_verified": false,
+    "real_backup_operator_verified": false,
+    "four_legacy_rows_store_ownership_proven": false,
+    "six_domain_caller_inventory_certified": false,
+    "meta_page_app_permissions_native_verified": false,
+    "zalo_oa_app_oauth_native_verified": false
+  },
+  "data_safety": {
+    "raw_customer_records_accessed": false,
+    "raw_auth_users_accessed": false,
+    "provider_tokens_accessed": false,
+    "hosted_sql_mutation": false,
+    "provider_send_from_this_task": false,
+    "paid_ai_calls": false
+  }
+}
