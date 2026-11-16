@@ -63,6 +63,7 @@ blocked('QA confirmed status not independent proof',e=>{e.proofs.consent.decisio
 blocked('JWT input rejected',e=>{e.raw_jwt='dummy'},'INVALID_OR_SENSITIVE_INPUT');
 blocked('owner phone metadata rejected',e=>{e.scope.phone='fake'},'INVALID_OR_SENSITIVE_INPUT');
 blocked('provider token metadata rejected',e=>{e.proofs.provider.access_token='fake'},'INVALID_OR_SENSITIVE_INPUT');
+blocked('nested array token metadata rejected',e=>{e.extra=[{private_key:'fake'}]},'INVALID_OR_SENSITIVE_INPUT');
 blocked('future observation rejected',e=>{e.proofs.provider.observedAtMs=NOW+1},'PROOF_EXPIRED_FORGED_OR_NOT_INDEPENDENT');
 test('independent Store scope hashes do not collide',()=>{
  const a=base(),b=base();b.scope.storeRef='QA_STORE_B';
