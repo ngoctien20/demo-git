@@ -1,0 +1,59 @@
+name: TIEN404 V15 Sales Lite Pilot Source Integration (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-pilot-consolidation-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-pilot/**'
+      - 'qa/v15-agent-core/**'
+      - 'qa/v15-commerce-core/**'
+      - 'qa/v15-hosted-readiness/**'
+      - 'qa/v1509-hosted-store/**'
+      - 'qa/v15-model-lab/**'
+      - '.github/workflows/v15-saleslite-pilot-consolidation-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-regression:
+    name: V15 Sales Lite Consolidated Security / Scope QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax of pilot safety gate
+        run: |
+          node --check qa/v15-sales-lite-pilot/pilot-release-gate.cjs
+          node --check qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+      - name: Pilot feature scope and evidence-only security QA
+        run: node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+      - name: Original V15 Agent, Skills, Model and Owner Test Lab QA
+        run: |
+          node --test qa/v15-agent-core/universal-agent-core.test.cjs
+          node --test qa/v15-commerce-core/offline-orchestrator.test.cjs
+          node --test qa/v15-model-lab/cost-simulator.test.cjs
+          node --test qa/v15-test-lab/test-lab.test.cjs qa/v15-test-lab/browser-smoke.test.cjs
+      - name: Reconciled PR125 hardening QA
+        run: |
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs qa/v15-agent-core/business-skills-gate.integration.test.cjs
+          node --test qa/v15-model-lab/private-dataset-gate.test.cjs
+      - name: Reconciled PR126 canonical Store readiness QA
+        run: node --test qa/v1509-hosted-store/store-security-contract.test.cjs qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: Inherited PR127 trusted ingress and tools QA
+        run: node --test qa/v15-hosted-readiness/hosted-readiness-gates.test.cjs
+      - name: Ensure code does not claim customer-pilot release
+        run: |
+          node - <<'NODE'
+          const {reviewPilotManifest,FUTURE_PREMIUM}=require('./qa/v15-sales-lite-pilot/pilot-release-gate.cjs');
+          const out=reviewPilotManifest({features:['catalog_read']});
+          if(out.status!=='BLOCKED'||out.can_publish!==false||out.can_send!==false||out.can_write_orders!==false) throw Error('PILOT_RELEASE_MUST_BE_BLOCKED');
+          if(!FUTURE_PREMIUM.includes('unified_operations_dashboard')) throw Error('ENTERPRISE_SCOPE_MUST_BE_DEFERRED');
+          console.log('PASS: pilot release NO-GO without real independent evidence');
+          NODE
