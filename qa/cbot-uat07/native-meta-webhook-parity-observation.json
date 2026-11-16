@@ -1,0 +1,56 @@
+{
+  "contract": "T404_CBOT_UAT07_NATIVE_WEBHOOK_PARITY_OBSERVED_V1",
+  "observed_date_jst": "2026-11-16",
+  "scope": "CONNECTED_META_DEVELOPERS_READ_ONLY_UI_AND_N8N_PUBLISHED_ACTIVE_GRAPH",
+  "meta": {
+    "app_name": "TIEN404 AI Messenger",
+    "messenger_use_case_settings_visible": true,
+    "configured_callback_path": "tien404-messenger-qa",
+    "verify_token_masked_in_ui": true,
+    "app_webhook_messages_subscribed": true,
+    "app_webhook_messages_version": "v27.0",
+    "app_webhook_messaging_postbacks_subscribed": true,
+    "app_webhook_messaging_postbacks_version": "v27.0",
+    "native_page_subscribed_apps_verified": false,
+    "native_meta_business_page_full_control_verified": false,
+    "pages_messaging_permission_granted_verified": false,
+    "app_review_customer_messaging_verified": false,
+    "exact_test_recipient_owner_consent_verified": false
+  },
+  "n8n": {
+    "messenger_published_workflow": "Z7FdV7uDvApfbURQ",
+    "messenger_active": true,
+    "messenger_published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "registered_webhook_path": "tien404-messenger-qa",
+    "webhook_nodes_with_matching_path": 2,
+    "published_nodes_total": 27,
+    "real_live01_execution": "4176",
+    "live01_signature_verified": true,
+    "live01_meta_send_acknowledged": true,
+    "live01_user_receipt_confirmed_prior_checkpoint": true,
+    "active_no_send_custom_canary_published": false,
+    "business_tools_still_attached_to_legacy_demo": true
+  },
+  "classification": {
+    "app_level_webhook_callback_path_parity": "OBSERVED",
+    "app_level_messages_checkbox": "OBSERVED_SUBSCRIBED",
+    "app_level_messaging_postbacks_checkbox": "OBSERVED_SUBSCRIBED",
+    "meta_page_level_subscribed_apps": "NOT_VERIFIED",
+    "native_meta_page_merchant_authority": "NOT_VERIFIED",
+    "native_zalo_oa_app_owner": "NOT_VERIFIED",
+    "merchant_store_owner_4_rows": "NOT_VERIFIED",
+    "real_full_off_host_m0_recovery": "NOT_VERIFIED",
+    "same_tenant_two_store_real_jwt_rls": "NOT_VERIFIED",
+    "hosted_store_order_lookup": "NOT_AUTHORIZED"
+  },
+  "privacy": {
+    "no_raw_page_id": true,
+    "no_raw_app_id": true,
+    "no_raw_psid": true,
+    "no_webhook_verify_token": true,
+    "no_native_access_tokens": true,
+    "no_order_or_auth_rows": true,
+    "no_live_provider_send_in_this_turn": true,
+    "no_hosted_mutation": true
+  }
+}
