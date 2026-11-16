@@ -1,0 +1,64 @@
+name: TIEN404 V15 Sales Lite P0-E Free Backup Operator-Ready QA (NO EXPORT)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0e-free-backup-controller-preflight-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0e/**'
+      - 'docs/ai-handoff/V15_P0E_*'
+      - '.github/workflows/v15-p0e-free-backup-no-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-private-backup:
+    name: Owner Scope + Offline SHA Integrity + Inherited No-Send Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check P0-E syntax
+        run: |
+          node --check qa/v15-sales-lite-p0e/backup-coverage-gate.cjs
+          node --check qa/v15-sales-lite-p0e/verify-local-sql-artifacts.cjs
+      - name: No-real-data P0-E coverage and local integrity tests
+        run: |
+          node --test qa/v15-sales-lite-p0e/backup-coverage-gate.test.cjs
+          node --test qa/v15-sales-lite-p0e/verify-local-sql-artifacts.test.cjs
+      - name: Inherited P0-D/P0-B and Commerce safety regression
+        run: |
+          node --test qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: Ensure P0-E has zero hosted export/write/network primitives
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          src = Path('qa/v15-sales-lite-p0e/backup-coverage-gate.cjs').read_text()
+          verify = Path('qa/v15-sales-lite-p0e/verify-local-sql-artifacts.cjs').read_text()
+          source = re.sub(r'/\*[\s\S]*?\*/','',src+'\n'+verify)
+          for forbidden in (
+            'fetch(', 'axios(', 'http.request', 'https.request', 'process.env.SUPABASE',
+            'pg_dump ', 'pg_restore ', 'supabase db dump', 'child_process',
+            'sendMessage(', 'SUPABASE_SERVICE_ROLE_KEY', 'DROP TABLE',
+            'INSERT INTO', 'UPDATE public.', 'apply_migration('
+          ):
+            assert forbidden not in source, forbidden
+          for text in ('may_export:false','may_restore:false',
+                       'may_apply_migration:false','can_certify_backup:false'):
+            assert text in src, text
+          for text in ('hosted_backup_certified:false','may_apply_migration:false',
+                       'real_restore_verified:false'):
+            assert text in verify, text
+          print('PASS source-only: reads local synthetic files, cannot export hosted database')
+          PY
