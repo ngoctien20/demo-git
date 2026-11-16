@@ -1,4 +1,10 @@
 'use strict';
+/* Browser + Node entrypoint, no provider I/O. */
+(function(factory){
+ const api=factory();
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ if(typeof window!=='undefined')Object.defineProperty(window,'T404ChannelRegistry',{value:api,writable:false});
+})(function(){
 /* V15.2-ADV.2: documentation-backed, NO-SEND component registry.
  * Capability metadata is informational, never a provider entitlement.
  * Must be consumed by a server-authorized renderer before any real send.
@@ -77,4 +83,6 @@ function resolve({channel,componentId,tenant_id,store_id}={}){
 function capabilities(channel){
   return Object.freeze(REGISTRY.filter(x=>x.channel===channel));
 }
-module.exports=Object.freeze({VERSION,CHANNELS,REGISTRY,resolve,capabilities,DOCUMENTED_BOT_TYPES});
+return Object.freeze({VERSION,CHANNELS,REGISTRY,resolve,capabilities,DOCUMENTED_BOT_TYPES});
+
+});

@@ -1,0 +1,98 @@
+name: TIEN404 V15.2 ADV.4 Advanced Studio Integration QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-studio*'
+      - 'qa/v147-custom-studio/advanced-channel-registry.js'
+      - 'qa/v147-custom-studio/advanced-ai-presentation-evaluator.js'
+      - 'qa/v147-custom-studio/index.html'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-studio-nosend-qa.yml'
+  push:
+    branches:
+      - work/v152adv4-advanced-studio-integrated-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-studio*'
+      - 'qa/v147-custom-studio/advanced-channel-registry.js'
+      - 'qa/v147-custom-studio/advanced-ai-presentation-evaluator.js'
+      - 'qa/v147-custom-studio/index.html'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-studio-nosend-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-send-contract:
+    name: Reused ADV.3 Policy, ADV.2 Registry and Security Static QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JS syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-channel-registry.js
+          node --check qa/v147-custom-studio/advanced-ai-presentation-evaluator.js
+          node --check qa/v147-custom-studio/advanced-studio-ui.js
+          node --check qa/v147-custom-studio/advanced-studio-browser.test.cjs
+      - name: Existing contracts must still pass unchanged
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Strict read-only browser source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          html=(root/'advanced-studio.html').read_text()
+          ui=(root/'advanced-studio-ui.js').read_text()
+          registry=(root/'advanced-channel-registry.js').read_text()
+          evaluator=(root/'advanced-ai-presentation-evaluator.js').read_text()
+          assert "connect-src 'none'" in html
+          assert "frame-src 'none'" in html
+          assert "img-src 'none'" in html
+          assert "form-action 'none'" in html
+          assert "default-src 'none'" in html
+          assert '<script src="./advanced-ai-presentation-evaluator.js" defer>' in html
+          assert 'T404PresentationEvaluator' in evaluator and 'T404ChannelRegistry' in registry
+          assert 'advanced-studio.html' in (root/'index.html').read_text()
+          for token in ('innerHTML', 'insertAdjacentHTML', 'localStorage', 'sessionStorage',
+                        'XMLHttpRequest', 'WebSocket', 'EventSource', 'eval(', 'new Function(',
+                        'service_role', 'graph.facebook.com', 'api.openai.com'):
+            assert token not in ui,token
+          assert not re.search(r'\bfetch\s*\(',ui+registry+evaluator)
+          assert 'releaseAuthorized:false' in evaluator and 'providerSends:0' in evaluator
+          assert "PUBLISH_REQUIRES_AUTHENTICATED_SERVER_GATE" in (root/'studio-core.js').read_text()
+          print('ADV4 browser/no-send static guard PASS')
+          PY
+
+  local-browser-qa:
+    name: Mobile & desktop Playwright isolation and no external writes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: QA-only Chromium installation
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Serve static files on loopback only
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-adv4-local.log 2>&1 &
+          sleep 2
+      - name: Multi-viewport browser acceptance
+        run: node qa/v147-custom-studio/advanced-studio-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv4-offline-studio-390px
+          path: qa-artifacts-v152adv4/
+          if-no-files-found: ignore

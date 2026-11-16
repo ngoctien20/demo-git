@@ -1,13 +1,21 @@
 'use strict';
+/* Same authorized contract compiler for offline Node tests and browser preview. */
+(function(factory){
+ const isNode=typeof module!=='undefined'&&!!module.exports;
+ const registry=isNode?require('./advanced-channel-registry.js'):window.T404ChannelRegistry;
+ const policy=isNode?require('./advanced-presentation-policy.js'):window.T404AdvancedPresentation;
+ const studioApi=isNode?require('./studio-core.js'):window.T404Studio;
+ if(!registry||!policy||!studioApi)throw Error('ADV4_DEPENDENCY_MISSING');
+ const api=factory(registry,policy,studioApi);
+ if(isNode)module.exports=api;
+ if(typeof window!=='undefined')Object.defineProperty(window,'T404PresentationEvaluator',{value:api,writable:false});
+})(function(registry,policy,studioApi){
 /*
  * TIEN404 V15.2-ADV.3 — Structured AI Presentation Proposal Evaluation.
  * SOURCE-ONLY; synthetic Store fixtures; NO SEND, NO MODEL API, NO HOSTED WRITES.
  * The model suggests semantic presentation. Trusted policy constructs all business text.
  * All preview actions remain non-executable and require a separate signed server gate.
  */
-const registry = require('./advanced-channel-registry.js');
-const policy = require('./advanced-presentation-policy.js');
-const studioApi = require('./studio-core.js');
 
 const INPUT_CONTRACT='T404_PRESENTATION_PROPOSAL_V1';
 const OUTPUT_CONTRACT='T404_PRESENTATION_DECISION_V1';
@@ -122,4 +130,6 @@ function decide({raw,shop,channel,studio=studioApi.createStudio(),api=studioApi}
     releaseAuthorized:false
   });
 }
-module.exports=Object.freeze({INPUT_CONTRACT,OUTPUT_CONTRACT,EMPHASIS,COMPONENT,MEDIA,ACTION,parseProposal,decide});
+return Object.freeze({INPUT_CONTRACT,OUTPUT_CONTRACT,EMPHASIS,COMPONENT,MEDIA,ACTION,parseProposal,decide});
+
+});
