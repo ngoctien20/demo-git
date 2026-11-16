@@ -119,11 +119,17 @@ jobs:
            '5; 0 105 TABLE DATA public customers postgres'
           SH
           chmod 700 "$RUNNER_TEMP/uat08-fake-pg-restore"
+          set +e
           result=$(pwsh -NoProfile -NonInteractive -File \
             qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
             -Mode InspectExistingArchive -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
             -ArchivePath "$RUNNER_TEMP/uat08-fake-archive.bin" \
-            -PgRestoreExe "$RUNNER_TEMP/uat08-fake-pg-restore" -NodeExe node)
+            -PgRestoreExe "$RUNNER_TEMP/uat08-fake-pg-restore" -NodeExe node 2>&1)
+          code=$?
+          set -e
+          # Synthetic CI fixture only: print allowlisted bounded, privacy-safe fields.
+          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|INSPECT_EXCEPTION_CLASS|classification|localEvidenceStatus|applicationEntries|authEntries|storageEntries|receiptSavedLocally|PRIVATE_RESTORE_WITNESSED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
+          test "$code" = "0"
           echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED'
           echo "$result" | grep -q 'CBOT08_applicationEntries=5'
           echo "$result" | grep -q 'CBOT08_authEntries=0'
