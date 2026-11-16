@@ -1,0 +1,113 @@
+name: TIEN404 V15.0-03H.10 Authority + Durable Mock Storage QA (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503h10-signer-authority-durable-storage-review-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1503h10-durable-idempotency/**'
+      - 'docs/ai-handoff/V15_03H10_*'
+      - '.github/workflows/v1503h10-authority-durable-storage-no-send.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-authority-and-durable-mock-object:
+    name: Independent Authority Review + Disposable PG17 Object Idempotency
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral_h10_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ephemeral_h10_ci_only
+      PGDATABASE: tien404_h10_ephemeral
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: H10 authority and inherited H9-H6 synthetic regression
+        run: |
+          node --check qa/v1503h10-durable-idempotency/independent-authority-gate.cjs
+          node --test \
+            qa/v1503h10-durable-idempotency/independent-authority-gate.test.cjs \
+            qa/v1503h9-private-executor/independent-signer-evidence.test.cjs \
+            qa/v1503h9-private-executor/synthetic-external-sink.test.cjs \
+            qa/v1503h8-lease/signer-enrollment-review.test.cjs \
+            qa/v1503h7-attestation/attestation-registry.test.cjs \
+            qa/v1503h6-backup-preflight/backup-coverage-preflight.test.cjs
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: PostgreSQL17 disposable conditional-create, seal, conflict, lost ACK and crash review
+        run: |
+          createdb tien404_h10_ephemeral
+          psql -X -v ON_ERROR_STOP=1 \
+            -f qa/v1503h10-durable-idempotency/ephemeral-pg17-conditional-object.sql
+      - name: Eight concurrent independent connections can create at most one metadata object
+        shell: bash
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/h10_conditional_create.txt"
+          : > "$results"
+          for i in $(seq 1 8); do
+            (psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT h10_mock_storage.conditional_put('QA_H10_CONCURRENT','QA_H10_OBJECT_CONCURRENT',repeat('1',64),repeat('a',64),'QA_WORKER_H10_A',1,repeat('7',64),1024)") >> "$results" &
+          done
+          wait
+          test "$(wc -l < "$results")" -eq 8
+          test "$(grep -xc 'CREATED_MOCK_ONLY' "$results")" -eq 1
+          test "$(grep -xc 'EXISTS_IDENTICAL_NO_WRITE' "$results")" -eq 7
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT count(*) FROM h10_mock_storage.objects WHERE operation_ref='QA_H10_CONCURRENT' AND state='provisional'")" = 1
+          echo 'PASS: PG17 8 external-connection create attempts => 1 created, 7 identical no-op.'
+      - name: New client observes sealed metadata after simulated lost ACK
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+            "SELECT h10_mock_storage.seal_once('QA_H10_CONCURRENT','QA_WORKER_H10_A',1,repeat('8',64))")" = SEALED_MOCK_METADATA_NOT_BACKUP
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+            "SELECT count(*) FROM h10_mock_storage.objects WHERE operation_ref='QA_H10_CONCURRENT' AND state='sealed' AND manifest_digest=repeat('8',64)")" = 1
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+            "SELECT h10_mock_storage.conditional_put('QA_H10_CONCURRENT','QA_H10_OBJECT_CONCURRENT',repeat('1',64),repeat('a',64),'QA_WORKER_H10_A',1,repeat('7',64),1024)")" = DENIED
+          echo 'PASS: separate client reads sealed fake object, no second write after ACK loss.'
+      - name: CI static deny list against hosted access, provider sends and real blob export
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          folder=Path('qa/v1503h10-durable-idempotency')
+          src=(folder/'independent-authority-gate.cjs').read_text()
+          sql=(folder/'ephemeral-pg17-conditional-object.sql').read_text()
+          for bad in ('fetch(', 'process.env.', 'axios(', 'child_process',
+                      'pg_dump ', 'pg_restore ', 'sendMessage(',
+                      'SUPABASE_SERVICE_ROLE', 'AWS_ACCESS_KEY',
+                      'allowedToExport:true', 'allowedToMigrate:true'):
+              assert bad not in src, 'Forbidden live capability: '+bad
+          assert "current_database() <> 'tien404_h10_ephemeral'" in sql
+          assert 'SECURITY INVOKER' in sql
+          assert 'REVOKE ALL ON SCHEMA' in sql
+          assert 'REVOKE ALL ON FUNCTION' in sql
+          assert 'ON CONFLICT DO NOTHING' in sql
+          assert "state='needs_review'" in sql
+          assert 'allowedToExport:false' in src and 'allowedToRestore:false' in src
+          print('PASS: NO HOSTED BACKUP, no real object store, no actual authorities or credentials.')
+          PY
