@@ -1,0 +1,91 @@
+name: TIEN404 CBOT-UAT-03 Recovery RPC Messenger Adapter (NO SEND)
+on:
+  push:
+    branches:
+      - work/cbot-uat03-recovery-rpc-messenger-adapter-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat03/**'
+      - '.github/workflows/cbot-uat03-nosend.yml'
+      - 'docs/ai-handoff/CBOT_UAT03_CHECKPOINT.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  messenger-adapter-source:
+    name: Messenger read-only adapter and gated recovery source QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and 55 NEW UAT03 source cases
+        run: |
+          node --check qa/cbot-uat03/messenger-commerce-adapter.mjs
+          node --check qa/cbot-uat03/hosted-recovery-rpc-gates.mjs
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+      - name: Inherited 38 UAT02 + 22 UAT01 + 65 V16.7 regressions
+        run: |
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: No-send, no-public-RPC, no-hosted-DB / secret static audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/cbot-uat03')
+          adapter=(root/'messenger-commerce-adapter.mjs').read_text()
+          gates=(root/'hosted-recovery-rpc-gates.mjs').read_text()
+          cases_a=(root/'messenger-commerce-adapter.test.mjs').read_text()
+          cases_g=(root/'hosted-recovery-rpc-gates.test.mjs').read_text()
+          assert cases_a.count("test('")==35 and cases_g.count("test('")==20
+          src=adapter+'\n'+gates
+          for banned in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+                         r'\bprocess\.env\b',r'new\s+WebSocket',r'graph\.facebook\.com',
+                         r'api\.openai\.com',r'\/rest\/v1\/',r'(?i:service_role)\s*=']:
+              assert not re.search(banned,src), f'Forbidden source dependency: {banned}'
+          assert 'UAT03_PROVIDER_SEND_DISABLED' in adapter
+          assert 'LEGACY_RPC_REVOKE_NOT_AUTHORIZED' in gates
+          assert 'HOSTED_BACKUP_EXPORT_NOT_AUTHORIZED' in gates
+          print('UAT03 55 source tests declared, NO SEND/NO HOSTED WRITE/NO PRIVILEGE CHANGE')
+          PY
+
+  disposable-postgres17:
+    name: Disposable PG17 mechanical same-tenant two-store RLS / rollback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: cbot03-ephemeral-ci-only
+          POSTGRES_DB: cbot03_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cbot03_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install CLI in CI runner (no hosted credentials)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: RLS Store isolation transaction followed by ROLLBACK
+        env:
+          PGPASSWORD: cbot03-ephemeral-ci-only
+        run: |
+          psql -h 127.0.0.1 -p 5432 -U postgres -d cbot03_disposable \
+            -v ON_ERROR_STOP=1 -f qa/cbot-uat03/pg17-disposable-readonly-store-rls.sql
+      - name: Verify CI DB objects rolled back
+        env:
+          PGPASSWORD: cbot03-ephemeral-ci-only
+        run: |
+          count=$(psql -h 127.0.0.1 -U postgres -d cbot03_disposable -Atc \
+            "SELECT count(*) FROM information_schema.schemata WHERE schema_name='qa_cbot03'")
+          test "$count" = "0"
+          echo "Disposable schema rolled back. This is not signed hosted JWT or real recovery."
