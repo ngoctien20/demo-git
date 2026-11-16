@@ -1,0 +1,54 @@
+name: TIEN404 V15 AI Technical Security Review — Read Only Evidence (NO EXPORT)
+
+on:
+  push:
+    branches:
+      - work/v15-p0-e2-ai-security-review-readonly-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-security-review/**'
+      - 'docs/ai-handoff/V15_P0E2_AI_SECURITY_REVIEW_*'
+      - '.github/workflows/v15-ai-security-review-evidence-only.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ai-technical-review:
+    name: Metadata-safe Review + Existing Backup NO-GO Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only evidence SQL, reviewer boundary and NO-GO regression
+        run: node --test qa/v15-security-review/security-review-source-contract.test.cjs
+      - name: Existing fail-closed one-time backup source regressions
+        run: |
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+          node --test qa/v15-sales-lite-p0e1/export-authorization-evidence.test.cjs
+          node --test qa/v15-sales-lite-p0e/backup-coverage-gate.test.cjs
+          node --test qa/v15-sales-lite-p0e/verify-local-sql-artifacts.test.cjs
+          node --test qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: No provider secrets, data exports or hosted write scripts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('docs/ai-handoff/V15_P0E2_AI_SECURITY_REVIEW_READ_ONLY.sql').read_text()
+          s=re.sub(r'--[^\n]*','',s)
+          for forbidden in ('supabase db dump', 'pg_dump ', 'pg_restore ',
+           'INSERT INTO', 'UPDATE public.', 'DELETE FROM', 'DROP TABLE',
+           'GRANT EXECUTE', 'REVOKE EXECUTE', 'service_role'):
+            assert forbidden not in s, forbidden
+          assert 'BEGIN TRANSACTION READ ONLY;' in s
+          assert 'COMMIT;' in s
+          print('PASS: review metadata only; no hosted side-effect code')
+          PY
