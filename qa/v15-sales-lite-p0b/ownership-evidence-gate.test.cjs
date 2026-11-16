@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {EVIDENCE,FORBIDDEN_PHASES,inspectOwnershipPacket}=require('./ownership-evidence-gate.cjs');
+const {EVIDENCE,PRE_EXPAND_REQUIRED,FORBIDDEN_PHASES,inspectOwnershipPacket}=require('./ownership-evidence-gate.cjs');
 function makePack(){
   const evidence={};
   Object.entries(EVIDENCE).forEach(([name,source],i)=>{
@@ -103,4 +103,40 @@ test('all output options remain non-authorizing',()=>{
     assert.equal(x[key],false,key);
   }
  }
+});
+
+test('pre-expand evidence review does NOT demand a Store row that cannot yet exist',()=>{
+ const p=makePack();
+ for(const key of ['canonical_store','store_membership','hosted_jwt_store_rls_tests',
+     'independent_provider_owner_consent','merchant_pilot_approval']) delete p.evidence[key];
+ const r=inspectOwnershipPacket(p,'PRE_EXPAND_REVIEW');
+ assert.equal(r.status,'INDEPENDENT_PRE_EXPAND_REVIEW_REQUIRED');
+ assert.equal(r.can_apply_migration,false);
+ assert.equal(r.real_owner_verified,false);
+ assert.equal(r.hosted_store_rls_verified,false);
+});
+test('pre-expand requires merchant proposal and private restore, not just Auth membership',()=>{
+ const p=makePack();
+ delete p.evidence.proposed_store_owner_intake;
+ delete p.evidence.isolated_restore_drill;
+ const r=inspectOwnershipPacket(p,'PRE_EXPAND_REVIEW');
+ assert.equal(r.status,'BLOCKED_INCOMPLETE_OR_INVALID_EVIDENCE');
+ assert.deepEqual(r.missing_evidence,['proposed_store_owner_intake','isolated_restore_drill']);
+});
+test('pre-expand is review-only even when every structural proof is submitted',()=>{
+ const r=inspectOwnershipPacket(makePack(),'PRE_EXPAND_REVIEW');
+ assert.equal(r.status,'INDEPENDENT_PRE_EXPAND_REVIEW_REQUIRED');
+ assert.equal(r.approved_migration,false);
+ assert.equal(r.can_change_rls,false);
+ assert.equal(r.can_reassign_legacy_rows,false);
+});
+test('invalid review phase is fail-closed',()=>{
+ const r=inspectOwnershipPacket(makePack(),'APPLY_HOSTED_MIGRATION');
+ assert.equal(r.status,'BLOCKED_INVALID_REVIEW_PHASE');
+ assert.equal(r.can_apply_migration,false);
+});
+test('pre-expand proof list excludes actual canonical Store and hosted JWT tests',()=>{
+ assert.equal(PRE_EXPAND_REQUIRED.includes('canonical_store'),false);
+ assert.equal(PRE_EXPAND_REQUIRED.includes('store_membership'),false);
+ assert.equal(PRE_EXPAND_REQUIRED.includes('hosted_jwt_store_rls_tests'),false);
 });
