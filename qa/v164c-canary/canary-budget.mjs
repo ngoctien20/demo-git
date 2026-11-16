@@ -66,9 +66,10 @@ export function newSyntheticBudget({global_cap_micro_usd,provider_caps_micro_usd
  function reserve({event_id,model_id,max_input_tokens,max_output_tokens}){
   deny(eventKey(event_id),'SYNTHETIC_EVENT_ID_REQUIRED');
   const quote=mkQuote({model_id,max_input_tokens,max_output_tokens});
+  const request_fingerprint=[model_id,max_input_tokens,max_output_tokens].join('|');
   const old=ledger.get(event_id);
   if(old){
-   deny(old.model_id===model_id&&old.micro===quote.assumed_max_micro_usd,'IDEMPOTENCY_KEY_CONFLICT');
+   deny(old.request_fingerprint===request_fingerprint,'IDEMPOTENCY_KEY_CONFLICT');
    return Object.freeze({accepted:old.status!=='HARD_BLOCKED',status:'ALREADY_PROCESSED',
     charged_real_usd:0,live_call_allowed:false});
   }
@@ -77,12 +78,12 @@ export function newSyntheticBudget({global_cap_micro_usd,provider_caps_micro_usd
   const providerRemaining=provider_caps_micro_usd[quote.provider]-
    providerReserved[quote.provider]-providerSpent[quote.provider];
   if(cap>globalRemaining||cap>providerRemaining){
-   ledger.set(event_id,{status:'HARD_BLOCKED',model_id,provider:quote.provider,micro:cap});
+   ledger.set(event_id,{status:'HARD_BLOCKED',model_id,provider:quote.provider,micro:cap,request_fingerprint});
    return Object.freeze({accepted:false,status:'HARD_BLOCKED_QA_CAP',
     charged_real_usd:0,live_call_allowed:false});
   }
   globalReserved+=cap;providerReserved[quote.provider]+=cap;
-  ledger.set(event_id,{status:'RESERVED_SYNTHETIC',model_id,provider:quote.provider,micro:cap});
+  ledger.set(event_id,{status:'RESERVED_SYNTHETIC',model_id,provider:quote.provider,micro:cap,request_fingerprint});
   return Object.freeze({accepted:true,status:'RESERVED_SYNTHETIC',
    max_simulated_micro_usd:cap,charged_real_usd:0,live_call_allowed:false});
  }
