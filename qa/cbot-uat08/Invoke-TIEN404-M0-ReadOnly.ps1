@@ -76,6 +76,9 @@ try {
   # Report only the exception CLASS (never the message or private paths).
   $safeErrorClass = [regex]::Replace([string]$_.Exception.GetType().Name,'[^A-Za-z0-9]','')
   Write-Output ("CBOT08_PRECHECK_EXCEPTION_CLASS=" + $safeErrorClass)
+  $safeErrorId = [regex]::Replace([string]$_.FullyQualifiedErrorId, '[^A-Za-z0-9_]', '_')
+  if ($safeErrorId.Length -gt 100) { $safeErrorId = $safeErrorId.Substring(0,100) }
+  Write-Output ("CBOT08_PRECHECK_ERROR_ID=" + $safeErrorId)
   Stop-Safely ("RPC7_PREFLIGHT_FAILURE_" + $preflightStage)
 }
 # No archive read occurs during Preflight.
