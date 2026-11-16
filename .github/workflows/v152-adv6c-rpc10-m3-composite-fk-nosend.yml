@@ -1,0 +1,130 @@
+name: TIEN404 V15.2 RPC.10 M3 Composite Store FK and Private Owner Gate (DISPOSABLE)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc10/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC10_*'
+      - '.github/workflows/v152-adv6c-rpc10-m3-composite-fk-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc10-m3-private-owner-fk-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc10-private-owner-source-qa:
+    name: RPC.10 Owner evidence M3 authority and inherited 155 Node cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC.10 private Owner+M3 gate negative tests
+        run: |
+          node --check qa/v152-rpc10/private-owner-m3-hosted-preflight.cjs
+          node --test qa/v152-rpc10/private-owner-m3-hosted-preflight.test.cjs
+      - name: Reuse RPC9 atomic cutover Owner and recovery gates
+        run: |
+          node --test qa/v152-rpc9/private-owner-atomic-cutover-preflight.test.cjs
+          node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Static NEVER HOSTED / no actual Owner IDs / no SQL executor
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-rpc10')
+          sql=(root/'pg17-m3-composite-fk-disposable-only.sql').read_text()
+          sh=(root/'ci-pg17-m3-composite-fk-rehearsal.sh').read_text()
+          src=(root/'private-owner-m3-hosted-preflight.cjs').read_text()
+          for s in (sql,sh):
+            assert 'qa_rpc8.' in s
+            assert 't404_rpc8_ci' in s
+            assert 'RPC8_DISPOSABLE' in s
+            assert 'ifxlvrhyjhbzbrkdsida' not in s
+            executable='\n'.join(l for l in s.splitlines()
+               if not l.lstrip().startswith(('--','#')))
+            for banned in (r'\bpublic\.(?:products|orders|customers|stores)\b',
+              r'\bauth\.users\b',r'\bpg_dump\b',r'\bpg_restore\b',
+              r'\bservice_role\b',r'\bcurl\b',r'\bwget\b'):
+              assert not re.search(banned,executable,re.I),banned
+          for token in ('rpc10_orders_same_store_customer_fk',
+            'FOREIGN KEY(tenant_id,store_id,customer_id)',
+            'VALIDATE CONSTRAINT rpc10_orders_same_store_customer_fk',
+            'ALTER COLUMN store_id SET NOT NULL',
+            'UNIQUE(tenant_id,store_id,sku)',
+            'DROP CONSTRAINT products_tenant_id_sku_key',
+            'RPC10_DISPOSABLE_PG17_ONLY'):
+            assert token in sql,token
+          assert 'ROLLBACK;' in sh and 'COMMIT;' in sh
+          assert 'canApplyM3:false' in src
+          assert 'canApplyM2M4:false' in src
+          assert 'RPC10_HOSTED_M3_REQUIRES_SEPARATE' in src
+          for banned in (r'\bfetch\s*\(',r'\bchild_process\b',
+            r'\bprocess\.env\b',r'\bhttps?\.request\s*\('):
+            assert not re.search(banned,src),banned
+          print('PASS RPC10: only guarded disposable Postgres M3 test, no hosted SQL')
+          PY
+  rpc10-disposable-m3-fk-qa:
+    name: RPC.10 PostgreSQL17 M3 composite FKs, same Store Customer and SKU, rollback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc10_synthetic_ci_pg17_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc10_synthetic_ci_pg17_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse M1 plus atomic M2/M4; negative M3 PostgreSQL proof
+        run: |
+          bash -n qa/v152-rpc10/ci-pg17-m3-composite-fk-rehearsal.sh
+          bash qa/v152-rpc10/ci-pg17-m3-composite-fk-rehearsal.sh
+  rpc10-hosted-m3-no-go:
+    name: RPC.10 HOSTED OWNER+M0+M1+M2/M4+M3 AUTHORITY — NO-GO (intentional)
+    needs: [rpc10-private-owner-source-qa,rpc10-disposable-m3-fk-qa]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deny hosted schema/backfill/JWT/legacy RPC until real evidence and approval
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc6/hosted-fourrow-recovery-baseline.json');
+          const g=require('./qa/v152-rpc10/private-owner-m3-hosted-preflight.cjs');
+          const r=g.classifyPrivateM3({currentBaseline:b});
+          console.log(JSON.stringify({status:r.status,blockers:r.issues.length,
+           canApplyM3:r.canApplyM3,actualOwnerStoreVerified:r.actualOwnerToStoreAuthorityVerified}));
+          if(r.status!=='HOSTED_M3_NO_GO'||r.canApplyM3||
+           r.canApplyM1||r.canApplyM2M4||r.canRevokeLegacyRpc)
+            throw Error('RPC10_UNSAFE_PRIVILEGED_PROMOTION');
+          console.error('RPC10_HOSTED_NO_GO_REAL_FOUR_ROW_OWNER_BACKUP_JWT_M1_M2M4_AND_M3_APPROVAL_REQUIRED');
+          process.exitCode=3;
+          NODE
