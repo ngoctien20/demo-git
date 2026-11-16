@@ -75,7 +75,11 @@ def claim_once(
     BLOCKED: duplicate, invalid recipient, revoked, expired, wrong marker.
     ERROR_BLOCKED: ambiguous DB error; never call provider/retry automatically.
     """
-    conn = sqlite3.connect(db_path, timeout=15, isolation_level=None)
+    try:
+        conn = sqlite3.connect(db_path, timeout=15, isolation_level=None)
+    except sqlite3.Error:
+        # Fail closed even when the database cannot be opened.
+        return "ERROR_BLOCKED"
     try:
         conn.execute("PRAGMA busy_timeout=15000")
         conn.execute("BEGIN IMMEDIATE")
