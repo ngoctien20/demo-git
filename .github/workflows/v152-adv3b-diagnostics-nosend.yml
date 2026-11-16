@@ -1,0 +1,78 @@
+name: TIEN404 V15.2 ADV3B Independent Diagnostics & Replay Risk (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV3B_*'
+      - '.github/workflows/v152-adv3b-diagnostics-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv3b-independent-evidence-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV3B_*'
+      - '.github/workflows/v152-adv3b-diagnostics-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-diagnostic:
+    name: 68-case separate challenge + explicit distributed replay gap
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-diagnostic-evaluator.cjs
+          node --check qa/v147-custom-studio/advanced-diagnostic-evaluator.test.cjs
+          node --check qa/v147-custom-studio/advanced-multiworker-replay-gap.test.cjs
+      - name: Independent challenge integrity, privacy and risk assertions
+        run: node --test qa/v147-custom-studio/advanced-diagnostic-evaluator.test.cjs
+      - name: Cross-worker replay proof — expected NO-GO
+        run: node --test qa/v147-custom-studio/advanced-multiworker-replay-gap.test.cjs
+      - name: Evaluate diagnostic on separate challenge
+        run: |
+          node qa/v147-custom-studio/advanced-diagnostic-evaluator.cjs
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('qa-artifacts-v152-adv3b/diagnostic.json')
+          r=json.loads(f.read_text())
+          assert r['total']==68
+          assert r['evaluationType']=='DETERMINISTIC_HEURISTIC_DIAGNOSTIC_NOT_MODEL'
+          assert r['operationalReleaseGate']=='BLOCKED'
+          assert r['liveModelAccuracyCertified'] is False
+          assert r['realModelCalls']==r['providerSends']==r['orderWrites']==0
+          print('REPORT: exact',r['correct'],'/68','unsafe high-risk',r['unsafeCount'],'/20')
+          for name,part in r['byGroup'].items():
+              print(name,part['correct'],'/',part['count'],'unsafe',part['unsafe'])
+          PY
+      - name: Inherited ADV3 and ADV2 security regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-intelligence.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-actions.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+      - name: Static no network, spend, or direct provider sends
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v147-custom-studio')
+          s=(base/'advanced-diagnostic-evaluator.cjs').read_text()
+          a=(base/'advanced-multiworker-replay-gap.test.cjs').read_text()
+          for pat in (r'\bfetch\s*\(',r'\baxios\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',r'\bnew Function\s*\('):
+            assert not re.search(pat,s+a),pat
+          assert 'NO EXECUTION' in a and 'NO_SIDE_EFFECTS_IN_QA_REGISTRY' in a
+          assert 'operationalReleaseGate' in s and 'BLOCKED' in s
+          print('ADV3B diagnostics NOT production release evidence: PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: adv3b-separate-diagnostic-risk-report-nosend
+          path: qa-artifacts-v152-adv3b/diagnostic.json
+          if-no-files-found: ignore
