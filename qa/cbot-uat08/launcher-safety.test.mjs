@@ -46,7 +46,7 @@ test('11 script never certifies M0 or hosted migration on successful local check
  assert.match(source,/CBOT08_PRIVATE_RESTORE_WITNESSED=false/);
 });
 test('12 catches local tool/archival failure without printing raw exception/path',()=>{
- assert.match(source,/RPC7_LOCAL_INSPECTION_FAILURE_/);
+ assert.match(source,/Stop-Safely "LOCAL_ARCHIVE_INSPECTION_BLOCKED"/);
  assert.doesNotMatch(source,/Write-Output\s+\$ArchivePath/i);
  assert.doesNotMatch(source,/Write-Output\s+\$_.Exception/i);
 });
