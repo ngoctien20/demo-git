@@ -98,3 +98,16 @@ Mọi tùy chọn đều yêu cầu rollback và QA sau thay đổi. **Chưa ch�
 Rollback draft: đóng PR con mới, không cần rollback hosted vì **không có thay đổi nào trên hosted**. Phạm vi kiểm tra chỉ đọc, không gọi model có phí, không publish hoặc merge.
 
 **PROPOSED V15.2 ADV.5E — Authorized RPC Remediation Decision × Signed JWT/RLS Hosted Execution Gate**, chỉ quyết định phương án sau bằng chứng riêng tư. Không mặc định phê duyệt thay đổi quyền, JWT test thật, backup hoặc chi phí.
+
+## 8. Bổ sung kiểm toán replay/OTP của hàm xử lý phía sau (read-only)
+
+Đã đọc `pg_get_functiondef` ở dạng **che tất cả chuỗi literal**, và truy vấn chỉ-đọc `pg_constraint` / `pg_trigger` trên `tien404_r1_qa.owner_pairing_challenges` và `owner_pairing_claims_v3`. **Không đọc code_hash, p_code, OTP hay bản ghi cá nhân.**
+
+- Hàm riêng `claim_owner_pairing_v3_synthetic` kiểm tra challenge đúng Tenant/Store/Bot, `requester_user_id IS NOT NULL`, `used_at IS NULL`, `expires_at > now()`, `failed_attempts < 5`, trạng thái bot hợp lệ và **FOR UPDATE OF c** trên challenge.
+- Nếu mã không khớp digest, hàm tăng bộ đếm `failed_attempts` có giới hạn 5 rồi trả về false.
+- Nhánh hợp lệ ghi vào `owner_pairing_claims_v3` với `ON CONFLICT DO NOTHING`; bảng có **PRIMARY KEY (tenant_key,store_key,bot_key,challenge_id)** và UNIQUE trên `inbound_event_ref` trong phạm vi Tenant/Store/Bot. Đây là các lớp giảm nguy cơ ghi claim trùng.
+- Không thấy trigger không nội bộ trên hai bảng. Hàm private này không tự cập nhật `used_at` trong đoạn đã đọc; primary key claim hiện bảo vệ khỏi ghi claim mới trùng cùng challenge, nhưng **chưa chứng nhận toàn bộ vòng đời xác nhận/thu hồi**, vì có thể nằm trong hàm hoặc worker khác.
+- Chỉ có định dạng QA synthetic (`qa-recipient-%`, `qa-event-%`) cho recipient và event theo CHECK constraints; **không áp dụng giả định này cho webhook thương mại thật**.
+- `anon` không có USAGE của schema `tien404_r1_qa` và không có EXECUTE trực tiếp hàm riêng.
+
+Kết luận: **guard chống sai OTP và replay có thiết kế cụ thể hơn so với giả định ban đầu**, nhưng P0 vẫn BLOCKED cho đến khi có bằng chứng tin cậy về claim nguồn (request JWT/session), caller chính thức, rate limit ở gateway, trạng thái revoke và kiểm chứng hosted thông qua người kiểm toán được phép. Không thử brute-force hoặc khởi tạo claim thật.
