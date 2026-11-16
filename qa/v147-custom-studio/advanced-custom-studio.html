@@ -40,6 +40,25 @@ table{width:100%;border-collapse:collapse;min-width:640px}th,td{border-bottom:1p
 footer{max-width:1500px;margin:auto;padding:10px 25px 28px;color:var(--muted);font-size:12px}
 @media(max-width:860px){main{grid-template-columns:1fr}.panel{padding:16px}}
 @media(max-width:420px){header{padding:18px 15px}.grid-two{gap:8px}.controls button{width:100%}.screen{padding:12px}.panel{padding:13px}}
+/* ADV.5B: mobile-first UAT cards. One DOM/source of truth; desktop table unchanged. */
+.uat-mobile-label{display:none}
+@media(max-width:600px){
+ #merchantUat .uat-scroll{overflow:visible;border:0;border-radius:0}
+ #merchantUat .uat-table{display:block;min-width:0;width:100%;border-collapse:separate}
+ #merchantUat .uat-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+ #merchantUat .uat-table tbody{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+ #merchantUat .uat-table tr{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:14px;border:1px solid #4b667c;border-radius:14px;background:#182c3c;min-width:0;box-shadow:0 3px 9px #0002}
+ #merchantUat .uat-table td{display:block;min-width:0;width:100%;padding:0;border:0;font-size:13px;overflow-wrap:anywhere;word-break:normal}
+ #merchantUat .uat-table td:first-child{min-width:0;padding-bottom:10px;border-bottom:1px solid #3c5569}
+ #merchantUat .uat-table td:first-child strong{display:block;font-size:14px;color:#f3f8ff}
+ #merchantUat .uat-table td:first-child div{font-size:12px;line-height:1.5}
+ #merchantUat .uat-table td .uat-mobile-label{display:block;font-weight:700;color:#a9e9dc;font-size:12px;line-height:1.4;margin:0 0 7px}
+ #merchantUat .uat-table td:nth-child(2){padding-bottom:9px;border-bottom:1px solid #344c60;color:#e2edf6}
+ #merchantUat .uat-table select,#merchantUat .uat-table input{display:block;width:100%;min-width:0;max-width:100%;min-height:46px;padding:11px 12px;font-size:16px;border-radius:10px}
+ #merchantUat .uat-table input{min-height:46px}
+ #merchantUat .uat-control button{min-height:44px}
+ #merchantUat #uatExportJson{min-height:125px;max-width:100%;overflow-wrap:anywhere}
+}
 .uat-guide{border-left:3px solid var(--mint);padding:9px 12px;background:#102b34;color:#deedf5;margin:10px 0 18px;font-size:13px}.uat-review{border:1px dashed #a87b51;padding:10px 12px;border-radius:9px;color:#f5d0a3;font-size:12px}.uat-table td:first-child{min-width:230px}.uat-table td div{color:var(--muted);margin-top:5px}.uat-table select{min-width:143px}.uat-table input{min-width:220px}#uatExportJson{min-height:155px;font-size:11px}.uat-control{display:flex;gap:9px;flex-wrap:wrap}@media(max-width:420px){.uat-control button{width:100%}}
 </style></head><body>
 <header>
@@ -114,7 +133,7 @@ footer{max-width:1500px;margin:auto;padding:10px 25px 28px;color:var(--muted);fo
 <h2>6. Chủ cửa hàng tự kiểm tra — UAT thử nghiệm</h2>
 <p class="uat-guide">Dữ liệu ở đây là Shop A/B/C giả lập. Hãy thử các chức năng ở phía trên, đánh dấu từng mục, rồi xuất JSON để gửi đánh giá thủ công. <strong>Đánh dấu Đạt không phải chứng nhận quyền Owner, JWT/RLS hay nghiệm thu production.</strong> Không nhập tên, điện thoại, đơn hàng hoặc thông tin khách thật.</p>
 <p class="metric" id="uatSummary" aria-live="polite">16 trường hợp đang chờ kiểm tra</p>
-<div class="scroll"><table class="uat-table">
+<div class="scroll uat-scroll" aria-label="Danh sách 16 bài kiểm tra UAT"><table class="uat-table">
 <thead><tr><th>Thử nghiệm / Thao tác</th><th>Kết quả mong đợi</th><th>Tự đánh giá</th><th>Ghi chú không chứa dữ liệu thật</th></tr></thead>
 <tbody id="uatRows"></tbody></table></div>
 <p class="uat-review" id="uatReviewGate" role="status">CHƯA NGHIỆM THU</p>
