@@ -1,0 +1,46 @@
+name: TIEN404 V15.0-10 Hosted Store JWT RLS PRE-CERTIFICATION (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1510-hosted-store-jwt-rls-precert-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1510-hosted-certification/**'
+      - 'docs/ai-handoff/TIEN404_V15_0_10_*'
+      - '.github/workflows/v1510-hosted-jwt-precert-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-tests:
+    name: JWT GET-only Matrix and Hosted Shape Gate (OFFLINE SYNTHETIC)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node22 offline signed-JWT interface and strict GET-only proof tests
+        run: node --test qa/v1510-hosted-certification/*.test.cjs
+      - name: No-Send source scan and read-only SQL audit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          d=Path('qa/v1510-hosted-certification')
+          files=[x for x in d.glob('*') if x.is_file()]
+          assert len(files)>=5
+          sql=(d/'hosted-readonly-preflight.sql').read_text()
+          assert not re.search(r'(?im)^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|GRANT|REVOKE|TRUNCATE|DO|SET ROLE|SET request\.jwt)\b',sql)
+          assert 'information_schema' in sql and 'pg_policies' in sql
+          transport=(d/'supabase-get-transport.cjs').read_text()
+          assert "method:'GET'" in transport
+          assert 'sb_secret_' in transport and "roleOfJwt(token)==='service_role'" in transport
+          for source in files:
+            assert not re.search(r'(?im)^\s*(?:SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|AUTH_JWT_A)\s*=',source.read_text())
+          print('PASS: offline synthetic evidence only; GET-only, SQL catalog SELECT, no hosted writes')
+          PY
