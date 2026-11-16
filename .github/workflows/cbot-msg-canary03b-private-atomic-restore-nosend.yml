@@ -29,6 +29,8 @@ jobs:
           node --check qa/cbot-messenger-canary03b/independent-restore-roundtrip.mjs
           node --check qa/cbot-messenger-canary03b/independent-restore-roundtrip.test.mjs
           node --test qa/cbot-messenger-canary03b/independent-restore-roundtrip.test.mjs
+      - name: Actual disposable n8n QA history + patch/restore executions 4182/4183/4184
+        run: node --test qa/cbot-messenger-canary03b/real-n8n-disposable-restore.test.mjs
       - name: Regression 240 previous no-send tests (actual Messenger, QA #4177/#4180/#4181)
         run: |
           node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
