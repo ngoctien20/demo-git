@@ -1,0 +1,85 @@
+name: TIEN404 ADV.6C-RPC.1 Private Gateway Capability QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc1/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC1_*'
+      - '.github/workflows/v152-adv6c-rpc1-private-gateway-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc1-private-gateway-capabilities-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc1-gateway-offline-qa:
+    name: RPC.1 Trusted Channel + Pairing Capability Synthetic Security QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check RPC.1 modules
+        run: |
+          node --check qa/v152-rpc1/trusted-pairing-capability.cjs
+          node --check qa/v152-rpc1/rpc1-action-coordinator.cjs
+          node --check qa/v152-rpc1/trusted-pairing-capability.test.cjs
+          node --check qa/v152-rpc1/rpc1-action-coordinator.test.cjs
+      - name: Synthetic signed event / owner-pairing capability / tenant isolation
+        run: |
+          node --test qa/v152-rpc1/trusted-pairing-capability.test.cjs
+          node --test qa/v152-rpc1/rpc1-action-coordinator.test.cjs
+      - name: Regress inherited ADV.5, ADV.6 and PRE-ADV6C protection
+        run: |
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Static no-network/no-RPC/no-live-SQL gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v152-rpc1')
+          for file in [base/'trusted-pairing-capability.cjs',
+                       base/'rpc1-action-coordinator.cjs']:
+            s=file.read_text()
+            assert 'SYNTHETIC_NO_SEND' in s, file
+            for pat in [r'\bfetch\s*\(', r'\bWebSocket\b',
+                        r'\bXMLHttpRequest\b',r'\bchild_process\b',
+                        r'\bprocess\.env\b',r'\bfs\.(?:write|append|unlink)',
+                        r'\bexecuteQuery\s*\(',r'\bservice_role\b',
+                        r'\bhttps?\.request\s*\(']:
+              assert not re.search(pat,s),(file,pat)
+          main=(base/'trusted-pairing-capability.cjs').read_text()
+          assert 'PUBLIC_SECURITY_DEFINER_RPC_DISABLED_IN_GATEWAY' in main
+          assert 'PAIRING_CAPABILITY_REPLAY_OR_LEDGER_UNAVAILABLE' in main
+          assert 'PRIVATE_PAIRING_WRITER_REQUIRES_HOSTED_APPROVAL' in main
+          assert 'PROVIDER_SEND_DISABLED' in main
+          assert 'dbWrites:0' in main
+          sql=Path('docs/ai-handoff/V15_2_ADV6C_RPC1_PRIVILEGE_MIGRATION_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          for p in [r'^\s*CREATE\s+',r'^\s*DROP\s+',r'^\s*INSERT\s+',r'^\s*UPDATE\s+',
+                    r'^\s*DELETE\s+',r'^\s*GRANT\s+',r'^\s*REVOKE\s+',r'^\s*ALTER\s+']:
+            assert not re.search(p,sql,re.I|re.M),p
+          print('PASS: RPC.1 is source-only; no live RPC, no SQL, no network, no data mutation')
+          PY
+  rpc1-hosted-rpc-exposure-no-go:
+    name: RPC.1 HOSTED ANON RPC REMOVAL — NO GO (expected BLOCKED)
+    needs: rpc1-gateway-offline-qa
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require separate verified caller inventory and hosted cutover approval
+        run: |
+          echo "RPC1_HOSTED_PRIVILEGE_CHANGE_BLOCKED_CALLER_INVENTORY_INCOMPLETE"
+          echo "Current verified staging baseline: anon still executes public SECURITY DEFINER qa_shop_b_zalo_claim"
+          echo "No privilege change has been authorized or applied; no hosted JWT/backup/cutover evidence"
+          exit 3

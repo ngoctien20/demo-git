@@ -1,0 +1,50 @@
+-- TIEN404 V15.2 ADV.6C-RPC.1 PRIVATE FUNCTION / ANON EXECUTE CUTOVER
+-- PROPOSAL ONLY -- **DO NOT APPLY / NEVER RUN ON HOSTED**
+-- Every actionable command is commented. No GRANT/REVOKE/DDL executed.
+--
+-- BASELINE VERIFIED 2026-11-16
+-- Existing function:
+-- public.qa_shop_b_zalo_claim(uuid,text,text,text)
+-- SECURITY DEFINER owner=postgres
+-- anon EXECUTE = true; authenticated EXECUTE = false
+-- Function uses Vault shared header secret before synthetic pairing claim.
+--
+-- P0 GATES BEFORE EVEN PROPOSING EXECUTION:
+-- [ ] Complete caller inventory incl. n8n, Workers, Edge, API, external clients
+-- [ ] Independent backup export AND isolated restore verified, approved separately
+-- [ ] Owner A/B same-tenant Store RLS and identity proofs certified
+-- [ ] Dedicated non-bypassrls backend role scoped to single purpose
+-- [ ] Real provider-specific raw webhook signature+account binding, event TTL
+-- [ ] Durable nonce ledger and atomic pairing writer transaction certified
+-- [ ] Canary/shadow tests and rollback plan independently reviewed
+-- [ ] Explicit Controller+Security Reviewer+Operator approval for EACH change
+--
+-- OPTION: a NEW private service, not an exposed PostgREST function:
+-- -- CREATE SCHEMA IF NOT EXISTS tien404_pairing_private;
+-- -- REVOKE ALL ON SCHEMA tien404_pairing_private FROM PUBLIC, anon, authenticated;
+-- -- CREATE ROLE t404_pairing_executor NOLOGIN NOBYPASSRLS;
+-- -- NEVER use postgres or service_role as the common AI/tool executor.
+-- -- Implement tightly scoped SECURITY INVOKER function only if backend role has
+-- -- necessary narrow table permissions; avoid privilege escalation.
+-- -- If a trusted SECURITY DEFINER is genuinely unavoidable, ensure fixed
+-- -- search_path, explicit trust boundaries and no generic EXECUTE grants.
+-- -- Do not expose private schema via the Supabase Data API.
+-- -- No free-form model SQL; only server-parameterized prepared queries.
+--
+-- AFTER verified approved cutover to the private service, optionally:
+-- -- REVOKE EXECUTE ON FUNCTION public.qa_shop_b_zalo_claim(
+-- --   uuid,text,text,text) FROM PUBLIC, anon;
+-- -- TEST: anon REST call returns permission denied.
+-- -- TEST: approved provider ingress pairing STILL works using new private path.
+-- -- TEST: tampered/replayed event and Shop A/B crossed pairing denied.
+-- -- TEST: Supabase Security Advisor warning removed for this specific RPC.
+--
+-- DO NOT "DROP FUNCTION" first: historical QA scripts / manual pairing
+-- callers may exist. Revoke only after the real caller inventory is complete.
+-- The old function's body contains a Vault access dependency; do not blindly
+-- replace it with SECURITY INVOKER and assume the same permissions work.
+--
+-- ROLLBACK (PROPOSAL, REQUIRES SEPARATE PRIVILEGE-CHANGE APPROVAL):
+-- Revert only the exact tested cutover at a safe checkpoint; the old
+-- function/GRANT source snapshot must be securely retained privately.
+-- Never regrant public EXECUTE merely to clear a migration failure.
