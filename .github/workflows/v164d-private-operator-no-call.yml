@@ -1,0 +1,70 @@
+name: TIEN404 V16.4D Operator Evidence and Authorized Decision (NO CALL)
+on:
+  push:
+    branches:
+      - work/v164d-private-operator-evidence-decision-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v164d-decision/**'
+      - 'docs/ai-handoff/V16_4D_*'
+      - '.github/workflows/v164d-private-operator-no-call.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signed-evidence-decision:
+    name: V16.4D 58 new Node assertions + 387 inherited offline checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independent evidence and NO-GO canary decision
+        run: |
+          node --check qa/v164d-decision/operator-evidence.mjs
+          node --check qa/v164d-decision/authorized-canary-decision.mjs
+          node --check qa/v164d-decision/v164d-decision.test.mjs
+          node --test qa/v164d-decision/v164d-decision.test.mjs
+      - name: Inherited V16.4C B A and platform regression
+        run: |
+          node --test qa/v164c-canary/v164c-private-canary.test.mjs
+          node --test qa/v164b-privacy/v164b-preflight.test.mjs
+          node --test qa/v164-private-ab/v164-eval-readiness.test.mjs
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Inherited private sanitizer synthetic self-tests only
+        run: |
+          python3 -m py_compile qa/v164b-privacy/private_sanitizer.py
+          python3 qa/v164b-privacy/test_private_sanitizer.py
+      - name: Static zero-network source guard
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/v164d-decision')
+          files=list(root.glob('*.mjs'))
+          assert {f.name for f in files}=={
+            'operator-evidence.mjs','authorized-canary-decision.mjs','v164d-decision.test.mjs'}
+          for f in files:
+            code=f.read_text()
+            for bad in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',
+                        r'\bWebSocket\b',r'\bprocess\.env\b',
+                        r'\bchild_process\b',r'\bopenai\.responses\.create\b',
+                        r'\bGoogleGenAI\b',r'(?i)sk-[A-Za-z0-9_-]{16,}']:
+              assert re.search(bad,code) is None,(f,bad)
+          assert 'V164D_PAID_CANARY_DISABLED' in (root/'authorized-canary-decision.mjs').read_text()
+          assert 'V164D_NO_CREDENTIAL_READ' in (root/'operator-evidence.mjs').read_text()
+          assert not list(root.glob('*.csv'))
+          print('NO-SEND VERIFIED: no real credentials, providers, customer prompts or billable API')
+          PY
+  live-provider-approval-blocked:
+    name: Actual human privacy, project model entitlement and spend approval — NOT RUN
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'BLOCKED: requires independently verified private evidence and separate operator approval'
