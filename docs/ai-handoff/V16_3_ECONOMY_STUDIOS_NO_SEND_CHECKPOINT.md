@@ -18,18 +18,18 @@ All features are server contracts running with pre-enrolled **QA-only synthetic*
 - **Cost Center:** \`cost-center.mjs\`. Integer micro-USD per-Shop mock budget, pessimistic reserve/settle/refund, idempotent event IDs, warnings at 70%, 90%, 100%, mock hard cap and quota fallback. All state local memory. No actual invoice or cloud-billing reconciliation, no cross-instance atomicity: real spending hard cap **BLOCKED**.
 - **Priority Queue Dashboard:** \`priority-dashboard.mjs\` wraps V16.2 deterministic weighted scheduler; metadata-only per-tenant/per-Shop pending queue age, tier distribution, oldest wait and simulated admission. NOT real Cloudflare Queues or throughput/SLA proof. Per-Shop Economy/Standard/Priority concurrency 1/2/5 and weighted 1:2:4 are proposed test values only. Reviewers may see same-tenant anonymized aggregate, never cross-tenant data.
 - **Human Handoff:** \`human-handoff.mjs\`: reason-code triggers, consent gate, idempotent preview ticket and store-scoped manager assignment/resolution. Staff never gets a real message, no customer profile or raw text stored, customer never gets status notification; owner verification and channel notification adapter still BLOCKED.
-- **Model A/B Lab:** \`model-ab-lab.mjs\`: exact 96 single + 36 multi case metadata manifest, composite case keys SINGLE:QA01 and MULTI:QA01 to avoid collision, candidates \`baseline_small\`, \`economy_candidate\`, \`premium_candidate\` as **unverified labels**. Generate 396 NOT_RUN plan rows (132 per label). No text, prompt, actual output, API key, real model ID or paid inference. Claimed reviewer PASS remains unverified and does not count as certified PASS.
+- **Model A/B Lab:** \`model-ab-lab.mjs\`: exact 96 single + 36-case dialogue-pack metadata manifest, composite case keys SINGLE:QA01 and MULTI:QA01 to avoid collision, candidates \`baseline_small\`, \`economy_candidate\`, \`premium_candidate\` as **unverified labels**. Generate 396 NOT_RUN plan rows (132 per label). Metadata verified directly from user CSV: 36-case pack has 9 one-turn, 21 two-turn, 4 three-turn and 2 four-turn cases (71 total turns); only 27 genuinely test multi-turn memory. No text, prompt, actual output, API key, real model ID or paid inference. Claimed reviewer PASS remains unverified and does not count as certified PASS.
 
 ## 3. Data, privacy, tenancy and status
 - No actual customer message, phone, address, JWT, token, merchant dataset, prices, stock or order writes should enter source-only modules. All public GitHub files contain only synthetic allowlisted fixtures and state schemas.
-- This iteration does not add UI connected to actual Shop identity, persistent DB, Queue, paid API, Messenger/Zalo send or n8n work.
+- This iteration adds `qa/v163-studios/preview.html` + `preview-ui.mjs` as a responsive LOCAL SYNTHETIC dashboard using in-memory modules. No hosted auth, real end-user UI QA or deployment has been performed. This iteration does not add UI connected to actual Shop identity, persistent DB, Queue, paid API, Messenger/Zalo send or n8n work.
 - Every action uses QA-only \`enrolled:true\` context injected in offline tests. A real principal MUST be authenticated and authorized by server-side trusted resolver before any production use. Do NOT reuse QA contexts for authorization.
 - All synthetic test measurements (if any) must be labelled LOCAL_SYNTHETIC. Real latency, provider delivery, per-model cost remain unverified.
 - Real 132-case quality baseline: 96 single \`actual_output\` blank and 36 multi \`NOT_RUN\`; historical 97 feedback lines include duplicate QA01; do not reinterpret as an independently validated score. No paid model A/B executed.
 - Real-time hard cost cap needs durable transactional reservation/refund and reconciliation with provider usage/pricing/billing before GO. In-memory mock cannot enforce multi-instance cap.
 
 ## 4. QA and release gates
-- New 64-case offline synthetic positive/negative suite + inherited V16.2 (37) + V16.1 (42). CI result must be attached for the exact PR HEAD.
+- New 70-case offline synthetic positive/negative suite + inherited V16.2 (37) + V16.1 (42). CI result must be attached for the exact PR HEAD.
 - P0: hosted tenant and Store ownership, independent Owner A/B JWT-RLS, public RPC risk, actual provider verification, human approval; production Commerce remains NO-GO.
 - P1: actual Queue fairness, cross-process atomic cost ledger, real deliverability/handoff acknowledgement, model ID/price/RPM/TPM/cost per resolved conversation, 132-case actual scored QA.
 - GO: review Draft PR and continue QA-only source-first trials. NO-GO: publish real Worker/webhook, n8n Published, paid model, live send, Order write, Supabase RLS/GRANT/RPC or customer rollout.
@@ -56,3 +56,11 @@ Changes are additive and isolated under \`qa/v163-studios/\`, \`.github/workflow
 - V16.4: đưa prompt/expected behavior từ nguồn private vào offline evaluator, không commit PII; kiểm tra model catalog và chi phí mới nhất; chạy model được duyệt với hard budget, chấm độc lập.
 - V16.5: thiết kế durable quota and queue with transactional outbox, process restart/replay/cross-Shop tests in isolated disposable DB; funded Cloudflare resources require approval riêng.
 - Merchant onboarding: xây wizard import CSV/XLSX chỉ ở môi trường private, validate sản phẩm, mã SKU, giá sỉ/lẻ, phân quyền, backup, DPA và consent; không lưu công khai.
+
+## 8. Dataset structure and additional acceptance evidence
+- Read direct user-supplied \`AI_SALES_QA_96_SINGLE_TURN.csv\`: 96 unique IDs, all 96 \`actual_output\` empty.
+- Read direct user-supplied \`AI_SALES_36_MULTI_TURN_FOR_LATER.csv\`: 36 unique IDs, 71 dialogue turns; **9 contain 1 turn**, 21 contain 2 turns, 4 contain 3 turns, 2 contain 4 turns. True multi-turn-memory subset is 27 cases. Do not score 9 single-turn dialogue items as memory successes.
+- Read historical \`AI_SALES_QA_CASES.csv\`: 97 rows / 96 unique IDs (QA01 duplicate); historical responses are not independent V16.3 model evaluations.
+- New metadata-only \`qa/v163-studios/manifest-132.mjs\` mirrors case counts and turn counts, without conversation text. Source CSV remains private (not committed).
+- Browser-only QA preview has five responsive tabs; owner/reviewer/staff actors are synthetic fixtures, NOT merchant login or real role enforcement.
+- New unit tests include an exact 9 anomalous / 71 turns integrity assertion and Shop-scoped FAQ greetings. **Expected 70 new tests**, inherited 37 + 42 = 149 if all CI jobs pass at exact HEAD.
