@@ -84,7 +84,7 @@ export function reviewSingleResponderTopology(design){
     !LIVE_AGENT_TOOLS.every(n=>design.agent_tools_attached_to_baseline.includes(n))||
     design.agent_tools_attached_to_baseline.length!==LIVE_AGENT_TOOLS.length)
   reject('PUBLISHED_BASELINE_WRITER_TOOLS_NOT_ACCOUNTED');
- if(!exact(design.canary_node_types,{...Object.fromEntries(onlyNames.map(k=>[k,true]))}))
+ if(!exact(design.canary_node_types,onlyNames))
   reject('NODE_TYPES_MISSING_OR_EXTRA');
  else{
   for(const n of REQUIRED_CANARY_NODES){
