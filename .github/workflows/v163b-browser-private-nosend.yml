@@ -1,0 +1,76 @@
+name: TIEN404 V16.3B Browser + V16.4 Private Lab (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v163-studios/preview-ui.mjs'
+      - 'qa/v163b-browser/**'
+      - 'qa/v164-private-ab/**'
+      - 'docs/ai-handoff/V16_3B_*'
+      - '.github/workflows/v163b-browser-private-nosend.yml'
+  push:
+    branches:
+      - work/v163b-browser-private-ab-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-paid-private-model-preflight:
+    name: V16.4 private data guard + 42 synthetic preflight tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node private lab, full inherited V16.3 QA
+        run: |
+          node --check qa/v164-private-ab/private-readiness.mjs
+          node --check qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Enforce no raw private dataset, provider action or PII in source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          files=list(Path('qa/v164-private-ab').glob('*.mjs'))
+          assert len(files)==2
+          for f in files:
+            s=f.read_text()
+            for p in [r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bfs\.(?:write|append|unlink)\w*\s*\(',r'\bXMLHttpRequest\b',
+              r'\bWebSocket\b',r'\bopenai\.responses\.create\b']:
+              assert not re.search(p,s),(f,p)
+          assert 'V164_PAID_API_HARD_BLOCK' in files[0].read_text()
+          assert 'actual_api_calls:0' in files[0].read_text()
+          print('PASS: no paid model executor, no private dataset upload and no real provider send')
+          PY
+
+  chromium-full-browser-qa:
+    name: Real Chromium 320-1440px Five Studios interactions and Shop isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set up isolated Playwright Python only (no model/provider calls)
+        run: |
+          python -m venv .v163b-venv
+          .v163b-venv/bin/python -m pip install --disable-pip-version-check playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Real localhost-only Chromium QA
+        run: |
+          .v163b-venv/bin/python qa/v163b-browser/browser_qa.py
+      - name: Upload synthetic QA evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v163b-chromium-synthetic-evidence
+          path: qa/v163b-browser/artifacts/
+          if-no-files-found: warn
+          retention-days: 7
