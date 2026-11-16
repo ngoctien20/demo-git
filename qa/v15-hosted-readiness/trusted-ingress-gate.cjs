@@ -12,12 +12,12 @@ const B64=/^[A-Za-z0-9_-]{86}$/;
 const CHANNELS=new Set(['MESSENGER','ZALO_BOT','ZALO_OA','WEB_WIDGET']);
 const accepted=new WeakSet();
 const TRUST='SYNTHETIC_SIGNED_BACKEND_CONTEXT_V15';
-const SOURCES={
+const SOURCES=Object.freeze({
  channel:'TIEN404_V15_QA_CHANNEL_SIGNATURE_ATTESTOR',
  membership:'TIEN404_V15_QA_TENANT_SCOPE_ATTESTOR'
-};
-const POLICY={version:'V15_03H_QA_V1',mode:'SYNTHETIC_ONLY',maxProofMs:120000,
-  allowedTools:Object.freeze(['catalog_read','price_quote','order_draft','support_draft'])};
+});
+const POLICY=Object.freeze({version:'V15_03H_QA_V1',mode:'SYNTHETIC_ONLY',maxProofMs:120000,
+  allowedTools:Object.freeze(['catalog_read','price_quote','order_draft','support_draft'])});
 function deny(reason){
  return Object.freeze({status:'BLOCKED',reason,can_send:false,can_write_orders:false,
    owner_certified:false,provider_identity_real:false,tool_execution_count:0,
