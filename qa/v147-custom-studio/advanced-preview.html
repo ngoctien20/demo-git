@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'none'; font-src 'none'; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>TIEN404 · Advanced AI Presentation Lab — NO SEND</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 system-ui,"Segoe UI",sans-serif;background:#0c1420;color:#f0f5fa}
+*{box-sizing:border-box}body{margin:0}header{padding:24px 4vw;background:#131e2d;border-bottom:1px solid #304052}
+h1{font-size:clamp(22px,3vw,32px);margin:0 0 8px}header p{margin:0;color:#b5c6d7}
+main{max-width:1240px;margin:auto;padding:24px 4vw;display:grid;grid-template-columns:minmax(240px,340px) 1fr;gap:18px}
+.panel{background:#152234;border:1px solid #34465a;border-radius:15px;padding:18px;min-width:0}
+h2{font-size:17px;margin:0 0 16px}label{display:block;margin:15px 0 5px;color:#d3e4f4;font-weight:600}
+select,textarea{width:100%;background:#0e1826;color:#fff;border:1px solid #4c6177;border-radius:9px;padding:12px;font:inherit}
+textarea{min-height:100px;resize:vertical}select:focus-visible,textarea:focus-visible{outline:2px solid #6bdac9}
+.badge{display:inline-block;padding:6px 11px;border:1px solid #7a6151;border-radius:99px;color:#ffd5a8;font-size:12px}
+.caption{color:#b5c6d7;font-size:12px;margin-top:12px}
+.screen{max-width:580px;margin:auto;background:#192839;border:1px solid #35506a;border-radius:19px;padding:18px;min-height:300px}
+.head{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-bottom:16px}
+.head strong{font-size:16px}.head small{color:#a5c9d7}.note{font-size:10px;color:#f7c689;letter-spacing:.08em;margin-bottom:9px}
+.bubble{white-space:pre-wrap;background:#283a4d;border-radius:16px 16px 16px 4px;padding:14px 15px;max-width:94%;line-height:1.7;overflow-wrap:anywhere}
+.style-price{color:#58d6a2}.style-warning{color:#fa746c;font-weight:700}.style-note{font-style:italic;color:#b3c1d8}
+.cards{display:flex;gap:12px;overflow:auto;padding:14px 0}.product-card{background:#1e3043;border:1px solid #49617b;border-radius:14px;padding:13px;min-width:175px;display:grid;gap:4px}
+.product-icon{font-size:34px}.product-price{font-weight:700;color:#55daa6}.product-card small{color:#a6bacc}
+.buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.buttons button{padding:9px 13px;border-radius:20px;border:1px solid #59798a;background:#2a3c51;color:#ccdae9}
+.photo{margin-top:13px;border:1px dashed #69828f;border-radius:12px;padding:15px;color:#b1d2dd}
+.warning{font-size:11px;color:#f3c48e;margin-top:18px}
+pre{white-space:pre-wrap;word-break:break-word;background:#101c2b;border-radius:10px;padding:13px;color:#b4d9e6;font-size:11px;max-height:340px;overflow:auto}
+footer{max-width:1240px;padding:0 4vw 30px;margin:auto;color:#9fb3c5}
+@media(max-width:760px){main{grid-template-columns:1fr}.panel{padding:15px}.screen{max-width:100%}}
+</style></head><body>
+<header><div class="badge">EXPERIMENTAL · NO SEND</div><h1>TIEN404 · Advanced AI Presentation Lab</h1>
+<p>Chữ đậm, nghiêng, màu sắc, ảnh sản phẩm, thẻ, nút và liên kết — theo từng kênh; dữ liệu mẫu A/B/C, không kết nối mạng.</p></header>
+<main><section class="panel"><h2>1. Bộ điều khiển QA</h2>
+<label for="shop">Cửa hàng</label><select id="shop"><option value="A">Shop A · Tạp hóa</option><option value="B">Shop B · Thời trang</option><option value="C">Shop C · Vật liệu</option></select>
+<label for="channel">Kênh</label><select id="channel"><option>MESSENGER</option><option>ZALO_BOT</option><option>ZALO_OA</option><option>WEB_WIDGET</option></select>
+<label for="question">Câu hỏi thử nghiệm</label><textarea id="question">Cho mình hỏi giá sản phẩm?</textarea>
+<label for="manualIntent">Ý định trình bày</label><select id="manualIntent"><option value="AUTO">Tự phân loại — heuristic QA (không phải model AI)</option>
+<option value="GREETING">Chào hỏi</option><option value="DISCOVER">Gợi ý sản phẩm</option><option value="QUOTE">Báo giá</option><option value="LOW_STOCK">Tồn kho</option><option value="POLICY">Chính sách</option><option value="ORDER_REQUEST">Đặt hàng</option><option value="ORDER_LOOKUP">Tra mã đơn</option><option value="SUPPORT">Hỗ trợ</option></select>
+<p class="caption">Bản QA chỉ thể hiện quy tắc quyết định hình thức. Model thật cần benchmark riêng bằng dữ liệu người dùng và ngân sách đã duyệt.</p>
+<h2 style="margin-top:22px">2. Kết quả quyết định</h2><p id="intent"></p><p class="caption" id="capability"></p>
+</section><section class="panel"><div class="head"><div><strong id="shopName"></strong><div><small id="channelName"></small></div></div><small id="status"></small></div>
+<div id="screen" class="screen" aria-live="polite"></div><h2 style="margin-top:22px">Dữ liệu dựng UI an toàn</h2><pre id="json"></pre></section></main>
+<footer>TIEN404 R&amp;D · Không gửi Meta/Zalo · Không đọc/ghi Supabase · Không tạo đơn · Không tiết lộ thông tin khách hàng.</footer>
+<script src="./studio-core.js" defer></script><script src="./advanced-presentation-policy.js" defer></script><script src="./advanced-preview.js" defer></script>
+</body></html>
