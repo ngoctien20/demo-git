@@ -67,3 +67,9 @@ The CLI only prints aggregate counts and remaining gaps, never references/sha/in
 
 ## ROLLBACK
 All UAT06 GitHub changes are candidate/source only. Close its Draft PR to roll back new artifacts; no hosted changes were made. Do NOT delete existing n8n QA evidence, archived file or old PRs to roll back a source change.
+
+## Extra READ-ONLY NATIVE META APP CONSOLE observation (connected Browser)
+- Browser tab open at Meta for Developers > TIEN404 AI Messenger > App Roles > Test Users. The rendered UI confirms the app name and shows the label "Chưa đăng" under publication state; test-user counter 0/0. No App ID, token or user identity is copied into GitHub.
+- The current tab does NOT show App Administrator role, Page's separate administrator role, connected Page, webhook messages subscriptions, pages_messaging permission or App Review status. It must remain NATIVE_PAGE_OWNER_NOT_VERIFIED.
+- From the authorized user's own browser, inspect the left-hand 'Vai trò' page for their role, 'Trường hợp sử dụng' and relevant Webhooks/Page settings for subscriptions, plus native Meta Business Page asset permissions. Read only; never toggle status or submit webhook changes under UAT06. Retain actual screenshots privately; separate independent reviewer must sign the correct Page/App/Store binding.
+- "Chưa đăng" is a current UI label, not a guarantee about every app permission or production delivery. Meta #4176 real Messenger reply is independent valid webhook/send evidence, but cannot substitute full native admin authority.
