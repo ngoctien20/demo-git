@@ -1,0 +1,43 @@
+{
+  "contract": "T404_CBOT_MSG_CANARY_N8N_MANUAL_QA_EVIDENCE_V1",
+  "observation": "DIRECT_CONNECTED_N8N_WORKFLOW_AND_EXECUTION_READONLY",
+  "observed_date_jst": "2026-11-16",
+  "project_type": "personal",
+  "workflow_id": "VSmXkK7Y1Bb3Dg2w",
+  "workflow_name": "TIEN404 CBOT Messenger Canary — QA [INACTIVE NO SEND]",
+  "parent_qa_folder": "90_QA - DIAGNOSTICS",
+  "active": false,
+  "published_version": null,
+  "node_count": 2,
+  "node_types": [
+    "n8n-nodes-base.manualTrigger",
+    "n8n-nodes-base.code"
+  ],
+  "assigned_credentials": 0,
+  "execution_id": "4177",
+  "execution_mode": "manual",
+  "execution_status": "success",
+  "execution_started_at_utc": "2026-11-16T11:54:25.508Z",
+  "execution_stopped_at_utc": "2026-11-16T11:54:27.109Z",
+  "executed_nodes": [
+    "Manual Canary QA Only",
+    "Preview QA Greeting NO_SEND"
+  ],
+  "all_executed_nodes_success": true,
+  "output_contract": "TIEN404_CBOT_CANARY_MANUAL_PREVIEW_V1",
+  "output_kind": "OFFLINE_SOURCE_ONLY",
+  "output_profile": "QA_STORE_A_SYNTHETIC",
+  "candidate_version": 2,
+  "output_has_expected_greeting_tag": true,
+  "can_send": false,
+  "can_create_order": false,
+  "can_publish": false,
+  "provider_messages_sent": 0,
+  "orders_written": 0,
+  "paid_model_calls": 0,
+  "native_page_proof_verified": false,
+  "qa_recipient_owner_proof_verified": false,
+  "real_published_agent_config_modified": false,
+  "real_meta_message_sent": false,
+  "synthetic_fixture_not_real_product_catalog": true
+}
