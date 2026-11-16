@@ -1,0 +1,104 @@
+name: TIEN404 V15.0-03H.9 Evidence + Idempotent Sink (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503h9-independent-evidence-external-idempotency-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1503h9-private-executor/**'
+      - 'docs/ai-handoff/V15_03H9_*'
+      - '.github/workflows/v1503h9-private-executor-no-send.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-private-evidence-executor:
+    name: Independent Receipt QA + Synthetic Sink + Disposable PG17
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral_h9_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ephemeral_h9_ci_only
+      PGDATABASE: tien404_h8_ephemeral
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test H9 evidence, mock external sink, and inherited H8-H6 contracts
+        run: |
+          node --check qa/v1503h9-private-executor/independent-signer-evidence.cjs
+          node --check qa/v1503h9-private-executor/synthetic-external-sink.cjs
+          node --test \
+            qa/v1503h9-private-executor/independent-signer-evidence.test.cjs \
+            qa/v1503h9-private-executor/synthetic-external-sink.test.cjs \
+            qa/v1503h8-lease/signer-enrollment-review.test.cjs \
+            qa/v1503h7-attestation/attestation-registry.test.cjs \
+            qa/v1503h6-backup-preflight/backup-coverage-preflight.test.cjs
+      - name: Install PostgreSQL client for inherited H8 atomic lease regression
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: H8 ephemeral PG17 fenced lease and crash quarantine regression
+        run: |
+          createdb tien404_h8_ephemeral
+          psql -X -v ON_ERROR_STOP=1 \
+            -f qa/v1503h8-lease/ephemeral-pg17-crash-safe-lease.sql
+      - name: Concurrent 8-source attempt and manual recovery gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/h9_disposable_lease_claims.txt"
+          : > "$results"
+          for i in $(seq 1 8); do
+            (psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT h8_lease_qa.reserve_once('QA_H8_CONCURRENT',repeat('f',64),repeat('6',64),'QA_WORKER_AAAA',30)") >> "$results" &
+          done
+          wait
+          test "$(wc -l < "$results")" -eq 8
+          test "$(grep -xc '1' "$results")" -eq 1
+          test "$(grep -xc '0' "$results")" -eq 7
+          psql -X -v ON_ERROR_STOP=1 -c \
+            "UPDATE h8_lease_qa.approvals SET lease_deadline=clock_timestamp()-interval '1 second' WHERE receipt_ref='QA_H8_CONCURRENT'"
+          test "$(psql -XAtq -c 'SELECT h8_lease_qa.quarantine_stale()')" = 1
+          test "$(psql -XAtq -c \
+            "SELECT state FROM h8_lease_qa.approvals WHERE receipt_ref='QA_H8_CONCURRENT'")" = needs_review
+          test "$(psql -XAtq -c \
+            "SELECT h8_lease_qa.reserve_once('QA_H8_CONCURRENT',repeat('f',64),repeat('6',64),'QA_WORKER_BBBB',30)")" = 0
+          echo 'PASS: PG17 8 claims 1 success/7 denied; crash quarantine and NO AUTO RE-EXECUTION.'
+      - name: Static guard — no provider, hosted backup, network, secrets or actual object store
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v1503h9-private-executor')
+          src='\n'.join(x.read_text() for x in p.glob('*.cjs') if not x.name.endswith('.test.cjs'))
+          for forbidden in ('fetch(', 'axios(', 'process.env.', 'child_process',
+                            "require('fs", 'pg_dump ', 'pg_restore ', 'sendMessage(',
+                            'SUPABASE_SERVICE_ROLE', 'AWS_ACCESS_KEY', 'PUT https:',
+                            'allowedToExport:true', 'authorizedToExport:true'):
+              assert forbidden not in src, 'Forbidden live runtime capability: '+forbidden
+          assert 'authorizedToExport:false' in src
+          assert 'allowedToExport:false' in src
+          assert 'hostedExportAuthorized===false' in src
+          assert 'externalWritesEnabled===false' in src
+          assert 'PRIVATE_MANUAL_RECONCILIATION_REQUIRED' in src
+          print('PASS: metadata-only simulator, no real backup/network/object writes/hosted credentials.')
+          PY
