@@ -1,0 +1,102 @@
+name: TIEN404 V15.2 ADV4 Advanced Studio Integration QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/**'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-custom-studio-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv4-custom-studio-integration-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/**'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-custom-studio-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    name: Store/channel Draft versioning, safe assets & no-send contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax validation
+        run: |
+          node --check qa/v147-custom-studio/advanced-studio-integration.js
+          node --check qa/v147-custom-studio/advanced-studio-ui.js
+          node --check qa/v147-custom-studio/advanced-adapter-contracts.js
+          node --check qa/v147-custom-studio/advanced-studio-integration.test.cjs
+          node --check qa/v147-custom-studio/advanced-adapter-contracts.test.cjs
+      - name: ADV4 50 versioned Studio tests
+        run: node --test qa/v147-custom-studio/advanced-studio-integration.test.cjs
+      - name: ADV4 20 channel adapter contracts
+        run: node --test qa/v147-custom-studio/advanced-adapter-contracts.test.cjs
+      - name: ADV3/3B/ADV2/ADV1 inherited regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-diagnostic-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-multiworker-replay-gap.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-actions.test.cjs
+          node --test qa/v147-custom-studio/advanced-ai-intelligence.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Static no-hosted-write, no-provider-send and no-client signer security
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          b=Path('qa/v147-custom-studio')
+          paths=['advanced-studio-integration.js','advanced-studio-ui.js','advanced-adapter-contracts.js']
+          text='\n'.join((b/f).read_text() for f in paths)
+          html=(b/'index.html').read_text()
+          bridge=(b/'studio-ui.js').read_text()
+          assert "connect-src 'none'" in html and "img-src 'none'" in html
+          assert "frame-src 'none'" in html and "form-action 'none'" in html
+          for f in paths:
+              assert f in html or f=='advanced-studio-integration.js', f
+          assert 'T404AdvancedLabBridge' in bridge
+          for bad in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                      r'\bEventSource\b',r'\baxios\s*\(',r'\binnerHTML\b',
+                      r'\b(localStorage|sessionStorage)\b',r'\bcreateHmac\s*\(',
+                      r'\bnew Function\s*\('):
+              assert not re.search(bad,text),bad
+          assert 'canExecute:false' in text and 'providerPayload:null' in text
+          assert 'ADV4_PUBLISH_SEND_ACTION_HOSTED_DISABLED' in text
+          assert 'ADV4_ADAPTER_SEND_DISABLED' in text
+          assert 'merchantEntitlementVerified:false' in text
+          print('ADV4 local-only static security PASS')
+          PY
+  browser-local:
+    name: V14.7 integrated Advanced Studio browser QA, 6 widths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium QA-only
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Serve isolated local static source
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v152-adv4-studio.log 2>&1 &
+          sleep 2
+      - name: ADV4 Studio integration browser QA
+        run: node qa/v147-custom-studio/advanced-studio-browser.test.cjs
+      - name: Inherited ADV3 browser QA
+        run: node qa/v147-custom-studio/advanced-intelligence-browser.test.cjs
+      - name: Inherited V14.7 experience browser QA
+        run: node qa/v147-custom-studio/experience-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv4-studio-390px-sourceonly
+          path: qa-artifacts-v152-adv4/
+          if-no-files-found: ignore
