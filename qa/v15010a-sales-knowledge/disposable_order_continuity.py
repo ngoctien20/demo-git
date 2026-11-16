@@ -105,7 +105,7 @@ class DisposableCommerce:
           unit_price_vnd INTEGER NOT NULL CHECK(unit_price_vnd>=0),
           total_vnd INTEGER NOT NULL CHECK(total_vnd>=0),
           status TEXT NOT NULL CHECK(status='QA_PERSISTED'),
-          idempotency_key TEXT NOT NULL,
+          idempotency_key TEXT NOT NULL, draft_id TEXT NOT NULL UNIQUE,
           UNIQUE(tenant_id,store_id,idempotency_key),
           FOREIGN KEY(tenant_id,store_id,sku)
             REFERENCES qa_products(tenant_id,store_id,sku)
@@ -238,6 +238,15 @@ class DisposableCommerce:
             AND customer_ref=?""",
           (draft_id,f["tenantId"],f["storeId"],customer)).fetchone()
         if not d:return self.denied()
+        existing_draft=self.db.execute("""
+          SELECT order_id,idempotency_key FROM qa_orders
+          WHERE draft_id=? AND tenant_id=? AND store_id=?""",
+          (draft_id,f["tenantId"],f["storeId"])).fetchone()
+        if existing_draft:
+            if existing_draft["idempotency_key"]!=idempotency_key:
+                return {"status":"DRAFT_ALREADY_PERSISTED_NO_NEW_ORDER","live_order_writes":0}
+            return {"status":"QA_PERSISTED","order_id":existing_draft["order_id"],
+                "idempotent_replay":True,"stock_deducted":False,"live_order_writes":0}
         existing=self.db.execute("""
           SELECT * FROM qa_orders
           WHERE tenant_id=? AND store_id=? AND idempotency_key=?""",
@@ -256,10 +265,10 @@ class DisposableCommerce:
         if p["stock"]<d["quantity"]:
             return {"status":"INSUFFICIENT_STOCK","live_order_writes":0}
         order_id="TEST-"+secrets.token_hex(8).upper()
-        self.db.execute("INSERT INTO qa_orders VALUES(?,?,?,?,?,?,?,?,?,?)",
+        self.db.execute("INSERT INTO qa_orders VALUES(?,?,?,?,?,?,?,?,?,?,?)",
           (order_id,f["tenantId"],f["storeId"],customer,d["sku"],
            d["quantity"],p["price_vnd"],p["price_vnd"]*d["quantity"],
-           "QA_PERSISTED",idempotency_key))
+           "QA_PERSISTED",idempotency_key,draft_id))
         self.db.execute(
           "UPDATE qa_order_drafts SET stage='CUSTOMER_CONFIRMED' WHERE draft_id=?",
           (draft_id,))
