@@ -47,3 +47,10 @@ No model calls, webhook sends, n8n Published edit, Supabase DDL/DML/RLS/GRANT/Au
 Rollback: Close Draft V15.0-11A PR or revert this child source-only branch; does not roll back hosted because nothing was changed. Future migration backup needs own signed rollback runbook.
 
 NEXT: owner-approved private G2.3 and Free-tier recovery work + independently budgeted 132-case model QA in separate stages; then signed hosted JWT/RLS test on an approved isolated target. Do not publish until all independent evidence and checks are green.
+
+
+## 7. Source checksum and integrated CI evidence, independently checked
+- All 21 introduced file blob SHAs under 09B/09C/09D EXACTLY MATCH their corresponding paths from security PR #135 HEAD 6ef086202a524b0c595fda3f03ae89a10fe73676, verified via GitHub fetch_file SHA comparison in three batches. These are additive paths only; prior V15 Agent Core and Sales Lite files are not replaced.
+- At source head 86c210b56de93d1469929570825dc29ff5b9e27a, unified GitHub Action #43799157082 SUCCESS. Exactly 345/345 combined offline tests PASS: six new release-gate tests, 294 other inherited Node tests, 45 SQLite tests. Synthetic PG17 pg_dump/restore, checksum, FORCE RLS and Store A/B negative read PASSED.
+- Additional GitHub Actions at that source head also SUCCESS: 09B #43799157048, 09C #43799157118, 09D #43799157039, V15 Core #43799157149.
+- These reflect SOURCE-ONLY/EPHEMERAL QA, not real Supabase JWT/RLS or real Owner/provider/backup certification. After THIS documentation-only commit, verify the newest exact HEAD CI before final TESTED claim.
