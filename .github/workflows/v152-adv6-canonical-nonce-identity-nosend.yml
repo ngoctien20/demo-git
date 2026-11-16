@@ -1,0 +1,74 @@
+name: TIEN404 V15.2 ADV.6 Canonical Action Identity Durable Nonce QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/**'
+      - 'docs/ai-handoff/V15_2_ADV6_*'
+      - '.github/workflows/v152-adv6-canonical-nonce-identity-nosend.yml'
+  push:
+    branches:
+      - work/v152adv6-canonical-action-identity-durable-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  canonical-identity-contract:
+    name: Server crypto fixtures and durable nonce adapter safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and no runtime dependency
+        run: |
+          node --check qa/v152-advanced-actions/verified-identity-connector.cjs
+          node --check qa/v152-advanced-actions/pg-nonce-store.cjs
+          node --check qa/v152-advanced-actions/canonical-action-gateway.cjs
+          node --check qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Cryptographic identity and PG adapter unit tests
+        run: node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Inherited ADV.5 action + provider QA
+        run: |
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Inherited ADV.3 and ADV.2 policy regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: SQL draft, private schema, credential and NO-SEND static checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-advanced-actions')
+          identity=(root/'verified-identity-connector.cjs').read_text()
+          pg=(root/'pg-nonce-store.cjs').read_text()
+          gateway=(root/'canonical-action-gateway.cjs').read_text()
+          sql=Path('docs/ai-handoff/V15_2_ADV6_PRIVATE_NONCE_SQL_DRAFT_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          assert 'CREATE SCHEMA IF NOT EXISTS tien404_action_private' in sql
+          assert 'ENABLE ROW LEVEL SECURITY' in sql
+          assert 'REVOKE ALL' in sql
+          assert not re.search(r'^\s*GRANT\b',sql,re.M|re.I)
+          assert not re.search(r'^\s*(?:CREATE|ALTER)\s+FUNCTION\b',sql,re.M|re.I)
+          assert 'public.action_nonce_claims' not in sql
+          assert "ON CONFLICT (nonce_key_hash) DO NOTHING" in pg
+          assert 'RETURNING nonce_key_hash' in pg
+          assert "decode($1::text, 'hex')" not in sql or 'DO NOT APPLY' in sql
+          assert "decode($1::text" in pg and "$2::double precision" in pg
+          assert 'crypto' in identity and 'verifyJwt' in identity
+          assert 'lookupActiveSession' in identity and 'lookupStoreMembership' in identity
+          assert 'merchant_consent' in identity and 'recheckConsent' in identity
+          assert "mode!=='SYNTHETIC_NO_SEND'" in gateway
+          assert 'PROVIDER_SEND_DISABLED' in gateway and 'BUSINESS_EXECUTION_DISABLED' in gateway
+          for s in [identity,pg,gateway]:
+            for ban in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                        r'\bEventSource\b',r'\bchild_process\b',r'process\.env',
+                        r'\bhttps?\.request\s*\(',r'\bfs\.(?:write|append|unlink)']:
+              assert not re.search(ban,s),ban
+          assert not (Path('supabase/migrations')/'V15_2_ADV6_PRIVATE_NONCE_SQL_DRAFT_DO_NOT_APPLY.sql').exists()
+          print('ADV6 PG PRIVATE / NO-SEND / NO-MIGRATION QA PASS')
+          PY
