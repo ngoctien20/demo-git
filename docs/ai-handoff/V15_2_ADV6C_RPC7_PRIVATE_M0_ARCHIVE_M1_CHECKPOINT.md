@@ -94,3 +94,18 @@ Do NOT claim the four hosted legacy rows are Shop A/B within the same tenant. Th
 - **IMPLEMENTED:** offline local archive TOC inspector, M0 evidence classification and M1 read-only readiness rules.
 - **BLOCKED:** actual archive inspection, real Owner Store mapping, real user approval and independent full restore.
 - **ROLLBACK:** close Draft PR; no real hosted change to restore.
+
+
+## 8. RPC.7 continued review — Recovery scope mismatch remediated (16/11/2026 JST)
+
+**New source-only finding:** The earlier RPC.7 `reviewM0Evidence` required Auth/Storage `TABLE DATA` even when the operator might explicitly choose *application-data recovery with an independently tested external Auth/Storage recovery plan*. This conflicted with the checkpoint's separation of the two scopes and could produce unnecessary pressure to create a new hosted backup.
+
+**Safe fix within the same PR:**
+- `FULL_SERVICE` (default) still requires application + Auth + Storage table data coverage and full-dependency recovery claims. TOC presence alone never certifies archive integrity or full service restore; Storage object bytes are not inside the database archive.
+- `APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN` accepts application TOC coverage only **for initial evidence classification**, but additionally requires independent external Auth restoration, Storage metadata and object-byte recovery plans, evidence that the external plan was tested, and *explicit* Controller/Security Reviewer approval of the limited scope and residual dependency risk.
+- In both scopes, actual archive/source digest, source freshness, exact Store Owner ledger, private operator and independent restore attestations remain separate blockers. Even a forged all-green JSON returns only **CLAIMED_M0_READY_FOR_EXTERNAL_ATTESTATION**, and `backupExportAuthorized` / `m1MigrationAuthorized` remain false. **No new real authorization is granted**.
+- Added six regression cases covering missing Auth, missing external recovery plan, missing scope signoff, false full-service claims, missing independent restore and malicious scope.
+- Existing local archive has **not** been re-opened or exported by this work. Historical H11R partial application restore is reused as context, not certified as current hosted independent full recovery.
+- Checkpoint and rollback remain the same child Draft PR; no Supabase, n8n or credential mutations.
+
+**Approval still required:** Operator must select the actual recovery scope privately and verify provenance plus current Recovery Point Objective (RPO), Auth/Storage dependency recovery and independent restore; M1 requires a **different operation-specific authorization**. No current M0/M1 approval is implied.
