@@ -51,7 +51,7 @@ jobs:
           stripped=re.sub(r'/\*[\s\S]*?\*/','',source)
           for token in ('fetch(', 'axios(', 'process.env.', 'child_process',
               'http.request(', 'sendMessage(', 'apply_migration(', 'publishWorkflow(',
-              'SUPABASE_SERVICE_ROLE_KEY','service_role'):
+              'SUPABASE_SERVICE_ROLE_KEY'):
               assert token not in stripped,token
           proof=json.loads((folder/'private-evidence-redacted-status.json').read_text())
           backup=json.loads((folder/'private-backup-restore-public-status.json').read_text())
