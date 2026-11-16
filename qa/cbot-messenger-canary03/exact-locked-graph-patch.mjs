@@ -65,7 +65,7 @@ const ifParams=(field,id)=>({
  },
  options:{}
 });
-const lockedGuard=String.raw\`/**
+const lockedGuard=String.raw`/**
  * INTENTIONALLY LOCKED. Never interpret a user-supplied
  * pageId/senderId/role/approval as trusted authority.
  * This node receives a message already signed and deduplicated upstream,
@@ -75,16 +75,16 @@ return $input.all().map((item,i)=>({
  json:{...item.json,t404_canary_match:false,t404_qa_block:false,
   t404_guard_state:'LOCKED_AWAITING_PRIVATE_OWNER_REVIEW'},
  pairedItem:{item:i}
-}));\`;
-const fixedGreeting=String.raw\`// NO_SEND by itself. Deterministic preview; no Agent/tools/network.
+}));`;
+const fixedGreeting=String.raw`// NO_SEND by itself. Deterministic preview; no Agent/tools/network.
 return $input.all().map((item,i)=>({
  json:{...item.json,
  output:'TIEN404-CANARY-01: Xin chào! Tôi hỗ trợ thông tin cửa hàng QA, chưa tiếp nhận đặt hàng.'},
  pairedItem:{item:i}
-}));\`;
-const suppress=String.raw\`// NO_SEND and NO legacy Agent execution for a future targeted QA block.
+}));`;
+const suppress=String.raw`// NO_SEND and NO legacy Agent execution for a future targeted QA block.
 // Returns zero items: does not reach Prepare Messenger Reply or Meta Send.
-return [];\`;
+return [];`;
 export const CANARY03_BASELINE=BASE;
 export const CANARY03_ADDED_NAMES=NEW;
 export const CANARY03_LEGACY_TOOL_NAMES=EXISTING_TOOLS;
