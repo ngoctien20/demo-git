@@ -14,6 +14,8 @@ export function createFaqStudio(){
  function edit(ctx,{key,value,expected_version}){
   const actor=qaContext(ctx,['owner','manager']);checkKey(key);
   assert(VALUES[key].includes(value),'FAQ_SYNTHETIC_VALUE_ONLY');
+  const scopedGreeting={QA_STORE_A:'Xin chao tu Shop QA A',QA_STORE_B:'Xin chao tu Shop QA B',QA_STORE_C:'Xin chao tu Shop QA C'};
+  assert(key!=='GREETING'||value===scopedGreeting[actor.store_id],'FAQ_CROSS_STORE_GREETING_DENIED');
   assert(positiveInt(expected_version),'FAQ_EXPECTED_VERSION_REQUIRED');
   const k=id(ctx,key),current=states.get(k),version=current?.version||0;
   assert(expected_version===version,'FAQ_VERSION_CONFLICT');
