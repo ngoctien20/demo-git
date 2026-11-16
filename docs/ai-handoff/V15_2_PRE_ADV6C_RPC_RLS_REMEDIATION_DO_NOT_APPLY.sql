@@ -1,0 +1,54 @@
+-- TIEN404 AI / SECURITY P0 RPC + STORE RLS REMEDIATION REVIEW
+-- DO NOT APPLY. DOCUMENTATION / CHANGE REQUEST ONLY.
+-- Not placed in Supabase migration directory. Never run on hosted DB without
+-- independent Owner review, tested encrypted backup + restore, staged rollout,
+-- confirmed Zalo event delivery dependency and rollback.
+--
+-- VERIFIED CURRENT: public.qa_shop_b_zalo_claim(p_challenge uuid,
+-- p_code text,p_sender text,p_event text) is SECURITY DEFINER, and anon has
+-- EXECUTE. The function checks a vaulted shared header before passing hashed
+-- sender/event identifiers to a synthetic QA claim. That is not a cryptographic
+-- per-event webhook signature or a durable provider replay attestation.
+--
+-- RECOMMENDED CHANGE (REFERENCE, EACH STATEMENT INTENTIONALLY COMMENTED):
+--
+-- 1) Inventory legitimate callers of the QA RPC and test alternative
+--    verified inbound relay with raw-body signature + channel account binding
+--    + atomic event replay + least-privilege backend role.
+-- 2) Ensure no webhook caller still depends on anonymous direct RPC access.
+-- 3) After approval and canary, revoke generic anonymous exposure:
+-- REVOKE EXECUTE ON FUNCTION public.qa_shop_b_zalo_claim(
+--   uuid,text,text,text) FROM PUBLIC,anon;
+-- 4) Confirm anon call returns permission denied and authorized staging
+--    webhook still works through its independently authenticated adapter.
+-- 5) Avoid simply replacing with SECURITY INVOKER if the underlying private
+--    QA table policy then causes an unreviewed or silent feature outage.
+--
+-- Other reviewed SECURITY DEFINER RPC:
+--   public.qa_owner_pairing(uuid,text,uuid): EXECUTE authenticated
+--   public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz):
+--     EXECUTE authenticated
+-- Both currently show auth.uid()/tenant-membership checks in their source,
+-- but store-level binding and concurrency have not been certified.
+--
+-- RLS V2 DESIGN, NOT AN EXECUTABLE MIGRATION:
+-- - Canonical stores(tenant_id,id) with unique(tenant_id,id).
+-- - Canonical store_memberships(tenant_id,store_id,user_id,role,active)
+--   with enforced tenant/store FK and current-session verification.
+-- - Backfill store_id for public.products/orders/customers using an
+--   OWNER-APPROVED deterministic ownership mapping, NEVER infer from tenant_id.
+-- - Every private read/query/RPC must check both tenant_id AND store_id
+--   against authenticated store membership, not customer-supplied values.
+-- - Rework privilege elevation in save_merchant_product to resolve target
+--   Store exclusively through server verified scope and check current owner
+--   role; use row-level and statement-level transactional guards.
+-- - Ensure RLS owner policies include SELECT and both USING/WITH CHECK where
+--   UPDATE is authorized. Do not grant arbitrary SQL or service_role to LLM.
+-- - Test owner A/B within SAME tenant plus independent tenant C; denied
+--   cross-store reads and writes; wrong JWT; expired session; revoked role.
+-- - Revoke old tenant-only capabilities only after compatibility is proven.
+--
+-- ROLLBACK:
+-- - Preserve exact original function DDL and GRANT snapshot privately.
+-- - Revert only approved migration under DB operator runbook with tests.
+-- - Do not paste server tokens, Vault secret values or customer records in PR.
