@@ -97,10 +97,17 @@ test('Unknown SKU never hallucinated price',()=>{
 });
 test('Cross-Store client override is rejected',()=>{
  const e=engine();
- for(const field of ['tenant_id','store_id','role','owner','knowledge_version','price','stock']){
+ for(const field of ['tenant_id','store_id','role','owner','knowledge_version','price','stock','sendEnabled','capabilities','provider_account_ref']){
   const r=e.lookup({shop:'A',channel:'MESSENGER',question:'A001',clientClaims:{[field]:'qa_shop_b'}});
   assert.equal(r.status,'BLOCKED',field);
  }
+});
+test('Only benign vi-VN locale can be supplied as a client hint',()=>{
+ const e=engine();
+ const ok=e.lookup({shop:'A',channel:'MESSENGER',question:'A001',clientClaims:{locale:'vi-VN'}});
+ assert.equal(ok.status,'SYNTHETIC_READ_ONLY');
+ const bad=e.lookup({shop:'A',channel:'MESSENGER',question:'A001',clientClaims:{locale:'en-US'}});
+ assert.equal(bad.status,'BLOCKED');
 });
 test('Prompt injection from a user to reveal another Shop blocked',()=>{
  const e=engine();
