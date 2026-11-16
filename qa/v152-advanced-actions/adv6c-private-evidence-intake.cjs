@@ -74,7 +74,7 @@ function receiptReview({manifest,attestations,registry,expectedProjectDigest,now
  if(!(registry instanceof Map)||registry.size===0)
    blockers.push('TRUSTED_SIGNER_ENROLLMENT_UNAVAILABLE');
  if(!blockers.length){
-   const principals=new Set(),keys=new Set(),message=canonicalBytes(manifest);
+   const principals=new Set(),keys=new Set(),publicKeys=new Set(),message=canonicalBytes(manifest);
    for(const a of attestations){
      const r=registry.get(a.keyId);
      const ok=r&&exact(r,['role','principalDigest','publicKey','enrollmentReceipt','state','purposes'])&&
@@ -84,11 +84,16 @@ function receiptReview({manifest,attestations,registry,expectedProjectDigest,now
        r.publicKey.asymmetricKeyType==='ed25519'&&
        !keys.has(a.keyId)&&!principals.has(r.principalDigest);
      if(!ok){blockers.push('INDEPENDENT_SIGNER_ENROLLMENT_OR_ROLE_INVALID');break}
+     const publicFingerprint=crypto.createHash('sha256').update(
+       r.publicKey.export({type:'spki',format:'der'})).digest('hex');
+     if(publicKeys.has(publicFingerprint)){
+       blockers.push('SIGNER_PUBLIC_KEY_REUSED_ACROSS_ROLES');break;
+     }
      const bytes=Buffer.from(a.signature,'base64url');
      if(bytes.length!==64||!crypto.verify(null,message,r.publicKey,bytes)){
        blockers.push('ED25519_ATTESTATION_INVALID');break;
      }
-     keys.add(a.keyId);principals.add(r.principalDigest);
+     keys.add(a.keyId);principals.add(r.principalDigest);publicKeys.add(publicFingerprint);
    }
  }
  // NEVER disclose private proof paths, hashes, IDs, signatures or actors.
