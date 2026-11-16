@@ -1,0 +1,56 @@
+name: TIEN404 V15.2 ADV5E Authorized RPC Decision and Hosted JWT Gate (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv5e-authorized-rpc-jwt-rls-gate-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-authorized-rpc-*'
+      - 'docs/ai-handoff/V15_2_ADV5E_*'
+      - '.github/workflows/v152-adv5e-authorized-rpc-jwt-noexec.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-authorized-rpc-*'
+      - 'docs/ai-handoff/V15_2_ADV5E_*'
+      - '.github/workflows/v152-adv5e-authorized-rpc-jwt-noexec.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  approval-gate-and-rpc-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify noexec gate source and test syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-authorized-rpc-remediation-gate.cjs
+          node --check qa/v147-custom-studio/advanced-authorized-rpc-remediation-gate.test.cjs
+      - name: ADV5E 32 negative/positive approval tests
+        run: node --test qa/v147-custom-studio/advanced-authorized-rpc-remediation-gate.test.cjs
+      - name: Inherited ADV5D and ADV5C private-security gates
+        run: |
+          node --test qa/v147-custom-studio/advanced-hosted-rpc-store-private-intake.test.cjs
+          node --test qa/v147-custom-studio/advanced-merchant-uat-independent-review.test.cjs
+      - name: No host write, no JWT issuance, no approval bypass
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v147-custom-studio/advanced-authorized-rpc-remediation-gate.cjs').read_text()
+          for marker in ('NO_GO_HOSTED_EXECUTION_OR_PRODUCTION',
+              'signedJwtExecutionAuthorized:false',
+              'migrationOrGrantAuthorized:false','backupAuthorized:false',
+              'providerMessageAuthorized:false','independentOwnerG23Verified:false',
+              'publicReceiptCount','executionScopes',
+              'REAL_JWT_RLS_TEST','HOSTED_STORE_SCHEMA_CHANGE',
+              'RPC_SECURITY_CHANGE','MIGRATE_PRIVATE_GATEWAY'):
+              assert marker in src,marker
+          for forbidden in ('fetch(', 'XMLHttpRequest','WebSocket','localStorage',
+             'process.env','createClient(', 'sendMessage(','child_process',
+             'service_role:', 'GRANT EXECUTE', 'REVOKE EXECUTE',
+             'ALTER TABLE', 'CREATE POLICY'):
+              assert forbidden not in src,forbidden
+          print('PASS ADV5E: draft-only, fail-closed, no hosted execution path')
+          PY
