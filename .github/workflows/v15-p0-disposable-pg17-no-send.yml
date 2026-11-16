@@ -65,4 +65,17 @@ jobs:
         with:
           node-version: '22'
       - run: node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+      - name: Signed QA Commerce read/quote/order request preview
+        run: node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: Commerce bridge has no provider/hosted writer dependencies
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v15-sales-lite-p0/commerce-preview-bridge.cjs').read_text()
+          for marker in ('fetch(', 'axios(', 'new OpenAI(', 'process.env', 'INSERT INTO', 'supabase.from(', 'sendMessage('):
+              assert marker not in p, marker
+          assert 'isAcceptedSyntheticContext' in p
+          assert 'authorizeQaBusinessTool' in p
+          print('PASS synthetic Commerce integration seam: no external send/write')
+          PY
       - run: node --test qa/v1509-hosted-store/store-security-contract.test.cjs qa/v1509-hosted-store/sql-review-contract.test.cjs
