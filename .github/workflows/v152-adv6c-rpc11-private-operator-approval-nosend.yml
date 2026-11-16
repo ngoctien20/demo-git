@@ -1,0 +1,100 @@
+name: TIEN404 V15.2 RPC.11 Private Four-Row Evidence × Recovery × Hosted Approval (NO LIVE)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc11/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC11_*'
+      - '.github/workflows/v152-adv6c-rpc11-private-operator-approval-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc11-private-realrow-currentrecovery-approval-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc11-private-evidence-and-approval-source:
+    name: Private row join / phase envelope / prior 155 security cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New RPC11 private 4-row metadata join + approval envelope
+        run: |
+          node --check qa/v152-rpc11/private-fourrow-current-snapshot-reconcile.cjs
+          node --check qa/v152-rpc11/private-fourrow-current-snapshot-cli.cjs
+          node --check qa/v152-rpc11/scoped-hosted-approval-packet.cjs
+          node --test qa/v152-rpc11/private-fourrow-current-snapshot-reconcile.test.cjs
+          node --test qa/v152-rpc11/scoped-hosted-approval-packet.test.cjs
+      - name: Reuse RPC10 M3 / RPC9 atomic / RPC7 backup H11R / Owner evidence QA
+        run: |
+          node --test qa/v152-rpc10/private-owner-m3-hosted-preflight.test.cjs
+          node --test qa/v152-rpc9/private-owner-atomic-cutover-preflight.test.cjs
+          node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: No hosted source IDs, credentials, SQL execution or network
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-rpc11')
+          pure=[
+            (root/'private-fourrow-current-snapshot-reconcile.cjs').read_text(),
+            (root/'scoped-hosted-approval-packet.cjs').read_text()
+          ]
+          cli=(root/'private-fourrow-current-snapshot-cli.cjs').read_text()
+          assert 'fs.readFileSync(0' in cli and 'process.argv.length!==2' in cli
+          for s in pure:
+            for pattern in [
+              r'\bfetch\s*\(',r'\bchild_process\b',r'\bprocess\.env\b',
+              r'\bWebSocket\b',r'\bXMLHttpRequest\b',
+              r'\bfs\.writeFile\b',r'\bexecuteQuery\s*\(',
+              r'\bhttps?\.request\s*\('
+            ]:
+              assert not re.search(pattern,s),pattern
+          assert 'canMigrate:false' in pure[0] and 'canBackfill:false' in pure[0]
+          assert 'approvalGranted:false' in pure[1]
+          assert 'canApplyM1:false' in pure[1]
+          assert 'canApplyM2M4:false' in pure[1]
+          assert 'canApplyM3:false' in pure[1]
+          assert 'canRevokePublicRpc:false' in pure[1]
+          assert 'canExportHostedBackup:false' in pure[1]
+          print('PASS RPC11: source-only private evidence comparator, no hosted authority')
+          PY
+
+  rpc11-independent-hosted-no-go:
+    name: RPC.11 REAL OWNER+CURRENT RESTORE+HOSTED MIGRATION — NO-GO (intentional)
+    needs: [rpc11-private-evidence-and-approval-source]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real four-row original source/restore/independent approval not provided
+        run: |
+          node - <<'NODE'
+          const a=require('./qa/v152-rpc11/private-fourrow-current-snapshot-reconcile.cjs');
+          const b=require('./qa/v152-rpc11/scoped-hosted-approval-packet.cjs');
+          const rows=a.reconcilePrivateRows();
+          const scope=b.inspectPhaseApproval();
+          console.log(JSON.stringify({
+            fourRowEvidence:rows.status,
+            ownerProven:rows.actualOwnerToCanonicalStoreProven,
+            hostedApproval:scope.status,
+            migration:scope.approvalGranted,
+            sourceRowsVerified:rows.matchedSnapshotAndLedgerRows
+          }));
+          if(rows.canMigrate||scope.approvalGranted||
+            scope.canApplyM1||scope.canApplyM2M4||scope.canApplyM3||
+            scope.canRevokePublicRpc)throw Error('UNSAFE_RPC11_HOSTED_PROMOTION');
+          console.error('RPC11_HOSTED_NO_GO_INDEPENDENT_FOUR_ROW_CURRENT_RECOVERY_AND_PER_PHASE_APPROVAL_MISSING');
+          process.exitCode=3;
+          NODE
