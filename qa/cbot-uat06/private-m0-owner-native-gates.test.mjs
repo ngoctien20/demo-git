@@ -220,3 +220,20 @@ test('44 actual RPC7 LOCAL_ARCHIVE_SCOPE_INCOMPLETE cannot promote M0',()=>{
  const f=fixture();f.existing_archive.rpc7_receipt_status='LOCAL_ARCHIVE_SCOPE_INCOMPLETE';
  const r=audit(f);assert.ok(r.missing_evidence.includes('ARCHIVE_SCOPE_OR_TOC_PARTIAL'));
 });
+
+test('45 connected Meta Developers app UI exists but this is not Page admin authority',async()=>{
+ const fs=await import('node:fs');
+ const observed=JSON.parse(fs.readFileSync(new URL('./actual-hosted-operator-checkpoint.json',import.meta.url),'utf8'));
+ assert.equal(observed.native_provider.meta_developers_console_direct_tab_observed,true);
+ assert.equal(observed.native_provider.meta_app_display_name,'TIEN404 AI Messenger');
+ assert.equal(observed.native_provider.meta_app_roles_in_current_tab,'NOT_VISIBLE');
+ assert.equal(observed.native_provider.meta_business_page_linkage_in_current_tab,'NOT_VISIBLE');
+});
+test('46 Meta app Chưa đăng and test users 0/0 cannot authorize live Page messenger',async()=>{
+ const fs=await import('node:fs');
+ const observed=JSON.parse(fs.readFileSync(new URL('./actual-hosted-operator-checkpoint.json',import.meta.url),'utf8'));
+ assert.equal(observed.native_provider.meta_app_publish_ui_text,'Chưa đăng');
+ assert.equal(observed.native_provider.meta_app_test_users_ui,'0/0');
+ assert.equal(observed.native_provider.meta_page_webhook_messages_in_current_tab,'NOT_VISIBLE');
+ assert.equal(audit(fixture()).native_meta_page_role_verified,false);
+});
