@@ -1,0 +1,92 @@
+name: TIEN404 V15.0-03H.7 Private Attestation Replay (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503h7-attestation-replay-private-qa-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1503h7-attestation/**'
+      - 'docs/ai-handoff/V15_03H7_*'
+      - '.github/workflows/v1503h7-private-attestation-no-send.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qa-attestation-and-atomic-replay:
+    name: Ephemeral Ed25519 Registry + PG17 Atomic Replay QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ephemeral_ci_only
+      PGDATABASE: tien404_h7_ephemeral
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic private signer enrollment and Ed25519 negative tests
+        run: |
+          node --check qa/v1503h7-attestation/attestation-registry.cjs
+          node --test qa/v1503h7-attestation/attestation-registry.test.cjs
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Disposable PG17 registry, lock and replay fixture
+        run: |
+          createdb tien404_h7_ephemeral
+          psql -X -v ON_ERROR_STOP=1 -f qa/v1503h7-attestation/ephemeral-pg17-replay.sql
+      - name: Simulate eight simultaneous claims of ONE ephemeral approval
+        shell: bash
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/h7_concurrent_claims.txt"
+          : > "$results"
+          for i in $(seq 1 8); do
+            (psql -XAtq -v ON_ERROR_STOP=1 -c \
+              "SELECT h7_private_qa.consume_once('QA_H7_CONCURRENT',repeat('d',64),repeat('4',64));") >> "$results" &
+          done
+          wait
+          test "$(wc -l < "$results")" -eq 8
+          test "$(grep -xc 't' "$results")" -eq 1
+          test "$(grep -xc 'f' "$results")" -eq 7
+          test "$(psql -XAtq -c \
+            "SELECT count(*) FROM h7_private_qa.approval_claims WHERE request_ref='QA_H7_CONCURRENT' AND state='consumed' AND consumed_at IS NOT NULL")" = 1
+          echo 'PASS: exactly 1 of 8 concurrent disposable PG17 claims consumed; 7 denied.'
+      - name: Static guard — no hosted verifier, private keys or backup executor
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v1503h7-attestation/attestation-registry.cjs').read_text()
+          sql=Path('qa/v1503h7-attestation/ephemeral-pg17-replay.sql').read_text()
+          for v in ('fetch(', 'axios(', 'process.env.', 'child_process', 'pg_dump ',
+                    'pg_restore ', 'SUPABASE_SERVICE_ROLE', 'sendMessage(',
+                    'allowedToExport:true','allowedToRestore:true'):
+              assert v not in src, 'Forbidden runtime capability: '+v
+          assert "current_database() <> 'tien404_h7_ephemeral'" in sql
+          assert 'SECURITY INVOKER' in sql
+          assert 'REVOKE ALL ON FUNCTION' in sql
+          assert 'REVOKE ALL ON SCHEMA' in sql
+          assert 'REVOKE ALL ON ALL TABLES' in sql
+          assert 'allowedToExport:false' in src and 'allowedToMigrate:false' in src
+          print('PASS: synthetic-only; no real signature authority, hosted connection, export or send.')
+          PY
