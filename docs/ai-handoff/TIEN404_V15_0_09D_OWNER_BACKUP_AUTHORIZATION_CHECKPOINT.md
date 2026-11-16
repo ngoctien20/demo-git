@@ -32,7 +32,7 @@ No valid unused pairing challenges currently remain; do not create or replay wit
 ## 4. QA labeling
 VERIFIED: live read-only Supabase and n8n execution metadata, org Free, baseline.
 IMPLEMENTED: source-only signing policy, intake docs, tests and CI.
-TESTED_OFFLINE: only after latest commit GitHub CI succeeds, count from job log.
+TESTED_OFFLINE: at commit 5e54c35b653280a240d27ae38850b9649b291584, GitHub Actions #43792421020 SUCCESS — 47 V15.0-09D signature/approval tests, 46 V15.0-09C, 28 V15.0-09B, 51+9 V15.0-09 Store Security/SQL, 21+8 V15 Skill Gate = 210/210 PASS. Separate V15 Model Cost regression #43792421005 SUCCESS. This result proves SOURCE-ONLY signing policy behavior; NOT real controller signature, hosted backup or store certification. Verify final commit CI after this documentation update.
 BLOCKED: real merchant G2.3; hosting Store ownership; backup authorization; encrypted backup artifact; private restore rehearsal; real signed JWT RLS; commercial launch.
 NO-GO: any customer sends, public deployment or production.
 
