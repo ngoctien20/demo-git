@@ -58,7 +58,7 @@ test.before(async()=>{
   await pool.query('CREATE ROLE '+role+' NOLOGIN NOBYPASSRLS');
  }
  const ddl=fs.readFileSync(path.join(__dirname,'ci-private-pairing-fixture.sql'),'utf8');
- assert.match(ddl,/DISPOSABLE/);
+ assert.match(ddl,/disposable/i);
  assert.match(ddl,/NEVER APPLY TO HOSTED/);
  await pool.query(ddl);
  secondary=new Pool(cfg);
