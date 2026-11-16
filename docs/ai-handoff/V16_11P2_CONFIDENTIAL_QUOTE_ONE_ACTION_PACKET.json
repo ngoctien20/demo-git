@@ -1,0 +1,148 @@
+{
+  "contract": "T404_V1611P2_CONFIDENTIAL_OPERATOR_QUOTE_ONE_ACTION_PACKET_V1",
+  "prepared_at": "2026-11-16 JST",
+  "phase": "SOURCE_ONLY_AUTHORIZATION_PREPARATION",
+  "source": {
+    "parent_pr": 225,
+    "parent_head": "3788fbdcba92811267dd34578f5c238ceef2838d"
+  },
+  "verified_read_only": {
+    "supabase_project": "tien404-staging",
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "project_status": "ACTIVE_HEALTHY",
+    "postgres_major": 17,
+    "organization_detected": true,
+    "organization_id_for_cost_query": "CONFIRM_WITH_USER_PRIVATELY",
+    "development_branches_count": 0,
+    "stores_table_exists": false,
+    "store_memberships_exists": false,
+    "products_store_id_exists": false,
+    "orders_store_id_exists": false,
+    "customers_store_id_exists": false
+  },
+  "confidential_operator_roles": [
+    {
+      "role": "MERCHANT_OWNER_A",
+      "assignment": "UNVERIFIED",
+      "private_signed_attestation_locator": null
+    },
+    {
+      "role": "MERCHANT_OWNER_B",
+      "assignment": "UNVERIFIED",
+      "private_signed_attestation_locator": null
+    },
+    {
+      "role": "PLATFORM_REQUESTER",
+      "assignment": "NOT_ASSIGNED",
+      "private_signed_attestation_locator": null
+    },
+    {
+      "role": "BACKUP_RECOVERY_OPERATOR",
+      "assignment": "NOT_ASSIGNED",
+      "private_signed_attestation_locator": null
+    },
+    {
+      "role": "INDEPENDENT_SECURITY_REVIEWER",
+      "assignment": "NOT_ASSIGNED",
+      "private_signed_attestation_locator": null
+    },
+    {
+      "role": "RELEASE_AUTHORITY",
+      "assignment": "NOT_ASSIGNED",
+      "private_signed_attestation_locator": null
+    }
+  ],
+  "account_specific_quotes": [
+    {
+      "type": "BRANCH",
+      "organization_confirmed_by_user": false,
+      "get_cost_called": false,
+      "provider_cost": null,
+      "eligibility": "NOT_VERIFIED",
+      "spend_cap_protection": "NOT_APPLICABLE_TO_BRANCH",
+      "real_data_restore_safe": "NOT_CERTIFIED"
+    },
+    {
+      "type": "PROJECT",
+      "organization_confirmed_by_user": false,
+      "get_cost_called": false,
+      "provider_cost": null,
+      "eligibility": "NOT_VERIFIED",
+      "source_project_physical_backup": "NOT_VERIFIED",
+      "real_data_restore_safe": "NOT_CERTIFIED"
+    }
+  ],
+  "public_reference": {
+    "micro_usd_per_hour": 0.01344,
+    "url": "https://supabase.com/docs/guides/platform/manage-your-usage/branching",
+    "label": "PUBLIC_COMPUTE_ONLY_NOT_ACCOUNT_QUOTE",
+    "extra_usage": [
+      "DISK",
+      "STORAGE",
+      "EGRESS",
+      "PLAN",
+      "PITR",
+      "TAXES"
+    ],
+    "recover_to_new_project_requires": "PAID_PLAN_AND_PHYSICAL_BACKUPS",
+    "recovery_importantly_excludes": [
+      "STORAGE_OBJECT_BYTES",
+      "EDGE_FUNCTIONS",
+      "AUTH_SETTINGS_API_KEYS",
+      "REALTIME_SETTINGS"
+    ],
+    "binary_restore_external_jobs": "MAY_RUN_AUTOMATICALLY",
+    "no_quote_without_organization_confirmation": true
+  },
+  "one_action": {
+    "action": "REQUEST_ACCOUNT_SPECIFIC_COST_QUOTE_READ_ONLY",
+    "requested_scope": "ONE_CONFIRMED_ORGANIZATION_PER_QUERY_TYPE",
+    "target_project": "ifxlvrhyjhbzbrkdsida",
+    "organization_confirmation": "PENDING_USER_CONFIRMATION",
+    "requested_quote_types": [
+      "BRANCH",
+      "PROJECT"
+    ],
+    "actual_provider_query_status": "NOT_RUN",
+    "consent_to_quote_request_in_this_pr": false,
+    "new_project_create": false,
+    "branch_create": false,
+    "hosted_backup": false,
+    "hosted_restore": false,
+    "customer_data_read": false,
+    "real_jwt_uat": false,
+    "rls_sql_change": false,
+    "rpc_revoke": false,
+    "payment_authorized": false,
+    "production_send": false
+  },
+  "written_authorization": {
+    "approval_id": null,
+    "exact_action": "NOT_AUTHORIZED",
+    "authorized_operator_private_signature": null,
+    "independently_verified_reviewer_signature": null,
+    "merchant_owner_A_proof": null,
+    "merchant_owner_B_proof": null,
+    "quote_receipt_private_ref": null,
+    "approved_currency": null,
+    "budget_cap": null,
+    "maintenance_window": null,
+    "backup_destination": null,
+    "restore_target": null,
+    "data_retention": null,
+    "rollback_receipt": null,
+    "status": "DRAFT_UNSIGNED"
+  },
+  "protective_constraints": {
+    "no_real_person_names_in_git": true,
+    "no_credentials_in_git": true,
+    "no_raw_evidence_in_chat": true,
+    "one_action_not_bundle": true,
+    "no_auto_approval_on_document_completion": true,
+    "no_schema_write": true,
+    "customer_data_privacy_gate": "BLOCKED",
+    "hosted_release": "NO_GO"
+  },
+  "release_decision": "NO_GO",
+  "rollback": "Close Draft PR. No hosted data, GitHub parent PR, Supabase billing, n8n Published or customer records modified."
+}
