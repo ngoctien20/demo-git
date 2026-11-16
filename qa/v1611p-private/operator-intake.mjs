@@ -76,7 +76,7 @@ export function prepareRecoveryRequest(input){
 export function assessRecoveryPlan(plan){
  assert(basic(plan),'RECOVERY_PLAN_REQUIRED');
  const allowed=['database','storage_metadata','storage_bytes','auth_roles',
-  rpc_permissions','channel_configs','rollback',
+  'rpc_permissions','channel_configs','rollback',
   encrypted_backup_digest','private_restore_attestation','cost_quote',
   operator_authority','independent_reviewer'];
  assert(Object.keys(plan).every(k=>allowed.includes(k)),'UNSAFE_RECOVERY_PLAN_FIELDS');
