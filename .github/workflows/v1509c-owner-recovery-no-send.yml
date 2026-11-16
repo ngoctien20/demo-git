@@ -1,0 +1,86 @@
+name: TIEN404 V15.0-09C Independent Owner & Ephemeral Recovery (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1509c-independent-owner-recovery-evidence-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1509c-owner-recovery/**'
+      - 'docs/ai-handoff/V15_09C_*'
+      - '.github/workflows/v1509c-owner-recovery-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-owner-and-recovery:
+    name: V15.0-09C Owner G2.3 Intake + Disposable PG17 Dump/Restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_only
+          POSTGRES_DB: tien404_ci_rehearsal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_ci_rehearsal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source-only contract syntax
+        run: |
+          node --check qa/v1509c-owner-recovery/evidence-gates.cjs
+          node --check qa/v1509c-owner-recovery/evidence-gates.test.cjs
+          sh -n qa/v1509c-owner-recovery/rehearse-ephemeral-recovery.sh
+      - name: Independent synthetic G2.3 and recovery fail-closed tests
+        run: node --test qa/v1509c-owner-recovery/evidence-gates.test.cjs
+      - name: Inherited merchant/store and Agent Core regression
+        run: |
+          node --test qa/v1509b-hosted-rls/owner-proof-gate.test.cjs
+          node --test qa/v1509-hosted-store/store-security-contract.test.cjs
+          node --test qa/v1509-hosted-store/sql-review-contract.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
+      - name: Prove pg_dump and pg_restore ONLY in disposable postgres:17-alpine
+        run: |
+          mkdir -p "$RUNNER_TEMP/v1509c_synthetic"
+          docker run --rm --network host \
+            -e PGHOST=127.0.0.1 \
+            -e PGPORT=5432 \
+            -e PGUSER=postgres \
+            -e PGPASSWORD=ci_ephemeral_only \
+            -e PGDATABASE=tien404_ci_rehearsal \
+            -v "$GITHUB_WORKSPACE:/work:ro" \
+            -v "$RUNNER_TEMP/v1509c_synthetic:/recovery" \
+            postgres:17-alpine \
+            sh /work/qa/v1509c-owner-recovery/rehearse-ephemeral-recovery.sh
+      - name: Source-only no secret/no-send and isolated restore contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          mod=Path('qa/v1509c-owner-recovery/evidence-gates.cjs').read_text()
+          script=Path('qa/v1509c-owner-recovery/rehearse-ephemeral-recovery.sh').read_text()
+          for token in ('fetch(', 'sendMessage(', 'axios(', 'new OpenAI(', 'SUPABASE_SERVICE_ROLE_KEY', 'ZALO_BOT_TOKEN', 'process.env.'):
+              assert token not in mod, token
+          assert "tien404_ci_rehearsal" in script
+          assert "'127.0.0.1'" in script
+          assert 'pg_dump' in script and 'pg_restore' in script
+          assert "trap 'rm -f" in script
+          print('PASS no hosted access, no outbound, no secrets, no persistent backup artifact')
+          PY
+      - name: Ensure synthetic backup is not retained
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/v1509c_synthetic/v1509c-synthetic-only.dump"
+          test ! -e "$RUNNER_TEMP/v1509c_synthetic/v1509c-synthetic-only.dump"
