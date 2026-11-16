@@ -1,0 +1,97 @@
+name: TIEN404 V15.2 ADV5C Independent UAT Review and Release NO-GO (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv5c-independent-uat-release-gates-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5C_*'
+      - '.github/workflows/v152-adv5c-review-release-gates-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV5C_*'
+      - '.github/workflows/v152-adv5c-review-release-gates-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review-and-security-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Strict receipt reviewer syntax and no-side-effects QA
+        run: |
+          node --check qa/v147-custom-studio/advanced-merchant-uat-independent-review.cjs
+          node --check qa/v147-custom-studio/advanced-merchant-uat-independent-review.test.cjs
+          node --test qa/v147-custom-studio/advanced-merchant-uat-independent-review.test.cjs
+      - name: Inherited ADV5B/5/4/3/2/1 and V14.7 node regressions
+        run: |
+          for name in \
+            advanced-merchant-uat-mobile-cards.test.cjs \
+            advanced-canonical-registry-rc.test.cjs \
+            advanced-merchant-uat.test.cjs \
+            advanced-custom-studio.test.cjs \
+            advanced-ai-presentation-evaluator.test.cjs \
+            advanced-secure-action-registry.test.cjs \
+            advanced-channel-registry.test.cjs \
+            advanced-presentation-policy.test.cjs \
+            studio-core.test.cjs; do
+            node --test qa/v147-custom-studio/"$name"
+          done
+      - name: Source-only release gate must fail closed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('qa/v147-custom-studio/advanced-merchant-uat-independent-review.cjs').read_text()
+          required=('NO_GO_HOSTED_OR_PRODUCTION','P0_RPC_DEFINER',
+                    'P0_HOSTED_STORE_JWT_RLS','P0_OWNER_AND_CONSENT',
+                    'P0_SECURE_ACTION_GATEWAY','P1_INDEPENDENT_MERCHANT_UAT',
+                    'P1_BACKUP_RECOVERY','P1_HOSTING_COST_RELEASE',
+                    'independentAttestationAccepted:false',
+                    'productionReleaseAuthorized:false',
+                    'publicStagingReleaseAuthorized:false',
+                    'providerSends:0','hostedWrites:0','paidModelCalls:0')
+          for marker in required:
+              assert marker in source,marker
+          forbidden=('fetch(', 'XMLHttpRequest','WebSocket','localStorage',
+                     'process.env','createClient(', 'sendMessage(',
+                     'child_process','service_role:')
+          for bad in forbidden:
+              assert bad not in source,bad
+          print('PASS ADV5C: independent reviewer and release cannot be self certified')
+          PY
+  unchanged-offline-uat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install disposable Chromium only
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Start local loopback read-only server
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/t404-adv5c-loopback.log 2>&1 &
+          sleep 2
+      - name: Inherited 9-width mobile card state/overflow QA
+        run: node qa/v147-custom-studio/advanced-merchant-uat-mobile-cards-browser.test.cjs
+      - name: Inherited merchant UAT browser 4 viewports
+        run: node qa/v147-custom-studio/advanced-merchant-uat-browser.test.cjs
+      - name: Generate CSP hash-pinned single-file UAT bundle
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - name: Inherited 4-viewport offline file protocol UAT
+        run: node qa/v147-custom-studio/advanced-merchant-uat-standalone-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: adv5c-offline-mobile-uat-review-evidence
+          path: qa-artifacts-v152-adv5b/
+          if-no-files-found: ignore
