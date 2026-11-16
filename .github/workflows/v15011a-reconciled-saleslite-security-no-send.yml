@@ -1,0 +1,99 @@
+name: TIEN404 V15.0-11A Sales Lite plus G2.3/Recovery Reconciliation (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15011a-saleslite-security-reconciliation-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15011a-reconciliation/**'
+      - '.github/workflows/v15011a-reconciled-saleslite-security-no-send.yml'
+      - 'docs/ai-handoff/TIEN404_V15_0_11A_*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconciled-no-send:
+    name: Shared Agent, Shop/Order Lab and G2.3/Recovery Gate — Disposable Only
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_only
+          POSTGRES_DB: tien404_ci_rehearsal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_ci_rehearsal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconciled security gate syntax and false-release guard
+        run: |
+          node --check qa/v15011a-reconciliation/integrated-release-gate.cjs
+          node --test qa/v15011a-reconciliation/integrated-release-gate.test.cjs
+      - name: Inherited 09B + 09C + 09D Owner/Provider/Backup negative checks
+        run: |
+          node --test qa/v1509b-hosted-rls/owner-proof-gate.test.cjs
+          node --test qa/v1509c-owner-recovery/evidence-gates.test.cjs
+          node --test qa/v1509d-owner-backup/backup-authorization-gate.test.cjs
+      - name: Inherited Hosted Store Security and guarded review-only SQL regression
+        run: |
+          node --test qa/v1509-hosted-store/store-security-contract.test.cjs
+          node --test qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: Shared V15 Core Skills + Sales Lite Pilot scope and Model Contract QA
+        run: |
+          node --test qa/v15-commerce-core/offline-orchestrator.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.test.cjs
+          node --test qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
+      - name: Disposable SQLite Messenger to Zalo Order continuity
+        run: python -m unittest discover -s qa/v15010a-sales-knowledge -p 'test_disposable_order_continuity.py' -v
+      - name: Database backup/restore rehearsal in completely disposable PostgreSQL 17
+        run: |
+          mkdir -p "$RUNNER_TEMP/v15011a_recovery"
+          docker run --rm --network host \
+            -e PGHOST=127.0.0.1 \
+            -e PGPORT=5432 \
+            -e PGUSER=postgres \
+            -e PGPASSWORD=ci_ephemeral_only \
+            -e PGDATABASE=tien404_ci_rehearsal \
+            -v "$GITHUB_WORKSPACE:/work:ro" \
+            -v "$RUNNER_TEMP/v15011a_recovery:/recovery" \
+            postgres:17-alpine \
+            sh /work/qa/v1509c-owner-recovery/rehearse-ephemeral-recovery.sh
+      - name: No-hosted/no-inference/no-secret invariant
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          r=Path('qa/v15011a-reconciliation/integrated-release-gate.cjs').read_text()
+          for word in ('fetch(', 'axios(', 'http.request(', 'process.env.',
+                       'OPENAI_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
+                       'sendMessage(', 'new OpenAI('):
+              assert word not in r, word
+          for token in ('can_publish:false','can_send:false',
+                        'can_apply_migration:false','can_call_model:false',
+                        'can_restore_hosted:false'):
+              assert token in r,token
+          print('PASS — reconciliation source cannot deploy, send, execute paid models, mutate hosted')
+          PY
+      - name: Delete ephemeral SQL backup artifact
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/v15011a_recovery/v1509c-synthetic-only.dump"
+          test ! -e "$RUNNER_TEMP/v15011a_recovery/v1509c-synthetic-only.dump"
