@@ -1,0 +1,76 @@
+name: TIEN404 V15 P0-I REAL Owner Evidence × Backup-Gated Store Decision (NO MIGRATION)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0i-real-evidence-backup-gated-decision-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0i/**'
+      - 'docs/ai-handoff/V15_P0I_*'
+      - '.github/workflows/v15-p0i-real-evidence-store-decision-noexec.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-hosted-reconciliation:
+    name: Real aggregate evidence × NO-GO migration × Prior Sales Lite QA (NO API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source syntax and observed aggregate receipt
+        run: |
+          node --check qa/v15-sales-lite-p0i/reconcile-real-evidence.cjs
+          node --check qa/v15-sales-lite-p0i/reconcile-real-evidence.test.cjs
+          node -e "JSON.parse(require('node:fs').readFileSync('qa/v15-sales-lite-p0i/real-hosted-reconciliation-20261116.json','utf8'))"
+      - name: P0-I actual hosted & n8n metadata reconciliation
+        run: |
+          node --test qa/v15-sales-lite-p0i/reconcile-real-evidence.test.cjs
+          node qa/v15-sales-lite-p0i/reconcile-real-evidence.cjs
+      - name: Inherited P0-H metadata plus P0-G/P0-F security regression
+        run: |
+          node --test qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.test.cjs
+          node --test qa/v15-sales-lite-p0h/hosted-preflight-sql-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0g/channel-store-readonly-contract.test.cjs
+          node --test qa/v15-sales-lite-p0f/zalo-claim-threat-model.test.cjs
+          node --test qa/v15-sales-lite-p0f/p0f-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-security-review/security-review-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: Static ban on real credentials, export, DDL or live provider calls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re,json
+          source=Path('qa/v15-sales-lite-p0i/reconcile-real-evidence.cjs').read_text()
+          code=re.sub(r'/\*[\s\S]*?\*/','',source)
+          sql=Path('docs/ai-handoff/V15_P0I_REAL_HOSTED_MIGRATION_IMPACT_READ_ONLY.sql').read_text()
+          sql='\n'.join(x for x in sql.splitlines() if not x.strip().startswith('--'))
+          for bad in ('fetch(', 'axios(', 'http.request(', 'https.request(',
+            'child_process', 'process.env.', 'SUPABASE_SERVICE_ROLE_KEY',
+            'pg_dump ', 'pg_restore ', 'sendMessage(', 'apply_migration('):
+            assert bad not in code,bad
+          for bad in ('INSERT INTO', 'UPDATE public.', 'DELETE FROM',
+            'CREATE TABLE', 'DROP TABLE', 'ALTER TABLE', 'GRANT ', 'REVOKE '):
+            assert bad not in sql,bad
+          assert 'BEGIN TRANSACTION READ ONLY;' in sql
+          assert 'COMMIT;' in sql
+          for key in ('can_export:false', 'can_apply_migration:false',
+            'can_read_real_commerce:false', 'can_send_provider:false'):
+            assert key in source,key
+          safe=Path('qa/v15-sales-lite-p0i/real-hosted-reconciliation-20261116.json').read_text()
+          for banned in ('"access_token"', '"refresh_token"', '"secret_ref"',
+            '"owner_ref"', '"customer_name"', '"external_account_ref"',
+            '"raw_user_meta_data"'):
+            assert banned not in safe,banned
+          data=json.loads(safe)
+          assert data['decision']['schema_expand']=='NO_GO'
+          print('PASS: real aggregate only, source-only decision, no export/DDL/send')
+          PY
