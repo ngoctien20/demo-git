@@ -1,0 +1,79 @@
+{
+  "contract": "V15_P0I_REAL_HOSTED_EVIDENCE_RECONCILIATION_V1",
+  "source": "SUPABASE_STAGING_SQL_AGGREGATE_AND_N8N_METADATA_READ_ONLY",
+  "observed_date_jst": "2026-11-16",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "schema_readonly_source": "docs/ai-handoff/V15_P0I_REAL_HOSTED_MIGRATION_IMPACT_READ_ONLY.sql",
+  "hosted": {
+    "contract": "V15_P0I_HOSTED_DECISION_PREFLIGHT_V1",
+    "tenants": 2,
+    "active_tenant_memberships": 3,
+    "legacy_products": 2,
+    "legacy_orders": 2,
+    "legacy_customers": 0,
+    "private_channel_bindings": 0,
+    "qa_paired": 2,
+    "qa_confirmed_claims": 3,
+    "qa_synthetic_bots": 2,
+    "store_tables": 0,
+    "store_member_tables": 0,
+    "product_store_columns": 0,
+    "order_store_columns": 0,
+    "legacy_tenant_permissive_policies": 7,
+    "store_scoped_policies": 0,
+    "product_tenant_sku_unique": 1,
+    "channel_tenant_platform_pk": 1,
+    "preview_lab_agent_configs": 1,
+    "duplicate_provider_bindings": 0
+  },
+  "n8n": {
+    "messenger": {
+      "workflow_id": "Z7FdV7uDvApfbURQ",
+      "active": true,
+      "version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+      "last_checked_webhook_successes": 4,
+      "has_meta_signature_verifier": true,
+      "has_demo_sheet_reader": true,
+      "has_legacy_send_node": true
+    },
+    "zalo_v1": {
+      "workflow_id": "yIJk8LvJoLF40Z62",
+      "active": true,
+      "version": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+      "calls_v2_shadow": true,
+      "recent_checked_executions_manual_only": true
+    },
+    "zalo_v2": {
+      "workflow_id": "OgDZNSAvKEvhnAvn",
+      "active": true,
+      "version": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+      "has_qa_rpc_http_node": true,
+      "recent_checked_executions_manual_only": true
+    }
+  },
+  "evidence": {
+    "meta_native_page_admin_and_consent": "NOT_INDEPENDENTLY_VERIFIED",
+    "zalo_oa_native_admin_and_consent": "NOT_INDEPENDENTLY_VERIFIED",
+    "independent_merchant_tenant_store_attestation": "NOT_INDEPENDENTLY_VERIFIED",
+    "real_encrypted_staging_backup": "NOT_CERTIFIED",
+    "independent_restore_drill": "NOT_CERTIFIED",
+    "authorized_legacy_row_store_attribution": "NOT_CERTIFIED",
+    "approved_exact_migration": "NOT_APPROVED",
+    "signed_hosted_jwt_rls_ab_c": "NOT_TESTED"
+  },
+  "decision": {
+    "schema_expand": "NO_GO",
+    "hosted_read_only_commerce_pilot": "NO_GO",
+    "provider_send": "NO_GO",
+    "order_write": "NO_GO",
+    "independent_human_approval": "NOT_GRANTED",
+    "source_only": true
+  },
+  "branches_reused": {
+    "hosted_preflight_pr": 184,
+    "signed_jwt_rehearsal_pr": 143,
+    "owner_backup_gate_pr": 135,
+    "disposable_store_migration_pr": 136,
+    "store_isolation_remediation_pr": 189
+  }
+}
