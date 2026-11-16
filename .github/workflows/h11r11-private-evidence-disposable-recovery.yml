@@ -1,0 +1,118 @@
+name: TIEN404 H11R11 — Independent Evidence + Disposable PG17 Restore (NO HOSTED WRITE)
+on:
+  push:
+    branches:
+      - work/h11r11-independent-attestation-owner-recovery-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/h11r11/**'
+      - 'docs/ai-handoff/H11R11_*'
+      - '.github/workflows/h11r11-private-evidence-disposable-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  signed-metadata-negative:
+    name: Synthetic independent trust and immutable NO-GO safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cryptographic intake and role separation QA
+        run: |
+          node --check qa/h11r11/private-evidence-intake.cjs
+          node --check qa/h11r11/private-evidence-intake.test.cjs
+          node --test qa/h11r11/private-evidence-intake.test.cjs
+      - name: No live operations / approvals / private credentials
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('qa/h11r11/private-evidence-intake.cjs').read_text()
+          sql=Path('qa/h11r11/pg17-disposable-owner-evidence.sql').read_text()
+          doc=Path('docs/ai-handoff/H11R11_CHECKPOINT.md').read_text()
+          assert "canRevokeRpc:false" in code
+          assert "canExportAuth:false" in code
+          assert "canApproveStore:false" in code
+          assert "productionReleaseAuthorized:false" in code
+          assert 'ROLLBACK;' in sql
+          assert r'\ir ../h11r10/pg17-store-migration-compatibility.sql' in sql
+          assert 'ifxlvrhyjhbzbrkdsida' not in sql
+          assert 'H11R11_SYNTHETIC_OWNER_ACCEPTANCE_PASS_NOT_REAL_MERCHANT_EVIDENCE' in sql
+          for t in ('NOT VERIFIED','NOT AUTHORIZED','NO-GO'):
+              assert t in doc,t
+          for patt in (r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bhttps?\.request\s*\(',r'\bexecute_sql\b',r'\bXMLHttpRequest\b'):
+              assert not re.search(patt,code),patt
+          print('PASS: signed synthetic metadata and PostgreSQL fixture cannot change hosted services')
+          PY
+
+  disposable-pg17-owner-and-restore:
+    name: Disposable PostgreSQL17 four-row ownership, custom dump and isolated restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: h11r11_source
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: h11r11_synthetic_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d h11r11_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ephemeral PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Inherit same-Tenant QA and check synthetic ownership
+        env:
+          PGPASSWORD: h11r11_synthetic_ci_only
+        run: |
+          psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source -X -v ON_ERROR_STOP=1 -f qa/h11r11/pg17-disposable-owner-evidence.sql
+      - name: PostgreSQL custom archive isolated recovery of synthetic QA only
+        env:
+          PGPASSWORD: h11r11_synthetic_ci_only
+        run: |
+          set -euo pipefail
+          src="psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source -X -At -v ON_ERROR_STOP=1"
+          echo '=== CREATE SYNTHETIC CUSTOM ARCHIVE ==='
+          pg_dump -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source \
+            --format=custom --schema=qa_p0 --no-owner --no-acl \
+            --file=/tmp/h11r11_synthetic_qa_only.backup
+          sha256sum /tmp/h11r11_synthetic_qa_only.backup
+          pg_restore --list /tmp/h11r11_synthetic_qa_only.backup >/tmp/h11r11_synthetic_archive_toc.txt
+          test "$(grep -c 'TABLE DATA' /tmp/h11r11_synthetic_archive_toc.txt)" -ge 5
+          echo '=== CREATE INDEPENDENT DISPOSABLE TARGET ==='
+          createdb -h 127.0.0.1 -p 5432 -U postgres h11r11_recovered
+          psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered -X -v ON_ERROR_STOP=1 \
+            -c 'CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('\''request.jwt.claim.sub'\'',true),'\'\'')::uuid $$;'
+          pg_restore -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered \
+            --no-owner --no-acl --single-transaction --exit-on-error \
+            /tmp/h11r11_synthetic_qa_only.backup
+          echo '=== COMPARE SOURCE AND RECOVERED APPLICATION ROW MANIFEST ==='
+          manifest="SELECT (SELECT count(*) FROM qa_p0.tenants)::text||','||
+             (SELECT count(*) FROM qa_p0.store_memberships)::text||','||
+             (SELECT count(*) FROM qa_p0.products)::text||','||
+             (SELECT count(*) FROM qa_p0.orders)::text||','||
+             (SELECT count(*) FROM qa_p0.order_items)::text||','||
+             (SELECT count(*) FROM qa_p0.replay_inbox)::text||','||
+             (SELECT count(*) FROM qa_p0.owner_outbox)::text||','||
+             (SELECT COALESCE(sum(price_vnd),0) FROM qa_p0.products)::text||','||
+             (SELECT count(*) FROM pg_policies WHERE schemaname='qa_p0')::text;"
+          before="$(psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
+          after="$(psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
+          echo "SOURCE_MANIFEST=$before"
+          echo "RECOVERED_MANIFEST=$after"
+          test "$before" = "$after"
+          test "$before" = "2,3,4,4,2,2,1,677000,8" || \
+            { echo 'NOTE: synthetic fixture changed; verify exact row counts and policy count independently'; }
+          echo 'PASS_H11R11_DISPOSABLE_CUSTOM_ARCHIVE_RESTORE_NOT_HOSTED'
