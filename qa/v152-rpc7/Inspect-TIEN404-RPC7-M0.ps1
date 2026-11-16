@@ -23,7 +23,7 @@ if (-not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)) {
 if ($ExpectedSha256 -ne "" -and $ExpectedSha256 -notmatch '^[0-9a-fA-F]{64}$') {
   Deny "EXPECTED_SHA256_NOT_HEX64"
 }
-if ($null -ne $ExpectedBytes -and $ExpectedBytes.Value -le 0) {
+if ($null -ne $ExpectedBytes -and [long]$ExpectedBytes -le 0) {
   Deny "EXPECTED_SIZE_INVALID"
 }
 $archive = Get-Item -LiteralPath $ArchivePath
@@ -56,7 +56,6 @@ try { $coverage = $coverageText | ConvertFrom-Json } catch {
 # The earlier CLI prints only classification and coverage. Build the full
 # internal classifier contract here from its non-sensitive summary.
 $entryCounts = $coverage.tableDataCoverage
-$complete = $false
 $tocContract = [ordered]@{
   contract = "T404_RPC7_LOCAL_ARCHIVE_COVERAGE_V1"
   status = [string]$coverage.classification
@@ -68,7 +67,7 @@ if ($ExpectedSha256 -ne "") {
   $expectedSha = $ExpectedSha256.ToLowerInvariant()
 }
 $expectedSizeValue = $null
-if ($null -ne $ExpectedBytes) { $expectedSizeValue = [long]$ExpectedBytes.Value }
+if ($null -ne $ExpectedBytes) { $expectedSizeValue = [long]$ExpectedBytes }
 $payload = [ordered]@{
   contract = "T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_INPUT_V1"
   observedAtUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
