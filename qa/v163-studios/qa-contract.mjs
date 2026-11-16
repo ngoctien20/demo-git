@@ -5,6 +5,7 @@ export const assert=(ok,why)=>{if(!ok)throw Error(why);};
 export const qaId=(x)=>typeof x==='string'&&/^QA_[A-Z0-9_]{1,36}$/.test(x);
 export function qaContext(ctx,allowed=['owner','manager','reviewer','staff','system']){
   assert(ctx&&typeof ctx==='object'&&!Array.isArray(ctx),'QA_CONTEXT_REQUIRED');
+  assert(exact(ctx,['stage','enrolled','tenant_id','store_id','actor_id','role']),'QA_CONTEXT_EXTRA_FIELD_DENIED');
   assert(ctx.stage===STAGE&&ctx.enrolled===true,'INDEPENDENT_QA_IDENTITY_REQUIRED');
   assert(qaId(ctx.tenant_id)&&qaId(ctx.store_id)&&qaId(ctx.actor_id),'QA_SCOPE_REQUIRED');
   assert(allowed.includes(ctx.role),'QA_ROLE_DENIED');
