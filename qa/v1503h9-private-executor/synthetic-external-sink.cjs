@@ -58,7 +58,8 @@ class SyntheticMetadataSink {
    if(existing.fence!==plan.fence||existing.workerRef!==plan.workerRef)
      return deny('LEASE_FENCE_OR_OPERATOR_CONFLICT');
    return Object.freeze({
-    status:existing.state==='SEALED'?'ALREADY_SEALED_NO_NEW_WRITE':'ALREADY_RESERVED_NO_NEW_WRITE',
+    status:existing.state==='SEALED'?'ALREADY_SEALED_NO_NEW_WRITE':
+      existing.state==='NEEDS_REVIEW'?'NEEDS_REVIEW_NO_AUTOMATIC_RETRY':'ALREADY_RESERVED_NO_NEW_WRITE',
     artifactRef:existing.artifactRef,hostedExported:false,allowedToExport:false
    });
   }
