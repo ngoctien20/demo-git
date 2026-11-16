@@ -23,7 +23,7 @@ permissions:
   contents: read
 jobs:
   synthetic-security:
-    name: 572 V16.11P.2 quoted-authorization + inherited Node QA (NO SEND)
+    name: 590 V16.11P.2A scoped-app archive quote and inherited Node QA (NO SEND)
     runs-on: ubuntu-24.04
     timeout-minutes: 14
     steps:
@@ -44,6 +44,8 @@ jobs:
           node --check qa/v1611p2-authority/approval-gate.test.mjs
           node --check qa/v1611p2-authority/operator-ui.mjs
           node --check qa/v1611p2-authority/browser.test.cjs
+      - name: V16.11P.2A selected application-only backup scope and quoted Free plan guards (18)
+        run: node --test qa/v1611p2-authority/app-scope-and-quote-receipt.test.mjs
       - name: V16.11P.2 fifty confidential assignment, cost quote and one-action gate tests
         run: node --test qa/v1611p2-authority/approval-gate.test.mjs
       - name: V16.11P.2 source-only, quote not queried, no secret, no hosted change
