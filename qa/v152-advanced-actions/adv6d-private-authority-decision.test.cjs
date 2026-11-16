@@ -233,7 +233,6 @@ test('34 forged receipt status cannot activate operation',()=>{
 test('35 changing scope between receipt and operation remains untrusted',()=>{
  const x=request();x.scopeDigest=DIG('g');
  const d=decision('BACKUP_EXPORT_REVIEW',{request:x});
- assert(r=>r); // explicitly assert next line for invalid scope
  assert(d.blockers.includes('OPERATION_REQUEST_INVALID_OR_UNSCOPED'));
 });
 test('36 release flag injected in operation request denied',()=>{
@@ -267,9 +266,9 @@ test('41 RPC review has own gate and cannot alter privileges',()=>{
  assert.equal(d.rpcPrivilegeChangeAuthorized,false);
 });
 test('42 missing rpc dependency review blocked for RPC operation',()=>{
- const d=decision('RPC_REMEDIATION_REVIEW',{rpcRisk:undefined});
- // Decision() default uses supplied undefined; explicit test below passes bad object
+ const d=decision('RPC_REMEDIATION_REVIEW',{rpcRisk:null});
  assert.equal(d.rpcPrivilegeChangeAuthorized,false);
+ assert(d.blockers.includes('HOSTED_RPC_REVIEW_GATE_MISSING'));
 });
 test('43 private DB role review cannot grant database role',()=>{
  const d=decision('PRIVATE_DB_ROLE_REVIEW');assert.equal(d.roleGrantAuthorized,false);
