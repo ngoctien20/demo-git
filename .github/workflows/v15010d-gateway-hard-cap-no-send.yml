@@ -1,0 +1,53 @@
+name: TIEN404 V15.0-10D Approved One Dollar Gateway Certification Gate (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15010d-approved-one-dollar-gateway-certification-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15010d-gateway/**'
+      - '.github/workflows/v15010d-gateway-hard-cap-no-send.yml'
+      - 'docs/ai-handoff/TIEN404_V15_0_10D_*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gateway-credit-hard-stop:
+    name: Explicit $1 USD × Unverified Gateway Credit Fail-Closed QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source and no actual provider call
+        run: |
+          node --check qa/v15010d-gateway/gateway-hard-cap-certification.cjs
+          node --check qa/v15010d-gateway/gateway-hard-cap-certification.test.cjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v15010d-gateway/gateway-hard-cap-certification.cjs').read_text()
+          for word in ('fetch(', 'axios(', 'https.request(', 'http.request(',
+                       'new OpenAI(', 'process.env.', 'OPENAI_API_KEY',
+                       'SUPABASE_SERVICE_ROLE_KEY', 'sendMessage('):
+              assert word not in src, word
+          assert 'APPROVED_CAP_USD=1' in src
+          assert 'can_call_model:false' in src
+          assert 'real_hard_limit_certified:false' in src
+          print('PASS: cap acknowledged but no live provider execution permitted')
+          PY
+      - name: Strict real Gateway hard-cap proof negative matrix
+        run: node --test qa/v15010d-gateway/gateway-hard-cap-certification.test.cjs
+      - name: Existing budget ledger, independent tool trace and multi case safeguards
+        run: |
+          node --test qa/v15010c-capped-run/budget-guard.test.cjs
+          node --test qa/v15010c-capped-run/independent-tool-trace-gate.test.cjs
+          node --test qa/v15010c-capped-run/multi-case-sandbox-policy.test.cjs
+      - name: Inherited private source and cross-Store release negative checks
+        run: |
+          node --test qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
+          node --test qa/v15011a-reconciliation/integrated-release-gate.test.cjs
