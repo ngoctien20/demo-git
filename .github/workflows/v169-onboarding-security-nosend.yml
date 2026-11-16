@@ -1,0 +1,100 @@
+name: TIEN404 V16.9 Owner Proof and Private Intake Synthetic QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v169-owner-proof-private-intake-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v169-security/**'
+      - 'docs/ai-handoff/V16_9_*'
+      - '.github/workflows/v169-onboarding-security-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-security:
+    name: 75 new V16.9 security tests and 235 inherited Node regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check source and browser files
+        run: |
+          node --check qa/v169-security/owner-evidence.mjs
+          node --check qa/v169-security/private-import-readiness.mjs
+          node --check qa/v169-security/readiness-ui.mjs
+          node --check qa/v169-security/browser.test.cjs
+          node --check qa/v169-security/v169-security.test.mjs
+      - name: NEW 75 source-only ownership and private-intake security tests
+        run: node --test qa/v169-security/v169-security.test.mjs
+      - name: INHERITED V16.8 synthetic import/Hybrid tests
+        run: node --test qa/v168-merchant/v168-merchant.test.mjs
+      - name: INHERITED V16.7 Merchant Registry tests
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: INHERITED V16.0/V16.1 Hybrid Core tests
+        run: node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: INHERITED V16.3 Studios tests
+        run: node --test qa/v163-studios/v163-studios.test.mjs
+      - name: Source-only security boundary and no real data gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          root=Path('qa/v169-security')
+          assert len(re.findall(r"test\('",(root/'v169-security.test.mjs').read_text()))==75
+          html=(root/'index.html').read_text()
+          assert "connect-src 'none'" in html and "script-src 'self'" in html
+          for name in ['owner-evidence.mjs','private-import-readiness.mjs','readiness-ui.mjs']:
+            code=(root/name).read_text()
+            for banned in [
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\blocalStorage\b',
+              r'\bsessionStorage\b',r'\bprocess\.env\b',r'\bcreateClient\s*\(',
+              r'graph\.facebook\.com',r'api\.openai\.com',r'generativelanguage\.googleapis\.com',
+              r'\bservice_role\s*=']:
+              assert not re.search(banned,code),(name,banned)
+          assert 'LIVE_CATALOG_COMMIT_FORBIDDEN' in (root/'private-import-readiness.mjs').read_text()
+          assert 'HOSTED_IDENTITY_AND_INDEPENDENT_APPROVAL_REQUIRED' in (root/'owner-evidence.mjs').read_text()
+          assert not list(root.glob('wrangler.*'))
+          handoff=json.loads(Path('docs/ai-handoff/V16_9_PRIVATE_OWNER_OPERATOR_HANDOFF_TEMPLATE.json').read_text())
+          assert handoff['final_release_status']=='NO_GO'
+          assert len(handoff['evidence_request'])==9
+          assert all(i['status']=='MISSING' and i['private_evidence_ref'] is None for i in handoff['evidence_request'])
+          assert handoff['private_file_controls']['uploaded_bytes_allowed_now'] is False
+          prior=Path('docs/ai-handoff/V16_8_STORE_JWT_RLS_MIGRATION_DO_NOT_APPLY.sql').read_text()
+          assert all(not l.strip() or l.startswith('--') for l in prior.splitlines())
+          print('V16.9 SOURCE ONLY / NO SQL / NO UPLOAD / NO TOKEN / NO SEND / NO PAID MODEL: PASS')
+          PY
+      - name: No keys and no real endpoints
+        run: |
+          if grep -RniE 'BEGIN PRIVATE KEY|sk-[A-Za-z0-9]{20}|Bearer [A-Za-z0-9]{20}' qa/v169-security; then
+            echo "Potential secret detected"; exit 3
+          fi
+          echo "Synthetic metadata and fixed QA identities only. No externally-verified proof."
+  browser-no-send:
+    name: Chromium local Owner metadata and private-intake readiness QA (4 viewports)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned QA-only Chromium Playwright
+        run: |
+          npm install --no-save --prefix qa/v169-security playwright@1.56.1
+          cd qa/v169-security && npx playwright install --with-deps chromium
+      - name: Serve source-only QA on localhost
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/v169-local.log 2>&1 &
+          sleep 2
+      - name: Run browser acceptance with network and overflow assertions
+        run: node qa/v169-security/browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v169-private-owner-synthetic-readiness-screenshots
+          path: qa-artifacts-v169/
+          if-no-files-found: ignore
