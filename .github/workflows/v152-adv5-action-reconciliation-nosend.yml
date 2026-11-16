@@ -1,0 +1,80 @@
+name: TIEN404 V15.2 ADV5.1 Action Contract Reconciliation (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/studio-action-crosswalk*'
+      - 'docs/ai-handoff/V15_2_ADV5_1_*'
+      - '.github/workflows/v152-adv5-action-reconciliation-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv5-action-contract-reconciliation-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  crosswalk-contract:
+    name: ADV4 to ADV5 action compatibility + security gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax validation
+        run: |
+          node --check qa/v152-advanced-actions/studio-action-crosswalk.cjs
+          node --check qa/v152-advanced-actions/studio-action-crosswalk.test.cjs
+          node --check qa/v152-advanced-actions/studio-action-crosswalk-report.cjs
+      - name: 35 new crosswalk tests including 132 isolated Shop/channel/action permutations
+        run: node --test qa/v152-advanced-actions/studio-action-crosswalk.test.cjs
+      - name: Inherited ADV5 signed action QA
+        run: node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Inherited ADV5 four-channel adapter QA
+        run: node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Inherited policy and Studio fixtures regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Crosswalk manifest
+        run: |
+          node qa/v152-advanced-actions/studio-action-crosswalk-report.cjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          m=json.loads(Path('qa-artifacts-v152-adv5/studio-action-crosswalk-manifest.json').read_text())
+          assert m['status']=='QA_CONTRACT_CHECKS_ONLY__PRODUCTION_BLOCKED'
+          assert m['blockedMappings']==['ORDER_REQUEST_DRAFT','TRACK_ORDER','OPEN_VERIFIED_LINK']
+          assert len(m['actionMappings'])==11
+          assert all(not a['canIssueReceipt'] and not a['executable'] for a in m['actionMappings'])
+          assert all(v is False for v in m['criticalGates'].values())
+          assert m['writes']==m['providerSends']==m['realModelCalls']==0
+          print('ADV5 CROSSWALK RELEASE BLOCKED — verified')
+          PY
+      - name: Static No-Send No-Sign lint
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v152-advanced-actions')
+          s=(base/'studio-action-crosswalk.cjs').read_text()
+          tests=(base/'studio-action-crosswalk.test.cjs').read_text()
+          banned=(r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\s*\(',
+                  r'\bWebSocket\b',r'\b(localStorage|sessionStorage)\b',
+                  r'\bcreateHmac\s*\(',r'\bnew Function\s*\(',r'\beval\s*\(')
+          for pattern in banned:
+              assert not re.search(pattern,s),pattern
+          assert "require('./signed-action-registry.cjs')" in s
+          assert 'canSign:false' in s and 'canExecute:false' in s and 'canSend:false' in s
+          assert 'ORDER_REQUEST_DRAFT' in s and 'TRACK_ORDER' in s and 'OPEN_VERIFIED_LINK' in s
+          assert 'STUDIO_CROSSWALK_SIGN_DISABLED' in s
+          assert 'notMergedSiblingBranches:true' in s
+          assert '3 shops x 4 channels x 11 aliases' in tests
+          print('ADV5.1 NO-SEND CODE GATE PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v152-adv5-studio-action-crosswalk-manifest
+          path: qa-artifacts-v152-adv5/studio-action-crosswalk-manifest.json
+          if-no-files-found: error
