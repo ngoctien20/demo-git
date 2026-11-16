@@ -52,10 +52,16 @@ jobs:
           set -euo pipefail
           actual=$(git -C "$GITHUB_WORKSPACE/rpc7" rev-parse HEAD)
           test "$actual" = '4f7bef71f54ee17b88449026b90803ccf9743e30'
+          set +e
           result=$(pwsh -NoProfile -NonInteractive -File \
             qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
             -Mode Preflight -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
-            -PgRestoreExe pg_restore -NodeExe node)
+            -PgRestoreExe pg_restore -NodeExe node 2>&1)
+          code=$?
+          set -e
+          # Preflight reads no archive; show ONLY explicit safe result/status keys.
+          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|RPC7_COMMIT_PINNED|ARCHIVE_INSPECTED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
+          test "$code" = "0"
           echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_TOOLS_READY'
           echo "$result" | grep -q 'CBOT08_RPC7_COMMIT_PINNED=true'
           echo "$result" | grep -q 'CBOT08_ARCHIVE_INSPECTED=false'
