@@ -1,0 +1,140 @@
+name: TIEN404 V15.2 ADV.6C-RPC.3 Private Caller and Two-Step Revoke Gate (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc3/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC3_*'
+      - '.github/workflows/v152-adv6c-rpc3-private-caller-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc3-private-caller-attestation-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc3-private-evidence-offline:
+    name: RPC.3 Caller attestations and hosted two-step PRE/POST rejection QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check new source syntax and 32 negative security cases
+        run: |
+          node --check qa/v152-rpc3/private-caller-attestation.cjs
+          node --check qa/v152-rpc3/private-caller-attestation.test.cjs
+          node --check qa/v152-rpc3/hosted-two-step-revocation-decision.cjs
+          node --check qa/v152-rpc3/hosted-two-step-revocation-decision.test.cjs
+          node --test qa/v152-rpc3/private-caller-attestation.test.cjs
+          node --test qa/v152-rpc3/hosted-two-step-revocation-decision.test.cjs
+      - name: Inherited RPC.2 offline review and RPC.1 signed channel capability
+        run: |
+          node --test qa/v152-rpc2/zero-downtime-cutover-review.test.cjs
+          node --test qa/v152-rpc1/trusted-pairing-capability.test.cjs
+          node --test qa/v152-rpc1/rpc1-action-coordinator.test.cjs
+      - name: Inherited ADV.6C signed evidence, PRE-ADV6C and action gate
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+      - name: Strict metadata-only, no SQL, no provider, no hosted mutation
+        run: |
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          root=Path('qa/v152-rpc3')
+          s=(root/'private-caller-attestation.cjs').read_text()
+          v=(root/'hosted-two-step-revocation-decision.cjs').read_text()
+          data=json.loads((root/'hosted-readonly-baseline.json').read_text())
+          assert data['supabase_project']=='ifxlvrhyjhbzbrkdsida'
+          assert data['supabase_rpc']['anon_execute'] is True
+          assert data['hosted_two_step']['public_stores_table_exists'] is False
+          assert data['hosted_two_step']['public_store_memberships_table_exists'] is False
+          assert data['logs']['postgresql_events_with_rpc_name']==3
+          assert data['logs']['direct_provider_rpc_invocations_proven'] is False
+          assert 'SIGNED_METADATA_PENDING_PRIVATE_EVIDENCE_VALIDATION' in s
+          assert 'rpcRevokeAuthorized:false' in s
+          assert 'approvesRpcRevoke:false' in v
+          for text in [s,v]:
+            for pattern in [r'\bfetch\s*\(',r'\bWebSocket\b',
+               r'\bXMLHttpRequest\b',r'\bprocess\.env\b',
+               r'\bchild_process\b',r'\bfs\.(?:write|append|unlink)',
+               r'\bexecuteQuery\s*\(',r'\bhttps?\.request\s*\(']:
+               assert not re.search(pattern,text),pattern
+          sql=Path('docs/ai-handoff/V15_2_ADV6C_RPC3_EXACT_RPC_REVOKE_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          for pattern in [r'^\s*REVOKE\s+',r'^\s*GRANT\s+',
+             r'^\s*CREATE\s+',r'^\s*ALTER\s+',r'^\s*DROP\s+',
+             r'^\s*INSERT\s+',r'^\s*UPDATE\s+',r'^\s*DELETE\s+']:
+            assert not re.search(pattern,sql,re.M|re.I),pattern
+          print('PASS: RPC.3 offline only; no actual revoke/backup/hosted JWT or send')
+          PY
+
+  rpc3-private-pg17-regression:
+    name: RPC.3 inherited disposable PG17 two-step pairing transaction
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc3_synthetic_disposable_ci_only
+          POSTGRES_DB: t404_rpc2_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc2_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: QA-only pinned PostgreSQL 17 client
+        run: npm install --no-save --no-package-lock --prefix qa/v152-rpc2 pg@8.16.3
+      - name: Real disposable PG17 transaction and role tests
+        env:
+          CI: 'true'
+          T404_RPC2_DISPOSABLE_PG: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGDATABASE: 't404_rpc2_ci'
+          PGUSER: 'postgres'
+          PGPASSWORD: 'rpc3_synthetic_disposable_ci_only'
+        run: node --test qa/v152-rpc2/pg17-private-pairing.integration.test.cjs
+
+  rpc3-hosted-privilege-no-go:
+    name: RPC.3 HOSTED RPC REVOCATION — NO GO (expected BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [rpc3-private-evidence-offline,rpc3-private-pg17-regression]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reject promotion without private evidence and separate exact-function approval
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc3/hosted-readonly-baseline.json');
+          const {reviewHostedTwoStep,reviewOneTimeRevocation,executeRevocation}=
+            require('./qa/v152-rpc3/hosted-two-step-revocation-decision.cjs');
+          const hosted=reviewHostedTwoStep({baseline:b});
+          const pre=reviewOneTimeRevocation({baseline:b,phase:'PRE_REVOKE'});
+          if(hosted.status!=='PREFLIGHT_BLOCKED'||pre.status!=='NO_GO'||
+             pre.approvesRpcRevoke!==false||pre.allowsProductionRelease!==false)
+            throw Error('RPC3_UNSAFE_LIVE_GATE');
+          console.log(JSON.stringify({hosted:hosted.status,
+             phase:pre.phase,status:pre.status,
+             blockerCount:pre.blockers.length,
+             revokeAuthorized:pre.approvesRpcRevoke}));
+          try{executeRevocation()}catch(e){console.error(e.message)}
+          console.error('RPC3_HOSTED_RPC_REVOKE_NO_GO_EXTERNAL_AUTHORITY_REQUIRED');
+          process.exitCode=3;
+          NODE
