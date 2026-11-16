@@ -27,6 +27,16 @@ textarea{min-height:100px;resize:vertical}select:focus-visible,textarea:focus-vi
 pre{white-space:pre-wrap;word-break:break-word;background:#101c2b;border-radius:10px;padding:13px;color:#b4d9e6;font-size:11px;max-height:340px;overflow:auto}
 footer{max-width:1240px;padding:0 4vw 30px;margin:auto;color:#9fb3c5}
 @media(max-width:760px){main{grid-template-columns:1fr}.panel{padding:15px}.screen{max-width:100%}}
+
+.capability-panel{grid-column:1/-1}
+.capability-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:690px;text-align:left}
+th,td{border-bottom:1px solid #34465a;padding:10px 8px;vertical-align:top}
+th{font-size:12px;color:#d1e8f4}
+td{font-size:12px;color:#ccdce8}
+a{color:#9ce4d3}
+#capabilitySelected{font-weight:650;color:#b3e5cf}
+@media(max-width:760px){.capability-panel{grid-column:auto}}
 </style></head><body>
 <header><div class="badge">EXPERIMENTAL · NO SEND</div><h1>TIEN404 · Advanced AI Presentation Lab</h1>
 <p>Chữ đậm, nghiêng, màu sắc, ảnh sản phẩm, thẻ, nút và liên kết — theo từng kênh; dữ liệu mẫu A/B/C, không kết nối mạng.</p></header>
@@ -39,7 +49,14 @@ footer{max-width:1240px;padding:0 4vw 30px;margin:auto;color:#9fb3c5}
 <p class="caption">Bản QA chỉ thể hiện quy tắc quyết định hình thức. Model thật cần benchmark riêng bằng dữ liệu người dùng và ngân sách đã duyệt.</p>
 <h2 style="margin-top:22px">2. Kết quả quyết định</h2><p id="intent"></p><p class="caption" id="capability"></p>
 </section><section class="panel"><div class="head"><div><strong id="shopName"></strong><div><small id="channelName"></small></div></div><small id="status"></small></div>
-<div id="screen" class="screen" aria-live="polite"></div><h2 style="margin-top:22px">Dữ liệu dựng UI an toàn</h2><pre id="json"></pre></section></main>
+<div id="screen" class="screen" aria-live="polite"></div><h2 style="margin-top:22px">Dữ liệu dựng UI an toàn</h2><pre id="json"></pre></section><section class="panel capability-panel"><h2>3. Danh mục khả năng kênh — ADV.2</h2>
+<p class="caption" id="capabilitySummary"></p><p id="capabilitySelected" aria-live="polite"></p>
+<p class="caption">Nguồn: tài liệu API và policy nội bộ. Trạng thái mô tả khả năng thiết kế, không phải quyền gửi tin đã được duyệt.</p>
+<div class="capability-scroll"><table><thead><tr><th>Thành phần</th><th>Trạng thái</th><th>Fallback QA</th><th>Tham khảo</th></tr></thead>
+<tbody id="capabilityRows"></tbody></table></div>
+</section></main>
 <footer>TIEN404 R&amp;D · Không gửi Meta/Zalo · Không đọc/ghi Supabase · Không tạo đơn · Không tiết lộ thông tin khách hàng.</footer>
-<script src="./studio-core.js" defer></script><script src="./advanced-presentation-policy.js" defer></script><script src="./advanced-preview.js" defer></script>
+<script src="./studio-core.js" defer></script><script src="./advanced-presentation-policy.js" defer></script><script src="./advanced-channel-registry.js" defer></script>
+<script src="./advanced-preview.js" defer></script>
+<script src="./advanced-registry-view.js" defer></script>
 </body></html>
