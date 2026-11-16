@@ -7,7 +7,9 @@ function fixture(overrides={}){
   sessionId:'qa_session_a',role:'CUSTOMER',identityVerified:true,membershipActive:true,
   channelBindingVerified:true,consentActive:true,entitlementActive:true,
   customerStoreLinkVerified:true,orderOwnershipVerified:true,
-  explicitCustomerConfirmation:true,approvedLinkRegistryMatch:true,...overrides};
+  authorizedOrderId:'qa_order_1',authorizedOrderStoreId:'qa_shop_a',
+  explicitCustomerConfirmation:true,confirmedDraftId:'qa_draft_1',
+  approvedLinkRegistryMatch:true,approvedLinkRef:'qa_link_1',...overrides};
 }
 function setup(o={}){
  let now=1800000000000;
@@ -107,14 +109,14 @@ test('26 signed order lookup requires actual customer ownership',()=>{
 });
 test('27 can't issue order lookup for other customer',()=>{
  const x=setup();
- assert.throws(()=>x.t({action:'TRACK_ORDER',resourceId:'qa_order_other',context:fixture({orderOwnershipVerified:false})}),/CUSTOMER_ORDER_OWNERSHIP_REQUIRED/);
+ assert.throws(()=>x.t({action:'TRACK_ORDER',resourceId:'qa_order_other',context:fixture({orderOwnershipVerified:false})}),/ORDER_RESOURCE_SCOPE_REQUIRED/);
 });
 test('28 customer order draft requires explicit confirmation',()=>{
  const x=setup();
  assert.throws(()=>x.t({action:'ORDER_REQUEST_DRAFT',context:fixture({explicitCustomerConfirmation:false})}),/CUSTOMER_CONFIRMATION_REQUIRED/);
 });
 test('29 signed order draft still cannot actually write order',()=>{
- const x=setup(),token=x.t({action:'ORDER_REQUEST_DRAFT'}).token;
+ const x=setup(),token=x.t({action:'ORDER_REQUEST_DRAFT',resourceId:'qa_draft_1'}).token;
  const out=x.registry.inspectAndConsumeQa({token,context:fixture()});assert.equal(out.canExecute,false);
  assert.throws(()=>x.registry.execute(),/NO_SIDE_EFFECTS_IN_QA_REGISTRY/);
 });
@@ -204,4 +206,26 @@ test('47 true verification must not produce provider send or order write',()=>{
 });
 test('48 unsupported channel cannot issue',()=>{
  const x=setup();assert.throws(()=>x.t({context:fixture({channel:'TELEGRAM'})}),/QA_CHANNEL_INVALID/);
+});
+test('49 even signed Owner cannot query order of other Shop under same tenant',()=>{
+ const x=setup(),owner=fixture({role:'OWNER',actorId:'qa_owner_a',ownerOrStaffRoleVerified:true,
+ authorizedOrderId:'qa_order_b',authorizedOrderStoreId:'qa_shop_b'});
+ assert.throws(()=>x.t({context:owner,action:'TRACK_ORDER',resourceId:'qa_order_b'}),/ORDER_RESOURCE_SCOPE_REQUIRED/);
+});
+test('50 valid customer cannot swap in a different orderId',()=>{
+ const x=setup(),c=fixture({orderOwnershipVerified:true,authorizedOrderId:'qa_order_1'});
+ assert.throws(()=>x.t({context:c,action:'TRACK_ORDER',resourceId:'qa_order_else'}),/ORDER_RESOURCE_SCOPE_REQUIRED/);
+});
+test('51 a confirmed draft receipt cannot act on another draft',()=>{
+ const x=setup();
+ assert.throws(()=>x.t({action:'ORDER_REQUEST_DRAFT',resourceId:'qa_draft_other'}),/CONFIRMED_DRAFT_SCOPE_REQUIRED/);
+});
+test('52 approved link receipt uses opaque internal ref only',()=>{
+ const x=setup(),token=x.t({action:'OPEN_VERIFIED_LINK',resourceId:'qa_link_1'}).token;
+ const out=x.registry.inspectAndConsumeQa({token,context:fixture()});
+ assert.equal(out.canExecute,false);assert.equal(out.resourceId,'qa_link_1');
+});
+test('53 a different link ref cannot be opened just because domain was approved',()=>{
+ const x=setup();
+ assert.throws(()=>x.t({action:'OPEN_VERIFIED_LINK',resourceId:'qa_link_2'}),/APPROVED_LINK_RESOURCE_SCOPE_REQUIRED/);
 });
