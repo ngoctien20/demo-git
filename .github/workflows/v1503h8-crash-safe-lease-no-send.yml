@@ -1,0 +1,108 @@
+name: TIEN404 V15.0-03H.8 Signer Enrollment + Crash-Safe Lease (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1503h8-trusted-enrollment-crash-safe-lease-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1503h8-lease/**'
+      - 'docs/ai-handoff/V15_03H8_*'
+      - '.github/workflows/v1503h8-crash-safe-lease-no-send.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  signer-enrollment-and-crash-safe-lease:
+    name: Offline Enrollment + Disposable PG17 Fenced Lease QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_h8_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable_h8_ci
+      PGDATABASE: tien404_h8_ephemeral
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enrollment negative matrix + inherited signature and coverage QA
+        run: |
+          node --check qa/v1503h8-lease/signer-enrollment-review.cjs
+          node --test \
+            qa/v1503h8-lease/signer-enrollment-review.test.cjs \
+            qa/v1503h7-attestation/attestation-registry.test.cjs \
+            qa/v1503h6-backup-preflight/backup-coverage-preflight.test.cjs
+      - name: Install PG client for isolated container
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Build disposable lease state machine and test expiry, revoke and crash quarantine
+        run: |
+          createdb tien404_h8_ephemeral
+          psql -X -v ON_ERROR_STOP=1 \
+            -f qa/v1503h8-lease/ephemeral-pg17-crash-safe-lease.sql
+      - name: Eight simultaneous simulated reservations consume only ONE lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/h8_parallel_results.txt"
+          : > "$results"
+          for i in $(seq 1 8); do
+            (psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT h8_lease_qa.reserve_once('QA_H8_CONCURRENT',repeat('f',64),repeat('6',64),'QA_WORKER_AAAA',30)") >> "$results" &
+          done
+          wait
+          test "$(wc -l < "$results")" -eq 8
+          test "$(grep -xc '1' "$results")" -eq 1
+          test "$(grep -xc '0' "$results")" -eq 7
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+           "SELECT count(*) FROM h8_lease_qa.approvals WHERE receipt_ref='QA_H8_CONCURRENT' AND state='leased' AND fence=1 AND attempt_count=1")" = 1
+          echo 'PASS: eight concurrent disposable lease claims -> exactly 1 reserved and 7 denied.'
+      - name: Simulate interrupted worker and no automatic retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -c \
+            "UPDATE h8_lease_qa.approvals SET lease_deadline=clock_timestamp()-interval '1 second' WHERE receipt_ref='QA_H8_CONCURRENT'"
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c 'SELECT h8_lease_qa.quarantine_stale()')" = 1
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT h8_lease_qa.reserve_once('QA_H8_CONCURRENT',repeat('f',64),repeat('6',64),'QA_WORKER_BBBB',30)")" = 0
+          test "$(psql -XAtq -v ON_ERROR_STOP=1 -c \
+             "SELECT state FROM h8_lease_qa.approvals WHERE receipt_ref='QA_H8_CONCURRENT'")" = needs_review
+          echo 'PASS: crashed lease quarantined; no automatic re-execution.'
+      - name: Static NO-HOSTED-ACTION contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v1503h8-lease/signer-enrollment-review.cjs').read_text()
+          sql=Path('qa/v1503h8-lease/ephemeral-pg17-crash-safe-lease.sql').read_text()
+          for forbidden in ('fetch(', 'axios(', 'process.env.', 'child_process', 'pg_dump ',
+                            'pg_restore ', 'sendMessage(', 'SUPABASE_SERVICE_ROLE',
+                            'canExport:true', 'canMigrate:true'):
+              assert forbidden not in src, f'Forbidden real capability in source: {forbidden}'
+          assert "current_database() <> 'tien404_h8_ephemeral'" in sql
+          assert 'SECURITY INVOKER' in sql
+          assert 'REVOKE ALL ON SCHEMA' in sql
+          assert 'REVOKE ALL ON FUNCTION' in sql
+          assert "state='needs_review'" in sql
+          assert 'canExport:false' in src and 'canRestore:false' in src
+          print('PASS: no real signer key, hosted data export, restore or provider send.')
+          PY
