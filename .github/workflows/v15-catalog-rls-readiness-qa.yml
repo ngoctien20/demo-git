@@ -43,7 +43,7 @@ jobs:
           for bad in ['fetch(', 'axios(', 'new OpenAI(', 'sendMessage(', 'service_role_token', 'ZALO_BOT_TOKEN', 'GATEWAY_AUTH_KEY', 'INSERT INTO', 'DELETE FROM', 'UPDATE public.', 'DROP TABLE']:
               assert bad not in s, bad
           import re
-          assert not re.search(r'(?im)^\\s*GRANT\\s+\\w+', s), 'ACTIVE_SQL_GRANT_STATEMENT_FOUND'
+          assert not re.search(r'(?im)^\s*GRANT\s+\w+', s), 'ACTIVE_SQL_GRANT_STATEMENT_FOUND'
           assert "hasServiceRoleKey===false" in s
           assert "backend.allowWrite===false" in s
           assert "CATALOG_SOURCE_MISMATCH" in s
