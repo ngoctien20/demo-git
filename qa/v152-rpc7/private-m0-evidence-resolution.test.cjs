@@ -213,3 +213,61 @@ test('22 no real hosted backup or M1 migration executor',()=>{
  assert.throws(()=>executeM1(),/RPC7_M1_HOSTED_EXECUTION_NOT_AUTHORIZED/);
  assert.equal(CONTRACT,'T404_RPC7_PRIVATE_M0_REAL_EVIDENCE_RESOLUTION_V1');
 });
+
+
+const appScope=()=>{
+ const q={...all(),archiveToc:partial,
+  recoveryScope:'APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN'};
+ q.recovery.externalAuthRecoveryPlanApproved=true;
+ q.recovery.externalStorageMetadataRecoveryPlanApproved=true;
+ q.recovery.externalStorageObjectBytesRecoveryPlanApproved=true;
+ q.recovery.externalDependencyPlanIndependentlyTested=true;
+ q.reviewer.applicationScopeExplicitlyApproved=true;
+ q.reviewer.externalDependencyResidualRiskIndependentlyAccepted=true;
+ return q;
+};
+test('23 historical partial archive cannot satisfy full-service M0 scope',()=>{
+ const q=appScope();q.recoveryScope='FULL_SERVICE';
+ const x=reviewM0Evidence(q);
+ assert.equal(x.status,'M0_EVIDENCE_BLOCKED');
+ assert(x.blockers.includes('AUTH_TABLE_DATA_NOT_IN_EXISTING_ARCHIVE'));
+ assert.equal(x.fullServiceRestoreClaimedByCode,false);
+});
+test('24 scoped application recovery requires independent external Auth/Storage plan',()=>{
+ const q=appScope();q.recovery.externalAuthRecoveryPlanApproved=false;
+ const x=reviewM0Evidence(q);
+ assert(x.blockers.includes('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_UNVERIFIED'));
+ assert.equal(x.m1MigrationAuthorized,false);
+});
+test('25 scoped application recovery needs distinct explicit controller/security scope review',()=>{
+ const q=appScope();q.reviewer.externalDependencyResidualRiskIndependentlyAccepted=false;
+ const x=reviewM0Evidence(q);
+ assert(x.blockers.includes('APPLICATION_ONLY_RECOVERY_SCOPE_NOT_APPROVED'));
+});
+test('26 all-green scoped app claims are NOT full-service restoration nor M0/M1 approval',()=>{
+ const q=appScope();const x=reviewM0Evidence(q);
+ assert.equal(x.status,'CLAIMED_M0_READY_FOR_EXTERNAL_ATTESTATION');
+ assert.equal(x.recoveryScope,'APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN');
+ assert.equal(x.archiveClassification,'PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY');
+ assert.equal(x.fullServiceRestoreClaimedByCode,false);
+ for(const k of ['actualFullRecoveryCertified','approvalGranted',
+  'backupExportAuthorized','m1MigrationAuthorized','realMerchantOwnerVerified'])
+  assert.equal(x[k],false,k);
+ const m=reviewM1Readiness({baseline:q.baseline,m0Review:x,
+   ownershipPacket:owner,m1Packet:m1()});
+ assert.equal(m.canApplyM1,false);
+ assert.equal(m.status,'M1_REVIEW_PACKET_PENDING_REAL_OPERATOR_APPROVAL');
+});
+test('27 scoped app recovery still needs independently tested isolated application restore',()=>{
+ const q=appScope();q.recovery.independentIsolatedRestoreCompleted=false;
+ const x=reviewM0Evidence(q);
+ assert(x.blockers.includes('REAL_INDEPENDENT_FULL_DEPENDENCY_RESTORE_UNVERIFIED'));
+});
+test('28 undefined or malicious recovery scope is DENY',()=>{
+ for(const recoveryScope of ['MIGRATE_NOW','',null,'SCHEMA_ONLY_WITHOUT_RECOVERY']){
+  const q=appScope();q.recoveryScope=recoveryScope;
+  const x=reviewM0Evidence(q);
+  assert.equal(x.status,'M0_EVIDENCE_BLOCKED');
+  assert(x.blockers.includes('RECOVERY_SCOPE_INVALID_OR_NOT_REVIEWED'));
+ }
+});
