@@ -32,6 +32,8 @@ jobs:
         run: node --test qa/v15010c-capped-run/budget-guard.test.cjs
       - name: Independent tool trace / no unauthorized writes or sends
         run: node --test qa/v15010c-capped-run/independent-tool-trace-gate.test.cjs
+      - name: Enforce all 36 multi-turn fault/race/order/no-send side-effect policies
+        run: node --test qa/v15010c-capped-run/multi-case-sandbox-policy.test.cjs
       - name: Inherited 132-case benchmark receipt and 11A integration safety regression
         run: |
           node --test qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
