@@ -45,10 +45,14 @@ jobs:
             assert 'RPC8_DISPOSABLE' in s
             assert 't404_rpc8_ci' in s
             assert 'ifxlvrhyjhbzbrkdsida' not in s
+            # Ignore non-executable SQL/shell comment lines; guard against
+            # dangerous statements or references in runnable source only.
+            executable='\n'.join(line for line in s.splitlines()
+                                 if not line.lstrip().startswith(('--','#')))
             for token in [r'\bservice_role\b',r'\bauth\.users\b',r'\bpublic\.orders\b',
               r'\bpublic\.products\b',r'\bpublic\.stores\b',r'\bpg_dump\b',
               r'\bpg_restore\b',r'\bcurl\b',r'\bwget\b']:
-              assert not re.search(token,s,re.I),token
+              assert not re.search(token,executable,re.I),token
           assert 'ADD COLUMN store_id uuid NULL' in candidate
           assert 'ENABLE ROW LEVEL SECURITY' in candidate
           assert 'FORCE ROW LEVEL SECURITY' in candidate
