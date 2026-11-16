@@ -69,4 +69,13 @@ class FreezeTests(unittest.TestCase):
   self.assertIn("STALE_PREVIEW_CONFLICT",c["MULTI:QA28"])
   self.assertIn("EXPECTED_TOTAL_REQUIRED",c["MULTI:QA20"])
  def test_24_never_certifies_independent_human(self):self.assertFalse(make_packet(self.f)[1]["external_independent_privacy_acceptance"])
+ def test_25_explicit_no_send_flag_required(self):
+  self.src["cases"][0].pop("send_to_provider_allowed");self.save()
+  with self.assertRaisesRegex(ValueError,"EXPLICIT_NO_SEND_FLAG"):make_packet(self.f)
+ def test_26_extra_sensitive_field_rejected(self):
+  self.src["cases"][0]["secret_token"]="PRIVATE";self.save()
+  with self.assertRaisesRegex(ValueError,"UNEXPECTED_PRIVATE_DATA_FIELD"):make_packet(self.f)
+ def test_27_real_model_output_in_input_rejected(self):
+  self.src["cases"][0]["actual_output"]="unverified real reply";self.save()
+  with self.assertRaisesRegex(ValueError,"REAL_MODEL_OUTPUT_IN_SOURCE"):make_packet(self.f)
 if __name__=="__main__":unittest.main(verbosity=2)
