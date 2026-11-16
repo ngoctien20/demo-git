@@ -109,3 +109,48 @@ Do NOT claim the four hosted legacy rows are Shop A/B within the same tenant. Th
 - Checkpoint and rollback remain the same child Draft PR; no Supabase, n8n or credential mutations.
 
 **Approval still required:** Operator must select the actual recovery scope privately and verify provenance plus current Recovery Point Objective (RPO), Auth/Storage dependency recovery and independent restore; M1 requires a **different operation-specific authorization**. No current M0/M1 approval is implied.
+
+
+## 9. RPC.7 operator-ready archive inspection (source-only implementation)
+
+### Delivered
+- `qa/v152-rpc7/Inspect-TIEN404-RPC7-M0.ps1`: read-only Windows/PowerShell operator wrapper for an **existing** archive. It checks file presence, `Get-FileHash SHA256`, optional prior SHA/byte receipt, `pg_restore --list` in metadata-only mode, then a strictly redacted Node receipt validator. The archive is NOT copied, exported, restored, uploaded, modified or connected to a remote database.
+- `qa/v152-rpc7/local-m0-archive-receipt.cjs` / `local-m0-archive-receipt-cli.cjs`: reject unexpected keys or raw PII, validate coverage counts and SHA reference, and always return `m0Approved=false` / `m1Authorized=false` / `independentRestoreCertified=false`.
+- `qa/v152-rpc7/private-fourrow-ledger-cli.cjs`: local-only STDIN wrapper around V14.4.3 and RPC.6, emits generic Owner/Store lint status without returning raw UUIDs or records. It does **NOT** verify signatures or authorize hosted backfill.
+
+### Private Windows usage — no connection to hosted
+
+Run in a trusted PowerShell terminal where the archive exists, after obtaining this Draft branch locally:
+
+```powershell
+$archive = Read-Host 'Existing archive path'
+$pgRestore = Read-Host 'pg_restore.exe full path'
+& .\qa\v152-rpc7\Inspect-TIEN404-RPC7-M0.ps1 `
+  -ArchivePath $archive `
+  -RecoveryScope APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN `
+  -PgRestoreExe $pgRestore
+```
+
+For a known prior SHA and byte-count receipt, the operator may also pass `-ExpectedSha256` and `-ExpectedBytes`. Those must be taken from the **existing independently controlled private H11R receipt**, not copied from unreviewed conversation claims. If prior hash/bytes differ, the script reports `LOCAL_ARCHIVE_BASELINE_MISMATCH` and exits nonzero. This script is read-only and does **not** require a PostgreSQL connection string.
+
+The sanitized local receipt is saved by default under `$env:LOCALAPPDATA\TIEN404\private-evidence`, outside the Git repository. It includes SHA/size **locally**; never upload the receipt, raw archive, TOC, tenant/owner IDs, JWT, passwords or customer data to public GitHub or CI. The terminal prints only coverage counts, comparison booleans and the mandatory M0/M1 DENY.
+
+If an existing private Owner-to-Store four-row JSON ledger has been separately authorized and prepared offline, the operator can run:
+
+```powershell
+Get-Content -LiteralPath '<PRIVATE_LEDGER_PATH>' -Raw |
+  node .\qa\v152-rpc7\private-fourrow-ledger-cli.cjs
+```
+
+The output is only generic lint status. **Never create Store ownership by guessing from Tenant owner counts, SKU, chatbot messages or model output.**
+
+### CI acceptance and scope
+
+- Existing RPC.7 28 cases, new local SHA/TOC receipt 14 cases, reused RPC.6 24 + V14.4.3 36 + ADV.6C backup 6 + RPC.5 preflight 18 = **126/126 Node PASS**.
+- GitHub CI also ran a **PowerShell end-to-end synthetic test** with a fake local archive and a fake `pg_restore --list` executable. It generated a local-only JSON receipt and asserted `m0Approved=false`, `m1Authorized=false`. No real archive or hosted DB was accessed by this CI.
+- The hosted M0/M1 eligibility job remains intentionally RED `NO_GO`. This is a policy denial, **not** evidence that a real backup or Store Owner mapping has been verified.
+- QA on Ubuntu PowerShell 7 does **not** claim full compatibility with every Windows PowerShell 5.1 environment; final local Windows operator run remains outstanding.
+- Since the real archive is not mounted in this session, **actual M0 recovery acceptance remains BLOCKED**.
+- No change to Supabase hosted permissions, RLS, database, n8n Published, Cloudflare, production credentials or Zalo sends.
+
+**Checkpoint remains OPEN DRAFT / SOURCE-ONLY TESTED / HOSTED M0-M1 NO-GO.**
