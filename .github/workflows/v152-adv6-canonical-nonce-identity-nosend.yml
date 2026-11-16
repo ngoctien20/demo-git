@@ -53,7 +53,7 @@ jobs:
           assert 'ENABLE ROW LEVEL SECURITY' in sql
           assert 'REVOKE ALL' in sql
           assert not re.search(r'^\s*GRANT\b',sql,re.M|re.I)
-          assert 'SECURITY DEFINER' not in sql
+          assert not re.search(r'^\s*(?:CREATE|ALTER)\s+FUNCTION\b',sql,re.M|re.I)
           assert 'public.action_nonce_claims' not in sql
           assert "ON CONFLICT (nonce_key_hash) DO NOTHING" in pg
           assert 'RETURNING nonce_key_hash' in pg
