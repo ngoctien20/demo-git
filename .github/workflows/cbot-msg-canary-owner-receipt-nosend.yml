@@ -31,6 +31,8 @@ jobs:
           node -e "JSON.parse(require('node:fs').readFileSync('qa/cbot-messenger-canary/NO_SEND_MANUAL_N8N_CANARY_WORKFLOW.json','utf8'))"
       - name: Run new no-write graph isolation and user receipt contracts
         run: node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+      - name: Actual inactive n8n manual QA execution #4177 evidence (not a provider send)
+        run: node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
       - name: Regression prior real Messenger receipt, Merchant configuration and CBOT identity
         run: |
           node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
