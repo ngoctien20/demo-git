@@ -30,7 +30,7 @@ jobs:
       - name: Reuse inherited V16.0/V16.1 42 synthetic gateway tests
         run: |
           node --test qa/v16-hybrid/hybrid-core.test.mjs
-      - name: Static safety checks: no real API calls, credentials, deployment or live write
+      - name: 'Static safety checks — no external API, secrets, deployment or writes'
         run: |
           python3 - <<'PY'
           from pathlib import Path
