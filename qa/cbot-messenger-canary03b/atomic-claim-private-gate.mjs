@@ -19,7 +19,7 @@ const BANNED_KEYS=new Set(['psid','sender_id','recipient_id','page_id',
  'verified','approved','authorization','credential','token']);
 const keys=['contract','source','app_role','page_full_control',
  'app_page_messages_subscription','qa_recipient_binding','qa_consent',
- 'independent_reviewer','owner_final_patch_approval','exact_published_sha',
+ 'independent_reviewer','owner_final_patch_approval','exact_published_version',
  'rollback_private_snapshot','atomic_backend_verified','live_canary_sent'];
 export function assessPrivateProofRecord(record){
  const reasons=[];
@@ -27,7 +27,7 @@ export function assessPrivateProofRecord(record){
  Object.keys(record).some(k=>!keys.includes(k)||BANNED_KEYS.has(k))||
  record.contract!=='T404_CANARY03B_PRIVATE_EVIDENCE_V1'||
  record.source!=='PUBLIC_REDACTED_GATE_ONLY'||
- record.exact_published_sha!==BASE.published_version||
+ record.exact_published_version!==BASE.published_version||
  record.app_role!=='ADMIN_UI_OBSERVED'||
  record.page_full_control!=='OWNER_ATTESTED'||
  record.live_canary_sent!==false)
