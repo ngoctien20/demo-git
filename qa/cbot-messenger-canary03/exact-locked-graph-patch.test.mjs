@@ -81,7 +81,7 @@ test('QA-block node emits zero items and has no outgoing Send connection',()=>{
  assert.equal(r.drop_path_reaches_sender,false);
  assert.equal(r.changes.add_connections[NEW.drop],undefined);
 });
-test('Prepare's real Loop item pairing contract must be kept unchanged',()=>{
+test("Prepare's real Loop item pairing contract must be kept unchanged",()=>{
  const r=patched();noGo(r);
  const p=baseline.nodes.find(x=>x.name==='Prepare Messenger Reply');
  assert.match(p.parameters.jsCode,/context\.currentRunIndex/);
