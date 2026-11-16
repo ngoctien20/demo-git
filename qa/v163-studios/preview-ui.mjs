@@ -4,6 +4,7 @@ import {createCostCenter} from './cost-center.mjs';
 import {previewQueue} from './priority-dashboard.mjs';
 import {createHandoffPreview} from './human-handoff.mjs';
 import {build132Manifest,planAbLab,aggregateAbRows} from './model-ab-lab.mjs';
+import {SINGLE_CASES,MULTI_PACK,MANIFEST_METADATA} from './manifest-132.mjs';
 /** Browser preview: QA-only, ephemeral, no fetch/storage, not merchant auth. */
 const byId=id=>document.getElementById(id);
 const store=()=>byId('store').value;
@@ -74,11 +75,10 @@ byId('handoff-close').addEventListener('click',safe(()=>{
  out('handoff-result',handoff.resolve(ctx('staff'),{case_id:'QA_CASE_DEMO',resolution:'RESOLVED_QA'}));
 }));
 byId('lab-preview').addEventListener('click',safe(()=>{
- const single=Array.from({length:96},(_,i)=>({case_id:'QA'+String(i+1).padStart(2,'0')}));
- const multi=Array.from({length:36},(_,i)=>({case_id:'QA'+String(i+1).padStart(2,'0'),turn_count:2}));
- const plan=planAbLab({manifest:build132Manifest({single,multi})});
+ const plan=planAbLab({manifest:build132Manifest({single:SINGLE_CASES,multi:MULTI_PACK})});
  out('lab-result',{case_count:plan.cases,models:plan.candidates,
   planned_evaluations:plan.planned_evaluations,
   scorecard:aggregateAbRows(plan.rows),actual_api_calls:plan.actual_api_calls,
-  note:'Synthetic manifest; 36 multi turns are placeholders, not original dataset'});
+  note:'Metadata-only manifest verified against CSV structure: 71 turns; 9 cases contain only one turn',
+  manifest_stats:MANIFEST_METADATA});
 }));
