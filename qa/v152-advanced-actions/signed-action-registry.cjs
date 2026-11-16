@@ -122,6 +122,11 @@ function createRegistry({keyRing,activeKid,resolveVerifiedContext,authorize,nonc
       if(ctx[k]!==data[k])fail('ACTION_BINDING_MISMATCH');
     }
     await authorized('CONSUME',ctx,data.action,data.resource_ref);
+    // Recheck after potentially slow async identity/authorization I/O. An action
+    // that expired while waiting cannot claim a nonce or proceed downstream.
+    const recheck=getNow();
+    if(!nowValid(recheck)||data.exp<=recheck||data.iat>recheck+MAX_CLOCK_SKEW_MS)
+      fail('ACTION_EXPIRED_OR_FUTURE');
     // Secure production adapter MUST atomically claim nonce in persistent DB/DO.
     // No execute/send happens here, even on success.
     const key=stableKey(data);
