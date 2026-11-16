@@ -18,8 +18,8 @@ Created restricted local files **outside the GitHub tree**:
 
 ## 3. Public additive implementation
 - \`qa/v164e-review/freeze_private_canary.py\`: operator-local CLI for exactly 8 frozen case IDs, source 132-case shape, explicit no-provider-send flag, reject non-allowlisted extra fields, unexpected actual model output, altered turn count, missing redacted source, duplicate keys, invalid SHA/per-case format; makes review packet 0600 in private directory with no-overwrite. Prints only counts to terminal.
-- \`qa/v164e-review/test_freeze_private_canary.py\`: **27 synthetic tests**, including injected secret field, missing no-send flag, unexpected actual model reply, proof of no human QA PASS, privacy flags, directory/file mode, frozen tags and 42-request denominator.
-- \`.github/workflows/v164e-private-review-no-send.yml\`: 27 new Python tests + 20 previous Python + 425 previous Node = **472 UNIQUE offline assertions** if CI green. All GitHub tests are synthetic; no user source CSV/JSON in repository or CI. Human privacy/paid-provider job intentionally SKIPPED.
+- \`qa/v164e-review/test_freeze_private_canary.py\`: **28 synthetic tests**, including injected secret field, missing no-send flag, unexpected actual model reply, proof of no human QA PASS, privacy flags, directory/file mode, frozen tags and 42-request denominator.
+- \`.github/workflows/v164e-private-review-no-send.yml\`: 28 new Python tests + 20 previous Python + 425 previous Node = **473 UNIQUE offline assertions** if CI green. All GitHub tests are synthetic; no user source CSV/JSON in repository or CI. Human privacy/paid-provider job intentionally SKIPPED.
 - This handoff document and private metadata contain no private message or key.
 
 ## 4. Real account entitlement cannot be inferred
