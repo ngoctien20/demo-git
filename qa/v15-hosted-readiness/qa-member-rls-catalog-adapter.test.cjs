@@ -153,6 +153,16 @@ test('invalid NaN, negative, exponent and fractional VND prices fail closed',()=
  assert.equal(safePrice('123000'),123000);
  assert.equal(safePrice(123000),123000);
 });
+test('QA price cap matches the actual Supabase products constraint',()=>{
+ assert.equal(safePrice(1000000000000),1000000000000);
+ assert.equal(safePrice('1000000000000'),1000000000000);
+ assert.equal(safePrice(1000000000001),null);
+ assert.equal(safePrice('1000000000001'),null);
+});
+test('database can store zero but merchant QA quote requires approved free-item policy',()=>{
+ assert.equal(safePrice(0),null);
+ assert.equal(safePrice('0'),null);
+});
 test('invalid negative and noninteger stock fails closed',()=>{
  for(const v of [-1,NaN,Infinity,'5',1.5,2147483648])assert.equal(safeStock(v),null,String(v));
  assert.equal(safeStock(0),0);assert.equal(safeStock(5),5);
