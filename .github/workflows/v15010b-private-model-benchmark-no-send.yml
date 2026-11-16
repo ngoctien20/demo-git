@@ -1,0 +1,52 @@
+name: TIEN404 V15.0-10B Private Model Benchmark Gate (NO PAID CALLS)
+
+on:
+  push:
+    branches:
+      - work/v15010b-private-model-measurement-gate-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15010b-model-benchmark/**'
+      - '.github/workflows/v15010b-private-model-benchmark-no-send.yml'
+      - 'docs/ai-handoff/TIEN404_V15_0_10B_*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-readiness:
+    name: Benchmark 96+36 Metadata / Cost / Quality Gate — Offline Only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify unrun private evaluator syntax
+        run: |
+          node --check qa/v15010b-model-benchmark/private-benchmark-contract.cjs
+          node --check qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
+      - name: Offline benchmark gating 96+36 and synthetic receipts
+        run: node --test qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
+      - name: Existing Shop Knowledge and Commerce QA regressions
+        run: |
+          node --test qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
+          node --test qa/v15-model-lab/private-dataset-gate.test.cjs
+      - name: Enforce no real model requests, no raw conversation artifact and no provider send
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v15010b-model-benchmark/private-benchmark-contract.cjs').read_text()
+          forbidden=('fetch(', 'axios(', 'https.request(', 'http.request(', 'new OpenAI(',
+              'process.env.', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY',
+              'ZALO_BOT_TOKEN', 'sendMessage(', 'executeWorkflow(')
+          for x in forbidden: assert x not in src, f'forbidden: {x}'
+          assert 'can_call_paid_model:false' in src
+          assert 'actual_billed_cost_usd:null' in src
+          assert 'real_model_quality_certified:false' in src
+          print('PASS: zero real inference, source-only metering, no hosted changes')
+          PY
