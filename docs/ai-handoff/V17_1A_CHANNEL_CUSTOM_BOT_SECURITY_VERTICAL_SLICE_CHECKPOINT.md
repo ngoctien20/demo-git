@@ -22,23 +22,28 @@ Messenger A and B, Zalo B, Website A, and cross-Tenant Messenger C all use the S
 Security: Incoming tenant_id/store_id/bot_id, verification_status and unexpected credentials cannot authorize Store choice. Tool authorization re-resolves channel binding; there is no self-asserted Bot/Store trust. Only catalog_read is allowed. Orders, price writes, LLM calls, vendor network calls and outbound sends are absent/disabled. Returned outbound includes source installation and customer scope, MOCK_ONLY status. Replay checks use in-memory per-installation idempotency, not durable atomic cross-worker acceptance. Trace excludes private message text. Fake HMAC fixture keys are NOT genuine Meta/Zalo/Website webhook verification and must never be used in hosted runtime.
 
 ## TESTED vs NOT TESTED
-- Source local Node.js tests and five smoke scenarios were run before GitHub commit; capture the actual new GitHub Actions case count at final HEAD.
-- No real n8n execution ID exists for this new module, and no actual Meta/Zalo/Website message was delivered.
+- GitHub Actions run #43907907031 and PR run #43907993837 at source HEAD a9c39316f0ec9660ad0bc49264fae8a07b6292c1 SUCCESS: 83/83 Node QA tests, 5/5 Node synthetic smoke and static no-network/source guard.
+- NEW n8n staging workflow DCj7mQbovyYNf7Li was created and executed manually in Personal / 90_QA - DIAGNOSTICS. It is INACTIVE, 4 nodes, version 1874c324-a7bc-46c4-a92e-5edfa46a805f, no assigned credentials. Manual execution #4197 status SUCCESS, returned 5/5 QA_PASS_SYNTHETIC results: Messenger A price 159000, Messenger B price 259000, Zalo B price 259000, Website A price 159000, Messenger C (other Tenant) price 309000. Every output provider_signature_verified=false, hosted_store_rls_verified=false, outbound=MOCK_ONLY_NOT_SENT, model_calls=0, orders_written=0, provider_sends=0. No actual Meta/Zalo/Website message was delivered.
 - No real OpenAI/Google model was called. Mock answers are not LLM quality evidence.
 - No real Supabase Store RLS or Store ownership was accepted. No SQL mutation, data transfer or live customer tool was performed.
 - Production website and all Published n8n graphs unchanged.
 
 ## Release Gate and responsibility
-- SOURCE-ONLY synthetic QA: GO if CI succeeds.
-- INACTIVE n8n staging candidate: NOT IMPLEMENTED YET; next safe step to add after n8n preference/SDK review and no-send workflow contract.
+- SOURCE-ONLY synthetic QA: TESTED GitHub 83/83 + five smoke paths.
+- INACTIVE n8n staging QA: IMPLEMENTED + TESTED manual execution #4197, 5/5 synthetic paths, but NOT real channel adapters or hosted Store isolation.
 - Actual native channel signature/authority and outbound recipient: NOT VERIFIED for the new path.
 - HOSTED SAME-TENANT STORE A/B: NO-GO until real Owner, JWT-RLS, composite FKs, Store mapping and RPC audit from Store security track.
 - Real Commerce writes, live canary, model migration, Core Bot RELEASED: NO-GO.
 
 ## Immediate next implementation
-1. Wire a non-active QA workflow in n8n: synthetic input → trusted fixture registry → Custom Bot A/B profile → catalog-only fake data → response mock; get execution proof. Do not attach five legacy writer tools.
-2. On the same API contract, compare Messenger staging ingress and Zalo router, then add Website installation verification.
+1. Retain the new inactive 4-node n8n manual-only QA workflow as a tested staging checkpoint; do not attach the five legacy writer tools or publish it.
+2. Audit native inbound Meta/Zalo verification and Page/OA ownership; in a separate no-send staging candidate, wire the trusted server-side channel installation registry to the same Custom Bot/Core contract (without migrating fake Store mapping to hosted). Obtain real n8n execution IDs for *native signed ingress* before any live send. Website must use a server-minted installation session.
 3. Independently reconcile merchant ownership and approve hosted Store migration in PR #237; private Page/OA ownership and one-shot live send authority in PR #239; model migration as separate cost-gated track.
 4. Allow only bounded staging read-only activities without real merchant context; use explicit independent approvals before hosted schema, production credentials, model billing or live sends.
 
 Rollback: close the additive child Draft PR. Parent gh-pages, PR #237/#239/#228, Published n8n versions, Supabase and production remain unchanged. No runtime rollback required because this phase has no live writes.
+
+## V17.1-A n8n operator checkpoint (verified)
+- Real workflow: https://ngoctien20.app.n8n.cloud/workflow/DCj7mQbovyYNf7Li ; INACTIVE manual-only, NO credential. QA folder: 90_QA - DIAGNOSTICS in Personal.
+- Workflow version 1874c324-a7bc-46c4-a92e-5edfa46a805f. Execution ID 4197 returned success with FIVE QA synthetic output records. It is not a production integration.
+- Rollback for n8n: keep the candidate inactive. To retire the QA candidate, archive it only after explicit operator permission; no need to change Messenger Published. No data Tables, live Orders, provider token or hosted migration were affected.
