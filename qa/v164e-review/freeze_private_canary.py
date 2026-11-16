@@ -61,6 +61,9 @@ def parse_private(path):
     and all(isinstance(x,str) and x.strip() for x in row["turns"]),"PRIVATE_TURNS_REQUIRED")
   require(isinstance(row.get("expected_behavior"),str),"PRIVATE_GOLD_TEXT_REQUIRED")
   byid[key]=row
+ expected_ids={f"SINGLE:QA{i:02}" for i in range(1,97)} | \
+  {f"MULTI:QA{i:02}" for i in range(1,37)}
+ require(set(byid)==expected_ids,"EXACT_SOURCE_CASE_ID_SET_REQUIRED")
  require(set(CASES).issubset(byid),"MISSING_8_CANARY_KEYS")
  return byid,hashbytes(raw)
 def make_packet(path):
