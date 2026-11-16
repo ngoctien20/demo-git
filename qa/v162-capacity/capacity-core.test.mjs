@@ -1,0 +1,43 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {sanitizeTrace,percentile,summarize,qualityVerdict,scheduleSynthetic,demandEstimate,LEVELS} from './capacity-core.mjs';
+import {scenario,fullGrid,grossMargin} from './cost-model.mjs';
+const m={trace_id:'QA_TRACE_A',tenant_tag:'QA_TENANT_A',store_tag:'QA_STORE_A',source_kind:'N8N_METADATA_READONLY',execution_mode:'webhook',execution_success:true,channel:'messenger',intent:'faq',error_class:null,provider_accepted:true,provider_delivery_verified:false,webhook_ack_ms:90,queue_wait_ms:null,ai_inference_ms:3000,catalog_read_ms:50,tool_execution_ms:null,provider_send_ms:450,customer_reply_e2e_ms:null,model_input_tokens:null,model_output_tokens:null,cost_actual_usd:null};
+for(const [name,fn] of [
+ ['01 sanitized read-only trace',()=>assert.equal(sanitizeTrace(m).webhook_ack_ms,90)],
+ ['02 secret field rejected',()=>assert.throws(()=>sanitizeTrace({...m,jwt:'s3cr3t'}),/PII_GUARD/)],
+ ['03 raw message rejected',()=>assert.throws(()=>sanitizeTrace({...m,message_text:'hello'}),/PII_GUARD/)],
+ ['04 raw phone rejected',()=>assert.throws(()=>sanitizeTrace({...m,phone:'0900000000'}),/PII_GUARD/)],
+ ['05 unscoped ID rejected',()=>assert.throws(()=>sanitizeTrace({...m,store_tag:'customer123'}),/PSEUDONYM/)],
+ ['06 provider send not delivery',()=>assert.throws(()=>sanitizeTrace({...m,provider_delivery_verified:true}),/PROOF_UNAVAILABLE/)],
+ ['07 E2E metric not inferred',()=>assert.throws(()=>sanitizeTrace({...m,customer_reply_e2e_ms:3100}),/NO_CUSTOMER_E2E/)],
+ ['08 no made-up cost',()=>assert.throws(()=>sanitizeTrace({...m,source_kind:'LOCAL_SYNTHETIC',cost_actual_usd:.02}),/MOCK_IS_NOT_REAL_COST/)],
+ ['09 no negative duration',()=>assert.throws(()=>sanitizeTrace({...m,queue_wait_ms:-2}),/INVALID_STAGE/)],
+ ['10 null telemetry preserved',()=>assert.equal(sanitizeTrace(m).queue_wait_ms,null)],
+ ['11 nearest-rank p95',()=>assert.equal(percentile([1,2,3,4,5],.95),5)],
+ ['12 missing empty p95 null',()=>assert.equal(percentile([],.95),null)],
+ ['13 mixed modes filtered',()=>{const x=sanitizeTrace(m),y=sanitizeTrace({...m,trace_id:'QA_TRACE_B',execution_mode:'manual',webhook_ack_ms:300});assert.equal(summarize([x,y],'webhook_ack_ms',{executionMode:'webhook'}).p95,90)}],
+ ['14 no prod certification from one run',()=>assert.equal(summarize([sanitizeTrace(m)],'webhook_ack_ms').productionCertified,false)],
+ ['15 summary sample gate',()=>assert.equal(summarize([sanitizeTrace(m)],'webhook_ack_ms').adequateForExploration,false)],
+ ['16 missing output not pass',()=>assert.equal(qualityVerdict({case_id:'QA01',actual_output:''}).status,'NOT_RUN')],
+ ['17 no execution evidence block',()=>assert.equal(qualityVerdict({case_id:'QA01',actual_output:'hello',reviewer_status:'PASS'}).status,'BLOCKED')],
+ ['18 security proof required for pass',()=>assert.equal(qualityVerdict({case_id:'QA01',actual_output:'hello',reviewer_status:'PASS',execution_evidence:'e',catalog_fixture_version:'v',tool_trace_evidence:'t'}).status,'BLOCKED')],
+ ['19 explicit reviewed fail preserved',()=>assert.equal(qualityVerdict({case_id:'QA01',actual_output:'wrong',reviewer_status:'FAIL',execution_evidence:'e',catalog_fixture_version:'v',tool_trace_evidence:'t'}).status,'FAIL')],
+ ['20 forged self-declared QA evidence does not PASS',()=>assert.equal(qualityVerdict({case_id:'QA01',actual_output:'correct',reviewer_status:'PASS',execution_evidence:'e',catalog_fixture_version:'v',tool_trace_evidence:'t',security_checked:true}).status,'BLOCKED')],
+ ['21 empty workload no fake throughput',()=>assert.equal(scheduleSynthetic({jobs:[]}).realThroughputRps,null)],
+ ['22 scheduler hard limit',()=>assert.throws(()=>scheduleSynthetic({jobs:[],slots:101}),/BAD_SCHEDULER/)],
+ ['23 fake store rejected',()=>assert.throws(()=>scheduleSynthetic({jobs:[{id:'QA_TASK_A',tier:'Economy',store:'real-shop-id'}]}),/BAD_SYNTHETIC/)],
+ ['24 three tiers represented',()=>{const jobs=LEVELS.map((tier,i)=>({tier,store:'QA_STORE_'+i,id:'QA_JOB_'+i}));const x=scheduleSynthetic({jobs,slots:3});assert.deepEqual(Object.values(x.perTier),[1,1,1])}],
+ ['25 per-Shop concurrent limit',()=>{const jobs=Array.from({length:8},(_,i)=>({tier:'Economy',store:'QA_STORE_A',id:'QA_JOB_'+i}));assert.equal(scheduleSynthetic({jobs,slots:8}).scheduled.length,1)}],
+ ['26 priority does not starve economy',()=>{const jobs=LEVELS.flatMap(tier=>Array.from({length:8},(_,i)=>({tier,store:'QA_STORE_'+tier.toUpperCase()+'_'+i,id:'QA_JOB_'+tier.toUpperCase()+'_'+i})));const a=scheduleSynthetic({jobs,slots:10});assert(a.perTier.Economy>=1&&a.perTier.Priority>=1)}],
+ ['27 no claim of real latency',()=>assert.equal(scheduleSynthetic({jobs:[]}).realLatencyP95Ms,null)],
+ ['28 demand estimate Little law',()=>assert.equal(demandEstimate(100,.3,.8,15).aiInFlightExpected,6)],
+ ['29 rejects ai ratio above one',()=>assert.throws(()=>demandEstimate(100,.3,1.2,15),/BAD_DEMAND/)],
+ ['30 model cost one turn',()=>assert.equal(scenario({shops:1,messagesPerShop:100,aiFraction:1,callsPerAiTurn:1,inputTokensPerCall:1200,outputTokensPerCall:180,inputUsdPerMillion:.25,outputUsdPerMillion:2}).apiUsd,.066)],
+ ['31 model price excludes cloud COGS',()=>assert.equal(scenario({shops:1,messagesPerShop:500,aiFraction:.2,callsPerAiTurn:1,inputTokensPerCall:1200,outputTokensPerCall:180,inputUsdPerMillion:.25,outputUsdPerMillion:2}).nonModelCogsUsd,null)],
+ ['32 60 scenario grid',()=>assert.equal(fullGrid({callsPerAiTurn:1,inputTokensPerCall:1200,outputTokensPerCall:180,inputUsdPerMillion:.25,outputUsdPerMillion:2}).length,60)],
+ ['33 repeat model calls add cost',()=>{const base={shops:1,messagesPerShop:500,aiFraction:.5,inputTokensPerCall:1200,outputTokensPerCall:180,inputUsdPerMillion:.25,outputUsdPerMillion:2};assert.equal(scenario({...base,callsPerAiTurn:2}).apiUsd,2*scenario({...base,callsPerAiTurn:1}).apiUsd)}],
+ ['34 retry cost accounted',()=>{const base={shops:1,messagesPerShop:100,aiFraction:1,callsPerAiTurn:1,inputTokensPerCall:1200,outputTokensPerCall:180,inputUsdPerMillion:.25,outputUsdPerMillion:2};assert.equal(scenario({...base,retryMultiplier:2}).apiUsd,2*scenario(base).apiUsd)}],
+ ['35 reject invalid negative cost',()=>assert.throws(()=>scenario({shops:1,messagesPerShop:500,aiFraction:.5,callsPerAiTurn:1,inputTokensPerCall:200,outputTokensPerCall:30,inputUsdPerMillion:-1,outputUsdPerMillion:2}),/INVALID_FINOPS/)],
+ ['36 no margin without full costs',()=>assert.equal(grossMargin(10,null),null)],
+ ['37 real margin requires verified inputs',()=>assert.equal(grossMargin(100,40),.6)]
+])test(name,fn);
