@@ -73,7 +73,9 @@ try {
     Stop-Safely "NODE_OR_PG_RESTORE_NOT_AVAILABLE"
   }
 } catch {
-  # Stage labels are constants, safe to show; never echo raw errors or paths.
+  # Report only the exception CLASS (never the message or private paths).
+  $safeErrorClass = [regex]::Replace([string]$_.Exception.GetType().Name,'[^A-Za-z0-9]','')
+  Write-Output ("CBOT08_PRECHECK_EXCEPTION_CLASS=" + $safeErrorClass)
   Stop-Safely ("RPC7_PREFLIGHT_FAILURE_" + $preflightStage)
 }
 # No archive read occurs during Preflight.
