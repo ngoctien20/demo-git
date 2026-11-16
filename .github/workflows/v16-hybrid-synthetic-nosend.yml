@@ -1,0 +1,62 @@
+name: TIEN404 V16 Hybrid Worker Queue Model Router Synthetic QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v160-v161-hybrid-worker-queue-model-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v16-hybrid/**'
+      - 'docs/ai-handoff/V16_0_V16_1_HYBRID_FAST_RESPONSE_NO_SEND_CHECKPOINT.md'
+      - '.github/workflows/v16-hybrid-synthetic-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-gateway:
+    name: Worker mock signed ingress / store isolation / quota / replay / 0 provider send
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate module syntax
+        run: |
+          node --check qa/v16-hybrid/hybrid-core.mjs
+          node --check qa/v16-hybrid/hybrid-core.test.mjs
+          node --check qa/v16-hybrid/worker.mjs
+      - name: Run 42 synthetic pure in-memory tests (no calls to provider/model/hosted)
+        run: node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Static absence of API clients, credentials and production deploy artifacts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v16-hybrid')
+          src=(root/'hybrid-core.mjs').read_text()
+          worker=(root/'worker.mjs').read_text()
+          test=(root/'hybrid-core.test.mjs').read_text()
+          docs=Path('docs/ai-handoff/V16_0_V16_1_HYBRID_FAST_RESPONSE_NO_SEND_CHECKPOINT.md').read_text()
+          assert len(re.findall(r"test\('",test))==42
+          assert "SYNTHETIC_ONLY_NO_SEND" in src
+          assert "V16_NO_LIVE_COMMERCE_OR_PROVIDER_EXECUTOR" in src
+          assert "/__qa/v16/event" in src
+          assert 'COMMERCE_BLOCKED' in src
+          assert 'NO SEND' in docs
+          assert 'NO HOSTED WRITE' in docs
+          assert not re.search(r'\bfetch\s*\(',src), 'External fetch in core'
+          for code in (src,worker):
+            for pattern in [r'\baxios\b',r'api\.openai\.com',r'generativelanguage\.googleapis\.com',
+                r'graph\.facebook\.com',r'\bprocess\.env\b',r'\bcreateClient\s*\(',r'\bservice_role\b',
+                r'@supabase/supabase-js',r'\bchild_process\b',r'R2\.put\s*\(',r'\blocalStorage\b']:
+              assert not re.search(pattern,code),pattern
+          assert not list(root.glob('wrangler.*'))
+          print('V16 SYNTHETIC ONLY / NO SEND / NO CLOUD / NO BILLING STATIC GATE: PASS')
+          PY
+      - name: Validate no configured cloud deployment or real credentials in this PR
+        run: |
+          if grep -RniE 'BEGIN PRIVATE KEY|sk-[A-Za-z0-9]{20}|Bearer [A-Za-z0-9]{20}' qa/v16-hybrid; then
+            echo "Potential real secret in V16 source"; exit 2
+          fi
+          echo "NO LLM, no Messenger/Zalo send, no hosted Supabase, no publish"
