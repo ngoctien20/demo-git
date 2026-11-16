@@ -69,7 +69,7 @@ jobs:
             r'\bfs\.',r'\bcreateHmac\s*\(',r'\bcreatePrivateKey\s*\(',
             r'\blocalStorage\b',r'\binnerHTML\b'):
             assert not re.search(pat,s),pat
-          assert "status:'NO_GO_PRIVATE_APPROVAL_REQUIRED'" in s
+          assert "blocked(errors,'NO_GO_PRIVATE_APPROVAL_REQUIRED')" in s
           assert 'EXTERNAL_CONTROLLER_REVIEWER_OPERATOR_ATTESTATION_PENDING' in s
           assert 'RECEIPT_REQUEST_SCOPE_BINDING_REQUIRES_TRUSTED_PRIVATE_REGISTRY' in s
           assert 'ADV6D_NO_HOSTED_PRIVILEGED_OPERATION' in s
@@ -77,6 +77,6 @@ jobs:
           assert 'rpcPrivilegeChangeAuthorized:false' in s
           assert 'productionAuthorized:false' in s
           assert 'NO HOSTED MUTATION' in doc
-          assert 'not a trusted' in doc.lower() or 'not cryptographically' in doc.lower() or 'not independently' in doc.lower()
+          assert 'are *not* cryptographically anchored' in doc.lower()
           print('ADV6D SAFE SOURCE-ONLY NO-GO: PASS')
           PY
