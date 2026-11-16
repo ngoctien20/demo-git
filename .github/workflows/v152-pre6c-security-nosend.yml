@@ -1,0 +1,67 @@
+name: TIEN404 PRE-ADV6C P0 P1 Security QA (SOURCE ONLY NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-pre6c-security/**'
+      - 'docs/ai-handoff/V15_2_PRE_ADV6C_*'
+      - '.github/workflows/v152-pre6c-security-nosend.yml'
+  push:
+    branches:
+      - work/v152-pre6c-security-p0p1-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pre6c-tool-security:
+    name: Tenant Store tool authorization and signed webhook abuse QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify contracts and 22 negative cases
+        run: |
+          node --check qa/v152-pre6c-security/pre6c-zero-trust-tool-boundary.cjs
+          node --check qa/v152-pre6c-security/pre6c-abuse-webhook-guard.cjs
+          node --check qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+      - name: Inherited canonical identity and signed action security regression
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+      - name: Inherited channel adapter and advanced presentation regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+      - name: Fail if source has live calls or accidental executable privilege migration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v152-pre6c-security')
+          files=[base/'pre6c-zero-trust-tool-boundary.cjs',
+                 base/'pre6c-abuse-webhook-guard.cjs']
+          sql=Path('docs/ai-handoff/V15_2_PRE_ADV6C_RPC_RLS_REMEDIATION_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          assert not re.search(r'^\s*(REVOKE|GRANT|ALTER|DROP|CREATE|UPDATE|INSERT|DELETE)\s+',sql,re.M|re.I)
+          assert 'PUBLIC,anon' in sql
+          assert 'store_memberships' in sql and 'store_id' in sql
+          for path in files:
+            src=path.read_text()
+            assert 'SYNTHETIC_NO_SEND' in src
+            for banned in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',
+              r'\bWebSocket\b',r'\bEventSource\b',
+              r'\beval\s*\(',r'\bchild_process\b',
+              r'\bprocess\.env\b',r'\bfs\.(?:write|append|unlink)',
+              r'\bexecuteQuery\s*\(',r'\bservice_role\b']:
+              assert not re.search(banned,src),f'{path}: {banned}'
+          assert 'ORDER_TOOL_EXECUTION_DISABLED' in files[0].read_text()
+          assert 'ARBITRARY_SQL_DISABLED' in files[0].read_text()
+          assert 'MODEL_CALL_DISABLED' in files[1].read_text()
+          assert 'PROVIDER_SEND_DISABLED' in files[1].read_text()
+          assert not Path('supabase/migrations/V15_2_PRE_ADV6C_RPC_RLS_REMEDIATION_DO_NOT_APPLY.sql').exists()
+          print('PASS: P0 P1 security contracts NO SEND, NO SQL, no executable hosted migration')
+          PY
