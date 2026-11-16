@@ -68,8 +68,11 @@ function decide({raw,shop,channel,studio=studioApi.createStudio(),api=studioApi}
   }
   // A semantic emphasis hint is only permitted when the policy actually generated that
   // role from trusted data. It may not invent warnings, discounts or price changes.
-  const emphasis=request.emphasis!=='NONE'&&base.plan.emphasis.includes(request.emphasis)?
+  let emphasis=request.emphasis!=='NONE'&&base.plan.emphasis.includes(request.emphasis)?
     request.emphasis:'NONE';
+  if(component==='TEXT'&&emphasis!=='NONE'){
+    emphasis='NONE';reasons.push('CHANNEL_OR_COMPONENT_CANNOT_APPLY_EMPHASIS');
+  }
   if(request.emphasis!=='NONE'&&emphasis==='NONE')reasons.push('UNTRUSTED_EMPHASIS_NOT_GROUNDED');
   // Suppress all style spans if model explicitly chose no emphasis or if there
   // is no channel-supported safe rich text preview for the selected component.
@@ -93,6 +96,17 @@ function decide({raw,shop,channel,studio=studioApi.createStudio(),api=studioApi}
   if(request.action!=='NONE'&&action==='NONE')
     reasons.push(request.action==='TRACK_ORDER'?'VERIFIED_CUSTOMER_IDENTITY_REQUIRED':
       'ACTION_NOT_AUTHORIZED_BY_POLICY');
+  // Restrict the preview controls to the one model-requested and policy-approved
+  // suggestion. Unrequested disabled controls must not appear as extra buttons.
+  render.buttons=(render.buttons||[]).filter(b=>b.id===action&&action!=='NONE');
+  render.cards=(render.cards||[]).map(c=>({...c,
+    buttons:(c.buttons||[]).filter(b=>b.id===action&&action!=='NONE')}));
+  // Text-only Zalo fallback should not expose additional menu actions merely
+  // because the underlying trusted compiler listed several candidates.
+  if(action==='NONE'&&['ZALO_BOT','ZALO_OA'].includes(channel)){
+    const menuStart=render.text.indexOf('\n1. ');
+    if(menuStart>=0)render.text=render.text.slice(0,menuStart);
+  }
   // No store-approved media registry or verified external URL is available.
   if(request.media!=='NONE')reasons.push('APPROVED_STORE_MEDIA_UNAVAILABLE');
   const modelSuggestionUsed=component!=='TEXT'||emphasis!=='NONE'||action!=='NONE';
