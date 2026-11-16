@@ -35,7 +35,10 @@ for(const b of document.querySelectorAll('button[data-tab]')){
 }
 byId('store').addEventListener('change',()=>{
  byId('store-scope').textContent='Shop synthetic: '+store()+' / '+tenant();
- options();byId('notice').textContent='Đã chuyển Shop QA, chưa có thay đổi dữ liệu thật.';
+ options();
+ // Critical UI privacy gate: transient results from previous Shop MUST NOT remain visible.
+ for(const key of ['faq','cost','queue','handoff','lab'])byId(key+'-result').textContent='Chưa thực hiện cho '+store();
+ byId('notice').textContent='Đã chuyển Shop QA; kết quả của Shop trước không còn hiển thị.';
 });
 const safe=(fn)=>()=>{try{byId('notice').textContent='';fn()}catch(e){byId('notice').textContent=String(e?.message||'QA_DENIED')}};
 byId('faq-draft').addEventListener('click',safe(()=>{
