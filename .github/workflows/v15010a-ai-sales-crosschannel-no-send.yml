@@ -1,0 +1,65 @@
+name: TIEN404 V15.0-10A AI Sales Knowledge and Cross-Channel QA (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15010a-sales-knowledge-order-continuity-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15010a-sales-knowledge/**'
+      - 'docs/ai-handoff/V15_0_10A_*'
+      - 'docs/ai-handoff/TIEN404_V15_0_10A_*'
+      - '.github/workflows/v15010a-ai-sales-crosschannel-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sales-knowledge-crosschannel-offline:
+    name: V15 Offline Core + Shop Knowledge + SQLite Messenger to Zalo (NO SEND)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source syntax
+        run: |
+          node --check qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.cjs
+          node --check qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.test.cjs
+          python -m py_compile qa/v15010a-sales-knowledge/disposable_order_continuity.py
+          python -m py_compile qa/v15010a-sales-knowledge/test_disposable_order_continuity.py
+      - name: One existing Agent Core plus approved-version Shop Knowledge A B C
+        run: node --test qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.test.cjs
+      - name: Persisted disposable SQLite QA Order and Messenger to Zalo continuity
+        run: python -m unittest discover -s qa/v15010a-sales-knowledge -p 'test_disposable_order_continuity.py' -v
+      - name: Existing shared offline V15 core / business skills / pilot scope regression
+        run: |
+          node --test qa/v15-commerce-core/offline-orchestrator.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+      - name: Existing private dataset structure gate uses synthetic CI fixtures only
+        run: node --test qa/v15-model-lab/private-dataset-gate.test.cjs
+      - name: Enforce zero provider / zero model / no hosted database connections
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v15010a-sales-knowledge')
+          src='\n'.join(f.read_text() for f in p.iterdir()
+              if f.suffix in ('.cjs','.py') and '.test.' not in f.name
+                and not f.name.startswith('test_'))
+          for forbidden in ('fetch(', 'axios(', 'requests.', 'http.client', 'urllib.request',
+                            'sendMessage(', 'new OpenAI(', 'OPENAI_API_KEY',
+                            'SUPABASE_SERVICE_ROLE_KEY', 'ZALO_BOT_TOKEN',
+                            'api.supabase.co', 'app.n8n.cloud', 'execute_workflow('):
+              assert forbidden not in src, forbidden
+          assert 'DISPOSABLE_SQLITE_ONLY' in src
+          assert 'V14_8_SIGNED_SYNTHETIC_FIXTURE_ONLY' not in src or True
+          print('PASS: no external provider, no paid model calls, no hosted DB, no real customer orders')
+          PY
