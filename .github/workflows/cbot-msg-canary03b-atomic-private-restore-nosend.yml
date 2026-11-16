@@ -1,0 +1,68 @@
+name: TIEN404 CBOT-MSG-CANARY-03B Atomic One-Shot × Redacted Recovery NO SEND
+on:
+  push:
+    branches:
+      - work/cbot-msg-canary03b-atomic-one-shot-private-recovery-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-canary03b/**'
+      - 'docs/ai-handoff/CBOT_MSG_CANARY03B_*'
+      - '.github/workflows/cbot-msg-canary03b-atomic-private-restore-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atom-and-recovery:
+    name: Private evidence NO-GO + 100-way synthetic one-shot + exact redacted rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and private source-only tests
+        run: |
+          node --check qa/cbot-messenger-canary03b/atomic-claim-private-gate.mjs
+          node --check qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.mjs
+          node --test qa/cbot-messenger-canary03b/atomic-claim-private-gate.test.mjs
+          node --test qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.test.mjs
+      - name: Exact parent 240 test suite, unmodified
+        run: |
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Static ensure no credentials, Meta Send, hosted SQL apply or publish
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          folder=Path('qa/cbot-messenger-canary03b')
+          files=[p for p in folder.glob('*.mjs') if not p.name.endswith('.test.mjs')]
+          source='\n'.join(p.read_text() for p in files)
+          stripped=re.sub(r'/\*[\s\S]*?\*/','',source)
+          for token in ('fetch(', 'axios(', 'process.env.', 'child_process',
+              'http.request(', 'sendMessage(', 'apply_migration(', 'publishWorkflow(',
+              'SUPABASE_SERVICE_ROLE_KEY','service_role'):
+              assert token not in stripped,token
+          proof=json.loads((folder/'private-evidence-redacted-status.json').read_text())
+          backup=json.loads((folder/'private-backup-restore-public-status.json').read_text())
+          assert proof['qa_recipient_binding']=='PRIVATE_EVIDENCE_NOT_PRESENT'
+          assert proof['atomic_backend_verified']=='PRIVATE_EVIDENCE_NOT_PRESENT'
+          assert backup['encrypted_archive_verified'] is False
+          assert backup['restore_dry_run'] is False
+          assert backup['production_backup_performed'] is False
+          sql=(folder/'ONE_SHOT_POSTGRES_REVIEW_ONLY.sql').read_text().lower()
+          assert 'on conflict (grant_id) do nothing' in sql
+          assert 'security invoker' in sql
+          assert 'revoke all' in sql
+          print('PASS: source-only; private missing evidence preserved; no credential/provider/DB writes')
+          PY
