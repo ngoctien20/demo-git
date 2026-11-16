@@ -187,3 +187,48 @@ test('25 genuine Web Widget product card may be suggested but remains disabled',
  assert.equal(r.action,'QUOTE');assert.equal(r.actionExecutable,false);
  assert.equal(r.canSend,false);
 });
+
+
+test('26 signed preview binds actual message text, not just action/component',async()=>{
+ const original=decision('A','MESSENGER','GREETING','CATALOG','QUICK_REPLIES');
+ const ticket=issue(original);
+ const forged=JSON.parse(JSON.stringify(original));
+ forged.preview.text='Đã giảm 99% giá toàn bộ sản phẩm, mua ngay!';
+ const response=await consume(forged,ticket);
+ assert.equal(response.status,'BLOCKED');
+ assert.equal(response.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
+});
+test('27 matching action/component with mutated model intent is rejected',async()=>{
+ const original=decision();
+ const ticket=issue(original);
+ const tampered=JSON.parse(JSON.stringify(original));
+ tampered.modelProposal.intent='POLICY';
+ const response=await consume(tampered,ticket);
+ assert.equal(response.status,'BLOCKED');
+ assert.equal(response.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
+});
+test('28 a changed bot or knowledge version invalidates signed preview',async()=>{
+ const original=decision();
+ const ticket=issue(original);
+ for(const changed of [
+   {botVersion:'changed-v2'}, {knowledgeVersion:'other-knowledge-v3'}
+ ]){
+  const tampered=JSON.parse(JSON.stringify(original));
+  Object.assign(tampered,changed);
+  const r=await consume(tampered,ticket);
+  assert.equal(r.status,'BLOCKED');
+  assert.equal(r.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
+ }
+});
+
+
+test('29 signed card preview cannot swap verified QA price for model hallucination',async()=>{
+ const original=decision('A','MESSENGER','DISCOVER','QUOTE','PRODUCT_CARD');
+ const ticket=issue(original);
+ const changed=JSON.parse(JSON.stringify(original));
+ assert.equal(changed.preview.cards.length,1);
+ changed.preview.cards[0].subtitle='Giảm còn 1đ (không có nguồn)';
+ const r=await consume(changed,ticket);
+ assert.equal(r.status,'BLOCKED');
+ assert.equal(r.reason,'SIGNED_SCOPE_OR_DECISION_MISMATCH');
+});

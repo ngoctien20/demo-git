@@ -49,8 +49,16 @@ function previewButton(decision,action){
  return buttons.some(b=>isPlain(b)&&b.id===action&&b.interactive===false&&b.requiresSignedServerAction===true);
 }
 function actionDigest(d,action){
- return sha(JSON.stringify({contract:d.contract,storeId:d.storeId,tenantId:d.tenantId,
-  channel:d.channel,action,selectedComponent:d.decision.selectedComponent}));
+ // Bind the ENTIRE trusted presentation, not only store/channel/component.
+ // Earlier digest permitted a different intent/text with the same action
+ // and component to reuse a signed QA preview token.
+ return sha(JSON.stringify({
+  contract:d.contract,lifecycle:d.lifecycle,mode:d.mode,
+  source:d.source,tenantId:d.tenantId,storeId:d.storeId,shop:d.shop,
+  channel:d.channel,botVersion:d.botVersion,knowledgeVersion:d.knowledgeVersion,
+  modelProposal:d.modelProposal,decision:d.decision,preview:d.preview,
+  action,releaseAuthorized:d.releaseAuthorized
+ }));
 }
 function scopeOk(decision,action,context){
  if(!validContext(context)||!previewButton(decision,action))return false;
