@@ -1,0 +1,82 @@
+name: TIEN404 V15.2 ADV6D Private Signer Authority & RPC Decision QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/adv6d-*'
+      - 'docs/ai-handoff/V15_2_ADV6D_*'
+      - '.github/workflows/v152-adv6d-private-signer-rpc-noexec.yml'
+  push:
+    branches:
+      - work/v152-adv6d-private-signer-rpc-approval-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-authority-no-go:
+    name: 50 independent signer / Controller / Operator / RPC remediation tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax validation
+        run: |
+          node --check qa/v152-advanced-actions/adv6d-private-authority-decision.cjs
+          node --check qa/v152-advanced-actions/adv6d-private-authority-decision.test.cjs
+      - name: 50 ADV6D independent private authority negative tests
+        run: node --test qa/v152-advanced-actions/adv6d-private-authority-decision.test.cjs
+      - name: Inherited ADV6C private signer receipt verification
+        run: node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+      - name: Inherited ADV6B and ADV6B1 security evidence gates
+        run: |
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+          node --test qa/v152-advanced-actions/hosted-metadata-triage.test.cjs
+      - name: Inherited ADV6 Gateway and ADV5 signed action security
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Show PUBLIC non-confidential NO-GO decision only
+        run: |
+          node - <<'NODE'
+          const g=require('./qa/v152-advanced-actions/adv6d-private-authority-decision.cjs');
+          const r=g.reviewCombined();
+          if(r.decision.approvalDecision!=='NOT_AUTHORIZED'||
+             r.decision.status!=='NO_GO_PRIVATE_APPROVAL_REQUIRED'||
+             r.decision.hostedWriteAuthorized!==false||
+             r.decision.backupExportAuthorized!==false||
+             r.decision.rpcPrivilegeChangeAuthorized!==false||
+             r.decision.productionAuthorized!==false)
+            process.exit(2);
+          console.log(JSON.stringify({
+            contract:g.REQUEST,status:r.decision.status,
+            decision:r.decision.approvalDecision,
+            signerStatus:r.signerAuthority.status,rpcStatus:r.rpcRisk.status,
+            hostedOperationExecuted:false,realSignerCertified:false,
+            privateBackupExportPerformed:false
+          }));
+          NODE
+      - name: Static zero-network, zero-export, zero-hosted-mutation checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v152-advanced-actions/adv6d-private-authority-decision.cjs').read_text()
+          doc=Path('docs/ai-handoff/V15_2_ADV6D_PRIVATE_SIGNER_RPC_DECISION_CHECKPOINT.md').read_text()
+          for pat in (r'\bfetch\s*\(',r'\baxios\s*\(',r'\bXMLHttpRequest\b',
+            r'\bWebSocket\b',r'\bprocess\.env\b',r'\bchild_process\b',
+            r'\bfs\.',r'\bcreateHmac\s*\(',r'\bcreatePrivateKey\s*\(',
+            r'\blocalStorage\b',r'\binnerHTML\b'):
+            assert not re.search(pat,s),pat
+          assert "status:'NO_GO_PRIVATE_APPROVAL_REQUIRED'" in s
+          assert 'EXTERNAL_CONTROLLER_REVIEWER_OPERATOR_ATTESTATION_PENDING' in s
+          assert 'RECEIPT_REQUEST_SCOPE_BINDING_REQUIRES_TRUSTED_PRIVATE_REGISTRY' in s
+          assert 'ADV6D_NO_HOSTED_PRIVILEGED_OPERATION' in s
+          assert 'backupExportAuthorized:false' in s
+          assert 'rpcPrivilegeChangeAuthorized:false' in s
+          assert 'productionAuthorized:false' in s
+          assert 'NO HOSTED MUTATION' in doc
+          assert 'not a trusted' in doc.lower() or 'not cryptographically' in doc.lower() or 'not independently' in doc.lower()
+          print('ADV6D SAFE SOURCE-ONLY NO-GO: PASS')
+          PY
