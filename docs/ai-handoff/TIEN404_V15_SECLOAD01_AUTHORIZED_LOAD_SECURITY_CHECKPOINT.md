@@ -113,3 +113,37 @@ A real system throughput must be tested separately for webhook ack, full AI, too
 **Rollback:** close the child Draft PR; no n8n/hosted/Meta rollback necessary because unchanged.
 
 **Next checkpoint:** `V15-SECLOAD-02 — Hosted Store Ownership Proof × Privileged RPC Security Review × Bounded Staging Concurrency Metrics`.
+
+
+### VII. Verified actual GitHub Actions and synthetic metrics — 17 Nov 2026 JST
+
+**Exact observed source commit:** `a31558da4d136be3789eb2724bffd0e9c1d6f273` (before this checkpoint-only documentation update).  
+[GitHub Actions #43911644287](https://github.com/ngoctien20/demo-git/actions/runs/43911644287): **COMPLETED SUCCESS, 2/2 jobs**.
+
+- **New V15-SECLOAD security controls:** **31/31 PASS**, including three new synthetic L9 AI outage, L10 backend outage and prompt-injection-as-admin negative cases.
+- **New load-report contract tests:** **3/3 PASS**.
+- **Inherited PR #239 and CBOT regression:** **294/294 PASS**.
+- **Total executed Node.js source test cases:** **328/328 PASS**, without production/backend/provider calls.
+- **Load harness generated exactly 600 synthetic requests** in one Node.js process, all with read-only mock price and mock AI reply, 0 failures, 0 actual Meta/Zalo messages, 0 real Orders, 0 paid AI API calls. The JSON is downloadable from the **OFFLINE-SYNTHETIC-NOT-PRODUCTION** artifact on the Actions run.
+
+| Synthetic level | Simulated conversations | Requests | In-process mock p95 (ms) | In-process mock RPS |
+|---|---:|---:|---:|---:|
+| L1 | 1 | 40 | 10.18 | 107.39 |
+| L2 | 5 | 50 | 10.12 | 536.67 |
+| L3 | 10 | 60 | 10.31 | 1,058.89 |
+| L4 | 25 | 100 | 9.83 | 2,614.26 |
+| L5 | 50 | 150 | 9.98 | 5,125.80 |
+| L6 | 100 | 200 | 10.67 | 8,974.32 |
+
+**Very important:** The extremely high mock RPS at high concurrency is an expected artifact of a 9 ms delayed in-process mock with no network/AI/database; these values have **ZERO evidentiary value for n8n/Meta real capacity**. They only demonstrate that the test harness can schedule and process the indicated synthetic event count and preserve in-memory isolation. Do not use for SLA, billing or production launch.
+
+### VIII. Additional current read-only auth and frontend scope facts
+
+- New Supabase metadata-only inspection: **20/20 public tables have PostgreSQL RLS enabled**; **zero** public tables both disabled RLS and grant anon/authenticated SELECT. This is a positive configuration fact, **not** proof each RLS policy correctly limits cross-store rows.
+- Three flagged `public` `SECURITY DEFINER` RPCs have function-specific `search_path` settings (mitigates one class of unsafe resolution); still require privileged code/permission review. `qa_shop_b_zalo_claim` was **directly verified as callable by anon**, while `qa_owner_pairing` and `save_merchant_product` were callable by authenticated. Advisor warnings remain review gates; we did NOT execute their business logic or try exploit inputs.
+- Static GitHub `gh-pages` snapshot: `index.html` and `login.html` present. `index.html` contains inline scripts and **no HTML CSP metadata**, and no `_headers` file was found at the checked branch root. This does **not** prove the live CDN HTTP response lacks a CSP header (edge config was not inspected). Mark **P2 HTTP-header review pending**, not confirmed XSS.
+- Cloudflare account READ-ONLY listed Pages `tien404-ai-git-staging` (`gh-pages` production branch) and `tien404-ai-staging`. Their WAF rules, zone security posture and real rate limits were **not certified**.
+- n8n search found **123 workflows**, **19 active**. These include Messenger Published and multiple Zalo staging/shadow/Commerce/DEMO workflows; `active=true` does NOT mean production-ready or safely multi-tenant.
+- Render workspace was not confirmed for asset-specific connected read-only checks. Auth/dashboard deploy, logs, CSP response, billing protection and service quota are **not audited here**.
+
+**Updated checkpoint scope:** REAL metadata/history audit VERIFIED; **328/328 synthetic/source tests TESTED** at cited CI SHA; real concurrency/capacity, Store-level Commerce ownership, live AI model acceptance, privileged RPC exploitability, full service recovery and authorized pentest REMAIN BLOCKED/UNTESTED.
