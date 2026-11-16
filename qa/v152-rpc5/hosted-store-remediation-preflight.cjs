@@ -58,8 +58,9 @@ function privateEvidenceReview({baseline,records=[]}={}){
      if(!seen.has(name))blockers.push('MISSING_'+name);
    }
  }
+ const safeRecords=Array.isArray(records)?records:[];
  const unsupported=EVIDENCE.filter(domain=>
-   !records.some(r=>r?.domain===domain&&r.privateOperatorInspected===true&&
+   !safeRecords.some(r=>r?.domain===domain&&r.privateOperatorInspected===true&&
      r.independentReviewerInspected===true&&r.sourceTimestampVerified===true));
  if(unsupported.length)blockers.push('REAL_INDEPENDENT_INSPECTION_NOT_ESTABLISHED');
  return Object.freeze({
