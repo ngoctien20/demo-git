@@ -48,7 +48,7 @@ def parse_private(path):
   key=row.get("case_key")
   require(isinstance(key,str) and re.fullmatch(r"(SINGLE|MULTI):QA\d{2}",key),"QA_CASE_KEY_REQUIRED")
   require(key not in byid,"DUPLICATE_PRIVATE_CASE_KEY")
-  require(row.get("provider_transfer_allowed",False) is False or
+  require(row.get("provider_transfer_allowed",False) is False and
    row.get("send_to_provider_allowed",False) is False,"UNSAFE_PROVIDER_SEND_FLAG")
   require(isinstance(row.get("turns"),list) and row["turns"]
     and all(isinstance(x,str) and x.strip() for x in row["turns"]),"PRIVATE_TURNS_REQUIRED")
