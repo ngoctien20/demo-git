@@ -65,7 +65,7 @@ jobs:
         run: |
           psql -h 127.0.0.1 -U postgres -d qa_v15_cross_synthetic -X -v ON_ERROR_STOP=1 \
             -f qa/v15-sales-lite-p0/pg17-store-rls-isolation.sql
-      - name: Messenger confirmed order to linked Zalo: actual disposable DB joins only
+      - name: "Messenger confirmed order to linked Zalo: actual disposable DB joins only"
         env:
           PGPASSWORD: temporary_fixture_password_only
         run: |
