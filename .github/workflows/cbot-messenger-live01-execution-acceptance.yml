@@ -1,0 +1,51 @@
+name: TIEN404 CBOT-MSG LIVE01 Actual Webhook Evidence (NO SEND / NO WRITE)
+on:
+  push:
+    branches:
+      - work/cbot-msg-live01-readonly-execution-acceptance-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-live-uat/**'
+      - 'docs/ai-handoff/CBOT_MSG_LIVE01_*'
+      - '.github/workflows/cbot-messenger-live01-execution-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-execution-evidence:
+    name: Actual Messenger 4176 receipt + fail-closed custom QA source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify real execution receipt and privacy-safe claims
+        run: |
+          node --check qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+      - name: Revalidate parent Custom Studio NO-SEND and Merchant A/B isolation
+        run: |
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Confirm no raw Meta account, customer IDs or token fields are committed
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          receipt=Path('qa/cbot-messenger-live-uat/live01-observed-execution-4176.json')
+          d=json.loads(receipt.read_text())
+          assert d['execution_id']=='4176'
+          assert d['inbound_marker_matched'] is True
+          assert d['meta_send_message_id_returned'] is True
+          assert not any(d['business_tool_invocations'].values())
+          for key in ('page_id','psid','sender_id','recipient_id','access_token','app_secret',
+                'message_id','meta_message_id','customer_name','phone','headers','raw_body'):
+            assert key not in d,key
+          assert d['studio_draft_loaded_into_live_agent'] is False
+          assert d['provider_delivery_on_client_confirmed'] is False
+          assert d['authorized_live_config_change'] is False
+          print('PASS: real webhook receipt evidence, no PII, no live configuration authorization')
+          PY
