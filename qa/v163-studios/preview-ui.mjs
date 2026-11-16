@@ -49,6 +49,8 @@ byId('faq-review').addEventListener('click',safe(()=>{
 }));
 byId('faq-preview').addEventListener('click',safe(()=>out('faq-result',faq.preview(ctx('owner'),{
  key:byId('faq-key').value,now_ms:Date.now()}))));
+byId('faq-history').addEventListener('click',safe(()=>out('faq-result',faq.revisions(ctx('owner'),{
+ key:byId('faq-key').value}))));
 byId('cost-configure').addEventListener('click',safe(()=>{
  const p=cost.snapshot(ctx('owner'));
  out('cost-result',cost.configure(ctx('owner'),{cap_micro_usd:1000,expected_version:p.version||0}));
