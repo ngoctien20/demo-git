@@ -62,7 +62,7 @@ jobs:
           assert 'crypto' in identity and 'verifyJwt' in identity
           assert 'lookupActiveSession' in identity and 'lookupStoreMembership' in identity
           assert 'merchant_consent' in identity and 'recheckConsent' in identity
-          assert 'mode!==\\'SYNTHETIC_NO_SEND\\'' in gateway
+          assert "mode!=='SYNTHETIC_NO_SEND'" in gateway
           assert 'PROVIDER_SEND_DISABLED' in gateway and 'BUSINESS_EXECUTION_DISABLED' in gateway
           for s in [identity,pg,gateway]:
             for ban in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
