@@ -43,6 +43,12 @@ try {
   if ($LASTEXITCODE -ne 0 -or [string]$head -cne $PinnedRpc7Sha) {
     Stop-Safely "RPC7_PINNED_COMMIT_MISMATCH"
   }
+  # A pinned HEAD alone is not sufficient if local tracked scripts are modified.
+  # Reject all uncommitted/untracked files in the separate RPC7 checkout.
+  $dirty = @(& $gitCmd.Source -C $root status --porcelain --untracked-files=all 2>$null)
+  if ($LASTEXITCODE -ne 0 -or $dirty.Count -gt 0) {
+    Stop-Safely "RPC7_PINNED_CHECKOUT_NOT_CLEAN"
+  }
   $src = Join-Path $root "qa\v152-rpc7"
   $inspector = Join-Path $src "Inspect-TIEN404-RPC7-M0.ps1"
   foreach ($name in @(
