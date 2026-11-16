@@ -8,7 +8,9 @@ const VALUES=Object.freeze({
  SUPPORT_POLICY:['QA_HANDOFF_REQUIRED','QA_REPLY_LATER']
 });
 export function createFaqStudio(){
- const states=new Map();
+ const states=new Map(),audit=new Map();
+ const persist=(key,record)=>{states.set(key,record);const a=audit.get(key)||[];
+  a.push(Object.freeze({...record}));audit.set(key,a);};
  const id=(ctx,key)=>qaScope(ctx)+'|'+key;
  const checkKey=key=>assert(FAQ_KEYS.includes(key),'FAQ_KEY_NOT_ALLOWED');
  function edit(ctx,{key,value,expected_version}){
@@ -21,7 +23,7 @@ export function createFaqStudio(){
   assert(expected_version===version,'FAQ_VERSION_CONFLICT');
   const draft={version:version+1,key,value,scope:qaScope(ctx),creator:actor.actor_id,
    status:'DRAFT_QA',reviewer:null,reviewed_at_ms:null,valid_until_ms:null};
-  states.set(k,draft);
+  persist(k,draft);
   return Object.freeze({version:draft.version,status:draft.status,key,no_send:true});
  }
  function review(ctx,{key,version,approved,valid_until_ms,now_ms}){
@@ -34,7 +36,7 @@ export function createFaqStudio(){
    valid_until_ms-now_ms<=86400000,'FAQ_VERIFICATION_TTL_REQUIRED');
   const next={...draft,status:approved?'QA_REVIEWED':'QA_REJECTED',
     reviewer:reviewer.actor_id,reviewed_at_ms:now_ms,valid_until_ms};
-  states.set(k,next);
+  persist(k,next);
   return Object.freeze({version:next.version,status:next.status,key,no_send:true,production_published:false});
  }
  function preview(ctx,{key,now_ms}){
@@ -50,7 +52,10 @@ export function createFaqStudio(){
    version:v.version,key:v.key,status:v.status,creator:v.creator,reviewer:v.reviewer,
    valid_until_ms:v.valid_until_ms,source:'SYNTHETIC_MEMORY_ONLY'
   }):null;}
- return Object.freeze({edit,review,preview,history,stage:STAGE});
+ function revisions(ctx,{key}){qaContext(ctx,['owner','manager','reviewer']);checkKey(key);
+  return Object.freeze((audit.get(id(ctx,key))||[]).map(x=>Object.freeze({version:x.version,
+   status:x.status,creator:x.creator,reviewer:x.reviewer,valid_until_ms:x.valid_until_ms})));}
+ return Object.freeze({edit,review,preview,history,revisions,stage:STAGE});
 }
 export function faqStudioUiContract(){return Object.freeze({
  title:'FAQ Studio',tabs:['Ban nhap','Cho kiem tra','Da xac minh','Het hieu luc'],
