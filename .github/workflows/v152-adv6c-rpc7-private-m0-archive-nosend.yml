@@ -29,6 +29,16 @@ jobs:
           node --check qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
       - name: RPC.7 new archive M0/M1 22 synthetic tests
         run: node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+      - name: New local read-only SHA and TOC receipt contract regression (14 cases)
+        run: |
+          node --check qa/v152-rpc7/local-m0-archive-receipt.cjs
+          node --check qa/v152-rpc7/local-m0-archive-receipt-cli.cjs
+          node --check qa/v152-rpc7/private-fourrow-ledger-cli.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+      - name: Private four-row ledger stdin-only smoke with dummy shape
+        run: |
+          printf '{"projectRef":"ifxlvrhyjhbzbrkdsida","mode":"PRIVATE_OPERATOR_REVIEW_ONLY","rows":[]}' |
+            node qa/v152-rpc7/private-fourrow-ledger-cli.cjs
       - name: Reuse RPC6 real-scope recovery and V14.4.3 Owner private ledger
         run: |
           node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
@@ -41,6 +51,33 @@ jobs:
         run: |
           printf '12; 0 16000 TABLE DATA public products postgres\n' |
             node qa/v152-rpc7/local-archive-coverage-cli.cjs
+      - name: Windows operator wrapper E2E using FAKE archive and FAKE pg_restore (no DB)
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "rpc7_synthetic_only.backup"
+          [System.IO.File]::WriteAllText($archive, "synthetic text only, not a database")
+          $stub = Join-Path $env:RUNNER_TEMP "rpc7-pg-restore-mock"
+          @'
+          #!/bin/sh
+          if [ "$1" != "--list" ]; then exit 42; fi
+          printf '11; 0 16001 TABLE DATA public tenants qa\n'
+          printf '12; 0 16002 TABLE DATA public tenant_memberships qa\n'
+          printf '13; 0 16003 TABLE DATA public products qa\n'
+          printf '14; 0 16004 TABLE DATA public orders qa\n'
+          printf '15; 0 16005 TABLE DATA public customers qa\n'
+          '@ | Set-Content -LiteralPath $stub -Encoding utf8
+          & chmod +x $stub
+          $sha = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          $bytes = (Get-Item -LiteralPath $archive).Length
+          $dest = Join-Path $env:RUNNER_TEMP "rpc7-private-synthetic"
+          $result = & ./qa/v152-rpc7/Inspect-TIEN404-RPC7-M0.ps1 -ArchivePath $archive -RecoveryScope "APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN" -ExpectedSha256 $sha -ExpectedBytes $bytes -PgRestoreExe $stub -PrivateEvidenceDir $dest
+          if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) { throw "RPC7_LOCAL_PS_E2E_FAILED" }
+          if (-not ($result -contains "m0Approved=false") -or -not ($result -contains "m1Authorized=false")) { throw "RPC7_UNSAFE_OUTPUT" }
+          $receiptFile = @(Get-ChildItem -LiteralPath $dest -Filter "RPC7_M0_LOCAL_ARCHIVE_*.json")
+          if ($receiptFile.Count -ne 1) { throw "RPC7_SYNTHETIC_RECEIPT_MISSING" }
+          $receipt = Get-Content -LiteralPath $receiptFile[0].FullName -Raw | ConvertFrom-Json
+          if ($receipt.referenceHashMatches -ne $true -or $receipt.m0Approved -ne $false -or $receipt.m1Authorized -ne $false) { throw "RPC7_RECEIPT_INVARIANT_FAILED" }
+          Write-Output "PASS RPC7 synthetic local PowerShell archive inspection"
       - name: No hosted write, no exported archive, no sources of private row data
         run: |
           python3 - <<'PY'
