@@ -1,0 +1,59 @@
+name: TIEN404 V16.2 Performance Scorecard FinOps (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v162-capacity/**'
+      - 'docs/ai-handoff/V16_2_*'
+      - '.github/workflows/v162-capacity-nosend.yml'
+  push:
+    branches:
+      - work/v162-performance-finops-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v162-local-offline-contract:
+    name: V16.2 offline metrics, independent QA gate and fair scheduler
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and 37 V16.2 unit tests
+        run: |
+          node --check qa/v162-capacity/capacity-core.mjs
+          node --check qa/v162-capacity/cost-model.mjs
+          node --check qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+      - name: Reuse inherited V16.0/V16.1 42 synthetic gateway tests
+        run: |
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Static safety checks: no real API calls, credentials, deployment or live write
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v162-capacity')
+          files=[root/'capacity-core.mjs',root/'cost-model.mjs',root/'capacity-core.test.mjs']
+          for file in files:
+            body=file.read_text()
+            for pattern in [
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+              r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bexec\s*\(',r'\bspawn\s*\(',
+              r'\bfs\.(write|append|unlink)\w*\s*\('
+            ]:
+              assert not re.search(pattern,body), (str(file),pattern)
+          assert 'EXTERNAL_INDEPENDENT_ACCEPTANCE_REQUIRED' in files[0].read_text()
+          assert 'productionCertified:false' in files[0].read_text()
+          assert 'grossMargin:null' in files[1].read_text()
+          print('PASS: Offline-only, no provider/model/send/Cloudflare/Supabase mutation')
+          PY
+  hosted-production-certification:
+    name: Hosted capacity and Store JWT/RLS — NO GO until separate approval
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'NOT_RUN: no hosted benchmark, no model purchase, no delivery proof'
