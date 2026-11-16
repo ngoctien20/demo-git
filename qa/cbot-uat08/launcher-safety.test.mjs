@@ -50,3 +50,9 @@ test('12 catches local tool/archival failure without printing raw exception/path
  assert.doesNotMatch(source,/Write-Output\s+\$ArchivePath/i);
  assert.doesNotMatch(source,/Write-Output\s+\$_.Exception/i);
 });
+
+test('13 rejects dirty or injected working checkout even when pinned SHA matches',()=>{
+ assert.match(source,/gitCmd\.Source -C \$root status --porcelain --untracked-files=all/);
+ assert.match(source,/RPC7_PINNED_CHECKOUT_NOT_CLEAN/);
+ assert.ok(source.indexOf('status --porcelain')<source.indexOf('GetFullPath($ArchivePath)'));
+});
