@@ -1,0 +1,88 @@
+name: TIEN404 V15-SECLOAD-01 Independent Synthetic Load × Security Gates (NO SEND)
+on:
+  push:
+    branches:
+      - work/v15-secload01-independent-capacity-security-qa-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v15-secload01/**'
+      - 'docs/ai-handoff/TIEN404_V15_SECLOAD01_*'
+      - '.github/workflows/v15-secload01-offline-load-security-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  synthetic-load-and-security:
+    name: 1→100 Synthetic Conversations + HMAC/Store/Order/Rate Security (NO PROVIDER)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static source syntax and factual evidence JSON
+        run: |
+          node --check qa/v15-secload01/synthetic-security-core.mjs
+          node --check qa/v15-secload01/synthetic-load-harness.mjs
+          node --check qa/v15-secload01/synthetic-security-core.test.mjs
+          node --check qa/v15-secload01/synthetic-load-harness.test.mjs
+          node -e "JSON.parse(require('node:fs').readFileSync('qa/v15-secload01/read-only-factual-baseline-20261117.json','utf8'))"
+      - name: Run HMAC, per-Store BOLA, isolation, ordering and cost guards
+        run: node --test qa/v15-secload01/synthetic-security-core.test.mjs
+      - name: Run repeatable mock 1 5 10 25 50 100 concurrency gates
+        run: node --test qa/v15-secload01/synthetic-load-harness.test.mjs
+      - name: Measure six in-process synthetic workloads and preserve JSON
+        run: |
+          node qa/v15-secload01/synthetic-load-harness.mjs "$RUNNER_TEMP/tien404-secload01-synthetic-metrics.json"
+          node -e "let d=JSON.parse(require('node:fs').readFileSync(process.argv[1],'utf8'));if(d.requestCount!==600||d.providerMessagesSent!==0||d.realOrdersWritten!==0||d.realDbTransactions!==0) process.exit(1); console.log('PASS offline metrics 600 synthetic requests; all real provider/Orders 0')" "$RUNNER_TEMP/tien404-secload01-synthetic-metrics.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TIEN404-SECLOAD01-OFFLINE-SYNTHETIC-NOT-PRODUCTION
+          path: ${{ runner.temp }}/tien404-secload01-synthetic-metrics.json
+          retention-days: 14
+      - name: No real webhook, paid model, credential or database usage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('qa/v15-secload01')
+          code=(root/'synthetic-security-core.mjs').read_text()+(root/'synthetic-load-harness.mjs').read_text()
+          for banned in ('https://graph.facebook.com','SUPABASE_SERVICE_ROLE_KEY',
+             'ngoctien20.app.n8n.cloud','fetch(', 'axios(', 'http.request(',
+             'process.env.OPENAI_API_KEY', 'child_process', 'execSync(',
+             'create_workflow(', 'apply_migration('):
+            assert banned not in code,banned
+          print('PASS: offline mock only, no provider/backend target')
+          PY
+
+  inherited-security-regression:
+    name: Recheck previous 294 no-send / Pg approval source tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 03C 14 source evidence gates
+        run: node --test qa/cbot-messenger-canary03c/release-evidence-gate.test.mjs
+      - name: 03B 40 source tests
+        run: |
+          node --test qa/cbot-messenger-canary03b/atomic-claim-private-gate.test.mjs
+          node --test qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.test.mjs
+          node --test qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.test.mjs
+          node --test qa/cbot-messenger-canary03b/live01-signed-sender-send-match-4176.test.mjs
+      - name: Prior 240 Canary and Merchant QA contracts
+        run: |
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
