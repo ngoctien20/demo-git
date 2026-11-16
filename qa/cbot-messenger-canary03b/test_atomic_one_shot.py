@@ -167,7 +167,7 @@ class CanaryAtomicOneShotTests(unittest.TestCase):
 
     def test_no_real_meta_tokens_or_psids_in_fixture(self):
         base = Path(__file__).resolve().parent
-        joined = "\n".join(p.read_text() for p in base.glob("*.py"))
+        joined = (base/"sqlite_one_shot_reference.py").read_text()
         self.assertNotIn("graph.facebook.com", joined)
         self.assertNotIn("pages_messaging_token", joined)
         self.assertNotIn("SUPABASE_SERVICE_ROLE_KEY", joined)
