@@ -1,0 +1,132 @@
+name: TIEN404 V15.2 RPC.7 Private M0 Archive Coverage and M1 Readiness (NO EXPORT)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc7/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC7_*'
+      - '.github/workflows/v152-adv6c-rpc7-private-m0-archive-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc7-private-m0-archive-m1-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc7-archive-and-m0-source-qa:
+    name: Local archive TOC coverage, actual baseline, M0 and M1 source QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC.7 new parser + readiness syntax
+        run: |
+          node --check qa/v152-rpc7/local-archive-coverage.cjs
+          node --check qa/v152-rpc7/local-archive-coverage-cli.cjs
+          node --check qa/v152-rpc7/private-m0-evidence-resolution.cjs
+          node --check qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+      - name: RPC.7 new archive M0/M1 22 synthetic tests
+        run: node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+      - name: New local read-only SHA and TOC receipt contract regression (14 cases)
+        run: |
+          node --check qa/v152-rpc7/local-m0-archive-receipt.cjs
+          node --check qa/v152-rpc7/local-m0-archive-receipt-cli.cjs
+          node --check qa/v152-rpc7/private-fourrow-ledger-cli.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+      - name: Private four-row ledger stdin-only smoke with dummy shape
+        run: |
+          printf '{"projectRef":"ifxlvrhyjhbzbrkdsida","mode":"PRIVATE_OPERATOR_REVIEW_ONLY","rows":[]}' |
+            node qa/v152-rpc7/private-fourrow-ledger-cli.cjs
+      - name: Reuse RPC6 real-scope recovery and V14.4.3 Owner private ledger
+        run: |
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+      - name: Reuse earlier backup DENY and RPC5 Store preflight
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Local archive coverage CLI synthetic stdin smoke
+        run: |
+          printf '12; 0 16000 TABLE DATA public products postgres\n' |
+            node qa/v152-rpc7/local-archive-coverage-cli.cjs
+      - name: Windows operator wrapper E2E using FAKE archive and FAKE pg_restore (no DB)
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "rpc7_synthetic_only.backup"
+          [System.IO.File]::WriteAllText($archive, "synthetic text only, not a database")
+          $stub = Join-Path $env:RUNNER_TEMP "rpc7-pg-restore-mock"
+          @'
+          #!/bin/sh
+          if [ "$1" != "--list" ]; then exit 42; fi
+          printf '11; 0 16001 TABLE DATA public tenants qa\n'
+          printf '12; 0 16002 TABLE DATA public tenant_memberships qa\n'
+          printf '13; 0 16003 TABLE DATA public products qa\n'
+          printf '14; 0 16004 TABLE DATA public orders qa\n'
+          printf '15; 0 16005 TABLE DATA public customers qa\n'
+          '@ | Set-Content -LiteralPath $stub -Encoding utf8
+          & chmod +x $stub
+          $sha = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          $bytes = (Get-Item -LiteralPath $archive).Length
+          $dest = Join-Path $env:RUNNER_TEMP "rpc7-private-synthetic"
+          $result = & ./qa/v152-rpc7/Inspect-TIEN404-RPC7-M0.ps1 -ArchivePath $archive -RecoveryScope "APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN" -ExpectedSha256 $sha -ExpectedBytes $bytes -PgRestoreExe $stub -PrivateEvidenceDir $dest
+          if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) { throw "RPC7_LOCAL_PS_E2E_FAILED" }
+          if (-not ($result -contains "m0Approved=false") -or -not ($result -contains "m1Authorized=false")) { throw "RPC7_UNSAFE_OUTPUT" }
+          $receiptFile = @(Get-ChildItem -LiteralPath $dest -Filter "RPC7_M0_LOCAL_ARCHIVE_*.json")
+          if ($receiptFile.Count -ne 1) { throw "RPC7_SYNTHETIC_RECEIPT_MISSING" }
+          $receipt = Get-Content -LiteralPath $receiptFile[0].FullName -Raw | ConvertFrom-Json
+          if ($receipt.referenceHashMatches -ne $true -or $receipt.m0Approved -ne $false -or $receipt.m1Authorized -ne $false) { throw "RPC7_RECEIPT_INVARIANT_FAILED" }
+          Write-Output "PASS RPC7 synthetic local PowerShell archive inspection"
+      - name: No hosted write, no exported archive, no sources of private row data
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/v152-rpc7')
+          s=(root/'private-m0-evidence-resolution.cjs').read_text()
+          p=(root/'local-archive-coverage.cjs').read_text()
+          cli=(root/'local-archive-coverage-cli.cjs').read_text()
+          assert 'canApplyM1:false' in s and 'backupExportAuthorized:false' in s
+          assert 'executeM1(){throw' in s or "function executeM1(){throw" in s
+          assert 'completeRestoreProven:false' in p
+          assert 'fs.readFileSync(0' in cli and 'process.argv.length>2' in cli
+          for code in [s,p]:
+            for pattern in [r'\bfetch\s*\(',r'\bWebSocket\b',
+               r'\bprocess\.env\b',r'\bchild_process\b',
+               r'\bfs\.(?:write|append|unlink)',r'\bexecuteQuery\s*\(',
+               r'\bhttps?\.request\s*\(']:
+              assert not re.search(pattern,code),pattern
+          assert 'DO NOT' not in '' # source-only tests do not invoke remote services
+          print('PASS: RPC7 local-only parser and source-only M0/M1 denial')
+          PY
+
+  rpc7-hosted-m0-m1-no-go:
+    name: RPC.7 HOSTED M0/M1 AUTHORIZATION — NO GO (expected BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [rpc7-archive-and-m0-source-qa]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deny hosted backup and M1 without independently inspected archive + authority
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc6/hosted-fourrow-recovery-baseline.json');
+          const gate=require('./qa/v152-rpc7/private-m0-evidence-resolution.cjs');
+          const m0=gate.reviewM0Evidence({baseline:b});
+          const m1=gate.reviewM1Readiness({baseline:b,m0Review:m0});
+          console.log(JSON.stringify({
+            m0:m0.status,m0Blockers:m0.blockers.length,
+            m1:m1.status,m1Blockers:m1.blockers.length,
+            backupExportAuthorized:m0.backupExportAuthorized,
+            migrationAuthorized:m1.canApplyM1
+          }));
+          if(m0.status!=='M0_EVIDENCE_BLOCKED'||
+             m1.status!=='M1_MIGRATION_NO_GO'||m0.backupExportAuthorized||
+             m1.canApplyM1)throw Error('RPC7_UNSAFE_PRIVILEGED_OPERATION');
+          console.error('RPC7_HOSTED_M0_M1_NO_GO_PRIVATE_ARCHIVE_AND_OPERATOR_EVIDENCE_MISSING');
+          process.exitCode=3;
+          NODE
