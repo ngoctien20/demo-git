@@ -25,7 +25,9 @@ SELECT (SELECT count(*) FROM auth.users) AS users,
  (SELECT count(*) FROM public.tenants) AS tenants,
  (SELECT count(*) FROM public.tenant_memberships WHERE active) AS active_memberships,
  (SELECT count(*) FROM tien404_r1_qa.tenant_identity_map) AS qa_identity_map,
- (SELECT count(*) FROM tien404_r1_qa.owner_bindings WHERE status='confirmed') AS qa_confirmed_owner_bindings;
+ (SELECT count(*) FROM tien404_r1_qa.owner_bindings WHERE status='paired') AS qa_paired_owner_bindings,
+ (SELECT count(*) FROM tien404_r1_qa.owner_pairing_claims_v3 WHERE status='CONFIRMED') AS qa_synthetic_confirmed_claims,
+ (SELECT count(*) FROM tien404_r1_qa.owner_pairing_claims_v3 WHERE status='PENDING_OWNER_CONFIRMATION') AS qa_synthetic_pending_claims;
 
 -- 4) RPC security surface; report BOOLEAN privilege, never function bodies/secrets.
 SELECT n.nspname||'.'||p.proname AS function_name,p.prosecdef AS security_definer,
