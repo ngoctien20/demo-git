@@ -18,9 +18,7 @@
  * The model suggests semantic presentation. Trusted policy constructs all business text.
  * All preview actions remain non-executable and require a separate signed server gate.
  */
-const registry = require('./advanced-channel-registry.js');
-const policy = require('./advanced-presentation-policy.js');
-const studioApi = require('./studio-core.js');
+// Dependencies supplied by UMD factory (Node and browser share identical evaluator).
 
 const INPUT_CONTRACT='T404_PRESENTATION_PROPOSAL_V1';
 const OUTPUT_CONTRACT='T404_PRESENTATION_DECISION_V1';
