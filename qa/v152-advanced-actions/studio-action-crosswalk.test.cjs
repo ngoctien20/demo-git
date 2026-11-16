@@ -102,7 +102,7 @@ test('23 cannot supply arbitrary native provider payload',()=>{
 });
 test('24 model suggestion must not silently overwrite merchant config',()=>{
  const x=sample('A','MESSENGER','VIEW_CATALOG',
-   proposal('QUOTE',{action:'QUOTE'}));
+   proposal('DISCOVER',{action:'QUOTE'}));
  assert.equal(x.configuredAction.uiAction,'VIEW_CATALOG');
  assert.equal(x.suggestedModelAction,'QUOTE');
  assert.equal(x.suggestionMismatch,true);
