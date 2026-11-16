@@ -21,19 +21,27 @@
   const description=el('td');
   const heading=el('strong',id+' · '+item.name);description.append(heading);
   description.append(el('div',item.scope+' — '+item.steps));
-  const expected=el('td',item.expected);
+  const expected=el('td');
+  const expectedLabel=el('div','Kết quả mong đợi');
+  expectedLabel.className='uat-mobile-label';
+  expected.append(expectedLabel,document.createTextNode(item.expected));
   const statusTd=el('td');
   const select=el('select');
   select.id='uat_'+id;select.setAttribute('aria-label','Kết quả '+id);
   for(const [v,label] of Object.entries(statuses)){
    const option=el('option',label);option.value=v;select.append(option);
   }
-  statusTd.append(select);
+  const statusLabel=el('label','Kết quả tự đánh giá');
+  statusLabel.className='uat-mobile-label';statusLabel.htmlFor=select.id;
+  statusTd.append(statusLabel,select);
   const noteTd=el('td');
   const note=el('input');note.type='text';note.maxLength=280;
+  note.id='uat_note_'+id;
   note.autocomplete='off';note.placeholder='Chỉ ghi nhận xét, không ghi tên/SĐT khách';
   note.setAttribute('aria-label','Ghi chú '+id);
-  noteTd.append(note);
+  const noteLabel=el('label','Nhận xét (không bắt buộc)');
+  noteLabel.className='uat-mobile-label';noteLabel.htmlFor=note.id;
+  noteTd.append(noteLabel,note);
   const apply=()=>{
    try{form.update(id,select.value,note.value);refresh();$('uatNotice').textContent='Đã ghi trong bộ nhớ QA: '+id}
    catch(e){$('uatNotice').textContent='Bị chặn: '+e.message}
