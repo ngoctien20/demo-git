@@ -1,0 +1,82 @@
+{
+  "contract": "T404_V1611P2A_APPLICATION_ONLY_RECOVERY_SCOPE_AND_PROVIDER_COST_RECEIPT_V1",
+  "checkpoint_date": "2026-11-16",
+  "source_pr": 229,
+  "scope_basis": "USER_INSTRUCTED_TO_SKIP_AUTH_AND_STORAGE_FOR_CURRENT_APPLICATION_ARCHIVE_CHECKPOINT",
+  "current_scope": "APPLICATION_ARCHIVE_ONLY",
+  "application_archive_h11r": {
+    "status": "PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY",
+    "provenance": "PRIOR_LOCAL_H11R_CHECKPOINT_NOT_RETESTED_IN_THIS_ACTION",
+    "application_entries": 5,
+    "auth_entries": 0,
+    "storage_entries": 0,
+    "app_archive_accepted_with_limitations": true,
+    "standalone_full_service_restore_verified": false,
+    "scope_exclusions": [
+      {
+        "domain": "AUTH",
+        "decision": "DEFERRED_FOR_APPLICATION_ONLY_REVIEW",
+        "app_only_gate_blocking": false,
+        "full_service_gate_blocking": true
+      },
+      {
+        "domain": "STORAGE",
+        "decision": "DEFERRED_FOR_APPLICATION_ONLY_REVIEW",
+        "app_only_gate_blocking": false,
+        "full_service_gate_blocking": true
+      }
+    ],
+    "real_supabase_auth_jwt_uat": "NOT_RUN",
+    "real_hosted_data_restore": "NOT_RUN"
+  },
+  "current_supabase_organization": {
+    "name": "ngoctien20's Org",
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "plan": "free",
+    "tier": "tier_free",
+    "evidence_source": "READ_ONLY_SUPABASE_GET_ORGANIZATION_AND_GET_PROJECT",
+    "production_project_changed": false,
+    "development_branches": 0
+  },
+  "provider_cost_read_only": {
+    "consent": "USER_EXPLICITLY_APPROVED_READ_ONLY_GET_COST",
+    "status": "VERIFIED_READ_ONLY_ORGANIZATION_RESPONSE",
+    "branch": {
+      "type": "branch",
+      "recurrence": "hourly",
+      "amount_usd": 0.01344
+    },
+    "project": {
+      "type": "project",
+      "recurrence": "monthly",
+      "amount_usd": 0
+    },
+    "project_zero_is_all_in_price": false,
+    "resource_provisioned": false,
+    "payment_authorized": false,
+    "discount_tax_storage_egress_compute_backup_total": "NOT_VERIFIED",
+    "eligibility_physical_backup_and_restore": "NOT_VERIFIED",
+    "actual_backup_approved": false
+  },
+  "release_gates": {
+    "application_archive_review": "ACCEPTED_WITH_LIMITATIONS",
+    "database_hosted_recovery": "NO_GO",
+    "full_supabase_service_recovery": "NO_GO",
+    "store_level_jwt_rls": "NO_GO",
+    "production_commerce": "NO_GO"
+  },
+  "ongoing_security_requirements": [
+    "AUTH_AND_STORAGE_REQUIRE_SEPARATE_EVIDENCE_BEFORE_FULL_RECOVERY_RELEASE",
+    "STORE_OWNERSHIP_REAL_JWT_RLS_STILL_BLOCKED",
+    "OPERATOR_AND_REVIEWER_REAL_ATTESTATION_MISSING",
+    "HOSTED_BACKUP_AND_RESTORE_NEED_EXACT_WRITTEN_APPROVAL",
+    "NO_REAL_DATA_NO_PAID_PROJECT_NO_CREDENTIALS_NO_PROVIDER_SEND"
+  ],
+  "next_safe_action": "REVIEW_APPLICATION_ARCHIVE_ONLY_AND_PREPARE_SCOPED_OPERATOR_DOCUMENTATION_WITHOUT_HOSTED_CHANGES",
+  "source_only": true,
+  "hosted_sql_changed": false,
+  "hosted_backup_created": false,
+  "auth_restored": false,
+  "storage_objects_restored": false,
+  "full_service_certified": false
+}
