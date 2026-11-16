@@ -1,0 +1,148 @@
+name: TIEN404 CBOT-UAT-08 Windows M0 Operator Launcher NO HOSTED WRITE
+on:
+  push:
+    branches:
+      - work/cbot-uat08-windows-m0-operator-launcher-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat08/**'
+      - '.github/workflows/cbot-uat08-offline-m0-operator.yml'
+      - 'docs/ai-handoff/CBOT_UAT08_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-m0-operator:
+    name: Real PR198 pinned source + PowerShell offline launcher / source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: '4f7bef71f54ee17b88449026b90803ccf9743e30'
+          path: rpc7
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 12 new source checks
+        run: node --test qa/cbot-uat08/launcher-safety.test.mjs
+      - name: Inherit 341 source and synthetic regressions
+        run: |
+          node --test qa/cbot-uat07/source-evidence-adjudicator.test.mjs
+          node --test qa/cbot-uat06/private-m0-owner-native-gates.test.mjs
+          node --test qa/cbot-uat05/real-evidence-intake.test.mjs
+          node --test qa/cbot-uat04/trusted-rpc-replacement.test.mjs
+          node --test qa/cbot-uat04/private-recovery-hosted-preflight.test.mjs
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs
+          node --test qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Install local pg_restore CLI for negative input test only
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          command -v pg_restore
+          command -v pwsh
+      - name: Source-pinned local-only Preflight with ORIGINAL RPC7 PR198 code
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(git -C "$GITHUB_WORKSPACE/rpc7" rev-parse HEAD)
+          test "$actual" = '4f7bef71f54ee17b88449026b90803ccf9743e30'
+          result=$(pwsh -NoProfile -NonInteractive -File \
+            qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
+            -Mode Preflight -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
+            -PgRestoreExe pg_restore -NodeExe node)
+          echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_TOOLS_READY'
+          echo "$result" | grep -q 'CBOT08_RPC7_COMMIT_PINNED=true'
+          echo "$result" | grep -q 'CBOT08_ARCHIVE_INSPECTED=false'
+          echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
+          echo 'CBOT08 pinned original RPC7 source preflight: PASS, no archive read'
+      - name: Reject wrongly pinned Git checkout (no backup use)
+        shell: bash
+        run: |
+          set +e
+          result=$(pwsh -NoProfile -NonInteractive -File \
+            qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
+            -Mode Preflight -Rpc7Checkout "$GITHUB_WORKSPACE" \
+            -PgRestoreExe pg_restore -NodeExe node 2>&1)
+          code=$?
+          set -e
+          test "$code" = "3"
+          echo "$result" | grep -q 'CBOT08_REASON=RPC7_PINNED_COMMIT_MISMATCH'
+          echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
+          echo 'CBOT08 mismatched source rejected before archive read'
+      - name: Exercise original RPC7 code with SYNTHETIC local TOC fixture only
+        shell: bash
+        run: |
+          set -euo pipefail
+          export LOCALAPPDATA="$RUNNER_TEMP/uat08-private-local-fixture"
+          mkdir -p "$LOCALAPPDATA"
+          printf 'CI-DISPOSABLE-NON-DB-ARCHIVE\n' > "$RUNNER_TEMP/uat08-fake-archive.bin"
+          cat > "$RUNNER_TEMP/uat08-fake-pg-restore" <<'SH'
+          #!/bin/sh
+          if [ "$1" != "--list" ]; then exit 7; fi
+          printf '%s\n' \
+           '1; 0 101 TABLE DATA public tenants postgres' \
+           '2; 0 102 TABLE DATA public tenant_memberships postgres' \
+           '3; 0 103 TABLE DATA public products postgres' \
+           '4; 0 104 TABLE DATA public orders postgres' \
+           '5; 0 105 TABLE DATA public customers postgres'
+          SH
+          chmod 700 "$RUNNER_TEMP/uat08-fake-pg-restore"
+          result=$(pwsh -NoProfile -NonInteractive -File \
+            qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
+            -Mode InspectExistingArchive -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
+            -ArchivePath "$RUNNER_TEMP/uat08-fake-archive.bin" \
+            -PgRestoreExe "$RUNNER_TEMP/uat08-fake-pg-restore" -NodeExe node)
+          echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED'
+          echo "$result" | grep -q 'CBOT08_applicationEntries=5'
+          echo "$result" | grep -q 'CBOT08_authEntries=0'
+          echo "$result" | grep -q 'CBOT08_storageEntries=0'
+          echo "$result" | grep -q 'CBOT08_receiptSavedLocally=true'
+          echo "$result" | grep -q 'CBOT08_PRIVATE_RESTORE_WITNESSED=false'
+          echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
+          echo "$result" | grep -q 'CBOT08_HOSTED_MIGRATION_AUTHORIZED=false'
+          ! echo "$result" | grep -q "$RUNNER_TEMP"
+          test "$(find "$LOCALAPPDATA" -name 'RPC7_M0_LOCAL_ARCHIVE_*.json' -type f | wc -l)" = "1"
+          echo 'CBOT08 pinned RPC7 original inspector exercised on SYNTHETIC local fixture only'
+      - name: Reject corrupted local archive without exposing its path
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'NOT-A-POSTGRES-ARCHIVE\n' > "$RUNNER_TEMP/uat08-invalid-archive.bin"
+          set +e
+          result=$(pwsh -NoProfile -NonInteractive -File \
+            qa/cbot-uat08/Invoke-TIEN404-M0-ReadOnly.ps1 \
+            -Mode InspectExistingArchive -Rpc7Checkout "$GITHUB_WORKSPACE/rpc7" \
+            -ArchivePath "$RUNNER_TEMP/uat08-invalid-archive.bin" \
+            -PgRestoreExe pg_restore -NodeExe node 2>&1)
+          code=$?
+          set -e
+          test "$code" = "3"
+          echo "$result" | grep -q 'CBOT08_RESULT=BLOCKED'
+          echo "$result" | grep -q 'CBOT08_M0_ACCEPTED=false'
+          ! echo "$result" | grep -q 'uat08-invalid-archive'
+          echo 'CBOT08 actual pg_restore rejected corrupted synthetic file without path disclosure'
+      - name: Static no-provider/no-hosted-operations check
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path("qa/cbot-uat08")
+          script=(root/"Invoke-TIEN404-M0-ReadOnly.ps1").read_text()
+          no_comments='\n'.join(line for line in script.splitlines() if not line.lstrip().startswith('#'))
+          assert "RPC7_PINNED_COMMIT_MISMATCH" in no_comments
+          assert "APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN" in no_comments
+          assert "CBOT08_M0_ACCEPTED=false" in no_comments
+          assert "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false" in no_comments
+          for banned in (r'\bInvoke-RestMethod\b',r'\bInvoke-WebRequest\b',
+                         r'\bStart-Process\b',r'\bpg_dump\b',r'\bdocker\b',
+                         r'\bSet-AzKeyVaultSecret\b',r'\bALTER\s+TABLE\b',
+                         r'\bGRANT\s+EXECUTE\b',r'\bREVOKE\s+EXECUTE\b'):
+            assert not re.search(banned,no_comments,re.I),banned
+          print("CBOT-UAT08 current source: PINNED, LOCAL ONLY, NO HOSTED WRITE")
+          PY
