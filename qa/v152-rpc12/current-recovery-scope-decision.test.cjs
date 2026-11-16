@@ -31,12 +31,12 @@ test('02 owner has not yet chosen migration current-recovery scope',()=>{
 test('03 full-service selection fails because historical Auth is absent',()=>{
  const r=reviewRecoveryScope(packet('FULL_SERVICE'));
  assert.equal(r.status,'CURRENT_M0_RECOVERY_NO_GO');
- assert(r.blockers.includes('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH'));
+ assert(r.historicalScopeLimitations.includes('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH'));
 });
 test('04 app-only scope still demands external Auth/Storage and independent restore',()=>{
  const r=reviewRecoveryScope(packet('APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN'));
  assert.equal(r.status,'CURRENT_M0_RECOVERY_NO_GO');
- assert(r.blockers.includes('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_AND_INDEPENDENT_RESTORE_MISSING'));
+ assert(r.historicalScopeLimitations.includes('EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_REQUIRES_SEPARATE_REAL_PROOF'));
 });
 test('05 3 current Auth users cannot be silently treated as backed up',()=>{
  const p=packet();p.currentSnapshot.authUsers=0;
@@ -93,4 +93,12 @@ test('13 even asserted auth plan still cannot certify object bytes',()=>{
 test('14 no real export/restore entrypoint',()=>{
  assert.equal(CONTRACT,'T404_RPC12_CURRENT_RECOVERY_SCOPE_DECISION_V1');
  assert.throws(()=>executeCurrentRecovery(),/SEPARATE_APPROVAL/);
+});
+
+test('15 claimed new recovery point may be structurally reviewed, old H11R is still not independently restored',()=>{
+ const r=reviewRecoveryScope(packet('FULL_SERVICE'));
+ assert.equal(r.status,'CLAIMED_CURRENT_RECOVERY_PACKET_REQUIRES_EXTERNAL_VERIFICATION');
+ assert(r.historicalScopeLimitations.includes('HISTORICAL_ARCHIVE_DOES_NOT_COVER_CURRENT_AUTH'));
+ assert.equal(r.m0Approved,false);
+ assert.equal(r.canApplyM1,false);
 });
