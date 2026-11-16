@@ -82,3 +82,12 @@ No RPC business function was invoked. No change to GRANT/REVOKE/RLS/JWT/credenti
 **Release decision:** `V15_SECLOAD02_HOSTED_MULTISTORE=NO_GO`, `V15_SECLOAD02_RPC_SOURCE_REVIEW=PARTIAL_GUARDS_OBSERVED`, `V15_SECLOAD02_MANUAL_STAGING_QA=4_OF_4_PASS`, `V15_SECLOAD02_CONCURRENT_LOAD=NOT_PROVEN`.
 
 **Next milestone:** `V15-SECLOAD-03 — Authorized Disposable JWT Store Isolation × Security Definer Helper Review × Isolated QA Webhook Load Acceptance`. Keep separate approval for any hosted migration or provider send.
+
+
+### 6. Independent exact-head CI and final immutable evidence
+
+**Initial code/evidence HEAD:** `69254554e9e4a7729529d8c2e04506b3cb079cc8` in Draft PR #246. [Actions #43970170658](https://github.com/ngoctien20/demo-git/actions/runs/43970170658) **COMPLETED SUCCESS, both jobs**: **21/21 new Store/RLS/RPC/actual n8n QA receipt tests PASS**, **328/328 inherited source tests PASS**, **349/349 total**, **0 failures**. These are **source and signed receipt checks only**; the CI did not remotely execute privileged RPC, perform a real Meta Send or submit additional n8n requests.
+
+**Post-test read-only verification:** Messenger Published still ACTIVE `Z7FdV7uDvApfbURQ`, 27 nodes, version `d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92`. New n8n `ZHJmhlRwAiNEtujb` still **INACTIVE**, two nodes, zero credentials. Fresh SQL read-only: hosted `stores=0,store_memberships=0,core store_id columns=0` after test. No rollback of live services needed because production was not touched.
+
+**Important acceptance boundary:** A real async API tool invocation **is not evidence of overlapping n8n executions** unless timestamps demonstrate overlap; `#4200–#4203` peak observed overlap=1, so `STAGING_CONCURRENT_LOAD=NOT_CERTIFIED` even though 4/4 manual smoke PASS. Store A/B/C same-tenant authorization still NOT TESTED on hosted. Security Definer role warning is review of source grants, not successful exploit. **All high-risk release gates stay NO-GO.**
