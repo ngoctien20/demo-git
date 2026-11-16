@@ -1,0 +1,40 @@
+name: TIEN404 CBOT-UAT-01 Cross-Channel Readiness (NO SEND)
+on:
+  push:
+    branches:
+      - work/cbot-uat01-crosschannel-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v167-merchant/cbot-uat01-readiness.test.mjs'
+      - '.github/workflows/cbot-uat01-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cross-channel-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert 22 synthetic readiness / fail-closed cases
+        run: |
+          node --check qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+      - name: Preserve 65 existing V16.7 merchant-registry regressions
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: No external call / send / cloud write / secret usage
+        run: |
+          python3 - <<'PY'
+          import pathlib,re
+          p=pathlib.Path('qa/v167-merchant/cbot-uat01-readiness.test.mjs')
+          src=p.read_text()
+          assert src.count("test('")==22
+          for banned in [r'\bfetch\s*\(',r'\baxios\b',r'createClient\s*\(',
+                         r'\bprocess\.env\b',r'\bservice_role\b',r'graph\.facebook\.com',
+                         r'api\.openai\.com',r'\bdelete\s+from\b',r'\bupdate\s+public\.']:
+              assert not re.search(banned,src,re.I), f'Unsafe fixture: {banned}'
+          print('SYNTHETIC-ONLY / NO-SEND / NO-DB-WRITE: PASS')
+          PY
