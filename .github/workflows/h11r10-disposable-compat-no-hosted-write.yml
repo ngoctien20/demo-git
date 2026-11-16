@@ -1,0 +1,75 @@
+name: TIEN404 H11R10 — Trusted RPC, Private Recovery, Store Compatibility (DISPOSABLE ONLY)
+on:
+  push:
+    branches:
+      - work/h11r10-rpc-cutover-consent-store-compat-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/h11r10/**'
+      - 'docs/ai-handoff/H11R10_*'
+      - '.github/workflows/h11r10-disposable-compat-no-hosted-write.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  metadata-fail-closed:
+    name: RPC / Auth / Store independent-approval metadata negative QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify runtime / policy tests
+        run: |
+          node --check qa/h11r10/approval-gates.cjs
+          node --check qa/h11r10/approval-gates.test.cjs
+          node --test qa/h11r10/approval-gates.test.cjs
+      - name: Guard against hosted changes, executors and fabricated signatures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('qa/h11r10/approval-gates.cjs').read_text()
+          sql=Path('qa/h11r10/pg17-store-migration-compatibility.sql').read_text()
+          doc=Path('docs/ai-handoff/H11R10_CHECKPOINT.md').read_text()
+          assert 'ifxlvrhyjhbzbrkdsida' not in sql
+          assert r'\ir ../h11r9/pg17-same-tenant-role-gap.regression.sql' in sql
+          assert "ROLLBACK;" in sql and "BEGIN;" in sql
+          assert "H11R10_DISPOSABLE_PG17_STORE_COMPATIBILITY_PASS_NOT_HOSTED" in sql
+          assert all(s in code for s in ("canRevokeRpc:false","canExportAuth:false","canApplyStoreMigration:false"))
+          assert all(s in doc for s in ("NOT AUTHORIZED","NO-GO","NOT VERIFIED","UNASSIGNED"))
+          for regex in (r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',r'\bchild_process\b',
+                        r'\bXMLHttpRequest\b',r'\bprocess\.env\b',r'\bexecute_sql\b'):
+              assert not re.search(regex,code),regex
+          print('PASS: no live action path / real authorization / hosted SQL in CI')
+          PY
+  disposable-pg17-legacy-compat:
+    name: Disposable PostgreSQL17 legacy-to-Store FK, SKU and no-backfill QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: h11r10_disposable_ci_not_secret
+          POSTGRES_DB: h11r10_ephemeral
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d h11r10_ephemeral"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ephemeral PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Run inherited Store QA plus legacy compatibility and ROLLBACK
+        env:
+          PGPASSWORD: h11r10_disposable_ci_not_secret
+        run: |
+          psql -h 127.0.0.1 -U postgres -d h11r10_ephemeral -X -v ON_ERROR_STOP=1 -f qa/h11r10/pg17-store-migration-compatibility.sql
