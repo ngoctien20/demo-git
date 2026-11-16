@@ -1,0 +1,91 @@
+{
+  "contract": "T404_V1610_PRIVATE_AUTHORITY_HOSTED_PREFLIGHT_V1",
+  "generated_for": "PRIVATE_OPERATOR_REVIEW_ONLY",
+  "source_only": true,
+  "store_real_ids": "NOT_PROVIDED",
+  "disposable_git_postgres_fixture": "SEPARATE_FROM_HOSTED",
+  "intent": "Identify each required independent human/hosted evidence item. No raw credentials/PII or backup contents here.",
+  "security_gates": [
+    {
+      "code": "MERCHANT_OWNER_AUTHORITY",
+      "owner_role": "Merchant Owner",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "CHANNEL_PROVIDER_OWNERSHIP",
+      "owner_role": "Page/OA Owner",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "REAL_SUPABASE_OWNER_JWT_A_B",
+      "owner_role": "Independent Security Reviewer",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "SAME_TENANT_DIFFERENT_STORE_READ_WRITE_DENIAL",
+      "owner_role": "Independent Security Reviewer",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "LEGACY_FOUR_ROW_STORE_MAPPING",
+      "owner_role": "Migration Operator & Merchant Owner",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "ENCRYPTED_HOSTED_BACKUP_DIGEST",
+      "owner_role": "Backup Operator",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "DISPOSABLE_HOSTED_BACKUP_RESTORE",
+      "owner_role": "Backup Operator & Independent Reviewer",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "RPC_CALLER_ATTESTATION_AND_REVOCATION",
+      "owner_role": "Security Reviewer & Production Operator",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "MERCHANT_DPA_AND_RETENTION",
+      "owner_role": "Merchant and TIEN404 Authorized Officer",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "N8N_CLOUD_SAAS_LICENSE",
+      "owner_role": "n8n Authorized Commercial Representative",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    },
+    {
+      "code": "MERCHANT_CANARY_NO_DUAL_WRITER",
+      "owner_role": "Commerce Integration Owner",
+      "status": "MISSING",
+      "private_evidence_locator": null
+    }
+  ],
+  "artifact_rules": {
+    "allowed_source_public": "sanitized labels only",
+    "real_proof": "private operator vault outside GitHub",
+    "reviewer_independence": "human authenticated external role, cannot be auto claimed",
+    "no_passwords": true,
+    "no_tokens": true,
+    "no_customer_data": true
+  },
+  "disposable_ci_result": "SEE_EXACT_COMMIT_ACTIONS",
+  "hosted_sql_applied": false,
+  "hosted_backup_downloaded": false,
+  "real_jwt_verified": false,
+  "hosted_rls_certified": false,
+  "release_decision": "NO_GO",
+  "rollback": "Close Draft PR without touching hosted services"
+}
