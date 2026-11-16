@@ -59,7 +59,7 @@ test('client-supplied store, tenant, user role and approved flags do not control
  assert.equal(ctx.store,'SHOP-A');
  assert.equal(x.quote(ctx,'A002').price,159000);
 });
-test('unknown synthetic object cannot forge trusted workflow identity',()=>{
+test('unknown synthetic object cannot forge trusted workflow identity',async()=>{
  const x=createQACommerce();
  const forged={_brand:'SERVER_ISSUED_QA',tenant:'TENANT-A',store:'SHOP-A',
   sender:'USER-A',channel:'MESSENGER',page:'PAGE-A',messageId:'QA-MID-01'};
