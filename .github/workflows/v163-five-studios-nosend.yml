@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   five-studios-offline-qa:
-    name: 64 offline security and functional assertions + 79 inherited
+    name: 69 offline security and functional assertions + 79 inherited
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -36,7 +36,7 @@ jobs:
           import pathlib,re
           root=pathlib.Path('qa/v163-studios')
           sources=list(root.glob('*.mjs'))
-          assert len(sources)>=7
+          assert len(sources)>=9
           forbidden=[
             r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
             r'\bprocess\.env\b',r'\bchild_process\b',
@@ -50,6 +50,8 @@ jobs:
           lab=(root/'model-ab-lab.mjs').read_text()
           assert "scored_pass:0" in lab and "actual_api_calls:0" in lab
           assert 'real_model_quality_certified:false' in lab
+          assert 'single_turn_cases_in_multi_pack' in lab
+          assert 'total_turns_in_multi_pack' in (root/'manifest-132.mjs').read_text()
           assert 'persistent:false' in (root/'cost-center.mjs').read_text()
           assert "real_staff_notified:false" in (root/'human-handoff.mjs').read_text()
           print('PASS no live provider sends, no model API, no hosted writes and no fabricated QA PASS')
