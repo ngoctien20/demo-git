@@ -1,0 +1,83 @@
+name: TIEN404 V15.2 ADV1-ADV2 Channel Registry & Browser QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV1_ADV2_*'
+      - '.github/workflows/v152-adv1-adv2-registry-qa.yml'
+  push:
+    branches:
+      - work/v152-adv1-adv2-capability-registry-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV1_ADV2_*'
+      - '.github/workflows/v152-adv1-adv2-registry-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  component-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax
+        run: |
+          for file in qa/v147-custom-studio/advanced-*.js qa/v147-custom-studio/advanced-*.cjs; do node --check "$file"; done
+      - name: 40 ADV2 registry unit tests
+        run: node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+      - name: 30 ADV1 presentation policy unit tests
+        run: node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: Prior V14.7 regression
+        run: |
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+          node --test qa/v147-custom-studio/messenger-adapter-inheritance.test.cjs
+      - name: Static security gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v147-custom-studio')
+          scripts=[base/p for p in ('advanced-channel-registry.js','advanced-registry-view.js','advanced-preview.js','advanced-presentation-policy.js')]
+          content='\n'.join(p.read_text() for p in scripts)
+          html=(base/'advanced-preview.html').read_text()
+          for s in ("connect-src 'none'","img-src 'none'","frame-src 'none'","form-action 'none'"):
+              assert s in html,s
+          for s in ('advanced-channel-registry.js','advanced-registry-view.js','advanced-presentation-policy.js'):
+              assert s in html,s
+          for forbidden in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',r'\bEventSource\b',r'\b(localStorage|sessionStorage)\b',r'\binnerHTML\b',r'\b(eval|new Function)\s*\('):
+              assert not re.search(forbidden,content),forbidden
+          assert 'canSend:false' in (base/'advanced-channel-registry.js').read_text()
+          assert 'canPublish:false' in (base/'advanced-presentation-policy.js').read_text()
+          assert 'requiresSignedServerAction:true' in content
+          assert 'UNTRUSTED_MODEL_FIELDS' in content
+          print('PASS static no-send/no-write/DOM/CSP guards')
+          PY
+  browser-local:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA-only Chromium
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Launch disposable local static source
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v152-adv2-local.log 2>&1 &
+          sleep 2
+      - name: ADV1/ADV2 browser QA four widths and 3 stores
+        run: node qa/v147-custom-studio/advanced-registry-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv2-advanced-registry-local-390px
+          path: qa-artifacts-v152-adv2/
+          if-no-files-found: ignore
