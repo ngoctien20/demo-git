@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TIEN404 V16.7 Merchant Configuration and Shared n8n Runtime (PROPOSED SOURCE CONTRACT)",
+  "version": "16.7.0-source-only",
+  "release_status": "EXPERIMENTAL",
+  "compatibility": {
+    "v16_hybrid_gateway": "EXTERNAL_ATTESTATION_REQUIRED",
+    "v147_custom_bot_studio": "REFERENCE_ONLY_NOT_MERGED",
+    "v163_economy_studios": "REFERENCE_ONLY_NOT_MERGED"
+  },
+  "trust_boundary": {
+    "input_to_runtime": "Only a server-verified provider-account-to-Store binding signed by the trusted gateway. A free-form user or LLM field cannot authorize tenant/store.",
+    "implementation_status": "SYNTHETIC_PROOF_ONLY",
+    "runtime_cannot_access": [
+      "plain_text_provider_token",
+      "service_role",
+      "raw_customer_PII",
+      "unverified_store_id",
+      "hosted_orders"
+    ],
+    "n8n_caller_requirements": [
+      "server_to_server_auth",
+      "signed_scoped_capability_with_expiry",
+      "approved_role_and_shop",
+      "anti_replay",
+      "verified_merchant_entitlement"
+    ],
+    "commerce_state": "BLOCKED_UNTIL_HOSTED_OWNER_JWT_RLS_BACKUP_AND_ATOMIC_WRITER"
+  },
+  "merchant_profile": {
+    "key": [
+      "tenant_id",
+      "store_id"
+    ],
+    "fields": [
+      "business_name",
+      "industry",
+      "public_contact_phone",
+      "public_address",
+      "business_hours",
+      "timezone",
+      "holidays",
+      "business_status",
+      "subscription_plan",
+      "subscription_status",
+      "merchant_profile_version"
+    ]
+  },
+  "bot_config": {
+    "key": [
+      "tenant_id",
+      "store_id",
+      "channel",
+      "bot_version"
+    ],
+    "fields": [
+      "bot_name",
+      "greeting_message",
+      "speaking_style",
+      "language",
+      "wholesale_enabled",
+      "sales_rules",
+      "operating_hours_behavior",
+      "handoff_policy",
+      "model_policy",
+      "prompt_version",
+      "knowledge_version",
+      "industry_profile_version",
+      "policy_version",
+      "approval_state",
+      "qa_evidence_ref"
+    ],
+    "never_client_editable": [
+      "tenant_id",
+      "store_id",
+      "policy_version",
+      "credential_reference",
+      "approval_state",
+      "publish_state"
+    ]
+  },
+  "channel_registry": {
+    "key": [
+      "channel_type",
+      "verified_provider_account_id"
+    ],
+    "fields": [
+      "tenant_id",
+      "store_id",
+      "provider_account_proof_ref",
+      "credential_reference_opaque",
+      "connection_status",
+      "last_verified_at",
+      "provider_policy_version"
+    ],
+    "secret_storage": "EXTERNAL_PRIVATE_VAULT_ONLY",
+    "sample_data": "NONE_REAL"
+  },
+  "entitlements": {
+    "scopes": [
+      "Economy",
+      "Standard",
+      "Priority"
+    ],
+    "fields": [
+      "subscription_status",
+      "allowed_channels",
+      "allowed_features",
+      "request_rate",
+      "max_parallel_ai",
+      "tokens_limit",
+      "monthly_ai_spend_micro_usd",
+      "order_management_enabled",
+      "inventory_enabled",
+      "handoff_enabled"
+    ],
+    "enforcement": "SERVER_SIDE_ATOMIC_DURABLE_STATE_REQUIRED"
+  },
+  "shared_n8n_request": {
+    "contract": "T404_SHARED_N8N_ACTION_V1",
+    "fields": [
+      "event_id",
+      "event_type",
+      "tenant_id",
+      "store_id",
+      "channel",
+      "trusted_capability_ref",
+      "idempotency_key",
+      "trace_ref",
+      "entity_version",
+      "occurred_at"
+    ],
+    "restrictions": [
+      "No raw provider tokens",
+      "No free-form LLM database role",
+      "No direct order mutation unless independently approved",
+      "No tenant/store ID inferred from chat"
+    ]
+  },
+  "shared_n8n_response": {
+    "contract": "T404_SHARED_N8N_RESULT_V1",
+    "fields": [
+      "event_id",
+      "tenant_id",
+      "store_id",
+      "status",
+      "effect_receipt_ref",
+      "safe_error_code",
+      "trace_ref"
+    ],
+    "statuses": [
+      "PREVIEW_ONLY",
+      "BLOCKED_NOT_AUTHORIZED",
+      "ACCEPTED_NOT_COMPLETED",
+      "VERIFIED_EFFECT",
+      "SAFE_FAILURE"
+    ]
+  },
+  "data_model_proposal": [
+    "stores",
+    "store_memberships",
+    "merchant_profiles",
+    "bot_config_versions",
+    "channel_account_bindings",
+    "industry_profile_versions",
+    "feature_entitlements",
+    "merchant_catalog_versions",
+    "import_batches",
+    "support_grants",
+    "action_capabilities",
+    "inbox_events",
+    "outbox_events",
+    "merchant_audit_events"
+  ],
+  "migration_policy": "DO NOT APPLY: stage against a fresh verified backup, prove two same-tenant different-Store Owner JWT isolation and rollback before any hosted DDL",
+  "zero_side_effects": {
+    "meta_send": false,
+    "zalo_send": false,
+    "paid_ai_api": false,
+    "supabase_hosted_write": false,
+    "n8n_published_write": false
+  }
+}
