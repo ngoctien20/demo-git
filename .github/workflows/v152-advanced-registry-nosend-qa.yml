@@ -1,0 +1,39 @@
+name: TIEN404 V15.2 Advanced Channel Registry QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-channel-registry*'
+      - '.github/workflows/v152-advanced-registry-nosend-qa.yml'
+  push:
+    paths:
+      - 'qa/v147-custom-studio/advanced-channel-registry*'
+      - '.github/workflows/v152-advanced-registry-nosend-qa.yml'
+    branches:
+      - 'work/v152adv2-channel-registry-nosend-20261116'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  registry-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check qa/v147-custom-studio/advanced-channel-registry.js
+      - run: node --check qa/v147-custom-studio/advanced-channel-registry.test.cjs
+      - run: node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+      - name: Static no-send guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('qa/v147-custom-studio/advanced-channel-registry.js').read_text()
+          assert not re.search(r'\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b',src)
+          assert not re.search(r'\b(localStorage|sessionStorage)\b',src)
+          assert 'providerSendAuthorized:false' in src
+          assert "sendable:false" in src
+          print('ADV.2 registry NO-SEND static checks PASS')
+          PY
