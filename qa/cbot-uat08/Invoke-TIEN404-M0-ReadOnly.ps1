@@ -42,14 +42,14 @@ try {
   $preflightStage = "GIT_BINARY"
   $gitCmd = Get-Command -Name "git" -CommandType Application -ErrorAction Stop
   $preflightStage = "PINNED_HEAD"
-  $head = (& ([string]$gitCmd.Source) -C $root rev-parse HEAD 2>$null | Select-Object -First 1)
+  $head = (& git -C $root rev-parse HEAD 2>$null | Select-Object -First 1)
   if ($LASTEXITCODE -ne 0 -or [string]$head -cne $PinnedRpc7Sha) {
     Stop-Safely "RPC7_PINNED_COMMIT_MISMATCH"
   }
   # A pinned HEAD alone is not sufficient if local tracked scripts are modified.
   # Reject all uncommitted/untracked files in the separate RPC7 checkout.
   $preflightStage = "CLEAN_CHECKOUT"
-  $dirty = @(& ([string]$gitCmd.Source) -C $root status --porcelain --untracked-files=all 2>$null)
+  $dirty = @(& git -C $root status --porcelain --untracked-files=all 2>$null)
   if ($LASTEXITCODE -ne 0 -or $dirty.Count -gt 0) {
     Stop-Safely "RPC7_PINNED_CHECKOUT_NOT_CLEAN"
   }
