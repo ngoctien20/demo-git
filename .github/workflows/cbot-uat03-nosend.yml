@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Syntax and 55 NEW UAT03 source cases
+      - name: Syntax and 57 NEW UAT03 source cases
         run: |
           node --check qa/cbot-uat03/messenger-commerce-adapter.mjs
           node --check qa/cbot-uat03/hosted-recovery-rpc-gates.mjs
@@ -41,7 +41,7 @@ jobs:
           gates=(root/'hosted-recovery-rpc-gates.mjs').read_text()
           cases_a=(root/'messenger-commerce-adapter.test.mjs').read_text()
           cases_g=(root/'hosted-recovery-rpc-gates.test.mjs').read_text()
-          assert cases_a.count("test('")==35 and cases_g.count("test('")==20
+          assert cases_a.count("test('")==35 and cases_g.count("test('")==22
           src=adapter+'\n'+gates
           for banned in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
                          r'\bprocess\.env\b',r'new\s+WebSocket',r'graph\.facebook\.com',
@@ -50,7 +50,7 @@ jobs:
           assert 'UAT03_PROVIDER_SEND_DISABLED' in adapter
           assert 'LEGACY_RPC_REVOKE_NOT_AUTHORIZED' in gates
           assert 'HOSTED_BACKUP_EXPORT_NOT_AUTHORIZED' in gates
-          print('UAT03 55 source tests declared, NO SEND/NO HOSTED WRITE/NO PRIVILEGE CHANGE')
+          print('UAT03 57 source tests declared, NO SEND/NO HOSTED WRITE/NO PRIVILEGE CHANGE')
           PY
 
   disposable-postgres17:
