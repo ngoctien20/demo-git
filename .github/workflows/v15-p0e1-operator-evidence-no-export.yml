@@ -1,0 +1,62 @@
+name: TIEN404 V15 P0-E.1 Private Operator + Real Export Evidence Intake (NO EXPORT)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0e1-backup-operator-real-evidence-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0e1/**'
+      - 'docs/ai-handoff/V15_P0E1_*'
+      - '.github/workflows/v15-p0e1-operator-evidence-no-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-only-gate:
+    name: Private Controller/Operator/Vault Intake & Inherited No-Send QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check qa/v15-sales-lite-p0e1/export-authorization-evidence.cjs
+          node --check qa/v15-sales-lite-p0e1/export-authorization-evidence.test.cjs
+      - name: P0-E.1 private role, one-time scope and post-export receipt negatives
+        run: node --test qa/v15-sales-lite-p0e1/export-authorization-evidence.test.cjs
+      - name: Inherited P0-E and P0-D coverage and backup integrity QA
+        run: |
+          node --test qa/v15-sales-lite-p0e/backup-coverage-gate.test.cjs
+          node --test qa/v15-sales-lite-p0e/verify-local-sql-artifacts.test.cjs
+          node --test qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: Verify review gate has no external access and cannot authorize any action
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('qa/v15-sales-lite-p0e1/export-authorization-evidence.cjs').read_text()
+          executable=re.sub(r'/\*[\s\S]*?\*/','',src)
+          for forbidden in (
+            'fetch(', 'axios(', 'http.request(', 'https.request(', 'child_process',
+            'process.env.', 'SUPABASE_SERVICE_ROLE_KEY', 'apply_migration(',
+            'supabase db dump', 'pg_dump ', 'pg_restore ', 'fs.writeFile',
+            'sendMessage(', 'INSERT INTO', 'UPDATE public.', 'DROP TABLE'
+          ):
+            assert forbidden not in executable, forbidden
+          for required in ('can_export:false','can_restore:false',
+            'can_apply_hosted_migration:false','can_send_provider:false',
+            'actual_export_verified:false','request_approved:false'):
+            assert required in src, required
+          assert not any(p.suffix in {'.sql','.dump','.backup'} for p in Path('qa/v15-sales-lite-p0e1').glob('*'))
+          print('PASS: source-only role and export evidence intake, no hosted credentials or export')
+          PY
