@@ -1,0 +1,71 @@
+name: TIEN404 V16.4 Private Model Evaluation READINESS (NO PAID CALL)
+on:
+  pull_request:
+    paths:
+      - 'qa/v164-private-ab/**'
+      - 'docs/ai-handoff/V16_4_*'
+      - '.github/workflows/v164-private-eval-no-call.yml'
+  push:
+    branches:
+      - work/v164-private-eval-readiness-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v164-private-readiness:
+    name: Model catalog, quality protocol, P0 review and inherited offline QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify V16.4 offline source and model QA
+        run: |
+          node --check qa/v164-private-ab/model-catalog-readiness.mjs
+          node --check qa/v164-private-ab/quality-review-protocol.mjs
+          node --check qa/v164-private-ab/v164-eval-readiness.test.mjs
+          node --test qa/v164-private-ab/v164-eval-readiness.test.mjs
+      - name: Inherited private lab and platform contracts (NO SEND)
+        run: |
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Private CSV audit synthetic self-test only, never uploads private CSV
+        run: |
+          python3 -m py_compile qa/v164-private-ab/validate_private_sources.py
+          python3 qa/v164-private-ab/validate_private_sources.py --self-test
+      - name: Source guard (no HTTP, credentials, provider send or real private fixtures)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v164-private-ab')
+          sources=[
+           root/'model-catalog-readiness.mjs',
+           root/'quality-review-protocol.mjs',
+           root/'v164-eval-readiness.test.mjs',
+           root/'validate_private_sources.py'
+          ]
+          assert len(sources)==4 and all(f.exists() for f in sources)
+          banned=[r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+            r'\bprocess\.env\b',r'\bchild_process\b',r'\brequests\.(?:post|get)\s*\(',
+            r'\bhttps?\.request\s*\(',r'(?i)sk-[a-z0-9]{16,}']
+          for f in sources:
+           code=f.read_text()
+           for rule in banned:assert not re.search(rule,code),(f,rule)
+          assert not list(root.glob('AI_SALES*.csv'))
+          assert 'NO_GO_SOURCE_ONLY' in (root/'model-catalog-readiness.mjs').read_text()
+          assert 'certified_pass:false' in (root/'quality-review-protocol.mjs').read_text()
+          assert 'PRIVATE_DATASET_SIZE_BOUND' in (root/'validate_private_sources.py').read_text()
+          print('PASS no API client, no credentials, no customer fixture, no model call, no COMMERCE write')
+          PY
+  paid-api-and-hosted-certification:
+    name: Independent privacy, provider quota, budget approval, and hosted Store RLS — NOT RUN
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'BLOCKED: paid API, private dataset import and hosted writes not authorized by this PR'
