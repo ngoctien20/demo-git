@@ -1,0 +1,68 @@
+name: TIEN404 V16.7 Merchant Registry Shared Runtime QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v167-merchant-registry-shared-runtime-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v167-merchant/**'
+      - 'docs/ai-handoff/V16_7_MERCHANT_REGISTRY_SHARED_RUNTIME_CHECKPOINT.md'
+      - '.github/workflows/v167-merchant-shared-core-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  merchant-registry-synthetic:
+    name: Multi-Shop A/B/C role approvals / n8n read-only contract / 0 sends
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax gate
+        run: |
+          node --check qa/v167-merchant/merchant-registry.mjs
+          node --check qa/v167-merchant/merchant-registry.test.mjs
+          node --check qa/v16-hybrid/hybrid-core.mjs
+      - name: Run 65 NEW same-tenant multi-Store synthetic contract tests
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Run 42 inherited V16 Hybrid no-send regression tests
+        run: node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Run inherited V16.3 studios source QA
+        run: node --test qa/v163-studios/v163-studios.test.mjs
+      - name: Check contract validity and hard-stop scope
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          p=Path('qa/v167-merchant')
+          src=(p/'merchant-registry.mjs').read_text()
+          test=(p/'merchant-registry.test.mjs').read_text()
+          contract=json.loads((p/'merchant-runtime-contract.json').read_text())
+          docs=Path('docs/ai-handoff/V16_7_MERCHANT_REGISTRY_SHARED_RUNTIME_CHECKPOINT.md').read_text()
+          assert len(re.findall(r"test\('",test))==65
+          assert contract['release_status']=='EXPERIMENTAL'
+          assert contract['zero_side_effects']=={
+           'meta_send':False,'zalo_send':False,'paid_ai_api':False,
+           'supabase_hosted_write':False,'n8n_published_write':False}
+          assert 'tien404' in docs.lower() and 'NO-GO' in docs
+          assert 'V167_NO_RELEASE_OR_HOSTED_COMMERCE' in src
+          assert 'V16.7' in docs and 'COMMERCIAL_LICENSE_REVIEW_BLOCKED' in docs
+          assert 'register' not in contract.get('release_status','').lower()
+          for forbidden in [
+            r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+            r'https?://',r'graph\.facebook\.com',r'api\.openai\.com',
+            r'generativelanguage\.googleapis\.com',r'\bservice_role\s*=',
+            r'\bprocess\.env\b',r'\bglobalThis\b',r'new\s+WebSocket'
+          ]:
+            assert not re.search(forbidden,src),f'FORBIDDEN: {forbidden}'
+          print('V16.7 NO EXTERNAL NETWORK / NO HOSTED WRITE / NO SEND: PASS')
+          PY
+      - name: No billing and no credential guard
+        run: |
+          if grep -RniE 'BEGIN PRIVATE KEY|sk-[A-Za-z0-9]{20}|Bearer [A-Za-z0-9]{20}' qa/v167-merchant; then
+            echo "Potential real secret"; exit 3
+          fi
+          echo "Only synthetic fixtures / no paid API / no deploy / no Supabase changes"
