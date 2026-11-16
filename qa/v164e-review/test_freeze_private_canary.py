@@ -78,4 +78,7 @@ class FreezeTests(unittest.TestCase):
  def test_27_real_model_output_in_input_rejected(self):
   self.src["cases"][0]["actual_output"]="unverified real reply";self.save()
   with self.assertRaisesRegex(ValueError,"REAL_MODEL_OUTPUT_IN_SOURCE"):make_packet(self.f)
+ def test_28_noncanonical_source_case_set_rejected(self):
+  self.src["cases"][-1]["case_key"]="MULTI:QA99";self.save()
+  with self.assertRaisesRegex(ValueError,"EXACT_SOURCE_CASE_ID_SET_REQUIRED"):make_packet(self.f)
 if __name__=="__main__":unittest.main(verbosity=2)
