@@ -132,3 +132,12 @@ test('synthetic oracle corpus never presented as real model benchmark',()=>{
  assert.equal(corpus.kind,'PUBLIC_SYNTHETIC_LABELED_NOT_REAL_MODEL_OUTPUT');
  assert(corpus.POSITIVE.every(c=>c.isActualModelOutput===false));
 });
+
+test('only the model-requested trusted preview action is shown',()=>{
+ const r=run('A','MESSENGER',make('GREETING',{component:'QUICK_REPLIES',action:'CATALOG'}));
+ assert.deepEqual(r.preview.buttons.map(x=>x.id),['CATALOG']);
+ const n=run('A','MESSENGER',make('GREETING',{component:'QUICK_REPLIES',action:'NONE'}));
+ assert.deepEqual(n.preview.buttons,[]);
+ const z=run('A','ZALO_BOT',make('GREETING',{component:'TEXT',action:'NONE'}));
+ assert.doesNotMatch(z.preview.text,/\n1\. /);
+});
