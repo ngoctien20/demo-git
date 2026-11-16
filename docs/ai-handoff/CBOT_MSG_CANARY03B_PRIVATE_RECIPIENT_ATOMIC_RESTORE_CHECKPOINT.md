@@ -51,9 +51,9 @@ Queried actual n8n `get_workflow_history` then `get_workflow_version`:
 | R0 LIVE01 exact Page→PSID→Meta recipient match | **VERIFIED, event-level** | Accepted as source-of-QA-person identity |
 | R1 Native Page/admin + App/Page subscription | **PENDING** | Private first-party rights + `messages` App/Page and recipient tester entitlement |
 | R2 One-recipient signed/private consent and HMAC registry | **PENDING** | Owner + independent reviewer, Page+PSID, TTL and profile digest; keep data private |
-| R3 Atomic claim semantics and concurrency | **DRAFT, CI pending** | Disposable PG17 and negative tests, then authorized hosted isolated service QA |
+| R3 Atomic claim semantics and concurrency | **TESTED on disposable PG17; HOSTED NOT TESTED** | 16 concurrent contenders→one win, then authorized hosted isolated service QA |
 | R4 Hosted claim DB privilege/RLS and operational wiring | **NOT DEPLOYED** | Authorize migration and credential scope; trusted signed webhook binding |
-| R5 Source 27→32→27 restore equivalence | **DRAFT, CI pending** | Compare version-pinned diff independently |
+| R5 Source 27→32→27 restore equivalence | **SOURCE QA TESTED; hosted restore NOT TESTED** | 27→32→27 redacted round-trip PASS; real n8n restore pending |
 | R6 Real original n8n encrypted backup & restore rehearsal | **NOT CERTIFIED** | Private operator export, checksum, isolated recovery test, backout and version verify |
 | R7 Final one-recipient one-send Publisher authorization | **NOT GRANTED** | Exact workflow diff+version, same QA actor, one event, TTL, rollback and external reviewer |
 | R8 Real LIVE02 | **NOT RUN** | Only after R1–R7, no writer execution, single MID, owner confirms rendered greeting |
@@ -64,9 +64,27 @@ Queried actual n8n `get_workflow_history` then `get_workflow_version`:
 
 - **VERIFIED:** LIVE01 native execution #4176 Page/PSID/MID equality, user receipt; original Published workflow 27 nodes and history pinned version retrievable (read-only). No sensitive identifiers included.
 - **IMPLEMENTED:** source-only private proof record, review-only PG SQL, independent redacted source restore harness, durable SQLite disposable QA, PG17 CI harness and release gate; no hosted changes.
-- **TESTED:** Mark only after exact HEAD GitHub CI completes. PostgreSQL 17 disposable pass is a synthetic DB result, not hosted security certification.
+- **TESTED:** 259/259 source Node tests, 19/19 disposable SQLite tests and 16-way disposable PostgreSQL 17 atomic claim plus separate synthetic schema archive/restore PASS. This is NOT hosted Supabase authorization, not original n8n rollback certification, and not LIVE02.
 - **BLOCKED:** Native exact one-recipient consent, production atomic claim/RLS wiring, encrypted full n8n backup, independent human reviewer, exact production patch, one-send authorization and real LIVE02.
 - **Live changes:** **None**. Existing Messenger Published `Z7FdV7uDvApfbURQ` remains unchanged; QA workflows `VSmXkK7Y1Bb3Dg2w`, `bOaSukunPYUWg2pS` and `CCb5PTNSRjYc9OfY` remain inactive. No new n8n workflow is needed for this milestone.
 - **Rollback:** Close this Draft PR to remove source-only files. Disposable CI databases are destroyed by GitHub-hosted job lifecycle. No existing Production or hosted Supabase rollback required as nothing is deployed.
 
 **Next decision after CI:** `CBOT-MSG-CANARY-03C — Private One-Recipient Authority Evidence × Isolated Claim Service & Real n8n Restore Rehearsal`. If R1/R2 and R6 cannot be verified, continue NO-GO, do not send LIVE02.
+
+### 7. FINAL independently observed CI and hosted unchanged — 2026-11-16 JST
+
+**Exact test evidence from GitHub Actions** [run #43877871533](https://github.com/ngoctien20/demo-git/actions/runs/43877871533) (at commit `bf6633045fdfd6084f22c05605af6542b5e4a6d3`, prior to this final documentation update):
+
+- **4/4 jobs SUCCESS**, including release NO-GO gate.
+- **259/259 Node.js source regression tests PASS** (19 independent redacted 27→32→27 tests + 240 inherited Messenger and Merchant security source tests).
+- **19/19 SQLite disposable tests PASS**: 24-thread and 8-process contention with independent durable connections, wrong Page/PSID, expired/revoked owner, config mismatch and unknown-provider-outcome no-retry. Two initial QA harness errors (SQLite connection failure escaped try and a static lint test matching its own prohibited literal) were corrected; the final exact CI has no such failures.
+- **Actual PostgreSQL 17 disposable job SUCCESS**: 16 concurrent independent SQL connections competing for one approved synthetic campaign produced **exactly 1 winner**, 15 non-winners; wrong Page, recipient, profile, revoked permission, different event and cross-campaign replay blocked. This ran the exact reviewed SQL CTE (not a hand-coded in-memory mock) from `PRIVATE_ONE_SHOT_ATOMIC_CLAIM_REVIEW_ONLY.sql`.
+- The synthetic private PostgreSQL schema was `pg_dump`ed and `pg_restore`d into a second disposable database, validating 1 claim, 2 FORCE RLS flags, two primary/unique constraints. **No hosted Supabase or n8n data backed up.**
+- Final rule-based release job completed **SUCCESS with explicit LIVE02 NO-GO**. CI green does not transform external authorization gaps into permission to send.
+
+**Final connected read-only checks:**
+- Supabase staging `ifxlvrhyjhbzbrkdsida`: `t404_canary_private` **schema does not exist, 0 canary tables**. No migration or private QA claim service deployed.
+- Messenger Published `Z7FdV7uDvApfbURQ`: **ACTIVE, unchanged exact version `d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92`, 27 nodes**.
+- The three existing manual QA workflows remain **INACTIVE**: `VSmXkK7Y1Bb3Dg2w` (2 nodes), `bOaSukunPYUWg2pS` (4), `CCb5PTNSRjYc9OfY` (6). No new n8n execution, Meta response, paid model, Orders or token action in this milestone.
+
+**Release decision remains: `CANARY03B_NO_GO_LIVE02`.** Blocking items are a privately authenticated Page+one QA recipient binding, an independent reviewer-approved event+config, an approved hosted least-privilege claimant and concurrent ingress integration, an encrypted private export of the **actual** n8n original workflow, independent n8n restore rehearsal and explicit authorization of the **final** one-recipient one-send patch. These are more than source test checkboxes, and this checkpoint does not silently approve them.
