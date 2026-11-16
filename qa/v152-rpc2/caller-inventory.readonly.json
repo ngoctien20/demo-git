@@ -1,0 +1,110 @@
+{
+  "contract": "T404_ADV6C_RPC2_CALLER_DISCOVERY_V1",
+  "observed_on_jst": "2026-11-16",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "scope": "CONNECTED_ACCOUNT_READ_ONLY_SNAPSHOT",
+  "conclusion": "SCOPED_N8N_CALLER_CHAIN_VERIFIED_GLOBAL_CALLER_COMPLETENESS_NOT_CERTIFIED",
+  "supabase_rpc": {
+    "signature": "public.qa_shop_b_zalo_claim(uuid,text,text,text)",
+    "security_definer": true,
+    "owner": "postgres",
+    "anon_execute": true,
+    "vault_shared_header_guard": true,
+    "track_functions": "none",
+    "tracked_calls_unreliable": true,
+    "underlying_function": "tien404_r1_qa.claim_owner_pairing_v3_synthetic",
+    "private_claim_has_for_update": true,
+    "private_claim_on_conflict": true,
+    "owner_confirm_function": "tien404_r1_qa.confirm_owner_pairing_v3_qa",
+    "private_confirm_has_for_update": true,
+    "private_confirm_on_conflict": true,
+    "private_tables_rls_enabled": true
+  },
+  "n8n": {
+    "accessible_workflows": 114,
+    "examined_draft_and_published": 114,
+    "active_workflows": 19,
+    "inactive_workflows": 95,
+    "exact_rpc_direct_callers": [
+      {
+        "workflow_id": "OgDZNSAvKEvhnAvn",
+        "name": "TIEN404_ZALO_V2_SHADOW_STAGING",
+        "active": true,
+        "published_version": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+        "rpc_node": "Submit pending claim for Shop B",
+        "method": "POST",
+        "auth_method": "httpHeaderAuth",
+        "command_node": "Recognize Shop B pairing command (staging)",
+        "guard_node": "Owner gate disabled",
+        "has_execute_workflow_trigger": true,
+        "has_manual_trigger": true,
+        "execution_metadata": {
+          "count": 1,
+          "observed_modes": [
+            "manual"
+          ],
+          "latest_execution_id": "2858"
+        }
+      }
+    ],
+    "active_upstream_callers": [
+      {
+        "workflow_id": "yIJk8LvJoLF40Z62",
+        "name": "TIEN404_ZALO_BOT_LAB_V1_STAGING",
+        "active": true,
+        "published_version": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+        "execute_node": "Zalo V2 Shadow (Owner Gate Only)",
+        "upstream_path": [
+          "Zalo Bot Webhook (Protected)",
+          "Validate & Normalize Event (Read Only)",
+          "Ack Zalo (No Message Sent)",
+          "Zalo V2 Shadow (Owner Gate Only)"
+        ],
+        "execution_metadata": {
+          "count": 11,
+          "observed_modes": [
+            "manual"
+          ],
+          "latest_execution_id": "2839"
+        }
+      }
+    ],
+    "no_other_literal_rpc_or_shadow_id_references_found_in_inspected_graphs": true,
+    "credentials_values_inspected": false
+  },
+  "cloudflare": {
+    "accessible_worker_scripts": 23,
+    "content_representations_scanned": 23,
+    "exact_rpc_literal_hits": 0,
+    "generic_rpc_path_worker_representations": 13,
+    "generic_rpc_scripts_are_bio_related": true,
+    "dynamic_or_compiled_calls_not_excluded": true
+  },
+  "supabase_edge": {
+    "accessible_functions": 1,
+    "inspected_slug": "tien404-r1-owner-preflight",
+    "exact_rpc_literal_found": false,
+    "dynamic_caller_not_excluded": true
+  },
+  "github": {
+    "repository": "ngoctien20/demo-git",
+    "branch": "RPC1 parent draft",
+    "default_branch_code_search_exact_hits": 0,
+    "completeness_for_all_branches_and_external_private_code": false
+  },
+  "unverified_domains": [
+    "External consumers of PostgREST endpoint",
+    "Historic/archived n8n versions not readable via current workflow metadata",
+    "Cloudflare minified/dynamic Worker bindings and runtime logs",
+    "Supabase Data API request logs over agreed observation window",
+    "Any manual operator scripts or old external webhook configurations",
+    "Private JWT ownership certification and backup/restore approval"
+  ],
+  "authorization": {
+    "privilege_change": false,
+    "publish": false,
+    "backup_export": false,
+    "real_customer_read": false,
+    "real_provider_send": false
+  }
+}
