@@ -1,0 +1,105 @@
+name: TIEN404 CBOT-UAT-04 Private Recovery RPC Read-Only (NO SEND)
+on:
+  push:
+    branches:
+      - work/cbot-uat04-private-recovery-trusted-rpc-readonly-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat04/**'
+      - '.github/workflows/cbot-uat04-no-hosted-write.yml'
+      - 'docs/ai-handoff/CBOT_UAT04_CHECKPOINT.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-recovery-gates:
+    name: 56 new UAT04 + 182 inherited No-Send source tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and new 38 gateway + 18 hosted metadata acceptance cases
+        run: |
+          node --check qa/cbot-uat04/trusted-rpc-replacement.mjs
+          node --check qa/cbot-uat04/private-recovery-hosted-preflight.mjs
+          node --test qa/cbot-uat04/trusted-rpc-replacement.test.mjs qa/cbot-uat04/private-recovery-hosted-preflight.test.mjs
+      - name: Regression UAT03 + UAT02 + UAT01 + V16.7
+        run: |
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs
+          node --test qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Static NO SEND / NO HOSTED WRITE / NO RPC REVOKE guard
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/cbot-uat04')
+          gateway=(root/'trusted-rpc-replacement.mjs').read_text()
+          preflight=(root/'private-recovery-hosted-preflight.mjs').read_text()
+          a=(root/'trusted-rpc-replacement.test.mjs').read_text()
+          b=(root/'private-recovery-hosted-preflight.test.mjs').read_text()
+          sql=(root/'hosted-readonly-preflight.sql').read_text()
+          disposable=(root/'disposable-pg17-trusted-rpc.sql').read_text()
+          assert a.count("test('")==38
+          assert b.count("test('")==18
+          for pattern in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+                          r'new\s+WebSocket',r'\bprocess\.env\b',r'api\.openai\.com',
+                          r'graph\.facebook\.com',r'\/rest\/v1\/',r'(?i:service_role)\s*=']:
+              assert not re.search(pattern,gateway+'\n'+preflight),f'Forbidden runtime network or secret: {pattern}'
+          stripped=re.sub(r'--[^\n]*','',sql)
+          assert re.match(r'^\s*WITH\s+',stripped,re.I)
+          for forbidden in [r'\bINSERT\b',r'\bUPDATE\b',r'\bDELETE\b',r'\bALTER\b',
+                            r'\bDROP\b',r'\bGRANT\b',r'\bREVOKE\b',
+                            r'\bSECURITY\s+DEFINER\b',r'\bpg_sleep\b']:
+              assert not re.search(forbidden,stripped,re.I),f'Unsafe hosted preflight SQL: {forbidden}'
+          assert 'SECURITY INVOKER' in disposable
+          assert 'REVOKE ALL ON FUNCTION' in disposable
+          assert 'ROLLBACK;' in disposable
+          assert 'HOSTED_RPC_DEPLOY_NOT_AUTHORIZED' in gateway
+          assert 'LEGACY_ANON_REVOKE_NOT_AUTHORIZED' in gateway
+          print('UAT04: NO HOSTED API / NO PII / NO SEND / NO PRIVILEGE MUTATION')
+          PY
+
+  disposable-private-rpc-pg17:
+    name: Disposable PG17 private SECURITY INVOKER/RLS with legacy coexistence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral-ci-qa-only-uat04
+          POSTGRES_DB: cbot04_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cbot04_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Postgres CLI for ephemeral service
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Run private RPC mechanical isolation; ROLLBACK
+        env:
+          PGPASSWORD: ephemeral-ci-qa-only-uat04
+        run: |
+          psql -h 127.0.0.1 -U postgres -d cbot04_disposable \
+            -v ON_ERROR_STOP=1 -f qa/cbot-uat04/disposable-pg17-trusted-rpc.sql
+      - name: Confirm disposable schema and custom roles absent
+        env:
+          PGPASSWORD: ephemeral-ci-qa-only-uat04
+        run: |
+          count=$(psql -h 127.0.0.1 -U postgres -d cbot04_disposable -Atc \
+            "SELECT count(*) FROM information_schema.schemata WHERE schema_name='qa_uat04'")
+          roles=$(psql -h 127.0.0.1 -U postgres -d cbot04_disposable -Atc \
+            "SELECT count(*) FROM pg_roles WHERE rolname IN ('qa_uat04_private_runtime','qa_uat04_anon')")
+          test "$count" = "0" && test "$roles" = "0"
+          echo "Disposable ROLLBACK verified; NOT live Supabase/JWT/auth recovery."
