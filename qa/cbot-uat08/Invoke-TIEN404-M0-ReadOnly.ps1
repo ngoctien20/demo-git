@@ -33,22 +33,27 @@ if ([string]::IsNullOrWhiteSpace($Rpc7Checkout)) {
 if ([string]::IsNullOrWhiteSpace($Rpc7Checkout)) {
   Stop-Safely "RPC7_CHECKOUT_REQUIRED"
 }
+ $preflightStage = "CHECKOUT_PATH"
 try {
   $root = [IO.Path]::GetFullPath($Rpc7Checkout)
   if (-not (Test-Path -LiteralPath $root -PathType Container)) {
     Stop-Safely "RPC7_CHECKOUT_MISSING"
   }
+  $preflightStage = "GIT_BINARY"
   $gitCmd = Get-Command -Name "git" -CommandType Application -ErrorAction Stop
+  $preflightStage = "PINNED_HEAD"
   $head = (& $gitCmd.Source -C $root rev-parse HEAD 2>$null | Select-Object -First 1)
   if ($LASTEXITCODE -ne 0 -or [string]$head -cne $PinnedRpc7Sha) {
     Stop-Safely "RPC7_PINNED_COMMIT_MISMATCH"
   }
   # A pinned HEAD alone is not sufficient if local tracked scripts are modified.
   # Reject all uncommitted/untracked files in the separate RPC7 checkout.
+  $preflightStage = "CLEAN_CHECKOUT"
   $dirty = @(& $gitCmd.Source -C $root status --porcelain --untracked-files=all 2>$null)
   if ($LASTEXITCODE -ne 0 -or $dirty.Count -gt 0) {
     Stop-Safely "RPC7_PINNED_CHECKOUT_NOT_CLEAN"
   }
+  $preflightStage = "RPC7_SOURCE_FILES"
   $src = Join-Path $root "qa\v152-rpc7"
   $inspector = Join-Path $src "Inspect-TIEN404-RPC7-M0.ps1"
   foreach ($name in @(
@@ -60,13 +65,16 @@ try {
       Stop-Safely "RPC7_PINNED_SOURCE_INCOMPLETE"
     }
   }
+  $preflightStage = "NODE_BINARY"
   $node = Get-Command -Name $NodeExe -CommandType Application -ErrorAction Stop
+  $preflightStage = "PG_RESTORE_BINARY"
   $pgRestore = Get-Command -Name $PgRestoreExe -CommandType Application -ErrorAction Stop
   if ($null -eq $node -or $null -eq $pgRestore) {
     Stop-Safely "NODE_OR_PG_RESTORE_NOT_AVAILABLE"
   }
 } catch {
-  Stop-Safely "RPC7_SOURCE_OR_LOCAL_TOOL_CHECK_FAILED"
+  # Stage labels are constants, safe to show; never echo raw errors or paths.
+  Stop-Safely ("RPC7_PREFLIGHT_FAILURE_" + $preflightStage)
 }
 # No archive read occurs during Preflight.
 if ($Mode -eq "Preflight") {
