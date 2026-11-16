@@ -1,0 +1,68 @@
+name: TIEN404 V16.4E Gateway Capability and Private Review Intake (NO CALL)
+on:
+  push:
+    branches:
+      - work/v164e-gateway-operator-review-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v164e-operator/**'
+      - 'docs/ai-handoff/V16_4E_*'
+      - '.github/workflows/v164e-operator-no-call.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-operator-source-readiness:
+    name: 48 V16.4E checks + 445 inherited offline (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V16.4E Gateway capability and private case reviewer intake
+        run: |
+          node --check qa/v164e-operator/gateway-route-evidence.mjs
+          node --check qa/v164e-operator/evidence-review.mjs
+          node --test qa/v164e-operator/v164e-operator.test.mjs
+      - name: Inherited 425 Node regression/security tests
+        run: |
+          node --test qa/v164d-decision/v164d-decision.test.mjs
+          node --test qa/v164c-canary/v164c-private-canary.test.mjs
+          node --test qa/v164b-privacy/v164b-preflight.test.mjs
+          node --test qa/v164-private-ab/v164-eval-readiness.test.mjs
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Inherited 20 Python synthetic privacy tests
+        run: |
+          python3 -m py_compile qa/v164b-privacy/private_sanitizer.py
+          python3 qa/v164b-privacy/test_private_sanitizer.py
+      - name: Static source-only NO SEND security gate
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          files=list(Path('qa/v164e-operator').glob('*.mjs'))
+          assert {x.name for x in files}=={
+            'gateway-route-evidence.mjs','evidence-review.mjs','v164e-operator.test.mjs'}
+          for f in files:
+            source=f.read_text()
+            for pat in [r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bXMLHttpRequest\b',
+              r'\bWebSocket\b',r'\bchild_process\b',r'(?i)sk-[A-Za-z0-9_-]{16,}',
+              r'\bopenai\.responses\.create\b']:
+              assert re.search(pat,source) is None,(f,pat)
+          assert 'V164E_GATEWAY_PAID_CALL_DISABLED' in Path('qa/v164e-operator/gateway-route-evidence.mjs').read_text()
+          assert 'V164E_PRIVATE_CORPUS_SEND_DISABLED' in Path('qa/v164e-operator/evidence-review.mjs').read_text()
+          assert not list(Path('qa/v164e-operator').glob('*.csv'))
+          print('PASS: no API client, no private fixture, no credential, no provider send')
+          PY
+  actual-private-operator-and-paid-canary:
+    name: Human privacy review + real account entitlement + paid run — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'NO-GO; external approvals and live-model authorization do not exist in CI'
