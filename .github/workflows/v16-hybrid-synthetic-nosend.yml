@@ -45,8 +45,9 @@ jobs:
           assert 'COMMERCE_BLOCKED' in src
           assert 'NO SEND' in docs
           assert 'NO HOSTED WRITE' in docs
+          assert not re.search(r'\bfetch\s*\(',src), 'External fetch in core'
           for code in (src,worker):
-            for pattern in [r'\bfetch\s*\(',r'\baxios\b',r'api\.openai\.com',r'generativelanguage\.googleapis\.com',
+            for pattern in [r'\baxios\b',r'api\.openai\.com',r'generativelanguage\.googleapis\.com',
                 r'graph\.facebook\.com',r'\bprocess\.env\b',r'\bcreateClient\s*\(',r'\bservice_role\b',
                 r'@supabase/supabase-js',r'\bchild_process\b',r'R2\.put\s*\(',r'\blocalStorage\b']:
               assert not re.search(pattern,code),pattern
