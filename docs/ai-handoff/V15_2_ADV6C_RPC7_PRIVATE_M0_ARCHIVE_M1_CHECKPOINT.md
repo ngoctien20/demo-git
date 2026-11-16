@@ -187,3 +187,32 @@ SHA/byte match establishes local consistency only with reference values submitte
 **Next operational dependency:** independent H11R archive provenance/source freshness review; Store-to-row owner proof reviewed privately (2 Products + 2 Orders); Auth/Storage recovery dependency proposal; explicit encrypted recovery authorization and real isolated restore if the selected migration requires a new valid snapshot. Do not automatically make a new backup or run M1. Keep the archive and receipt local.
 
 This section supersedes only the earlier statement that the local Windows tool run was outstanding. It does **not** supersede NO-GO for real M0/M1 or certify full-service restoration.
+
+
+## 11. Operator note and scope-limited backup acceptance (2026-11-16 JST)
+
+**USER/OWNER STATEMENT — SELF-REPORTED CAUSE, NOT INDEPENDENT TECHNICAL ROOT-CAUSE VERIFICATION**
+
+The project owner states that when they originally created the backup in pgAdmin, they **had not configured/selected the component they called "Application Auth"** for export. The owner attributes the current absence of Auth and Storage backup coverage to that earlier selection/configuration and intends to configure and back up the missing components later. This is an owner-provided explanation and future plan. The exact pgAdmin settings, included schemas, and Storage object handling have **not** been independently examined; omitting an Auth schema selection alone is **not** proof of the technical cause of all Storage omissions. Supabase Storage **object bytes** are separate from the PostgreSQL database archive and require a distinct recovery plan.
+
+The owner expressly requests that the backup checkpoint be accepted. Record that decision **only for the bounded, evidenced scope**, not as full-system acceptance:
+
+| Acceptance dimension | Decision | Evidence / limitation |
+|---|---|---|
+| Existing H11R archive local identity vs previously entered SHA-256 and byte size | **OWNER-ACCEPTED / LOCAL CHECK PASSED (SELF-REPORTED)** | `referenceHashMatches=True`, `referenceBytesMatches=True` |
+| Application TABLE DATA TOC structural coverage | **OWNER-ACCEPTED / LOCAL CHECK PASSED (SELF-REPORTED)** | `applicationEntries=5/5`; TOC is not data-integrity or restore proof |
+| H11R partial **application-archive inspection** milestone | **ACCEPTED WITH KNOWN LIMITATIONS BY PROJECT OWNER** | `PARTIAL_APP_ARCHIVE_NOT_FULL_SERVICE_RECOVERY`; `LOCAL_ARCHIVE_TOC_REVIEW_ONLY` |
+| Auth backup / user authentication restore | **DEFERRED / NOT ACCEPTED** | `authEntries=0/3`; user intends to address later |
+| Storage database metadata / Storage object-byte recovery | **DEFERRED / NOT ACCEPTED** | `storageEntries=0/2`; separate object-byte restoration is required |
+| Current hosted source freshness, complete row data, independent off-host restore | **BLOCKED / NOT VERIFIED** | No real current hosted archive independently inspected or restored |
+| Canonical four-row Owner→Store mapping | **BLOCKED / NOT VERIFIED** | Tenant Owner count is not Store ownership proof |
+| `M0_REAL_RECOVERY_ACCEPTANCE` | **BLOCKED** | Independent primary evidence and approved scope-specific recovery/restore still missing |
+| `M1_HOSTED_MIGRATION_AUTHORIZATION` | **NO_GO** | Requires distinct operation-specific approval |
+| n8n Published cutover and legacy RPC `anon EXECUTE` removal | **NO_GO** | No relevant authorization |
+
+**Canonical status:** `H11R_PARTIAL_APPLICATION_ARCHIVE_LOCAL_QA_OWNER_ACCEPTED_WITH_LIMITATIONS`.
+**Not canonical:** `FULL_BACKUP_PASS`, `M0_APPROVED`, `INDEPENDENT_RESTORE_PASS`, `M1_APPROVED`, `RELEASED`.
+
+**Follow-up / not executed:** When the owner is ready, review the pgAdmin export configuration and decide exactly which Auth-related schema/data must be included in a newly approved recovery plan; prepare a separate Storage metadata and object-byte recovery plan. Do not automatically export a new archive or overwrite the existing archive; retain the old H11R file and receipt as immutable reference evidence. Any new real export and isolated restore require separate permissions and independent verification. Until then, partial application archival QA is owner-accepted, but hosted recovery/migration gates remain closed.
+
+This checkpoint update records an explicit, limited owner acceptance and an owner-reported configuration cause **without claiming that missing Auth/Storage was technically remediated**. No database, credentials, files on the operator's Windows host, workflow, provider traffic, subscription, or privileged RPC rights were changed.
