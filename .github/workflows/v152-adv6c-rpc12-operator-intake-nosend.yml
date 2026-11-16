@@ -1,0 +1,94 @@
+name: TIEN404 V15.2 RPC.12 Operator Four-Row × Recovery Scope × M1 Independent NO-GO
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc12/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC12_*'
+      - '.github/workflows/v152-adv6c-rpc12-operator-intake-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc12-private-operator-m0-m1-intake-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc12-private-operator-source-qa:
+    name: RPC.12 private current recovery+4-row intake and inherited 197 Node
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC.12 new current recovery and local-only private evidence tests
+        run: |
+          node --check qa/v152-rpc12/current-recovery-scope-decision.cjs
+          node --check qa/v152-rpc12/private-operator-intake.cjs
+          node --test qa/v152-rpc12/current-recovery-scope-decision.test.cjs
+          node --test qa/v152-rpc12/private-operator-intake.test.cjs
+      - name: Inherited RPC11/10/9/7/6/V14/ADV6C/RPC5 security regression
+        run: |
+          node --test qa/v152-rpc11/private-fourrow-current-snapshot-reconcile.test.cjs
+          node --test qa/v152-rpc11/scoped-hosted-approval-packet.test.cjs
+          node --test qa/v152-rpc10/private-owner-m3-hosted-preflight.test.cjs
+          node --test qa/v152-rpc9/private-owner-atomic-cutover-preflight.test.cjs
+          node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Verify no hosted mutation, external calls or secret output
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-rpc12')
+          src=(root/'current-recovery-scope-decision.cjs').read_text()
+          cli=(root/'private-operator-intake.cjs').read_text()
+          for s in (src,cli):
+            for token in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+               r'\bchild_process\b',r'\bhttps?\.request\s*\(',
+               r'\bexecSync\s*\(',r'\bspawnSync\s*\(',r'\bpg_dump\b',
+               r'\bpg_restore\b',r'\bservice_role\b'):
+              # Comments are not executable and may discuss forbidden methods.
+              effective='\n'.join(x for x in s.splitlines()
+                                 if not x.lstrip().startswith(('*','//')))
+              assert not re.search(token,effective,re.I),token
+          assert 'canApplyM1:false' in cli
+          assert 'canExportBackup:false' in cli
+          assert 'canRevokeLegacyRpc:false' in cli
+          assert 'm0Approved:false,m1Approved:false' in src
+          assert 'fs.readFileSync(abs' in cli
+          assert 'fs.writeFileSync' not in cli
+          assert 'PRIVATE_EVIDENCE_MUST_BE_OUTSIDE_REPOSITORY' in cli
+          assert 'PRIVATE_INPUT_REJECTED_KEEP_FILES_PRIVATE' in cli
+          print('PASS RPC12 private local-only admission, no hosted executor, no backup/SQL')
+          PY
+
+  rpc12-hosted-authorization-no-go:
+    name: RPC.12 ACTUAL OWNER+CURRENT RESTORE+M1 AUTHORIZATION — NO-GO (intentional)
+    needs: [rpc12-private-operator-source-qa]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real evidence absent; permanent hosted action gate denial
+        run: |
+          node - <<'NODE'
+          const {reviewIntake}=require('./qa/v152-rpc12/private-operator-intake.cjs');
+          const x=reviewIntake();
+          console.log(JSON.stringify({status:x.status,
+           ownerStatus:x.ownerLedgerStatus,recovery:x.recoverySelectionStatus,
+           m1:x.m1PrivatePacketStatus,canApplyM1:x.canApplyM1,
+           canExportBackup:x.canExportBackup}));
+          if(x.canApplyM1||x.canApplyM2M4||x.canApplyM3||
+             x.canExportBackup||x.canRevokeLegacyRpc)
+           throw Error('RPC12_UNAUTHORIZED_HOSTED_PROMOTION');
+          console.error('RPC12_HOSTED_NO_GO_INDEPENDENT_FOUR_ROW_OWNER_CURRENT_RECOVERY_AND_M1_APPROVAL_MISSING');
+          process.exitCode=3;
+          NODE
