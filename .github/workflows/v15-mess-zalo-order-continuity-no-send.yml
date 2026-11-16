@@ -1,0 +1,84 @@
+name: TIEN404 V15 Messenger Zalo Order Continuity (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15-mess-zalo-order-continuity-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-cross-channel/**'
+      - 'docs/ai-handoff/TIEN404_V15_MESS_ZALO_ORDER_CONTINUITY*'
+      - '.github/workflows/v15-mess-zalo-order-continuity-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-qa-continuity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Signed fixture Messenger Zalo continuity and fast path (no external API)
+        run: node --test qa/v15-cross-channel/*.test.cjs
+      - name: Explicit no-hosted no-provider source check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v15-cross-channel/no-send-order-continuity.cjs').read_text()
+          for dangerous in ('fetch(', 'axios(', 'process.env', 'service_role', 'supabase.from(',
+                            'INSERT INTO', 'sendMessage(', 'new OpenAI(', 'MetaAccessToken'):
+              assert dangerous not in p, dangerous
+          assert 'isAcceptedSyntheticContext' in p
+          assert 'QA_PERSISTED_IN_MEMORY_NOT_HOSTED' in p
+          assert 'REAL_OWNER_G23_AND_HOSTED_STORE_MEMBERSHIP_NOT_CERTIFIED' in p
+          print('PASS NO SEND / NO HOSTED SIDE EFFECTS')
+          PY
+  disposable-database-continuity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: qa_v15_cross_synthetic
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: temporary_fixture_password_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d qa_v15_cross_synthetic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install temporary PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Reuse parent disposable Store RLS + atomic Order Outbox fixture
+        env:
+          PGPASSWORD: temporary_fixture_password_only
+        run: |
+          psql -h 127.0.0.1 -U postgres -d qa_v15_cross_synthetic -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-sales-lite-p0/pg17-store-rls-isolation.sql
+      - name: "Messenger confirmed order to linked Zalo: actual disposable DB joins only"
+        env:
+          PGPASSWORD: temporary_fixture_password_only
+        run: |
+          psql -h 127.0.0.1 -U postgres -d qa_v15_cross_synthetic -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-cross-channel/pg17-cross-channel-proof.sql
+      - name: Guard no hosted DB connection
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v15-cross-channel/pg17-cross-channel-proof.sql').read_text()
+          assert 'CREATE SCHEMA qa_cross;' in p
+          assert 'PASS_DISPOSABLE_CROSS_CHANNEL_DB_NO_HOSTED_JWT' in p
+          for x in ('ifxlvrhyjhbzbrkdsida','service_role','supabase.co','dblink','postgres_fdw'):
+              assert x not in p,x
+          print('PASS only disposable GitHub Actions PostgreSQL')
+          PY
