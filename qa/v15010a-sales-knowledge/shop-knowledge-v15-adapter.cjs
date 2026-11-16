@@ -61,7 +61,7 @@ function createShopKnowledgeLab(){
    if(!Object.hasOwn(FIXTURES,shop)||!CHANNELS.includes(channel))return fail('UNKNOWN_QA_STORE_OR_CHANNEL');
    if(typeof question!=='string'||question.length>1000||!question.trim())return fail('INVALID_QUESTION');
    if(!clientClaims||typeof clientClaims!=='object'||Array.isArray(clientClaims)||
-     Object.keys(clientClaims).some(k=>/tenant|store|role|knowledge|price|stock|owner|admin|policy|auth|token|secret/i.test(k)))
+     Object.keys(clientClaims).some(k=>k!=='locale'||clientClaims[k]!=='vi-VN'))
      return fail('CLIENT_AUTHORITY_OVERRIDE_REJECTED');
    const f=FIXTURES[shop],version=approved.get(shop),doc=SHOP_DOCS[shop][version];
    if(!doc||!['APPROVED_QA_ONLY','DRAFT_ONLY'].includes(doc.status))
