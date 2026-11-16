@@ -1,0 +1,96 @@
+{
+  "contract": "T404_V1611_HOSTED_METADATA_READ_ONLY_BASELINE_V1",
+  "captured_on": "2026-11-16",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "evidence_class": "CONNECTOR_READ_ONLY_METADATA_NOT_OWNER_ATTESTATION",
+  "fact_verification": "VERIFIED_READ_ONLY",
+  "production_security_certified": false,
+  "verified_schema": {
+    "tenants": true,
+    "tenant_memberships": true,
+    "stores": false,
+    "store_memberships": false,
+    "products_store_id": false,
+    "orders_store_id": false,
+    "customers_store_id": false,
+    "products_tenant_id": true,
+    "orders_tenant_id": true,
+    "customers_tenant_id": true
+  },
+  "verified_rls": {
+    "tenants": {
+      "enabled": true,
+      "forced": true
+    },
+    "tenant_memberships": {
+      "enabled": true,
+      "forced": true
+    },
+    "products": {
+      "enabled": true,
+      "forced": true
+    },
+    "orders": {
+      "enabled": true,
+      "forced": true
+    },
+    "customers": {
+      "enabled": true,
+      "forced": true
+    }
+  },
+  "policy_scope": {
+    "products": "TENANT_MEMBERSHIP_SELECT_ONLY",
+    "orders": "TENANT_OWNER_MANAGER_SELECT_ONLY",
+    "customers": "TENANT_OWNER_MANAGER_SELECT_ONLY",
+    "same_tenant_different_store": "NOT_ENFORCED_BY_EXISTING_SCHEMA",
+    "jwt_owner_AB_real": "NOT_RUN"
+  },
+  "constraints": {
+    "products_unique": "UNIQUE (tenant_id, sku)",
+    "orders_customer_fk": "FOREIGN KEY (tenant_id, customer_id) REFERENCES customers(tenant_id, id)",
+    "store_scoped_sku_unique": false,
+    "store_scoped_order_customer_fk": false
+  },
+  "privileged_rpcs": [
+    {
+      "name": "qa_shop_b_zalo_claim",
+      "security_definer": true,
+      "anon_execute": true,
+      "authenticated_execute": false,
+      "review": "REQUIRES_CALLER_ATTESTATION"
+    },
+    {
+      "name": "qa_owner_pairing",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "review": "REQUIRES_CALLER_ATTESTATION"
+    },
+    {
+      "name": "save_merchant_product",
+      "security_definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "review": "REQUIRES_CALLER_ATTESTATION"
+    }
+  ],
+  "pending_real_evidence": [
+    "MERCHANT_OWNER_AUTHORITY",
+    "PAGE_OA_OWNER_PROOF",
+    "REAL_SUPABASE_AUTH_JWT_OWNER_A_B",
+    "SAME_TENANT_STORE_A_B_RLS_READ_WRITE",
+    "INDEPENDENT_HOSTED_BACKUP_AND_RESTORE",
+    "STORAGE_OBJECT_RESTORE_COVERAGE",
+    "LEGACY_STORE_MAPPING",
+    "RPC_CALLER_ATTESTATION",
+    "MERCHANT_DPA",
+    "N8N_SAAS_LICENSE",
+    "NO_DUAL_WRITER_CANARY"
+  ],
+  "sensitive_data_queried": false,
+  "hosted_sql_modified": false,
+  "hosted_backup_created": false,
+  "real_auth_token_used": false,
+  "recommendation": "NO_GO"
+}

@@ -7,6 +7,8 @@ on:
     paths:
       - 'qa/v169-security/**'
       - 'qa/v1610-disposable/**'
+      - 'qa/v1611-hosted-gates/**'
+      - 'docs/ai-handoff/V16_11_*'
       - 'docs/ai-handoff/V16_10_*'
       - 'docs/ai-handoff/V16_9_*'
       - '.github/workflows/v169-onboarding-security-nosend.yml'
@@ -30,6 +32,34 @@ jobs:
           node --check qa/v169-security/readiness-ui.mjs
           node --check qa/v169-security/browser.test.cjs
           node --check qa/v169-security/v169-security.test.mjs
+      - name: V16.11 new private hosted authority / recovery acceptance contract tests (58)
+        run: node --test qa/v1611-hosted-gates/v1611-gate.test.mjs
+      - name: V16.11 source-only no-secrets / verified baseline / NOT-AUTHORIZED gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          d=json.loads(Path('docs/ai-handoff/V16_11_HOSTED_READ_ONLY_BASELINE.json').read_text())
+          a=json.loads(Path('docs/ai-handoff/V16_11_PRIVATE_OPERATOR_APPROVAL_PACKET.json').read_text())
+          js=Path('qa/v1611-hosted-gates/authority-gate.mjs').read_text()
+          tests=Path('qa/v1611-hosted-gates/v1611-gate.test.mjs').read_text()
+          sql=Path('docs/ai-handoff/V16_11_READ_ONLY_HOSTED_METADATA_QUERIES.sql').read_text()
+          assert d['recommendation']=='NO_GO' and not d['hosted_sql_modified'] and not d['hosted_backup_created']
+          assert not d['verified_schema']['stores'] and not d['verified_schema']['store_memberships']
+          assert a['release_decision']=='NO_GO'
+          assert not a['approval']['explicit_user_hosted_backup_approval']
+          assert not a['approval']['cost_approved']
+          assert not a['approval']['security_reviewer_signed']
+          assert not a['approval']['merchant_owner_verified']
+          assert len(re.findall(r"test\('",tests))==58
+          assert 'BEGIN TRANSACTION READ ONLY;' in sql and 'ROLLBACK;' in sql
+          noncomments='\n'.join(l for l in sql.splitlines() if not l.lstrip().startswith('--'))
+          assert not re.search(r'\b(?:insert|update|delete|alter|drop|create|truncate|copy|grant|revoke)\b\s+(?:into|table|function|on|from)',noncomments,re.I)
+          assert not any(re.search(p,js) for p in [
+             r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bprocess\.env\b',r'\bcreateClient\s*\(',
+             r'graph\.facebook\.com',r'api\.openai\.com',r'\bservice_role\s*='])
+          print('V16.11 SECURITY SOURCE ONLY / NO REAL AUTH / NO HOSTED CHANGE / NO SEND: PASS')
+          PY
       - name: V16.10 new source-only evidence preflight (24 cases)
         run: node --test qa/v1610-disposable/preflight.test.mjs
       - name: NEW 75 source-only ownership and private-intake security tests
