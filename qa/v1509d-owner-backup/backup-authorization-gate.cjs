@@ -79,7 +79,7 @@ function assessBackupAuthorizationEnvelope(request,attestations,hostTrust,{now=(
      trusted.environment!=='EPHEMERAL_QA_ONLY'||trusted.projectRef!==PROJECT||
      trusted.syntheticOnly!==true||typeof trusted.publicKeyPem!=='string')
     return FAIL('UNTRUSTED_OR_REVOKED_SIGNER');
-  if(typeof a.signatureBase64!=='string'||!/^([A-Za-z0-9+/]{4}){21,22}={0,2}$/.test(a.signatureBase64))
+  if(typeof a.signatureBase64!=='string'||!/^[A-Za-z0-9+/]{86}==$/.test(a.signatureBase64))
     return FAIL('INVALID_SIGNATURE_ENCODING');
   try{
    if(!verify(null,approvalPayload(request,a.signerRef,a.role,a.observedAtMs),
