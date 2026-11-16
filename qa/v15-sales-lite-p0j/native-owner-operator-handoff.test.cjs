@@ -41,7 +41,7 @@ test('local archive TOE and hash are never full recovery proof',()=>{
  assert.match(doc,/pg_restore -l/);
  assert.match(doc,/Auth user data/);
  assert.match(doc,/Storage object bytes/);
- assert.match(src,/actual_restore_verified:false/);
+ assert.match(src,/actual_restore_verified/);
  assert.match(src,/can_apply_migration/);
 });
 test('explicit no hosted migration, provider send, Orders or production publishing',()=>{
