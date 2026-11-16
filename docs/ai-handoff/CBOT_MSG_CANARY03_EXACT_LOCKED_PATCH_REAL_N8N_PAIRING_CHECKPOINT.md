@@ -73,3 +73,9 @@ Created a NEW **INACTIVE** Manual + Code + `splitInBatches` 6-node workflow in P
 - **Next milestone:** `CBOT-MSG-CANARY-03B — Private QA Recipient Proof × Atomic One-Shot Claim × Independent Patch Diff/Restore Acceptance`. After its independent evidence, seek **specific** one-recipient live SEND/PUBLISH approval.
 
 **Checkpoint:** `VERIFIED` real Published 27-node baseline; `IMPLEMENTED` exact locked source patch; `TESTED` n8n #4181 synthetic pairing + CI; `BLOCKED` real Page-only one-recipient live trial; `RELEASED` NONE.
+
+### 6. QA correction: next-message loopback and release risk
+
+The source graph originally failed a test because an unrestricted reachability traversal walked `Send Messenger Reply → Verify Messenger Send Result → Record Successful Messenger MID → Loop One Message` into a **NEW** message which can use the legacy Agent. The correct **per-message** safety check terminates at the single shared Send node; it proves the deterministic greeting cannot invoke legacy business tools **before the current message is sent**, while it **does not** claim all subsequent Page conversations lack writer tools. A regression test now explicitly pins that real loopback.
+
+The current branch is still **LOCKED** and cannot select any real Page/PSID; production is unchanged. Real one-recipient live acceptance also needs independent concurrency/atomic one-shot proof and a reviewer-approved rollout/rollback. A passing 6-node single-message QA is not a concurrent-message guarantee.
