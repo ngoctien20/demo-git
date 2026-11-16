@@ -68,3 +68,12 @@
 Close Draft PR #159 or revert add-only branch commits. No production rollback is needed since there were **no n8n, Cloudflare, Supabase, GitHub Pages, credential, billing, order, stock, Meta/Zalo or production release modifications**.
 
 Next: collect one actual independent Merchant UAT report, fix P1 usability defects, reconcile final provider-native feature entitlement and decide staging billing/approval. **Do not merge/release automatically.**
+
+
+## 8. UAT self-report receipt — nhận 16/11/2026 JST
+
+**RECEIVED / STRUCTURALLY CHECKED / SELF_REPORTED_PASS** — đã nhận JSON qua cuộc trò chuyện từ người thử, `generatedAt=2026-11-16T05:02:01.952Z` (14:02 JST). Hợp đồng, 16 ID UAT01–UAT16 và bộ đếm nhất quán: **PASS 16, FAIL 0, NOT_RUN 0, NOT_APPLICABLE 0**. Cả 16 trường observation để trống. UI preview tự báo `renderCount=111`, không phải bằng chứng AI inference hay network execution.
+
+**Lưu ý sửa checkpoint trước đó:** Mệnh đề “chưa có UAT thật được gửi” trong §3/§5 là trạng thái tại thời điểm checkpoint đầu tiên; **nay đã nhận một lượt UAT tự đánh giá qua chat**, nhưng `independentMerchantAcceptance=false`, `merchantIdentityIndependentlyVerified=false`, `merchantUatApproved=false`, `releaseAuthorized=false` và chưa có chứng cứ độc lập cho từng thao tác. Không chuyển Release Candidate sang Approved/Released.
+
+[Báo cáo tiếp nhận đã ẩn danh, không chứa dữ liệu khách hàng](./V15_2_ADV5_MERCHANT_UAT_SELF_REPORT_RECEIPT_20261116.md). Không thay đổi code sản phẩm, quyền Owner/GRANT, Published, hosted DB hay billing. **Bước tiếp:** xem xét UX Mobile UAT card-vs-table như cải tiến P2 riêng, tiếp tục thu phản hồi và chứng nhận các cổng Owner/JWT-RLS/Provider/Action Gateway.
