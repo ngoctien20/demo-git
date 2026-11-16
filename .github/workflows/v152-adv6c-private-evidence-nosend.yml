@@ -1,0 +1,69 @@
+name: TIEN404 V15.2 ADV6C Independent Private Evidence Receipts QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/adv6c-private-evidence-intake*'
+      - 'docs/ai-handoff/V15_2_ADV6C_*'
+      - '.github/workflows/v152-adv6c-private-evidence-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-private-evidence-intake-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-receipt-no-go:
+    name: Synthetic independent Ed25519 receipt validation and fail-closed operations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and module policy
+        run: |
+          node --check qa/v152-advanced-actions/adv6c-private-evidence-intake.cjs
+          node --check qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+      - name: 37 negative, cryptographic and separation tests with synthetic keys only
+        run: node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+      - name: Inherited ADV6B independent Owner/Backup/Role evidence gates
+        run: node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+      - name: Inherited ADV6B1 hosted metadata NO-GO
+        run: node --test qa/v152-advanced-actions/hosted-metadata-triage.test.cjs
+      - name: Inherited Canonical Gateway and Signed Backend
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Verify explicit PUBLIC NO-GO without any private input
+        run: |
+          node - <<'JS'
+          const v=require('./qa/v152-advanced-actions/adv6c-private-evidence-intake.cjs');
+          const r=v.receiptReview();
+          if(r.status!=='BLOCKED'||r.productionReleaseAuthorized||
+             r.privateExportAuthorized||r.hostedMigrationAuthorized||
+             r.dbRoleChangeAuthorized||r.providerSendsAuthorized)
+            process.exit(2);
+          console.log('NO-GO: no private authority, signed evidence or hosted change authorization was supplied');
+          JS
+      - name: Static no secrets, hosted network, key enrollment or operation executor
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          core=Path('qa/v152-advanced-actions/adv6c-private-evidence-intake.cjs').read_text()
+          docs=Path('docs/ai-handoff/V15_2_ADV6C_INDEPENDENT_PRIVATE_EVIDENCE_INTAKE_CHECKPOINT.md').read_text()
+          for pat in (r'\bfetch\s*\(',r'\baxios\s*\(',r'\bXMLHttpRequest\b',
+              r'\bWebSocket\b',r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bfs\.',r'\bcreatePrivateKey\s*\(',r'\bcreateHmac\s*\(',
+              r'\blocalStorage\b',r'\binnerHTML\b'):
+            assert not re.search(pat,core),pat
+          assert "status:blockers.length?'BLOCKED':'PENDING_EXTERNAL_INDEPENDENT_VERIFICATION'" in core
+          assert 'privateExportAuthorized:false' in core
+          assert 'hostedMigrationAuthorized:false' in core
+          assert 'productionReleaseAuthorized:false' in core
+          assert 'ADV6C_NO_PRIVATE_OPERATION_EXECUTOR' in core
+          assert 'NO HOSTED MUTATION' in docs
+          assert 'NO' in docs and 'JWT' in docs
+          print('ADV6C PRIVATE INTAKE POLICY PASS — 0 real signatures / 0 real backups / 0 hosted operations')
+          PY
