@@ -129,7 +129,7 @@
   }
   container.append(document.createTextNode(value.slice(end)));
  }
- function draw(decision,cross){
+ function draw(decision,cross,requestedCapability){
   const screen=$('screen');screen.replaceChildren();
   const d=decision.decision,r=decision.preview;
   const safeRich=cross.previewEligible && d.selectedComponent!=='TEXT';
@@ -171,8 +171,9 @@
   $('actionStatus').textContent=d.actionSuggestion==='NONE'?
    'Không có action được policy cấp cho preview.':
    'Hành động gợi ý: '+d.actionSuggestion+' · KHÔNG thực thi, chưa có chữ ký server.';
-  $('fallbackInfo').textContent=[...d.fallbackReasons,
-   ...(cross.previewEligible?[]:[cross.reason])].join(' · ')||'Không có fallback bổ sung.';
+  $('fallbackInfo').textContent=[...new Set([...d.fallbackReasons,
+   ...(cross.previewEligible?[]:[cross.reason]),
+   ...(requestedCapability?.previewEligible?[]:[requestedCapability?.reason])].filter(Boolean))].join(' · ')||'Không có fallback bổ sung.';
   $('qaStatus').textContent='EXPERIMENTAL / QA / 0 provider send / 0 order write';
  }
  function matrix(shop,channel){
@@ -199,14 +200,17 @@
    const feature=mapComponent[decision.decision.selectedComponent]||'TEXT';
    const f=studioApi.FIXTURES[shop];
    const capability=crosswalk.row({channel,component:feature,tenant_id:f.tenantId,store_id:f.storeId});
+   const requestedCapability=crosswalk.row({channel,
+    component:mapComponent[c.presentation.component]||'TEXT',tenant_id:f.tenantId,store_id:f.storeId});
    $('shopName').textContent=studio.get(shop,channel).assistantName+' · '+f.name;
    $('channelName').textContent=channel+' · '+c.intent+' · mô hình thật chưa chạy';
    $('screen').style.borderColor=studio.get(shop,channel).color;
-   draw(decision,capability);matrix(shop,channel);
+   draw(decision,capability,requestedCapability);matrix(shop,channel);
    $('outJson').textContent=JSON.stringify({source:'SYNTHETIC_QA_ONLY',contract:decision.contract,
     intent:c.intent,shop,channel,decision:decision.decision,
     capability:{version:crosswalk.VERSION,feature,previewEligible:capability.previewEligible,
-     reason:capability.reason},
+     reason:capability.reason,requestedFeature:requestedCapability.component,
+     requestedReason:requestedCapability.reason},
     actionRegistry:'SERVER_ONLY_NOT_EXECUTED',providerSends:0,ordersWritten:0,
     hostedReads:0,hostedWrites:0,paidModelCalls:0},null,2);
    last={scope:c,decision,capability};renderCount++;notice('Xem trước an toàn · bản nháp chưa được xuất bản.');
