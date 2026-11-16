@@ -7,7 +7,7 @@ Date: 16/11/2026 JST | Scope: Hosted READ ONLY + source-only QA + guarded SQL re
 - Nine core public tables have RLS plus FORCE RLS. Existing Product, Customer, Order, OrderItem, Conversation, Message and Bot Config records are Tenant-scoped; none has store_id. There is NO canonical public.stores or public.store_memberships.
 - Authenticated business-table SELECT currently uses Tenant membership. No equivalent Store-level RLS verified. Anon SELECT on inspected business tables is false. The service_role can bypass RLS and must not be used by untrusted clients.
 - Products currently UNIQUE(tenant_id,sku): two Stores under one Tenant cannot independently use the same SKU without controlled policy/constraint and query migration.
-- QA identity map rows = 2, maps to 2 actual Tenants; QA owner_bindings rows = 2, confirmed rows = 0. Do not treat QA text store keys as trusted canonical ownership.
+- QA identity map rows = 2, maps to 2 actual Tenants; QA owner_bindings rows = 2, both status=paired; owner_pairing_claims_v3 has 3 status=CONFIRMED and 1 PENDING_OWNER_CONFIRMATION. These statuses are **synthetic/QA pairing evidence**, not independent G2.3 real provider owner proof. Do not treat QA text store keys as trusted canonical ownership.
 - Private order_idempotency is Tenant-scoped, and channel_secrets not Store-scoped. Review all dependent Outbox, Channel Binding, and Bot Profile tables and callers before changing.
 - Existing 2 Products and 2 Orders lack a verified Store owner. DO NOT auto-assign them to a newly fabricated default Store.
 
