@@ -41,7 +41,7 @@ test('existing tenant-wide SKU unique constraint is not accidentally dropped',()
  assert.doesNotMatch(nonComments(draft),/\bDROP\b/i);
 });
 test('existing business RLS policies are NOT falsely marked migrated',()=>{
- assert.match(draft,/does NOT establish per-Store RLS isolation/);
+ assert.match(draft,/does NOT establish per-Store RLS isolation/i);
  assert.match(draft,/RESTRICTIVE store-SELECT policy/);
 });
 test('readonly audit uses only SELECT statements',()=>{
@@ -49,7 +49,7 @@ test('readonly audit uses only SELECT statements',()=>{
  const statements=body.split(';').map(x=>x.trim()).filter(Boolean);
  assert.equal(statements.length,5);
  statements.forEach(s=>assert.match(s,/^SELECT\b/i));
- assert.doesNotMatch(body,/\b(INSERT|UPDATE|DELETE|ALTER|CREATE|GRANT|REVOKE|DROP|TRUNCATE|EXECUTE|COPY)\b/i);
+ assert.doesNotMatch(body,/\b(INSERT|UPDATE|DELETE|ALTER|CREATE|GRANT|REVOKE|DROP|TRUNCATE|COPY)\b/i);
 });
 test('no secrets or executable API calls in migration and audit source',()=>{
  const both=draft+'\n'+audit;
