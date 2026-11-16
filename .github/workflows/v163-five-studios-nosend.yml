@@ -1,0 +1,62 @@
+name: TIEN404 V16.3 Five Studios Economy QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v163-studios/**'
+      - 'docs/ai-handoff/V16_3_*'
+      - '.github/workflows/v163-five-studios-nosend.yml'
+  push:
+    branches:
+      - work/v163-economy-five-studios-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  five-studios-offline-qa:
+    name: 64 offline security and functional assertions + 79 inherited
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          for f in qa/v163-studios/*.mjs; do node --check "$f"; done
+      - name: V16.3 Five Studios offline unit tests
+        run: node --test qa/v163-studios/v163-studios.test.mjs
+      - name: Inherited V16.2 stage QA and V16.1 Hybrid QA
+        run: |
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Static no external call, no secrets and no live mutators
+        run: |
+          python3 - <<'PY'
+          import pathlib,re
+          root=pathlib.Path('qa/v163-studios')
+          sources=list(root.glob('*.mjs'))
+          assert len(sources)>=7
+          forbidden=[
+            r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+            r'\bprocess\.env\b',r'\bchild_process\b',
+            r'\bfs\.(?:write|append|unlink)\w*\s*\(',
+            r'https?://(?:api\.|graph\.)',
+            r'(?i)sk-[a-z0-9]{16,}'
+          ]
+          for p in sources:
+            s=p.read_text()
+            for pattern in forbidden: assert not re.search(pattern,s),(p,pattern)
+          lab=(root/'model-ab-lab.mjs').read_text()
+          assert "scored_pass:0" in lab and "actual_api_calls:0" in lab
+          assert 'real_model_quality_certified:false' in lab
+          assert 'persistent:false' in (root/'cost-center.mjs').read_text()
+          assert "real_staff_notified:false" in (root/'human-handoff.mjs').read_text()
+          print('PASS no live provider sends, no model API, no hosted writes and no fabricated QA PASS')
+          PY
+  hosted-real-provider-and-commerce-certification:
+    name: Hosted P0, live send, model A/B and billing — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "NOT_RUN: operation-specific approvals and independent evidence required"
