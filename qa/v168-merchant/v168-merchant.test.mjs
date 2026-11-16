@@ -224,5 +224,5 @@ test('53 SQL migration document contains zero executable SQL',()=>{
  const sql=readFileSync(new URL('../../docs/ai-handoff/V16_8_STORE_JWT_RLS_MIGRATION_DO_NOT_APPLY.sql',import.meta.url),'utf8');
  for(const line of sql.split('\n')){if(line.trim())assert(line.startsWith('--'),line)}
  assert(sql.includes('UNIQUE(tenant_id,store_id,sku)'));
- assert(sql.includes('NOT EXECUTABLE'));
+ assert(sql.includes('ZERO EXECUTABLE SQL LINES'));
 });
