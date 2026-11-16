@@ -8,7 +8,7 @@ import {CONTRACT,REQUIRED_MODE,handleQaFetch,signQaHmac,handleQaBatch,costPrevie
 import {faqStudioUiContract} from '../v163-studios/faq-studio.mjs';
 import {priorityDashboardUiContract} from '../v163-studios/priority-dashboard.mjs';
 import {createCostCenter} from '../v163-studios/cost-center.mjs';
-import {createHandoffStudio} from '../v163-studios/human-handoff.mjs';
+import {createHandoffPreview} from '../v163-studios/human-handoff.mjs';
 import {previewImport,sampleCsvForStore,parseCsv} from './import-preview.mjs';
 const fail=x=>{throw Error(x)};
 const CHANNEL_ACCOUNTS=Object.freeze({
@@ -50,6 +50,7 @@ export function createStagingSession(){
   async markEnqueued(key){claimed.set(key,'ENQUEUED')},
   async retryable(key){claimed.delete(key)}
  };
+ const handoff=createHandoffPreview();
  const environment={
   V16_MODE:REQUIRED_MODE,QA_HMAC_SECRET:'QA_V168_SYNTHETIC_HMAC_DO_NOT_USE',
   QA_REGISTRY:{async lookup(channel,account){
@@ -118,7 +119,7 @@ export function createStagingSession(){
   ...replayCounter,previews:processed.size,duplicateProtectedQA:claimed.size,
   no_hosted_writes:true,no_cloudflare_deployment:true,no_real_provider_verification:true
  })}
- return Object.freeze({simulate,importForAccount,readEvidence,registry,costCenter:createCostCenter()});
+ return Object.freeze({simulate,importForAccount,readEvidence,registry,costCenter:createCostCenter(),handoff});
 }
 export function planCosts({shops,messagesPerShop=1000,modelFraction=0.3,
  orchestrationFraction=0.1,inputTokens=3000,outputTokens=300,
