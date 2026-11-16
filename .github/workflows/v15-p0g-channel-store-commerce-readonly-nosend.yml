@@ -1,0 +1,102 @@
+name: TIEN404 V15 Sales Lite P0-G Signed Channel-Store Commerce Read-Only (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0g-channel-store-readonly-contract-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0g/**'
+      - 'docs/ai-handoff/V15_P0G_*'
+      - '.github/workflows/v15-p0g-channel-store-commerce-readonly-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-channel-store-contract:
+    name: A/B/C Four-Channel Signed QA x Commerce Read-Only NO-SEND
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check new P0-G bridge syntax
+        run: |
+          node --check qa/v15-sales-lite-p0g/channel-store-readonly-contract.cjs
+          node --check qa/v15-sales-lite-p0g/channel-store-readonly-contract.test.cjs
+      - name: P0-G trusted QA channel and Store read contract
+        run: node --test qa/v15-sales-lite-p0g/channel-store-readonly-contract.test.cjs
+      - name: P0-F Zalo/RPC negative QA and inherited Commerce/Release security gates
+        run: |
+          node --test qa/v15-sales-lite-p0f/zalo-claim-threat-model.test.cjs
+          node --test qa/v15-sales-lite-p0f/p0f-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-security-review/security-review-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: P0-G immutable source uses no hosted credentials, send or order writer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('qa/v15-sales-lite-p0g/channel-store-readonly-contract.cjs').read_text()
+          executable=re.sub(r'/\*[\s\S]*?\*/','',code)
+          for bad in (
+            'fetch(', 'https.request', 'http.request', 'axios(', 'child_process',
+            'process.env.', 'SUPABASE_SERVICE_ROLE_KEY', 'supabase db dump',
+            'pg_dump ', 'pg_restore ', 'INSERT INTO ', 'UPDATE public.',
+            'sendMessage(', 'apply_migration(', 'ifxlvrhyjhbzbrkdsida',
+          ):
+            assert bad not in executable,bad
+          for required in (
+            'isAcceptedSyntheticContext', 'attestSyntheticRequest',
+            'can_send:false','can_write_orders:false','provider_identity_real:false',
+            'hosted_store_authority_verified:false','real_price_verified:false'
+          ):
+            assert required in code or required=='attestSyntheticRequest', required
+          assert 'source:\'V14_7_SYNTHETIC_FIXTURE\'' in executable
+          print('PASS: P0-G source uses only inherited signed synthetic context and synthetic fixtures')
+          PY
+
+  inherited-disposable-store-security:
+    name: Existing P0-F Store Scoped RPC / RLS on Ephemeral PG17
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: p0g_synthetic_only
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only_no_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d p0g_synthetic_only"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Revalidate inherited P0-F Store A/B/C and rollback on disposable postgres
+        env:
+          PGPASSWORD: synthetic_only_no_secret
+        run: |
+          psql -h 127.0.0.1 -U postgres -d p0g_synthetic_only -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql
+      - name: Confirm no Supabase hosted target/connection in fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql').read_text()
+          assert 'ROLLBACK;' in s
+          assert 'PASS_DISPOSABLE_PG17_SECURITY_INVOKER_STORE_PRODUCT_FK_RLS_NO_HOSTED' in s
+          assert 'ifxlvrhyjhbzbrkdsida' not in s
+          print('PASS: synthetic rollback-only Store tests, no hosted connection')
+          PY
