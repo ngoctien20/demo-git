@@ -1,0 +1,15 @@
+{
+  "contract": "T404_CANARY03B_PRIVATE_EVIDENCE_V1",
+  "source": "PUBLIC_REDACTED_GATE_ONLY",
+  "app_role": "ADMIN_UI_OBSERVED",
+  "page_full_control": "OWNER_ATTESTED",
+  "app_page_messages_subscription": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "qa_recipient_binding": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "qa_consent": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "independent_reviewer": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "owner_final_patch_approval": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "exact_published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+  "rollback_private_snapshot": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "atomic_backend_verified": "PRIVATE_EVIDENCE_NOT_PRESENT",
+  "live_canary_sent": false
+}
