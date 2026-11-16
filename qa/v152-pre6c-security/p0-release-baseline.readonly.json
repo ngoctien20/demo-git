@@ -1,0 +1,68 @@
+{
+  "contract": "T404_PRE_ADV6C_P0_RELEASE_BASELINE_V1",
+  "environment": "SUPABASE_STAGING_AND_N8N_PUBLISHED",
+  "observed_date_jst": "2026-11-16",
+  "evidence_scope": "READ_ONLY_METADATA_AND_WORKFLOW_STRUCTURE",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "parent_pr": 171,
+  "parent_commit": "26253c185f711eeed39989b99b01a9a17d247a4f",
+  "schema": {
+    "stores_table": false,
+    "store_memberships_table": false,
+    "products_store_id": false,
+    "orders_store_id": false,
+    "customers_store_id": false,
+    "orders_rls_enabled": true,
+    "products_rls_enabled": true,
+    "customers_rls_enabled": true,
+    "owner_A_B_independent_hosted_jwt_proof": false,
+    "cross_store_negative_hosted_proof": false
+  },
+  "rpc": {
+    "anon_security_definer_execute": [
+      "public.qa_shop_b_zalo_claim(uuid,text,text,text)"
+    ],
+    "authenticated_security_definer_review_required": [
+      "public.qa_owner_pairing(uuid,text,uuid)",
+      "public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)"
+    ],
+    "verified_webhook_relay_replacement": false,
+    "independent_rpc_role_test": false,
+    "caller_dependency_test": false
+  },
+  "order_writer": {
+    "messenger_published_workflow_id": "Z7FdV7uDvApfbURQ",
+    "published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "legacy_tools_still_connected": true,
+    "server_verified_customer_order_identity": false,
+    "server_verified_store_scope": false,
+    "server_confirmation_gate": false,
+    "commerce_atomic_order_idempotency": false,
+    "independent_no_send_regression_on_real_published": false
+  },
+  "privileged_tools": {
+    "no_arbitrary_sql_live_proof": false,
+    "no_common_service_role_live_proof": false,
+    "least_privilege_database_role_proof": false,
+    "agent_to_writer_scope_proof": false
+  },
+  "recovery": {
+    "independent_owner_attestation": false,
+    "approved_export_receipt": false,
+    "independent_restore_evidence": false,
+    "rollback_tested": false
+  },
+  "delivery": {
+    "independent_release_approval": false,
+    "branch_protection_verified": false,
+    "deployment_pipeline_enforces_gate": false,
+    "live_release_approved": false
+  },
+  "p1": {
+    "durable_per_store_ai_budget_hosted": "NOT_VERIFIED",
+    "cloudflare_rate_limit_on_exact_entry_route": "NOT_VERIFIED",
+    "provider_replay_hosted": "NOT_VERIFIED",
+    "secret_rotation_plan_approved": "NOT_VERIFIED"
+  },
+  "note": "CURRENT_READ_ONLY_FINDINGS_NOT_A_SECURITY_CERTIFICATE; NO TOKENS OR CUSTOMER RECORDS INCLUDED"
+}
