@@ -76,7 +76,7 @@ function issueSignedPreview({decision,action,context,nonce,issuedAtMs,ttlMs=6000
  if(!NONCE.test(nonce||'')||!Number.isSafeInteger(issuedAtMs)||issuedAtMs<1700000000000||
     !Number.isSafeInteger(ttlMs)||ttlMs<1000||ttlMs>MAX_TTL_MS)return deny('NONCE_TIME_OR_TTL_INVALID');
  let key;
- try{key=crypto.createPrivateKey(privateKey);if(key.asymmetricKeyType!=='ed25519')throw Error()}catch{return deny('QA_ED25519_SIGNER_REQUIRED')}
+ try{key=privateKey?.type==='private'&&privateKey?.asymmetricKeyType==='ed25519'?privateKey:crypto.createPrivateKey(privateKey);if(key.asymmetricKeyType!=='ed25519')throw Error()}catch{return deny('QA_ED25519_SIGNER_REQUIRED')}
  const claims={version:VERSION,audience:AUDIENCE,action,channel:context.channel,
   tenantDigest:context.tenantDigest,storeDigest:context.storeDigest,
   subjectDigest:context.subjectDigest,conversationDigest:context.conversationDigest,
@@ -99,7 +99,7 @@ async function verifyPreviewAndConsume({token,decision,action,context,publicKey,
  try{
   const raw=decode(token.payload),sig=decode(token.signature);
   if(sig.length!==64)return deny('TOKEN_SIGNATURE_INVALID');
-  const key=crypto.createPublicKey(publicKey);
+  const key=publicKey?.type==='public'&&publicKey?.asymmetricKeyType==='ed25519'?publicKey:crypto.createPublicKey(publicKey);
   if(key.asymmetricKeyType!=='ed25519'||!crypto.verify(null,raw,key,sig))
     return deny('TOKEN_SIGNATURE_INVALID');
   p=JSON.parse(raw.toString('utf8'));
