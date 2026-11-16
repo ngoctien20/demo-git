@@ -71,3 +71,22 @@ CI must show separately:
 **NO-GO:** real hosted DDL/RLS, M2 backfill, n8n Published edit, provider send, RPC revoke, credentials, payment.
 
 Rollback of Draft: close the child PR. No hosted rollback required because the branch changes only source and disposable CI.
+
+
+## 6. VERIFIED CI acceptance and P0 red-team finding — 16/11/2026 JST
+
+**Exact tested source HEAD (before this documentation receipt):** `b3b5cbacd3a0d958a380a6b049b61d4db31b25a1`  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/43885009042
+
+**TESTED**
+- Inherited RPC.7/RPC.6/V14.4.3/ADV.6C/RPC.5: **126/126 Node tests PASS** and static disposable-only guard PASS.
+- Actual PostgreSQL 17 throwaway CI: synthetic legacy fixture created, M1 expand executed transactionally and rolled back, null Store IDs/tables restored to original state, then expand applied to QA schema; **database QA job SUCCESS**.
+- Preserved two Products/two Orders/zero Customers, three existing Tenant-level PERMISSIVE policies and original `UNIQUE(tenant_id,sku)`. No real Store assignment/backfill; both new tables FORCE RLS; QA client has no INSERT/UPDATE on Store tables.
+- QA same-Tenant Owner A / Staff B / other Tenant C and unassigned actor read only their respective synthetic Store registrations. Revoked synthetic member denied instantly.
+- **P0 red-team confirmed on actual disposable PG17:** when an additional *synthetic* Shop B Product is inserted into the same Tenant before M4 policy replacement, Owner A sees it under existing Tenant-only permissive Product policy. Removing the synthetic row restores original query results. This **is evidence of a real PostgreSQL policy design vulnerability for future M2 sequencing**, not evidence of an actual hosted data breach. No hosted Store rows exist today.
+
+**Required follow-up before any real M2:** do not perform an exposed Store backfill while legacy broad Tenant policies remain effective. Plan independently approved controlled reader restriction and atomic read-policy migration or transactional Store attribution + policy replacement, with exact rollback and host JWT/role tests. The current PR does **not** implement M2/M4.
+
+**Expected red eligibility job:** `RPC8_HOSTED_M1_NO_GO_REAL_BACKUP_RESTORE_OWNER_PROOF_AND_APPROVAL_MISSING`, deliberate exit code 3. `M0_EVIDENCE_BLOCKED`, `M1_MIGRATION_NO_GO`, `canApplyM1=false`, `canBackfill=false`, `canChangeRls=false`. Overall GitHub run FAILURE reflects policy-denied hosted release while offline QA jobs are green.
+
+**Status:** `RPC8_M1_DISPOSABLE_REHEARSAL_TESTED`; real M0 backup recovery and M1 migration remain **BLOCKED/NO-GO**. User's H11R application archive acceptance remains limited, with Auth/Storage deferral unchanged. **Rollback** of this PR is closing Draft; no hosted database mutation or live traffic occurred.
