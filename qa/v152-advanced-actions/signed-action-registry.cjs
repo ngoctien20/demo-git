@@ -24,7 +24,9 @@ const safe=(x,max=128)=>typeof x==='string'&&x.length>0&&x.length<=max&&
   /^[A-Za-z0-9:_./-]+$/.test(x);
 const fail=reason=>{throw new Error(reason)};
 const nowValid=x=>Number.isSafeInteger(x)&&x>=0;
-const stableKey=scope=>scope.tenant_id+'|'+scope.store_id+'|'+scope.channel+'|'+scope.jti;
+const stableKey=scope=>crypto.createHash('sha256')
+  .update([scope.tenant_id,scope.store_id,scope.channel,scope.jti].join('|'))
+  .digest('hex');
 function createEphemeralQaClaimStore(){
   const seen=new Map();
   return Object.freeze({
