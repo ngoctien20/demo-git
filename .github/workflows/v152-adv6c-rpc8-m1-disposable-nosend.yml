@@ -1,0 +1,131 @@
+name: TIEN404 V15.2 ADV.6C-RPC.8 M1 Expand-only Disposable Rehearsal (NO HOSTED)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc8/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC8_*'
+      - '.github/workflows/v152-adv6c-rpc8-m1-disposable-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc8-m1-disposable-expand-owner-ledger-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc8-prior-m0-regression:
+    name: RPC.8 preserve RPC.7 local archive/Owner acceptance and source-only NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prior accepted RPC.7 owner-deferred recovery evidence 42 cases
+        run: |
+          node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+      - name: Inherited private four-row/backup/Store gates
+        run: |
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Strict SQL and configuration boundary scan
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('qa/v152-rpc8')
+          fixture=(p/'pg17-synthetic-legacy-fixture.sql').read_text()
+          candidate=(p/'pg17-m1-expand-disposable-only.sql').read_text()
+          shell=(p/'ci-pg17-m1-expand-rehearsal.sh').read_text()
+          for s in [fixture,candidate,shell]:
+            assert 'qa_rpc8.' in s
+            assert 'RPC8_DISPOSABLE' in s
+            assert 't404_rpc8_ci' in s
+            assert 'ifxlvrhyjhbzbrkdsida' not in s
+            # Ignore non-executable SQL/shell comment lines; guard against
+            # dangerous statements or references in runnable source only.
+            executable='\n'.join(line for line in s.splitlines()
+                                 if not line.lstrip().startswith(('--','#')))
+            for token in [r'\bservice_role\b',r'\bauth\.users\b',r'\bpublic\.orders\b',
+              r'\bpublic\.products\b',r'\bpublic\.stores\b',r'\bpg_dump\b',
+              r'\bpg_restore\b',r'\bcurl\b',r'\bwget\b']:
+              assert not re.search(token,executable,re.I),token
+          assert 'ADD COLUMN store_id uuid NULL' in candidate
+          assert 'ENABLE ROW LEVEL SECURITY' in candidate
+          assert 'FORCE ROW LEVEL SECURITY' in candidate
+          assert 'REFERENCES qa_rpc8.tenant_memberships(tenant_id,user_id)' in candidate
+          for token in [r'\bDROP POLICY\b',r'\bDROP TABLE\b',r'\bUPDATE qa_rpc8.products\b',
+            r'\bUPDATE qa_rpc8.orders\b',r'\bDELETE FROM qa_rpc8.products\b',
+            r'\bINSERT INTO qa_rpc8.products\b',r'\bGRANT INSERT\b',r'\bGRANT UPDATE\b']:
+            assert not re.search(token,candidate,re.I),token
+          assert 'ROLLBACK;' in shell and 'COMMIT;' in shell
+          print('PASS: Candidate is disposable-only M1 expand, not Supabase migration')
+          PY
+
+  rpc8-pg17-real-disposable-m1:
+    name: RPC.8 PG17 M1 transaction rollback + same-Tenant Store access QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc8_synthetic_postgres17_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc8_synthetic_postgres17_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Only ephemeral CI database may run executable QA M1 SQL
+        run: |
+          bash -n qa/v152-rpc8/ci-pg17-m1-expand-rehearsal.sh
+          bash qa/v152-rpc8/ci-pg17-m1-expand-rehearsal.sh
+
+  rpc8-hosted-release-no-go:
+    name: RPC.8 HOSTED M1/M2/M4 RELEASE — NO GO (expected BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [rpc8-prior-m0-regression,rpc8-pg17-real-disposable-m1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce existing M0 independent evidence and M1 real authorization
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc6/hosted-fourrow-recovery-baseline.json');
+          const {reviewM0Evidence,reviewM1Readiness}=
+            require('./qa/v152-rpc7/private-m0-evidence-resolution.cjs');
+          const m0=reviewM0Evidence({baseline:b});
+          const m1=reviewM1Readiness({baseline:b,m0Review:m0});
+          if(m0.status!=='M0_EVIDENCE_BLOCKED'||
+             m1.status!=='M1_MIGRATION_NO_GO'||
+             m0.m1MigrationAuthorized!==false||
+             m1.canApplyM1!==false||
+             m1.canBackfill!==false||m1.canChangeRls!==false)
+            throw Error('RPC8_UNSAFE_HOSTED_PROMOTION');
+          console.log(JSON.stringify({m0:m0.status,
+            m1:m1.status,m0Blocks:m0.blockers.length,m1Blocks:m1.blockers.length,
+            canApplyM1:false,canBackfill:false,canChangeRls:false}));
+          console.error('RPC8_HOSTED_M1_NO_GO_REAL_BACKUP_RESTORE_OWNER_PROOF_AND_APPROVAL_MISSING');
+          process.exitCode=3;
+          NODE
