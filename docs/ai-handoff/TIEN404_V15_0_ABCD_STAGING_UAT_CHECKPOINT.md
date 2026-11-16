@@ -97,3 +97,10 @@
 - `V15.0-08U` Owner accepts staged UI and provides exported JSON evidence. G2.3 independent Zalo Owner/merchant consent proceeds in a separate security release train.
 
 **No production go-live claim.**
+
+## 10. Owner UAT accepted — synthetic Lab only (2026-11-16 JST)
+- **OWNER-ACCEPTED (direct chat confirmation): 7/7 PASS**, encompassing Shop A/B/C correct synthetic price and product, switching four channels no-send, missing A002 no guessed price, order draft-only, customer cannot access Owner reporting, model chooser estimates without real inference, and manual PASS/FAIL + JSON export.
+- **Evidence classification:** This is the owner's direct *self-reported acceptance in conversation*, NOT independent verification of individual per-case browser logs. The UAT JSON export was **not attached** in this turn. Use `qa/v15-test-lab/v15-owner-uat-self-reported-7-of-7.json` for an accurate machine-readable record; do not invent signature, timestamped browser capture, or independently observed full dataset.
+- Existing **hosted no-send evidence remains independently VERIFIED**: n8n execution #3886 SUCCESS GET health 200 / index 200 / POST send 405, static Worker version `4fba3556-5133-4aee-a018-b6dc5409c45e`, 0 bindings, CSP no-connect; unchanged as of latest read-only audit. Published Zalo ingress remains unchanged, outbound `ZALO_SEND_ENABLED=false`.
+- **V15.0-08 SYNTHETIC UI UAT ACCEPTED** by Owner; not an AI model quality/accuracy assessment, merchant account authorization, G2.3 Zalo Owner proof, hosted authenticated backend success or commercial release.
+- Following step: `V15.0-03H/04H` source-only trusted backend security gates, mock/staging no-send integration, proof of negative tenant/role and tool authorization. No real customer data, Owner role, Supabase RLS/GRANT, Published workflow, credential, paid API or channel send without separately scoped approval.
