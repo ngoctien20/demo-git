@@ -1,0 +1,72 @@
+{
+  "contract": "T404_ADV6C_RPC3_HOSTED_READONLY_BASELINE_V1",
+  "recorded_on_jst": "2026-11-16",
+  "data_classification": "NON_SECRET_METADATA_ONLY",
+  "supabase_project": "ifxlvrhyjhbzbrkdsida",
+  "caller_chain": {
+    "n8n_total_inspected_rpc2": 114,
+    "exact_rpc_workflow": "OgDZNSAvKEvhnAvn",
+    "exact_rpc_node": "Submit pending claim for Shop B",
+    "rpc_workflow_published": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+    "upstream_webhook_workflow": "yIJk8LvJoLF40Z62",
+    "upstream_node": "Zalo V2 Shadow (Owner Gate Only)",
+    "upstream_published": "8ca4a6f6-ab3f-42f1-8637-d4f5db790a3e",
+    "observed_execution_modes_rpc2": [
+      "manual"
+    ],
+    "external_callers_independently_certified": false
+  },
+  "supabase_rpc": {
+    "name": "public.qa_shop_b_zalo_claim(uuid,text,text,text)",
+    "security_definer": true,
+    "anon_execute": true,
+    "track_functions": "none",
+    "missing_exact_real_call_counts": true,
+    "security_advisor_0028_warnings": 1,
+    "security_advisor_0029_warnings": 2
+  },
+  "logs": {
+    "window": "Supabase unified logs tool default last 24 hours; exact start/end not returned",
+    "postgresql_events_total": 44,
+    "postgresql_events_with_rpc_name": 3,
+    "postgrest_events_total": 7,
+    "postgrest_events_with_rpc_name": 0,
+    "interpretation": "UNCLASSIFIED: PostgreSQL marker hits may be introspection/metadata queries, not real PostgREST RPC invocations",
+    "direct_provider_rpc_invocations_proven": false,
+    "independent_external_operator_request_audit": false
+  },
+  "hosted_two_step": {
+    "private_schema": "tien404_r1_qa",
+    "claim_function": "claim_owner_pairing_v3_synthetic",
+    "confirm_function": "confirm_owner_pairing_v3_qa",
+    "both_security_invoker": true,
+    "both_anon_execute": false,
+    "both_authenticated_execute": false,
+    "both_have_row_lock_and_conflict_handling": true,
+    "confirm_uses_auth_uid_and_owner_authorized_qa": true,
+    "public_stores_table_exists": false,
+    "public_store_memberships_table_exists": false,
+    "authenticated_real_owner_a_jwt_proof": false,
+    "authenticated_real_owner_b_jwt_proof": false,
+    "same_tenant_cross_store_denial_proof": false,
+    "active_jwt_session_revocation_proof": false,
+    "claim_call_executed_on_hosted": false,
+    "confirm_call_executed_on_hosted": false
+  },
+  "backup": {
+    "one_time_controller_approval_verified": false,
+    "separate_security_reviewer_approval_verified": false,
+    "named_operator_approval_verified": false,
+    "encrypted_backup_export_verified": false,
+    "independent_restore_verified": false
+  },
+  "migration": {
+    "full_caller_inventory": false,
+    "private_service_role_and_writer_hosted": false,
+    "no_double_writer_real_canary": false,
+    "rollback_drill_verified": false,
+    "external_authorized_change_window": false,
+    "rpc_revoke_authorized": false
+  },
+  "note": "NO_REAL_JWT_NO_HOSTED_WRITES_NO_SECRET_OR_BACKUP_EXPORTED"
+}
