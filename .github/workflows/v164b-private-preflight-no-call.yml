@@ -1,0 +1,72 @@
+name: TIEN404 V16.4B Privacy × Entitlement × Independent QA (NO CALL)
+on:
+  push:
+    branches:
+      - work/v164b-private-sanitization-entitlement-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v164b-privacy/**'
+      - 'docs/ai-handoff/V16_4B_*'
+      - '.github/workflows/v164b-private-preflight-no-call.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  privacy-entitlement-no-call:
+    name: V16.4B synthetic privacy, account proof and two-reviewer QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile and test offline private sanitizer (synthetic fixtures ONLY)
+        run: |
+          python3 -m py_compile qa/v164b-privacy/private_sanitizer.py
+          python3 -m py_compile qa/v164b-privacy/test_private_sanitizer.py
+          python3 qa/v164b-privacy/test_private_sanitizer.py
+      - name: V16.4B model entitlement and reviewer preflight
+        run: |
+          node --check qa/v164b-privacy/entitlement_gate.mjs
+          node --check qa/v164b-privacy/independent_eval_gate.mjs
+          node --check qa/v164b-privacy/v164b-preflight.test.mjs
+          node --test qa/v164b-privacy/v164b-preflight.test.mjs
+      - name: Inherited V16.4/16.3/16.2/16.1 offline regression
+        run: |
+          node --test qa/v164-private-ab/v164-eval-readiness.test.mjs
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: No provider API, no private fixtures, no credentials, no external network
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/v164b-privacy')
+          files=list(root.iterdir())
+          expected={'private_sanitizer.py','test_private_sanitizer.py',
+             'entitlement_gate.mjs','independent_eval_gate.mjs','v164b-preflight.test.mjs'}
+          assert expected.issubset({f.name for f in files})
+          assert not list(root.glob('AI_SALES*.csv'))
+          assert not list(root.glob('*.json'))
+          for f in [root/'private_sanitizer.py',root/'entitlement_gate.mjs',
+             root/'independent_eval_gate.mjs']:
+            s=f.read_text()
+            for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+             r'\bprocess\.env\b',r'\brequests\.(?:get|post)\s*\(',
+             r'\bopenai\.responses\.create\b',r'\bgoogle\.genai\b']:
+              assert not re.search(pattern,s),(f,pattern)
+          assert 'provider_transfer_allowed' in (root/'private_sanitizer.py').read_text()
+          assert 'V164B_PAID_PROVIDER_CALL_DISABLED' in (root/'entitlement_gate.mjs').read_text()
+          assert 'BLOCKED_WAITING_INDEPENDENT_PROOF' in (root/'independent_eval_gate.mjs').read_text()
+          print('PASS: no network, no private user CSV, no real model calls and no self-approved QA PASS')
+          PY
+  no-live-entitlement-or-paid-benchmark:
+    name: Account entitlement, data privacy, paid canary, hosted Store authority — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'NOT RUN: Independent evidence and separate paid benchmark approval required'
