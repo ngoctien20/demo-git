@@ -137,9 +137,9 @@ test('12 registrar proof must be private-only ref',()=>{
  const x=signers();x.registrar.authorityProofRef='https://example.org/unauthorized';
  assert(auth(x).blockers.includes('PRIVATE_INDEPENDENT_REGISTRAR_PROOF_MISSING'));
 });
-test('13 nonexistent authority registrar denied',()=>{
+test('13 missing top-level registrar is rejected at schema boundary',()=>{
  const x=signers();delete x.registrar;
- assert(auth(x).blockers.includes('PRIVATE_INDEPENDENT_REGISTRAR_PROOF_MISSING'));
+ assert(auth(x).blockers.includes('TRUSTED_SIGNER_ENROLLMENT_MISSING_OR_WRONG_PROJECT'));
 });
 test('14 revoked signer not acceptable',()=>{
  const x=signers();x.signers[1].status='REVOKED';
