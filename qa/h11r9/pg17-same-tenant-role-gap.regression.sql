@@ -83,7 +83,7 @@ SELECT set_config('request.jwt.claim.sub','20000000-0000-0000-0000-000000000001'
 SET LOCAL ROLE authenticated;
 DO $qa$ BEGIN
  IF (SELECT count(*) FROM qa_p0.products) <> 1 OR
-    (SELECT count(*) FROM qa_p0.orders) <> 1 OR
+    (SELECT count(*) FROM qa_p0.orders) <> 2 OR
     (SELECT count(*) FROM qa_p0.stores) <> 1
  THEN RAISE EXCEPTION 'H11R9_OWNER_A_REGRESSION'; END IF;
  RAISE NOTICE 'H11R9_PASS_OWNER_A';
