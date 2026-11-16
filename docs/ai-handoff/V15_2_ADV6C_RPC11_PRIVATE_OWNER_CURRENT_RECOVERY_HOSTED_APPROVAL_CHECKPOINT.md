@@ -129,3 +129,20 @@ Run:
 **Rollback:** close the unmerged child Draft PR. No Supabase hosted schema, real records, credentials, Storage, Auth, n8n workflow or Cloudflare deployment was changed by this milestone.
 
 **Checkpoint status:** `RPC11_PRIVATE_EVIDENCE_INTAKE_READY_HOSTED_MIGRATION_NO_GO`.
+
+
+### 8. Independent GitHub QA acceptance receipt — 2026-11-17 JST
+
+**Exact source SHA tested:** `5ed89797ec986261615947e26f9642cf0312ede5`  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/43904500192
+
+**TESTED:**
+- New RPC.11 private snapshot+Owner ledger exact 4-row reconciliation: **20/20 PASS**; includes wrong/missing/duplicate row, Tenant drift, stale version/digest, stale source, PII field rejection, and no authenticated ownership claim.
+- New RPC.11 staging-only exact-per-phase Controller/Reviewer/Operator approval envelope: **22/22 PASS**; includes unique receipt digest, independent actor, time-to-live, commit SHA, wrong phase, altered scope, no signature-authority and hard NO-GO.
+- Inherited RPC.10 **15**, RPC.9 **14**, RPC.7 **28+14**, RPC.6 **24**, V14.4.3 **36**, ADV6C **6**, RPC.5 **18**: **155/155 PASS**.
+- **Total 197/197 Node tests PASS**; static prohibition on hosted network/SQL/export/publish/credential use SUCCESS.
+- Hosted release eligibility deliberately exits code **3**: `RPC11_HOSTED_NO_GO_INDEPENDENT_FOUR_ROW_CURRENT_RECOVERY_AND_PER_PHASE_APPROVAL_MISSING`. Overall GitHub Actions status **FAILURE by release policy**; not a unit-test regression.
+
+**No actual four-row primary-source ledger/snapshot was provided to the program, signed/cryptographically verified, or inspected by the assistant.** The GitHub tests only exercised deterministic synthetic fixtures. **No backup export, hosted Auth/Storage restoration, Supabase schema alteration, real data assignment, RLS/GRANT/REVOKE, RPC revoke, live JWT, n8n Published change, provider send or merge occurred.**
+
+**Checkpoint classification:** `RPC11_PRIVATE_EVIDENCE_INTAKE_IMPLEMENTED_AND_OFFLINE_TESTED_HOSTED_NO_GO`. The existing H11R partial application archive local QA remains owner-accepted with limitations; real M0 recovery and all hosted migration authorizations remain **BLOCKED/NO-GO**.
