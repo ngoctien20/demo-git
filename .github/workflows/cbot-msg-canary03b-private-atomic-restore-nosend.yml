@@ -1,0 +1,142 @@
+name: TIEN404 CBOT-MSG-CANARY-03B Private Recipient × Atomic Claim × Restore (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/cbot-msg-canary03b-private-psid-atomic-claim-restore-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-canary03b/**'
+      - 'docs/ai-handoff/CBOT_MSG_CANARY03B_*'
+      - '.github/workflows/cbot-msg-canary03b-private-atomic-restore-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-recipient-independent-restore:
+    name: Real LIVE01 metadata × independent 27→32→27 source restore NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independent source-only private Page/recipient and rollback QA
+        run: |
+          node --check qa/cbot-messenger-canary03b/independent-restore-roundtrip.mjs
+          node --check qa/cbot-messenger-canary03b/independent-restore-roundtrip.test.mjs
+          node --test qa/cbot-messenger-canary03b/independent-restore-roundtrip.test.mjs
+      - name: Actual disposable n8n QA history + patch/restore executions 4182/4183/4184
+        run: node --test qa/cbot-messenger-canary03b/real-n8n-disposable-restore.test.mjs
+      - name: Regression 240 previous no-send tests (actual Messenger, QA #4177/#4180/#4181)
+        run: |
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Never leak Page ID, PSID, live workflow code or grant prod Send
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          root=Path('qa/cbot-messenger-canary03b')
+          b=json.loads((root/'live01-private-recipient-provenance-20261116.json').read_text())
+          r=json.loads((root/'original-published-restore-source-evidence.json').read_text())
+          assert b['inbound_sender_page_message_id_paired_to_prepare']
+          assert b['outbound_meta_recipient_matches_original_sender']
+          assert b['exact_private_qa_psid_bound'] is False
+          assert b['can_send_live_canary'] is False
+          assert r['pinned_version_retrieved_readonly'] is True
+          assert r['independent_private_encrypted_export_seen'] is False
+          assert r['executable_restore_performed'] is False
+          assert r['observed_version_history_entries']==1
+          for f in root.glob('*.json'):
+            for key in ('"page_id"','"psid"','"customer_name"',
+                '"customer_phone"','"access_token"','"app_secret"',
+                '"recipient_id"','"raw_body"','"headers"'):
+                assert key not in f.read_text(),(f.name,key)
+          src=(root/'independent-restore-roundtrip.mjs').read_text()
+          for x in ('fetch(', 'axios(', 'process.env.', 'updateWorkflow(',
+                    'publishWorkflow(', 'restoreWorkflow(', 'sendMessage(',
+                    'pg_dump ', 'apply_migration('):
+            assert x not in src,x
+          print('PASS: real sender→recipient proof stored without identifiers, private live cutover remains NO-GO')
+          PY
+
+  sqlite-disposable-atomic-races:
+    name: Disposable SQLite durable claim — threads/processes/replay (NOT PostgreSQL)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run reference 19 synthetic atomic claim tests (no hosted access)
+        run: |
+          cd qa/cbot-messenger-canary03b
+          python3 -m unittest -v test_atomic_one_shot.py
+
+  pg17-disposable-atomic-restore:
+    name: Real PG17 disposable SQL — 16 claims, private RLS, synthetic backup/restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: t404_cbot03b_SyntheticOnly_CI_DB
+          POSTGRES_DB: t404_cbot03b_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_cbot03b_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      CI_CANARY03B_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: t404_cbot03b_SyntheticOnly_CI_DB
+      PGDATABASE: t404_cbot03b_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify guarded disposable-only script syntax
+        run: bash -n qa/cbot-messenger-canary03b/ci_pg17_disposable_claim_restore.sh
+      - name: Actual review-only Postgres SQL in isolated CI DB (not hosted)
+        run: bash qa/cbot-messenger-canary03b/ci_pg17_disposable_claim_restore.sh
+
+  no-go-release-decision:
+    name: FINAL LIVE02 NO-GO — missing private recipient + hosted backup + exact signed patch
+    needs:
+      - private-recipient-independent-restore
+      - sqlite-disposable-atomic-races
+      - pg17-disposable-atomic-restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail closed on real one-recipient or backup approval
+        run: |
+          node - <<'NODE'
+          const r=require('./qa/cbot-messenger-canary03b/live01-private-recipient-provenance-20261116.json');
+          const b=require('./qa/cbot-messenger-canary03b/original-published-restore-source-evidence.json');
+          if(r.exact_private_qa_psid_bound||r.can_send_live_canary||
+             r.independent_security_reviewer_signed||
+             b.independent_private_encrypted_export_seen||
+             b.executable_restore_performed||
+             b.operator_backed_up_original_published_workflow)
+            throw new Error('UNSUPPORTED_LIVE_AUTHORITY_CLAIM');
+          console.log('PASS: SOURCE and PG17 disposable readiness only');
+          console.log('NO-GO: real Page/PSID private binding, original encrypted snapshot, hosted restore, exact one-send consent');
+          NODE
