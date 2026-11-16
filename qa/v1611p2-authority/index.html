@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<title>TIEN404 V16.11P.2 — Xác minh và báo giá</title>
+<link rel="stylesheet" href="./operator.css"><script type="module" defer src="./operator-ui.mjs"></script></head>
+<body><div class="shell">
+<header><div><p class="eyebrow">TIEN404 AI · V16.11P.2 · SYNTHETIC LOCAL</p><h1>Phân công riêng tư & phê duyệt giới hạn</h1></div><span class="pill">HOSTED NO-GO</span></header>
+<p class="notice"><b>Không phải cổng xác minh thật.</b> Không nhập tên người thật, ảnh giấy tờ, mật khẩu, JWT, token hoặc file backup. Không gửi hoặc lưu dữ liệu trên trình duyệt. Tài khoản Supabase và chi phí vẫn cần được xác nhận riêng.</p>
+<div class="layout"><aside class="panel">
+<h2>QA Store</h2><label for="store">Cửa hàng thử nghiệm</label><select id="store"><option value="A">QA Shop A · Tenant 1</option><option value="B">QA Shop B · Tenant 1</option></select>
+<div id="scope" class="muted"></div><hr>
+<p><strong>Supabase:</strong> tien404-staging</p>
+<p class="blocked">JWT/RLS thật: BLOCKED</p>
+<p class="blocked">Backup hosted: NOT AUTHORIZED</p>
+<p class="blocked">Ngân sách: NOT APPROVED</p>
+</aside>
+<main>
+<section class="panel"><p class="eyebrow">01 / TÀI KHOẢN VÀ BÁO GIÁ</p><h2>Hai báo giá chưa được truy vấn</h2>
+<div class="quote-list" id="quotes"></div>
+<label for="quoteType">Loại báo giá cần xin</label><select id="quoteType"><option value="BRANCH">Preview Branch</option><option value="PROJECT">Dự án độc lập</option></select>
+<div class="actions"><button id="draft">Tạo đề nghị truy vấn chỉ đọc</button><button id="tryProvision" class="secondary">Thử tạo project (phải bị chặn)</button></div>
+<pre id="quoteResult" aria-live="polite"></pre>
+<p class="muted">Bảng giá công khai không phải báo giá áp dụng cho tổ chức. Chưa gọi công cụ tính phí; không có quyền tạo tài nguyên.</p>
+</section>
+<section class="panel"><p class="eyebrow">02 / ĐỘC LẬP NGƯỜI VẬN HÀNH</p><h2>Sáu vai trò cần xác minh riêng tư</h2>
+<label for="role">Vai trò QA</label><select id="role"></select><div class="actions"><button id="nominate">Đề xuất metadata QA</button><button id="review">Rà soát metadata QA</button></div>
+<pre id="roleResult" aria-live="polite"></pre><div id="roleList"></div>
+</section>
+<section class="panel"><p class="eyebrow">03 / MỘT HÀNH ĐỘNG</p><h2>Văn bản xin phép — chưa ký</h2>
+<p class="muted">Chỉ chuẩn bị đề nghị truy vấn báo giá của đúng một tổ chức. Không gồm backup, restore, RLS/RPC hoặc phát sinh phí.</p>
+<button id="draftApproval">Lập bản nháp chưa ký</button>
+<pre id="approvalResult" aria-live="polite"></pre>
+<p id="release" class="blocked" aria-live="polite"></p>
+</section></main>
+</div><footer>NO SEND · NO CLOUD CALLS · NO REAL OPERATOR ID · NO CUSTOMER DATA · NO BILLABLE RESOURCES</footer>
+</div></body></html>
