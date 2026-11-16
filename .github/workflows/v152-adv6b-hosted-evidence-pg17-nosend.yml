@@ -1,0 +1,94 @@
+name: TIEN404 V15.2 ADV.6B PG17 Durable Replay and Owner Evidence Gates (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/pg17-durable-replay.integration.test.cjs'
+      - 'qa/v152-advanced-actions/owner-evidence-gate*'
+      - 'docs/ai-handoff/V15_2_ADV6B_*'
+      - '.github/workflows/v152-adv6b-hosted-evidence-pg17-nosend.yml'
+  push:
+    branches:
+      - 'work/v152adv6b-hosted-owner-gate-pg17-replay-ci-nosend-20261116'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ephemeral-pg17-atomicity:
+    name: Ephemeral PostgreSQL 17 real concurrence and role limitations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: qa_synthetic_disposable_pg_163
+          POSTGRES_DB: t404_adv6b_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_adv6b_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned QA-only PostgreSQL client
+        run: npm install --no-save --no-package-lock --prefix qa/v152-advanced-actions pg@8.16.3
+      - name: Verify source syntax
+        run: |
+          node --check qa/v152-advanced-actions/pg17-durable-replay.integration.test.cjs
+          node --check qa/v152-advanced-actions/pg-nonce-store.cjs
+      - name: Test real PG17 DB isolation and durable atomic claims
+        env:
+          CI: 'true'
+          T404_PG_CI_ONLY: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGDATABASE: 't404_adv6b_ci'
+          PGUSER: 'postgres'
+          PGPASSWORD: 'qa_synthetic_disposable_pg_163'
+        run: node --test qa/v152-advanced-actions/pg17-durable-replay.integration.test.cjs
+
+  hosted-evidence-no-go:
+    name: Source-only hostile evidence checks and inherited security regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Evidence contract and source checks
+        run: |
+          node --check qa/v152-advanced-actions/owner-evidence-gate.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+      - name: Inherited signed and identity/nonce contracts
+        run: |
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Static no-hosted-write and no fake certification
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-advanced-actions')
+          src=(root/'owner-evidence-gate.cjs').read_text()
+          sql=Path('docs/ai-handoff/V15_2_ADV6_PRIVATE_NONCE_SQL_DRAFT_DO_NOT_APPLY.sql').read_text()
+          ci=Path('.github/workflows/v152-adv6b-hosted-evidence-pg17-nosend.yml').read_text()
+          assert 'DO NOT APPLY' in sql
+          assert "t404_adv6b_ci" in ci and "postgres:17-alpine" in ci
+          assert "127.0.0.1" in ci and "T404_PG_CI_ONLY" in ci
+          assert "PENDING_INDEPENDENT_REVIEW" in src
+          assert "BLOCKED" in src
+          assert "APPROVED" not in src
+          for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+            r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.(?:write|append|unlink)']:
+            assert not re.search(pattern,src),pattern
+          assert not (Path('supabase/migrations')/'V15_2_ADV6_PRIVATE_NONCE_SQL_DRAFT_DO_NOT_APPLY.sql').exists()
+          print('ADV6B evidence and No-Host-Mutation static gate PASS')
+          PY
