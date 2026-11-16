@@ -22,14 +22,16 @@ export function assessReadOnlyHostedSnapshot(snapshot){
   tenants:count(s.tenants),products:count(s.products),orders:count(s.orders),customers:count(s.customers),
   canonical_stores_table:s.canonical_stores_table===true,
   orders_store_id:s.orders_store_id===true,
-  anon_definer_rpc_executable:s.anon_definer_rpc_executable===true,
-  known_live_legacy_rpc_caller:s.known_live_legacy_rpc_caller===true
+  anon_definer_rpc_executable:typeof s.anon_definer_rpc_executable==='boolean'?s.anon_definer_rpc_executable:null,
+  known_live_legacy_rpc_caller:typeof s.known_live_legacy_rpc_caller==='boolean'?s.known_live_legacy_rpc_caller:null
  });
  const reasons=[];
  if(hosted.project_ref!=='ifxlvrhyjhbzbrkdsida')reasons.push('PROJECT_SCOPE_NOT_VERIFIED');
  if(!hosted.canonical_stores_table||!hosted.orders_store_id)reasons.push('CANONICAL_STORE_SCHEMA_ABSENT');
- if(hosted.anon_definer_rpc_executable)reasons.push('PUBLIC_SECURITY_DEFINER_RPC_EXPOSURE');
- if(hosted.known_live_legacy_rpc_caller)reasons.push('ACTIVE_LEGACY_RPC_CALLER_REQUIRES_CUTOVER');
+ if(hosted.anon_definer_rpc_executable===true)reasons.push('PUBLIC_SECURITY_DEFINER_RPC_EXPOSURE');
+ if(hosted.anon_definer_rpc_executable===null)reasons.push('RPC_PRIVILEGE_UNKNOWN');
+ if(hosted.known_live_legacy_rpc_caller===true)reasons.push('ACTIVE_LEGACY_RPC_CALLER_REQUIRES_CUTOVER');
+ if(hosted.known_live_legacy_rpc_caller===null)reasons.push('RPC_CALLER_INVENTORY_UNKNOWN');
  if(hosted.orders===null||hosted.products===null)reasons.push('LEGACY_ROW_COVERAGE_UNKNOWN');
  return frozen({contract:GATE_CONTRACT,source:'READ_ONLY_METADATA_UNTRUSTED_UNTIL_REVIEW',
    hosted,diagnostic_reasons:frozen(reasons),hosted_migration_allowed:false,rpc_revoke_allowed:false,
