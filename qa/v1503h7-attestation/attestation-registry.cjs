@@ -83,6 +83,8 @@ function assessSyntheticAttestationRegistry({request,attestations,registry},{now
    Object.assign({},trusted),{now});
  if(verify.status!=='SYNTHETIC_DUAL_SIGNATURE_VERIFIED_NOT_AUTHORIZED')
    return DENY('INHERITED_SIGNED_ENVELOPE_REJECTED_'+(verify.reason||verify.status));
+ const tiedNonce=createHash('sha256').update('V15-H7-REPLAY:'+PROJECT+':'+verify.requestFingerprint).digest('hex');
+ if(registry.nonceDigest!==tiedNonce)return DENY('NONCE_NOT_BOUND_TO_SIGNED_REQUEST');
  return Object.freeze({
    status:'SYNTHETIC_REGISTRY_VERIFIED_NOT_HOSTED_AUTHORIZATION',
    scope:'SYNTHETIC_QA_ONLY',signatureAlgorithm:'Ed25519',
