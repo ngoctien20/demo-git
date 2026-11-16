@@ -168,7 +168,9 @@ test('27 concurrent replay cannot enqueue two when mock reserve is atomic',async
  const e=setup();
  const responses=await Promise.all(Array.from({length:20},()=>run(e)));
  assert.equal(e.QA_QUEUE.items.length,1);
- assert.equal(responses.filter(x=>x.status===202).length,1);
+ const statuses=await Promise.all(responses.map(x=>x.json()));
+ assert.equal(statuses.filter(x=>x.status==='QA_ACCEPTED_TO_QUEUE').length,1);
+ assert.equal(statuses.filter(x=>x.status==='QA_ACCEPTED_TO_QUEUE'||x.status==='DUPLICATE_ACK').length,20);
 });
 test('28 no real guest provider send through worker',async()=>{
  assert.equal(typeof worker.fetch,'function');
