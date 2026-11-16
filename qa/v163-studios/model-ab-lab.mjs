@@ -8,7 +8,7 @@ function checkRows(rows,kind,count){
  for(const row of rows){
   assert(exact(row,kind==='single'?['case_id']:['case_id','turn_count']),'MANIFEST_METADATA_ONLY');
   assert(ID.test(row.case_id)&&!seen.has(row.case_id),'DUPLICATE_OR_INVALID_CASE_ID');
-  if(kind==='multi')assert(Number.isInteger(row.turn_count)&&row.turn_count>=2&&row.turn_count<=12,'INVALID_TURN_COUNT');
+  if(kind==='multi')assert(Number.isInteger(row.turn_count)&&row.turn_count>=1&&row.turn_count<=12,'INVALID_TURN_COUNT');
   seen.add(row.case_id);
  }
 }
@@ -21,6 +21,8 @@ export function build132Manifest({single,multi}){
  assert(new Set(cases.map(x=>x.case_key)).size===132,'NONUNIQUE_COMPOSITE_KEYS');
  return Object.freeze({stage:STAGE,count:132,single_count:96,multi_count:36,
   total_turns:cases.reduce((n,x)=>n+x.turns,0),
+  true_multi_turn_count:multi.filter(x=>x.turn_count>=2).length,
+  single_turn_cases_in_multi_pack:multi.filter(x=>x.turn_count===1).length,
   cases:Object.freeze(cases.map(Object.freeze)),
   raw_prompts_included:false,actual_outputs_included:false});
 }
