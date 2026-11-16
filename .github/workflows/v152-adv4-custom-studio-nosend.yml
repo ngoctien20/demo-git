@@ -1,0 +1,85 @@
+name: TIEN404 V15.2 ADV4 Custom Bot Studio Integration (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv4-custom-studio-integration-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-custom-studio-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV4_*'
+      - '.github/workflows/v152-adv4-custom-studio-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts-and-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: ADV4 component module syntax
+        run: |
+          for f in qa/v147-custom-studio/advanced-*.js qa/v147-custom-studio/advanced-*.cjs; do node --check "$f"; done
+      - name: ADV4 crosswalk and Studio contract tests
+        run: node --test qa/v147-custom-studio/advanced-custom-studio.test.cjs
+      - name: ADV3 structured evaluator and secure action regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-action-registry.test.cjs
+      - name: Inherited ADV2 and ADV1 regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+      - name: Static source and CSP security QA
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          files=[root/n for n in ('advanced-custom-studio.js',
+                'advanced-custom-studio.html','advanced-studio-capability-crosswalk.js')]
+          txt='\n'.join(p.read_text() for p in files)
+          html=(root/'advanced-custom-studio.html').read_text()
+          for marker in ("connect-src 'none'","img-src 'none'","form-action 'none'",
+                 "frame-src 'none'","default-src 'none'","script-src 'self'"):
+              assert marker in html,marker
+          for prohibited in (r'\bfetch\s*\(',r'\bWebSocket\b',r'\bXMLHttpRequest\b',
+                r'\bEventSource\b',r'\b(localStorage|sessionStorage|indexedDB)\b',
+                r'\binnerHTML\b',r'\bnew Function\s*\(',r'\beval\s*\(',
+                r'\bprocess\.env\b',r'\bchild_process\b'):
+              assert not re.search(prohibited,txt),prohibited
+          assert 'releaseAuthorized:false' in txt
+          assert 'NOT_ISSUED_BROWSER' in txt
+          assert 'disabled=true' in txt
+          print('PASS ADV4 NO SEND, NO HOSTED WRITE, NO PERSISTENCE, NO LIVE SIGNER')
+          PY
+  disposable-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install QA-only Chromium on disposable runner
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Launch local-only static source (no external requests)
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v152adv4-local.log 2>&1 &
+          sleep 2
+      - name: Desktop/mobile 4 widths, store/channel isolation and blocked actions
+        run: node qa/v147-custom-studio/advanced-custom-studio-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv4-custom-studio-390px-local
+          path: qa-artifacts-v152-adv4/
+          if-no-files-found: ignore
