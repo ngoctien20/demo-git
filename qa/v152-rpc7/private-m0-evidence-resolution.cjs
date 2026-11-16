@@ -14,7 +14,7 @@ const sha=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 const o=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype;
 function reviewM0Evidence({
  baseline,archiveToc,archiveProvenance,ownerReview,
- recovery,reviewer,now=Date.now()
+ recovery,reviewer,recoveryScope='FULL_SERVICE',now=Date.now()
 }={}){
  const b=o(baseline)?baseline:{};
  const p=o(archiveProvenance)?archiveProvenance:{};
@@ -29,14 +29,30 @@ function reviewM0Evidence({
  req(count.status==='AGGREGATE_ROW_SHAPE_VERIFIED_ONLY',
    'REAL_HOSTED_COUNT_OR_TENANT_SHAPE_DRIFT');
  const archive=inspectArchiveToc(archiveToc);
+ const fullScope=recoveryScope==='FULL_SERVICE';
+ const scopedApp=recoveryScope==='APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN';
+ req(fullScope||scopedApp,'RECOVERY_SCOPE_INVALID_OR_NOT_REVIEWED');
  req(archive.coverage?.application?.includesAllTableDataEntries===true,
    'APPLICATION_TABLE_DATA_MISSING_FROM_EXISTING_ARCHIVE');
- req(archive.coverage?.auth?.includesAllTableDataEntries===true,
-   'AUTH_TABLE_DATA_NOT_IN_EXISTING_ARCHIVE');
- req(archive.coverage?.storage?.includesAllTableDataEntries===true,
-   'STORAGE_TABLE_METADATA_NOT_IN_EXISTING_ARCHIVE');
- req(archive.status==='STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED',
-   'OLD_ARCHIVE_IS_PARTIAL_OR_UNPARSEABLE');
+ if(fullScope){
+   req(archive.coverage?.auth?.includesAllTableDataEntries===true,
+     'AUTH_TABLE_DATA_NOT_IN_EXISTING_ARCHIVE');
+   req(archive.coverage?.storage?.includesAllTableDataEntries===true,
+     'STORAGE_TABLE_METADATA_NOT_IN_EXISTING_ARCHIVE');
+   req(archive.status==='STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED',
+     'OLD_ARCHIVE_IS_PARTIAL_OR_UNPARSEABLE');
+ }else if(scopedApp){
+   // A partial archive may be useful, but it NEVER proves whole-service
+   // recovery. External Auth and Storage recovery must be reviewed separately.
+   req(r.externalAuthRecoveryPlanApproved===true&&
+       r.externalStorageMetadataRecoveryPlanApproved===true&&
+       r.externalStorageObjectBytesRecoveryPlanApproved===true&&
+       r.externalDependencyPlanIndependentlyTested===true,
+     'EXTERNAL_AUTH_STORAGE_RECOVERY_PLAN_UNVERIFIED');
+   req(sec.applicationScopeExplicitlyApproved===true&&
+       sec.externalDependencyResidualRiskIndependentlyAccepted===true,
+     'APPLICATION_ONLY_RECOVERY_SCOPE_NOT_APPROVED');
+ }
  req(p.projectRef===PROJECT&&p.scope==='PRE_M1_ENCRYPTED_FULL_DATA_RECOVERY_ONLY'&&
      sha(p.archiveDigest)&&sha(p.hostedReadOnlySnapshotDigest),
    'EXACT_HOSTED_ARCHIVE_OR_SOURCE_SNAPSHOT_PROVENANCE_MISSING');
@@ -53,9 +69,9 @@ function reviewM0Evidence({
  req(r.encryptedAtRest===true&&
      r.independentIsolatedRestoreCompleted===true&&
      r.restoredApplicationRowsMatchReadOnlyBaseline===true&&
-     r.authDependencyRecoveryTestPassed===true&&
-     r.storageObjectBytesHandledInSeparateApprovedPlan===true&&
-     r.rlsAndGrantsRestoreComparisonPassed===true,
+     r.rlsAndGrantsRestoreComparisonPassed===true&&
+     (!fullScope||(r.authDependencyRecoveryTestPassed===true&&
+      r.storageObjectBytesHandledInSeparateApprovedPlan===true)),
    'REAL_INDEPENDENT_FULL_DEPENDENCY_RESTORE_UNVERIFIED');
  req(sec.controllerIndependentlyVerified===true&&
      sec.securityReviewerIndependentlyVerified===true&&
@@ -70,6 +86,8 @@ function reviewM0Evidence({
    contract:CONTRACT,status:blockers.length?'M0_EVIDENCE_BLOCKED':'CLAIMED_M0_READY_FOR_EXTERNAL_ATTESTATION',
    blockers:Object.freeze([...new Set(blockers)]),
    archiveClassification:archive.status,
+   recoveryScope:fullScope?'FULL_SERVICE':scopedApp?'APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN':'INVALID',
+   fullServiceRestoreClaimedByCode:false,
    aggregateRowShapeVerified:count.blockers.length===0,
    sourceArchiveReadByThisCode:false,
    independentlyInspectedBackup:false,
