@@ -37,6 +37,7 @@ INSERT INTO t404_canary_private.one_shot_send_attempt_claims
   (canary_id, event_hmac, page_binding_hmac, recipient_binding_hmac)
 SELECT a.canary_id, $5::text, a.page_binding_hmac, a.recipient_binding_hmac
 FROM eligible AS a
+WHERE true -- disambiguates INSERT...SELECT...ON CONFLICT in PostgreSQL
 ON CONFLICT DO NOTHING
 RETURNING canary_id;
 
