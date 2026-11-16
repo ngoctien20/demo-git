@@ -84,6 +84,9 @@ function reviewSignerEnrollment({enrollment,expectedProjectDigest,now=Date.now()
 }
 function reviewRpcRisk({snapshot,review,now=Date.now()}={}){
  const problems=[];
+ if(!Number.isSafeInteger(now)||now<=0)
+   return Object.freeze({...blocked(['INVALID_REVIEW_CLOCK']),
+     rpcFindings:0,anonDefinerCallable:false});
  if(!exact(snapshot,['contract','capturedAtUtc','source','projectDigest','functions'])||
    snapshot.contract!==RPC||snapshot.source!=='HOSTED_PG_CATALOG_READ_ONLY'||
    !HEX.test(snapshot.projectDigest)||!Number.isFinite(ts(snapshot.capturedAtUtc))||
@@ -166,6 +169,9 @@ function reviewOperationDecision({request,receipt,signerAuthority,rpcRisk,
  if(request?.operation==='RPC_REMEDIATION_REVIEW'&&
     (!rpcRisk||rpcRisk.status!=='SECURITY_REVIEW_REQUIRED_NO_HOSTED_CHANGE'))
    errors.push('HOSTED_RPC_REVIEW_GATE_MISSING');
+ // ADV6C redacts request ID/project binding; this layer cannot prove that
+ // a supplied receipt actually belongs to this operation's exact scope.
+ errors.push('RECEIPT_REQUEST_SCOPE_BINDING_REQUIRES_TRUSTED_PRIVATE_REGISTRY');
  // A passed source-only review cannot validate provenance of raw inputs,
  // approve spending or create a durable single-use lease.
  errors.push('EXTERNAL_CONTROLLER_REVIEWER_OPERATOR_ATTESTATION_PENDING');
