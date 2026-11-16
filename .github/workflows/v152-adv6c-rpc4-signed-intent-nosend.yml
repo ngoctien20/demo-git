@@ -1,0 +1,132 @@
+name: TIEN404 V15.2 ADV.6C-RPC.4 Private Evidence and Signed Revoke Intent (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc4/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC4_*'
+      - '.github/workflows/v152-adv6c-rpc4-signed-intent-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc4-private-caller-revoke-intent-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc4-private-offline-qa:
+    name: RPC.4 cryptographic intent QA and inherited fail-closed security suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks and new scope/signature/no-revoke QA
+        run: |
+          node --check qa/v152-rpc4/private-signed-revocation-intent.cjs
+          node --check qa/v152-rpc4/private-signed-revocation-intent.test.cjs
+          node --test qa/v152-rpc4/private-signed-revocation-intent.test.cjs
+      - name: RPC.3 private caller and hosted PRE/POST acceptance inherited
+        run: |
+          node --test qa/v152-rpc3/private-caller-attestation.test.cjs
+          node --test qa/v152-rpc3/hosted-two-step-revocation-decision.test.cjs
+      - name: RPC.2/RPC.1 cutover and trusted channel inherited
+        run: |
+          node --test qa/v152-rpc2/zero-downtime-cutover-review.test.cjs
+          node --test qa/v152-rpc1/trusted-pairing-capability.test.cjs
+          node --test qa/v152-rpc1/rpc1-action-coordinator.test.cjs
+      - name: ADV6C and PRE-ADV6C security regression
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+      - name: Static nonexecutability, exact scope and absence of live SQL
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('qa/v152-rpc4')
+          source=(root/'private-signed-revocation-intent.cjs').read_text()
+          b=json.loads((root/'read-only-evidence-baseline.json').read_text())
+          assert b['rpc']['anon_execute'] is True
+          assert b['hosted']['public_stores_exists'] is False
+          assert b['observation']['postgres_rpc_literal_marker_events']==3
+          assert b['observation']['exact_external_caller_attribution_verified'] is False
+          assert b['approvals']['signed_exact_rpc_revoke'] is False
+          assert "REVIEW_ONLY_NOT_AUTHORIZATION" in source
+          assert "revokeAllowed:false" in source
+          assert "RPC4_REAL_REVOKE_REQUIRES_EXTERNAL_APPROVAL" in source
+          for pat in [r'\bfetch\s*\(',r'\bWebSocket\b',r'\bXMLHttpRequest\b',
+            r'\bchild_process\b',r'\bprocess\.env\b',
+            r'\bfs\.(?:write|append|unlink)',r'\bexecuteQuery\s*\(',
+            r'\bhttps?\.request\s*\(']:
+            assert not re.search(pat,source),pat
+          sql=Path('docs/ai-handoff/V15_2_ADV6C_RPC4_EXACT_REVOKE_DO_NOT_APPLY.sql').read_text()
+          assert 'DO NOT APPLY' in sql
+          for pattern in [r'^\s*REVOKE\s+',r'^\s*GRANT\s+',r'^\s*DROP\s+',
+            r'^\s*CREATE\s+',r'^\s*ALTER\s+',r'^\s*UPDATE\s+',
+            r'^\s*INSERT\s+',r'^\s*DELETE\s+']:
+            assert not re.search(pattern,sql,re.I|re.M),pattern
+          print('PASS RPC.4: offline only, no real authorization, no SQL/network/send/revoke')
+          PY
+
+  rpc4-disposable-pg17:
+    name: RPC.4 inherited disposable PostgreSQL 17 two-step pairing QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc4_disposable_synthetic_ci
+          POSTGRES_DB: t404_rpc2_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc2_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: QA-only PG client dependency
+        run: npm install --no-save --no-package-lock --prefix qa/v152-rpc2 pg@8.16.3
+      - name: Repeat disposable PG17 claim/confirm race/rollback tests
+        env:
+          CI: 'true'
+          T404_RPC2_DISPOSABLE_PG: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGDATABASE: 't404_rpc2_ci'
+          PGUSER: 'postgres'
+          PGPASSWORD: 'rpc4_disposable_synthetic_ci'
+        run: node --test qa/v152-rpc2/pg17-private-pairing.integration.test.cjs
+
+  rpc4-hosted-authorization-no-go:
+    name: RPC.4 HOSTED REVOKE AUTHORIZATION — NO GO (expected BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [rpc4-private-offline-qa,rpc4-disposable-pg17]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Report refusal of privileged operation without private signers
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc3/hosted-readonly-baseline.json');
+          const g=require('./qa/v152-rpc4/private-signed-revocation-intent.cjs');
+          const r=g.evaluateHostedReadiness(b);
+          console.log(JSON.stringify({status:r.status,blockers:r.blockers,
+             revokeAuthorized:r.canRevoke,externalAuthority:r.verifiedExternalSignedAuthority}));
+          if(r.status!=='NO_GO'||r.canRevoke!==false)
+            throw Error('RPC4_UNEXPECTED_RELEASE');
+          console.error('RPC4_HOSTED_EXACT_RPC_REVOKE_DENIED_EXTERNAL_SIGNED_APPROVAL_REQUIRED');
+          process.exitCode=3;
+          NODE
