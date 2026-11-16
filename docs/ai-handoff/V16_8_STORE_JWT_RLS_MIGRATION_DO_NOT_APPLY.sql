@@ -1,0 +1,108 @@
+-- TIEN404 V16.8 | SPECIFICATION / DO NOT APPLY
+-- THE ENTIRE DOCUMENT IS A SQL COMMENT. IT IS NOT AN EXECUTABLE MIGRATION.
+-- Never run on production/staging without independently approved recovery gate.
+--
+-- Existing hosted staging (read-only 2026-11-16):
+--   public.tenants(id), public.tenant_memberships(tenant_id,user_id,role,active)
+--   public.products(tenant_id,sku,price_vnd,stock_on_hand,...)
+--   public.orders(tenant_id,customer_id,...) and public.customers(tenant_id,...)
+--   no stores, store_memberships, store_id on Product/Order/Customer
+--   products_tenant_id_sku_key UNIQUE (tenant_id,sku) currently prevents
+--   same-Tenant Shop A/Shop B both using SAME01 with different prices.
+--   current authenticated policies only constrain tenant_memberships, not Store.
+--   SECURITY DEFINER public RPCs have separate P0 review/authorization.
+--
+-- STAGE 0: APPROVAL AND RECOVERY (P0 BEFORE ANY DDL)
+--   - Independent DBA/security reviewer checks exact schema+grants+RPC callers.
+--   - Confirm current project, all roles, Page/OA ownership, exact backup/restore
+--     operator, encrypted backup validation and disposable restoration test.
+--   - Produce migration plan and reversal after verifying tenant/store mapping.
+--   - No automatic promotion of test fixture IDs into the hosted database.
+--
+-- STAGE 1: EXPAND SCHEMA (proposed after approval, NOT IMPLEMENTED)
+--   CREATE TABLE public.stores(
+--       id uuid PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES public.tenants(id),
+--       slug text NOT NULL, name text NOT NULL, status text NOT NULL,
+--       UNIQUE (tenant_id,id), UNIQUE(tenant_id,slug));
+--   CREATE TABLE public.store_memberships(
+--       tenant_id uuid NOT NULL,store_id uuid NOT NULL,user_id uuid NOT NULL,
+--       role text NOT NULL, active boolean NOT NULL DEFAULT false,
+--       PRIMARY KEY(tenant_id,store_id,user_id),
+--       FOREIGN KEY (tenant_id,store_id) REFERENCES public.stores(tenant_id,id),
+--       FOREIGN KEY (user_id) REFERENCES auth.users(id));
+--   ALTER TABLE public.products ADD COLUMN store_id uuid;
+--   ALTER TABLE public.orders ADD COLUMN store_id uuid;
+--   ALTER TABLE public.customers ADD COLUMN store_id uuid;
+--   CREATE TABLE private_schema.migration_store_mapping (... exact source PK,
+--       tenant_id, verified_store_id, human_authorization_ref, provenance);
+--   -- Private mapping table is restricted to migration operator; do not expose
+--   -- to Data API and never map all same-Tenant records to a guessed Shop.
+--   -- Prefer a private schema with explicit least privilege and RLS.
+--
+-- STAGE 2: PRE-BACKFILL CERTIFICATION
+--   - Verify original ownership of EVERY existing Products/Orders/Customers
+--     record. More than one active Store per Tenant => default DENY/QUARANTINE
+--     unless authoritative human-approved mapping available.
+--   - Verify no orphans and consistent customer→order Store relation.
+--   - Rerun read-only validation on a dedicated disposable restore.
+--   - Do not assume tenant_memberships grants global access to all Stores.
+--
+-- STAGE 3: FKs, INDEXES, UNIQUE TRANSITION (after exhaustive mapping)
+--   - Add composite FK (tenant_id,store_id) to public.stores for each entity.
+--   - Add composite UNIQUE (tenant_id,store_id,id) where required to support
+--     cross-table constraints, with suitable non-unique supporting indexes.
+--   - Add composite FK for orders customer reference to
+--     customers(tenant_id,store_id,id). Keep old FK until verified replacement.
+--   - Replace products UNIQUE(tenant_id,sku) with
+--     UNIQUE(tenant_id,store_id,sku), ONLY WHEN all imports/API/RPC consumers
+--     no longer rely on the old key. Existing SKU uniqueness cannot be dropped
+--     before independent backward compatibility evidence.
+--   - Consider nullability and NOT VALID/VALIDATE CONSTRAINT migration
+--     windows; NOT NULL only once all rows verified.
+--
+-- STAGE 4: RLS POLICY CUTOVER (NO EXECUTION IN THIS DELIVERABLE)
+--   - RLS must be enabled before any exposed schema grants. Explicit role grants
+--     must be minimum and independently reviewed.
+--   - Example owner-read predicate, ADAPT/REVIEW NOT COPY/PASTE:
+--       EXISTS(
+--         SELECT 1 FROM public.store_memberships sm
+--         WHERE sm.tenant_id = entity.tenant_id
+--           AND sm.store_id = entity.store_id
+--           AND sm.user_id = (SELECT auth.uid())
+--           AND sm.active
+--           AND sm.role IN ('owner','manager')
+--       )
+--     Membership SELECT policy needs safe non-recursive access; never solve
+--     recursive RLS by blindly adding SECURITY DEFINER.
+--   - For UPDATE use BOTH USING(existing scope) and WITH CHECK(new scope).
+--   - auth.uid() must come from a real authenticated JWT, not SQL Editor
+--     postgres, not user_metadata or client supplied headers.
+--   - When permissions change, refresh or actively invalidate JWT/session
+--     as appropriate; do not depend on stale app_metadata.
+--   - Public SECURITY DEFINER functions require per-caller privilege audit.
+--   - FORCE RLS / owner-bypass behavior must be addressed separately.
+--
+-- STAGE 5: INDEPENDENT JWT NEGATIVE TEST MATRIX (P0)
+--   - SAME Tenant Shop A Owner authenticates and can access only Shop A
+--     Products/Orders/Customers, not Shop B even for shared SKU SAME01.
+--   - SAME Tenant Shop B Owner authenticates and cannot read/write Shop A.
+--   - Different Tenant Shop C has no access to A/B.
+--   - Anon and expired/revoked manager cannot access protected rows.
+--   - Support staff without time-bounded support grant denied.
+--   - UPDATE cannot reassign store_id/tenant_id to an unauthorized Shop.
+--   - Invalid order.customer_id across Shop rejected by composite FK.
+--   - Duplicate webhook/Queue retry cannot create extra Order effect.
+--   - Same SKU two Shops prices remain independent after import re-sync.
+--
+-- STAGE 6: APPLICATION MIGRATION / CANARY / ROLLBACK
+--   - Test single Shop canary with read-only first, no dual order writers.
+--   - Reconcile counts/prices/version IDs, logs and idempotency; reject drift.
+--   - Preserve old Published workflows; rollback feature flags immediately
+--     on any cross-store/authorization regression.
+--   - Schema rollback is NOT DROP TABLE on live customer data: restore via
+--     independently approved recovery plan and verified backup, not guesswork.
+--   - Do not modify RPC permissions during this migration without separate
+--     ADV.6C-RPC.3 approval and verified callers.
+--
+-- STATUS: PROPOSED / DO NOT APPLY / NOT MIGRATION SQL.
+-- END OF DOCUMENT: ZERO EXECUTABLE SQL LINES.

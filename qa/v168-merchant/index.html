@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'none'; base-uri 'none'">
+<title>TIEN404 — Merchant Setup Studio V16.8 QA</title>
+<link rel="stylesheet" href="./studio.css">
+<script defer type="module" src="./studio-ui.mjs"></script></head>
+<body><div class="shell">
+<header class="top">
+ <div class="brand"><div class="mark">T<span>404</span></div><div><div class="eyebrow">TIEN404 AI / Merchant Operations</div><h1>Thiết lập cửa hàng</h1></div></div>
+ <div class="status"><span class="dot"></span>LOCAL SYNTHETIC · NO SEND</div>
+</header>
+<div class="notice" role="note"><strong>Chỉ bản xem trước nội bộ.</strong> Sử dụng Shop A/B/C giả lập. Không tải dữ liệu khách hàng thật, không dùng số điện thoại/token thật, không kết nối n8n, Supabase hoặc Messenger/Zalo.</div>
+<div class="layout">
+<aside aria-label="Quản lý cửa hàng">
+ <div class="sidehead">QUẢN LÝ CỬA HÀNG</div>
+ <label for="shop">Cửa hàng giả lập</label><select id="shop"><option value="A">Shop A — Tạp hóa</option><option value="B">Shop B — Thời trang</option><option value="C">Shop C — Vật liệu</option></select>
+ <div id="scope" class="scope"></div>
+ <div class="rule"></div>
+ <nav aria-label="Các chức năng">
+   <button type="button" class="navbtn active" data-tab="profile">01. Hồ sơ & cấu hình</button>
+   <button type="button" class="navbtn" data-tab="import">02. Nhập sản phẩm</button>
+   <button type="button" class="navbtn" data-tab="runtime">03. Bot & luồng thử</button>
+   <button type="button" class="navbtn" data-tab="finance">04. Chi phí & quota</button>
+   <button type="button" class="navbtn" data-tab="new">05. Tạo Shop giả lập</button>
+ </nav>
+ <p class="muted small">Thông tin không được lưu sau khi tải lại trang. Owner/RLS thực tế chưa được chứng nhận.</p>
+</aside>
+<main>
+<section data-panel="profile" class="panel active">
+ <div class="heading"><div><p class="eyebrow">THIẾT LẬP & PHÊ DUYỆT</p><h2>Hồ sơ bot từng cửa hàng</h2><p class="muted">Thay đổi là bản nháp mock. Chỉ Shop A có quyền nhân sự hỗ trợ trong fixture.</p></div><span class="tag">DRAFT ONLY</span></div>
+ <div class="two">
+  <div class="card">
+   <h3>Cấu hình riêng</h3>
+   <label for="botname">Tên trợ lý</label><input id="botname" maxlength="60" value="Trợ lý A"/>
+   <label for="greeting">Lời chào</label><textarea id="greeting" maxlength="180" rows="3">Xin chào cửa hàng A</textarea>
+   <label for="tone">Giọng điệu</label><select id="tone"><option>thân thiện</option><option>chuyên nghiệp</option><option>cao cấp</option><option>kỹ thuật</option><option>ngắn gọn</option></select>
+   <label for="hours">Giờ hoạt động (HH:MM-HH:MM)</label><input id="hours" value="06:00-21:00"/>
+   <button id="saveDraft" class="primary">Lưu bản nháp QA</button>
+   <button id="approveDraft" class="secondary">Chủ Shop nghiệm thu xem trước</button>
+   <pre id="draftResult" aria-live="polite" class="output"></pre>
+  </div>
+  <div class="card">
+   <h3>Giới hạn quyền</h3>
+   <div class="info"><strong>Tenant/Store</strong><span id="profileScope"></span></div>
+   <div class="info"><strong>Trạng thái Publish</strong><span class="tag warn">BLOCKED / NOT RELEASED</span></div>
+   <div class="info"><strong>Cấu hình ngành</strong><span id="industry"></span></div>
+   <div class="rule"></div>
+   <p class="muted">Nhân sự TIEN404 được quyền xem và soạn cấu hình **chỉ khi** có hỗ trợ Shop được cấp trước. Chủ Shop phê duyệt cũng không thay thế đánh giá bảo mật/QA độc lập.</p>
+  </div>
+ </div>
+</section>
+<section data-panel="import" class="panel">
+ <div class="heading"><div><p class="eyebrow">DATA ONBOARDING</p><h2>Nhập và so sánh sản phẩm</h2><p class="muted">CSV UTF-8 hoặc XLSX đơn giản, tối đa 2 MB; đọc tại máy, không upload.</p></div><span class="tag">0 GHI DỮ LIỆU</span></div>
+ <div class="card">
+  <div class="actions"><button id="sample" class="secondary">Nạp mẫu Shop hiện tại</button><button id="exportTemplate" class="secondary">Tạo CSV mẫu QA</button></div>
+  <label for="merchantFile">Chọn file giả lập có cột marker <code>QA_V168_SYNTHETIC_ONLY</code></label>
+  <input type="file" id="merchantFile" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+  <p class="muted small">Không hỗ trợ .xls, file macro, công thức, workbook có external links hoặc sheet nhiều cấu trúc. File không có marker QA bị từ chối. Không dùng dữ liệu khách hàng thật.</p>
+  <pre id="importResult" class="output" aria-live="polite"></pre>
+  <div class="table-scroll"><table><thead><tr><th>Dòng</th><th>SKU</th><th>Sản phẩm</th><th>Giá lẻ</th><th>Tồn</th><th>Trạng thái</th></tr></thead><tbody id="importRows"></tbody></table></div>
+  <button disabled class="primary">Xác nhận ghi vào database (BLOCKED)</button>
+ </div>
+</section>
+<section data-panel="runtime" class="panel">
+ <div class="heading"><div><p class="eyebrow">HYBRID INTEGRATION</p><h2>Bot mô phỏng — không gửi thật</h2><p class="muted">Gọi các mô-đun Hybrid Gateway HMAC, Merchant Registry và Shared Runtime trong bộ nhớ.</p></div><span class="tag">NO SEND</span></div>
+ <div class="two">
+ <div class="card">
+  <h3>Luồng thử</h3>
+  <div class="actions"><button class="secondary simulate" data-text="xin chao">Lời chào</button><button class="secondary simulate" data-text="xin gia ao thun">Báo giá</button><button class="secondary simulate" data-text="tu van ao">Tư vấn</button><button class="secondary simulate" data-text="toi muon dat hang">Đặt hàng (chặn)</button></div>
+  <pre id="runtimeResult" aria-live="polite" class="output"></pre>
+ </div>
+ <div class="card">
+  <h3>Tích hợp mô-đun hiện có</h3>
+  <div id="connections" class="connections"></div>
+  <p class="muted small">Chưa có xác minh chữ ký provider thật, store JWT, mô hình AI trả phí, Queues thực hoặc lệnh ghi Commerce.</p>
+ </div></div>
+</section>
+<section data-panel="finance" class="panel">
+ <div class="heading"><div><p class="eyebrow">FINOPS SIMULATION</p><h2>Chi phí và hạn mức 1–500 Shop</h2><p class="muted">Tất cả đều là giả định đầu vào, không phải báo giá thực tế của nhà cung cấp.</p></div><span class="tag">HYPOTHETICAL</span></div>
+ <div class="card">
+ <div class="formgrid">
+  <div><label for="shops">Số Shop</label><select id="shops"><option>1</option><option>5</option><option selected>20</option><option>50</option><option>100</option><option>500</option></select></div>
+  <div><label for="messages">Tin nhắn/Shop/tháng</label><input type="number" id="messages" min="0" max="1000000" value="1000"/></div>
+  <div><label for="aiPercent">Tỷ lệ gọi model (%)</label><input type="number" id="aiPercent" min="0" max="100" value="30"/></div>
+  <div><label for="n8nPercent">Tỷ lệ gọi n8n (%)</label><input type="number" id="n8nPercent" min="0" max="100" value="10"/></div>
+  <div><label for="inputPrice">Giá input / triệu tokens (USD giả định)</label><input type="number" id="inputPrice" min="0" step="0.01" value="0.10"/></div>
+  <div><label for="outputPrice">Giá output / triệu tokens (USD giả định)</label><input type="number" id="outputPrice" min="0" step="0.01" value="0.50"/></div>
+ </div>
+ <button class="primary" id="calculate">Tính mô phỏng</button>
+ <div id="finResults" class="metrics"></div>
+ <pre id="finError" class="output" aria-live="polite"></pre>
+ <p class="muted small">Chưa tính workflow con, retry, lịch chạy, Support, Worker/Queues, database, nhà cung cấp kênh, giá cố định n8n hoặc thuế. Quota 5/15/30 tin/phút và 1/2/5 AI đồng thời chỉ là giá trị thử nghiệm, chưa có hard limit hosted.</p>
+ </div>
+</section>
+<section data-panel="new" class="panel">
+ <div class="heading"><div><p class="eyebrow">ONBOARDING SIMULATION</p><h2>Tạo đề nghị mở Shop</h2><p class="muted">Chỉ tạo đề nghị QA; chưa thêm vào Tenant Registry hay tạo tài khoản thật.</p></div><span class="tag">WAIT FOR AUTHORITY</span></div>
+ <div class="card">
+ <label for="newName">Tên Shop giả lập (bắt đầu bằng QA_)</label><input id="newName" placeholder="QA_CUA_HANG_MOI" maxlength="50"/>
+ <label for="newIndustry">Ngành</label><select id="newIndustry"><option value="GROCERY">Tạp hóa</option><option value="FASHION">Thời trang</option><option value="MATERIALS">Vật liệu xây dựng</option><option value="WHOLESALE">Bán sỉ/lẻ</option></select>
+ <label for="newChannel">Kênh dự kiến</label><select id="newChannel"><option value="MESSENGER">Messenger</option><option value="ZALO_BOT">Zalo Bot</option><option value="WEBSITE">Website</option></select>
+ <button class="primary" id="createProposal">Tạo đề nghị QA</button>
+ <pre id="newResult" class="output" aria-live="polite"></pre>
+ </div>
+</section>
+</main></div>
+<footer>TIEN404 V16.8 · SOURCE-ONLY · NO HOSTED AUTH · NO SEND · NO API BILLING · ZERO PERSISTENCE</footer>
+</div></body></html>
