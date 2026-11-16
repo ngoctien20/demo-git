@@ -1,0 +1,69 @@
+name: TIEN404 CBOT-MSG-CANARY-03 Exact LOCKED Workflow Patch × One-Recipient NO-SEND Preflight
+
+on:
+  push:
+    branches:
+      - work/cbot-msg-canary03-exact-locked-patch-one-recipient-preflight-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-canary03/**'
+      - 'docs/ai-handoff/CBOT_MSG_CANARY03_*'
+      - '.github/workflows/cbot-msg-canary03-exact-locked-patch-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-patch:
+    name: Redacted actual Published graph → 5-node locked no-writer patch (NO SEND)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and exactly pinned source-only graph patch
+        run: |
+          node --check qa/cbot-messenger-canary03/exact-locked-graph-patch.mjs
+          node --check qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+      - name: Actual n8n execution #4181 exact Loop+Prepare recipient pairing receipt
+        run: node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+      - name: Regression parent 209 actual-source and manual QA contracts
+        run: |
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Verify no private objects, remote requests or active workflow changes
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          dir=Path('qa/cbot-messenger-canary03')
+          b=json.loads((dir/'actual-published-redacted-topology-27nodes.json').read_text())
+          src=(dir/'exact-locked-graph-patch.mjs').read_text()
+          code=re.sub(r'/\*[\s\S]*?\*/','',src)
+          assert len(b['nodes'])==27
+          assert b['activeVersionId']=='d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92'
+          assert all(n['type']!='n8n-nodes-base.httpRequest' or n['name']=='Send Messenger Reply - CONFIGURE TOKEN' for n in b['nodes'])
+          for ban in ['fetch(', 'axios(', 'process.env.', 'child_process',
+            'supabase.auth.', 'sendMessage(', 'service_role', 'pg_dump ',
+            'writeFileSync(', 'updateWorkflow(', 'publishWorkflow(']:
+            assert ban not in code,ban
+          assert 't404_canary_match:false' in code
+          assert 't404_qa_block:false' in code
+          for f in dir.glob('*.json'):
+            data=f.read_text()
+            for word in ['"credentials"','"access_token"','"page_id"',
+              '"psid"','"customer_name"','"customer_phone"']:
+              assert word not in data,(f.name,word)
+          print('PASS source patch locked, 27-node baseline pinned, no Meta send or credential change')
+          PY
