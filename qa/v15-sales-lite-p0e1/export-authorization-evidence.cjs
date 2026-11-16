@@ -78,7 +78,11 @@ function reviewOneTimeRequest(q,nowMs){
  return failed('PRIVATE_CONTROLLER_AND_SECURITY_APPROVAL_REQUIRED');
 }
 function reviewExportEvidence(q,evidence,nowMs){
- const preliminary=reviewOneTimeRequest(q,nowMs);
+ // A later audit may happen after export approval expired; check alleged
+ // export finish against the approval window, never granting an operation.
+ const allegedFinish=isPlain(evidence)&&Number.isSafeInteger(evidence.finished_at_ms)
+   ?evidence.finished_at_ms:nowMs;
+ const preliminary=reviewOneTimeRequest(q,allegedFinish);
  if(preliminary.reason!=='PRIVATE_CONTROLLER_AND_SECURITY_APPROVAL_REQUIRED')
    return failed('REQUEST_PREFLIGHT_FAILED',[preliminary.reason]);
  if(!exactly(evidence,['contract','project','request_id','method','source_type',
