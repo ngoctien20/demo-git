@@ -14,7 +14,7 @@ Security reference: H11R.11 PR #205 at 8df7b9b30f26906091340dc95531d4e422c8196b;
 1. qa/cbot-uat03/messenger-commerce-adapter.mjs: reuses UAT02 synthetic identity / order scope, strict read-only lookup, unified unauthorized response, no PII leak, mutation denied, event dedup candidate and draft phone policy fix (reject 9-digit unprefixed instead of auto-prefix 0).
 2. qa/cbot-uat03/hosted-recovery-rpc-gates.mjs: read-only baseline snapshot, missing six caller domains and six recovery domains, operator handoff. Even fabricated all-green metadata never authorizes hosted migration, backup export, RPC revoke or publication. Reuse H11R11 independent signer instead of inventing a competing attestation system.
 3. qa/cbot-uat03/pg17-disposable-readonly-store-rls.sql: PostgreSQL17 test in ephemeral CI database: Owner A/B different Stores in one Tenant, Owner C separate Tenant, inactive owner blocked, anon no SELECT, no write grants. Uses a user-controllable test GUC, not a real signed JWT, so THIS CANNOT certify hosted JWT/RLS. All test schema/roles ROLLBACK.
-4. CI: 35 adapter + 20 recovery/rpc safety = 55 new source tests, inherited 38 UAT02 + 22 UAT01 + 65 V16.7 = 180 source/synthetic test assertions, plus PG17 disposable. Exact HEAD CI evidence must be separately checked.
+4. CI: 35 adapter + 22 recovery/rpc safety = 57 new source tests, inherited 38 UAT02 + 22 UAT01 + 65 V16.7 = 182 source/synthetic test assertions, plus PG17 disposable. Exact HEAD CI evidence must be separately checked.
 
 ## P0-01 Operational recovery and Store cutover (NO HOSTED APPLY)
 - Private proof is still missing: legal Controller authorization, independent Security Reviewer, Backup Operator, actual complete encrypted offsite Auth/Storage/roles/app backup and off-host restore receipt. Prior selected-schema archive is NOT whole platform recovery.
@@ -38,3 +38,9 @@ Security reference: H11R.11 PR #205 at 8df7b9b30f26906091340dc95531d4e422c8196b;
 - Existing CBOT-UAT02 n8n inactive manual QA workflow 6IMJj5xdCGC2b5ll exec #4175 PASS 10/10 synthetic, not hosted.
 - XCH01..XCH06 real hosted E2E BLOCKED pending actual provider ownership, private recovery and same-Tenant Store JWT.
 - Close this Draft PR to roll back source-only. NO hosted DB changes, Auth/Storage export, credential edit, n8n Published edit, Meta/Zalo send, paid model request or real customer Order write.
+
+## Additional read-only n8n caller audit on 2026-11-16 JST
+- Scanned all 19 active workflows from the full inventory of 115 accessible workflows. Inspected active-version node parameters (not credentials) and searched for literal RPC paths.
+- Exactly one active workflow with literal qa_shop_b_zalo_claim / /rest/v1/rpc match: Zalo V2 Shadow OgDZNSAvKEvhnAvn, node Submit pending claim for Shop B. Active Messenger workflow Z7FdV7uDvApfbURQ has Meta Send HTTP node but no literal named Supabase RPC in its active graph.
+- These 19 active graph scans cover ONLY this n8n instance and literal references. Dynamic RPC calls, inactive workflows that may be published later, Cloudflare Workers/Pages, Supabase Edge, external clients and other accounts remain UNKNOWN; it is NOT evidence safe to REVOKE.
+- Security enhancement: absent privilege status and unknown caller inventory now remain explicit UNKNOWN, never silently interpreted as false/safe; two new negative assertions.
