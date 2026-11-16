@@ -1,0 +1,81 @@
+{
+  "checkpoint": "TIEN404_V15_0_08_OWNER_SYNTHETIC_UI_UAT",
+  "date_jst": "2026-11-16",
+  "evidence_type": "USER_SELF_REPORTED_DIRECT_CHAT_ACCEPTANCE",
+  "acceptance_scope": "SYNTHETIC_OFFLINE_BROWSER_UI_ONLY",
+  "accepted_by": "project_owner_confirmation_in_current_conversation",
+  "independently_verified_browser_json": false,
+  "uat_json_received": false,
+  "source": "User explicitly checked all seven checklist items PASS in ChatGPT; no exported UAT JSON submitted",
+  "test_lab_url": "https://tien404-v15-owner-ai-test-lab-nosend-staging.tienmobi208.workers.dev/",
+  "qa_execution": "3886",
+  "qa_execution_result": "success",
+  "stage_worker_version": "4fba3556-5133-4aee-a018-b6dc5409c45e",
+  "criteria": [
+    {
+      "id": "UAT-01",
+      "criterion": "Chuyển Shop A/B/C và thấy đúng sản phẩm, giá mô phỏng",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-02",
+      "criterion": "Chuyển Messenger/Zalo Bot/Zalo OA/Web Widget không gửi tin thật",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-03",
+      "criterion": "A002 không có trong danh mục được thông báo không tìm thấy, không tự bịa giá",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-04",
+      "criterion": "Yêu cầu đặt hàng chỉ nhận bản nháp",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-05",
+      "criterion": "Khách QA không thể truy cập báo cáo Owner",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-06",
+      "criterion": "Lựa chọn model chỉ cho dự toán không gọi API thật",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    },
+    {
+      "id": "UAT-07",
+      "criterion": "Đánh dấu PASS/FAIL và xuất JSON UAT",
+      "result": "PASS",
+      "source": "OWNER_SELF_REPORTED",
+      "independently_proven": false
+    }
+  ],
+  "total": 7,
+  "owner_reported_pass": 7,
+  "owner_reported_fail": 0,
+  "conclusion": "ACCEPTED_SYNTHETIC_UI_SCOPE_ONLY",
+  "real_zalo_owner_certified": false,
+  "merchant_authority_certified": false,
+  "browser_authenticated_owner": false,
+  "provider_ai_quality_benchmarked": false,
+  "commercial_release_approved": false,
+  "production_merged": false,
+  "pending": [
+    "Owner UAT JSON direct record optional for full per-case audit",
+    "Hosted verified identity and Shop isolation",
+    "G2.3 independent Zalo Owner and merchant consent",
+    "Real API model benchmark budget+provider entitlement"
+  ]
+}
