@@ -1,0 +1,47 @@
+{
+  "name": "TIEN404 CBOT Messenger Canary — OFFLINE MANUAL QA NO-SEND",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d8037067-c675-4b02-a121-40baa95f85fd",
+      "name": "Manual Canary QA Only",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// TIEN404 CANARY offline/manual fixture — NO_SEND\n// This node never receives a real Meta event and cannot send replies.\nconst sample = Object.freeze({\n  contract: 'TIEN404_CBOT_CANARY_MANUAL_PREVIEW_V1',\n  kind: 'OFFLINE_SOURCE_ONLY',\n  workflow_target: 'Z7FdV7uDvApfbURQ',\n  proposed_version: 2,\n  source_profile: 'QA_STORE_A_SYNTHETIC',\n  previous_greeting: 'Xin chào cửa hàng A',\n  candidate_greeting: 'TIEN404-CANARY-01: Xin chào! Tôi hỗ trợ thông tin cửa hàng QA, chưa tiếp nhận đặt hàng.',\n  can_send: false,\n  can_write_orders: false,\n  can_publish: false,\n  no_paid_model_call: true,\n  provider_messages_sent: 0,\n  orders_written: 0\n});\nreturn [{json: sample}];\n"
+      },
+      "id": "8a52746f-f13c-43d5-8ecf-2e2a4d73a970",
+      "name": "Preview QA Greeting NO_SEND",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Canary QA Only": {
+      "main": [
+        [
+          {
+            "node": "Preview QA Greeting NO_SEND",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
