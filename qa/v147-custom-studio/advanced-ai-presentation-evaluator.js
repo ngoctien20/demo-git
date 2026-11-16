@@ -1,4 +1,17 @@
 'use strict';
+/* ADV.4: same structured evaluator in browser and Node, without model or IO. */
+(function(factory){
+ if(typeof module!=='undefined'&&module.exports){module.exports=factory(
+  require('./advanced-channel-registry.js'),
+  require('./advanced-presentation-policy.js'),
+  require('./studio-core.js'));
+ }
+ if(typeof window!=='undefined')Object.defineProperty(window,'T404PresentationEvaluator',{
+  value:factory(window.T404Adv2Registry,window.T404AdvancedPresentation,window.T404Studio),
+  writable:false,configurable:false});
+})(function(registry,policy,studioApi){
+ if(!registry||!policy||!studioApi)throw Error('ADV4_PRESENTATION_DEPENDENCY_MISSING');
+
 /*
  * TIEN404 V15.2-ADV.3 — Structured AI Presentation Proposal Evaluation.
  * SOURCE-ONLY; synthetic Store fixtures; NO SEND, NO MODEL API, NO HOSTED WRITES.
@@ -122,4 +135,5 @@ function decide({raw,shop,channel,studio=studioApi.createStudio(),api=studioApi}
     releaseAuthorized:false
   });
 }
-module.exports=Object.freeze({INPUT_CONTRACT,OUTPUT_CONTRACT,EMPHASIS,COMPONENT,MEDIA,ACTION,parseProposal,decide});
+return Object.freeze({INPUT_CONTRACT,OUTPUT_CONTRACT,EMPHASIS,COMPONENT,MEDIA,ACTION,parseProposal,decide});
+});
