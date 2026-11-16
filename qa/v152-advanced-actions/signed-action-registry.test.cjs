@@ -170,3 +170,21 @@ test('missing security dependencies and weak key cannot instantiate registry',()
    nonceStore:action.createEphemeralQaClaimStore()
  }),/INVALID_SIGNING_KEY_RING/);
 });
+
+
+test('slow asynchronous reauthorization cannot consume action after expiry',async()=>{
+ let current=1700000000000;
+ const reg=action.createRegistry({
+  keyRing:{qa:crypto.randomBytes(32)},activeKid:'qa',clock:()=>current,
+  nonceStore:action.createEphemeralQaClaimStore(),
+  resolveVerifiedContext:async()=>identity(),
+  authorize:async({phase})=>{
+   if(phase==='CONSUME')current+=4000;
+   return true;
+  }
+ });
+ const minted=await reg.issue({request:{},action:'QUOTE',ttlMs:2000});
+ await assert.rejects(()=>reg.verifyAndClaim({
+  token:minted.token,request:{}
+ }),/ACTION_EXPIRED_OR_FUTURE/);
+});
