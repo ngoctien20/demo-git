@@ -9,6 +9,8 @@ on:
       - 'qa/v1610-disposable/**'
       - 'qa/v1611-hosted-gates/**'
       - 'qa/v1611p-private/**'
+      - 'qa/v1611p1-operator/**'
+      - 'docs/ai-handoff/V16_11P1_*'
       - 'docs/ai-handoff/V16_11P_*'
       - 'docs/ai-handoff/V16_11_*'
       - 'docs/ai-handoff/V16_10_*'
@@ -19,7 +21,7 @@ permissions:
   contents: read
 jobs:
   synthetic-security:
-    name: 460 V16.11P private operator and inherited Node QA (NO SEND)
+    name: 522 V16.11P.1 quote-only + inherited Node QA (NO SEND)
     runs-on: ubuntu-24.04
     timeout-minutes: 14
     steps:
@@ -34,6 +36,42 @@ jobs:
           node --check qa/v169-security/readiness-ui.mjs
           node --check qa/v169-security/browser.test.cjs
           node --check qa/v169-security/v169-security.test.mjs
+      - name: V16.11P.1 source/QA/UI syntax
+        run: |
+          node --check qa/v1611p1-operator/quote-gate.mjs
+          node --check qa/v1611p1-operator/quote-gate.test.mjs
+          node --check qa/v1611p1-operator/quote-ui.mjs
+          node --check qa/v1611p1-operator/browser.test.cjs
+      - name: V16.11P.1 62 operator assignment / quote-only / unsigned approval tests
+        run: node --test qa/v1611p1-operator/quote-gate.test.mjs
+      - name: V16.11P.1 no-cost no-hosted source boundary and unsigned approval
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          root=Path('qa/v1611p1-operator')
+          packet=json.loads(Path('docs/ai-handoff/V16_11P1_OPERATOR_ASSIGNMENT_QUOTE_ONLY_PACKET.json').read_text())
+          assert packet['release_decision']=='NO_GO'
+          assert packet['real_evidence_count']==0
+          assert packet['quote_basis']['current_org_specific_quote'] is None
+          assert packet['approval_scope']['signed_written_permission'] is False
+          assert packet['approval_scope']['create_paid_resource'] is False
+          assert packet['approval_scope']['execute_backup_hosted'] is False
+          assert packet['approval_scope']['execute_restore_hosted'] is False
+          assert packet['approval_scope']['use_real_merchant_data'] is False
+          assert all(x['real_actor_id'] is None and x['private_attestation_ref'] is None
+                     for x in packet['actor_assignments'])
+          assert len(re.findall(r"test\('",(root/'quote-gate.test.mjs').read_text()))==62
+          html=(root/'index.html').read_text()
+          assert "connect-src 'none'" in html and "script-src 'self'" in html
+          for path in (root/'quote-gate.mjs',root/'quote-ui.mjs'):
+            text=path.read_text()
+            for banned in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bprocess\.env\b',
+                           r'\blocalStorage\b',r'\bsessionStorage\b',r'\bcreateClient\s*\(',
+                           r'graph\.facebook\.com',r'api\.openai\.com']:
+              assert not re.search(banned,text),(path,banned)
+          print('V16.11P1 SOURCE-ONLY QUOTE REFERENCE / ALL REAL OPERATOR APPROVALS MISSING: PASS')
+          PY
       - name: Syntax check V16.11P request and browser fixture
         run: |
           node --check qa/v1611p-private/operator-intake.mjs
@@ -166,6 +204,8 @@ jobs:
         run: node qa/v169-security/browser.test.cjs
       - name: V16.11P private operator Chromium localhost-only UAT (72 checks)
         run: node qa/v1611p-private/browser.test.cjs
+      - name: V16.11P.1 quote and authorization Chromium QA (72 checks)
+        run: node qa/v1611p1-operator/browser.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -173,6 +213,7 @@ jobs:
           path: |
             qa-artifacts-v169/
             qa-artifacts-v1611p/
+            qa-artifacts-v1611p1/
           if-no-files-found: ignore
 
   v1610-disposable-postgres:

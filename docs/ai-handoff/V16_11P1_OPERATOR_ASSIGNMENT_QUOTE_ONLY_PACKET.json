@@ -1,0 +1,129 @@
+{
+  "contract": "T404_V1611P1_REAL_OPERATOR_QUOTE_ONLY_APPROVAL_PACKET_V1",
+  "checkpoint": "2026-11-16 JST",
+  "mode": "SOURCE_ONLY_DRAFT_NO_PAID_RESOURCE_NO_HOSTED_ACTION",
+  "target": {
+    "project": "tien404-staging",
+    "ref": "ifxlvrhyjhbzbrkdsida",
+    "environment": "STAGING",
+    "region": "ap-southeast-1",
+    "postgres_major": 17
+  },
+  "baseline": {
+    "pr": 222,
+    "head": "beabdc32b450fb7da5fd23fc9979b2ba440e64a1",
+    "prior_ci_run": 43875143279,
+    "node_pass": 460,
+    "browser_pass": 140,
+    "pg17_synthetic_restore": "TESTED",
+    "store_schema_hosted": false,
+    "real_jwt_rls": "BLOCKED"
+  },
+  "actor_assignments": [
+    {
+      "role": "MERCHANT_OWNER_A",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "role": "MERCHANT_OWNER_B",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "role": "TIEN404_PLATFORM_REQUESTER",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_ASSIGNED"
+    },
+    {
+      "role": "BACKUP_RECOVERY_OPERATOR",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_ASSIGNED"
+    },
+    {
+      "role": "INDEPENDENT_SECURITY_REVIEWER",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_ASSIGNED"
+    },
+    {
+      "role": "PRODUCTION_RELEASE_AUTHORITY",
+      "real_actor_id": null,
+      "private_attestation_ref": null,
+      "status": "NOT_ASSIGNED"
+    }
+  ],
+  "quote_basis": {
+    "source_url": "https://supabase.com/docs/guides/platform/manage-your-usage/branching",
+    "retrieved_date": "2026-11-16",
+    "currency": "USD",
+    "preview_micro_hour_usd": 0.01344,
+    "options": [
+      {
+        "option_id": "EXISTING_LOCAL_QA",
+        "estimated_8h_compute": null,
+        "estimated_24h_compute": null,
+        "estimated_72h_compute": null,
+        "provider_quote": "NOT_OBTAINED",
+        "notes": "Synthetic-only; local operator time/runner consumption not estimated. Cannot accept real customer backup."
+      },
+      {
+        "option_id": "SUPABASE_PREVIEW_BRANCH",
+        "estimated_8h_compute": 0.10752,
+        "estimated_24h_compute": 0.32256,
+        "estimated_72h_compute": 0.96768,
+        "provider_quote": "NOT_OBTAINED",
+        "notes": "Public Micro compute reference only, excludes disk/Storage/egress and plan; not Spend Cap protected. Eligibility for secure real backup restore NOT verified."
+      },
+      {
+        "option_id": "SUPABASE_NEW_ISOLATED_PROJECT",
+        "estimated_8h_compute": 0.10752,
+        "estimated_24h_compute": 0.32256,
+        "estimated_72h_compute": 0.96768,
+        "provider_quote": "NOT_OBTAINED",
+        "notes": "Compute-only reference, not account-specific new-project bill; plan, credits, size and secure recovery scope NOT verified."
+      }
+    ],
+    "current_org_specific_quote": null,
+    "branch_eligibility": "NOT_VERIFIED",
+    "restoration_target_selected": false,
+    "paid_plan_entitlement": "UNKNOWN",
+    "new_supabase_resource_created": false
+  },
+  "approval_scope": {
+    "only_authorized_action": "QUOTE_RESEARCH_AND_PREPARE_DRAFT",
+    "propose_backup_hosted": true,
+    "execute_backup_hosted": false,
+    "execute_restore_hosted": false,
+    "create_paid_resource": false,
+    "test_real_jwt": false,
+    "apply_store_sql": false,
+    "revoke_rpc": false,
+    "use_real_merchant_data": false,
+    "send_provider_messages": false,
+    "signed_written_permission": false,
+    "user_approved_cost_cap_vnd": null,
+    "independent_qualified_reviewer": false,
+    "approved_maintenance_window": null,
+    "recovery_data_destination": null,
+    "customer_data_processing_agreement": false,
+    "rollback_drill_externally_verified": false
+  },
+  "provider_security_note": "Supabase DB backups include storage object metadata, NOT physical Storage object bytes; custom role password recovery and Auth configuration must be separately addressed.",
+  "formal_signatures": {
+    "merchant_owner_A": null,
+    "merchant_owner_B": null,
+    "platform_requester": null,
+    "recovery_operator": null,
+    "independent_security_reviewer": null,
+    "release_authority": null
+  },
+  "legal_evidence_location": "PRIVATE_APPROVED_VAULT_ONLY_NOT_GITHUB",
+  "real_evidence_count": 0,
+  "release_decision": "NO_GO",
+  "rollback": "Close child Draft PR only; no hosted changes, paid resources, encrypted backup, credential updates or provider sends"
+}
