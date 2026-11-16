@@ -83,6 +83,10 @@ jobs:
         run: node qa/v147-custom-studio/advanced-custom-studio-browser.test.cjs
       - name: New Merchant UAT UX 320 390 768 1280px
         run: node qa/v147-custom-studio/advanced-merchant-uat-browser.test.cjs
+      - name: Build verified hash-pinned single HTML for offline merchant testers
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - name: Offline file protocol UAT across 4 viewports
+        run: node qa/v147-custom-studio/advanced-merchant-uat-standalone-browser.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,4 +128,13 @@ jobs:
         with:
           name: v152-adv5-offline-source-package
           path: qa-artifacts-v152-adv5-package/TIEN404_ADV5_MERCHANT_UAT_SOURCE_ONLY.zip
+          if-no-files-found: error
+      - name: Build standalone HTML + CSP integrity manifest
+        run: python3 qa/v147-custom-studio/build-adv5-standalone.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v152-adv5-single-html-merchant-uat
+          path: |
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline.html
+            qa-artifacts-v152-adv5-package/TIEN404_ADV5_Merchant_UAT_Offline_MANIFEST.json
           if-no-files-found: error
