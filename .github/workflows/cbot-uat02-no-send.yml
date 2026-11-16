@@ -1,0 +1,48 @@
+name: TIEN404 CBOT-UAT-02 Trusted Identity and Read-Only Lookup (NO SEND)
+on:
+  push:
+    branches:
+      - work/cbot-uat02-identity-lookup-candidate-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat02/**'
+      - '.github/workflows/cbot-uat02-no-send.yml'
+      - 'docs/ai-handoff/CBOT_UAT02_IDENTITY_LOOKUP_CHECKPOINT.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-cross-channel-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run 38 isolated synthetic Messenger-Zalo E2E tests
+        run: |
+          node --check qa/cbot-uat02/crosschannel-core.mjs
+          node --check qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Inherited CBOT-UAT-01 readiness tests
+        run: node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+      - name: Inherited V16.7 multi-merchant contract tests
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Verify no providers, hosted DB or AI model calls in lab
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=(Path('qa/cbot-uat02')/'crosschannel-core.mjs').read_text()
+          cases=(Path('qa/cbot-uat02')/'crosschannel-core.test.mjs').read_text()
+          assert cases.count("test('")==38
+          for bad in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+                      r'\bprocess\.env\b',r'new\s+WebSocket',r'graph\.facebook\.com',
+                      r'api\.openai\.com',r'\/rest\/v1\/',r'\bservice_role\b']:
+              assert not re.search(bad,src,re.I), f'Forbidden dependency: {bad}'
+          assert "HOSTED_WRITER_DISABLED" in src
+          assert "RPC_CHANGE_NOT_APPROVED_BY_BACKUP_GATE" in src
+          assert "PROVIDER_SEND_DISABLED" in src
+          print('CBOT-UAT02: no real transport, credential, paid API or hosted mutation')
+          PY
