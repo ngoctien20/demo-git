@@ -40,9 +40,6 @@ jobs:
         run: |
           python3 -m py_compile qa/v164b-privacy/private_sanitizer.py
           python3 qa/v164b-privacy/test_private_sanitizer.py
-      - name: Test sanitized fixture in-memory, never private uploaded CSV
-        run: |
-          python3 qa/v164b-privacy/test_private_sanitizer.py
       - name: Static zero-network source guard
         run: |
           python3 - <<'PY'
