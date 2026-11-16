@@ -105,5 +105,22 @@ Shop B baseline and all other users must be unchanged. Check message and Meta Se
 - **IMPLEMENTED:** User-acknowledgement evidence, deterministic Shop A synthetic greeting canary, graph blocker, optional importable *offline manual* workflow and test matrix.
 - **TESTED:** Source QA only once exact-head CI succeeds; no live custom routing performed.
 - **BLOCKED:** Native Page→Store authority, private QA PSID, production no-write path, complete safe cutover/rollback review, exact Owner approval.
-- **RELEASED:** Nothing. Existing Messenger bot and Meta Page unchanged.
+- **RELEASED:** Nothing. Existing Messenger Published bot and Meta Page unchanged. A new, isolated INACTIVE n8n QA workflow exists; it is not a published provider workflow.
 - **Next meaningful action:** Private Meta Page native verification and operator review of exact no-write node graph, then seek separate single-recipient canary cutover approval. Do not request yet another vague global production approval.
+
+
+### 8. New REAL n8n QA execution #4177 (actual n8n instance, synthetic preview)
+
+**Additional operation performed within safe draft authority (not a live Page change):**
+- Created workflow **`TIEN404 CBOT Messenger Canary — QA [INACTIVE NO SEND]`**, ID `VSmXkK7Y1Bb3Dg2w`, in n8n Personal project, folder `90_QA - DIAGNOSTICS`; it is **inactive**, has **2 nodes** `Manual Canary QA Only → Preview QA Greeting NO_SEND`, zero credentials, no webhook/HTTP/Meta/model/toolWorkflow/database.
+- Workflow verified via n8n connector: `active=false`, `activeVersionId=null`. The existing Published Messenger `Z7FdV7uDvApfbURQ` was **not** changed.
+- Executed that isolated workflow in **manual** mode exactly once. n8n execution **#4177**, 2026-11-16T11:54:25.508Z–11:54:27.109Z, **SUCCESS**, both nodes success.
+- Output: `contract=TIEN404_CBOT_CANARY_MANUAL_PREVIEW_V1`, `status=OFFLINE_SOURCE_ONLY`, QA_STORE_A_SYNTHETIC, greeting candidate `TIEN404-CANARY-01`, version 2, `can_send=false`, `can_create_order=false`, `can_publish=false`, `provider_messages_sent=0`, `orders_written=0`, `paid_model_calls=0`.
+- Privacy-safe factual receipt: `qa/cbot-messenger-canary/n8n-manual-qa-4177-observed.json`; separate exact-head CI tests verify structure and NO-GO. This is a real n8n execution of **synthetic preview**, not a Meta provider message or actual live Studio→Page configuration.
+- Link (QA only): https://ngoctien20.app.n8n.cloud/workflow/VSmXkK7Y1Bb3Dg2w
+
+**Changed-system ledger:**
+- GitHub: additive Draft PR files and CI only.
+- n8n: **one new inactive manual QA workflow**, **one manual synthetic execution #4177**. n8n stores ordinary QA execution metadata by design.
+- No change to Messenger Published, Meta subscriptions/tokens, Supabase, DEMO Products/Orders, actual customer data, credential, paid model or live provider send.
+- **Rollback note:** Closing this Draft PR does **not** delete the separately created QA workflow. Keep it inactive; deleting it is a separate decision and requires approval, and the existing manual execution audit should not be removed casually.
