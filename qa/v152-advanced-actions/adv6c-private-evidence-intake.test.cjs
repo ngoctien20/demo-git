@@ -200,3 +200,15 @@ test('35 private evidence intake cannot become approval lease',()=>{
  assert.equal(out.dbRoleChangeAuthorized,false);
  assert.equal(out.providerSendsAuthorized,false);
 });
+
+test('36 shared signing public key across independent roles cannot pass',()=>{
+ const x=make();
+ x.registry.get('QA_KEY_1').publicKey=x.registry.get('QA_KEY_0').publicKey;
+ assert(verify(x).blockers.includes('SIGNER_PUBLIC_KEY_REUSED_ACROSS_ROLES'));
+});
+test('37 signed manifest review never certifies real backup operator identity',()=>{
+ const x=make(),out=verify(x);
+ assert.equal(out.requiredIndependentRoles,3);
+ assert.equal(out.signerAuthorityCertified,false);
+ assert.equal(out.independentBackupRestoreCertified,false);
+});
