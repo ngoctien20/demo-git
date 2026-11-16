@@ -89,3 +89,14 @@ test('17 hosted backup export is disabled',()=>err(exportRealBackup,'HOSTED_BACK
 test('18 hosted migration is disabled',()=>err(applyHostedMigration,'HOSTED_STORE_MIGRATION_NOT_AUTHORIZED'));
 test('19 privileged RPC revoke is disabled',()=>err(revokeLegacyRpc,'LEGACY_RPC_REVOKE_NOT_AUTHORIZED'));
 test('20 Messenger publish is disabled',()=>err(publishMessengerCommerce,'PUBLISHED_MESSENGER_CHANGE_NOT_AUTHORIZED'));
+
+test('21 unknown RPC privilege is UNKNOWN rather than silently safe false',()=>{
+ const a=assessReadOnlyHostedSnapshot({...baseline,anon_definer_rpc_executable:undefined});
+ assert.equal(a.hosted.anon_definer_rpc_executable,null);
+ assert.ok(a.diagnostic_reasons.includes('RPC_PRIVILEGE_UNKNOWN'));
+});
+test('22 unknown external legacy RPC caller population stays fail closed',()=>{
+ const a=assessReadOnlyHostedSnapshot({...baseline,known_live_legacy_rpc_caller:undefined});
+ assert.equal(a.hosted.known_live_legacy_rpc_caller,null);
+ assert.ok(a.diagnostic_reasons.includes('RPC_CALLER_INVENTORY_UNKNOWN'));
+});
