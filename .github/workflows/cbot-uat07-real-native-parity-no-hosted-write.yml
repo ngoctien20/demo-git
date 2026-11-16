@@ -1,0 +1,68 @@
+name: TIEN404 CBOT-UAT-07 Real Meta Webhook Parity M0 Witness NO-GO
+on:
+  push:
+    branches:
+      - work/cbot-uat07-real-m0-witness-native-webhook-parity-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat07/**'
+      - '.github/workflows/cbot-uat07-real-native-parity-no-hosted-write.yml'
+      - 'docs/ai-handoff/CBOT_UAT07_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-parity-no-go-source:
+    name: 26 new native App webhook/M0 claim + 315 inherited safety cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and 26 new native evidence adjudication cases
+        run: |
+          node --check qa/cbot-uat07/source-evidence-adjudicator.mjs
+          node --test qa/cbot-uat07/source-evidence-adjudicator.test.mjs
+      - name: Inherit UAT06 through UAT01 and Merchant Registry regression
+        run: |
+          node --test qa/cbot-uat06/private-m0-owner-native-gates.test.mjs
+          node --test qa/cbot-uat05/real-evidence-intake.test.mjs
+          node --test qa/cbot-uat04/trusted-rpc-replacement.test.mjs
+          node --test qa/cbot-uat04/private-recovery-hosted-preflight.test.mjs
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs
+          node --test qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Directly observed bounded Meta webhook source audit and no-hosted action guard
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path("qa/cbot-uat07")
+          obs=json.loads((root/"native-meta-webhook-parity-observation.json").read_text())
+          s=(root/"source-evidence-adjudicator.mjs").read_text()
+          tests=(root/"source-evidence-adjudicator.test.mjs").read_text()
+          assert obs["scope"]=="CONNECTED_META_DEVELOPERS_READ_ONLY_UI_AND_N8N_PUBLISHED_ACTIVE_GRAPH"
+          assert obs["meta"]["app_webhook_messages_subscribed"] is True
+          assert obs["meta"]["app_webhook_messaging_postbacks_subscribed"] is True
+          assert obs["meta"]["app_webhook_messages_version"]=="v27.0"
+          assert obs["meta"]["configured_callback_path"]==obs["n8n"]["registered_webhook_path"]=="tien404-messenger-qa"
+          assert obs["meta"]["native_page_subscribed_apps_verified"] is False
+          assert obs["meta"]["pages_messaging_permission_granted_verified"] is False
+          assert obs["classification"]["hosted_store_order_lookup"]=="NOT_AUTHORIZED"
+          assert obs["privacy"]["no_webhook_verify_token"] is True
+          assert tests.count("test('")==26
+          for keyword in ["can_migrate_store:false","can_revoke_rpc:false",
+                          "can_query_hosted_store_orders:false","can_send_messenger_canary:false",
+                          "actual_private_witness_accepted:false"]:
+              assert keyword in s
+          for forbidden in [r"\bfetch\s*\(",r"\baxios\b",r"\bcreateClient\s*\(",
+                             r"\bprocess\.env\b",r"\bchild_process\b",
+                             r"new\s+WebSocket",r"graph\.facebook\.com",
+                             r"\/rest\/v1\/rpc\/",r"api\.openai\.com"]:
+              assert not re.search(forbidden,s), f"Forbidden source operation: {forbidden}"
+          print("CBOT-UAT07 direct native App webhook parity documented; no actual Page owner or hosted release asserted")
+          PY
