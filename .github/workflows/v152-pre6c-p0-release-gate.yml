@@ -1,0 +1,77 @@
+name: TIEN404 PRE-ADV6C Security P0 Release Gate (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-pre6c-security/**'
+      - 'docs/ai-handoff/V15_2_PRE_ADV6C_*'
+      - '.github/workflows/v152-pre6c-p0-release-gate.yml'
+  push:
+    branches:
+      - 'work/v152-pre6c-p0-release-gate-nosend-20261116'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  p0-policy-contract-qa:
+    name: P0 audit policy and inherited security suite (offline expected PASS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: P0 gate syntax and negative authorization suite
+        run: |
+          node --check qa/v152-pre6c-security/p0-release-gate.cjs
+          node --check qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --check qa/v152-pre6c-security/p0-release-gate-cli.cjs
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+      - name: Inherited P0 and channel QA
+        run: |
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+          node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+          node --test qa/v147-custom-studio/advanced-ai-presentation-evaluator.test.cjs
+      - name: Report current P0 NO GO without accessing hosted systems
+        run: node qa/v152-pre6c-security/p0-release-gate-cli.cjs --report
+      - name: Verify source cannot send, execute SQL or auto-release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          base=Path('qa/v152-pre6c-security')
+          source=(base/'p0-release-gate.cjs').read_text()
+          baseline=json.loads((base/'p0-release-baseline.readonly.json').read_text())
+          assert baseline['schema']['stores_table'] is False
+          assert baseline['schema']['store_memberships_table'] is False
+          assert baseline['rpc']['anon_security_definer_execute']
+          assert baseline['order_writer']['legacy_tools_still_connected'] is True
+          assert baseline['delivery']['deployment_pipeline_enforces_gate'] is False
+          assert 'PENDING_INDEPENDENT_ATTESTATION' in source
+          assert 'releaseAuthorized:false' in source
+          assert 'assertReleaseAllowed' in source
+          for forbidden in [
+            r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+            r'\bhttps?\.request\s*\(',r'\bexecSync\s*\(',
+            r'\bprocess\.env\b',r'\bquery\s*\(',r'\bservice_role\b',
+            r'\bfs\.(?:write|append|unlink)'
+          ]:
+            assert not re.search(forbidden,source),forbidden
+          print('PASS: P0 gate is a NO-SEND report only; production pipeline NOT wired')
+          PY
+
+  p0-release-eligibility:
+    name: P0 RELEASE ELIGIBILITY — NO GO (expected BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: p0-policy-contract-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Block promotion without independent signed approval and hosted evidence
+        run: node qa/v152-pre6c-security/p0-release-gate-cli.cjs --require-release
