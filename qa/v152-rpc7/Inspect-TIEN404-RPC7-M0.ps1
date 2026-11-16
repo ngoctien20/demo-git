@@ -33,8 +33,13 @@ if (-not (Test-Path -LiteralPath "$PSScriptRoot\local-archive-coverage-cli.cjs" 
   Deny "RPC7_SOURCE_PACKAGE_INCOMPLETE"
 }
 try {
-  $restoreTool = (Get-Command -Name $PgRestoreExe -CommandType Application -ErrorAction Stop).Source
-  $nodeTool = (Get-Command -Name $NodeExe -CommandType Application -ErrorAction Stop).Source
+  $restoreCommands = @(Get-Command -Name $PgRestoreExe -CommandType Application -ErrorAction Stop)
+  $nodeCommands = @(Get-Command -Name $NodeExe -CommandType Application -ErrorAction Stop)
+  if ($restoreCommands.Count -lt 1 -or $nodeCommands.Count -lt 1) {
+    Deny "LOCAL_TOOLS_UNAVAILABLE"
+  }
+  $restoreTool = [string]$restoreCommands[0].Source
+  $nodeTool = [string]$nodeCommands[0].Source
 } catch {
   Deny "PG_RESTORE_OR_NODE_NOT_INSTALLED_OR_EXPLICIT_BINARY_PATH_REQUIRED"
 }
