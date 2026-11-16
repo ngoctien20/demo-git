@@ -1,0 +1,103 @@
+name: TIEN404 V15.2 ADV3 AI Presentation & Secure Action QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV3_*'
+      - '.github/workflows/v152-adv3-intelligence-actions-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv3-intelligence-signed-action-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADV3_*'
+      - '.github/workflows/v152-adv3-intelligence-actions-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  intelligence-security:
+    name: 76-label presentation corpus + 53 action security and inherited QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JS syntax QA
+        run: |
+          node --check qa/v147-custom-studio/advanced-ai-intelligence.js
+          node --check qa/v147-custom-studio/advanced-intelligence-view.js
+          node --check qa/v147-custom-studio/advanced-secure-actions.cjs
+          node --check qa/v147-custom-studio/advanced-offline-evaluator.cjs
+          node --check qa/v147-custom-studio/advanced-ai-intelligence.test.cjs
+          node --check qa/v147-custom-studio/advanced-secure-actions.test.cjs
+      - name: 40 presentation intelligence tests + 76 labelled cases
+        run: node --test qa/v147-custom-studio/advanced-ai-intelligence.test.cjs
+      - name: 53 signed action + negative security tests
+        run: node --test qa/v147-custom-studio/advanced-secure-actions.test.cjs
+      - name: Offline evaluator and reproducible metrics
+        run: |
+          node qa/v147-custom-studio/advanced-offline-evaluator.cjs
+          test -s qa-artifacts-v152-adv3/heuristic-baseline.json
+      - name: ADV2, ADV1 and V14.7 regression
+        run: |
+          node --test qa/v147-custom-studio/advanced-channel-registry.test.cjs
+          node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+      - name: Static No-Send/No-Real-Model/No-Hosted-Write guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v147-custom-studio')
+          files=['advanced-ai-intelligence.js','advanced-intelligence-view.js','advanced-secure-actions.cjs','advanced-offline-evaluator.cjs']
+          src='\n'.join((base/f).read_text() for f in files)
+          html=(base/'advanced-preview.html').read_text()
+          assert "connect-src 'none'" in html
+          assert "frame-src 'none'" in html and "img-src 'none'" in html
+          assert 'advanced-ai-intelligence.js' in html and 'advanced-intelligence-view.js' in html
+          for s in ('NO_SIDE_EFFECTS_IN_QA_REGISTRY','timingSafeEqual','QA_REPLAY_DENIED','QA_ACTOR_SCOPE_MISMATCH','ORDER_RESOURCE_SCOPE_REQUIRED'):
+              assert s in src,s
+          for bad in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',r'\bEventSource\b',r'\baxios\s*\(',r'\binnerHTML\b',r'\b(localStorage|sessionStorage)\b'):
+              assert not re.search(bad,src),bad
+          assert 'modelBenchmarkCompleted' in (base/'advanced-presentation-corpus.json').read_text()
+          assert 'realModelCalls:0' in src
+          assert 'canExecute:false' in src
+          print('ADV3 NO-SEND STATIC GUARDS PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv3-offline-intent-benchmark-synthetic
+          path: qa-artifacts-v152-adv3/heuristic-baseline.json
+          if-no-files-found: ignore
+  browser-local:
+    name: Vietnamese schema/form and 4-viewport visual QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA-only Chromium
+        run: |
+          npm install --no-save --prefix qa/v147-custom-studio playwright@1.56.1
+          cd qa/v147-custom-studio && npx playwright install --with-deps chromium
+      - name: Serve isolated QA source only
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v152-adv3.log 2>&1 &
+          sleep 2
+      - name: ADV3 local browser QA
+        run: node qa/v147-custom-studio/advanced-intelligence-browser.test.cjs
+      - name: ADV2 inherited local browser QA
+        run: node qa/v147-custom-studio/advanced-registry-browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv3-visual-390px
+          path: qa-artifacts-v152-adv3/intelligence-schema-390.png
+          if-no-files-found: ignore
