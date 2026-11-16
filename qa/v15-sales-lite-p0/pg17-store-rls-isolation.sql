@@ -246,4 +246,80 @@ INSERT INTO qa_p0.replay_inbox VALUES('00000000-0000-0000-0000-000000000001',
 DO $test$ BEGIN
  IF (SELECT count(*) FROM qa_p0.replay_inbox)<>1 THEN RAISE EXCEPTION 'DUPLICATE_REPLAY_ACCEPTED'; END IF;
 END $test$;
+
+-- Synthetic atomic Order + Outbox transactional contract.
+-- These tables are private in this disposable test: zero authenticated grants.
+CREATE TABLE qa_p0.owner_outbox(
+  tenant_id uuid NOT NULL,store_id uuid NOT NULL,order_id uuid NOT NULL,
+  provider_event_key text NOT NULL,status text NOT NULL DEFAULT 'pending'
+    CHECK(status IN ('pending','sent','failed')),
+  PRIMARY KEY(tenant_id,store_id,provider_event_key),
+  FOREIGN KEY(tenant_id,store_id,order_id) REFERENCES qa_p0.orders(tenant_id,store_id,id));
+ALTER TABLE qa_p0.owner_outbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qa_p0.owner_outbox FORCE ROW LEVEL SECURITY;
+ALTER TABLE qa_p0.replay_inbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qa_p0.replay_inbox FORCE ROW LEVEL SECURITY;
+
+-- In the disposable DB only, simulate one backend-authorized transaction.
+-- It writes Order pending + Item + consumed event + Outbox pending together.
+-- It does NOT send a provider message or decrement stock.
+BEGIN;
+INSERT INTO qa_p0.orders VALUES
+ ('40000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',318000);
+INSERT INTO qa_p0.order_items VALUES
+ ('50000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000009',
+  '30000000-0000-0000-0000-000000000001',2,159000);
+INSERT INTO qa_p0.replay_inbox VALUES
+ ('00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001','messenger:page_A:mid_009');
+INSERT INTO qa_p0.owner_outbox VALUES
+ ('00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000009',
+  'messenger:page_A:mid_009','pending');
+COMMIT;
+DO $tx$ BEGIN
+ IF (SELECT count(*) FROM qa_p0.owner_outbox WHERE status='pending')<>1
+ THEN RAISE EXCEPTION 'ATOMIC_OUTBOX_NOT_PREPARED'; END IF;
+ IF (SELECT count(*) FROM qa_p0.orders WHERE id='40000000-0000-0000-0000-000000000009')<>1
+ THEN RAISE EXCEPTION 'ATOMIC_ORDER_NOT_SAVED'; END IF;
+ IF (SELECT count(*) FROM qa_p0.replay_inbox WHERE event_key='messenger:page_A:mid_009')<>1
+ THEN RAISE EXCEPTION 'ATOMIC_REPLAY_MARKER_MISSING'; END IF;
+ IF (SELECT stock FROM qa_p0.products WHERE id='30000000-0000-0000-0000-000000000001') IS NOT NULL
+ THEN NULL; END IF;
+END $tx$;
+-- Repeated external event cannot add duplicate Outbox/Replay entry.
+INSERT INTO qa_p0.owner_outbox VALUES
+ ('00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000009',
+  'messenger:page_A:mid_009','pending') ON CONFLICT DO NOTHING;
+DO $tx$ BEGIN
+ IF (SELECT count(*) FROM qa_p0.owner_outbox)<>1 THEN
+  RAISE EXCEPTION 'DUPLICATE_OUTBOX_PER_EVENT'; END IF;
+END $tx$;
+-- A cross-store notification to the wrong order must fail composite FK;
+-- the same failed nested transaction must not leave a partial Order behind.
+DO $tx$ DECLARE rejected boolean:=false; BEGIN
+ BEGIN
+  INSERT INTO qa_p0.orders VALUES
+   ('40000000-0000-0000-0000-000000000010','00000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',159000);
+  INSERT INTO qa_p0.owner_outbox VALUES
+   ('00000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002',
+    '40000000-0000-0000-0000-000000000010',
+    'messenger:page_A:mid_010','pending');
+ EXCEPTION WHEN foreign_key_violation THEN rejected:=true;
+ END;
+ IF NOT rejected OR EXISTS(SELECT 1 FROM qa_p0.orders
+     WHERE id='40000000-0000-0000-0000-000000000010')
+ THEN RAISE EXCEPTION 'PARTIAL_ORDER_OR_WRONG_OWNER_OUTBOX_ALLOWED'; END IF;
+END $tx$;
+DO $tx$ BEGIN
+ IF (SELECT stock FROM qa_p0.products
+ WHERE id='30000000-0000-0000-0000-000000000001')<>5
+ THEN RAISE EXCEPTION 'UNAPPROVED_STOCK_DEDUCTION'; END IF;
+END $tx$;
+
 SELECT 'PASS_DISPOSABLE_POSTGRES17_RLS_ISOLATION_NOT_HOSTED' AS result;
