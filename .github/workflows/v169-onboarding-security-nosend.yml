@@ -6,6 +6,8 @@ on:
   pull_request:
     paths:
       - 'qa/v169-security/**'
+      - 'qa/v1610-disposable/**'
+      - 'docs/ai-handoff/V16_10_*'
       - 'docs/ai-handoff/V16_9_*'
       - '.github/workflows/v169-onboarding-security-nosend.yml'
   workflow_dispatch:
@@ -28,6 +30,8 @@ jobs:
           node --check qa/v169-security/readiness-ui.mjs
           node --check qa/v169-security/browser.test.cjs
           node --check qa/v169-security/v169-security.test.mjs
+      - name: V16.10 new source-only evidence preflight (24 cases)
+        run: node --test qa/v1610-disposable/preflight.test.mjs
       - name: NEW 75 source-only ownership and private-intake security tests
         run: node --test qa/v169-security/v169-security.test.mjs
       - name: INHERITED V16.8 synthetic import/Hybrid tests
@@ -98,3 +102,38 @@ jobs:
           name: v169-private-owner-synthetic-readiness-screenshots
           path: qa-artifacts-v169/
           if-no-files-found: ignore
+
+  v1610-disposable-postgres:
+    name: V16.10 PG17 disposable RLS & synthetic restore (stacked fallback CI)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: T404_SYNTHETIC_RUNNER_ONLY_20261116
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 4s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: T404_SYNTHETIC_RUNNER_ONLY_20261116
+      T404_DISPOSABLE_QA_ONLY: "YES"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard syntax, repo and localhost before any synthetic SQL
+        run: |
+          bash -n qa/v1610-disposable/run-disposable.sh
+          test "$GITHUB_REPOSITORY" = "ngoctien20/demo-git"
+          test "$PGHOST" = "127.0.0.1"
+          ! grep -RiE 'supabase\.co|postgresql://|PGHOST=.*\.cloud' qa/v1610-disposable/postgres-fixture.sql qa/v1610-disposable/test-store-rls.sql qa/v1610-disposable/run-disposable.sh
+      - name: PG17 NOBYPASSRLS A/B isolation and local pg_dump restore verification
+        run: bash qa/v1610-disposable/run-disposable.sh
+      - name: Confirm no hosted data or real signed JWT in test
+        run: echo "Synthetic PG17 only. No hosted backup/restore or Supabase Owner JWT verification."
