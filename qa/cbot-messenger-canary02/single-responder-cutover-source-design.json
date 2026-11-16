@@ -1,0 +1,108 @@
+{
+  "contract": "TIEN404_CBOT_CANARY02_SOURCE_TOPOLOGY_V1",
+  "mode": "SOURCE_ONLY_PROPOSED",
+  "nodes": [
+    "EXISTING_WEBHOOK",
+    "HMAC_VERIFIED",
+    "DEDUP_VERIFIED",
+    "PRIVATE_PAGE_STORE_RESOLVER",
+    "QA_RECIPIENT_ALLOWLIST",
+    "CANARY_EXCLUSIVE_ROUTER",
+    "APPROVED_PROFILE_VERSION",
+    "CANARY_DETERMINISTIC_REPLY",
+    "CANARY_RATE_TTL_GUARD",
+    "SEND_ONCE_EXISTING_NODE",
+    "LEGACY_MESSENGER_AGENT"
+  ],
+  "canary_edges": [
+    [
+      "EXISTING_WEBHOOK",
+      "HMAC_VERIFIED"
+    ],
+    [
+      "HMAC_VERIFIED",
+      "DEDUP_VERIFIED"
+    ],
+    [
+      "DEDUP_VERIFIED",
+      "PRIVATE_PAGE_STORE_RESOLVER"
+    ],
+    [
+      "PRIVATE_PAGE_STORE_RESOLVER",
+      "QA_RECIPIENT_ALLOWLIST"
+    ],
+    [
+      "QA_RECIPIENT_ALLOWLIST",
+      "CANARY_EXCLUSIVE_ROUTER"
+    ],
+    [
+      "CANARY_EXCLUSIVE_ROUTER",
+      "APPROVED_PROFILE_VERSION"
+    ],
+    [
+      "APPROVED_PROFILE_VERSION",
+      "CANARY_DETERMINISTIC_REPLY"
+    ],
+    [
+      "CANARY_DETERMINISTIC_REPLY",
+      "CANARY_RATE_TTL_GUARD"
+    ],
+    [
+      "CANARY_RATE_TTL_GUARD",
+      "SEND_ONCE_EXISTING_NODE"
+    ]
+  ],
+  "baseline_edges": [
+    [
+      "EXISTING_WEBHOOK",
+      "HMAC_VERIFIED"
+    ],
+    [
+      "HMAC_VERIFIED",
+      "DEDUP_VERIFIED"
+    ],
+    [
+      "DEDUP_VERIFIED",
+      "PRIVATE_PAGE_STORE_RESOLVER"
+    ],
+    [
+      "PRIVATE_PAGE_STORE_RESOLVER",
+      "QA_RECIPIENT_ALLOWLIST"
+    ],
+    [
+      "QA_RECIPIENT_ALLOWLIST",
+      "CANARY_EXCLUSIVE_ROUTER"
+    ],
+    [
+      "CANARY_EXCLUSIVE_ROUTER",
+      "LEGACY_MESSENGER_AGENT"
+    ],
+    [
+      "LEGACY_MESSENGER_AGENT",
+      "SEND_ONCE_EXISTING_NODE"
+    ]
+  ],
+  "message_ingress_count": 1,
+  "send_node_count": 1,
+  "agent_tools_attached_to_baseline": [
+    "create_order",
+    "manage_order",
+    "update_order_address",
+    "get_order_status",
+    "create_support_ticket"
+  ],
+  "canary_node_types": {
+    "EXISTING_WEBHOOK": "SAFE_METADATA_OR_DETERMINISTIC",
+    "HMAC_VERIFIED": "SAFE_METADATA_OR_DETERMINISTIC",
+    "DEDUP_VERIFIED": "SAFE_METADATA_OR_DETERMINISTIC",
+    "PRIVATE_PAGE_STORE_RESOLVER": "SAFE_METADATA_OR_DETERMINISTIC",
+    "QA_RECIPIENT_ALLOWLIST": "SAFE_METADATA_OR_DETERMINISTIC",
+    "CANARY_EXCLUSIVE_ROUTER": "SAFE_METADATA_OR_DETERMINISTIC",
+    "APPROVED_PROFILE_VERSION": "SAFE_METADATA_OR_DETERMINISTIC",
+    "CANARY_DETERMINISTIC_REPLY": "SAFE_METADATA_OR_DETERMINISTIC",
+    "CANARY_RATE_TTL_GUARD": "SAFE_METADATA_OR_DETERMINISTIC",
+    "SEND_ONCE_EXISTING_NODE": "PROVIDER_SEND_SHARED",
+    "LEGACY_MESSENGER_AGENT": "AGENT_WITH_LEGACY_TOOLS"
+  },
+  "canary_enabled": false
+}
