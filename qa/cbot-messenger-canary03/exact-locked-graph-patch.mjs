@@ -189,8 +189,14 @@ export function previewLockedExactPatch(meta){
    (v.main||[]).flat().filter(Boolean).map(x=>x.node)]));
  // Structural reachability check: the greeting has no path through
  // either legacy AI Agent or its business tool connections.
- const reachable=(src)=>{const seen=new Set(),q=[src];while(q.length){
+ // Per-message reachability stops at the ONE provider Send node.
+ // The real workflow routes the send result back to Loop One Message to
+ // process the NEXT event. Global reachability would incorrectly follow
+ // the next event into the legacy Agent and conflate different recipients.
+ // This does NOT prove multi-event concurrency/one-shot dedup safety.
+ const reachable=(src,stopAtSend=true)=>{const seen=new Set(),q=[src];while(q.length){
   const n=q.shift();if(seen.has(n))continue;seen.add(n);
+  if(stopAtSend&&n===BASE.send)continue;
   for(const e of graph[n]||[])q.push(e);
  }return seen;};
  const canaryReach=reachable(NEW.greeting);
