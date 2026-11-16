@@ -133,7 +133,7 @@ export function verifyOneShotSqlContract(sql){
  compact.includes('on conflict (grant_id) do nothing') &&
  compact.includes('returning') &&
  compact.includes('security invoker') &&
- compact.includes('revoke all') &&
+ compact.includes('revoke all on function') &&
  compact.includes('row level security') &&
  !/drop table|truncate|grant all|service_role|create extension/.test(compact);
 }
