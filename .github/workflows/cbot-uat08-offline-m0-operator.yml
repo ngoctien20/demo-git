@@ -128,7 +128,7 @@ jobs:
           code=$?
           set -e
           # Synthetic CI fixture only: print allowlisted bounded, privacy-safe fields.
-          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|INSPECT_EXCEPTION_CLASS|classification|localEvidenceStatus|applicationEntries|authEntries|storageEntries|receiptSavedLocally|PRIVATE_RESTORE_WITNESSED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
+          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|INSPECT_EXCEPTION_CLASS|SAFE_RECEIPT_FIELD_COUNT|classification|localEvidenceStatus|applicationEntries|authEntries|storageEntries|receiptSavedLocally|PRIVATE_RESTORE_WITNESSED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
           test "$code" = "0"
           echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED'
           echo "$result" | grep -q 'CBOT08_applicationEntries=5'
