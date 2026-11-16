@@ -1,0 +1,47 @@
+name: TIEN404 V15.0-09 Hosted Store Security Readiness (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1509-hosted-store-security-readiness-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1509-hosted-store/**'
+      - 'docs/ai-handoff/V15_09_*'
+      - '.github/workflows/v1509-hosted-store-security-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v1509-source-security-gates:
+    name: Canonical Store No-Send RLS Design & Evidence QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check qa/v1509-hosted-store/store-security-contract.cjs
+          node --check qa/v1509-hosted-store/store-security-contract.test.cjs
+          node --check qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: Store A/B/C ownership and fail-closed synthetic tests
+        run: node --test qa/v1509-hosted-store/store-security-contract.test.cjs
+      - name: Review-only migration and SELECT-only hosted audit checks
+        run: node --test qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: No provider, hosted write, credential access or paid model
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path("qa/v1509-hosted-store/store-security-contract.cjs").read_text()
+          for denied in ('fetch(', 'sendMessage(', 'new OpenAI(', 'axios(', 'INSERT INTO', 'UPDATE public.', 'process.env.', 'ZALO_BOT_TOKEN'):
+              assert denied not in src, denied
+          sql=Path('docs/ai-handoff/V15_09_CANONICAL_STORE_EXPAND_REVIEW_ONLY.sql').read_text()
+          assert "RAISE EXCEPTION 'V15.0-09 REVIEW ONLY:" in sql
+          assert sql.rstrip().endswith('ROLLBACK;')
+          print('PASS NO-SEND SOURCE-ONLY / REVIEW-ONLY SQL')
+          PY
