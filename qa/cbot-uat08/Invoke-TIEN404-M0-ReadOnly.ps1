@@ -19,7 +19,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $PinnedRpc7Sha = "4f7bef71f54ee17b88449026b90803ccf9743e30"
-$ExpectedProject = "ifxlvrhyjhbzbrkdsida"
 function Stop-Safely([string]$Code) {
   if ($Code -notmatch '^[A-Z0-9_]{4,90}$') { $Code = "UNSPECIFIED_LOCAL_PRECHECK_FAILURE" }
   Write-Output ("CBOT08_RESULT=BLOCKED")
@@ -92,17 +91,17 @@ try {
   if ($null -ne $ExpectedArchiveBytes -and [long]$ExpectedArchiveBytes -le 0) {
     Stop-Safely "EXPECTED_ARCHIVE_BYTES_INVALID"
   }
-  $args = @{
+  $callArgs = @{
     ArchivePath = $archiveAbsolute
     RecoveryScope = "APPLICATION_WITH_EXTERNAL_AUTH_STORAGE_PLAN"
     PgRestoreExe = $PgRestoreExe
     NodeExe = $NodeExe
   }
-  if ($ExpectedArchiveSha256 -ne "") { $args.ExpectedSha256 = $ExpectedArchiveSha256 }
-  if ($null -ne $ExpectedArchiveBytes) { $args.ExpectedBytes = $ExpectedArchiveBytes }
+  if ($ExpectedArchiveSha256 -ne "") { $callArgs.ExpectedSha256 = $ExpectedArchiveSha256 }
+  if ($null -ne $ExpectedArchiveBytes) { $callArgs.ExpectedBytes = $ExpectedArchiveBytes }
   # This is the existing RPC7 READ-ONLY script. Its receipt is written only
   # under the operator's local private-evidence directory; NEVER public Git.
-  $output = @(& $inspector @args 2>$null)
+  $output = @(& $inspector @callArgs 2>$null)
   # Parse ONLY explicitly allowlisted, non-sensitive terminal status keys.
   $allowed = @(
     "classification","localEvidenceStatus","referenceHashMatches",
@@ -127,7 +126,6 @@ try {
       Write-Output ("CBOT08_" + $key + "=" + $summary[$key])
     }
   }
-  Write-Output ("CBOT08_STAGING_REF_MATCHED=" + [string]($ExpectedProject -eq "ifxlvrhyjhbzbrkdsida"))
   Write-Output "CBOT08_PRIVATE_RESTORE_WITNESSED=false"
   Write-Output "CBOT08_M0_ACCEPTED=false"
   Write-Output "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false"
