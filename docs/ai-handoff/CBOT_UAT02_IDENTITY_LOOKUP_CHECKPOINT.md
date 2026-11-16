@@ -46,4 +46,11 @@ XCH-01..06 hosted still BLOCKED until real native Meta Page/Zalo OA ownership, p
 Use one owner-approved QA order, verify its DB receipt, then same-store Zalo OA read-only lookup. No production Send or paid model API without separate consent.
 
 ## Rollback
-Close Draft PR to discard additive source without touching production. No hosted database / workflow change performed in this checkpoint.
+Close Draft PR to discard additive source without touching production. No hosted database or Published workflow changed. One new inactive manual QA workflow was created in n8n Personal / 90_QA - DIAGNOSTICS and can be archived separately after approval.
+
+## EXACT-HEAD QA EVIDENCE (2026-11-16 JST)
+- GitHub Actions run #43852397994: COMPLETED SUCCESS at initial PR #204 HEAD 78c1338da9d6f69240e6f56c97f9124aa560ea82. Test step 38/38 source synthetic, inherited 22/22 CBOT-UAT-01, inherited 65/65 V16.7 synthetic, secret/network guard all PASS. Do not claim this same run verifies this later docs-only checkpoint commit; test code remains unchanged.
+- New independent n8n workflow 6IMJj5xdCGC2b5ll (INACTIVE, manual-only, four nodes, no credentials) created in Personal project folder 90_QA - DIAGNOSTICS, version c6d6e405-a83a-4cc5-895b-d99a55bf0069.
+- n8n execution #4175 completed SUCCESS, assertion CBOT02_N8N_SYNTHETIC_LOOKUP 10/10; outputs verify synthetic found/denied decision, no provider sends (0), no hosted Orders writes (0). This workflow is intentionally not connected to Meta/Zalo providers or Supabase.
+- Therefore synthetic functional engine is IMPLEMENTED and TESTED, but hosted cross-channel XCH01..06 remain BLOCKED. P0-01 and P0-02 are VERIFIED defects / proposed gated remediation, NOT REMEDIATED.
+- Rollback: close Draft PR #204 and, if desired under separate safe operator approval, archive inactive QA workflow 6IMJj5xdCGC2b5ll. Existing Published and Supabase untouched.
