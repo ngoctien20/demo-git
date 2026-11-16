@@ -1,0 +1,98 @@
+name: TIEN404 V15 Sales Lite P0-F Security Remediation Candidate (DISPOSABLE / NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0f-rpc-security-commerce-pg17-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0f/**'
+      - 'docs/ai-handoff/V15_P0F_*'
+      - '.github/workflows/v15-p0f-security-commerce-pg17-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg17-store-product-invoker:
+    name: Synthetic Store A/B/C RPC, RLS and price isolation on disposable PG17
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: p0f_synthetic_only
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only_no_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d p0f_synthetic_only"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL CLI
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Execute no-hosted PG17 RLS / SECURITY INVOKER remediation rehearsal
+        env:
+          PGPASSWORD: synthetic_only_no_secret
+        run: |
+          psql -h 127.0.0.1 -U postgres -d p0f_synthetic_only -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql
+      - name: Guard synthetic environment after transaction rollback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql').read_text()
+          assert 'CREATE SCHEMA qa_p0f' in s
+          assert 'ROLLBACK;' in s
+          assert 'PASS_DISPOSABLE_PG17_SECURITY_INVOKER_STORE_PRODUCT_FK_RLS_NO_HOSTED' in s
+          assert 'ifxlvrhyjhbzbrkdsida' not in s
+          print('PASS disposable PG17 only; no Supabase hosted connection')
+          PY
+
+  offline-security-contract:
+    name: Zalo claim threat model + Store RPC source contract + inherited No-Send
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: P0-F source and Zalo synthetic threat-model QA
+        run: |
+          node --test qa/v15-sales-lite-p0f/zalo-claim-threat-model.test.cjs
+          node --test qa/v15-sales-lite-p0f/p0f-source-contract.test.cjs
+      - name: Inherited signed Commerce and Release NO-GO regression
+        run: |
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-security-review/security-review-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: Verify no provider sends, hosted DB calls or service keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          fs=[
+            Path('qa/v15-sales-lite-p0f/zalo-claim-threat-model.cjs'),
+            Path('qa/v15-sales-lite-p0f/pg17-store-product-invoker-rehearsal.sql'),
+          ]
+          for f in fs:
+            s=f.read_text()
+            if f.suffix=='.cjs':s=re.sub(r'/\*[\s\S]*?\*/','',s)
+            else:s=re.sub(r'--[^\n]*','',s)
+            for p in ('process.env.SUPABASE', 'SUPABASE_SERVICE_ROLE_KEY', 'fetch(',
+              'http.request', 'https.request', 'axios(', 'sendMessage(', 'api.supabase.com',
+              'ifxlvrhyjhbzbrkdsida'):
+              assert p not in s,(f,p)
+          code=fs[0].read_text()
+          for t in ('can_claim_live:false','can_mutate_hosted:false','can_send_provider:false'):
+            assert t in code,t
+          print('PASS: P0-F research candidate contains no hosted/send implementation')
+          PY
