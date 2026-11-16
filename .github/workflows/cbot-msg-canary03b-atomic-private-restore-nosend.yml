@@ -29,6 +29,8 @@ jobs:
           node --test qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.test.mjs
       - name: Actual n8n manual #4190 synthetic 100-way one-use evidence
         run: node --test qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.test.mjs
+      - name: Signed LIVE01 source-to-recipient private comparison #4176 (only booleans)
+        run: node --test qa/cbot-messenger-canary03b/live01-signed-sender-send-match-4176.test.mjs
       - name: Exact parent 240 test suite, unmodified
         run: |
           node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
