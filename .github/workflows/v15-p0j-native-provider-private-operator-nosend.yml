@@ -1,0 +1,79 @@
+name: TIEN404 V15 P0-J Native Page/OA Evidence + PRIVATE Offline Backup Operator (NO EXPORT)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0j-native-page-oa-private-operator-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0j/**'
+      - 'docs/ai-handoff/V15_P0J_*'
+      - '.github/workflows/v15-p0j-native-provider-private-operator-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-evidence-and-offline-operator:
+    name: Native provider handoff & local archive-only integrity, inherited NO-GO QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: P0-J syntax and safe local-only source contract
+        run: |
+          node --check qa/v15-sales-lite-p0j/operator-offline-preflight.cjs
+          node --check qa/v15-sales-lite-p0j/operator-offline-preflight.test.cjs
+          node --check qa/v15-sales-lite-p0j/native-owner-operator-handoff.test.cjs
+      - name: P0-J private operator archive AND native Meta/Zalo evidence contracts
+        run: |
+          node --test qa/v15-sales-lite-p0j/operator-offline-preflight.test.cjs
+          node --test qa/v15-sales-lite-p0j/native-owner-operator-handoff.test.cjs
+      - name: Prove CLI version preflight is local and always NO-GO
+        run: |
+          node qa/v15-sales-lite-p0j/operator-offline-preflight.cjs > /tmp/p0j-no-secret.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const d=JSON.parse(fs.readFileSync('/tmp/p0j-no-secret.json','utf8'));
+          if(d.can_export||d.can_restore_hosted||d.can_apply_migration||d.actual_restore_verified)
+            process.exit(3);
+          if(d.status!=='NO_GO_REAL_BACKUP_AND_RESTORE_NOT_CERTIFIED')process.exit(4);
+          console.log('PASS local tool health; no hosted backup, restore or authorization');
+          NODE
+      - name: Preserve inherited real hosted P0-I / P0-H and QA safety
+        run: |
+          node --test qa/v15-sales-lite-p0i/reconcile-real-evidence.test.cjs
+          node --test qa/v15-sales-lite-p0h/hosted-channel-store-metadata-preflight.test.cjs
+          node --test qa/v15-sales-lite-p0h/hosted-preflight-sql-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0g/channel-store-readonly-contract.test.cjs
+          node --test qa/v15-sales-lite-p0f/zalo-claim-threat-model.test.cjs
+          node --test qa/v15-sales-lite-p0f/p0f-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-security-review/security-review-source-contract.test.cjs
+          node --test qa/v15-sales-lite-p0e2/one-time-export-decision.test.cjs
+      - name: Reject hosted commands, private tokens, customer data and send code
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('qa/v15-sales-lite-p0j/operator-offline-preflight.cjs').read_text()
+          code=re.sub(r'/\*[\s\S]*?\*/','',code)
+          for command in ('pg_dump ', 'pg_restore -d', 'db dump --remote',
+            'supabase db dump --remote', 'supabase db push', 'supabase link ',
+            'psql -h', 'docker exec', 'SUPABASE_SERVICE_ROLE_KEY',
+            'fetch(', 'axios(', 'https.request(', 'http.request(', 'process.env.'):
+            assert command not in code, command
+          assert "['supabase',['db','dump','--help']]" in code
+          for required in ('can_export','can_restore_hosted','can_apply_migration',
+                           'actual_restore_verified','can_send_provider'):
+            assert required in code, required
+          doc=Path('docs/ai-handoff/V15_P0J_NATIVE_PAGE_OA_PRIVATE_BACKUP_OPERATOR_HANDOFF.md').read_text()
+          assert 'PRE-M1 backup decision is separate from POST-M1 Store JWT/RLS' in doc
+          assert 'Do not POST to subscribe' in doc
+          print('PASS: source-only local archive reader; no hosted remote or native provider operation')
+          PY
