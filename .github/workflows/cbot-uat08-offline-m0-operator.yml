@@ -60,7 +60,7 @@ jobs:
           code=$?
           set -e
           # Preflight reads no archive; show ONLY explicit safe result/status keys.
-          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|RPC7_COMMIT_PINNED|ARCHIVE_INSPECTED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
+          echo "$result" | grep -E '^CBOT08_(RESULT|REASON|PRECHECK_EXCEPTION_CLASS|RPC7_COMMIT_PINNED|ARCHIVE_INSPECTED|M0_ACCEPTED|HOSTED_MIGRATION_AUTHORIZED)=' || true
           test "$code" = "0"
           echo "$result" | grep -q 'CBOT08_RESULT=LOCAL_TOOLS_READY'
           echo "$result" | grep -q 'CBOT08_RPC7_COMMIT_PINNED=true'
