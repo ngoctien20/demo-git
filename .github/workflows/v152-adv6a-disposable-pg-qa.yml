@@ -1,0 +1,125 @@
+name: TIEN404 V15.2 ADV6A Real Disposable PG17 Nonce QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/adv6a-*'
+      - 'docs/ai-handoff/V15_2_ADV6A_*'
+      - '.github/workflows/v152-adv6a-disposable-pg-qa.yml'
+  push:
+    branches:
+      - work/v152-adv6a-disposable-postgres-atomic-nonce-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-postgres:
+    name: Real Postgres 17 atomic nonce (ephemeral CI ONLY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: adv6a_qa
+          POSTGRES_PASSWORD: adv6a_disposable_only_qa_password
+          POSTGRES_DB: adv6a_qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U adv6a_qa -d adv6a_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      ADV6A_DISPOSABLE_POSTGRES: 'YES'
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGUSER: 'adv6a_qa'
+      PGPASSWORD: 'adv6a_disposable_only_qa_password'
+      PGDATABASE: 'adv6a_qa'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce scope — cannot run against hosted Supabase
+        run: |
+          test "$ADV6A_DISPOSABLE_POSTGRES" = YES
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = adv6a_qa
+          test "$PGUSER" = adv6a_qa
+          test "$CI" = true
+          test "$GITHUB_ACTIONS" = true
+          test -z "$(printenv SUPABASE_SERVICE_ROLE_KEY || true)"
+      - name: Install PostgreSQL QA-only driver (no production dependencies)
+        run: npm install --no-save --prefix qa/v152-advanced-actions pg@8.13.3
+      - name: Source syntax
+        run: |
+          node --check qa/v152-advanced-actions/adv6a-disposable-postgres.test.cjs
+          node --check qa/v152-advanced-actions/pg-nonce-store.cjs
+          node --check qa/v152-advanced-actions/canonical-action-gateway.cjs
+          node --check qa/v152-advanced-actions/verified-identity-connector.cjs
+      - name: Execute real 10-case Postgres proof
+        run: node --test qa/v152-advanced-actions/adv6a-disposable-postgres.test.cjs
+      - name: Validate evidence and explicit hosted NO-GO
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('qa-artifacts-v152-adv6a/disposable-pg-evidence.json')
+          r=json.loads(f.read_text())
+          for k in ('actualPg17Tested','multipleConnectionsUniqueNonce',
+                    'poolReconnectReplayDenied','qaTransactionalWriteAtomic',
+                    'rollbackAfterFailureVerified','syntheticSignedJwtScopeChecked',
+                    'leastPrivilegeNegativeTest'):
+              assert r[k] is True,k
+          for k in ('hostedOwnerJwtRlsCertified','realCommerceTransactionCertified',
+                    'actualProviderWebhookCertified','dbCrashRestartCertified',
+                    'livePublishAuthorized','liveActionAuthorized'):
+              assert r[k] is False,k
+          assert (r['providerSends'],r['hostedWrites'],r['realCustomerReads'])==(0,0,0)
+          assert len(r['tests'])==10,len(r['tests'])
+          assert r['database']=='DISPOSABLE_GITHUB_ACTIONS_NOT_HOSTED'
+          print('PG17 evidence PASS; hosted JWT/RLS, real Commerce and provider send: BLOCKED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v152-adv6a-real-disposable-pg17-nonce-evidence
+          path: qa-artifacts-v152-adv6a/disposable-pg-evidence.json
+          if-no-files-found: ignore
+  inherited-security:
+    name: ADV6 canonical gateway and ADV5 signed-actions regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Existing canonical identity & simulated nonce tests
+        run: node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Inherited ADV5 signer tests
+        run: node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Four provider adapter no-send regression
+        run: node --test qa/v147-custom-studio/advanced-safe-channel-adapters.test.cjs
+      - name: Static production mutation/security policy
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v152-advanced-actions/adv6a-disposable-postgres.test.cjs').read_text()
+          ddl=Path('qa/v152-advanced-actions/adv6a-disposable-postgres-schema.sql').read_text()
+          y=Path('.github/workflows/v152-adv6a-disposable-pg-qa.yml').read_text()
+          assert "ADV6A_DISPOSABLE_ONLY_PREFLIGHT_DENIED" in p
+          assert "current_database() <> 'adv6a_qa'" in ddl
+          assert 'REVOKE ALL ON SCHEMA' in ddl
+          assert 'ENABLE ROW LEVEL SECURITY' in ddl
+          assert 'postgres:17' in y
+          assert 'CONCURRENT_CONNECTIONS' in p
+          assert 'realCommerceTransactionCertified:false' in p
+          for name in ('graph.facebook.com','api.zalo.me','SUPABASE_SERVICE_ROLE_KEY',
+                        'api.openai.com','production.supabase'):
+              assert name not in p,name
+          print('DISPOSABLE-ONLY NO-SEND SECURITY GATE: PASS')
+          PY
