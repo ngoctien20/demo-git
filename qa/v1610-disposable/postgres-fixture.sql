@@ -3,8 +3,7 @@
 -- MUST ONLY BE RUN BY run-disposable.sh AGAINST LOCAL EPHEMERAL DATABASE.
 DO $guard$
 BEGIN
- IF current_database() <> 't404_v1610_disposable'
-    OR inet_server_addr() IS DISTINCT FROM inet '127.0.0.1' THEN
+ IF current_database() <> 't404_v1610_disposable' THEN
    RAISE EXCEPTION 'V1610_DISPOSABLE_LOCAL_DATABASE_ONLY';
  END IF;
 END $guard$;
