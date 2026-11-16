@@ -8,6 +8,7 @@
 const EVIDENCE = Object.freeze({
   auth_user: 'AUTH_SERVICE_READ_ONLY',
   tenant_membership: 'HOSTED_DB_READ_ONLY',
+  proposed_store_owner_intake: 'INDEPENDENT_MERCHANT_OWNER_WITNESS',
   canonical_store: 'HOSTED_DB_READ_ONLY',
   store_membership: 'HOSTED_DB_READ_ONLY',
   independent_provider_owner_consent: 'NATIVE_PROVIDER_OWNER_VERIFIER',
@@ -20,6 +21,11 @@ const EVIDENCE = Object.freeze({
   hosted_jwt_store_rls_tests: 'INDEPENDENT_HOSTED_QA',
   merchant_pilot_approval: 'EXPLICIT_MERCHANT_OWNER'
 });
+const PRE_EXPAND_REQUIRED = Object.freeze([
+  'auth_user','tenant_membership','proposed_store_owner_intake',
+  'legacy_products_attribution','legacy_orders_attribution','private_backup_snapshot',
+  'isolated_restore_drill','rollback_plan','privileged_rpc_review'
+]);
 const FORBIDDEN_PHASES = Object.freeze([
   'APPLY_HOSTED_MIGRATION','ALTER_HOSTED_RLS','GRANT_HOSTED_ACCESS',
   'BACKFILL_REAL_CUSTOMERS','BACKFILL_REAL_PRODUCTS','BACKFILL_REAL_ORDERS',
@@ -42,7 +48,10 @@ function result(status,missing,invalid){
    no_production_release:true
  });
 }
-function inspectOwnershipPacket(packet){
+function inspectOwnershipPacket(packet,phase='FULL_CERTIFICATION'){
+ if(!['FULL_CERTIFICATION','PRE_EXPAND_REVIEW'].includes(phase))
+   return result('BLOCKED_INVALID_REVIEW_PHASE',Object.keys(EVIDENCE),['phase']);
+ const required=phase==='PRE_EXPAND_REVIEW'?PRE_EXPAND_REQUIRED:Object.keys(EVIDENCE);
  if(!packet||typeof packet!=='object'||Array.isArray(packet)||
     Object.getPrototypeOf(packet)!==Object.prototype||
     !Object.keys(packet).every(k=>['version','scope','evidence','requested_operations'].includes(k))||
@@ -59,8 +68,8 @@ function inspectOwnershipPacket(packet){
  for(const key of Object.keys(packet.evidence)){
    if(!Object.hasOwn(EVIDENCE,key)) invalid.push(key);
  }
- for(const [key,source] of Object.entries(EVIDENCE)){
-   const p=packet.evidence[key];
+ for(const key of required){
+   const source=EVIDENCE[key],p=packet.evidence[key];
    if(!p){missing.push(key);continue;}
    if(!p||typeof p!=='object'||Array.isArray(p)||
       Object.getPrototypeOf(p)!==Object.prototype||
@@ -72,7 +81,8 @@ function inspectOwnershipPacket(packet){
    }
    uniqueIds.add(p.evidence_id);known.add(key);
  }
- const clean=missing.length===0&&invalid.length===0&&known.size===Object.keys(EVIDENCE).length;
- return result(clean?'INDEPENDENT_REVIEW_REQUIRED':'BLOCKED_INCOMPLETE_OR_INVALID_EVIDENCE',missing,invalid);
+ const clean=missing.length===0&&invalid.length===0&&known.size===required.length;
+ return result(clean?(phase==='PRE_EXPAND_REVIEW'?'INDEPENDENT_PRE_EXPAND_REVIEW_REQUIRED':'INDEPENDENT_REVIEW_REQUIRED'):
+  'BLOCKED_INCOMPLETE_OR_INVALID_EVIDENCE',missing,invalid);
 }
-module.exports={EVIDENCE,FORBIDDEN_PHASES,inspectOwnershipPacket};
+module.exports={EVIDENCE,PRE_EXPAND_REQUIRED,FORBIDDEN_PHASES,inspectOwnershipPacket};
