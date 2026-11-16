@@ -96,6 +96,7 @@ if ($Mode -eq "Preflight") {
 if ([string]::IsNullOrWhiteSpace($ArchivePath)) {
   $ArchivePath = Read-Host "Path to EXISTING private backup archive (never upload)"
 }
+ $archiveStage = "LOCAL_ARCHIVE_INPUT"
 try {
   if ([string]::IsNullOrWhiteSpace($ArchivePath) -or
       -not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)) {
@@ -123,6 +124,7 @@ try {
   if ($null -ne $ExpectedArchiveBytes) { $callArgs.ExpectedBytes = $ExpectedArchiveBytes }
   # This is the existing RPC7 READ-ONLY script. Its receipt is written only
   # under the operator's local private-evidence directory; NEVER public Git.
+  $archiveStage = "ORIGINAL_RPC7_INSPECTOR"
   $output = @(& $inspector @callArgs 2>$null)
   # Parse ONLY explicitly allowlisted, non-sensitive terminal status keys.
   $allowed = @(
@@ -137,6 +139,7 @@ try {
     $key = [string]$matches[1]; $value = [string]$matches[2]
     if ($allowed -contains $key) { $summary[$key] = $value }
   }
+  $archiveStage = "RPC7_SAFE_RECEIPT"
   if ($summary["receiptSavedLocally"] -ne "true" -or
       $summary["m0Approved"] -ne "false" -or
       $summary["m1Authorized"] -ne "false") {
@@ -153,6 +156,8 @@ try {
   Write-Output "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false"
   Write-Output "CBOT08_NEXT=INDEPENDENT_PRIVATE_AUTH_STORAGE_ACL_OFFHOST_RESTORE"
 } catch {
-  # Do NOT echo raw exception (may contain local path, script line, input hash).
-  Stop-Safely "LOCAL_ARCHIVE_INSPECTION_BLOCKED"
+  # Report only a constant stage and exception class, not path/message/hash.
+  $safeErrorClass = [regex]::Replace([string]$_.Exception.GetType().Name,'[^A-Za-z0-9]','')
+  Write-Output ("CBOT08_INSPECT_EXCEPTION_CLASS=" + $safeErrorClass)
+  Stop-Safely ("RPC7_LOCAL_INSPECTION_FAILURE_" + $archiveStage)
 }
