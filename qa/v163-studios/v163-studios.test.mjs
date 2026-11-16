@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {STAGE,qaScope,qaContext} from './qa-contract.mjs';
+import {SINGLE_CASES,MULTI_PACK,MANIFEST_METADATA} from './manifest-132.mjs';
 import {createFaqStudio,faqStudioUiContract} from './faq-studio.mjs';
 import {createCostCenter} from './cost-center.mjs';
 import {previewQueue,priorityDashboardUiContract} from './priority-dashboard.mjs';
@@ -67,9 +68,9 @@ test('47 Handoff: low confidence triggers preview',()=>assert(shouldHandoff({int
 test('48 Handoff: repeated failures trigger preview',()=>assert(shouldHandoff({intent:'CONSULT',confidence:.95,failed_attempts:2}).reasons.includes('REPEATED_FAILURE')));
 test('49 Handoff: fake admin instruction not route permission',()=>fail(()=>shouldHandoff({intent:'admin; DROP TABLE',confidence:.9}),/INTENT_CODE/));
 test('50 Handoff: PII text cannot be reason code',()=>fail(()=>createHandoffPreview().open(system,{case_id:'QA_TICKET_A',reason:'0901234567',customer_consent:true}),/UNSAFE_HANDOFF/));
-const single=Array.from({length:96},(_,i)=>({case_id:'QA'+String(i+1).padStart(2,'0')}));
-const multi=Array.from({length:36},(_,i)=>({case_id:'QA'+String(i+1).padStart(2,'0'),turn_count:2}));
-test('51 Lab: manifest has 132 scoped cases',()=>{const m=build132Manifest({single,multi});assert.equal(m.count,132);assert.equal(m.total_turns,168)});
+const single=SINGLE_CASES;
+const multi=MULTI_PACK;
+test('51 Lab: manifest has 132 scoped cases',()=>{const m=build132Manifest({single,multi});assert.equal(m.count,132);assert.equal(m.total_turns,167)});
 test('52 Lab: QA01 single and QA01 multi are distinct',()=>{const m=build132Manifest({single,multi});assert(m.cases.some(x=>x.case_key==='SINGLE:QA01'));assert(m.cases.some(x=>x.case_key==='MULTI:QA01'))});
 test('53 Lab: duplicate single case rejected',()=>fail(()=>build132Manifest({single:[...single.slice(0,95),single[0]],multi}),/DUPLICATE/));
 test('54 Lab: raw prompts prohibited in manifest',()=>fail(()=>build132Manifest({single:[{...single[0],chatInput:'secret'},...single.slice(1)],multi}),/METADATA_ONLY/));
@@ -83,3 +84,9 @@ test('61 Lab: self-asserted reviewer does not PASS',()=>{const p=planAbLab({mani
 test('62 Lab: unverified PASS claim never certified',()=>assert.equal(aggregateAbRows([{status:'PASS'}]).certified_pass,0));
 test('63 Lab: too few cases rejected',()=>fail(()=>build132Manifest({single:single.slice(1),multi}),/COUNT_MISMATCH/));
 test('64 Lab: no model ID is verified',()=>{const p=planAbLab({manifest:build132Manifest({single,multi})});assert(p.rows.every(x=>x.model_id_verified===false))});
+
+test('65 file structure: 9 one-turn cases in alleged multi pack',()=>assert.equal(MANIFEST_METADATA.multi_pack_one_turn,9));
+test('66 file structure: 27 genuinely multi-turn cases',()=>assert.equal(MANIFEST_METADATA.multi_pack_true_multi,27));
+test('67 file structure: 71 dialogue turns, not 72',()=>assert.equal(MANIFEST_METADATA.total_turns_in_multi_pack,71));
+test('68 Lab: flags one-turn pack cases, no invented memory evaluation',()=>{const m=build132Manifest({single,multi});assert.equal(m.single_turn_cases_in_multi_pack,9);assert.equal(m.true_multi_turn_count,27)});
+test('69 Lab: malformed zero-turn case denied',()=>fail(()=>build132Manifest({single,multi:[{...multi[0],turn_count:0},...multi.slice(1)]}),/INVALID_TURN_COUNT/));
