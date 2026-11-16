@@ -99,7 +99,8 @@ function reviewM1Readiness({baseline,m0Review,ownershipPacket,m1Packet}={}){
  if(m.currentPublishedCallerFrozen!==true||
     m.migrationCodeReviewedAgainstActualHostedSchema!==true||
     m.disposablePg17UpgradeRollbackRehearsed!==true||
-    m.independentControllerAndSecurityApproval===true&&m.realOperatorAuthorization!==true)
+    m.independentControllerAndSecurityApproval!==true||
+    m.realOperatorAuthorization!==true)
     issues.push('M1_CONTRACT_AND_ROLLBACK_UNCERTIFIED');
  return Object.freeze({
    contract:CONTRACT,phase:'M1_EXPAND_SCHEMA_ONLY',
