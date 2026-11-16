@@ -1,0 +1,67 @@
+name: TIEN404 V16.4C Privacy Acceptance + 8-Case Budget Canary (NO CALL)
+on:
+  push:
+    branches:
+      - work/v164c-private-acceptance-budget-canary-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v164c-canary/**'
+      - 'docs/ai-handoff/V16_4C_*'
+      - '.github/workflows/v164c-privacy-budget-no-call.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  canary-readiness-offline:
+    name: 64 V16.4C security cases + 323 inherited tests (no API, no data)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V16.4C 64 privacy/entitlement/budget-gated canary tests
+        run: |
+          node --check qa/v164c-canary/private-acceptance.mjs
+          node --check qa/v164c-canary/canary-budget.mjs
+          node --check qa/v164c-canary/v164c-private-canary.test.mjs
+          node --test qa/v164c-canary/v164c-private-canary.test.mjs
+      - name: V16.4B 20 Python synthetic sanitizer privacy tests
+        run: |
+          python3 -m py_compile qa/v164b-privacy/private_sanitizer.py
+          python3 qa/v164b-privacy/test_private_sanitizer.py
+      - name: Inherited 303 Node offline regressions
+        run: |
+          node --test qa/v164b-privacy/v164b-preflight.test.mjs
+          node --test qa/v164-private-ab/v164-eval-readiness.test.mjs
+          node --test qa/v164-private-ab/private-readiness.test.mjs
+          node --test qa/v163-studios/v163-studios.test.mjs
+          node --test qa/v162-capacity/capacity-core.test.mjs
+          node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: Hard NO-API and NO-PII source guard
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/v164c-canary')
+          sources=sorted(root.glob('*.mjs'))
+          assert {x.name for x in sources}=={'private-acceptance.mjs','canary-budget.mjs','v164c-private-canary.test.mjs'}
+          for x in sources:
+            source=x.read_text()
+            for banned in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',
+               r'\bWebSocket\b',r'\bprocess\.env\b',r'\bchild_process\b',
+               r'(?i)sk-[A-Za-z0-9_-]{16,}',r'\bopenai\.\w+\.create\b']:
+              assert not re.search(banned,source),(x,banned)
+          assert 'V164C_NO_PAID_CANARY_EXECUTOR' in (root/'canary-budget.mjs').read_text()
+          assert 'V164C_PRIVATE_TRANSFER_DISABLED' in (root/'private-acceptance.mjs').read_text()
+          assert not list(root.glob('*.csv'))
+          print('PASS NO REAL API, NO customer dataset, NO external sends or paid benchmark')
+          PY
+  live-provider-private-approval:
+    name: Independent human privacy + provider entitlement + paid spend cap — NOT RUN
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'NO-GO: independent approvals/true hard budget/authenticated project evidence required'
