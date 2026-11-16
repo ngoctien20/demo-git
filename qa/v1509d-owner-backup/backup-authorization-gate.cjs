@@ -69,7 +69,7 @@ function assessBackupAuthorizationEnvelope(request,attestations,hostTrust,{now=(
   if(!isPlain(a)||Object.keys(a).length!==5||
    !['signerRef','role','observedAtMs','signatureBase64','purpose'].every(k=>Object.hasOwn(a,k)))
     return FAIL('INVALID_ATTESTATION');
-  if(!ID.test(a.signerRef||'')||!['owner','security'].includes(a.role)||
+  if(!ID.test(a.signerRef||'')||!['project_data_controller','security'].includes(a.role)||
      a.purpose!==OP||roleSeen.has(a.role)||signerSeen.has(a.signerRef)||
      !Number.isSafeInteger(a.observedAtMs)||a.observedAtMs<request.issuedAtMs||
      a.observedAtMs>t||a.observedAtMs>request.expiresAtMs)
@@ -88,7 +88,7 @@ function assessBackupAuthorizationEnvelope(request,attestations,hostTrust,{now=(
   }catch{return FAIL('INVALID_APPROVAL_SIGNATURE')}
   roleSeen.add(a.role);signerSeen.add(a.signerRef);
  }
- if(!roleSeen.has('owner')||!roleSeen.has('security'))
+ if(!roleSeen.has('project_data_controller')||!roleSeen.has('security'))
   return FAIL('TWO_INDEPENDENT_APPROVERS_REQUIRED');
  return Object.freeze({status:'SYNTHETIC_DUAL_SIGNATURE_VERIFIED_NOT_AUTHORIZED',
   requestFingerprint:createHash('sha256').update(canonical(request)).digest('hex'),
