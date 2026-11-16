@@ -1,0 +1,61 @@
+-- TIEN404 V15.2-ADV.6C-RPC.3 — RPC REVOCATION REVIEW ONLY
+-- **DO NOT APPLY**: EVERY executable SQL line intentionally commented.
+-- This file is NOT a Supabase migration and has never been executed.
+--
+-- Observed staged baseline on 2026-11-16 JST:
+-- public.qa_shop_b_zalo_claim(uuid,text,text,text)
+-- SECURITY DEFINER owner postgres, anon EXECUTE true.
+-- Current callers: n8n Zalo V2 Shadow enabled HTTP POST, reached from
+-- n8n Zalo Bot V1 protected webhook (Published).
+-- PostgreSQL track_functions=none. No reliable invocation frequency.
+--
+-- STEP 1 — Independently verified private operator evidence BEFORE changes:
+-- [ ] Exact same staging project, DB role and branch/version receipts.
+-- [ ] Caller observation window plus external clients and manual scripts.
+-- [ ] SHA-256 digests of independently inspected private PostgREST logs.
+-- [ ] Actual trusted Meta/Zalo provider signature verification.
+-- [ ] Real Owner A/B same-tenant JWT/RLS positive & negative tests.
+-- [ ] Real two-step pairing claim AND distinct Owner confirmation proof.
+-- [ ] Private backend pairing writer and least-privilege role certified.
+-- [ ] Approved encrypted backup, isolated restore and rollback drill.
+-- [ ] One-time Controller, Security Reviewer, DB Operator approval scope,
+--     expiry, nonce, exact project/function/operation and consumption record.
+-- [ ] Single-writer canary success and rollback threshold.
+--
+-- STEP 2 — Snapshot source + GRANTs privately without exposing credentials:
+-- -- select p.oid::regprocedure,pg_get_userbyid(p.proowner),p.prosecdef
+-- -- from pg_proc p where p.oid='public.qa_shop_b_zalo_claim(uuid,text,text,text)'::regprocedure;
+-- -- select grantee,privilege_type from information_schema.role_routine_grants
+-- -- where routine_schema='public' and routine_name='qa_shop_b_zalo_claim';
+--
+-- STEP 3 — Separate n8n cutover authorization:
+-- -- Switch ONLY verified signed events to new private gateway.
+-- -- Never run old RPC and new private writer for same event (NO DOUBLE WRITE).
+-- -- Maintain exact original n8n Published checkpoint and restore plan.
+--
+-- STEP 4 — REVOKE requires NEW per-operation authorization after canary:
+-- -- REVOKE EXECUTE ON FUNCTION public.qa_shop_b_zalo_claim(
+-- --   uuid,text,text,text) FROM PUBLIC, anon;
+-- -- CAUTION: Review any wider EXECUTE grants and DEFAULT PRIVILEGES.
+-- -- CAUTION: Removing the public grant is irreversible to existing callers
+-- -- until a separately authorized rollback is executed.
+--
+-- STEP 5 — post-revoke independent proof:
+-- -- SELECT has_function_privilege('anon',
+-- -- 'public.qa_shop_b_zalo_claim(uuid,text,text,text)','EXECUTE');
+-- -- EXPECT false.
+-- -- Repeat authorization matrix for authenticated, public and runtime roles.
+-- -- Test REST anon call returns permission denied, not a successful claim.
+-- -- Test private gateway signed ingress -> pending claim only.
+-- -- Test separate real Owner JWT confirmation completes pairing once.
+-- -- Cross-shop, revoked session, replay, expired and wrong credentials DENIED.
+-- -- Confirm Supabase Advisor lint 0028 no longer flags this function.
+-- -- Reconcile request logs, errors, chat latency and approved canary metrics.
+--
+-- STOP / ROLLBACK:
+-- Do not automatically restore anon execute if rollout degrades:
+-- incident commander and independently authorized DB operator decide safe
+-- rollback, potentially route to previously verified private gateway version.
+-- Never use unbounded service_role/shared AI credentials to bypass broken RLS.
+--
+-- No GRANT, REVOKE, DDL, JWT, customer row or provider send is performed.
