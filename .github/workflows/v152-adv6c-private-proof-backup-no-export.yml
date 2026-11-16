@@ -1,0 +1,100 @@
+name: TIEN404 V15.2 ADV.6C Private Evidence and Backup Decision QA (NO EXPORT)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-advanced-actions/adv6c-*'
+      - 'docs/ai-handoff/V15_2_ADV6C_*'
+      - '.github/workflows/v152-adv6c-private-proof-backup-no-export.yml'
+  push:
+    branches:
+      - work/v152adv6c-private-intake-jwt-backup-gate-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-packet-offline-qa:
+    name: Ed25519 evidence intake, synthetic replay, one-time backup refusal and inherited QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check parser and source syntax
+        run: |
+          node --check qa/v152-advanced-actions/adv6c-private-evidence-intake.cjs
+          node --check qa/v152-advanced-actions/adv6c-backup-decision.cjs
+          node --check qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --check qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+      - name: Verify synthetic three-signer private packet and one-time backup NO-GO
+        run: |
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+      - name: Reuse V14.4.2 hosted JWT GET-only acceptance unit tests (no real token)
+        run: node --test qa/hosted-readiness-v1442/hosted-jwt-acceptance.test.cjs
+      - name: Inherited P0 release gate and zero trust tool security regressions
+        run: |
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+          node --test qa/v152-advanced-actions/owner-evidence-gate.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+          node --test qa/v152-advanced-actions/signed-action-registry.test.cjs
+      - name: Static proof of no hosted write/export/send/approval path
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          root=Path('qa/v152-advanced-actions')
+          files=[root/'adv6c-private-evidence-intake.cjs',
+                 root/'adv6c-backup-decision.cjs']
+          for f in files:
+            s=f.read_text()
+            assert "EXPORT" in s and "APPROVAL" in s
+            for p in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                      r'\bprocess\.env\b',r'\bchild_process\b',
+                      r'\bfs\.(?:write|append|unlink)',r'\bhttps?\.request\s*\(']:
+              assert not re.search(p,s),(f,p)
+          src=files[0].read_text()
+          assert "SYNTHETIC_OFFLINE_NO_EXPORT" in src
+          assert "PRIVATE_PACKET_REPLAY_DENIED" in src
+          assert "DETACHED_SIGNATURE_INVALID" in src
+          assert "oneTimeBackupExportApproved:false" in src
+          src2=files[1].read_text()
+          assert "DENY_ONE_TIME_REAL_BACKUP_EXPORT" in src2
+          assert "oneTimeApprovalGranted:false" in src2
+          sql=Path('docs/ai-handoff/V15_2_ADV6C_HOSTED_READ_ONLY_PREFLIGHT.sql').read_text()
+          assert sql.startswith('-- TIEN404')
+          for p in [r'^\s*CREATE\s+',r'^\s*DROP\s+',r'^\s*UPDATE\s+',r'^\s*DELETE\s+',
+                    r'^\s*GRANT\s+',r'^\s*REVOKE\s+',r'^\s*INSERT\s+']:
+            assert not re.search(p,sql,re.M|re.I)
+          b=json.loads(Path('qa/v152-pre6c-security/p0-release-baseline.readonly.json').read_text())
+          assert b['schema']['stores_table'] is False
+          assert b['recovery']['approved_export_receipt'] is False
+          assert b['recovery']['independent_restore_evidence'] is False
+          assert b['delivery']['live_release_approved'] is False
+          print('ADV6C OFFLINE QA: zero live API, no real backup export, release remains NO-GO')
+          PY
+  private-hosted-certification-no-go:
+    name: PRIVATE HOSTED CERTIFICATION — NO GO (expected BLOCKED)
+    needs: private-packet-offline-qa
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Refuse hosted backup/JWT certification without independent real evidence
+        run: |
+          node - <<'NODE'
+          const baseline=require('./qa/v152-pre6c-security/p0-release-baseline.readonly.json');
+          const {decideOneTimeBackup}=require('./qa/v152-advanced-actions/adv6c-backup-decision.cjs');
+          const r=decideOneTimeBackup({baseline});
+          console.log(JSON.stringify({contract:r.contract,decision:r.decision,
+            blockerCount:r.blockers.length,backupAuthorized:r.privateBackupExportAuthorized,
+            hostedJwtProof:r.hostedJwtRlsProofPassed,releaseAuthorized:r.productionReleaseAuthorized}));
+          if(r.privateBackupExportAuthorized||r.productionReleaseAuthorized)throw Error('UNEXPECTED_RELEASE');
+          process.stderr.write('ADV6C_HOSTED_CERTIFICATION_NO_GO_SEPARATE_OWNER_SECURITY_APPROVAL_REQUIRED\n');
+          process.exitCode=3;
+          NODE
