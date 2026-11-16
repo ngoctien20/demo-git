@@ -1,0 +1,60 @@
+name: TIEN404 V15 Sales Lite P0-D Private Owner and Free Backup Readiness (NO HOSTED WRITE)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0d-owner-free-backup-readiness-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0d/**'
+      - 'docs/ai-handoff/V15_P0D_*'
+      - '.github/workflows/v15-p0d-owner-free-backup-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-readiness:
+    name: Private Ticket Safety x Source Dependency Integration (NO API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate P0-D syntax
+        run: |
+          node --check qa/v15-sales-lite-p0d/private-certification-gate.cjs
+          node --check qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+      - name: P0-D genuine owner and backup negative QA
+        run: node --test qa/v15-sales-lite-p0d/private-certification-gate.test.cjs
+      - name: Preserve P0-B private evidence / P0-C no-send Sales Lite regressions
+        run: |
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: No provider, secret, export, restore, migration or paid API in new gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v15-sales-lite-p0d/private-certification-gate.cjs').read_text()
+          executable=re.sub(r'/\*[\s\S]*?\*/', '', s)
+          for forbidden in [
+            'fetch(', 'axios(', 'process.env.', 'new OpenAI(', 'sendMessage(',
+            'pg_dump ', 'pg_restore ', 'SUPABASE_SERVICE_ROLE_KEY',
+            'ZALO_BOT_TOKEN', 'META_PAGE_TOKEN', 'INSERT INTO',
+            'UPDATE public.', 'DELETE FROM', 'apply_migration(',
+          ]:
+            assert forbidden not in executable, forbidden
+          for required in [
+            'hosted_backup_certified:false', 'may_export_hosted:false',
+            'may_restore_hosted:false', 'may_apply_migration:false',
+            'may_send_provider:false', 'may_write_orders:false',
+          ]:
+            assert required in s, required
+          print('PASS: P0-D is private ticket index only; every hosted action blocked')
+          PY
