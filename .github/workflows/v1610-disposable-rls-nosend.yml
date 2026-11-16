@@ -1,0 +1,83 @@
+name: TIEN404 V16.10 Disposable PG17 Store RLS Recovery Preflight (NO HOSTED)
+on:
+  push:
+    branches:
+      - work/v1610-disposable-owner-rls-recovery-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1610-disposable/**'
+      - 'docs/ai-handoff/V16_10_*'
+      - '.github/workflows/v1610-disposable-rls-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-regressions:
+    name: 24 V16.10 proof gates plus 310 inherited synthetic Node QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V16.10 preflight 24 static gates
+        run: node --test qa/v1610-disposable/preflight.test.mjs
+      - name: V16.9 ownership/private-intake 75
+        run: node --test qa/v169-security/v169-security.test.mjs
+      - name: V16.8 integration/import 53
+        run: node --test qa/v168-merchant/v168-merchant.test.mjs
+      - name: V16.7 merchant registry 65
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: V16 Hybrid 42
+        run: node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: V16.3 studios 75
+        run: node --test qa/v163-studios/v163-studios.test.mjs
+      - name: Validate missing real proof + no production SQL steps
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('docs/ai-handoff/V16_10_PRIVATE_OPERATOR_AUTHORITY_EVIDENCE_MANIFEST.json').read_text())
+          assert len(d['security_gates'])==11
+          assert all(x['status']=='MISSING' and x['private_evidence_locator'] is None for x in d['security_gates'])
+          assert d['release_decision']=='NO_GO'
+          assert d['hosted_sql_applied'] is False
+          assert d['real_jwt_verified'] is False
+          print('NO PRIVATE EVIDENCE EXPOSED; HOSTED PROOF NOT CERTIFIED: PASS')
+          PY
+  disposable-postgres:
+    name: Real PG17 engine: synthetic Store A/B RLS + pg_dump/restore (LOCAL ONLY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: T404_SYNTHETIC_RUNNER_ONLY_20261116
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 4s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: T404_SYNTHETIC_RUNNER_ONLY_20261116
+      T404_DISPOSABLE_QA_ONLY: "YES"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Strict no-remote safety and syntax gates
+        run: |
+          bash -n qa/v1610-disposable/run-disposable.sh
+          ! grep -RiE 'supabase\.co|postgresql://|pg_dump.*hosted|PGHOST=.*\.cloud' qa/v1610-disposable/postgres-fixture.sql qa/v1610-disposable/test-store-rls.sql qa/v1610-disposable/run-disposable.sh
+          test "$PGHOST" = "127.0.0.1"
+          test "$T404_DISPOSABLE_QA_ONLY" = "YES"
+      - name: Execute disposable PostgreSQL 17 RLS then dump, restore and rerun
+        run: bash qa/v1610-disposable/run-disposable.sh
+      - name: Final no-hosted confirmation
+        run: |
+          echo "Postgres container only; no hosted Supabase backup/restore, Auth JWT, or production DDL"
