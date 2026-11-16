@@ -1,0 +1,86 @@
+name: TIEN404 V15 P0-C Disposable Store Schema Expand and Rollback (NO HOSTED WRITE)
+
+on:
+  push:
+    branches:
+      - work/v15-sales-lite-p0c-store-expand-disposable-20261116
+  pull_request:
+    paths:
+      - 'qa/v15-sales-lite-p0c/**'
+      - 'docs/ai-handoff/V15_P0C_*'
+      - '.github/workflows/v15-p0c-store-expand-rollback-offline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg17-expand-rollback:
+    name: Disposable PG17 Store A/B/C Expand / Restrictive RLS / Exact Rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: qa_p0c_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_disposable_pg17
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d qa_p0c_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Rehearse tenant-wide baseline to Store RLS and rollback on isolated PG17
+        env:
+          PGPASSWORD: synthetic_disposable_pg17
+        run: |
+          psql -h 127.0.0.1 -U postgres -d qa_p0c_disposable -X -v ON_ERROR_STOP=1 \
+            -f qa/v15-sales-lite-p0c/pg17-expand-rollback-rehearsal.sql
+      - name: Assert synthetic-only fixture source and rollback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v15-sales-lite-p0c/pg17-expand-rollback-rehearsal.sql').read_text()
+          assert "CREATE SCHEMA p0c;" in s
+          assert "ROLLBACK;" in s
+          assert "PASS_DISPOSABLE_PG17_P0C_EXPAND_AND_ROLLBACK_NOT_HOSTED" in s
+          assert 'ifxlvrhyjhbzbrkdsida' not in s
+          assert 'service_role' not in s
+          print('PASS disposable postgres17 only, no hosted project or service key')
+          PY
+
+  evidence-safety-regression:
+    name: P0-B Ownership Evidence / P0 Pilot Scope / No-Send Source QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prevent backdoor authorizations from P0-C candidate
+        run: |
+          node --test qa/v15-sales-lite-p0b/ownership-evidence-gate.test.cjs
+          node --test qa/v15-sales-lite-p0b/preflight-contract.test.cjs
+          node --test qa/v15-sales-lite-pilot/pilot-release-gate.test.cjs
+          node --test qa/v15-sales-lite-p0/commerce-preview-bridge.test.cjs
+      - name: Check review-only DDL is not deployable
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('docs/ai-handoff/V15_09_CANONICAL_STORE_EXPAND_REVIEW_ONLY.sql').read_text()
+          assert "RAISE EXCEPTION 'V15.0-09 REVIEW ONLY:" in s
+          assert s.rstrip().endswith('ROLLBACK;')
+          for file in Path('qa/v15-sales-lite-p0c').glob('*'):
+              c=file.read_text()
+              for token in ('process.env.SUPABASE', 'SUPABASE_SERVICE_ROLE_KEY', 'ZALO_BOT_TOKEN', 'META_PAGE_TOKEN', 'api.supabase.com'):
+                  assert token not in c, (file,token)
+          print('PASS review-only SQL remains hard-blocked and no credential/provider callers')
+          PY
