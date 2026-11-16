@@ -52,7 +52,7 @@ async function planStoreScope(event,{resolveTrustedEvent,readCanonicalEvidence,c
      !safeId(proof.bindingId)||!safeId(proof.providerAccountRef)||
      !safeId(proof.providerBotRef)||!safeId(proof.conversationId)||
      !safeId(proof.policyVersion)||!safeId(proof.replayKey)||
-     proof.providerSignatureVerified!==true||proof.expiresAtMs<=clock())
+     proof.providerSignatureVerified!==true||!Number.isSafeInteger(proof.expiresAtMs)||proof.expiresAtMs<=clock())
       return deny(REASON.EVENT);
    evidence=await readCanonicalEvidence({authUserId:proof.authUserId,
      tenantId:proof.tenantId,storeId:proof.storeId,bindingId:proof.bindingId,
@@ -72,11 +72,11 @@ async function planStoreScope(event,{resolveTrustedEvent,readCanonicalEvidence,c
  if(evidence.bindingId!==proof.bindingId||evidence.channel!==proof.channel||
     evidence.providerAccountRef!==proof.providerAccountRef||
     evidence.providerBotRef!==proof.providerBotRef||
-    evidence.ownerConsentVerified!==true||evidence.ownerConsentExpiresAtMs<=clock())
+    evidence.ownerConsentVerified!==true||!Number.isSafeInteger(evidence.ownerConsentExpiresAtMs)||evidence.ownerConsentExpiresAtMs<=clock())
     return deny(REASON.OWNER);
  if(evidence.storeStatus!=='active'||evidence.subscriptionActive!==true||
-    evidence.policyVersion!==proof.policyVersion||evidence.bindingRevoked===true||
-    evidence.tenantRevoked===true||evidence.storeRevoked===true)
+    evidence.policyVersion!==proof.policyVersion||evidence.bindingRevoked!==false||
+    evidence.tenantRevoked!==false||evidence.storeRevoked!==false)
     return deny(REASON.POLICY);
  if(evidence.allowedCapabilities?.includes(event.capability)!==true)
     return deny(REASON.CAPABILITY);
