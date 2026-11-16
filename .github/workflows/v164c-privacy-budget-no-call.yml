@@ -63,4 +63,5 @@ jobs:
     if: false
     runs-on: ubuntu-24.04
     steps:
-      - run: echo 'NO-GO: independent approvals/true hard budget/authenticated project evidence required'
+      - run: |
+          echo 'NO-GO: independent approvals/true hard budget/authenticated project evidence required'
