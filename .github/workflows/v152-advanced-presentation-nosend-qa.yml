@@ -1,0 +1,63 @@
+name: TIEN404 V15.2 Advanced Presentation Policy QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADVANCED_*'
+      - '.github/workflows/v152-advanced-presentation-nosend-qa.yml'
+  push:
+    branches:
+      - work/v152-advanced-channel-presentation-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-*'
+      - 'docs/ai-handoff/V15_2_ADVANCED_*'
+      - '.github/workflows/v152-advanced-presentation-nosend-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  advanced-channel-policy:
+    name: Advanced Channel Decision QA -- synthetic / no send
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JS syntax validation
+        run: |
+          node --check qa/v147-custom-studio/advanced-presentation-policy.js
+          node --check qa/v147-custom-studio/advanced-preview.js
+          node --check qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: Advanced policy security and rendering tests
+        run: node --test qa/v147-custom-studio/advanced-presentation-policy.test.cjs
+      - name: Inherited V14.7 Studio and Provider Preview regression
+        run: |
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v147-custom-studio/experience-lab.test.cjs
+          node --test qa/v147-custom-studio/messenger-adapter-inheritance.test.cjs
+      - name: Isolated client and provider no-send static gates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base = Path('qa/v147-custom-studio')
+          html=(base/'advanced-preview.html').read_text()
+          js=(base/'advanced-preview.js').read_text()
+          lib=(base/'advanced-presentation-policy.js').read_text()
+          assert "connect-src 'none'" in html
+          assert "frame-src 'none'" in html
+          assert "img-src 'none'" in html
+          assert 'T404AdvancedPresentation' in js and 'T404AdvancedPresentation' in lib
+          assert 'innerHTML' not in js
+          assert not re.search(r'\bfetch\s*\(',js+lib)
+          assert not re.search(r'\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b',js+lib)
+          assert not re.search(r'\b(localStorage|sessionStorage)\b',js+lib)
+          assert 'providerSends:0' in lib and 'orderWrites:0' in lib and 'canPublish:false' in lib
+          assert 'requiresSignedServerAction:true' in lib
+          assert "UNTRUSTED_MODEL_FIELDS" in lib and "STORE_POLICY_MISMATCH" in lib
+          assert 'ZBS spend gate LOCKED' in lib
+          assert '<script src="./advanced-presentation-policy.js" defer>' in html
+          print('STATIC NO-SEND QA PASS')
+          PY
