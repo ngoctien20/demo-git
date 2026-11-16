@@ -1,0 +1,131 @@
+name: TIEN404 V15.2 RPC.9 Atomic M2/M4 Cutover Rehearsal (DISPOSABLE ONLY)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc9/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC9_*'
+      - '.github/workflows/v152-adv6c-rpc9-atomic-cutover-nosend.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc9-atomic-m2m4-disposable-owner-nosend-20261116
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc9-source-and-owner-readiness:
+    name: RPC.9 privacy and 140 Node source tests, no hosted writes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New independent Owner + M0/M1 + M2M4 NO-GO tests
+        run: |
+          node --check qa/v152-rpc9/private-owner-atomic-cutover-preflight.cjs
+          node --test qa/v152-rpc9/private-owner-atomic-cutover-preflight.test.cjs
+      - name: Reuse prior 126 H11R Owner+Backup+Store security cases
+        run: |
+          node --test qa/v152-rpc7/private-m0-evidence-resolution.test.cjs
+          node --test qa/v152-rpc7/local-m0-archive-receipt.test.cjs
+          node --test qa/v152-rpc6/fourrow-recovery-migration-gate.test.cjs
+          node --test qa/security-definer-v1443/four-row-owner-evidence.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-rpc5/hosted-store-remediation-preflight.test.cjs
+      - name: Reject any executable hosted SQL/backup/network in RPC9
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-rpc9')
+          for name in ('pg17-prepare-synthetic-three-store.sql',
+                       'pg17-atomic-m2m4-disposable-only.sql',
+                       'ci-pg17-atomic-m2m4-rehearsal.sh'):
+            s=(root/name).read_text()
+            assert 'qa_rpc8.' in s and 'RPC8_DISPOSABLE' in s
+            assert 't404_rpc8_ci' in s
+            assert 'ifxlvrhyjhbzbrkdsida' not in s
+            effective='\n'.join(line for line in s.splitlines()
+               if not line.lstrip().startswith(('--','#')))
+            for disallowed in (r'\bpublic\.(?:products|orders|customers|stores)\b',
+                r'\bauth\.users\b',r'\bservice_role\b',r'\bpg_dump\b',
+                r'\bpg_restore\b',r'\bcurl\b',r'\bwget\b'):
+              assert not re.search(disallowed,effective,re.I),(name,disallowed)
+          atomic=(root/'pg17-atomic-m2m4-disposable-only.sql').read_text()
+          assert 'ACCESS EXCLUSIVE MODE' in atomic
+          assert "lock_timeout='2s'" in atomic
+          assert 'DROP POLICY products_member_read' in atomic
+          assert 'DROP POLICY orders_manager_read' in atomic
+          assert 'DROP POLICY customers_manager_read' in atomic
+          assert 'CREATE POLICY products_store_scoped_read' in atomic
+          assert 'CREATE POLICY orders_store_manager_read' in atomic
+          assert 'CREATE POLICY customers_store_manager_read' in atomic
+          assert 'RPC9_REFUSES_HOSTED_MIGRATION' in atomic
+          src=(root/'private-owner-atomic-cutover-preflight.cjs').read_text()
+          assert 'canApplyCutover:false' in src
+          assert 'canRevokeRpc:false' in src
+          assert 'zeroDowntimeCertified:false' in src
+          assert 'RPC9_HOSTED_CUTOVER_REQUIRES_SEPARATE' in src
+          for disallowed in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+             r'\bchild_process\b',r'\bhttps?\.request\s*\('):
+            assert not re.search(disallowed,src),disallowed
+          print('PASS RPC9: strictly disposable SQL and no executable hosted approval')
+          PY
+  rpc9-disposable-pg17-atomic:
+    name: RPC.9 PG17 atomic M2M4, rollback, drift and same-Tenant isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc9_synthetic_disposable_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc9_synthetic_disposable_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run inherited M1 then NEW synthetic M2/M4 single-transaction cutover
+        run: |
+          bash -n qa/v152-rpc9/ci-pg17-atomic-m2m4-rehearsal.sh
+          bash qa/v152-rpc9/ci-pg17-atomic-m2m4-rehearsal.sh
+  rpc9-hosted-no-go:
+    name: RPC.9 HOSTED M0/M1/M2M4 AUTHORITY — NO-GO (intentional)
+    needs: [rpc9-source-and-owner-readiness,rpc9-disposable-pg17-atomic]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independently deny real cutover absent four-row + restore + approvals
+        run: |
+          node - <<'NODE'
+          const b=require('./qa/v152-rpc6/hosted-fourrow-recovery-baseline.json');
+          const gate=require('./qa/v152-rpc9/private-owner-atomic-cutover-preflight.cjs');
+          const r=gate.recordPreflight({baseline:b});
+          console.log(JSON.stringify({status:r.status,blockers:r.blockers.length,
+            canApplyCutover:r.canApplyCutover,zeroDowntimeCertified:r.zeroDowntimeCertified}));
+          if(r.status!=='RPC9_M2_M4_HOSTED_NO_GO'||r.canApplyCutover||
+            r.canBackfill||r.canReplaceRls||r.canRevokeRpc)
+            throw Error('RPC9_UNSAFE_HOSTED_PROMOTION');
+          console.error('RPC9_HOSTED_NO_GO_OWNER_BACKUP_JWT_AND_ATOMIC_READER_AUTHORITY_MISSING');
+          process.exitCode=3;
+          NODE
