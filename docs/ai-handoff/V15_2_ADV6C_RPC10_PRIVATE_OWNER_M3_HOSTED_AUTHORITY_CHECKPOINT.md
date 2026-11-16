@@ -66,3 +66,20 @@ Run all existing RPC.9 140 Node cases plus 15 new RPC.10 owner/M3/authority test
 **ROLLBACK:** close child Draft PR. No Supabase hosted restore needed; no public database, real Customer, credential, n8n Published, provider send, Cloudflare deploy or RPC privilege change was made.
 
 **Checkpoint classification:** `RPC10_M3_DISPOSABLE_CANDIDATE_HOSTED_NO_GO`.
+
+
+### 7. Exact source CI acceptance receipt — 17 November 2026 JST
+
+**Tested source SHA:** `9456004fd78b903b679f0bcbd10a0c0a9f80860c`  
+**Actions run:** https://github.com/ngoctien20/demo-git/actions/runs/43901076952
+
+**VERIFIED from GitHub Actions logs:**
+- RPC.10 new M3 Owner/Independent Authorization source cases **15/15 PASS**.
+- Inherited RPC.9 14, RPC.7 28+14, RPC.6 24, V14.4.3 private ledger 36, ADV.6C backup deny 6 and RPC.5 Store preflight 18 = **140/140 PASS**.
+- **Total 155/155 Node tests PASS**, plus static no-hosted SQL/network inspector PASS.
+- Real PostgreSQL 17 in **disposable CI ONLY** job SUCCESS: inherits M1 and M2/M4 source; demonstrates legacy Tenant-only Order→Customer FK wrongly accepts same-Tenant cross-Store link before M3 (rolled back), M3 full transaction ROLLBACK restores old FK/nullable Store columns/old Tenant SKU uniqueness, injected wrong-Store source state aborts before schema change, disposable M3 COMMIT validates **four composite FKs** and three NOT NULL Store IDs, removes only old Tenant SKU uniqueness in synthetic schema and creates Store-scoped SKU uniqueness, refuses wrong-Store Customer/wrong-Tenant Store/NULL Store, permits same SKU across different Stores, denies duplicate in same Store, enforces Store-scoped Customer/Order read/join and revoked member denial. 3 synthetic Products, 3 synthetic Orders, 2 synthetic Customers retained.
+- Hosted M3 release eligibility **intentionally FAILS exit code 3**, `RPC10_HOSTED_NO_GO_REAL_FOUR_ROW_OWNER_BACKUP_JWT_M1_M2M4_AND_M3_APPROVAL_REQUIRED`. Overall run FAILURE is an intentional release gate, **not an offline code regression**.
+
+**Unverified:** actual four real Product/Order row ownership and Merchant/Store source, independent reviewer, M0 full current restore, actual hosted M1/M2M4/M3, real Store A/B JWT, caller compatibility, DDL lock budgets and real rollback. No privileged SQL or user data was changed.
+
+**Current canonical state:** `RPC10_M3_DISPOSABLE_TESTED_HOSTED_NO_GO`. Owner-accepted limited H11R local application backup QA stays accepted; Auth/Storage remains deferred for further independently approved recovery. Close Draft PR to roll back all source-only changes.
