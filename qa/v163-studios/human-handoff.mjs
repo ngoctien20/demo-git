@@ -54,6 +54,7 @@ export function shouldHandoff({intent,confidence,failed_attempts=0,user_wants_hu
   if(failed_attempts>=2)reasons.push('REPEATED_FAILURE');
   if(intent==='COMPLAINT')reasons.push('COMPLAINT');
   if(intent==='ORDER_BLOCKED')reasons.push('ORDER_BLOCKED');
+  if(intent==='SAFETY')reasons.push('SAFETY');
   return {route:reasons.length?'HANDOFF_PREVIEW_ONLY':'AI_OR_FAQ_PREVIEW',
     reasons,create_live_ticket:false,send_notification:false};
 }
