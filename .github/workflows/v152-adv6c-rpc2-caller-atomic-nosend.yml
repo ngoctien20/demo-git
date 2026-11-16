@@ -1,0 +1,134 @@
+name: TIEN404 V15.2 ADV.6C RPC.2 Caller Discovery and Atomic Pairing QA (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc2/**'
+      - 'docs/ai-handoff/V15_2_ADV6C_RPC2_*'
+      - '.github/workflows/v152-adv6c-rpc2-caller-atomic-nosend.yml'
+  push:
+    branches:
+      - 'work/v152-adv6c-rpc2-caller-atomic-cutover-nosend-20261116'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc2-discovery-and-cutover-policy:
+    name: Verified caller manifest, synthetic shadow comparison and NO-GO QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static syntax + source-only cutover security QA
+        run: |
+          node --check qa/v152-rpc2/zero-downtime-cutover-review.cjs
+          node --check qa/v152-rpc2/zero-downtime-cutover-review.test.cjs
+          node --test qa/v152-rpc2/zero-downtime-cutover-review.test.cjs
+      - name: Inherited trusted ingress + private evidence regression
+        run: |
+          node --test qa/v152-rpc1/trusted-pairing-capability.test.cjs
+          node --test qa/v152-rpc1/rpc1-action-coordinator.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-private-evidence-intake.test.cjs
+          node --test qa/v152-advanced-actions/adv6c-backup-decision.test.cjs
+          node --test qa/v152-pre6c-security/p0-release-gate.test.cjs
+          node --test qa/v152-pre6c-security/pre6c-zero-trust-security.test.cjs
+      - name: No live SQL, webhook calls, provider messages or production release
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('qa/v152-rpc2')
+          m=json.loads((root/'caller-inventory.readonly.json').read_text())
+          assert m['n8n']['examined_draft_and_published']==114
+          assert m['n8n']['exact_rpc_direct_callers'][0]['workflow_id']=='OgDZNSAvKEvhnAvn'
+          assert m['n8n']['active_upstream_callers'][0]['workflow_id']=='yIJk8LvJoLF40Z62'
+          assert m['supabase_rpc']['anon_execute']
+          assert m['supabase_rpc']['tracked_calls_unreliable']
+          assert m['authorization']['privilege_change'] is False
+          s=(root/'zero-downtime-cutover-review.cjs').read_text()
+          assert 'PENDING_INDEPENDENT_EXTERNAL_APPROVAL_ONLY' in s
+          assert 'canRevoke:false' in s
+          for pat in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+             r'\bprocess\.env\b',r'\bchild_process\b',r'\bfs\.(?:write|append|unlink)',
+             r'\bexecuteQuery\s*\(',r'\bhttps?\.request\s*\(']:
+             assert not re.search(pat,s),pat
+          assert (root/'ci-private-pairing-fixture.sql').read_text().startswith('-- TIEN404')
+          print('PASS: RPC.2 deterministic policy NO-SEND and exact caller inventory')
+          PY
+
+  rpc2-disposable-pg17:
+    name: PostgreSQL 17 private synthetic pairing claim/confirm transactional QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc2_disposable_ci_only_synthetic
+          POSTGRES_DB: t404_rpc2_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc2_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned disposable QA Postgres driver
+        run: npm install --no-save --no-package-lock --prefix qa/v152-rpc2 pg@8.16.3
+      - name: Validate PG test syntax and isolated DB guards
+        run: |
+          node --check qa/v152-rpc2/pg17-private-pairing.integration.test.cjs
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v152-rpc2/pg17-private-pairing.integration.test.cjs').read_text()
+          assert 'T404_RPC2_DISPOSABLE_PG' in s
+          assert "t404_rpc2_ci" in s
+          assert "127.0.0.1" in s
+          assert 'RPC2_REFUSES_HOSTED_OR_UNAPPROVED_DATABASE' in s
+          print('PASS: PG test refuses non-loopback and unapproved DB')
+          PY
+      - name: Test real PG17 atomic claim, owner confirmation and restricted DB roles
+        env:
+          CI: 'true'
+          T404_RPC2_DISPOSABLE_PG: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGDATABASE: 't404_rpc2_ci'
+          PGUSER: 'postgres'
+          PGPASSWORD: 'rpc2_disposable_ci_only_synthetic'
+        run: node --test qa/v152-rpc2/pg17-private-pairing.integration.test.cjs
+
+  rpc2-hosted-cutover-no-go:
+    name: RPC.2 HOSTED CUTOVER CERTIFICATION — NO GO (expected BLOCKED)
+    needs: [rpc2-discovery-and-cutover-policy, rpc2-disposable-pg17]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Never auto-revoke anonymous RPC or publish n8n before independent approval
+        run: |
+          node - <<'NODE'
+          const inventory=require('./qa/v152-rpc2/caller-inventory.readonly.json');
+          const {evaluateRpc2Cutover,requireProductionCutover}=
+             require('./qa/v152-rpc2/zero-downtime-cutover-review.cjs');
+          const d=evaluateRpc2Cutover({callerInventory:inventory});
+          console.log(JSON.stringify({status:d.status,blockers:d.blockers,
+            canRevoke:d.canRevoke,canPublish:d.canPublish}));
+          if(d.status!=='NO_GO'||d.canRevoke||d.canPublish)throw Error('UNSAFE_RELEASE');
+          try {requireProductionCutover();}catch(err){
+            console.error(err.message);
+          }
+          process.stderr.write('RPC2_HOSTED_CUTOVER_DENIED_INDEPENDENT_CALLER_AND_OWNER_APPROVAL_REQUIRED\n');
+          process.exitCode=3;
+          NODE
