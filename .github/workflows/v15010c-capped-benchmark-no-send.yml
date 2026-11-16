@@ -1,0 +1,57 @@
+name: TIEN404 V15.0-10C Capped Benchmark Readiness (NO PAID CALLS)
+
+on:
+  push:
+    branches:
+      - work/v15010c-capped-real-benchmark-execution-gate-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v15010c-capped-run/**'
+      - 'docs/ai-handoff/TIEN404_V15_0_10C_*'
+      - '.github/workflows/v15010c-capped-benchmark-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-budget-gate:
+    name: Explicit USD Budget Lock / Independent Tool Trace / No-Send
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify no-execution contract syntax
+        run: |
+          node --check qa/v15010c-capped-run/budget-guard.cjs
+          node --check qa/v15010c-capped-run/independent-tool-trace-gate.cjs
+      - name: Strict budget and no-paid-call tests
+        run: node --test qa/v15010c-capped-run/budget-guard.test.cjs
+      - name: Independent tool trace / no unauthorized writes or sends
+        run: node --test qa/v15010c-capped-run/independent-tool-trace-gate.test.cjs
+      - name: Enforce all 36 multi-turn fault/race/order/no-send side-effect policies
+        run: node --test qa/v15010c-capped-run/multi-case-sandbox-policy.test.cjs
+      - name: Inherited 132-case benchmark receipt and 11A integration safety regression
+        run: |
+          node --test qa/v15010b-model-benchmark/private-benchmark-contract.test.cjs
+          node --test qa/v15011a-reconciliation/integrated-release-gate.test.cjs
+          node --test qa/v15010a-sales-knowledge/shop-knowledge-v15-adapter.test.cjs
+      - name: Enforce zero SDK/provider/hosted access on new code
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('qa/v15010c-capped-run')
+          source='\n'.join(f.read_text() for f in root.glob('*.cjs') if not f.name.endswith('.test.cjs'))
+          for token in ('fetch(', 'axios(', 'https.request(', 'http.request(',
+                        'new OpenAI(', 'process.env.', 'SUPABASE_SERVICE_ROLE_KEY',
+                        'OPENAI_API_KEY', 'sendMessage(', 'executeWorkflow(', 'pg_dump ',
+                        'pg_restore ', 'UPDATE public.', 'ALTER TABLE'):
+              assert token not in source, token
+          assert source.count('can_call_provider:false')>=3
+          assert 'EXPLICIT_NUMERIC_BUDGET_REQUIRED' in source
+          assert 'INCONCLUSIVE_NO_INDEPENDENT_TOOL_TRACE' in source
+          print('PASS: no paid model calls, no hosted writes, no sends, no fake approvals')
+          PY
