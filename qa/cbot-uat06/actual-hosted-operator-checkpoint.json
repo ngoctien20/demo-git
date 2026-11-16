@@ -1,0 +1,113 @@
+{
+  "contract": "T404_CBOT_UAT06_REAL_READ_ONLY_CHECKPOINT_V1",
+  "date_jst": "2026-11-16",
+  "parent_pr_215_head": "1c563db7f874f5c3f48e73ccc2e30de75a6d52a4",
+  "source_class": "CONNECTED_SUPABASE_N8N_GITHUB_PLUS_LOCAL_MOUNT_CHECK",
+  "hosted": {
+    "project": "ifxlvrhyjhbzbrkdsida",
+    "status": "ACTIVE_HEALTHY",
+    "postgres_major": 17,
+    "tenants": 2,
+    "products": 2,
+    "orders": 2,
+    "tenant_memberships": 3,
+    "auth_users": 3,
+    "auth_sessions": 5,
+    "storage_buckets": 0,
+    "storage_objects": 0,
+    "tenant_slots": [
+      {
+        "slot": 1,
+        "owner_memberships": 2,
+        "products": 1,
+        "orders": 1
+      },
+      {
+        "slot": 2,
+        "owner_memberships": 1,
+        "products": 1,
+        "orders": 1
+      }
+    ],
+    "stores_table_present": false,
+    "store_memberships_table_present": false,
+    "products_store_id_present": false,
+    "orders_store_id_present": false,
+    "policies": {
+      "orders": {
+        "rls_enabled": true,
+        "force_rls": true,
+        "policy_count": 1
+      },
+      "products": {
+        "rls_enabled": true,
+        "force_rls": true,
+        "policy_count": 1
+      }
+    },
+    "privileged_qa_shop_b_zalo_claim": {
+      "security_definer": true,
+      "anon_execute": true
+    },
+    "real_owner_jwt_store_isolation": "NOT_VERIFIED"
+  },
+  "n8n": {
+    "messenger": {
+      "id": "Z7FdV7uDvApfbURQ",
+      "active": true,
+      "nodes": 27,
+      "published_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+      "user_confirmed_live01_execution": "4176",
+      "native_page_role": "NOT_INDEPENDENTLY_VERIFIED"
+    },
+    "zalo_v2": {
+      "id": "OgDZNSAvKEvhnAvn",
+      "active": true,
+      "published_version": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+      "old_privileged_rpc_http_post": true,
+      "native_zalo_oa_admin": "NOT_INDEPENDENTLY_VERIFIED"
+    }
+  },
+  "private_backup": {
+    "existing_local_archive_bytes_available_in_this_runtime": false,
+    "attached_files_types_in_this_runtime": [
+      "CSV_QA_FIXTURES_ONLY"
+    ],
+    "private_m0_full_auth_acl_storage_restore": "NOT_WITNESSED",
+    "locally_reviewed_rpc7_receipt": "NOT_PROVIDED",
+    "independent_backup_operator": "NOT_AUTHENTICATED",
+    "independent_security_reviewer": "NOT_AUTHENTICATED"
+  },
+  "native_provider": {
+    "meta_page_business_suite_user_asset_visibility": "OBSERVED_IN_SEPARATE_PR214_FROM_USER_SCREENSHOT",
+    "meta_full_control_and_app_page_subscription": "NOT_INDEPENDENTLY_VERIFIED",
+    "meta_single_recipient_qa_allowlist": "NOT_VERIFIED",
+    "zalo_oa_native_app_scopes_and_administrator": "NOT_INDEPENDENTLY_VERIFIED",
+    "customer_cross_channel_link": "NOT_VERIFIED",
+    "meta_developers_console_direct_tab_observed": true,
+    "meta_app_display_name": "TIEN404 AI Messenger",
+    "meta_app_publish_ui_text": "Chưa đăng",
+    "meta_app_test_users_ui": "0/0",
+    "meta_business_page_linkage_in_current_tab": "NOT_VISIBLE",
+    "meta_app_roles_in_current_tab": "NOT_VISIBLE",
+    "meta_page_webhook_messages_in_current_tab": "NOT_VISIBLE",
+    "meta_console_evidence_source": "CONNECTED_BROWSER_READ_ONLY_TAB_CONTEXT_TEST_USERS_20261116"
+  },
+  "evidence_gates": {
+    "M0_PRIVATE_RECOVERY": "BLOCKED",
+    "M1_FOURROW_STORE_CLAIMS": "BLOCKED",
+    "META_NATIVE_AUTHORITY": "BLOCKED",
+    "ZALO_NATIVE_AUTHORITY": "BLOCKED",
+    "HOSTED_STORE_ORDER_LOOKUP": "BLOCKED",
+    "RPC_REVOKE": "BLOCKED",
+    "PRODUCTION": "NO_GO"
+  },
+  "safety": {
+    "supabase_mutation": false,
+    "rpc_revoke": false,
+    "n8n_published_edit": false,
+    "provider_send": false,
+    "private_backup_upload": false,
+    "customer_row_contents_read": false
+  }
+}

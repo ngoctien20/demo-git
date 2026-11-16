@@ -1,0 +1,81 @@
+name: TIEN404 CBOT-UAT-06 Private M0 Merchant Native Operator NO-GO
+on:
+  push:
+    branches:
+      - work/cbot-uat06-private-m0-owner-native-operator-intake-20261116
+  pull_request:
+    paths:
+      - 'qa/cbot-uat06/**'
+      - 'docs/ai-handoff/CBOT_UAT06_*'
+      - '.github/workflows/cbot-uat06-private-operator-no-hosted-write.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-intake-source-qa:
+    name: 46 new UAT06 plus 269 inherited no-send source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and 46 NEW private operator preflight cases
+        run: |
+          node --check qa/cbot-uat06/private-m0-owner-native-gates.mjs
+          node --check qa/cbot-uat06/private-operator-cli.mjs
+          node --test qa/cbot-uat06/private-m0-owner-native-gates.test.mjs
+      - name: Run inherited UAT05 UAT04 UAT03 UAT02 UAT01 and Merchant registry regression
+        run: |
+          node --test qa/cbot-uat05/real-evidence-intake.test.mjs
+          node --test qa/cbot-uat04/trusted-rpc-replacement.test.mjs
+          node --test qa/cbot-uat04/private-recovery-hosted-preflight.test.mjs
+          node --test qa/cbot-uat03/messenger-commerce-adapter.test.mjs
+          node --test qa/cbot-uat03/hosted-recovery-rpc-gates.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+          node --test qa/v167-merchant/cbot-uat01-readiness.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: Private offline CLI rejects unrecognized raw input without echoing it
+        run: |
+          set +e
+          result=$(printf '{"private":"REDACTED_TEST_SENTINEL"}\n' | node qa/cbot-uat06/private-operator-cli.mjs 2>&1)
+          code=$?
+          set -e
+          test "$code" = "3"
+          echo "$result" | grep -q 'STRICT_PRIVATE_PACKET_SHAPE_REQUIRED'
+          if echo "$result" | grep -q 'REDACTED_TEST_SENTINEL'; then
+            echo "Unexpected private input echo"
+            exit 1
+          fi
+          echo "UAT06 CLI reject-without-sensitive-data-echo PASS"
+      - name: Static no-hosted-write, source provenance and authentic RPC7 contract audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          base=Path('qa/cbot-uat06')
+          src=(base/'private-m0-owner-native-gates.mjs').read_text()
+          cli=(base/'private-operator-cli.mjs').read_text()
+          tests=(base/'private-m0-owner-native-gates.test.mjs').read_text()
+          manifest=json.loads((base/'actual-hosted-operator-checkpoint.json').read_text())
+          assert tests.count("test('")==46
+          assert 'T404_RPC7_LOCAL_EXISTING_ARCHIVE_RECEIPT_V1' in src
+          assert 'STRUCTURAL_TOC_COVERAGE_CANDIDATE_UNVERIFIED' in src
+          assert 'LOCAL_ARCHIVE_TOC_REVIEW_ONLY' in src
+          assert 'independent_full_m0_recovery_certified:false' in src
+          assert 'hosted_store_order_reader_authorized:false' in src
+          assert 'hosted_rpc_revoke_authorized:false' in src
+          assert manifest['hosted']['auth_users']==3 and manifest['hosted']['auth_sessions']==5
+          assert manifest['hosted']['stores_table_present'] is False
+          assert manifest['hosted']['privileged_qa_shop_b_zalo_claim']['anon_execute'] is True
+          for flag in ['supabase_mutation','rpc_revoke','n8n_published_edit','provider_send',
+                       'private_backup_upload','customer_row_contents_read']:
+            assert manifest['safety'][flag] is False
+          for pattern in [r'\bfetch\s*\(',r'\baxios\b',r'\bcreateClient\s*\(',
+                          r'\bchild_process\b',r'\bexecSync\s*\(',r'\bspawn\s*\(',
+                          r'\bprocess\.env\b',r'new\s+WebSocket',r'graph\.facebook\.com',
+                          r'\/rest\/v1\/rpc\/',r'api\.openai\.com']:
+            assert not re.search(pattern,src+'\n'+cli),f'Forbidden network, credentials or host operation: {pattern}'
+          print('CBOT06 private operator preflight is offline and NO GO; direct observations kept separate from signoffs')
+          PY
