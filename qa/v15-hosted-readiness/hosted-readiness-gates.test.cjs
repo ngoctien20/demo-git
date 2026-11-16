@@ -96,3 +96,53 @@ test('inventory writes cannot be directly invoked',async()=>{const r=await autho
 test('owner revenue report never authorized by synthetic customer claim',async()=>{const r=await authorizeQaBusinessTool({context:await accepted(),request:{capability:'owner_report_read',sku:'A001'},backend:backend()});assert.equal(r.reason,'TOOL_NOT_ALLOWED_OR_SIDE_EFFECT');});
 test('support draft no ticket persisted',async()=>{const r=await authorizeQaBusinessTool({context:await accepted(),request:{capability:'support_draft'},backend:backend()});assert.equal(r.status,'QA_DRAFT_ONLY');assert.equal(r.provider_sends,0);});
 test('support draft rejects unneeded SKU/id arguments',async()=>{const r=await authorizeQaBusinessTool({context:await accepted(),request:{capability:'support_draft',sku:'A001'},backend:backend()});assert.equal(r.reason,'STRICT_SUPPORT_ARGUMENT_SCHEMA_REQUIRED');});
+
+test('P256 trusted issuer names and policy cannot be overridden at runtime',()=>{
+ const {POLICY,SOURCES}=require('./trusted-ingress-gate.cjs');
+ assert.equal(Object.isFrozen(POLICY),true);
+ assert.equal(Object.isFrozen(SOURCES),true);
+ assert.equal(Object.isFrozen(POLICY.allowedTools),true);
+ assert.throws(()=>{POLICY.allowedTools=['inventory_write'];},/read only|assign/i);
+ assert.throws(()=>{SOURCES.channel='ATTACKER_ISSUER';},/read only|assign/i);
+});
+function reissued(role,change){
+ const original=JSON.parse(evidence(role).payload),payload=JSON.stringify({...original,...change});
+ const kp=role==='channel'?channelKeys:membershipKeys;
+ return {payload,signature:sign('sha256',Buffer.from(payload),{key:kp.privateKey,dsaEncoding:'ieee-p1363'}).toString('base64url')};
+}
+test('expired but legitimately signed channel proof is denied',async()=>{
+ const b=bundle();b.channelProof=reissued('channel',{issued_ms:now-180000,expires_ms:now-60000});
+ await rejected(b,'SIGNATURE_OR_PROOF_FRESHNESS_INVALID');
+});
+test('future-dated but legitimately signed membership proof is denied',async()=>{
+ const b=bundle();b.membershipProof=reissued('membership',{issued_ms:now+10000,expires_ms:now+60000});
+ await rejected(b,'SIGNATURE_OR_PROOF_FRESHNESS_INVALID');
+});
+test('signed attestations with TTL above 120 seconds are rejected',async()=>{
+ const b=bundle();b.channelProof=reissued('channel',{issued_ms:now-1000,expires_ms:now+180000});
+ await rejected(b,'SIGNATURE_OR_PROOF_FRESHNESS_INVALID');
+});
+test('wrong signed audience denied even with valid signature',async()=>{
+ const b=bundle();b.channelProof=reissued('channel',{audience:'PRODUCTION_SEND'});
+ await rejected(b,'SIGNATURE_OR_PROOF_FRESHNESS_INVALID');
+});
+test('unbounded customer input is rejected before any tool call',async()=>{await rejected({...bundle(),text:'a'.repeat(2001)},'INVALID_MESSAGE')});
+test('independent replay store returning false blocks regardless of signed proofs',async()=>{
+ await rejected(bundle(),'NONCE_REPLAY_OR_ATOMIC_STORE_UNAVAILABLE',makeTrust({consumeNonceOnce:async()=>false}));
+});
+test('integer overflow in large QA unit price cannot create order draft',async()=>{
+ const product={...FIXTURES.A.product,priceVnd:Number.MAX_SAFE_INTEGER,stock:100};
+ const r=await authorizeQaBusinessTool({
+  context:await accepted(),request:{capability:'order_draft',sku:'A001',quantity:2},
+  backend:backend({readPinnedFixture:async()=>({source:'V14_7_SYNTHETIC_FIXTURE',tenantId:FIXTURES.A.tenantId,storeId:FIXTURES.A.storeId,product})})
+ });
+ assert.equal(r.status,'BLOCKED');assert.equal(r.reason,'TOTAL_INTEGER_OVERFLOW');assert.equal(r.orders_written,0);
+});
+test('negative QA stock is invalid, never shown as an actual inventory',async()=>{
+ const product={...FIXTURES.A.product,stock:-1};
+ const r=await authorizeQaBusinessTool({
+  context:await accepted(),request:{capability:'catalog_read',sku:'A001'},
+  backend:backend({readPinnedFixture:async()=>({source:'V14_7_SYNTHETIC_FIXTURE',tenantId:FIXTURES.A.tenantId,storeId:FIXTURES.A.storeId,product})})
+ });
+ assert.equal(r.reason,'INVALID_PINNED_PRICE_OR_STOCK');
+});
