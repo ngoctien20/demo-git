@@ -32,6 +32,8 @@ jobs:
           node -e "JSON.parse(require('node:fs').readFileSync('qa/cbot-messenger-canary02/single-responder-cutover-source-design.json','utf8'))"
       - name: Native Meta ownership private gate and graph negative suite
         run: node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+      - name: Real Meta screenshot callback path ↔ existing n8n GET/POST ↔ No-Writer insertion guard
+        run: node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
       - name: Regression real LIVE01, actual n8n 4177, Studio A/B and crosschannel
         run: |
           node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
