@@ -1,0 +1,65 @@
+name: TIEN404 H11R9 - Same-Tenant Store PG17 and Recovery NO-GO (DISPOSABLE)
+on:
+  push:
+    branches:
+      - work/h11r9-caller-consent-same-tenant-disposable-no-send-20261116
+  pull_request:
+    paths:
+      - 'qa/h11r9/**'
+      - 'docs/ai-handoff/H11R9_*'
+      - '.github/workflows/h11r9-disposable-pg17-no-hosted-write.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  h11r9-fail-closed-static:
+    name: Source-only / no hosted backup, RPC revoke or merchant sends
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify non-executable authorization and SQL scope
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/h11r9/pg17-same-tenant-role-gap.regression.sql').read_text()
+          d=Path('docs/ai-handoff/H11R9_PRIVATE_RECOVERY_CONSENT_TEMPLATE.md').read_text()
+          assert r'\ir ../v15-sales-lite-p0/pg17-store-rls-isolation.sql' in s
+          assert 'H11R9_DISPOSABLE_PG17_POLICY_GAP_DETECTED_CANDIDATE_TESTED_NOT_HOSTED' in s
+          assert 'BEGIN;' in s and 'ROLLBACK;' in s
+          assert 'ifxlvrhyjhbzbrkdsida' not in s
+          for k in ('NOT VERIFIED','NOT SIGNED','NOT AUTHORIZED','NO-GO'):
+              assert k in d, k
+          for needle in ('rpcRevokeAuthorized: true','backupExportAuthorized: true','PRODUCTION_GO=TRUE'):
+              assert needle not in (s+d)
+          print('PASS: QA schema only; no hosted migration, backup, send, credential, or release')
+          PY
+
+  h11r9-disposable-postgresql17:
+    name: Inherited same-Tenant Store A/B/C + Staff restriction candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: h11r9_synthetic_ci_only
+          POSTGRES_DB: h11r9_ephemeral
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d h11r9_ephemeral"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ephemeral database client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Test inherited Store A/B/C and H11R9 role gap in disposable PG17
+        env:
+          PGPASSWORD: h11r9_synthetic_ci_only
+        run: |
+          psql -h 127.0.0.1 -U postgres -d h11r9_ephemeral -X -v ON_ERROR_STOP=1 -f qa/h11r9/pg17-same-tenant-role-gap.regression.sql
