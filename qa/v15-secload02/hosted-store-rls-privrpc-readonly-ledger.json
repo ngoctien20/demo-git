@@ -1,0 +1,171 @@
+{
+  "contract": "T404_V15_SECLOAD02_HOSTED_RLS_PRIVRPC_EVIDENCE_V1",
+  "observedDateJst": "2026-11-17",
+  "environment": "SUPABASE_TIEn404_STAGING_READ_ONLY",
+  "postgresVersion": "17.11",
+  "canonicalStoreTablesPresent": false,
+  "storeMembershipsPresent": false,
+  "publicCommerceStoreColumnsPresent": false,
+  "publicStoreScopedPoliciesPresent": false,
+  "publicTablesRlsEnabledCount": 20,
+  "publicTablesCheckedCount": 20,
+  "publicTablesWithRlsOffAndAnonSelect": 0,
+  "privilegedRpcAllOwners": "postgres",
+  "privilegedRpcAllSearchPathsConfigured": true,
+  "privilegedRpcDynamicSqlDetected": false,
+  "policies": [
+    {
+      "table": "products",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "orders",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id",
+        "customer_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "customers",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "messages",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "conversations",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "tenant_agent_configs",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "tenants",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    },
+    {
+      "table": "tenant_memberships",
+      "rls": true,
+      "forceRls": true,
+      "ownerCols": [
+        "tenant_id",
+        "user_id"
+      ],
+      "policyCount": 1,
+      "authUidPolicyCount": 1,
+      "storeIdPolicyCount": 0
+    }
+  ],
+  "rpc": [
+    {
+      "name": "qa_shop_b_zalo_claim",
+      "owner": "postgres",
+      "codeSha256": "25039e790d087aac5e71a32116f85e3f6269494c3c1dbc6aa9562237c72027dd",
+      "securityDefiner": true,
+      "anonCallable": true,
+      "authenticatedCallable": false,
+      "setsSearchPath": true,
+      "usesAuthUid": false,
+      "usesVaultSecret": true,
+      "validatesHeaderSecret": true,
+      "usesHmacSenderEvent": true,
+      "connectsToSyntheticClaimHelper": true,
+      "parameterWriteCodeDetected": false,
+      "reviewed": "READ_ONLY_REDACTED_SOURCE_SHAPE",
+      "accessStatus": "GATE_EXISTS_NOT_INDEPENDENTLY_ATTACK_TESTED"
+    },
+    {
+      "name": "qa_owner_pairing",
+      "owner": "postgres",
+      "codeSha256": "c0997a0959cf19f7f9454699d25cd0fbad9328f292e5b913e84a96f0b54db012",
+      "securityDefiner": true,
+      "anonCallable": false,
+      "authenticatedCallable": true,
+      "setsSearchPath": true,
+      "usesAuthUid": true,
+      "checksActiveTenantMembership": true,
+      "checksOwnerRole": true,
+      "checksChallengeExpiryAndAttemptLimit": true,
+      "hasSyntheticInnerHelpers": true,
+      "reviewed": "READ_ONLY_REDACTED_SOURCE_SHAPE",
+      "accessStatus": "REQUIRES_REVIEW_OF_INNER_HELPERS_AND_AUTHZ_TEST"
+    },
+    {
+      "name": "save_merchant_product",
+      "owner": "postgres",
+      "codeSha256": "06e091c4537ceaf2dcfe693672a66b8f4860e6bb0e34b14eb678dcb490d6e52e",
+      "securityDefiner": true,
+      "anonCallable": false,
+      "authenticatedCallable": true,
+      "setsSearchPath": true,
+      "usesAuthUid": true,
+      "checksActiveTenantMembership": true,
+      "checksOwnerManagerRole": true,
+      "usesHardcodedTwoTenantAllowlist": true,
+      "writesProductsUsingTenantId": true,
+      "writesProductsUsingStoreId": false,
+      "checksOptimisticTimestampForUpdate": true,
+      "writesPrivateAuditEvent": true,
+      "reviewed": "READ_ONLY_REDACTED_SOURCE_SHAPE",
+      "accessStatus": "TENANT_LEVEL_ONLY_NOT_READY_FOR_SAME_TENANT_MULTISTORE"
+    }
+  ],
+  "advisorRpcWarningCount": 3,
+  "publicRlsNoPolicyPrivateSchemaFindingsLastObserved": 18,
+  "liveCrossStoreAccessTestPerformed": false,
+  "securityDefinerExploitProven": false,
+  "hostedSchemaChangePerformed": false,
+  "rpcInvoked": false,
+  "customerRowsRead": false,
+  "passwordsOrTokensExported": false,
+  "requiredApprovalBeforeChange": true,
+  "multiStoreCommerceReleaseStatus": "P0_BLOCKED",
+  "qaNativeRoleAcceptance": "SOURCE_REVIEW_ONLY_NOT_RELEASE_CERTIFIED"
+}

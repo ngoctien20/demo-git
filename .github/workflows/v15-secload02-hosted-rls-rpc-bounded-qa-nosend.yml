@@ -1,0 +1,86 @@
+name: TIEN404 V15-SECLOAD-02 Hosted Store/RLS Privileged RPC Review × Bounded n8n Manual QA NO SEND
+
+on:
+  push:
+    branches:
+      - work/v15-secload02-hosted-rls-privrpc-bounded-n8n-qa-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v15-secload02/**'
+      - 'docs/ai-handoff/TIEN404_V15_SECLOAD02_*'
+      - '.github/workflows/v15-secload02-hosted-rls-rpc-bounded-qa-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-hosted-evidence-and-staging-receipt:
+    name: 21 no-secret RLS/RPC read-only gates + 4200–4203 no-overlap proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source syntax and strictly sanitized connected evidence
+        run: |
+          node --check qa/v15-secload02/hosted-auth-staging-load-gate.mjs
+          node --check qa/v15-secload02/hosted-auth-staging-load-gate.test.mjs
+          node -e "for(const x of ['hosted-store-rls-privrpc-readonly-ledger.json','real-inactive-n8n-bounded-manual-4200-4203.json']) JSON.parse(require('node:fs').readFileSync('qa/v15-secload02/'+x,'utf8'))"
+      - name: Run exact source-only 21 no-go authorization and real n8n QA receipt tests
+        run: node --test qa/v15-secload02/hosted-auth-staging-load-gate.test.mjs
+      - name: Explicit test no production or SQL write/Meta secrets
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=Path('qa/v15-secload02')
+          hosted=json.loads((d/'hosted-store-rls-privrpc-readonly-ledger.json').read_text())
+          qa=json.loads((d/'real-inactive-n8n-bounded-manual-4200-4203.json').read_text())
+          assert hosted['canonicalStoreTablesPresent'] is False
+          assert hosted['storeMembershipsPresent'] is False
+          assert hosted['hostedSchemaChangePerformed'] is False
+          assert hosted['rpcInvoked'] is False
+          assert qa['actualObservedPairwiseExecutionOverlaps']==0
+          assert qa['actualVerifiedSimultaneouslyRunningExecutions']==1
+          assert qa['cloudConcurrencyLimitCertified'] is False
+          assert qa['metaSends']==0 and qa['orderWrites']==0 and qa['paidModelCalls']==0
+          print('PASS: source only + 4/4 previously witnessed inactive QA; 0 live sends and NO concurrency certification')
+          PY
+
+  inherited-secload01-regression:
+    name: Previous 328 source tests, no real provider/DB/Meta calls
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SECLOAD01 synthetic HMAC/Shop/Order/rate gates (31)
+        run: node --test qa/v15-secload01/synthetic-security-core.test.mjs
+      - name: SECLOAD01 synthetic load contracts (3)
+        run: node --test qa/v15-secload01/synthetic-load-harness.test.mjs
+      - name: Canary-03C hosted source no-go (14)
+        run: node --test qa/cbot-messenger-canary03c/release-evidence-gate.test.mjs
+      - name: Canary-03B 40 source regressions
+        run: |
+          node --test qa/cbot-messenger-canary03b/atomic-claim-private-gate.test.mjs
+          node --test qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.test.mjs
+          node --test qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.test.mjs
+          node --test qa/cbot-messenger-canary03b/live01-signed-sender-send-match-4176.test.mjs
+      - name: Canary-03, 02 and merchant source regressions
+        run: |
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
