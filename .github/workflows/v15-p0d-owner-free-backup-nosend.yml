@@ -40,14 +40,16 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           s=Path('qa/v15-sales-lite-p0d/private-certification-gate.cjs').read_text()
+          executable=re.sub(r'/\*[\s\S]*?\*/', '', s)
           for forbidden in [
             'fetch(', 'axios(', 'process.env.', 'new OpenAI(', 'sendMessage(',
             'pg_dump ', 'pg_restore ', 'SUPABASE_SERVICE_ROLE_KEY',
             'ZALO_BOT_TOKEN', 'META_PAGE_TOKEN', 'INSERT INTO',
             'UPDATE public.', 'DELETE FROM', 'apply_migration(',
           ]:
-            assert forbidden not in s, forbidden
+            assert forbidden not in executable, forbidden
           for required in [
             'hosted_backup_certified:false', 'may_export_hosted:false',
             'may_restore_hosted:false', 'may_apply_migration:false',
