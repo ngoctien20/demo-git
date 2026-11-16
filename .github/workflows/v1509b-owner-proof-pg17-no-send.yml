@@ -1,0 +1,67 @@
+name: TIEN404 V15.0-09B Merchant Proof & Ephemeral PostgreSQL RLS (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v1509b-owner-proof-jwt-rls-rehearsal-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v1509b-hosted-rls/**'
+      - 'docs/ai-handoff/V15_09B_*'
+      - '.github/workflows/v1509b-owner-proof-pg17-no-send.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg17-jwt-claim-simulation:
+    name: PostgreSQL 17 RLS A/B/C — Disposable DB, Mock Claim Only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      pg:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_only
+          POSTGRES_DB: tien404_ci_rehearsal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_ci_rehearsal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci_ephemeral_only
+      PGDATABASE: tien404_ci_rehearsal
+      PGSSLMODE: disable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql client if missing
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Execute 100% disposable RLS demonstration
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f qa/v1509b-hosted-rls/ephemeral-postgres17-rls-rehearsal.sql
+      - name: Confirm synthetic Owner evidence gate
+        run: |
+          node --check qa/v1509b-hosted-rls/owner-proof-gate.cjs
+          node --test qa/v1509b-hosted-rls/owner-proof-gate.test.cjs
+      - name: Enforce no hosted keys or provider calls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v1509b-hosted-rls/owner-proof-gate.cjs').read_text()
+          sql=Path('qa/v1509b-hosted-rls/ephemeral-postgres17-rls-rehearsal.sql').read_text()
+          for forbidden in ('fetch(', 'sendMessage(', 'new OpenAI(', 'SUPABASE_SERVICE_ROLE_KEY', 'ZALO_BOT_TOKEN', 'process.env.'):
+              assert forbidden not in s+sql, forbidden
+          assert 'EPHEMERAL PostgreSQL' in sql and 'UNSIGNED simulated JWT' in sql
+          print('PASS — no hosted JWT / no Supabase / no provider sends / no billable calls')
+          PY
