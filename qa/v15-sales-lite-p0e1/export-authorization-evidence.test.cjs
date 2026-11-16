@@ -201,3 +201,19 @@ test('preflight denial always also denies export evidence',()=>{
  const r=reviewExportEvidence(p,receipt(),now);
  never(r);assert.equal(r.reason,'REQUEST_PREFLIGHT_FAILED');
 });
+
+test('delayed private audit accepts historical window only for structural review',()=>{
+ const p=request(),e=receipt();
+ const auditAt=p.expires_at_ms+3600000;
+ const v=reviewExportEvidence(p,e,auditAt);
+ never(v);
+ assert.equal(v.reason,'INDEPENDENT_ARCHIVE_PROVENANCE_AND_RESTORE_REQUIRED');
+});
+test('evidence claiming export after approval expiry is rejected',()=>{
+ const p=request(),e=receipt();
+ e.started_at_ms=p.expires_at_ms-10;
+ e.finished_at_ms=p.expires_at_ms+10;
+ const v=reviewExportEvidence(p,e,p.expires_at_ms+1000);
+ never(v);
+ assert.equal(v.reason,'REQUEST_PREFLIGHT_FAILED');
+});
