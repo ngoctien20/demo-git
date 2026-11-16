@@ -54,6 +54,15 @@ jobs:
         run: |
           node --check qa/v1509b-hosted-rls/owner-proof-gate.cjs
           node --test qa/v1509b-hosted-rls/owner-proof-gate.test.cjs
+      - name: V15.0-09 inherited Store security regression
+        run: |
+          node --test qa/v1509-hosted-store/store-security-contract.test.cjs
+          node --test qa/v1509-hosted-store/sql-review-contract.test.cjs
+      - name: V15 original Universal Agent Core regression
+        run: |
+          node --test qa/v15-agent-core/universal-agent-core.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.test.cjs
+          node --test qa/v15-agent-core/business-skills-gate.integration.test.cjs
       - name: Enforce no hosted keys or provider calls
         run: |
           python - <<'PY'
