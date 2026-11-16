@@ -83,22 +83,25 @@ jobs:
           PGPASSWORD: h11r11_synthetic_ci_only
         run: |
           set -euo pipefail
-          src="psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source -X -At -v ON_ERROR_STOP=1"
-          echo '=== CREATE SYNTHETIC CUSTOM ARCHIVE ==='
-          pg_dump -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source \
+          # Use the SAME ephemeral postgres:17 service to avoid old host pg_dump mismatch.
+          pg17="${{ job.services.postgres.id }}"
+          test -n "$pg17"
+          echo '=== CREATE SYNTHETIC CUSTOM ARCHIVE WITH PG17 CLIENT ==='
+          docker exec "$pg17" pg_dump -U postgres -d h11r11_source \
             --format=custom --schema=qa_p0 --no-owner --no-acl \
             --file=/tmp/h11r11_synthetic_qa_only.backup
-          sha256sum /tmp/h11r11_synthetic_qa_only.backup
-          pg_restore --list /tmp/h11r11_synthetic_qa_only.backup >/tmp/h11r11_synthetic_archive_toc.txt
+          docker exec "$pg17" sha256sum /tmp/h11r11_synthetic_qa_only.backup
+          docker exec "$pg17" pg_restore --list /tmp/h11r11_synthetic_qa_only.backup \
+            > /tmp/h11r11_synthetic_archive_toc.txt
           test "$(grep -c 'TABLE DATA' /tmp/h11r11_synthetic_archive_toc.txt)" -ge 5
-          echo '=== CREATE INDEPENDENT DISPOSABLE TARGET ==='
-          createdb -h 127.0.0.1 -p 5432 -U postgres h11r11_recovered
-          psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered -X -v ON_ERROR_STOP=1 \
-            -c 'CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('\''request.jwt.claim.sub'\'',true),'\'\'')::uuid $$;'
-          pg_restore -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered \
+          echo '=== CREATE DISTINCT DISPOSABLE TARGET DATABASE ==='
+          docker exec "$pg17" createdb -U postgres h11r11_recovered
+          docker exec "$pg17" psql -U postgres -d h11r11_recovered -X -v ON_ERROR_STOP=1 \
+            -c "CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS \$\$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid \$\$;"
+          docker exec "$pg17" pg_restore -U postgres -d h11r11_recovered \
             --no-owner --no-acl --single-transaction --exit-on-error \
             /tmp/h11r11_synthetic_qa_only.backup
-          echo '=== COMPARE SOURCE AND RECOVERED APPLICATION ROW MANIFEST ==='
+          echo '=== COMPARE SOURCE AND RECOVERED SYNTHETIC ROW MANIFEST ==='
           manifest="SELECT (SELECT count(*) FROM qa_p0.tenants)::text||','||
              (SELECT count(*) FROM qa_p0.store_memberships)::text||','||
              (SELECT count(*) FROM qa_p0.products)::text||','||
@@ -108,11 +111,9 @@ jobs:
              (SELECT count(*) FROM qa_p0.owner_outbox)::text||','||
              (SELECT COALESCE(sum(price_vnd),0) FROM qa_p0.products)::text||','||
              (SELECT count(*) FROM pg_policies WHERE schemaname='qa_p0')::text;"
-          before="$(psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_source -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
-          after="$(psql -h 127.0.0.1 -p 5432 -U postgres -d h11r11_recovered -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
+          before="$(docker exec "$pg17" psql -U postgres -d h11r11_source -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
+          after="$(docker exec "$pg17" psql -U postgres -d h11r11_recovered -X -At -v ON_ERROR_STOP=1 -c "$manifest")"
           echo "SOURCE_MANIFEST=$before"
           echo "RECOVERED_MANIFEST=$after"
           test "$before" = "$after"
-          test "$before" = "2,3,4,4,2,2,1,677000,8" || \
-            { echo 'NOTE: synthetic fixture changed; verify exact row counts and policy count independently'; }
           echo 'PASS_H11R11_DISPOSABLE_CUSTOM_ARCHIVE_RESTORE_NOT_HOSTED'
