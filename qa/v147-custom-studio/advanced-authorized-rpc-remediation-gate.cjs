@@ -14,10 +14,10 @@ const SCOPES=Object.freeze(['RPC_SECURITY_CHANGE','HOSTED_STORE_SCHEMA_CHANGE','
 const OPTIONS=Object.freeze({
  KEEP_AND_HARDEN:Object.freeze({
   status:'PROPOSED_ALTERNATIVE_NOT_AUTHORIZED',risk:'PRIVILEGED_ANON_ENTRY_REMAINS',
-  need:'Independently verify caller identity, rate limits, Vault claim, nonce replay, function grants and provider callback'},
+  need:'Independently verify caller identity, rate limits, Vault claim, nonce replay, function grants and provider callback'}),
  MIGRATE_PRIVATE_GATEWAY:Object.freeze({
   status:'PREFERRED_DESIGN_NOT_AUTHORIZED',risk:'BREAKING_CHANGE_IF_CALLERS_EXIST',
-  need:'Inventory all callers, shadow synthetic gateway, signed provider ingress, durable nonce, independent review and reversible cutover'},
+  need:'Inventory all callers, shadow synthetic gateway, signed provider ingress, durable nonce, independent review and reversible cutover'}),
  ISOLATE_TEMPORARILY:Object.freeze({
   status:'EMERGENCY_OPTION_NOT_AUTHORIZED',risk:'BREAKS_OWNER_PAIRING_IF_CALLED',
   need:'Separate incident authority, verified exploit/abuse evidence, impact assessment and tested rollback'})
