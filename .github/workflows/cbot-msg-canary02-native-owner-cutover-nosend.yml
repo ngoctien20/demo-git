@@ -34,6 +34,8 @@ jobs:
         run: node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
       - name: Real Meta screenshot callback path ↔ existing n8n GET/POST ↔ No-Writer insertion guard
         run: node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+      - name: Actual Meta App Administrator screenshot and manual n8n #4180 owner QA receipt
+        run: node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
       - name: Regression real LIVE01, actual n8n 4177, Studio A/B and crosschannel
         run: |
           node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
