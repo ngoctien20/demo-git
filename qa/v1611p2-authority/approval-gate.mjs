@@ -64,7 +64,7 @@ export function makeQuoteRequestDraft(x){
 }
 export function assessProviderCostEvidence(x){
  const allowed=['quote_type','provider_response_kind','organization_confirmed',
-   provider_response_verified','approved_budget','new_resource_created',
+   'provider_response_verified','approved_budget','new_resource_created',
    file_backup_approved','storage_cost_reviewed'];
  assert(only(x,allowed),'UNSAFE_PROVIDER_COST_EVIDENCE');
  assert(['BRANCH','PROJECT'].includes(x.quote_type),'QUOTE_TYPE_NOT_ALLOWLISTED');
