@@ -1,0 +1,59 @@
+name: TIEN404 V15.2 ADV5D Hosted RPC and JWT-RLS Evidence Intake (NO SEND)
+on:
+  push:
+    branches:
+      - work/v152adv5d-hosted-rpc-store-jwt-proof-intake-nosend-20261116
+    paths:
+      - 'qa/v147-custom-studio/advanced-hosted-rpc-*'
+      - 'docs/ai-handoff/V15_2_ADV5D_*'
+      - '.github/workflows/v152-adv5d-hosted-rpc-private-intake-nosend.yml'
+  pull_request:
+    paths:
+      - 'qa/v147-custom-studio/advanced-hosted-rpc-*'
+      - 'docs/ai-handoff/V15_2_ADV5D_*'
+      - '.github/workflows/v152-adv5d-hosted-rpc-private-intake-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  p0-rpc-and-private-evidence-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: No-send and metadata-only code syntax
+        run: |
+          node --check qa/v147-custom-studio/advanced-hosted-rpc-store-private-intake.cjs
+          node --check qa/v147-custom-studio/advanced-hosted-rpc-store-private-intake.test.cjs
+      - name: ADV5D security and owner-evidence controls
+        run: node --test qa/v147-custom-studio/advanced-hosted-rpc-store-private-intake.test.cjs
+      - name: Carry forward ADV5C and Merchant UAT critical regressions
+        run: |
+          node --test qa/v147-custom-studio/advanced-merchant-uat-independent-review.test.cjs
+          node --test qa/v147-custom-studio/advanced-merchant-uat.test.cjs
+          node --test qa/v147-custom-studio/advanced-merchant-uat-mobile-cards.test.cjs
+          node --test qa/v147-custom-studio/advanced-secure-action-registry.test.cjs
+      - name: Reject mutation and secret-handling code by static gate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v147-custom-studio')
+          sql=(root/'advanced-hosted-rpc-readonly-metadata.sql').read_text()
+          js=(root/'advanced-hosted-rpc-store-private-intake.cjs').read_text()
+          assert 'BEGIN TRANSACTION READ ONLY;' in sql
+          body=re.sub(r'--[^\n]*','',sql)
+          for stmt in ['INSERT','UPDATE','DELETE','CREATE','ALTER','DROP','GRANT','REVOKE','CALL',
+                       'TRUNCATE','COPY','DO','EXECUTE']:
+              assert not re.search(r'^\s*'+stmt+r'\b',body,re.M|re.I),stmt
+          for bad in [r'\bfetch\s*\(',r'\bWebSocket\b',r'\bXMLHttpRequest\b',
+                      r'\bprocess\.env\b',r'\bchild_process\b',r'\bsupabase\.']:
+              assert not re.search(bad,js),bad
+          assert 'NO_GO_HOSTED_OR_PRODUCTION' in js
+          assert 'releaseAuthorized:false' in js
+          assert 'canChangeRpcGrant:false' in js
+          print('PASS: Read-only SQL, private receipt-only metadata, no hosted execution')
+          PY
