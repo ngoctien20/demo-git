@@ -1,0 +1,93 @@
+name: TIEN404 V16.8 Merchant Setup Hybrid Import Synthetic QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v168-merchant-setup-import-isolation-nosend-20261116
+  pull_request:
+    paths:
+      - 'qa/v168-merchant/**'
+      - 'docs/ai-handoff/V16_8_*'
+      - '.github/workflows/v168-merchant-setup-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-send-source:
+    name: 53 new import/hybrid/finops + 182 inherited source checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node module parsing
+        run: |
+          node --check qa/v168-merchant/import-preview.mjs
+          node --check qa/v168-merchant/integration.mjs
+          node --check qa/v168-merchant/studio-ui.mjs
+          node --check qa/v168-merchant/v168-merchant.test.mjs
+          node --check qa/v168-merchant/browser.test.cjs
+      - name: NEW V16.8 import, Store, XLSX and FinOps contract QA
+        run: node --test qa/v168-merchant/v168-merchant.test.mjs
+      - name: INHERITED V16.7 Merchant Registry QA
+        run: node --test qa/v167-merchant/merchant-registry.test.mjs
+      - name: INHERITED V16.0 Hybrid Worker QA
+        run: node --test qa/v16-hybrid/hybrid-core.test.mjs
+      - name: INHERITED V16.3 Five Studios QA
+        run: node --test qa/v163-studios/v163-studios.test.mjs
+      - name: Verify strict no-network and no executable migration spec
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          folder=Path('qa/v168-merchant')
+          scripts=[folder/'studio-ui.mjs',folder/'integration.mjs',folder/'import-preview.mjs']
+          for f in scripts:
+            src=f.read_text()
+            for banned in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\blocalStorage\b',
+               r'\bsessionStorage\b',r'\bprocess\.env\b',r'\bcreateClient\s*\(',
+               r'graph\.facebook\.com',r'api\.openai\.com',r'generativelanguage\.googleapis\.com']:
+              assert not re.search(banned,src),(f,banned)
+          html=(folder/'index.html').read_text()
+          assert "connect-src 'none'" in html
+          assert "script-src 'self'" in html
+          sql=Path('docs/ai-handoff/V16_8_STORE_JWT_RLS_MIGRATION_DO_NOT_APPLY.sql').read_text()
+          assert all(not ln.strip() or ln.startswith('--') for ln in sql.splitlines())
+          assert 'DO NOT APPLY' in sql
+          assert 'UNIQUE(tenant_id,store_id,sku)' in sql
+          assert not list(folder.glob('wrangler*'))
+          assert len(re.findall(r"test\('",(folder/'v168-merchant.test.mjs').read_text()))==53
+          print('V16.8 NO HOSTED SQL / NO NETWORK / NO PROVIDER SEND / NO REAL PII: PASS')
+          PY
+      - name: Secret and production execution gate
+        run: |
+          if grep -RniE 'BEGIN PRIVATE KEY|sk-[A-Za-z0-9]{20}|Bearer [A-Za-z0-9]{20}' qa/v168-merchant; then
+            echo "Potential credential in synthetic source"; exit 3
+          fi
+          echo "No real provider calls, no paid API, no Supabase or n8n Published mutation."
+  chromium-preview:
+    name: Local Chromium 320/390/768/1280 Studio UX, Store isolation, No-send
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA-only pinned Playwright
+        run: |
+          npm install --no-save --prefix qa/v168-merchant playwright@1.56.1
+          cd qa/v168-merchant && npx playwright install --with-deps chromium
+      - name: Serve synthetic assets on localhost only
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/t404-v168-local.log 2>&1 &
+          sleep 2
+      - name: Run viewport and scenario UI acceptance
+        run: node qa/v168-merchant/browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tien404-v168-browser-synthetic-screenshots
+          path: qa-artifacts-v168/
+          if-no-files-found: ignore
