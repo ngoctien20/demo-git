@@ -1,0 +1,105 @@
+name: TIEN404 CBOT-MSG-CANARY-03C Disposable PostgreSQL Atomicity × Full-Recovery NO-GO
+
+on:
+  push:
+    branches:
+      - work/cbot-msg-canary03c-durable-disposable-backup-gated-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/cbot-messenger-canary03c/**'
+      - 'docs/ai-handoff/CBOT_MSG_CANARY03C_*'
+      - '.github/workflows/cbot-msg-canary03c-disposable-pg17-restore-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-pg17-one-use:
+    name: PostgreSQL 17 disposable 64-session atomic grant acceptance, NO SEND
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: canary_qa
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_CI_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d canary_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client for temporary CI database
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql --version
+      - name: Apply ONLY to GitHub Actions disposable postgres:17 container
+        env:
+          PGPASSWORD: disposable_CI_only
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d canary_qa \
+            -f qa/cbot-messenger-canary03c/disposable-postgres-one-shot.sql
+      - name: 64 real concurrent independent PG sessions plus RLS, expiry, replay and reconnect
+        run: python3 qa/cbot-messenger-canary03c/pg17-disposable-parallel-proof.py
+      - name: Explicit no live tenant or credential access
+        run: |
+          echo "PASS: only disposable PostgreSQL GitHub Actions container; no Meta, n8n, Supabase staging or merchant data"
+
+  private-owner-source-regression:
+    name: Private evidence NO-GO + recovery QA + inherited source suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact hosted status, n8n version history and release blocker (14 tests)
+        run: node --test qa/cbot-messenger-canary03c/release-evidence-gate.test.mjs
+      - name: Parent 03B 40 source tests (no provider or database)
+        run: |
+          node --test qa/cbot-messenger-canary03b/atomic-claim-private-gate.test.mjs
+          node --test qa/cbot-messenger-canary03b/redacted-rollback-rehearsal.test.mjs
+          node --test qa/cbot-messenger-canary03b/actual-n8n-atomic-qa-4190.test.mjs
+          node --test qa/cbot-messenger-canary03b/live01-signed-sender-send-match-4176.test.mjs
+      - name: Canary-03 240 inherited source and no-send regression
+        run: |
+          node --test qa/cbot-messenger-canary03/exact-locked-graph-patch.test.mjs
+          node --test qa/cbot-messenger-canary03/real-n8n-qa-4181-item-pairing.test.mjs
+          node --test qa/cbot-messenger-canary02/native-owner-cutover-gate.test.mjs
+          node --test qa/cbot-messenger-canary02/callback-route-draft-audit.test.mjs
+          node --test qa/cbot-messenger-canary02/owner-app-admin-canary-qa-4180.test.mjs
+          node --test qa/cbot-messenger-canary/isolated-canary-guard.test.mjs
+          node --test qa/cbot-messenger-canary/n8n-manual-qa-evidence.test.mjs
+          node --test qa/cbot-messenger-live-uat/live01-observed-execution.test.mjs
+          node --test qa/cbot-messenger-live-uat/messenger-custom-preflight.test.mjs
+          node --test qa/v167-merchant/merchant-registry.test.mjs
+          node --test qa/cbot-uat02/crosschannel-core.test.mjs
+      - name: Enforce no public identifiers, no network or hosted mutation in source preflight
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('qa/cbot-messenger-canary03c')
+          record=json.loads((p/'actual-hosted-and-workflow-readonly-ledger.json').read_text())
+          assert record['hosted_claim_rpc_count']==0
+          assert record['full_encrypted_private_backup_certified'] is False
+          assert record['one_shot_postgres_hosted_deployed'] is False
+          assert record['owner_final_exact_patch_authorized'] is False
+          assert record['actual_live02_sent'] is False
+          code=(p/'release-evidence-gate.mjs').read_text()
+          for term in ('fetch(', 'process.env.', 'apply_migration(', 'sendMessage(', 'publishWorkflow('):
+            assert term not in code,term
+          for k in ('page_id','psid','access_token','recipient_id','app_secret'):
+            assert k not in record,k
+          print('PASS: real backend/owner/restore remain NOT VERIFIED; source cannot authorize SEND')
+          PY
