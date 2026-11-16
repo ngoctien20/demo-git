@@ -56,4 +56,5 @@ jobs:
     if: false
     runs-on: ubuntu-24.04
     steps:
-      - run: echo 'NOT_RUN: no hosted benchmark, no model purchase, no delivery proof'
+      - run: |
+          echo 'NOT_RUN: no hosted benchmark, no model purchase, no delivery proof'
