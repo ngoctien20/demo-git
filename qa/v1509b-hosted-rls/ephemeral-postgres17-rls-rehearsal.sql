@@ -126,7 +126,7 @@ END $$;
 RESET ROLE;
 
 -- Restrictive AND policy closes gap; all policies still require membership and active Store.
-CREATE POLICY products_store_guard AS RESTRICTIVE ON public.products FOR SELECT TO qa_authenticated
+CREATE POLICY products_store_guard ON public.products AS RESTRICTIVE FOR SELECT TO qa_authenticated
  USING (store_id IS NOT NULL AND EXISTS
  (SELECT 1 FROM public.store_memberships sm JOIN public.stores s
  ON s.tenant_id=sm.tenant_id AND s.id=sm.store_id
