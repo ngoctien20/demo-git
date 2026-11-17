@@ -32,7 +32,7 @@ jobs:
           from pathlib import Path
           import re
           p=Path('qa/v171-channel-first')
-          assert {x.name for x in p.glob('*.mjs')}=={'vertical-slice.mjs','vertical-slice.test.mjs','smoke.mjs'}
+          assert {x.name for x in p.glob('*.mjs')}=={'vertical-slice.mjs','vertical-slice.test.mjs','smoke.mjs','native-ingress-qa.mjs','native-ingress-qa.test.mjs'}
           for f in p.glob('*.mjs'):
             s=f.read_text()
             for pat in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
