@@ -65,8 +65,19 @@ export async function handleDedicatedQaWebhook(req,env={},now=Date.now()){
   return reply(415);
  let bytes;
  try{bytes=await limitedBody(req)}catch(e){return reply(e.message==='TOO_LARGE'?413:400)}
- let event;try{event=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes))}
+ let parsed;try{parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes))}
  catch{return reply(400)}
+ // Official Bot webhook docs document {ok:true,result:{event_name,message}},
+ // while third-party observed deliveries can be flat {event_name,message}.
+ // Only these two shapes are allowed; never normalize ambiguous/wrong wrappers.
+ if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')return reply(422);
+ const isWrapped=Object.hasOwn(parsed,'ok')||Object.hasOwn(parsed,'result');
+ if(isWrapped&&(
+   parsed.ok!==true||!parsed.result||Array.isArray(parsed.result)||
+   typeof parsed.result!=='object'||Object.hasOwn(parsed,'event_name')||
+   Object.hasOwn(parsed,'message')
+ ))return reply(422);
+ const event=isWrapped?parsed.result:parsed;
  if(!event||Array.isArray(event)||typeof event!=='object'||event.event_name!=='message.text.received'||
     !event.message||typeof event.message!=='object'||Array.isArray(event.message))return reply(422);
  const msg=event.message;
