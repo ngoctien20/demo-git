@@ -1,0 +1,66 @@
+name: TIEN404 RPC17.8D — Backup Inventory × Independent Owner GO/NO-GO (NO HOST)
+on:
+  push:
+    branches:
+      - work/v152-rpc178d-backup-inventory-operator-go-nogo-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc178d/**'
+      - 'docs/ai-handoff/T404_RPC178D_*'
+      - '.github/workflows/v152-rpc178d-owner-recovery-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  offline-owner-recovery-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Backup API GET-only mocked QA and independent signed evidence
+        run: |
+          node --check qa/v152-rpc178d/backup-inventory.mjs
+          node --check qa/v152-rpc178d/backup-inventory-cli.mjs
+          node --check qa/v152-rpc178d/signed-admission.mjs
+          node --test qa/v152-rpc178d/backup-inventory.test.mjs
+          node --test qa/v152-rpc178d/signed-admission.test.mjs
+      - name: Private backup listing CLI must be OFF in CI
+        run: |
+          set +e
+          output=$(node qa/v152-rpc178d/backup-inventory-cli.mjs)
+          status=$?
+          set -e
+          test "$status" -eq 2
+          test "$output" = '{"status":"BLOCKED","reason":"PRIVATE_OPERATOR_OPT_IN_REQUIRED"}'
+      - name: Print fixed candidate SQL checksum only
+        run: |
+          sha256sum qa/v152-rpc178a/sql/private-schema-candidate.sql
+      - name: Inherited RPC17.8C through RPC13 security source regressions
+        run: |
+          node --test qa/v152-rpc178c/owner-contract-audit.test.mjs
+          node --test qa/v152-rpc178c/staging-recovery-gate.test.mjs
+          node --test qa/v152-rpc178b/immutable-preflight.test.mjs
+          node --test qa/v152-rpc178a/migration-admission.test.mjs
+          node --test qa/v152-rpc178/private-readonly-uat.test.mjs
+          node --test qa/v152-rpc177/private-ownership-proof.test.mjs
+          node --test qa/v152-rpc177/real-auth-ab-uat-gate.test.mjs
+          node --test qa/v152-rpc176/private-auth-admission.test.mjs
+          node --test qa/v152-rpc175/canonical-store-authority.test.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Hard deny hosted actions and prevent public routes
+        run: |
+          node --input-type=module -e "import {actualMigrationDecision} from './qa/v152-rpc178d/signed-admission.mjs';const x=actualMigrationDecision();if(x.can_apply_ddl||x.can_restore_staging||x.can_use_real_jwt||x.can_send)process.exit(1)"
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
