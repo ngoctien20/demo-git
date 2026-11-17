@@ -75,6 +75,7 @@ export function assessIndependentAuthorization(payload,signatures,trust,inventor
  const a=isObj(payload)?payload:{},s=isObj(signatures)?signatures:{};
  const t=isObj(trust)?trust:{},v=isObj(inventory)?inventory:{},r=isObj(review)?review:{};
  check('exact_signed_contract_fields',equal(keys(a),VALID_KEYS));
+ check('exact_contract_version',a.contract===CONTRACT);
  check('isolated_target_account',a.account_id===ACCOUNT);
  check('dedicated_worker_and_class',a.target_worker===WORKER&&a.replay_class===REPLAY_CLASS);
  check('phase_a_only_no_active_route',a.phase==='INACTIVE_UPLOAD_ONLY');
