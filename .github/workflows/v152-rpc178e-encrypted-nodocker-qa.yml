@@ -38,6 +38,14 @@ jobs:
           cmp /tmp/t404-qa.txt /tmp/t404-qa-verified.txt
           echo 'RPC178E PASS: real age encryption/decryption of synthetic-only fixture'
           rm -f /tmp/t404-qa.txt /tmp/t404-qa-verified.txt /tmp/t404-qa.age /tmp/t404-qa-age-key.txt
+      - name: Validate Windows PowerShell private launcher syntax (no secret, no DB)
+        shell: pwsh
+        run: |
+          $parseTokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('qa/v152-rpc178e/windows-private-backup.ps1', [ref]$parseTokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'RPC178E PowerShell parse failed' }
+          Write-Host 'RPC178E PASS: PowerShell launcher syntax parsed'
       - name: Default CLI must be no-contact dry-run
         run: |
           output=$(node qa/v152-rpc178e/stream-encrypted-app-backup.mjs || true)
