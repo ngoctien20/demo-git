@@ -1,0 +1,68 @@
+name: TIEN404 V17.1E Merchant Corpus Vision Receipt QA Messenger Zalo NO-SEND
+on:
+  push:
+    branches:
+      - work/v171e-merchant-vision-benchmark-uat-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171e-commerce/**'
+      - 'docs/ai-handoff/V17_1E_*'
+      - '.github/workflows/v171e-merchant-vision-uat-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171e-source-contract:
+    name: V17.1E merchant corpus, vision receipts and admission offline QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate bounded media, receipt quality, fail-closed admission
+        run: |
+          node --check qa/v171e-commerce/merchant-corpus-contract.cjs
+          node --check qa/v171e-commerce/model-receipt-benchmark.cjs
+          node --check qa/v171e-commerce/uat-admission-gate.cjs
+          node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: Preserve 52 V17.1D PNG / 2-step identity / integrated regressions
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: Static no-send no-hosted no-paid-model contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          fs=list(Path('qa/v171e-commerce').glob('*.cjs'))
+          assert len(fs)==4,fs
+          for f in fs:
+            t=f.read_text()
+            if f.name.endswith('.test.cjs'): continue
+            for banned in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+              r'\bchild_process\b',r'\baxios\b',r'\bservice_role\b',
+              r'\bhttps?\.request\s*\(',r'\bsendProvider\s*\(',
+              r'\bcreateOrder\s*\('):
+              assert not re.search(banned,t,re.I),(str(f),banned)
+          corpus=Path('qa/v171e-commerce/merchant-corpus-contract.cjs').read_text()
+          model=Path('qa/v171e-commerce/model-receipt-benchmark.cjs').read_text()
+          guard=Path('qa/v171e-commerce/uat-admission-gate.cjs').read_text()
+          assert 'merchantPhotoOriginIndependentlyVerified:false' in corpus
+          assert 'providerReceiptsIndependentlyVerified:false' in model
+          assert "status:'HOSTED_NO_GO'" in guard
+          assert 'authorizedForLiveSend:false' in guard
+          print('SOURCE_ONLY: PASS. No real model, hosted write or SEND invoked.')
+          PY
+  v171e-hosted-release-denied:
+    name: V17.1E real merchant photo and provider UAT HOSTED NO GO
+    needs: [v171e-source-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Block hosted release without independent real photo and signed provider evidence
+        run: |
+          echo "::error::V171E_L3_L4_HOSTED_NO_GO_REAL_CORPUS_VENDOR_RECEIPTS_PAGE_OA_STORE_RLS_AND_RECOVERY_MISSING"
+          exit 3
