@@ -18,6 +18,8 @@ code,output{overflow-wrap:anywhere}
 .code{display:block;padding:12px;color:#cde8ff;background:#071020;border:1px solid #34445c;border-radius:8px;font:13px/1.6 ui-monospace,monospace}
 .warn{border-left:3px solid #e8b86e;padding-left:14px}
 small{display:block;margin-top:10px;color:#a8b7cf}
+textarea{width:100%;min-height:100px;resize:vertical;background:#091225;color:#d9e9ff;border:1px solid #6b7c99;border-radius:8px;padding:12px;font:13px/1.5 ui-monospace,monospace}
+#compare-status{font-weight:650}
 </style>
 </head>
 <body><main>
@@ -36,6 +38,17 @@ small{display:block;margin-top:10px;color:#a8b7cf}
 <p>Mã đối chiếu dùng chung:</p><output id="nonce-output" class="code"></output>
 <p>Dấu phiên tài khoản (hai tài khoản phải khác nhau):</p><output id="actor-code" class="code"></output>
 <p>Dấu tenant owner (hai bên phải có ít nhất một mã giống nhau):</p><output id="tenant-codes" class="code"></output>
+<h2>Đối chiếu tự động hai phiên (chỉ trên máy)</h2>
+<p>Ở phiên B, nhấn “Sao chép biên nhận”. Quay lại phiên A, dán biên nhận vào ô phía dưới rồi nhấn “Đối chiếu”.</p>
+<label for="receipt-output">Biên nhận tạm thời của phiên này (không chứa JWT hoặc ID gốc)</label>
+<textarea id="receipt-output" readonly aria-label="Biên nhận của phiên này" maxlength="1800"></textarea>
+<button id="copy-receipt" type="button">Sao chép biên nhận</button>
+<p id="copy-status" role="status" aria-live="polite"></p>
+<label for="peer-receipt">Dán biên nhận từ hồ sơ trình duyệt còn lại</label>
+<textarea id="peer-receipt" maxlength="1800" autocomplete="off" spellcheck="false" aria-label="Biên nhận của phiên còn lại"></textarea>
+<button id="compare-receipt" type="button">Đối chiếu hai tài khoản</button>
+<p id="compare-status" role="status" aria-live="polite">Chưa đối chiếu</p>
+<small>Không gửi biên nhận lên chat/GitHub. Mỗi biên nhận hết hạn sau 30 phút. Kết quả chỉ là đối chiếu cục bộ, không phải bằng chứng đã xác minh chữ ký từ server.</small>
 </div>
 </div>
 <p class="warn">Kết quả chỉ là kiểm tra cục bộ từ trình duyệt. Chưa chứng minh phiên server không bị thu hồi, chưa có Store Authority A/B và không cấp quyền production.</p>

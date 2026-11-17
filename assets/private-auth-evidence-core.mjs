@@ -80,3 +80,62 @@ export function compareTwoLocalReports(a,b){
    canMigrate:false,canSend:false,canPublish:false
  });
 }
+
+
+
+// P0O browser-local receipt. The value is USER-COPYABLE and UNTRUSTED,
+// never a backend-signed proof. Includes only HMAC pseudonyms + one-time nonce.
+const HEX40=/^[0-9a-f]{40}$/;
+const RECEIPT_DOMAIN='TIEN404_PRIVATE_AUTH_QA_P0O';
+const MAX_AGE_SECONDS=30*60;
+const validCode=code=>typeof code==='string' && HEX40.test(code);
+export function makeLocalPairReceipt(evidence,nonce,at=Math.floor(Date.now()/1000)){
+ if(!validNonce(nonce)||evidence?.status!=='LOCAL_OWNER_AUTH_READ_OK'||
+   !validCode(evidence.actorCode) ||
+   !Array.isArray(evidence.ownerTenantCodes) ||
+   evidence.ownerTenantCodes.length<1 || evidence.ownerTenantCodes.length>10 ||
+   evidence.ownerTenantCodes.some(c=>!validCode(c))||
+   !Number.isSafeInteger(at)||at<=0) return null;
+ return JSON.stringify({
+   domain:RECEIPT_DOMAIN,version:1,
+   nonce,actor:evidence.actorCode,owners:[...new Set(evidence.ownerTenantCodes)].sort(),
+   issuedAt:at
+ });
+}
+const rejectCompare=reason=>Object.freeze({
+ status:'BLOCKED',reason,
+ differentActor:false,sameTenantOwner:false,
+ serverSignedProof:false,sessionRevocationVerified:false,
+ canonicalStoreAuthority:false,canSend:false,canMigrate:false
+});
+export function comparePeerLocalReceipt(localEvidence,nonce,raw,at=Math.floor(Date.now()/1000)){
+ if(localEvidence?.status!=='LOCAL_OWNER_AUTH_READ_OK' ||
+   !validCode(localEvidence.actorCode) ||
+   !Array.isArray(localEvidence.ownerTenantCodes) ||
+   !validNonce(nonce)) return rejectCompare('LOCAL_ACCOUNT_NOT_CHECKED');
+ if(typeof raw!=='string'||raw.length<50||raw.length>1800)
+   return rejectCompare('PEER_RECEIPT_MISSING_OR_TOO_LONG');
+ let peer;
+ try{peer=JSON.parse(raw);}catch{return rejectCompare('INVALID_RECEIPT_JSON');}
+ if(!peer||typeof peer!=='object'||Array.isArray(peer) ||
+   Object.keys(peer).sort().join(',')!=='actor,domain,issuedAt,nonce,owners,version'||
+   peer.domain!==RECEIPT_DOMAIN||peer.version!==1 ||
+   peer.nonce!==nonce||!validCode(peer.actor) ||
+   !Array.isArray(peer.owners)||peer.owners.length<1||peer.owners.length>10 ||
+   peer.owners.some(c=>!validCode(c)) ||
+   !Number.isSafeInteger(peer.issuedAt)|| !Number.isSafeInteger(at))
+   return rejectCompare('MISMATCH_OR_MALFORMED_RECEIPT');
+ if(peer.issuedAt>at+120||at-peer.issuedAt>MAX_AGE_SECONDS)
+   return rejectCompare('RECEIPT_EXPIRED');
+ if(localEvidence.actorCode===peer.actor)
+   return rejectCompare('SAME_ACTOR_FINGERPRINT');
+ if(!localEvidence.ownerTenantCodes.some(c=>peer.owners.includes(c)))
+   return rejectCompare('NO_COMMON_OWNER_TENANT');
+ return Object.freeze({
+   status:'LOCAL_TWO_ACTOR_SAME_OWNER_TENANT_INDICATION',
+   reason:'UNSIGNED_BROWSER_ONLY_NOT_SERVER_OR_STORE_PROOF',
+   differentActor:true,sameTenantOwner:true,
+   serverSignedProof:false,sessionRevocationVerified:false,
+   canonicalStoreAuthority:false,canSend:false,canMigrate:false
+ });
+}
