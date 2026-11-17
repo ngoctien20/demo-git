@@ -11,8 +11,8 @@ const BLOCK=(issues)=>Object.freeze({
 const safeText=v=>typeof v==='string'&&v.length>=80&&v.length<50000;
 export function auditOwnerPairingContracts(contracts={}){
  const issues=[];
- const owner=contracts.ownerFunction;
- const provider=contracts.providerFunction;
+ const owner=contracts?.ownerFunction;
+ const provider=contracts?.providerFunction;
  if(!safeText(owner?.definition)||!safeText(provider?.definition))return BLOCK(['FUNCTION_DEFINITION_MISSING']);
  if(owner.schema!=='public'||owner.name!=='qa_owner_pairing'||owner.securityDefiner!==true)issues.push('OWNER_FUNCTION_IDENTITY_UNVERIFIED');
  if(provider.schema!=='public'||provider.name!=='qa_shop_b_zalo_claim'||provider.securityDefiner!==true)issues.push('PROVIDER_FUNCTION_IDENTITY_UNVERIFIED');
