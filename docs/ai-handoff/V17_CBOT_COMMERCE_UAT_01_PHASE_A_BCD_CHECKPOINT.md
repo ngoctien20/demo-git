@@ -97,3 +97,21 @@ Real API sends, Commerce hosted writes, provider credential changes, paid model 
 Close this child Draft PR / revert only `qa/v17-cbot` and V17-specific CI/checkpoint. Hosted systems and n8n workflows need no rollback because no changes were made.
 
 Next safe step is a *server-side* verified provider adapter + ephemeral catalog image benchmark, and an offline identity link proof-flow (out-of-band challenge) with distinct n8n candidate only after review. Do not force actual Auth/Storage backup or perform M0/M1 hosted changes during this milestone.
+
+
+### 10. Exact code-and-contract QA receipt — 17 November 2026 JST
+
+**Tested source HEAD:** `d6ce6fc3a3b393bac51b722c6d8bbe97f43333bc`  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/43996631884
+
+**TESTED (GitHub Actions job SUCCESS):**
+- `qa/v17-cbot/cbot-readonly-contract.test.cjs`: **33/33 PASS**. Covers allowed Messenger/Zalo OA/Zalo Bot, rejected malformed/stale inbound, image candidate/score/scope fallback, SKU+quantity confirmation only, price/stock grounding, unverified order reference rejection, authorized readback mismatch rejection, verified cross-channel Store-specific ephemeral context, TTL, replay, blocked provider and order execution.
+- Reused **V14.3 channel 36/36 PASS**, **V14.7 Studio 36/36 PASS**, **V15.2 verified identity/canonical gateway 14/14 PASS**.
+- **119/119 Node cases PASS**, plus static no-provider send, no direct network/DB, no paid model, no hosted credential path scan **PASS**.
+- **Hosted release eligibility intentionally FAILURE / exit code 3**: `V17_L3_L4_NO_GO_REAL_STORE_RLS_IDENTITY_VISION_PROVIDER_AUTHORITY_REQUIRED`. This explicitly prevents source-only success from being called an approved real Meta/Zalo Page/OA UAT.
+- GitHub workflow overall FAILURE is deliberate release gating, not a regression in the unit/source tests.
+
+**CRITICAL LIMITATIONS:** QA callbacks are synthetic (not Meta HMAC, Zalo OA permission, real Zalo Bot secret attestation, Supabase JWT, OTP challenge, or signed order grant); images are represented only by opaque synthetic references and scored candidate IDs; no actual image recognition/embeddings/cost/performance benchmark has been run. Memory and replay ID tracking are in-process, expire or vanish across worker restarts, and do **not** establish durable multi-instance continuation/idempotency. Cross-channel order lookup is a source-only readback contract; no live Orders database was accessed.
+
+**Current canonical checkpoint:** `V17_PHASE_A_VERIFIED_BCD_SOURCE_CONTRACT_TESTED_L3L4_NO_GO`.
+**No hosted or provider side effects**; rollback is close Draft PR.
