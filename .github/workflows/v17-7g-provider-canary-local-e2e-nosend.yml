@@ -1,0 +1,80 @@
+name: V17.7G Provider Request WebCrypto Local E2E NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7G_REAL_PROVIDER_CANARY_ADMISSION_CHECKPOINT.md"
+      - ".github/workflows/v17-7g-provider-canary-local-e2e-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-worker-canary-no-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source syntax verification (inherited A-G)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: Request-level WebCrypto + inherited channel QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: No-host deployment, no real secrets, no provider send and no Commerce access invariant
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          import defaultWorker from './qa/v17-7a-oa-independent/v17-7g-provider-canary-local-worker.mjs';
+          const root='qa/v17-7a-oa-independent/';
+          const src=readFileSync(root+'v17-7g-provider-canary-local-worker.mjs','utf8');
+          const upstream=readFileSync(root+'v17-7f-provider-crypto-fixture-offline.mjs','utf8');
+          for(const marker of [
+            "env.V17_7G_MODE !== 'OFFLINE_FIXTURE_ONLY'",
+            "u.hostname !== 'canary.invalid'",
+            "deps.liveEnabled !== false",
+            "return handleOfflineSignedProviderRequest(request, env, null)",
+            "body.result",
+            "crypto.subtle.verify('HMAC'",
+            "deps.reserveOnce(replayKey)",
+            "deps.ratePermit(channel",
+          ])assert.ok(src.includes(marker), 'Missing V17.7G hard safety invariant: '+marker);
+          assert.ok(upstream.includes('const event=body.result'),
+            'Inherited V17.7F must reject wrong root-only Zalo Bot fixture');
+          for(const bad of [
+            /\bawait\s+fetch\s*\(/,
+            /\bglobalThis\.fetch\s*\(/,
+            /\baxios\s*\./,
+            /\bnew\s+WebSocket\s*\(/,
+            /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+          ]) if(bad.test(src)) throw Error('Forbidden outbound or write in V17.7G Worker source');
+          const e=JSON.parse(readFileSync(root+'v17-7g-hosted-safety-redacted-evidence.json','utf8'));
+          assert.equal(e.release_status,'REAL_PROVIDER_OWNER_AND_HOSTED_NO_GO');
+          assert.equal(e.cloudflare.created_v177g_worker,false);
+          assert.equal(e.cloudflare.created_or_modified_access_policy,false);
+          assert.equal(e.cloudflare.external_edge_deny_test_executed,false);
+          assert.equal(e.provider.actual_provider_messages_received,0);
+          assert.equal(e.provider.actual_provider_messages_sent,0);
+          assert.equal(e.provider.actual_signed_provider_events_verified,false);
+          assert.equal(e.provider.production_webhook_routing_changed,false);
+          assert.equal(e.supabase.real_same_tenant_store_ab_jwt_uat,false);
+          assert.equal(e.merchant.original_four_row_owner_consent_verified,false);
+          assert.equal(e.scope.source_only,true);
+          const res=await defaultWorker.fetch(new Request('https://canary.invalid/_qa/v17-7g/meta',
+            {method:'POST',body:'{}',headers:{'content-type':'application/json'}}),
+            {V17_7G_MODE:'OFFLINE_FIXTURE_ONLY',META_APP_SECRET_QA:'QA_ONLY_test_value_123456789'});
+          assert.equal(res.status,404,'default public worker fetch must NEVER accept');
+          console.log('V17.7G local WebCrypto/Request tests complete; default Worker 404; NO HOST/NO SEND/NO WRITE: PASS');
+          NODE
