@@ -1,0 +1,71 @@
+{
+  "contract": "TIEN404_V17_7F_PRIVATE_CONSENT_SIGNED_PROVIDER_PREFLIGHT_READONLY",
+  "captured_date_jst": "2026-11-17",
+  "source": "CONNECTED_READ_ONLY_CLOUDFLARE_SUPABASE_N8N_AND_GITHUB",
+  "canonical_gates": {
+    "merchant_intake_rpc16_pr": 313,
+    "merchant_intake_rpc17_pr": 322,
+    "merchant_atomic_replay_pr": 327,
+    "merchant_local_sqlite_scanner_pr": 332,
+    "store_rls_canonical_pr": 247,
+    "merchant_rpc_security_pr": 246,
+    "commerce_recovery_pr": 251,
+    "multichannel_parent_pr": 334
+  },
+  "cloudflare": {
+    "merchant_worker_name": "tien404-rpc16-merchant-evidence-inactive-staging",
+    "merchant_worker_exists": true,
+    "merchant_worker_r2_binding": "R2_QUARANTINE",
+    "merchant_access_app_id": "f994d4b2-d4f9-419b-8585-5d33be506f13",
+    "merchant_access_name": "TIEN404 RPC16 Merchant Evidence Staging — DENY ALL",
+    "access_app_count_current": 2,
+    "merchant_access_inline_allow_policy_count": 0,
+    "merchant_access_inline_bypass_policy_count": 0,
+    "dedicated_v177f_provider_worker_deployed": false,
+    "merchant_external_access_denial_executed_this_phase": false,
+    "hosted_durable_object_replay_verified_for_this_canary": false,
+    "real_malware_scanner_proof_verified": false,
+    "merchant_data_uploaded": false
+  },
+  "n8n": {
+    "archived_or_modified_existing_workflows": false,
+    "merchant_canary_qa_workflow_id": "MQcbjLWZ5QUTJW0k",
+    "merchant_canary_qa_workflow_version": "b8aaf94c-def1-472c-bd92-fccea1d946b8",
+    "merchant_canary_qa_workflow_active": false,
+    "existing_qa_manual_execution_id": "5026",
+    "existing_qa_synthetic_cases_passed": 12,
+    "merchant_provider_canary_webhook_live": false,
+    "messenger_test_has_http_send_node": true,
+    "zalo_bot_test_has_qa_marker_upsert": true
+  },
+  "supabase": {
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "core_commerce_table_count": 6,
+    "force_rls_core_table_count": 6,
+    "store_id_core_table_count": 0,
+    "qa_tenant_count": 2,
+    "qa_max_stores_per_tenant": 1,
+    "qa_same_tenant_ab_count": 0,
+    "real_store_jwt_rls_uat": false,
+    "original_four_row_merchant_authority_verified": false
+  },
+  "tests_performed_this_phase": {
+    "native_meta_webhook_called": false,
+    "native_zalo_bot_webhook_called": false,
+    "crypto_fixture_only": true,
+    "production_workflows_executed": 0,
+    "new_cloudflare_resources_created": 0,
+    "supabase_writes": 0,
+    "merchant_credentials_read": 0,
+    "customer_messages_sent": 0,
+    "commerce_orders_written": 0
+  },
+  "release_status": "REAL_SIGNED_PROVIDER_AND_OWNER_NO_GO",
+  "limitations": [
+    "Access DENY ALL policy list is current configuration inspection; no independent browser denial UAT in this phase",
+    "Zalo Bot header shared-secret check is not a cryptographic HMAC signature over message bytes",
+    "Native Meta HMAC test uses QA_ONLY secret and synthetic request, not Meta-delivered event",
+    "RPC17.2 local SQLite Workerd tests do not prove hosted Durable Object deployment or production event replay",
+    "Merchant owner authorization and same-Tenant two real Store Auth JWTs are not available"
+  ]
+}
