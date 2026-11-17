@@ -23,8 +23,9 @@ function signedProof(packet,pins,now){
   return p;
  }catch{return null;}
 }
-export function assessPrivateOwnershipBundle({owner,security,finance,ownerPins,securityPins,financePins,context,now}={}){
+export function assessPrivateOwnershipBundle(input={}){
  try{
+  const {owner,security,finance,ownerPins,securityPins,financePins,context,now}=input||{};
   if(!context||!['tenant_id','store_a','store_b','merchant_ref','operator_sub'].every(k=>typeof context[k]==='string'&&ID.test(context[k]))||context.store_a===context.store_b)return deny('CONTEXT_NOT_CANONICAL');
   const proofs=[
    signedProof(owner,ownerPins,now),
