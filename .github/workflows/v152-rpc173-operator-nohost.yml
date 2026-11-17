@@ -1,0 +1,41 @@
+name: TIEN404 RPC17.3 — Trusted Operator Contract × Hosted NO-GO
+on:
+  push:
+    branches:
+      - work/v152-rpc173-operator-identity-hosted-gate-nohost-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc173/**'
+      - 'docs/ai-handoff/T404_RPC173_*'
+      - '.github/workflows/v152-rpc173-operator-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  private-identity-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source-only operator authority and hosted no-go
+        run: |
+          node --check qa/v152-rpc173/operator-authority.mjs
+          node --check qa/v152-rpc173/hosted-change-gate.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+      - name: Inherited scanner and ledger source regressions
+        run: |
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Preserve RPC16 disabled subdomain and previews
+        run: |
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
