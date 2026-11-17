@@ -1,0 +1,61 @@
+name: TIEN404 V17.23H Disposable PG17 M1 Compatibility NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723h/**'
+      - '.github/workflows/v1723h-disposable-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-source-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: node --test qa/v1723h/independent-recovery-gate.test.mjs
+  disposable-pg17-m1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: QA_ONLY_DISPOSABLE_PG17_NOT_A_SECRET
+          POSTGRES_DB: t404_b3_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_b3_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGDATABASE: t404_b3_disposable
+      PGUSER: postgres
+      PGPASSWORD: QA_ONLY_DISPOSABLE_PG17_NOT_A_SECRET
+      T404_B3_DISPOSABLE_ONLY: YES
+      CI: "true"
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Existing PR319 RLS and rollback proof
+        run: bash qa/v176b3-private-authority/ci-disposable-pg17.sh
+      - name: V17.23H M1 schema compatibility, Store A/B and rollback
+        run: bash qa/v1723h/ci-m1-disposable.sh
+      - name: Verify no disposable schema residue
+        run: |
+          count=$(psql -XAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_namespace WHERE nspname IN ('t404_b3','t404_h')")
+          test "$count" = "0"
+          echo "V1723H_DISPOSABLE_CLEAN_NO_REAL_JWT_NO_HOSTED_WRITE"
