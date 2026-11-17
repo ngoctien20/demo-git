@@ -54,8 +54,10 @@ export function inspectExternalAccessNoSendTranscript(receipt,expected){
     !/^[a-z0-9-]+\.cloudflareaccess\.com$/.test(expected.teamAccessHost)||
     typeof expected.aud!=='string'||expected.aud.length<16||
     !receipt||typeof receipt!=='object'||Array.isArray(receipt)||
-    !nowValid(receipt.collectedAtMs))
+    !nowValid(receipt.collectedAtMs)||!nowValid(expected.nowMs))
     return fail('MISSING_TRUSTED_EXTERNAL_UAT_CONTEXT');
+  if(Math.abs(expected.nowMs-receipt.collectedAtMs)>5*60*1000)
+    return fail('EXTERNAL_EVIDENCE_STALE_OR_FUTURE');
   const anon=receipt.anonymous,other=receipt.unauthorizedOperator,
         approved=receipt.approvedOperator,oauth=receipt.oauthPath,
         hook=receipt.webhookPath,write=receipt.approvalPost;
