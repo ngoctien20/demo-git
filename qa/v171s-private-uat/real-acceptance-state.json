@@ -1,0 +1,22 @@
+{
+  "milestone": "V17.1S_PRIVATE_DUAL_STORE_NATIVE_OWNER_UAT_READY",
+  "parent": "V17.1R_PR_303",
+  "sourceOnly": true,
+  "plannedSourceTests": 107,
+  "inheritedSourceRegressionTests": 855,
+  "realPrivateHostedProof": {
+    "sameTenantDifferentStoreOwners": false,
+    "twoIndependentSupabaseJwtSessions": false,
+    "realMetaPageSignedCallback": false,
+    "realZaloOaSignedCallback": false,
+    "realCommerceReaderWithStoreRls": false,
+    "independentCustomerOrderGrant": false,
+    "uatOperatorAttested": false
+  },
+  "actualProviderMessagesSent": 0,
+  "actualCommerceReads": 0,
+  "actualOrdersWritten": 0,
+  "productionDeployed": false,
+  "hostedAuthorization": false,
+  "release": "HOSTED_NO_GO"
+}
