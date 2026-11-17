@@ -34,7 +34,9 @@ function createTrustedCatalogReadPlan({canary,clock}={}){
   if(!canary||canary.MODE!==ADAPTER_MODE||
     typeof canary.authorize!=='function'||typeof canary.receipt!=='function'||
     typeof clock!=='function')fail('TRUSTED_QA_POLICY_AND_SERVER_CLOCK_REQUIRED');
-  function compile({session,proposal}={}){
+  function compile(request={}){
+    if(!exactKeys(request,['session','proposal']))fail('QUERY_PLAN_ENVELOPE_REJECTED');
+    const {session,proposal}=request;
     if(!exactKeys(proposal,['action','sku'])||proposal.action!=='READ_PUBLIC_CATALOG')
       fail('MODEL_FREE_TEXT_OR_EXTRA_FIELDS_DENIED');
     const sku=proposal.sku;
