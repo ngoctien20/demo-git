@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   v171t-independent-operator-admission-regression:
-    name: V17.1T 147 signed operator tests + 855 inherited regressions
+    name: V17.1T 150 signed operator tests + 855 inherited regressions
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
