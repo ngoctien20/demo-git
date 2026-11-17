@@ -97,3 +97,39 @@ This is **new independent read-only Cloudflare connector evidence**, cross-check
 **Checkpoint result:** `RPC16_PRIVATE_BUCKET_VERIFIED · ACCESS_DENY_ALL · WORKER_404_INACTIVE · NO_PUBLIC_ROUTE_OBSERVED · REAL_MERCHANT_0_VERIFIED · SAME_TENANT_JWT_UAT_NO_GO · META_HANDOVER_NO_GO`.
 
 **Rollback:** V17.03B has no hosted change to roll back; close its Draft PR for source-only rollback. Do **not** delete, redeploy or change RPC16 Cloudflare resources as part of this track; those belong to separate PR #313 and require explicit owner/security approval.
+
+---
+
+## 6. LIVE LEGACY FOUR-ROW PROVENANCE TRIAGE — 17 NOV 2026 JST
+
+**Direct evidence:** A privacy-minimal source query was saved as `qa/v17-multichannel03b/legacy-four-row-provenance-READ_ONLY.sql` and **executed verbatim** on the actual connected Supabase staging `ifxlvrhyjhbzbrkdsida`. The sanitized result was saved at `qa/v17-multichannel03b/observed-legacy-four-row-provenance-20261117.json`.
+
+No customer names, email, phone, IDs, SKU/name values, amounts, Auth JWT or source order contents were retrieved.
+
+| Hosted aggregate fact | Observed |
+| --- | ---: |
+| Tenants / Products / Orders | 2 / 2 / 2 |
+| Product and Order records per Tenant slot | 1 + 1 in each slot |
+| Order source `manual` | 2 / 2 |
+| Orders linked to Customers | 0 / 2 |
+| Tenants with **both name and slug** containing test/demo/QA-like labels | 2 / 2 |
+| Tenant, Product, Order creation timestamps all equal within each slot | 2 / 2 |
+| Shared timestamp for both Tenant slots | `2026-11-10T14:04:29.056346Z` |
+| `app_private.audit_events` audit rows | 0 |
+| Independently authenticated source seed / import artifact found | **0** |
+
+**Evidence classification: `QA_LIKELY_NOT_VERIFIED_SYNTHETIC`.** This is substantially stronger circumstantial evidence for a two-Tenant QA seed than the previous assumption that four legacy rows must belong to real Merchants, but **still not verified synthetic**. A shared timestamp and name pattern could originate from a single real batch import, and zero audit events means missing provenance, not proof of mock origin. Do not invent the creator, signed fixture import, owner, Store mapping or real transaction purpose.
+
+**Data governance decision for current staged source-only workflow:**
+1. **Do NOT ask any real Merchant to provide citizen documents, access credentials or customer invoices for these four rows until an authorized data steward verifies whether they are actual QA fixtures.** The previous 0/4 original-doc blockers are now **DEFERRED PENDING PROVENANCE CLASSIFICATION**, not silently declared satisfied or waived for a real customer launch.
+2. **Do NOT relabel, delete, merge, modify, migrate, or publicize** the four rows. Retain existing tenant-only RLS; production release and real Store A/B JWT remain **NO-GO**.
+3. **If independent original seed/fixture provenance is verified privately** (source owner attestation plus original staging seed/migration or auditable creation receipt), establish a separate minimal verified synthetic classification in the future approved data inventory; no real Merchant private document intake is required just to authorize the fixtures. However real same-Tenant **two-Store** identity, canonical Store/Staff RLS and UAT must still be built and verified under separate Security/Recovery/DB approvals.
+4. **If they are business/merchant data or provenance remains uncertain**, retain confidential Merchant ownership and original source controls; use PR #196 / RPC13 #285 existing private process only after the source, consent, retention and Access portal gates are approved.
+5. **RPC16 #313 remains deliberately inactive**: R2 0 objects, Access 0 Allow/Bypass, no public route, 404 Worker, no upload. No need to enable it to make a classification based solely on non-sensitive staging metadata. A private owner/QA source review may use **already-held internal original source documentation**, not a newly solicited personal ID.
+6. The existing [RPC13 actual JWT runner](https://github.com/ngoctien20/demo-git/pull/285) should remain unused until canonical Store RLS, same-Tenant two independently authenticated owner users, six sentinel fixtures, safe local token custody (including Windows NTFS ACL), and approved PRE-M1 recovery are present. Do not use the two currently separate Tenant QA records to pretend there are two Stores within one Tenant.
+
+**Operational status:** `VERIFIED_HOSTED_AGGREGATES · QA_LIKELY_NOT_VERIFIED_SYNTHETIC · SENSITIVE_DOC_REQUEST_DEFERRED · NO_HOSTED_MUTATION · REAL_STORE_AB_JWT_NO_GO · META_NO_SEND_NO_GO`.
+
+**Independent reviewer decision still required:** Original QA seed/migration provenance or genuine authorized database seed owner attestation. Only a read-only aggregate was obtained in this change; it is insufficient to attest actual creator, file origin or legal Merchant control.
+
+**Rollback:** revert the source-only SQL, sanitized JSON and this checkpoint appendix. No database customer records or cloud resources changed.
