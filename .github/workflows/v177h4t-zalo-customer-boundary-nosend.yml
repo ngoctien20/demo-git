@@ -1,0 +1,51 @@
+name: V17.7H.4T Zalo Customer Boundary × Existing Store Authority NO-SEND
+on:
+  push:
+    branches:
+      - work/v177h4t-zalo-customer-boundary-nosend-20261118
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/v17-7h4t-*"
+      - "docs/ai-handoff/V17_7H4T_ZALO_CUSTOMER_CHANNEL_BOUNDARY_NO_SEND.md"
+      - ".github/workflows/v177h4t-zalo-customer-boundary-nosend.yml"
+permissions:
+  contents: read
+jobs:
+  zalo-customer-real-boundary-source-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test V17.7H.4T sanitized inbound, intentional OA shadow, offline registry joins
+        run: |
+          node --check qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.mjs
+          node --test qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.test.mjs
+      - name: Inherited V17.7H.4S existing Bot Store/Customer contract source regressions
+        run: |
+          node --test qa/v17-7a-oa-independent/v17-7h4s-trusted-store-crosschannel-readonly.test.mjs
+      - name: Check NO_SEND/NO_WRITE and source-only design
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {currentReleaseDecision,inspectProposedQaChannelJoin} from './qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.mjs';
+          const status=currentReleaseDecision();
+          assert.equal(status.status,'NO_GO');
+          assert.equal(status.canSendProvider,false);
+          assert.equal(status.canReadOrder,false);
+          assert.equal(status.canPromoteCore,false);
+          const x=inspectProposedQaChannelJoin({
+            nowMs:1795000000000,channelRows:[{channelType:'zalo_oa',enabled:false}],
+            installations:[],profiles:[]
+          });
+          assert.equal(x.reason,'ZALO_BOT_COMMERCE_CHANNEL_NOT_REGISTERED');
+          const src=readFileSync('qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.mjs','utf8');
+          for(const forbidden of [
+            /\bawait\s+fetch\s*\(/, /\bprocess\.env\b/,
+            /\b(createOrder|sendMessage|setWebhook|updateWorkflow|publishWorkflow|migrateSchema)\s*\(/
+          ])assert.equal(forbidden.test(src),false);
+          console.log('V17.7H.4T SOURCE QA: ZALO BOT IS NOT OA; REAL COMMERCE/PROVIDER NO-GO');
+          NODE
