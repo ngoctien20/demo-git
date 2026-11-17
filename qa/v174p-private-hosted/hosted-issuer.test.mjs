@@ -155,7 +155,8 @@ test('32 denies missing bearer',async()=>{
  assert.equal(r.status,401);
 });
 test('33 denies bad session signature',async()=>{
- const token=(await issue()).data.token;const r=await message(token.slice(0,-1)+'A',{event_id:'QA_MSG_0033'});
+ const token=(await issue()).data.token;const changed=token.slice(0,-1)+(token.endsWith('A')?'B':'A');
+ const r=await message(changed,{event_id:'QA_MSG_0033'});
  assert.equal(r.status,403);
 });
 test('34 session binds to Access subject',async()=>{
