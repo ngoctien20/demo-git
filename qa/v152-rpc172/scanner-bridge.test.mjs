@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {generateKeyPairSync,sign,createHash} from 'node:crypto';
+import {privateScannerPreflight,scannerHostedGate} from './scanner-bridge.mjs';
+const {publicKey,privateKey}=generateKeyPairSync('ed25519');
+const pub=publicKey.export({format:'pem',type:'spki'}),now=2000000000;
+const content=Buffer.from('%PDF-1.7\nqa only');
+const file={name:'qa.pdf',mime:'application/pdf',size:content.length,head:content.subarray(0,8),content};
+const base={file,tenant_id:'tenant-qa',store_id:'store-A',object_id:'object-qa-01',scanner_id:'scanner-qa',now,pinnedKeys:{S1:pub}};
+function signVerdict(v,override={}){const payload=Buffer.from(JSON.stringify({aud:'tien404-rpc171-offline-qa',digest:v.digest,exp:now+60,iat:now,object_id:v.object_id,scanner_id:v.scanner_id,status:'CLEAN',store_id:v.store_id,tenant_id:v.tenant_id,...override})).toString('base64url');return {kid:'S1',payload,signature:sign(null,Buffer.from(payload,'base64url'),privateKey).toString('base64url')}}
+test('test scanner signed CLEAN result never authorizes upload',async()=>{const x=await privateScannerPreflight({...base,scanOffline:async v=>signVerdict(v)});assert.equal(x.accepted,true);assert.equal(x.can_upload,false)});
+test('no scanner rejects',async()=>assert.equal((await privateScannerPreflight(base)).reason,'SCANNER_UNAVAILABLE'));
+test('scanner throw fails closed',async()=>assert.equal((await privateScannerPreflight({...base,scanOffline:async()=>{throw Error('scanner offline')}})).reason,'SCANNER_FAILURE'));
+test('scanner MALWARE verdict rejected',async()=>assert.equal((await privateScannerPreflight({...base,scanOffline:async v=>signVerdict(v,{status:'MALWARE'})})).accepted,false));
+test('scanner wrong hash rejected',async()=>assert.equal((await privateScannerPreflight({...base,scanOffline:async v=>signVerdict(v,{digest:'0'.repeat(64)})})).accepted,false));
+test('scanner wrong tenant rejected',async()=>assert.equal((await privateScannerPreflight({...base,scanOffline:async v=>signVerdict(v,{tenant_id:'tenant-B'})})).accepted,false));
+test('scanner forged receipt rejected',async()=>assert.equal((await privateScannerPreflight({...base,scanOffline:async()=>({kid:'S1',payload:'abc',signature:'def'})})).accepted,false));
+test('unsupported file rejected before scanner is called',async()=>{let called=false;const x=await privateScannerPreflight({...base,file:{...file,name:'malware.exe'},scanOffline:async()=>{called=true}});assert.equal(x.accepted,false);assert.equal(called,false)});
+test('file byte mismatch rejected before scanner',async()=>assert.equal((await privateScannerPreflight({...base,file:{...file,size:file.size+1},scanOffline:async v=>signVerdict(v)})).accepted,false));
+test('hosted scanner remains NO GO',()=>{const x=scannerHostedGate();assert.equal(x.can_upload,false);assert.equal(x.accepted,false)});

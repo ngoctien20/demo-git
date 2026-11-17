@@ -1,0 +1,44 @@
+name: TIEN404 RPC17.2 — LOCAL SQLite DO × Offline Scanner × NO HOST
+on:
+  push:
+    branches:
+      - work/v152-rpc172-local-sqlite-scanner-hosted-gate-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc172/**'
+      - 'docs/ai-handoff/T404_RPC172_*'
+      - '.github/workflows/v152-rpc172-local-sqlite-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  source-and-workerd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Miniflare test runtime into isolated QA folder
+        run: npm install --prefix qa/v152-rpc172 --no-save --ignore-scripts miniflare@3
+      - name: Validate source and 10 scanner negative tests
+        run: |
+          node --check qa/v152-rpc172/runtime/worker.mjs
+          node --check qa/v152-rpc172/scanner-bridge.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+      - name: Real local Workerd SQLite durable object tests
+        run: timeout 90s node --test qa/v152-rpc172/sqlite-runtime.test.mjs
+      - name: Inherited RPC17.1 - RPC13 regressions
+        run: |
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: No-host safety gate and no public ingress
+        run: |
+          node --input-type=module -e "import {scannerHostedGate} from './qa/v152-rpc172/scanner-bridge.mjs';if(scannerHostedGate().accepted||scannerHostedGate().can_upload)process.exit(1)"
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
