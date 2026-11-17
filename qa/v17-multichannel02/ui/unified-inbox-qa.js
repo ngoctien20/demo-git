@@ -1,5 +1,5 @@
 // TIEN404 V17.MULTI-CHANNEL-02 — browser-only synthetic Inbox.
-// All buttons simulate transitions in memory. No fetch/XHR/WS/localStorage,
+// All buttons simulate transitions in memory. No network calls or browser persistence,
 // provider calls, token/session handling, orders, or real staff authority.
 (() => {
  'use strict';
