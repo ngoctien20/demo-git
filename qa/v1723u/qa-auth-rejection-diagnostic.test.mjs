@@ -43,7 +43,7 @@ function env(db,diagMode='OWNER_SCOPED_AUTH_REJECTION_ONCE'){
  return {QA_CANARY_MODE:'OWNER_SCOPED_PRIVATE_NO_SEND_ONCE',QA_CALLBACK_PATH:route,
   QA_START_MS:String(now-30000),QA_END_MS:String(now+30000),
   QA_HEADER_SECRET:secret,QA_EVENT_PEPPER:pepper,QA_CHALLENGE:challenge,
-  QA_EVENT_DB:db,...(diagMode===undefined?{}:{QA_DIAG_MODE:diagMode})};
+  QA_EVENT_DB:db,...(diagMode===null?{}:{QA_DIAG_MODE:diagMode})};
 }
 function request({payload=valid,contentType='application/json',header=secret,body,
  url='https://test.invalid'+route,method='POST'}={}){
@@ -91,7 +91,7 @@ test('no diagnostic writes for missing/wrong header, incorrect path, inactive mo
 });
 test('diagnostics absent/disabled cannot change original fail-closed response or write D1',async()=>{
  const db=fakeDb();
- for(const diag of [undefined,'DISABLED','OWNER_SCOPE_WRONG']){
+ for(const diag of [null,'DISABLED','OWNER_SCOPE_WRONG']){
   const r=await handleDedicatedQaWebhook(request({payload:{...valid,event_name:'unknown'}}),env(db,diag),now);
   assert.equal(r.status,422);
  }
