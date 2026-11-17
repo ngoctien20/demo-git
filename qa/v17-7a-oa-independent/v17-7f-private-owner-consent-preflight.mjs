@@ -6,7 +6,6 @@
 const CASES=Object.freeze(['T1_PRODUCT_1','T1_ORDER_1','T2_PRODUCT_1','T2_ORDER_1']);
 const DIGEST=/^[a-f0-9]{64}$/;
 const SLOT=/^[A-Za-z][A-Za-z0-9_-]{7,95}$/;
-const EXTRA=/token|secret|cookie|password|jwt|authorization|signature|email|phone|address|name|file|base64|body|payload|credential|private|url|key|customer|owner_id|user_id|store_id|tenant_id/i;
 const STATUS=Object.freeze({
  sourceOnly:true,realMerchantAuthorized:false,realOwnerVerified:false,
  independentReviewerVerified:false,realStoreMembershipVerified:false,
@@ -36,7 +35,7 @@ export function inspectPrivateMerchantConsentPacket(packet,nowMs){
     packet.noUpload!==true||packet.noStoreRead!==true||packet.noSend!==true||
     packet.consentScope!=='FOUR_ORIGINAL_STORE_PROVENANCE_ONLY')
    return reject('PRIVATE_CONSENT_MODE_NOT_ESTABLISHED');
- if(Object.keys(packet).some(k=>!allowedTop.has(k)||EXTRA.test(k)))
+ if(Object.keys(packet).some(k=>!allowedTop.has(k)))
    return reject('RAW_IDENTITY_OR_UNTRUSTED_TOP_LEVEL_FIELD');
  if(!SLOT.test(packet.privateIntakeRef??'')||
     !DIGEST.test(packet.invitationDigest??'')||
@@ -52,7 +51,7 @@ export function inspectPrivateMerchantConsentPacket(packet,nowMs){
    return reject('FOUR_WITNESS_BINDINGS_MISSING');
  for(const witness of packet.witnesses){
    if(!witness||typeof witness!=='object'||Array.isArray(witness)||
-      Object.keys(witness).some(k=>!allowedWit.has(k)||EXTRA.test(k)))
+      Object.keys(witness).some(k=>!allowedWit.has(k)))
      return reject('PII_OR_UNKNOWN_WITNESS_FIELD');
    if(![witness.issuerDigest,witness.ownerSessionDigest,
      witness.reviewerSessionDigest,witness.originalSourceDigest].every(v=>DIGEST.test(v??'')))
