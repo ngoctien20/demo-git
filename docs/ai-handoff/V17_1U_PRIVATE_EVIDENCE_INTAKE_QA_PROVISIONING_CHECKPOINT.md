@@ -38,3 +38,19 @@ The only success result is `PRIVATE_QA_IDENTITY_PROVISIONING_REVIEW_ONLY` with `
 Only child Draft GitHub PR source/tests/CI/docs and the read-only aggregate Supabase queries. No Auth user or membership created, no RLS DDL, no n8n edit, no credentials, no private Merchant files, no provider sends, no Commerce writes, no payment actions, no cost approval. Rollback: close child Draft PR. Keep parent PR #318 and Published Messenger/Zalo intact.
 
 Supabase security context: https://supabase.com/docs/guides/auth/sessions and https://supabase.com/docs/guides/storage/security/access-control
+
+
+## 6. Independent security QA evidence — VERIFIED 2026-11-17 JST
+
+**Tested source SHA:** `d7c2a898025d1fd62f7498c6b34b5951f607dcda`.
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44077907625
+
+- Source job `134020603894` **SUCCESS**: **25/25 V17.1U** cryptographic private evidence/reference/scan/CDR/replay/cross-Store cases, **150/150 V17.1T** four-party signer and JWT checks, **855/855** inherited V17.1P–V17.1D security/Commerce regressions. **1030/1030 source PASS**.
+- Independent disposable PostgreSQL 17 job `134020603445` **SUCCESS**: fake same-Tenant Store A/B RLS with temporary records and explicit rollback; **NO REAL SUPABASE JWT, NO REAL COMMERCE ROW ACCESS**.
+- Real owner JWT/Meta/Zalo private evidence admission `134020985066` **FAILURE BY DESIGN**, blocked until protected real owner identities in two Stores same Tenant, private evidence enrollment/scanning and independently signed provider QA callbacks exist. Overall GitHub workflow deliberately RED for hosted admission.
+- Private evidence signing and review were tested with **ephemeral synthetic Ed25519 keys** and artificial registry records; no actual uploaded merchant file, real scan, approved real operator, owner identity or hosted protected storage was accessed.
+- V17.1U has **no HTTP listener, outbound fetch, DB/Auth operation, file read/write or secret import** and never provisions a user. Auth, membership, owner mappings, Pages/OAs, credentials, real orders, payment and customer messages remain untouched.
+- Manual source review confirms attestation signs not only file hash/version but also visibility, malware scan and CDR status, so changing those trust flags after signing invalidates the signature. This is not substitute for real malware scanning on a privately deployed worker.
+- This documentation-only update changes HEAD; verify final commit CI before final VERIFIED checkpoint.
+
+**Final release decision: SOURCE IMPLEMENTED / TESTED / REAL PRIVATE EVIDENCE UAT BLOCKED / PRODUCTION NO-GO.** Close this child Draft PR for rollback; no production restoration needed.
