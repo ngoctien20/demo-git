@@ -16,6 +16,13 @@ Five successful pre-existing manual executions: #3843, #3854, #3869, #3875 (2026
 
 **Interpretation:** n8n + connected Gateway reported valid existing Zalo Bot credential through a GETME-shaped read-only flow. We did NOT read the raw provider TLS response, actual Bot ID or Bot Token; therefore this is **Gateway-reported native-token validation**, NOT independently verified human Bot Creator ownership, not an independent pinned-provider native transcript, and not an accepted Bot→Store binding. No need to repeat the five requests merely to duplicate the same report. The PR #389 V17.7H.4U local getMe tool stays optional/inactive and must not be described as already used privately.
 
+## 1B. Read-only Cloudflare deployed Gateway provenance
+- Cloudflare account Worker script inventory confirms `tien404-zalo-outbound-v1-staging` exists, last modified 2026-11-15 19:59:57 UTC.
+- Cloudflare Worker deployment API identifies the latest inspected deployment `17b7106a-d66a-4e37-a18e-0d8ec97d6f78` dated 2026-11-15T20:04:08 UTC with **100% traffic** routed to version `3422864f-f095-45b9-85ca-a7d03cb87a3f`. This is deployment metadata, not a webhook callback or a new send.
+- Cloudflare read-only Worker content inspection found native Zalo Bot API host `bot-api.zaloplatforms.com`, outbound `fetch`, `getMe`, and gateway `bot_token_valid` flag deriving from `r.ok && j.ok===true`. The inspected code includes an upstream HTTPS fetch and response-success check; no token, binding values or raw script contents were exported.
+- **Interpretation upgraded:** existing n8n HTTP200 sanitized getMe outcomes are consistent with a deployed Worker containing real native provider-read code, rather than proof from mocks alone. The exact raw native response and one-to-one mapping between the currently pictured Bot Creator account, numeric Bot ID, Gateway credential and canonical Store were **not independently verified** in this audit. This does not change the Owner/Store release NO-GO.
+- Worker read-only GETs only. **No deployment, secret read, credential rotation, provider request, tail or production write** performed.
+
 ## 2. Real customer acceptance already observed — do not repeat
 - Customer QA `TIEN404 EXT 03` marker 2026-11-17 15:59:59 UTC:
   `v123_ext03_ingress=SEEN_AUTHENTICATED_WEBHOOK`, `v123_ext03_customer=CUSTOMER_ROUTE_ELIGIBLE`, `v123_ext03_route=CUSTOMER_ROUTE_ELIGIBLE`.
