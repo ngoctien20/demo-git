@@ -1,0 +1,55 @@
+{
+  "contract": "T404_V174P_HOSTED4B_OWNER_OPERATOR_SCOPED_ADMISSION_V1",
+  "scope": "INACTIVE_UPLOAD_ONLY_NO_PUBLIC_ROUTE",
+  "status": "BLOCKED_PENDING_PRIVATE_OWNER_SECURITY_AND_COST_APPROVAL",
+  "reviewed_parent_pr": 286,
+  "known_parent_sha": "103341cc547c0ba7b07d13243677877195e26edc",
+  "target_script": "tien404-v174p-private-qa-issuer",
+  "target_new_do": "V174PReplayGuard",
+  "max_http_requests_if_later_approved": 96,
+  "source_signature_process": "VERIFY_SHA256_AND_GIT_SHA_OUTSIDE_EDITABLE_JSON",
+  "independent_signers": {
+    "owner_key_id": null,
+    "security_reviewer_key_id": null,
+    "verified_out_of_band": false
+  },
+  "operators": {
+    "private_allowlist_verified": false,
+    "exact_user_identities": "COLLECT_ONLY_IN_PRIVATE_SIGNED_PORTAL"
+  },
+  "hostname": {
+    "approved_origin": null,
+    "public_route_allowed": false,
+    "workers_dev_allowed": false,
+    "preview_urls_allowed": false
+  },
+  "billing": {
+    "shared_account_risk_accepted": false,
+    "maximum_qa_usd": null,
+    "stored_do_data_cost_reviewed": false,
+    "modify_account_spend_limit": false
+  },
+  "security": {
+    "no_provider_send": true,
+    "no_real_commerce": true,
+    "no_external_model_calls": true,
+    "no_existing_v175_do_changes": true,
+    "no_credential_values_in_repo": true,
+    "rollback_operator_identified": false
+  },
+  "owner_approval": {
+    "signed_document_reference": null,
+    "approved_inactive_upload": false,
+    "approved_create_new_worker_and_do": false
+  },
+  "security_approval": {
+    "signed_document_reference": null,
+    "approved_inactive_upload": false
+  },
+  "operator_execution": {
+    "api_resource_mutations_permitted": false,
+    "live_cloudflare_uat_permitted": false,
+    "rollback_checked": false
+  },
+  "can_deploy": false
+}
