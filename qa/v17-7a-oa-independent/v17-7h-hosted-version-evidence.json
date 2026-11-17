@@ -15,13 +15,24 @@
     "no_workers_dev_requested": true,
     "no_bindings": true,
     "no_secrets": true,
-    "hosted_version_upload_verified": false,
-    "hosted_version_id": null,
-    "hosted_deployment_count_verified_zero": false,
-    "hosted_workers_dev_disabled_verified": false,
-    "hosted_previews_disabled_verified": false,
-    "hosted_route_count_verified_zero": false,
-    "scope_approved_for_real_events": false
+    "hosted_version_upload_verified": true,
+    "hosted_version_id": "c39b8e9d-2dfc-454d-b29d-40b495ff2043",
+    "hosted_deployment_count_verified_zero": true,
+    "hosted_workers_dev_disabled_verified": true,
+    "hosted_previews_disabled_verified": true,
+    "hosted_route_count_verified_zero": true,
+    "scope_approved_for_real_events": false,
+    "hosted_worker_id": "0265c4d1f3d64f9196eb7587b8f1a552",
+    "hosted_worker_registered": true,
+    "hosted_version_count": 1,
+    "hosted_deployment_count": 0,
+    "hosted_route_count": 0,
+    "hosted_custom_domain_count": 0,
+    "hosted_cron_count": 0,
+    "hosted_binding_count": 0,
+    "hosted_deployed_on": null,
+    "source_commit_at_upload": "3535ee2f0e212c846c547c171f0f1b545f6d341d",
+    "upload_operation": "Cloudflare Create Worker metadata with disabled subdomain then POST scripts/{name}/versions without deployment"
   },
   "existing": {
     "rpc16_private_merchant_worker_preserved": true,
@@ -58,13 +69,20 @@
     "independentEdgeDenyVerified": false,
     "hostedDurableReplayVerified": false,
     "hostedRateLimiterVerified": false,
-    "realCustomerMessagesUsed": false
+    "realCustomerMessagesUsed": false,
+    "inactive_worker_current_config_readback_verified": true,
+    "actual_worker_runtime_request_executed": false,
+    "external_access_denial_verified": false,
+    "real_provider_webhook_verified": false
   },
   "finance": {
     "new_paid_resources_created": false,
-    "incremental_cost_claimed": 0,
+    "incremental_cost_claimed": null,
     "zero_cost_guaranteed_by_provider": false,
-    "bounded_inactive_staging_only": true
+    "bounded_inactive_staging_only": true,
+    "new_inactive_worker_metadata_registered": true,
+    "new_worker_versions_uploaded": 1,
+    "current_usage_cost_verified": false
   },
   "release": "REAL_PROVIDER_HOSTED_UAT_NO_GO"
 }
