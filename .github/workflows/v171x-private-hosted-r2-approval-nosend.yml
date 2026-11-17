@@ -1,0 +1,299 @@
+name: TIEN404 V17.1X Private Hosted UAT and R2 Lifecycle Approval NO SEND
+on:
+  push:
+    branches:
+      - work/v171x-private-hosted-r2-lifecycle-auth-readiness-20261117
+  pull_request:
+    paths:
+      - 'qa/v171x-hosted-uat/**'
+      - 'qa/v171p-bot-security/**'
+      - 'docs/ai-handoff/V17_1X_*'
+      - '.github/workflows/v171x-private-hosted-r2-approval-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171x-hosted-approval-regression:
+    name: V17.1X 50 lifecycle/canary/Auth planning cases + 1132 inherited source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'V17.1X source-only external Access canary, scoped R2 lifecycle and Auth plan QA'
+        run: |
+          node -c qa/v171x-hosted-uat/hosted-uat-approval-plan.cjs
+          node --test qa/v171x-hosted-uat/hosted-uat-approval-plan.test.cjs
+      - name: 'V17.1X hosted gate and R2 deletion proposal stay NOT APPROVED'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          m=json.loads(Path('qa/v171x-hosted-uat/real-acceptance-state.json').read_text())
+          assert m['release']=='HOSTED_NO_GO' and m['sourceOnly'] is True
+          assert m['newSourceTestCases']==50 and m['inheritedSourceTestCases']==1132
+          assert m['productionReleaseApproved'] is False
+          assert m['hostedPrivateCanaryApproved'] is False
+          assert m['r2LifecycleChangeApproved'] is False
+          assert m['qaOwnerIdentityProvisioningApproved'] is False
+          for k,v in m['realHostedEvidence'].items():
+              assert v is False,k
+          for k in ('actualCloudflareWrites','actualR2Writes',
+                    'actualAuthUsersProvisioned','actualTenantOrStoreWrites',
+                    'actualN8nWrites','actualProviderSends','actualPaidActions'):
+              assert m[k]==0,k
+          assert m['proposedOnly']['proposedNewRuleInitiallyDisabled'] is True
+          assert m['proposedOnly']['zeroOldObjectsUnderPrefixVerified'] is False
+          assert m['verifiedReadOnly']['defaultAbortMultipartMaxAgeSeconds']==604800
+          assert m['verifiedReadOnly']['lifecycleObjectExpirationRuleCount']==0
+          src=Path('qa/v171x-hosted-uat/hosted-uat-approval-plan.cjs').read_text()
+          for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+                      r'\bchild_process\b',r'\bhttps?\.request\s*\(',r'\baxios\b'):
+              assert not re.search(bad,src),bad
+          assert 'PRIVATE_HOSTED_CANARY_AND_R2_APPROVAL_PLAN_ONLY' in src
+          assert 'allowR2Put:false' in src
+          assert 'allowAuthWrites:false' in src
+          print('V171X_SOURCE_ONLY_R2_APPROVAL_NO_SEND_HOSTED_NO_GO_PASS')
+          PY
+      - name: 'V17.1W independent private Worker R2 and two Owner gate regression'
+        run: |
+          node -c qa/v171w-private-worker-security/private-worker-security-gate.cjs
+          node --test qa/v171w-private-worker-security/private-worker-security-gate.test.cjs
+      - name: 'V17.1W real hosted inventory is not an authorization receipt'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          m=json.loads(Path('qa/v171w-private-worker-security/real-acceptance-state.json').read_text())
+          assert m['release']=='HOSTED_NO_GO' and m['sourceOnly'] is True
+          assert m['productionReleaseApproved'] is False
+          assert m['realHostedPrivateEvidenceAdmissionApproved'] is False
+          assert m['newSourceTestCases']==44 and m['inheritedSourceTestCases']==1088
+          for k,v in m['realHostedEvidence'].items():
+              assert v is False,k
+          for k in ('actualWorkerDeployments','actualAccessPolicyChanges',
+                    'actualR2SettingChanges','actualAuthUserProvisioning',
+                    'actualStoreMembershipChanges','actualCommerceWrites',
+                    'actualCustomerMessages','actualExtraSpendAuthorizedUsd'):
+              assert m[k]==0,k
+          assert m['readOnlyCloudflare']['r2DevelopmentPublicEnabled'] is False
+          assert m['readOnlyCloudflare']['independentExternalDenyProbePerformed'] is False
+          assert m['readOnlyCloudflare']['r2ObjectDeletionRetentionAttested'] is False
+          assert m['readOnlyCloudflare']['workerDurableReplayBindingAttested'] is False
+          source=Path('qa/v171w-private-worker-security/private-worker-security-gate.cjs').read_text()
+          for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
+                      r'\bhttps?\.request\s*\(',r'\baxios\b'):
+              assert not re.search(bad,source),bad
+          assert 'PRIVATE_WORKER_R2_AUTH_GAP_REVIEW_ONLY' in source
+          assert 'allowAuthProvision:false' in source and 'allowWorkerDeploy:false' in source
+          print('V171W_PRIVATE_WORKER_NO_SEND_SOURCE_VERIFIED_HOSTED_NO_GO_PASS')
+          PY
+      - name: 'V17.1V real Ed25519 signatures on FAKE private hosting and QA tenant design'
+        run: |
+          node -c qa/v171v-hosting-readiness/private-hosting-readiness.cjs
+          node --test qa/v171v-hosting-readiness/private-hosting-readiness.test.cjs
+      - name: 'V17.1V no-hosted-evidence release manifest and source denylist'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          m=json.loads(Path('qa/v171v-hosting-readiness/real-acceptance-state.json').read_text())
+          assert m['release']=='HOSTED_NO_GO' and m['sourceOnly'] is True
+          assert m['productionReleaseApproved'] is False
+          assert m['hostedDeploymentApproved'] is False
+          assert m['realQaIdentityProvisioningApproved'] is False
+          assert m['paidResourcesApproved'] is False
+          for k,v in m['realHostedProof'].items():
+              assert v is False,k
+          for k in ('actualCloudflareWorkersCreated','actualR2BucketsCreated',
+                    'actualAuthUsersCreated','actualTenantsOrStoresCreated',
+                    'actualMembershipChanges','actualCustomerRowsTouched',
+                    'actualProviderMessagesSent'):
+              assert m[k]==0,k
+          assert m['sourceReviewTestCases']==58 and m['inheritedSourceRegressionCases']==1030
+          source=Path('qa/v171v-hosting-readiness/private-hosting-readiness.cjs').read_text()
+          for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+                      r'\bchild_process\b',r'\bhttps?\.request\s*\(',r'\baxios\b'):
+              assert not re.search(bad,source),bad
+          assert "PRIVATE_INFRA_QA_TENANT_DESIGN_REVIEW_ONLY" in source
+          assert "allowAuthWrites:false" in source and "allowDeployment:false" in source
+          print('V171V_PRIVATE_HOSTING_DESIGN_SOURCE_ONLY_HOSTED_NO_GO_PASS')
+          PY
+      - name: 'V17.1U private evidence reference intake synthetic adversarial tests'
+        run: |
+          node -c qa/v171u-private-evidence/private-evidence-intake.cjs
+          node --test qa/v171u-private-evidence/private-evidence-intake.test.cjs
+      - name: 'V17.1U evidence source-only and real-hosted NO GO contract'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          m=json.loads(Path('qa/v171u-private-evidence/real-acceptance-state.json').read_text())
+          assert m['release']=='HOSTED_NO_GO' and m['sourceOnly'] is True
+          assert m['noEvidenceUploaded'] is True and m['noRealJwtImported'] is True
+          assert m['productionReleaseApproved'] is False and m['productionDeployment'] is False
+          for k,v in m['hostedRealEvidence'].items():
+              assert v is False,k
+          for k in ('realUsersProvisioned','realMembershipsChanged',
+                    'realDbRowsChanged','realProviderMessagesSent'):
+              assert m[k]==0,k
+          assert m['sourceIntakeTestCases']==25 and m['sourceInheritedTestCases']==1005
+          source=Path('qa/v171u-private-evidence/private-evidence-intake.cjs').read_text()
+          for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
+                      r'\bhttps?\.request\s*\(',r'\baxios\b'):
+              assert not re.search(bad,source),bad
+          assert 'planPrivateIdentityProvisioningReview' in source
+          assert 'identityProvisioningApproved:false' in source
+          print('V171U_SOURCE_ONLY_PRIVATE_EVIDENCE_NO_SEND_HOSTED_NO_GO_PASS')
+          PY
+      - name: 'V17.1T four-party cryptographic operator approval no-send regression'
+        run: |
+          node -c qa/v171t-private-uat/private-admission.cjs
+          node --test qa/v171t-private-uat/private-admission.test.cjs
+      - name: 'V17.1T validate real operator and owner proof remains NO-GO'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          m=json.loads(Path('qa/v171t-private-uat/real-acceptance-state.json').read_text())
+          assert m['release']=='HOSTED_NO_GO'
+          assert m['testedSourceOnly'] is True
+          assert m['productionReleaseApproved'] is False
+          assert m['roleOrMembershipMutationApproved'] is False
+          assert m['codeContainsRealCredentials'] is False
+          for k,v in m['realHostedEvidence'].items():
+              assert v is False,k
+          assert m['actualMessagesSent']==0 and m['actualCommerceReads']==0
+          assert m['actualAuthUsersCreated']==0 and m['actualOrdersWritten']==0
+          source=Path('qa/v171t-private-uat/private-admission.cjs').read_text()
+          for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
+                      r'\bhttps?\.request\s*\(',r'\baxios\b'):
+              assert not re.search(bad,source),bad
+          assert 'planOperatorAuthorizedTwoStoreAuth' in source
+          assert 'PRIVATE_TWO_STORE_NO_SEND_AUTH_ADMISSION' in source
+          assert 'PRIVATE_OPERATOR_TWO_OWNER_AUTH_SETUP_ONLY' in source
+          print('V171T_OPERATOR_SIGNED_AUTH_SOURCE_ONLY_HOSTED_NO_GO_PASS')
+          PY
+      - name: 'V17.1P replay exact n8n inactive Store Auth reader guard and mutations'
+        run: node --test qa/v171p-bot-security/v171p-n8n-reader.test.cjs
+      - name: 'Inherited V17.1O exact Published V17.17 source and Unicode 57 cases'
+        run: node --test qa/v171o-bot-security/v171o-source-regression.test.cjs
+      - name: 'Inherited V17.1N guarded Core and signed-shaped replay 57 cases'
+        run: node --test qa/v171n-bot-security/v171n-shadow.test.cjs
+      - name: 'Inherited V17.1M same-Tenant simulated Store A/B 48 cases'
+        run: node --test qa/v171m-bot-security/v171m-snapshot.test.cjs
+      - name: 'Inherited V17.1L forged tenant/tool authority and PII-free audit 120 cases'
+        run: |
+          node --test qa/v171l-bot-security/zero-trust-bot-boundary.test.cjs
+          node --test qa/v171l-bot-security/safe-audit-and-quota.test.cjs
+      - name: 'Install disposable-only raster decoder for inherited media suite'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('jpg') and features.check('webp')"
+      - name: 'Inherited V17.1K-S1 hostile media 67 cases'
+        run: |
+          python -m unittest discover -s qa/v171k-security -p 'test_*.py' -v
+          node --test qa/v171k-security/zero-trust-media-review.test.cjs
+      - name: 'Inherited V17.1K staff image proof 45 cases'
+        run: node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Inherited V17.1J merchant corpus and channel shadow 76 cases'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Inherited V17.1I image budget 82 cases'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1H raster 40 cases'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1G pinned DNS 40 cases'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Inherited V17.1F media registry 32 cases'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Inherited V17.1E Vision receipt 28 cases'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Inherited V17.1D PNG and customer challenge 52 cases'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Strict static safety contract - no actual Auth JWT/Provider or Commerce DB'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          p=Path('qa/v171p-bot-security/v171p-n8n-source-snapshot.json')
+          d=json.loads(p.read_text())
+          assert d['contract']=='T404_V171P_AUTH_STORE_COMMERCE_READER_SNAPSHOT_V1'
+          q=d['staging']
+          assert q['workflowId']=='p5OsIaB0NkMDFMw7'
+          assert q['workflowVersionId']=='dec4b734-ab6a-4cdc-b449-bf052b703118'
+          assert q['active'] is False and q['publishedVersionId'] is None
+          assert q['callerPolicy']=='none' and q['noCredentials'] and q['manualOnly']
+          assert q['expectedCases']==208 and q['expectedPassed']==208
+          assert q['expectedDenied']==196 and q['expectedSyntheticCatalogPlans']==8
+          assert q['expectedSyntheticOrderPlans']==4
+          assert len(q['nodes'])==5
+          assert {n['type'] for n in q['nodes']}=={'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
+          assert d['supabaseReadOnlyAsObserved']['sameTenantDistinctStoreOwnerPairs']==0
+          assert d['supabaseReadOnlyAsObserved']['tenantsWithTwoActiveSessionMembers']==0
+          assert d['supabaseReadOnlyAsObserved']['realTwoOwnerJwtAttested'] is False
+          assert d['providerAuthority']['realMetaSignedQaEventAttested'] is False
+          assert d['providerAuthority']['realZaloSignedQaEventAttested'] is False
+          for n in q['source']:
+            for regex in (r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+                          r'\bprocess\.env\b',r'\baxios\b',
+                          r'\bchild_process\b',r'\bpostgrest\b'):
+              assert not re.search(regex,n['code'],re.I),(n['name'],regex)
+          assert d['realOrdersRead']==0 and d['realOrdersWritten']==0
+          assert d['realCustomersRead']==0 and d['actualModelsCalled']==0
+          assert d['providerMessagesSent']==0
+          assert d['realCommerceReaderConnected'] is False and d['release']=='HOSTED_NO_GO'
+          print('V171P_SOURCE_ONLY_NO_DB_NO_PROVIDER_NO_JWT_AUTHENTICATION_CLAIMS_PASS')
+          PY
+  v171x-disposable-pg17-rls:
+    name: V17.1T disposable PG17 Store isolation rollback (not JWT)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_ci_only_password
+          POSTGRES_DB: t404_v171p_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171p_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Install disposable PostgreSQL client'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: 'Create synthetic authenticated ROLE only in throwaway CI container'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: psql -h localhost -U postgres -d t404_v171p_disposable -X -v ON_ERROR_STOP=1 -c "CREATE ROLE authenticated NOLOGIN;"
+      - name: 'Run saved Store A/B RLS and confirm rollback of temp table'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: |
+          psql -h localhost -U postgres -d t404_v171p_disposable -X -v ON_ERROR_STOP=1 -f qa/v171n-bot-security/disposable_pg17_store_rls_rollback.sql
+          test "$(psql -h localhost -U postgres -d t404_v171p_disposable -X -At -c "SELECT count(*) FROM pg_catalog.pg_class WHERE relname='t404_v171n_disposable_store_rls'")" = "0"
+          echo 'V171P_DISPOSABLE_PG17_ROW_ISOLATION_ROLLBACK_PASS_NO_REAL_JWT'
+  real-auth-page-oa-admission-no-go:
+    name: V17.1X Real External Access R2 Lifecycle and Owner JWT UAT NO GO
+    runs-on: ubuntu-24.04
+    needs: [v171x-hosted-approval-regression,v171x-disposable-pg17-rls]
+    timeout-minutes: 2
+    steps:
+      - name: 'Fail closed until independent Auth JWT, same-Tenant owners and Page OA signed canary'
+        run: |
+          echo "::error::V171X_NO_GO_REAL_ACCESS_R2_RETENTION_OWNER_JWT"
+          exit 3
