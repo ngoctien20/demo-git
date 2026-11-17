@@ -1,6 +1,6 @@
 # TIEN404 AI — RPC17.8A Exact Checkpoint
 
-**2026-11-17 JST — Source implementation, no Supabase migration, no real JWT UAT.**
+**2026-11-17 JST — SOURCE IMPLEMENTED / DISPOSABLE PG17 CI VERIFIED / NO SUPABASE MIGRATION / REAL JWT A/B NO-GO.**
 
 ## Parent and current state
 - Parent RPC17.8 Draft PR #353 baseline exact SHA `1d4cf92edc9482000481d5954033cdd373446ad9`.
@@ -15,6 +15,12 @@
 4. `.github/workflows/v152-rpc178a-private-schema-nohost.yml`: ephemeral PG17 and Node inherited RPC17.8–RPC13 source regression; **no hosted/cloud deploy or Supabase connector writes**.
 5. Independent approval runbook for real Store A/B setup, private UAT and restore.
 
+## CI and live scope readback verified
+- GitHub Actions RPC17.8A run #44092940482 on commit `de3ab203c224b77a3a1679ae86699f42fdd9fdf8`: SUCCESS; **502/502 Node tests PASS, 0 FAIL** (32 new RPC17.8A + 470 inherited) and isolated PostgreSQL 17 candidate DDL/12 logged acceptance confirmations for forced RLS, no policies/grants, authenticated SELECT denial and schema collision refusal.
+- This is a disposable PG17 service, NOT real Supabase schema permissions. Real service_role bypass behavior, schema exposure, snapshots and Auth JWTs not yet accepted.
+- After CI, read-only Supabase SELECT confirms `rpc178_qa` absent, no public Store/Store Membership tables and zero store_id columns in public Products/Orders.
+- Independent RPC10 GitHub workflow still reports failure outside this scope.
+
 ## Explicit blockers
 - No independently accepted owner/store authority, dedicated operator + reviewer with fresh MFA, prechange restore drill, signed exact DDL scope or real Auth A/B sessions.
 - The candidate schema is **private and unexposed**; real PostgREST JWT A/B cannot pass yet, intentionally.
@@ -26,4 +32,4 @@
 - Source rollback by closing this Draft PR; no hosted resources to delete and no data to restore.
 - Do not promote to CANDIDATE/APPROVED/RELEASED automatically.
 
-CHECKPOINT: RPC178A_SOURCE_ONLY · PRIVATE_SCHEMA_DDL_CANDIDATE · NO_ROLE_GRANTS · REAL_JWT_AB_NO_GO · SUPABASE_DDL_NO_GO · HOSTED_NO_GO
+CHECKPOINT: RPC178A_PR355 · CI_NODE_502_502_PG17_PRIVATE_SCHEMA_PASS · SUPABASE_STAGING_UNCHANGED · REAL_JWT_AB_NO_GO · SUPABASE_DDL_NO_GO · HOSTED_NO_GO
