@@ -85,7 +85,7 @@ const invalid=[
  ['invalid installation id','INGRESS_NATIVE',{installationId:'../../secret'}],
  ['invalid clock','INGRESS_NATIVE',{nowMs:'now'}],
  ['oversized signature header','INGRESS_NATIVE',{signatureHeader:'x'.repeat(500)}],
- ['different channel spoof','INGRESS_SIGNATURE',{channel:'ZALO'}],
+ ['different channel spoof','INGRESS_INSTALLATION',{channel:'ZALO'}],
  ['invalid signature','INGRESS_SIGNATURE',{signatureHeader:'sha256='+'0'.repeat(64)}]
 ];
 for(const [name,error,extra] of invalid)test('reject '+name,()=>{
