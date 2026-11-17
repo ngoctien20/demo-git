@@ -108,9 +108,12 @@ export function normalizeCompleteInventory(input,accountId=ACCOUNT,collectedAtMs
  const apps=values['/access/apps'];
  if(apps.some(a=>a?.destinations?.some(d=>d?.type==='all_workers')))
   errors.push('account_wide_worker_access_policy_review_required');
+ const targetIndex=workers.indexOf(TARGET);
+ const targetId=targetIndex>=0?workerIds[targetIndex]:null;
  if(scripts.includes(TARGET)||workers.includes(TARGET)||
     namespaces.some(x=>x.name?.includes(TARGET)||x.script===TARGET)||
-    apps.some(x=>x.name?.includes(TARGET)||x.destinations?.some(d=>d?.worker_id===workerIds[workers.indexOf(TARGET)])))
+    apps.some(x=>x.name?.includes(TARGET)||
+      (targetId!==null&&x.destinations?.some(d=>d?.worker_id===targetId))))
   errors.push('target_v174p_resource_already_exists');
  if(values['/workers/domains'].some(x=>x.name?.includes(TARGET)))
   errors.push('target_worker_domain_collision');
