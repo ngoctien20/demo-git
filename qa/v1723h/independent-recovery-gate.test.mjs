@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {recoveryAdmission} from './independent-recovery-gate.mjs';
+const cases=[{}, {ownerScope:'UNDECIDED'},{ownerScope:'FULL_SERVICE'},{localBackupDeferred:true},{requestedOperation:'APPLY_M1'},{requestedOperation:'SEND_ZALO'},{jwt:'x.y.z'},{refresh_token:'secret'},{service_role:'secret'},{credential:'secret'}];
+for(const [i,p] of cases.entries())test('fail closed '+i,()=>{const x=recoveryAdmission(p);assert.equal(x.status,'NO_GO');assert.equal(x.canMigrate,false);assert.equal(x.canSend,false);});
+test('all caller-provided flags cannot approve',()=>{const keys=['currentArchiveRestored','authRecoveryRestored','rolesAndAclVerified','storageAndSettingsCovered','independentOperatorVerified','independentReviewerVerified','fourRowOwnershipVerified','privateSignedRestoreReceiptVerified','issuerJwtAValidated','issuerJwtBValidated','sameTenantStoreABMembershipVerified'];const x=recoveryAdmission({ownerScope:'FULL_SERVICE',localBackupDeferred:false,evidence:Object.fromEntries(keys.map(k=>[k,true])),requestedOperation:'REVIEW_ONLY'});assert.equal(x.status,'NO_GO');assert.ok(x.reasonCodes.includes('INDEPENDENT_PRIVATE_RUNTIME_REQUIRED'));});
+test('secret value not reflected in verdict',()=>{const x=recoveryAdmission({jwt:'CANARY_UNIQUE_SECRET_123'});assert.ok(!JSON.stringify(x).includes('CANARY_UNIQUE_SECRET_123'));});
