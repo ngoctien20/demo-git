@@ -1,0 +1,96 @@
+name: TIEN404 RPC14 Private Evidence Hardening (SOURCE + DISPOSABLE PG17)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc14/**'
+      - 'docs/ai-handoff/T404_RPC14_*'
+      - '.github/workflows/v152-rpc14-private-evidence-hardening-nosend.yml'
+  push:
+    branches:
+      - work/v152-rpc14-evidence-durable-replay-quarantine-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc14-source:
+    name: Source-only body limit, dual identity, replay and reviewer checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC14 synthetic tests and inherited RPC13 regression
+        run: |
+          node --check qa/v152-rpc14/hardened-private-intake.mjs
+          node --check qa/v152-rpc14/scan-review-state.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+          bash -n qa/v152-rpc14/ci-pg17-invite-ledger-disposable.sh
+  rpc14-disposable-pg17:
+    name: Isolated PG17 atomic one-use receipt, rollback and concurrent replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc14_disposable_synthetic_only
+          POSTGRES_DB: t404_rpc14_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc14_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC14_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: t404_rpc14_ci
+      PGPASSWORD: rpc14_disposable_synthetic_only
+      PGOPTIONS: '-c tien404.rpc14_ephemeral=RPC14_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Strict PostgreSQL disposable database guard
+        run: |
+          bash -n qa/v152-rpc14/ci-pg17-invite-ledger-disposable.sh
+          grep -q 'RPC14_REFUSES_HOSTED_OR_NON_EPHEMERAL_DATABASE' qa/v152-rpc14/pg17-invite-ledger-disposable-only.sql
+          grep -q 't404_rpc14_ci' qa/v152-rpc14/ci-pg17-invite-ledger-disposable.sh
+      - name: Real Postgres 17 durable one-time receipt, collision and scan quarantine
+        run: |
+          bash qa/v152-rpc14/ci-pg17-invite-ledger-disposable.sh
+  rpc14-hosted-no-go:
+    name: Unenabled R2 and missing independent ownership must deny hosted deployment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Hard NO-GO even if supplied metadata is all green
+        run: |
+          node - <<'NODE'
+          const r=require('./qa/v152-rpc14/hosted-readiness.cjs').inspect(require('./qa/v152-rpc14/hosted-baseline-sanitized.json'));
+          if(r.status!=='RPC14_HOSTED_NO_GO'||r.canProvisionR2||r.canDeployUpload||r.canAcceptRealMerchantEvidence||r.canRunRealJwtUat||r.canRelease)throw Error('UNSAFE_HOSTED_GATE');
+          console.log('RPC14 HOSTED_NO_GO',r.blockers.length,'blockers');
+          NODE
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v152-rpc14')
+          sql=(root/'pg17-invite-ledger-disposable-only.sql').read_text()
+          assert 't404_rpc14_ci' in sql and 'RPC14_DISPOSABLE' in sql
+          effective='\n'.join(x for x in sql.splitlines() if not x.strip().startswith('--'))
+          for bad in (r'\bpublic\.',r'\bauth\.users\b',r'\bservice_role\b',r'\bcurl\b',r'\bwget\b'):
+              assert not re.search(bad,effective,re.I),bad
+          assert 'SECURITY DEFINER' in sql and 'REVOKE ALL ON FUNCTION' in sql
+          assert 'NOLOGIN NOSUPERUSER NOBYPASSRLS' in sql
+          print('PASS OFFLINE GUARDS: no live credentials, migration, channel send or real owner evidence')
+          PY
