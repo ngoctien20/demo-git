@@ -28,6 +28,11 @@ CREATE TABLE tien404_v172c10_disposable.qa_store_memberships (
   FOREIGN KEY (tenant_id,store_id)
     REFERENCES tien404_v172c10_disposable.qa_stores(tenant_id,store_id)
 );
+CREATE INDEX qa_store_memberships_user_active_idx
+ON tien404_v172c10_disposable.qa_store_memberships (user_id, active, tenant_id, store_id);
+-- This index supports the auth.uid()/active predicate used by read-only RLS.
+-- The composite PK begins with tenant_id and is not a substitute for user_id indexing.
+
 CREATE TABLE tien404_v172c10_disposable.qa_catalog (
   tenant_id uuid NOT NULL,
   store_id uuid NOT NULL,
