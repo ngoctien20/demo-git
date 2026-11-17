@@ -113,7 +113,7 @@ test('02 no packet blocks; no upload',()=>{
  assert.equal(r.decision,'BLOCKED');assert(r.reasons.length>=8);
 });
 test('03 forged owner signature fails',()=>reject(f=>{
- f.signatures.owner.signature='A'+f.signatures.owner.signature.slice(1);
+ f.signatures.owner.signature=(f.signatures.owner.signature[0]==='A'?'B':'A')+f.signatures.owner.signature.slice(1);
 },'five_independently_signed_phase_bound_attestations'));
 test('04 missing finance signature fails',()=>reject(f=>{
  delete f.signatures.finance;
@@ -215,7 +215,7 @@ test('32 QA Worker needs earlier independent ledger receipt',()=>reject(f=>{
 },'exact_prior_ledger_receipt_bound_to_new_inventory',false,PHASE_QA));
 test('33 QA Worker receipt invalid signature cannot be used',()=>reject(f=>{
  f.priorLedgerAcceptance.signature.signature=
- 'B'+f.priorLedgerAcceptance.signature.signature.slice(1);
+ (f.priorLedgerAcceptance.signature.signature[0]==='A'?'B':'A')+f.priorLedgerAcceptance.signature.signature.slice(1);
 },'private_independent_ledger_postflight_signature',false,PHASE_QA));
 test('34 QA Worker receipt with public exposure fails',()=>reject(f=>{
  f.priorLedgerAcceptance.receipt.no_public_route=false;
