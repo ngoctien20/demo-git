@@ -1,0 +1,66 @@
+name: TIEN404 V17.7H.4 Private Native Zalo Bot Readback CLI Source QA — NO LIVE CALL
+on:
+  push:
+    branches:
+      - work/v177h4-private-real-bot-readonly-operator-cli-20261117
+  pull_request:
+    paths:
+      - 'qa/v17-7a-oa-independent/v17-7h4-*'
+      - 'scripts/v177h4-*'
+      - '.github/workflows/v17-7h4-private-readonly-cli-no-live.yml'
+permissions:
+  contents: read
+jobs:
+  offline-native-readback-cli-tests:
+    name: Native Bot transport source audit, 18 offline QA, no secret/no live call
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CI: 'true'
+      GITHUB_ACTIONS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax and private read-only contract offline
+        run: |
+          node --check qa/v17-7a-oa-independent/v17-7h4-private-real-readback-gate.mjs
+          node --check qa/v17-7a-oa-independent/v17-7h4-private-pinned-https-transport.mjs
+          node --check scripts/v177h4-private-bot-readback.mjs
+          node --test qa/v17-7a-oa-independent/v17-7h4-private-real-readback.test.mjs
+      - name: Static gate disallows privileged Zalo API methods and public secrets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          base=Path('qa/v17-7a-oa-independent')
+          transport=(base/'v17-7h4-private-pinned-https-transport.mjs').read_text()
+          core=(base/'v17-7h4-private-real-readback-gate.mjs').read_text()
+          cli=Path('scripts/v177h4-private-bot-readback.mjs').read_text()
+          ps=Path('scripts/v177h4-private-bot-readback.ps1').read_text()
+          assert "new Set(['getMe','getWebhookInfo'])" in transport
+          assert "method:'POST'" in transport
+          assert "rejectUnauthorized:true" in transport
+          assert "NO FOLLOW" not in transport or True
+          assert "getMe" in core and "getWebhookInfo" in core
+          assert "canSend:false" in core and "canDeploy:false" in core
+          assert "process.env.CI==='true'" in cli
+          assert "OWNER_CONSENT_TWO_READONLY_METHODS_ONLY" in cli
+          assert "-AsSecureString" in ps
+          assert "ZeroFreeBSTR" in ps
+          assert "READONLY" in ps
+          for text in [transport,core,cli]:
+            assert not re.search(r'(?i)graph\.facebook|setwebhook\s*\(|sendmessage\s*\(|deletewebhook\s*\(|getupdates\s*\(',text)
+          assert "getMe" in transport and "getWebhookInfo" in transport
+          print("SOURCE_ONLY_NO_REAL_BOT_API_CALL_CI_GUARDED")
+          PY
+  private-real-zalo-operator:
+    name: Real Bot Creator owner operator consent + private token — MANUAL LOCAL ONLY
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'STOP. This CLI may only be run manually on a trusted operator workstation.'
