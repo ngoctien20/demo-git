@@ -57,3 +57,25 @@
 **Rollback:** close V17.1E Draft PR. No hosted restore required.
 
 **Next action:** independent merchant owner supplies a few **licensed product photos to a private authorized intake**, approves search/inference purpose separately from training; verify Page/OA owner authority and Store-RLS/backup with private operator; only then request bounded real model spending and no-send Page/OA UAT. No shortcuts from synthetic tests to real Commerce release.
+
+
+### 6. TESTED — direct GitHub Actions evidence, 17 November 2026 JST
+
+**Exact source acceptance commit:** `5b2fd7313d12d8c38267ba201c2036bf31264608`  
+**Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44002622715
+
+**SOURCE QA SUCCESS:**
+- Merchant corpus rights/Store/holdout/security cases **22/22 PASS**.
+- Offline Vision prediction/COST/billing gate cases **15/15 PASS**.
+- Meta/Zalo OA evidence and hosted Store/JWT/recovery admission cases **12/12 PASS**.
+- **New V17.1E total 49/49 PASS.**
+- Inherited: V17.1D media 22/22; two-step link 25/25; PNG→SKU→draft/confirmation→seeded Zalo QA lookup 5/5; V17.1C challenge 20/20 and numeric vector retrieval 19/19; V17 chatbot 33/33; V14.3 Channel 36/36; V14.7 Studio 36/36; V15.2 identity 14/14 = **210/210 PASS**.
+- **Aggregate 259/259 Node tests PASS** (all synthetic/local contracts). Static no-service-role/credentials/no direct network/paid-provider call/hosted SQL scan PASS.
+- Sanitized V17.2 historical media snapshot gate result: `corpusStatus=NOT_ADMISSIBLE`, `merchantPhotosObserved=0`, three QA fashion products inspected in Store A, `rightsProofVerified=false`, `modelBenchmarkCalls=0`, `paidProviderRunAllowed=false`, `realMetaZaloUatAllowed=false`, `hostedWorkflowChanges=0`, **24 separate account/Store/security UAT original-evidence blockers**.
+- **HOSTED / REAL UAT release job deliberately FAIL exit code 3** with `V171E_HOSTED_NO_GO_NO_MERCHANT_PHOTO_OR_RIGHTS_NO_REAL_MODEL_NO_META_ZALO_OA_PROOF_NO_STORE_RLS_NO_APPROVED_BUDGET`. Overall Actions FAILURE is correct release policy, not source test failure.
+
+**Corrected QA fixture:** Initial CI found two test-only regressions when reorganizing reference/holdout labels. Both were corrected in commit `5b2fd7313d12d8c38267ba201c2036bf31264608` and all 22 corpus cases subsequently passed. No hosted system was affected.
+
+**Definitive limitations:** No actual authorized merchant image was uploaded/processed. No actual paid or free semantic Vision provider inference was called. No real provider photos were benchmarked. Zero real Meta/Zalo OA Page authorities verified and zero live vendor messages sent. Source claim packets are not independent proof, and all-green self-report cannot release hosted. Independent M0 restore, four-row Owner Store mapping, actual hosted Store JWT-RLS and private actual Customer identity verification remain blocked.
+
+**Checkpoint classification:** `V171E_259_SOURCE_TESTED_REAL_MEDIA_MODEL_META_ZALO_UAT_HOSTED_NO_GO`. Rollback is closing Draft PR #253; no hosted database restoration or credential reversal required.
