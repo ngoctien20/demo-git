@@ -1,0 +1,17 @@
+{
+  "contract":"T404_RPC14_METADATA_ONLY_20261117",
+  "r2Enabled":false,
+  "dedicatedAccessApp":false,
+  "supabaseStorageBuckets":0,
+  "scannerDeployed":false,
+  "durableRegistry":false,
+  "signedFourRowEvidence":false,
+  "dualIndependentSignins":false,
+  "sameTenantTwoStores":false,
+  "realJwtUatPassed":false,
+  "fullRestoreVerified":false,
+  "commerceStoreColumns":0,
+  "products":2,
+  "orders":2,
+  "notes":"Sanitized read-only metadata. Cloudflare R2 GET 403 code 10042; no customer tokens, email, or row IDs."
+}
