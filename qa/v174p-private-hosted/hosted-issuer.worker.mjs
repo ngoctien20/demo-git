@@ -221,6 +221,10 @@ export class V174PReplayGuard {
   const exp=(Math.floor(now/60)+1)*60;
   const rateKey='r:'+String(exp).padStart(10,'0')+':'+kind;
   const eventKey=isMessage?'e:'+String(body.expires_at).padStart(10,'0')+':'+body.key:null;
+  // The event identity MUST NOT include caller-supplied expires_at. Otherwise
+  // a replay with the same authenticated key but a shifted expiry is "new".
+  // Retain an immutable identity index until the ORIGINAL event expires.
+  const identityKey=isMessage?'k:'+body.key:null;
   const limit=isSession?QA_RATE_POLICY.sessionPerMinute:QA_RATE_POLICY.messagePerMinute;
   try{
    const status=await storage.transaction(async txn=>{
@@ -229,10 +233,20 @@ export class V174PReplayGuard {
     if(count>=limit)return 'rate_limited';
     await txn.put(rateKey,count+1);
     if(isSession)return 'admitted';
+    const indexed=await txn.get(identityKey);
+    if(indexed!==undefined&&indexed!==null){
+     if(typeof indexed.fingerprint!=='string'||
+        !Number.isSafeInteger(indexed.expires_at))return 'storage_corrupt';
+     return indexed.fingerprint===body.fingerprint?'duplicate':'conflict';
+    }
     const prev=await txn.get(eventKey);
-    if(prev!==undefined&&prev!==null)
+    if(prev!==undefined&&prev!==null){
+     if(typeof prev.fingerprint!=='string')return 'storage_corrupt';
+     // Legacy event retention: do not re-claim its exact expiring key.
      return prev.fingerprint===body.fingerprint?'duplicate':'conflict';
+    }
     await txn.put(eventKey,{fingerprint:body.fingerprint});
+    await txn.put(identityKey,{fingerprint:body.fingerprint,expires_at:body.expires_at});
     return 'claimed';
    });
    if(status==='storage_corrupt')return reply({status:'DENY'},503);
@@ -247,7 +261,7 @@ export class V174PReplayGuard {
 
  async alarm(){
   const storage=this.state?.storage;
-  if(!storage?.list||!storage?.delete||!storage?.setAlarm)
+  if(!storage?.list||!storage?.delete||!storage?.setAlarm||!storage?.transaction)
    throw Error('DURABLE_STORAGE_NOT_AVAILABLE');
   const now=Date.now();
   let next=null,backlog=false;
@@ -258,7 +272,20 @@ export class V174PReplayGuard {
    for(const [key] of entries){
     const expiry=Number(key.slice(2,12))*1000+1000;
     if(!Number.isSafeInteger(expiry))continue; // malformed keys never created by this version
-    if(expiry<=now){await storage.delete(key);deleted++;}
+    if(expiry<=now){
+     if(prefix==='e:'){
+      const originalKey=key.slice(13);
+      // Delete the expiry-ordered event and its immutable identity index
+      // atomically. Never erase a newer identity whose expiry differs.
+      await storage.transaction(async txn=>{
+       const prior=await txn.get('k:'+originalKey);
+       await txn.delete(key);
+       if(prior?.expires_at===Number(key.slice(2,12)))
+        await txn.delete('k:'+originalKey);
+      });
+     }else await storage.delete(key);
+     deleted++;
+    }
     else {next=next===null?expiry:Math.min(next,expiry);break;}
    }
    if(deleted>=QA_RATE_POLICY.cleanupBatch)backlog=true;
