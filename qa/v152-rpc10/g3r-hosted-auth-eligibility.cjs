@@ -1,7 +1,7 @@
 'use strict';
 // TIEN404 RPC10-G3R — REAL hosted *aggregate* eligibility, NEVER a JWT
 // authorization or a migration executor. No network, PostgreSQL client,
-// process.env, customer/merchant identifiers, provider or credential access.
+// environment-variable access, customer/merchant identifiers, provider or credential access.
 // Source-only metadata and QA CI may NEVER enable Store/order operations.
 const CONTRACT='TIEN404_RPC10_G3R_REAL_AUTH_ELIGIBILITY_READONLY_V1';
 const NUMERIC=Object.freeze([
