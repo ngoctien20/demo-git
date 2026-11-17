@@ -23,7 +23,7 @@ for(const [label,patch] of [
  ['public subdomain',{workers_dev:true}],['preview links',{preview_urls:true}],['Access allow',{allow_policy_count:1}],
  ['real upload',{real_file_upload:true}],['outbound send',{outbound_send:true}]
 ])test('reject unsafe policy '+label,()=>{const r=inspectRealStoreAbReadiness(all,session,{...policy,...patch});check(r);assert.ok(r.missing.length>0)});
-test('strings cannot spoof independent verifications',()=>{const e=Object.fromEntries(REQUIRED.map(k=>[k:'true']));const r=inspectRealStoreAbReadiness(e,session,policy);check(r);assert.ok(r.missing.length>=REQUIRED.length)});
+test('strings cannot spoof independent verifications',()=>{const e=Object.fromEntries(REQUIRED.map(k=>[k,'true']));const r=inspectRealStoreAbReadiness(e,session,policy);check(r);assert.ok(r.missing.length>=REQUIRED.length)});
 test('null input fails closed',()=>check(inspectRealStoreAbReadiness(null,null,null)));
 test('safe trace strips secrets and private URLs',()=>{const t=safeUatTrace({case_id:'AB_01',stage:'AUTH',result:'BLOCKED',access_token:'secret-value',merchant_name:'private',raw_jwt:'ey...',reason:'MISSING_PROOF'});assert.deepEqual(t,{case_id:'AB_01',stage:'AUTH',result:'BLOCKED',reason:'MISSING_PROOF'})});
 test('unsafe trace values stripped',()=>{const t=safeUatTrace({case_id:'AB_02',stage:'https://example.com/?token=abc',result:'BLOCKED'});assert.equal(t.stage,undefined)});
