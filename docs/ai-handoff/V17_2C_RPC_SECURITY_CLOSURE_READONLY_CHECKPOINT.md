@@ -59,3 +59,22 @@ ORDER BY tablename,policyname;
 ## Acceptance decision
 
 **Current: SECURITY CLOSURE NO-GO.** Read-only audit is verified. No privileges were revoked, no function replaced, no migration applied, no live tests executed, no secrets or customer records accessed. Close this child Draft branch/PR to roll back source documentation only; runtime remains unchanged.
+
+
+## V17.2C.1 — 2026-11-18 JST read-only caller and ACL negative follow-up
+
+### Current checked scope
+- GitHub default-branch code search for each of the three exact RPC names returned zero matches. **This searches default branch only and is not proof of zero callers** on work branches or deployed Cloudflare Workers.
+- n8n exact draft/published graph inspection of Zalo V1 webhook `yIJk8LvJoLF40Z62` (active; draft/published same), V12.3 customer router `sIPs6egzIwOY1GNv` (active; draft/published same), and V17.1P Commerce Reader synthetic QA `p5OsIaB0NkMDFMw7` (inactive) found zero explicit RPC-name references, `/rest/v1/rpc` URLs, or Supabase calls in inspected workflow definitions. **Other workflows and external deploys remain unverified**.
+- Independent staging read-only ACL query via `pg_proc` + `aclexplode(coalesce(proacl,acldefault('f',proowner)))` verified **PUBLIC EXECUTE=false for all three**, exactly scoped `anon`/ `authenticated` rights as in prior checkpoint, and service_role explicit execute false. This is privilege metadata, not an HTTP 403 or real auth probe.
+- Added `qa/v172c-rpc-closure/privilege-negative-contract.test.cjs` and `.github/workflows/v172c1-rpc-privilege-negative.yml`. 18/18 local Node source contract assertions PASS, using captured metadata fixture; no actual RPC called. GitHub exact-HEAD Actions job was not returned at checkpoint creation; CI acceptance pending.
+- No negative HTTP request, JWT, trusted provider callback or hosted SQL-function invocation performed. No live credential or customer data accessed.
+
+### Compatibility decision
+Retain all three existing RPC grants temporarily; `qa_shop_b_zalo_claim` currently requires verified upstream Zalo/Cloudflare caller inventory, `qa_owner_pairing` requires real caller tracking, and `save_merchant_product` has only SELECT RLS on products (cannot swap to invoker without redesign). Do **not** interpret missing GitHub default search hits as deployed inactivity.
+
+### Next blockers for release
+Exact deployed Cloudflare Worker script/route caller scan; full GitHub work-branch caller inventory; targeted n8n Supabase-connected workflow inventory; independent no-send, no-mutation authenticated/unauthenticated HTTP tests in disposable staging; safely review how Vault header secret is delivered; test correct denial, replay, cross-store and revocation using real authorized QA identity. Real hosted security closure remains **NO-GO**.
+
+### Evidence
+PR #392, source-only local Node test 18/18 PASS; parent V17.2B PR #384; staging Supabase `ifxlvrhyjhbzbrkdsida`. No runtime rollback necessary.
