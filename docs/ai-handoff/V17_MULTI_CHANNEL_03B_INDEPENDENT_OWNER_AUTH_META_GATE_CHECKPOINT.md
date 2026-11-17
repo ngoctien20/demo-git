@@ -64,3 +64,36 @@ Run \`node --test qa/v17-multichannel03b/*.test.mjs\` plus inherited #308/#304/#
 **Rollback:** close child Draft PR. Nothing modified on Supabase, n8n, Cloudflare, Meta, merchant customers or production. Keep ancestors and parallel ownership PRs intact.
 
 Official references: https://supabase.com/docs/guides/auth/users ; https://supabase.com/docs/guides/database/postgres/row-level-security ; https://developers.facebook.com/docs/graph-api/reference/page/pass_thread_control/ ; https://developers.facebook.com/docs/graph-api/reference/page/release_thread_control/ .
+
+---
+
+## 5. RPC16 HOSTED INACTIVE CROSS-TRACK VERIFICATION — 2026-11-17 JST
+
+This is **new independent read-only Cloudflare connector evidence**, cross-checking the currently open [RPC16 PR #313](https://github.com/ngoctien20/demo-git/pull/313) at exact HEAD `59b455badc5890f87d1b379415ad39e54e29f22e` and its SUCCESS run [44066765977](https://github.com/ngoctien20/demo-git/actions/runs/44066765977). No new Worker, Access app, bucket, token, invoice or storage object has been created in V17.03B.
+
+| Existing Cloudflare resource | Verified current reading | Release interpretation |
+| --- | --- | --- |
+| R2 `tien404-merchant-evidence-quarantine-staging` | APAC / Standard; **0 objects** in current list | Private quarantine exists, no Merchant proof received |
+| R2 `r2.dev` | **DISABLED** | Do not enable public development URLs |
+| R2 custom domains | **ZERO** | No direct R2 public hostname |
+| Access `TIEN404 RPC16 Merchant Evidence Staging — DENY ALL` | App exists, **0 app policies** (no Allow/Bypass), hidden launcher, 15m session | Not an authenticated Merchant admission portal |
+| Worker `tien404-rpc16-merchant-evidence-inactive-staging` | Script exists; has **one** `R2_QUARANTINE` binding, disabled `workers.dev` subdomain | R2 binding is **not** an enabled upload path |
+| Worker code | Current Cloudflare script includes `INACTIVE_DENY_ALL_NO_SEND`, 404 response; no direct R2 PUT observed | Intentionally inactive; no real upload or scanner |
+| Account Worker Domains | **1 domain, none bound to RPC16 Worker** | No account-level custom Worker Domain |
+| Account zone routes | 1 visible Zone `ngoctien20.io.vn`, **0 Worker routes** | No Worker route on accessible Zone; no external browser canary attempted |
+
+**Do not infer too much:** No actual end-to-end external anonymous browser probe was performed because no public route is desired. No independent Cloudflare API token inventory was available. Access with zero policies is a **DENY ALL checkpoint**, NOT authentication plus admission. Public access must remain disabled. R2 object count was read through connector GET; no object key or byte was fetched.
+
+**Already built; DO NOT rebuild:** [RPC13 #285](https://github.com/ngoctien20/demo-git/pull/285) has the existing operator-only `qa/v152-rpc13/live-auth-uat.mjs` with an actual two-JWT remote Supabase `getUser` and six-surface PostgREST sentinel test. This is real network-capable source code, but **has not been executed with actual Store A/B identities** and cannot pass current canonical Store/RLS prerequisites. The runner must not be invoked with real tokens or configured with merchant materials before isolated operator approval. On Windows, the script currently skips POSIX mode bits; operators must separately verify restrictive **NTFS ACL**, local secret-file storage and secure deletion; no token may be pasted into ChatGPT/GitHub/CI.
+
+**Cross-team release sequence / exact handoff, not authorization:**
+
+1. **Merchant Owner / Security Reviewer:** independently identify and prove original Merchant/Owner of four legacy Products/Orders records (P1/P2/O1/O2) using primary sources, no files/URLs in chat/GitHub. Confirm lawful purpose, distinct same-Tenant Store A/B records, reviewer separation, correct consent and revocation. The encrypted private intake portal remains inactive; no upload invitation may be issued yet.
+2. **Privacy/Cloudflare Team:** keep RPC16 404/DENY ALL; approve separately the missing hosted scan/CDR, invitation/replay, quotas, retention, managed secrets, independent Access identity and restore before **any real intake**. A billing alert is not a spending cap.
+3. **DB/Recovery Team:** use existing [#290](https://github.com/ngoctien20/demo-git/pull/290), [#247](https://github.com/ngoctien20/demo-git/pull/247) and PRE-M1 recovery track; obtain complete independent restore evidence and separately approved Store/Staff schema + RLS before changing hosted database. Current real tenant-only RLS cannot isolate two Stores in the same Tenant.
+4. **Auth UAT Operator:** ONLY after (1)-(3), privately run pinned RPC13 operator tool with **two real independently logged-in users**, same Tenant, different Store, six approved QA sentinel pairs; verify positive own Store and negative cross-Store reads, staff revocation with fresh Auth. Log only anonymous counts and reviewer sign-off.
+5. **Meta Page Owner / Independent Reviewer:** reuse [#196](https://github.com/ngoctien20/demo-git/pull/196) and existing Meta [#243](https://github.com/ngoctien20/demo-git/pull/243)/[#269](https://github.com/ngoctien20/demo-git/pull/269) evidence. Verify separate QA App/Page and real Handover roles privately, then seek a **separate scoped** passive signed one-shot no-send callback authorization. **No Meta thread-control POST** under this source-only checkpoint.
+
+**Checkpoint result:** `RPC16_PRIVATE_BUCKET_VERIFIED · ACCESS_DENY_ALL · WORKER_404_INACTIVE · NO_PUBLIC_ROUTE_OBSERVED · REAL_MERCHANT_0_VERIFIED · SAME_TENANT_JWT_UAT_NO_GO · META_HANDOVER_NO_GO`.
+
+**Rollback:** V17.03B has no hosted change to roll back; close its Draft PR for source-only rollback. Do **not** delete, redeploy or change RPC16 Cloudflare resources as part of this track; those belong to separate PR #313 and require explicit owner/security approval.
