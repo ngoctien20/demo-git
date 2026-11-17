@@ -1,0 +1,29 @@
+name: TIEN404 V17.23S Dedicated QA Bot Isolated Once NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723s/**'
+      - '.github/workflows/v1723s-dedicated-zalo-qa-once-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa-receiver-candidate-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      ZALO_BOT_TOKEN: ""
+      QA_HEADER_SECRET: ""
+      QA_EVENT_PEPPER: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run inherited V17.23N O P Q R regression
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs qa/v1723o/v1723o.test.mjs qa/v1723p/synthetic-provider-canary.test.mjs qa/v1723q/private-provider-evidence.test.mjs qa/v1723r/provider-real-evidence-gate.test.mjs
+      - name: Verify standalone isolated QA receiver and one-row durable-DB interface
+        run: node --test qa/v1723s/isolated-qa-webhook.test.mjs
+      - name: Assert receiver is inert without private owner-approved config
+        run: |
+          node --input-type=module -e "import {handleDedicatedQaWebhook} from './qa/v1723s/isolated-qa-webhook.mjs';const r=await handleDedicatedQaWebhook(new Request('https://qa.invalid/qa/zalo-bot/DO_NOT_USE_FOR_REAL_PROVIDER_123',{method:'GET'}),{});if(r.status!==404)process.exit(1);console.log('V1723S_INERT_BY_DEFAULT_NEW_QA_BOT_NOT_ENROLLED_REAL_EVENT_NO_GO');"
