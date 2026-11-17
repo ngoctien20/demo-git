@@ -1,0 +1,83 @@
+name: TIEN404 G0.6 Signed Channel Store Commerce Inactive QA NO SEND
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-g06/**'
+      - 'docs/ai-handoff/T404_G06_*'
+      - '.github/workflows/v152-g06-signed-channel-commerce-nosend.yml'
+  push:
+    branches:
+      - work/v152-g06-signed-ingress-store-commerce-inactive-nosend-20261117
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g06-source-qa:
+    name: Node22 G0.6 signed-shape synthetic Store and Commerce QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate signed-shape QA source and 36-case fixture replay
+        run: |
+          node --check qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.js
+          node --check qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs
+          node --test qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs
+      - name: Inherited G0.4 G0.5 synthetic no-send QA
+        run: |
+          node --test qa/v152-g04/trusted-store-commerce-adapter.test.cjs \
+                      qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs
+      - name: Static deny outbound, credentials, hosted I/O and order writes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.js').read_text()
+          for text in (
+              'n8n-nodes-base.webhook',
+              'n8n-nodes-base.httpRequest',
+              'n8n-nodes-base.googleSheets',
+              'n8n-nodes-base.executeWorkflow',
+              'n8n-nodes-base.postgres',
+              'n8n-nodes-base.supabase',
+              '@n8n/n8n-nodes-langchain',
+              'newCredential(',
+              'process.env',
+              'sendMessage(',
+              'createOrder(',
+          ):
+              assert text not in p, text
+          assert p.count('n8n-nodes-base.manualTrigger') == 1
+          assert p.count('n8n-nodes-base.code') == 5
+          assert p.count('n8n-nodes-base.dataTable') == 2
+          assert p.count("operation:'get'") == 2
+          assert "QA_G06_FAKE_META_APP_SECRET_NEVER_PROD" in p
+          assert "QA_G06_FAKE_OA_HMAC_NON_NATIVE_ONLY" in p
+          assert "real_zalo_oa_signature_verified:false" in p
+          assert "release_status:'HOSTED_NO_GO'" in p
+          print('G06: manual only, HMAC/QA header, no credential or hosted I/O')
+          PY
+
+  g06-release-refused:
+    name: Real Page OA JWT Store Owner and hosted release refused (NO GO)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert candidate cannot be mistaken for real signed provider authority
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=fs.readFileSync('qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.js','utf8');
+          if(!x.includes("real_provider_authentication:false")||
+             !x.includes("real_owner_verified:false")||
+             !x.includes("hosted_rls_verified:false")||
+             !x.includes("can_publish:false"))
+            throw Error('FAIL_CLOSED_REAL_AUTHORITY_REQUIRED');
+          console.log('HOSTED NO GO: Real provider/Zalo OA, Store Owner, JWT/RLS and recovery not certified');
+          NODE
