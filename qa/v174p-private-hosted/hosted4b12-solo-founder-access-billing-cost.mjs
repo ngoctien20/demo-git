@@ -17,6 +17,7 @@ export const CONTRACT='T404_V174P_HOSTED4B12_SOLO_FOUNDER_ACCESS_BILLING_CANARY_
 export const PHASE='PRIVATE_CANARY_ADMISSION_REVIEW_NO_DEPLOY';
 export const ALLOWED_METHOD='GET_ONLY';
 const isObject=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const sha256=x=>createHash('sha256').update(x,'utf8').digest('hex');
 const hex=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 const sortedKeys=x=>isObject(x)?Object.keys(x).sort():[];
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -49,7 +50,7 @@ const decodePart=(seg,max)=>{
  * must not be mistaken for independent Cloudflare trust roots.
  */
 export function verifySyntheticPinnedAccessJwt({
- token,pinnedIssuer,pinnedAudience,pinnedFounderSubject,pinnedJwk,nowSeconds
+ token,pinnedIssuer,pinnedAudience,pinnedFounderSubjectHash,pinnedJwk,nowSeconds
 }={}){
  const base=()=>({signature_math_verified:false,live_access_verified:false,
    real_phishing_resistant_mfa_verified:false,can_authorize_spend:false,
@@ -57,7 +58,7 @@ export function verifySyntheticPinnedAccessJwt({
  const deny=code=>Object.freeze({...base(),code});
  if(typeof token!=='string'||token.length>8192||token.split('.').length!==3||
   typeof pinnedIssuer!=='string'||!/^https:\/\/[a-z0-9.-]+\.cloudflareaccess\.com$/.test(pinnedIssuer)||
-  !forbiddenOpaque(pinnedAudience)||!hex(pinnedFounderSubject)||
+  !forbiddenOpaque(pinnedAudience)||!hex(pinnedFounderSubjectHash)||
   !Number.isSafeInteger(nowSeconds)||!isObject(pinnedJwk)||
   pinnedJwk.kty!=='RSA'||pinnedJwk.alg!=='RS256'||
   pinnedJwk.use!=='sig'||typeof pinnedJwk.kid!=='string'||!forbiddenOpaque(pinnedJwk.kid)||
@@ -71,7 +72,8 @@ export function verifySyntheticPinnedAccessJwt({
  const audValid=typeof claims?.aud==='string'?claims.aud===pinnedAudience:
   Array.isArray(claims?.aud)&&claims.aud.length===1&&claims.aud[0]===pinnedAudience;
  if(!isObject(claims)||claims.iss!==pinnedIssuer||!audValid||
-   !hex(claims.sub)||claims.sub!==pinnedFounderSubject||
+   typeof claims.sub!=='string'||claims.sub.length<8||claims.sub.length>256||
+   sha256(claims.sub)!==pinnedFounderSubjectHash||
    !Number.isSafeInteger(claims.exp)||!Number.isSafeInteger(claims.iat)||
    !Number.isSafeInteger(claims.nbf)||claims.exp<=nowSeconds||
    claims.nbf>nowSeconds||claims.iat>nowSeconds||
