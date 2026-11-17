@@ -1,0 +1,29 @@
+{
+  "contract": "T404_V174P_HOSTED4_OWNER_AUTHORIZATION_TEMPLATE_V1",
+  "date_jst": "2026-11-17",
+  "status": "UNSIGNED_UNAPPROVED_NO_DEPLOY",
+  "approval_packet": null,
+  "signatures": {
+    "owner": null,
+    "security": null
+  },
+  "trust_anchors": {
+    "owner": "EXTERNALLY_PROVISIONED_ONLY_NOT_IN_GITHUB",
+    "security": "EXTERNALLY_PROVISIONED_ONLY_NOT_IN_GITHUB"
+  },
+  "private_operator_emails": "NOT_COLLECTED_IN_GITHUB",
+  "required_phase": "INACTIVE_UPLOAD_ONLY",
+  "required_worker": "tien404-v174p-private-qa-issuer",
+  "required_do_class": "V174PReplayGuard",
+  "required_access": "WORKER_ALL_TRAFFIC_EXACT_OPERATOR_ALLOWLIST",
+  "max_requests_per_probe": 96,
+  "qa_budget_usd": "OWNER_APPROVAL_REQUIRED",
+  "rollback": "ONLY QA_WORKER_DONOT_TOUCH_V175E_2",
+  "target_host": "PENDING_APPROVED_DEDICATED_PRIVATE_QA_HOST",
+  "host_canary": "NOT_RUN",
+  "billing_review": "NOT_VERIFIED",
+  "real_commerce_allowed": false,
+  "account_wide_spend_limit_change_allowed": false,
+  "can_deploy": false,
+  "no_resource_deploy_by_this_template": true
+}
