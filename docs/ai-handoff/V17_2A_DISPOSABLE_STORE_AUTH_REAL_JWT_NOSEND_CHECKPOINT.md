@@ -67,3 +67,14 @@ Supabase docs: https://supabase.com/docs/guides/auth/sessions ; https://supabase
 **Actual work:** GitHub child Draft PR source/tests/docs/workflow only. ZERO staging Auth users/roles, Tenant/Store memberships, public views, RLS, real JWTs, credentials, Cloudflare, n8n workflows, Messenger/Zalo sends, real orders/payments or paid resources created or changed.
 
 **Approval needed:** explicitly authorized disposable Tenant and two QA users; backup/rollback evidence; reviewer-approved QA Store schema and public invoker view; private getClaims/session registry + end-user JWT PostgREST no-send reader. This code alone is not real UAT consent.
+
+
+## 7. Supabase 2026 Data API exposure gate — independently reviewed
+
+Supabase's published 2026 breaking-change notes state that **new public schema objects may no longer be exposed automatically through the Data API**, with the opt-in behavior applying to existing projects by October 30, 2026. Do not assume CREATE VIEW and GRANT SELECT prove PostgREST recognizes the new public QA view. A separate admin-controlled Data API exposure check and independent deny/allow HTTP verification is required before any genuine JWT UAT; this might need a per-object opt-in or permission setting in the Supabase project.
+
+The migration candidate **does not** try to change project-wide Data API settings or expose additional schemas. In particular do not expose the entire private tien404_v172a_qa schema merely to make the test pass. If the project cannot safely expose this exact public view, choose a protected narrow read-only gateway design and test the caller's RLS separately, never bypass with service_role.
+
+Source: https://supabase.com/changelog?types=breaking-change (Data API exposure change; verify current account setting) and https://supabase.com/docs/guides/api/securing-your-api (grants vs RLS).
+
+Additional NO-GO gate: project-specific public view exposure + authenticated-only permissions + real HTTP response proof has NOT been verified. This remains a separate explicit approval alongside migrations and two disposable QA Auth identities.
