@@ -54,3 +54,35 @@ qa/v171l-bot-security/safe-audit-and-quota.cjs:
 New V17.1L deterministic signed fixture, forged scope, replay, rate, tool injection, Store IDOR, price/confirmation, prompt injection, audit and quota tests. Inherit 462 previously verified V17.1K-S1 through V17.1D cases. Only count new tests after CI. Hosted release intentionally RED until independent evidence.
 No production send, payment, data write, credential change, workflow publish or repo merge.
 Rollback: close child Draft PR, parent #270 untouched and no hosted restore needed.
+
+
+## 6. VERIFIED acceptance evidence — 2026-11-17 JST
+
+### GitHub source QA
+- Tested source HEAD: d4ad1e83e98daf59db88af840c58a15cec1e033e.
+- Actions run: https://github.com/ngoctien20/demo-git/actions/runs/44017293984
+- Source QA job 133818168320 SUCCESS: 103/103 signed ingress / forged trust / replay / tool boundary / prompt-injection tests PASS; 17/17 PII-free security audit and quota tests PASS. New source tests **120/120 PASS**.
+- Inherited source regression **462/462 PASS** (31+36 V17.1K-S1; 45 V17.1K; 40+36 V17.1J; 82 V17.1I; 40 V17.1H; 40 V17.1G; 32 V17.1F; 28 V17.1E; 22+25+5 V17.1D).
+- Total **582/582 OFFLINE PASS**. Static guard NO_MODEL_NO_SEND_NO_DB_WRITE passed. An initial run of 103 tests had 102 PASS/1 bad test expectation: cross-channel spoof was denied at trusted installation before native signature, not at signature; test assertion was fixed, security guard remained fail-closed.
+- Hosted release gate job 133818356867 FAILURE intentionally. Overall GitHub workflow shows FAILURE due NO-GO release policy, not source QA failure.
+
+### Real n8n QA execution evidence — manual read-only
+- G06 FqEcdmc8PRRMNUEb execution **4486** SUCCESS. Final assertion: G06_SIGNED_SHAPED_QA_36_OF_36_PASS; 36/36 synthetic cases passed, 28 denied, status HOSTED_NO_GO.
+- G07 mmt3ToandWrLAcjH execution **4487** SUCCESS. Final assertion: G07_PRIVATE_REVIEW_20_OF_20_REAL_ADMISSION_DENIED; 20/20 attempted real admissions denied per QA contract, status REAL_SIGNED_NO_SEND_ADMISSION_BLOCKED.
+- Before test, both inactive/manual QA workflow graphs were verified to contain manual trigger, local Code nodes and DataTable GET only (no writes, API sends or order tools).
+- User's n8n preference was read: keep AI_SALES_DEMO data/credentials separate from Commerce and do not disturb Published. Honored: no workflow definitions, credentials, data tables, Google Sheets or production data were changed. Only QA execution history was added.
+
+### Live n8n drift discovered during audit
+- Live Messenger TEST Z7FdV7uDvApfbURQ originally inspected at version ff7a57d2-519a-4283-933c-37a854df92d2 (28 nodes). A later read-only inspection found version 2b869035-fe39-46fb-a253-18fefe4ecbfd (32 nodes), including new V17.15 Core route, PII stripping and reply safety nodes. This V17.1L branch did NOT author those concurrent live changes. Preserve them and reconcile current graph/owner before any merge or cutover; the new nodes have NOT been verified as a complete independent Store-level tool authorization.
+- Historical Messenger execution 4429 ERROR on 2026-11-17 at 03:54:04 UTC; only execution metadata checked. Security exploit/root cause NOT established.
+
+### Remaining blockers
+**Lifecycle:** IMPLEMENTED SOURCE / OFFLINE TESTED / N8N G06-G07 QA TESTED / REAL MESSENGER-ZALO-COMMERCE RELEASE NO-GO.
+- No independent real Meta Page/Zalo OA native signature/installation owner or hosted store JWT/RLS accepted; no real OrderAccessGrant cross-channel customer identity proof.
+- No mandatory server-side tool authorizer installed before live Messenger order/send tools. Atomic replay/rate/budget adapters, independent RLS, safe image scanner/bucket are not accepted in real hosting.
+- Prompt injection tests validate deterministic tool boundaries with synthetic input. They do NOT prove actual live LLM refusal, live behavior or semantic image safety. Real LLM adversarial tests are separate.
+- No real customer message was sent, no order/stock/price/customer data changed, no credential modified.
+
+Rollback: close child Draft PR #274; parent #270 and all hosted data unchanged. No restore required.
+
+Documentation-only checkpoint update needs final HEAD GitHub Actions confirmation.
