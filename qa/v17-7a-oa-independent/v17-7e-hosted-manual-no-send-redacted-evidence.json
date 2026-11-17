@@ -1,0 +1,57 @@
+{
+  "contract": "TIEN404_V17_7E_HOSTED_MANUAL_12_CASES_REDACTED_PROOF",
+  "captured_date": "2026-11-17 JST",
+  "provider_uat": false,
+  "environment": "n8n Cloud existing Personal / 90_QA - DIAGNOSTICS",
+  "workflow_id": "MQcbjLWZ5QUTJW0k",
+  "workflow_version": "b8aaf94c-def1-472c-bd92-fccea1d946b8",
+  "workflow_name": "TIEN404_V177E_MANUAL_CHANNEL_STORE_QA_INACTIVE_NO_SEND",
+  "active": false,
+  "published_version": null,
+  "trigger": "MANUAL_ONLY",
+  "nodes": [
+    "Manual QA Gate",
+    "Offline Store Channel Gate No Send"
+  ],
+  "node_types": [
+    "n8n-nodes-base.manualTrigger",
+    "n8n-nodes-base.code"
+  ],
+  "node_count": 2,
+  "provider_network_nodes": 0,
+  "webhook_nodes": 0,
+  "database_nodes": 0,
+  "http_nodes": 0,
+  "credentials_attached": 0,
+  "qa_execution_id": "5026",
+  "qa_execution_mode": "manual",
+  "qa_execution_status": "success",
+  "qa_cases_passed": 12,
+  "qa_cases_total": 12,
+  "qa_cases_failed": 0,
+  "original_hosted_result_contract": "TIEN404_V17_7E_MANUAL_FIXTURE_12_CASES",
+  "zero_side_effect_result": {
+    "provider_events_received": 0,
+    "provider_sends": 0,
+    "commerce_reads": 0,
+    "commerce_writes": 0,
+    "orders_written": 0,
+    "stock_written": 0,
+    "model_calls": 0
+  },
+  "source_of_evidence": "direct connected n8n workflow metadata and execution readback",
+  "independently_verified_native_provider": false,
+  "real_owner_proof": false,
+  "real_same_tenant_store_ab_jwt": false,
+  "cloudflare_access_private_ingress_verified": false,
+  "release_status": "NO_GO",
+  "parent_pr": 330,
+  "canonical_store_workstream_pr": 247,
+  "public_test_data_only": true,
+  "notes": [
+    "Connected n8n manual execution proves a fixture runtime test, not an actual Meta/Zalo provider event",
+    "All owner, provider and Store JWT authority fields remain false",
+    "The QA workflow was created in personal QA folder and remains inactive",
+    "No production workflow, Commerce, OAuth, Cloudflare Worker or credentials were changed"
+  ]
+}
