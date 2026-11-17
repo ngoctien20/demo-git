@@ -1,0 +1,67 @@
+name: TIEN404 V18.0-P0M — Auth Staging Evidence Page Admission
+on:
+  push:
+    branches:
+      - work/supabase-auth-staging-v1
+    paths:
+      - 'auth-evidence.html'
+      - 'assets/private-auth-evidence-*.mjs'
+      - 'scripts/build-auth-preview.mjs'
+      - 'tests/v180-p0m-auth-evidence.test.mjs'
+      - '.github/workflows/v180-p0m-auth-evidence-staging.yml'
+  pull_request:
+    paths:
+      - 'auth-evidence.html'
+      - 'assets/private-auth-evidence-*.mjs'
+      - 'scripts/build-auth-preview.mjs'
+      - 'tests/v180-p0m-auth-evidence.test.mjs'
+      - '.github/workflows/v180-p0m-auth-evidence-staging.yml'
+permissions:
+  contents: read
+jobs:
+  exact-static-build-and-read-only-auth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact commit and parent for surgical diff verification
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 2
+      - name: Block changes to existing Auth/Commerce entrypoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$(git rev-parse HEAD^)"
+          test -z "$(git diff --name-only HEAD^ HEAD -- login.html account.html merchant-portal.html assets/auth-client.js assets/auth-login.js assets/auth-account.js assets/auth-config.js)"
+          git diff --name-only HEAD^ HEAD | while IFS= read -r f; do
+            case "$f" in
+              auth-evidence.html|assets/private-auth-evidence-core.mjs|assets/private-auth-evidence-ui.mjs|scripts/build-auth-preview.mjs|tests/v180-p0m-auth-evidence.test.mjs|.github/workflows/v180-p0m-auth-evidence-staging.yml) ;;
+              *) echo "Unexpected staging source change: $f"; exit 1;;
+            esac
+          done
+      - name: Verify Auth claims, tenant RLS, consent and no provider send
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/private-auth-evidence-core.mjs
+          node --check assets/private-auth-evidence-ui.mjs
+          node --test tests/v180-p0m-auth-evidence.test.mjs
+      - name: Build real Render static publish path and verify non-regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-auth-preview.mjs
+          test -s auth-preview-dist/auth-evidence.html
+          test -s auth-preview-dist/assets/private-auth-evidence-core.mjs
+          test -s auth-preview-dist/assets/private-auth-evidence-ui.mjs
+          cmp -s assets/auth-account.js auth-preview-dist/assets/auth-account.js
+          cmp -s assets/auth-client.js auth-preview-dist/assets/auth-client.js
+          grep -Fq 'id="account-status"' auth-preview-dist/account.html
+          grep -Fq 'signInWithPassword' auth-preview-dist/assets/auth-login.js
+          grep -Fq 'noindex,nofollow' auth-preview-dist/auth-evidence.html
+          grep -Fq 'id="consent"' auth-preview-dist/auth-evidence.html
+          grep -Fq 'id="check"' auth-preview-dist/auth-evidence.html
+          ! grep -Eqi 'service_role|private_key|refresh_token' auth-preview-dist/assets/private-auth-evidence-core.mjs
+      - name: Explicit hosted release gate
+        run: |
+          printf '%s\n' 'STAGING_SOURCE_CHECKED; NO_RENDER_DEPLOY_FROM_THIS_CI; NO_SUPABASE_MUTATION; NO_RAW_JWT; NO_PROVIDER_SEND; CANONICAL_STORE_AUTH_NO_GO'

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>TIEN404 QA · Kiểm tra phiên Auth chỉ-đọc</title>
+<style>
+:root{color-scheme:dark;font:16px/1.55 system-ui,sans-serif;background:#0b1020;color:#edf3ff}
+*{box-sizing:border-box}body{margin:0;padding:20px}
+main{max-width:680px;margin:30px auto}
+h1{font-size:clamp(1.55rem,5vw,2.25rem);line-height:1.2}
+p{color:#c7d3e8} .box{padding:22px;border:1px solid #364664;border-radius:16px;background:#141d30}
+label{display:block;margin-top:18px;font-weight:600}
+input[type=text]{width:100%;font:inherit;color:inherit;background:#0b1020;border:1px solid #64748b;border-radius:9px;padding:13px}
+input[type=checkbox]{width:19px;height:19px;vertical-align:middle}
+button{margin-top:17px;font:inherit;font-weight:650;min-height:48px;padding:11px 18px;border:0;border-radius:9px;color:#091423;background:#a8d8ff;cursor:pointer}
+button[disabled]{opacity:.6;cursor:wait}
+code,output{overflow-wrap:anywhere}
+.code{display:block;padding:12px;color:#cde8ff;background:#071020;border:1px solid #34445c;border-radius:8px;font:13px/1.6 ui-monospace,monospace}
+.warn{border-left:3px solid #e8b86e;padding-left:14px}
+small{display:block;margin-top:10px;color:#a8b7cf}
+</style>
+</head>
+<body><main>
+<p>TIEN404 / PRIVATE QA / STAGING ONLY — KHÔNG CẤP QUYỀN STORE</p>
+<h1>Kiểm tra hai phiên Auth</h1>
+<p>Trang này chỉ dùng cho tài khoản QA staging đã đăng nhập và được phép kiểm tra. Không đặt đơn, không gửi Messenger/Zalo, không thay đổi dữ liệu.</p>
+<div class="box">
+<p class="warn">Chạy riêng trong hai hồ sơ trình duyệt A/B tại cùng tên miền Auth staging sau khi xác minh đang ở đúng tên miền Auth staging. Không sử dụng bản sao trên website khác.</p>
+<label for="nonce">Mã đối chiếu tạm thời</label>
+<input id="nonce" type="text" maxlength="36" autocomplete="off" spellcheck="false" placeholder="Để trống ở A; nhập mã từ A vào B">
+<small>Ở A, để trống để tạo mã mới. Ở B, nhập đúng mã A. Chỉ so sánh trên máy; không gửi mã hay kết quả vào chat.</small>
+<label for="consent"><input type="checkbox" id="consent"> Tôi là người được phép dùng phiên QA này và chỉ đồng ý kiểm tra đọc.</label>
+<button id="check" type="button">Kiểm tra tài khoản QA</button>
+<p id="status" role="status" aria-live="polite">Chưa thực hiện</p>
+<div id="result" hidden>
+<p>Mã đối chiếu dùng chung:</p><output id="nonce-output" class="code"></output>
+<p>Dấu phiên tài khoản (hai tài khoản phải khác nhau):</p><output id="actor-code" class="code"></output>
+<p>Dấu tenant owner (hai bên phải có ít nhất một mã giống nhau):</p><output id="tenant-codes" class="code"></output>
+</div>
+</div>
+<p class="warn">Kết quả chỉ là kiểm tra cục bộ từ trình duyệt. Chưa chứng minh phiên server không bị thu hồi, chưa có Store Authority A/B và không cấp quyền production.</p>
+<script type="module" src="/assets/private-auth-evidence-ui.mjs"></script>
+</main></body></html>
