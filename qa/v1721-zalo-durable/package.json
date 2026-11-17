@@ -1,0 +1,15 @@
+{
+  "name": "tien404-v1721-local-durable-qa",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Local-only Cloudflare Workerd QA; do not deploy",
+  "scripts": {
+    "test": "vitest run --config vitest.config.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.0.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,8 @@
+const e=$('Bind Trusted Staging Bot Identity V12.3').first()?.json||{};
+if(e.stage!=='READ_ONLY'||e.accepted!==true||e.text!=='TIEN404 EXT 03')return [];
+const result=$input.first()?.json||{};
+const ok=result.status==='PUBLIC_CUSTOMER_EVENT_ACCEPTED'&&result.route==='CUSTOMER'&&result.qa_ext03_match===true&&result.external_sends===0&&result.orders_written===0;
+const ownerSeparated=result.status==='OWNER_ROUTE_SEPARATE'&&result.route==='OWNER'&&result.reason==='owner_isolation'&&result.external_sends===0&&result.orders_written===0;
+const routeOutcome=ok?'CUSTOMER_ROUTE_ELIGIBLE':ownerSeparated?'OWNER_ROUTE_SEPARATE':'ROUTE_UNVERIFIED';
+const t=new Date().toISOString();
+return [{json:{slot:'v123_ext03_ingress',outcome:'SEEN_AUTHENTICATED_WEBHOOK',observed_at:t}},{json:{slot:'v123_ext03_customer',outcome:ok?'CUSTOMER_ROUTE_ELIGIBLE':'NOT_ACCEPTED_BY_CUSTOMER_ROUTER',observed_at:t}},{json:{slot:'v123_ext03_route',outcome:routeOutcome,observed_at:t}}];

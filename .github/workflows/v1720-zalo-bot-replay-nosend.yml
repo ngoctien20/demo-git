@@ -1,0 +1,60 @@
+name: TIEN404 V17.20 Zalo Bot Replay Admission Candidate NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v1720-zalo-replay/**'
+      - '.github/workflows/v1720-zalo-bot-replay-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  source-replay-security:
+    name: Source-only atomic replay contract tests (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and pure Node.js replay/forgery tests
+        run: |
+          node --check qa/v1720-zalo-replay/zalo-bot-replay-gate.mjs
+          node --check qa/v1720-zalo-replay/zalo-bot-replay-gate.test.mjs
+          node --test qa/v1720-zalo-replay/zalo-bot-replay-gate.test.mjs
+      - name: Static source-only, no provider client / merchant credential guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v1720-zalo-replay')
+          files=list(root.glob('*.mjs'))
+          assert {f.name for f in files}=={
+            'zalo-bot-replay-gate.mjs',
+            'zalo-bot-replay-gate.test.mjs'
+          }, 'unexpected executable code in QA source'
+          for f in files:
+            s=f.read_text()
+            if f.name.endswith('.test.mjs'):
+              # The test source deliberately contains string literals like 'fetch(' as forbidden tokens.
+              # Scan the implementation module below; test file only imports node built-ins and that module.
+              assert "import test from 'node:test'" in s
+              assert "from './zalo-bot-replay-gate.mjs'" in s
+              assert "from 'node:http'" not in s and "from 'node:https'" not in s
+              continue
+            for bad in [
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+              r'\bprocess\.env\b',r'\bchild_process\b',r'\bhttp\.request\s*\(',
+              r'(?i)sk-[a-z0-9_-]{16,}',r'(?i)service_role[=:][a-z0-9_-]{12,}'
+            ]:
+              assert not re.search(bad,s),(f.name,bad)
+          assert 'provider_origin_independently_verified:false' in (root/'zalo-bot-replay-gate.mjs').read_text()
+          assert 'INSTALLATION_NOT_TRUSTED' in (root/'zalo-bot-replay-gate.mjs').read_text()
+          assert 'ATOMIC_REPLAY_SERVICE_UNAVAILABLE' in (root/'zalo-bot-replay-gate.mjs').read_text()
+          print('SOURCE ONLY: no network calls, no provider send, no database or merchant secret.')
+          PY
+  hosted-webhook-promotion:
+    name: Real Zalo provider origin, durable atomic claim, Store approval — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Blocked until separate owner approval and hosted atomic claim acceptance'

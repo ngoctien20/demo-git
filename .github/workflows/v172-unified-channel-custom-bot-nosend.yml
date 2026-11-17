@@ -1,0 +1,42 @@
+name: TIEN404 V17.2 Unified Channel × Store Bot × Security QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v172-unified-core/**'
+      - 'docs/ai-handoff/V17_2_*'
+      - '.github/workflows/v172-unified-channel-custom-bot-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  unified-channel-store-bot-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Independent QA for actual n8n 26-case central Store/Bot run
+        run: python3 -m unittest discover -v -s qa/v172-unified-core -p 'test_*.py'
+      - name: Explicit no-credential, no-send and no-hosted-Store certification
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('qa/v172-unified-core/actual-n8n-unified-core-qa-snapshot.json').read_text())
+          w=x['n8n'];r=x['registry'];a=x['actual_execution']['result'];g=x['release']
+          assert w['active'] is False and w['active_version_id'] is None
+          assert len(w['nodes'])==5 and len(r['rows'])==7
+          assert all('credentials' not in n for n in w['nodes'])
+          assert all(row['approval_scope']=='SYNTHETIC_ONLY' and row['owner_authority_verified'] is False for row in r['rows'])
+          assert a['passed']==26 and a['total']==26
+          assert a['provider_sends']==a['model_calls']==a['commerce_writes']==0
+          assert not g['real_vendor_ingress_verified'] and not g['hosted_store_rls_verified']
+          print('V17.2 SAFE QA — NO LIVE INGRESS, NO CUSTOMER/ORDER ACCESS, NO SEND')
+          PY
+  real-channels-hosted-security-release:
+    name: Real Messenger/Zalo/Website authorization + Store JWT-RLS — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Requires Page/OA owner proof, website session, same-tenant Store JWT-RLS, durable dedupe and separate release approval'

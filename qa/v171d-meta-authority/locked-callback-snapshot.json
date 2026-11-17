@@ -1,0 +1,119 @@
+{
+  "schema_version": "T404_V171D_INACTIVE_SHADOW_CALLBACK_SNAPSHOT_V1",
+  "workflow": {
+    "id": "6ZWYRBKieTKQMzoQ",
+    "version": "732d376f-2cef-4ba7-bc3e-80136055dc56",
+    "active": false,
+    "activeVersionId": null,
+    "folder": "90_QA - DIAGNOSTICS",
+    "name": "TIEN404_V171D_ISOLATED_MESSENGER_SHADOW_LOCKED_NO_SEND",
+    "nodes": [
+      {
+        "name": "Isolated POST Shadow Only (INACTIVE)",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.2,
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "tien404-v171d-meta-shadow-locked-nosend",
+          "responseMode": "responseNode",
+          "options": {
+            "rawBody": true
+          }
+        }
+      },
+      {
+        "name": "Fail Closed Until Verified App Secret and Page Owner",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "// V17.1-D: permanent fail-closed shell until an independently approved, credential-backed verifier and Page owner authority are installed.\n// No secret, real provider data, Page ID, PSID or message text is returned.\nconst input=$input.first()?.json||{};\nconst h=input.headers||{};\nconst hasHeader=typeof h['x-hub-signature-256']==='string'&&/^sha256=[a-f0-9]{64}$/.test(h['x-hub-signature-256']);\nreturn [{json:{status:'SHADOW_LOCKED',reason:'REAL_PAGE_OWNER_AND_APP_SECRET_NOT_VERIFIED',\n  http_status:403,meta_signature_header_shape_present:hasHeader,\n  real_meta_signature_verified:false,\n  approved_channel_installation:false,\n  store_resolution_executed:false,\n  bot_loaded:false,recipient_echoed:false,\n  public_reply_sent:false,provider_sends:0,model_calls:0,commerce_writes:0,\n  webhook_only_probe:true}}];"
+        }
+      },
+      {
+        "name": "403 Shadow Locked - Never Reply To Messenger",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "SHADOW_LOCKED_NO_PROVIDER_AUTHORITY",
+          "options": {
+            "responseCode": 403,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=utf-8"
+                },
+                {
+                  "name": "Cache-Control",
+                  "value": "no-store"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Isolated POST Shadow Only (INACTIVE)": {
+        "main": [
+          [
+            {
+              "node": "Fail Closed Until Verified App Secret and Page Owner",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fail Closed Until Verified App Secret and Page Owner": {
+        "main": [
+          [
+            {
+              "node": "403 Shadow Locked - Never Reply To Messenger",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "proof": {
+    "executionId": "4347",
+    "status": "success",
+    "mode": "manual",
+    "guard": {
+      "status": "SHADOW_LOCKED",
+      "reason": "REAL_PAGE_OWNER_AND_APP_SECRET_NOT_VERIFIED",
+      "http_status": 403,
+      "meta_signature_header_shape_present": true,
+      "real_meta_signature_verified": false,
+      "approved_channel_installation": false,
+      "store_resolution_executed": false,
+      "bot_loaded": false,
+      "recipient_echoed": false,
+      "public_reply_sent": false,
+      "provider_sends": 0,
+      "model_calls": 0,
+      "commerce_writes": 0,
+      "webhook_only_probe": true
+    }
+  },
+  "release_gate": {
+    "private_owner_verified": false,
+    "meta_app_subscribed_verified": false,
+    "real_meta_callback_received": false,
+    "verified_native_hmac_using_real_app_secret": false,
+    "actual_store_bot_resolved": false,
+    "real_message_sent": 0,
+    "model_calls": 0,
+    "orders_written": 0
+  },
+  "notes": [
+    "INACTIVE; no GET handshake; no credential; POST path is unique; callback cannot be subscribed to Meta with current disabled GET route.",
+    "Existing Published Messenger webhook is untouched; manual synthetic probe does not establish provider acceptance."
+  ]
+}

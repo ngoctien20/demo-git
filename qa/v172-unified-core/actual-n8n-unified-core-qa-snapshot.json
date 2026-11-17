@@ -1,0 +1,552 @@
+{
+  "schema_version": "T404_V172_CENTRAL_QA_CHANNEL_BOT_SECURITY_SNAPSHOT_V1",
+  "checkpoint_jst": "2026-11-17",
+  "n8n": {
+    "workflow_id": "AjG4xCGD4OEvvgeB",
+    "version_id": "17c3f1ea-e266-405f-8456-b182f6ffaf99",
+    "name": "TIEN404_V172_UNIFIED_CHANNEL_CUSTOM_BOT_SECURITY_QA_NO_SEND",
+    "active": false,
+    "active_version_id": null,
+    "project": "Personal",
+    "folder": "90_QA - DIAGNOSTICS",
+    "nodes": [
+      {
+        "name": "Manual Unified QA Only",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "parameters": {}
+      },
+      {
+        "name": "Generate 26 Unified Channel QA Events",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst make=(num,channel,installation_ref,options={})=>({\n case_id:'QA_V172_'+String(num).padStart(2,'0'),expected:options.expected||'ALLOW',\n event_id:Object.hasOwn(options,'event_id')?options.event_id:'QA_EVENT_'+String(num).padStart(2,'0'),channel,installation_ref,\n customer_ref:options.customer_ref===undefined?'QA_CUSTOMER_001':options.customer_ref,\n message_type:options.message_type||'text',text:options.text===undefined?'QA_PRODUCT_SKU_001':options.text,\n requested_tool:options.requested_tool||'catalog_read',\n ...options.add\n});\nconst cases=[\n make(1,'messenger','QA_META_PAGE_A'),\n make(2,'messenger','QA_META_PAGE_B'),\n make(3,'zalo_bot','QA_ZALO_BOT_A'),\n make(4,'zalo_oa','QA_ZALO_OA_B'),\n make(5,'website','QA_WEB_WIDGET_A'),\n make(6,'messenger','QA_META_PAGE_C'),\n make(7,'messenger','QA_META_PAGE_REVOKED',{expected:'DENY'}),\n make(8,'messenger','QA_UNKNOWN_PAGE',{expected:'DENY'}),\n make(9,'zalo_oa','QA_META_PAGE_A',{expected:'DENY'}),\n make(10,'messenger','QA_META_PAGE_A',{expected:'DENY',add:{store_id:'QA_STORE_B'}}),\n make(11,'messenger','QA_META_PAGE_A',{expected:'DENY',add:{bot_id:'QA_BOT_B'}}),\n make(12,'messenger','QA_META_PAGE_A',{expected:'DENY',add:{tenant_id:'QA_TENANT_2'}}),\n make(13,'messenger','QA_META_PAGE_A',{expected:'DENY',add:{verified:true}}),\n make(14,'messenger','QA_META_PAGE_A',{expected:'DENY',customer_ref:'REAL_CUSTOMER_ID'}),\n make(15,'messenger','QA_META_PAGE_A',{expected:'DENY',requested_tool:'order_read'}),\n make(16,'messenger','QA_META_PAGE_A',{expected:'DENY',requested_tool:'create_order'}),\n make(17,'messenger','QA_META_PAGE_A',{expected:'DENY',requested_tool:'update_price'}),\n make(18,'zalo_oa','QA_ZALO_OA_B',{expected:'DENY',requested_tool:'order_read'}),\n {...make(1,'messenger','QA_META_PAGE_A'),case_id:'QA_V172_19',expected:'DUPLICATE'},\n make(20,'messenger','QA_META_PAGE_A',{expected:'DENY',event_id:'QA_EVENT_01',text:'QA_CONFLICT'}),\n make(21,'messenger','QA_META_PAGE_A',{expected:'DENY',message_type:'image'}),\n make(22,'messenger','QA_META_PAGE_A',{expected:'DENY',text:'A'.repeat(501)}),\n make(23,'messenger','QA_META_PAGE_A',{expected:'DENY',event_id:''}),\n make(24,'',{installation_ref:'QA_META_PAGE_A'},{expected:'DENY'}),\n make(25,'telegram','QA_META_PAGE_A',{expected:'DENY'}),\n make(26,'website','QA_WEB_WIDGET_A',{expected:'DENY',add:{customer_identity_linked:true}})\n];\nreturn [{json:{contract:'T404_V172_UNIFIED_QA_BATCH_V1',input_trust:'MANUAL_SYNTHETIC_FIXTURE_ONLY',cases}}];\n"
+        }
+      },
+      {
+        "name": "Load Central QA Channel and Bot Profiles",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "AAlsUnaAxbp0BscT",
+            "cachedResultName": "TIEN404_V172_QA_UNIFIED_CHANNEL_CUSTOM_BOT_PROFILES_NO_SEND"
+          },
+          "returnAll": true
+        }
+      },
+      {
+        "name": "Server QA Resolver plus Custom Bot Security Policy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst source=$('Generate 26 Unified Channel QA Events').first()?.json||{};\nif(source.contract!=='T404_V172_UNIFIED_QA_BATCH_V1'||source.input_trust!=='MANUAL_SYNTHETIC_FIXTURE_ONLY'||!Array.isArray(source.cases)||source.cases.length!==26)throw Error('QA_INPUT_CONTRACT_DENIED');\nconst rows=$input.all().map(i=>i.json||{});\nif(rows.length!==7)throw Error('PERSISTED_QA_BINDING_COUNT_MISMATCH');\nconst keys=new Set(),profiles=new Map();\nfor(const r of rows){\n const k=r.channel+'|'+r.installation_ref;\n if(keys.has(k))throw Error('DUPLICATED_CHANNEL_INSTALLATION');\n keys.add(k);\n if(r.approval_scope!=='SYNTHETIC_ONLY'||r.owner_authority_verified!==false||r.read_only!==true)\n  throw Error('NON_QA_OWNERSHIP_FLAG_DENIED');\n if(!/^QA_TENANT_[12]$/.test(String(r.tenant_ref))||\n !/^QA_STORE_[ABC]$/.test(String(r.store_ref))||\n !/^QA_BOT_[ABC]$/.test(String(r.bot_ref))||\n r.bot_version!==r.bot_ref+'_V1'||\n r.prompt_version!=='QA_PROMPT_'+r.store_ref.slice(-1)+'_V1'||\n r.knowledge_version!=='QA_KNOWLEDGE_'+r.store_ref.slice(-1)+'_V1'||\n r.policy_version!=='QA_POLICY_V172')throw Error('INVALID_QA_PROFILE_VERSION');\n const expectedTenant=r.store_ref==='QA_STORE_C'?'QA_TENANT_2':'QA_TENANT_1';\n if(r.tenant_ref!==expectedTenant||r.bot_ref!=='QA_BOT_'+r.store_ref.slice(-1))\n  throw Error('QA_CROSS_STORE_PROFILE_CONFLICT');\n const profile=[r.store_ref,r.bot_ref,r.bot_version,r.prompt_version,r.knowledge_version,r.policy_version,\n r.tone,r.selling_mode,r.tool_allowlist,r.subscription_active,r.store_paused,r.price_vnd,r.stock,r.product_label].join('|');\n if(profiles.has(r.store_ref)&&profiles.get(r.store_ref)!==profile)throw Error('QA_SAME_STORE_PROFILE_DRIFT_ACROSS_CHANNELS');\n profiles.set(r.store_ref,profile);\n}\nconst validFields=new Set(['case_id','expected','event_id','channel','installation_ref','customer_ref','message_type','text','requested_tool']);\nconst allowedChannels=new Set(['messenger','zalo_bot','zalo_oa','website']);\nconst seen=new Map(),results=[];\nfor(const c of source.cases){\n let status='DENY',reason='INVALID_INPUT',trustStore=null,trustBot=null,tenant=null,price=null,stock=null,botVersion=null;\n try{\n  if(Object.keys(c).some(k=>!validFields.has(k)))throw Error('CLIENT_SCOPE_OR_IDENTITY_SPOOF');\n  if(typeof c.event_id!=='string'||!/^QA_EVENT_[0-9]{2}$/.test(c.event_id)||\n    !allowedChannels.has(c.channel)||typeof c.installation_ref!=='string'||!/^QA_/.test(c.installation_ref)||\n    typeof c.customer_ref!=='string'||!/^QA_CUSTOMER_[0-9]{3}$/.test(c.customer_ref))\n   throw Error('UNTRUSTED_CHANNEL_EVENT');\n  if(c.message_type!=='text'||typeof c.text!=='string'||c.text.length<1||c.text.length>500)\n   throw Error('UNSUPPORTED_OR_OVERSIZED_MESSAGE');\n  if(typeof c.requested_tool!=='string')throw Error('INVALID_TOOL');\n  const k=c.channel+'|'+c.installation_ref;\n  const matches=rows.filter(r=>r.channel+'|'+r.installation_ref===k);\n  if(matches.length!==1)throw Error('UNBOUND_INSTALLATION');\n  const r=matches[0];\n  if(r.status!=='QA_APPROVED'||r.subscription_active!==true||r.store_paused!==false)\n   throw Error('BOT_REVOKED_SUSPENDED_OR_PAUSED');\n  if(r.tool_allowlist!=='catalog_read'||c.requested_tool!=='catalog_read')\n   throw Error('UNAUTHORIZED_WRITE_OR_ORDER_LOOKUP');\n  const dedupKey=[c.channel,c.installation_ref,c.event_id].join('|');\n  const fingerprint=[c.channel,c.installation_ref,c.event_id,c.customer_ref,c.message_type,c.text,c.requested_tool].join('|');\n  if(seen.has(dedupKey)){\n   if(seen.get(dedupKey)!==fingerprint)throw Error('CONFLICTING_EVENT_REPLAY');\n   status='DUPLICATE';reason='IN_MEMORY_QA_REPLAY_ONLY';\n  }else{\n   seen.set(dedupKey,fingerprint);status='ALLOW';reason='PERSISTED_QA_PROFILE_READ_ONLY';\n   trustStore=r.store_ref;trustBot=r.bot_ref;tenant=r.tenant_ref;botVersion=r.bot_version;\n   price=r.price_vnd;stock=r.stock;\n  }\n }catch(err){status='DENY';reason=String(err.message||'DENIED').slice(0,72);}\n results.push({case_id:c.case_id,expected:c.expected,status,reason,channel:c.channel,\n  tenant:tenant,store:trustStore,bot:trustBot,bot_version:botVersion,price_vnd:price,stock,\n  provider_verified:false,hosted_rls_verified:false,customer_cross_channel_link_verified:false,\n  outbound:'MOCK_ONLY_NOT_SENT',model_calls:0,provider_sends:0,commerce_writes:0});\n}\nreturn [{json:{contract:source.contract,source_mode:source.input_trust,bindings:rows.length,results}}];\n"
+        }
+      },
+      {
+        "name": "Fail Closed Unified Channel QA Acceptance",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst x=$input.first()?.json||{};const cases=x.results||[];\nif(x.contract!=='T404_V172_UNIFIED_QA_BATCH_V1'||x.source_mode!=='MANUAL_SYNTHETIC_FIXTURE_ONLY'||\n cases.length!==26||x.bindings!==7||new Set(cases.map(c=>c.case_id)).size!==26)throw Error('INVALID_QA_CORE_RESULT');\nfor(const c of cases){\n if(c.status!==c.expected)throw Error('P0_CASE_EXPECTATION_FAILED_'+c.case_id+'_'+c.status);\n if(c.model_calls!==0||c.provider_sends!==0||c.commerce_writes!==0||\n c.provider_verified!==false||c.hosted_rls_verified!==false||\n c.customer_cross_channel_link_verified!==false||c.outbound!=='MOCK_ONLY_NOT_SENT')\n   throw Error('UNAUTHORIZED_PROVIDER_OR_HOSTED_ACTION');\n if(c.status==='ALLOW'&&(!/^QA_TENANT_[12]$/.test(c.tenant)||!/^QA_STORE_[ABC]$/.test(c.store)||\n !/^QA_BOT_[ABC]$/.test(c.bot)||!Number.isSafeInteger(c.price_vnd)||c.price_vnd<=0))\n  throw Error('INVALID_ALLOW_CONTEXT');\n if(c.status==='DENY'&&(c.store!==null||c.bot!==null))throw Error('DENIED_CASE_HAS_TRUSTED_CONTEXT');\n}\nconst allow=cases.filter(c=>c.status==='ALLOW'),denied=cases.filter(c=>c.status==='DENY'),dups=cases.filter(c=>c.status==='DUPLICATE');\nif(allow.length!==6||denied.length!==19||dups.length!==1)throw Error('CASE_DISTRIBUTION_MISMATCH');\nconst a=allow.find(c=>c.case_id==='QA_V172_01'),b=allow.find(c=>c.case_id==='QA_V172_02'),\n z=allow.find(c=>c.case_id==='QA_V172_04'),w=allow.find(c=>c.case_id==='QA_V172_05'),other=allow.find(c=>c.case_id==='QA_V172_06');\nif(a?.store!=='QA_STORE_A'||a?.price_vnd!==159000||b?.store!=='QA_STORE_B'||b?.price_vnd!==259000||\n a?.tenant!==b?.tenant||z?.store!=='QA_STORE_B'||w?.store!=='QA_STORE_A'||\n other?.tenant===a?.tenant)throw Error('SAME_TENANT_STORE_OR_CHANNEL_SCOPE_FAILED');\nreturn [{json:{\n status:'V172_UNIFIED_CHANNEL_STORE_BOT_QA_PASS',total:cases.length,passed:cases.length,\n allow:allow.length,deny:denied.length,duplicate:dups.length,channels_supported_in_qa:4,\n same_tenant_cross_store_enforced:true,isolated_different_tenant:true,\n customer_cross_channel_identity_verified:false,provider_webhooks_verified:false,\n hosted_rls_verified:false,installed_channels_verified:false,\n actual_messenger_zalo_website_ingress:false,model_calls:0,\n provider_sends:0,commerce_writes:0,outbound:'MOCK_ONLY_NOT_SENT',\n cases:cases.map(c=>({id:c.case_id,status:c.status,reason:c.reason,channel:c.channel,\n  store:c.store,bot:c.bot,price_vnd:c.price_vnd}))\n }}];\n"
+        }
+      }
+    ],
+    "connections": {
+      "Manual Unified QA Only": {
+        "main": [
+          [
+            {
+              "node": "Generate 26 Unified Channel QA Events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate 26 Unified Channel QA Events": {
+        "main": [
+          [
+            {
+              "node": "Load Central QA Channel and Bot Profiles",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Load Central QA Channel and Bot Profiles": {
+        "main": [
+          [
+            {
+              "node": "Server QA Resolver plus Custom Bot Security Policy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Server QA Resolver plus Custom Bot Security Policy": {
+        "main": [
+          [
+            {
+              "node": "Fail Closed Unified Channel QA Acceptance",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "registry": {
+    "table_id": "AAlsUnaAxbp0BscT",
+    "name": "TIEN404_V172_QA_UNIFIED_CHANNEL_CUSTOM_BOT_PROFILES_NO_SEND",
+    "rows": [
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_B",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      },
+      {
+        "channel": "zalo_bot",
+        "installation_ref": "QA_ZALO_BOT_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "zalo_oa",
+        "installation_ref": "QA_ZALO_OA_B",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      },
+      {
+        "channel": "website",
+        "installation_ref": "QA_WEB_WIDGET_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_C",
+        "tenant_ref": "QA_TENANT_2",
+        "store_ref": "QA_STORE_C",
+        "bot_ref": "QA_BOT_C",
+        "bot_version": "QA_BOT_C_V1",
+        "prompt_version": "QA_PROMPT_C_V1",
+        "knowledge_version": "QA_KNOWLEDGE_C_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 309000,
+        "stock": 8,
+        "product_label": "QA_CATALOG_C"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_REVOKED",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "REVOKED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      }
+    ]
+  },
+  "actual_execution": {
+    "id": "4358",
+    "status": "success",
+    "mode": "manual",
+    "result": {
+      "status": "V172_UNIFIED_CHANNEL_STORE_BOT_QA_PASS",
+      "total": 26,
+      "passed": 26,
+      "allow": 6,
+      "deny": 19,
+      "duplicate": 1,
+      "channels_supported_in_qa": 4,
+      "same_tenant_cross_store_enforced": true,
+      "isolated_different_tenant": true,
+      "customer_cross_channel_identity_verified": false,
+      "provider_webhooks_verified": false,
+      "hosted_rls_verified": false,
+      "installed_channels_verified": false,
+      "actual_messenger_zalo_website_ingress": false,
+      "model_calls": 0,
+      "provider_sends": 0,
+      "commerce_writes": 0,
+      "outbound": "MOCK_ONLY_NOT_SENT",
+      "cases": [
+        {
+          "id": "QA_V172_01",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "messenger",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V172_02",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "messenger",
+          "store": "QA_STORE_B",
+          "bot": "QA_BOT_B",
+          "price_vnd": 259000
+        },
+        {
+          "id": "QA_V172_03",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "zalo_bot",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V172_04",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "zalo_oa",
+          "store": "QA_STORE_B",
+          "bot": "QA_BOT_B",
+          "price_vnd": 259000
+        },
+        {
+          "id": "QA_V172_05",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "website",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V172_06",
+          "status": "ALLOW",
+          "reason": "PERSISTED_QA_PROFILE_READ_ONLY",
+          "channel": "messenger",
+          "store": "QA_STORE_C",
+          "bot": "QA_BOT_C",
+          "price_vnd": 309000
+        },
+        {
+          "id": "QA_V172_07",
+          "status": "DENY",
+          "reason": "BOT_REVOKED_SUSPENDED_OR_PAUSED",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_08",
+          "status": "DENY",
+          "reason": "UNBOUND_INSTALLATION",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_09",
+          "status": "DENY",
+          "reason": "UNBOUND_INSTALLATION",
+          "channel": "zalo_oa",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_10",
+          "status": "DENY",
+          "reason": "CLIENT_SCOPE_OR_IDENTITY_SPOOF",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_11",
+          "status": "DENY",
+          "reason": "CLIENT_SCOPE_OR_IDENTITY_SPOOF",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_12",
+          "status": "DENY",
+          "reason": "CLIENT_SCOPE_OR_IDENTITY_SPOOF",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_13",
+          "status": "DENY",
+          "reason": "CLIENT_SCOPE_OR_IDENTITY_SPOOF",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_14",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CHANNEL_EVENT",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_15",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WRITE_OR_ORDER_LOOKUP",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_16",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WRITE_OR_ORDER_LOOKUP",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_17",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WRITE_OR_ORDER_LOOKUP",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_18",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WRITE_OR_ORDER_LOOKUP",
+          "channel": "zalo_oa",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_19",
+          "status": "DUPLICATE",
+          "reason": "IN_MEMORY_QA_REPLAY_ONLY",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_20",
+          "status": "DENY",
+          "reason": "CONFLICTING_EVENT_REPLAY",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_21",
+          "status": "DENY",
+          "reason": "UNSUPPORTED_OR_OVERSIZED_MESSAGE",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_22",
+          "status": "DENY",
+          "reason": "UNSUPPORTED_OR_OVERSIZED_MESSAGE",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_23",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CHANNEL_EVENT",
+          "channel": "messenger",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_24",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CHANNEL_EVENT",
+          "channel": "",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_25",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CHANNEL_EVENT",
+          "channel": "telegram",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V172_26",
+          "status": "DENY",
+          "reason": "CLIENT_SCOPE_OR_IDENTITY_SPOOF",
+          "channel": "website",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        }
+      ]
+    }
+  },
+  "release": {
+    "source_security_qa_only": true,
+    "real_vendor_ingress_verified": false,
+    "page_oa_owner_verified": false,
+    "website_server_session_verified": false,
+    "hosted_store_rls_verified": false,
+    "cross_channel_customer_identity_verified": false,
+    "real_provider_sends": 0,
+    "real_llm_calls": 0,
+    "commerce_writes": 0
+  }
+}

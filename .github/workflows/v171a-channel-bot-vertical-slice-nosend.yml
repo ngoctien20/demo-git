@@ -1,0 +1,53 @@
+name: TIEN404 V17.1-A Channel to Custom Bot to Store Guard (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171-channel-first/**'
+      - 'docs/ai-handoff/V17_1A_*'
+      - '.github/workflows/v171a-channel-bot-vertical-slice-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  offline-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail-closed channel, Store, Bot and tool security tests
+        run: |
+          node --check qa/v171-channel-first/vertical-slice.mjs
+          node --check qa/v171-channel-first/vertical-slice.test.mjs
+          node --test qa/v171-channel-first/vertical-slice.test.mjs
+      - name: Five no-send vertical slice scenarios
+        run: node qa/v171-channel-first/smoke.mjs
+      - name: No actual API client or real customer dataset
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('qa/v171-channel-first')
+          assert {x.name for x in p.glob('*.mjs')}=={'vertical-slice.mjs','vertical-slice.test.mjs','smoke.mjs','native-ingress-qa.mjs','native-ingress-qa.test.mjs'}
+          for f in p.glob('*.mjs'):
+            s=f.read_text()
+            for pat in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                        r'\bprocess\.env\b',r'\bchild_process\b',r'\bhttp\.request\s*\(',
+                        r'(?i)sk-[A-Za-z0-9_-]{16,}']:
+              assert re.search(pat,s) is None,(str(f),pat)
+          assert 'PROVIDER_SEND_DISABLED' in (p/'vertical-slice.mjs').read_text()
+          assert 'COMMERCE_WRITE_DISABLED' in (p/'vertical-slice.mjs').read_text()
+          assert not list(p.glob('*.csv'))
+          print('PASS — no network, credentials, provider sends or Commerce writes')
+          PY
+  real-merchant-release:
+    name: Hosted Store RLS, Page/OA ownership and live send — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'BLOCKED until independent Owner/Store/JWT-RLS and channel authority evidence'
