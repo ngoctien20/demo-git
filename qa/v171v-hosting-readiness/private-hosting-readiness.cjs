@@ -83,7 +83,8 @@ function createPrivateHostingReadinessGate({
     return deny('HOSTING_REFERENCE_SHAPE');
   const now=clock();
   if(!Number.isSafeInteger(now)||now<=0)return deny('HOSTING_CLOCK');
-  const key=infrastructureRef+'|'+qaPlanRef+'|'+reviewNonce;
+  // A nonce is one-shot across ALL candidate refs, not scoped to one pair.
+  const key=reviewNonce;
   if(pending.has(key))return deny('HOSTING_REVIEW_ALREADY_ATTEMPTED');
   // Prevent same-process concurrent requests BEFORE any awaited lookup.
   // Never clear after failure: a fresh independently authorized nonce is needed.
