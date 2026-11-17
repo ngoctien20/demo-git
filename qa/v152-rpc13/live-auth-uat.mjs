@@ -1,16 +1,12 @@
 // RPC13: operator-only real Supabase Auth JWT UAT. NEVER run in GitHub Actions.
 // No writes; 2 independently-authenticated user tokens are read from local files.
 // No access-token, email, user UUID, original Store UUID or merchant data is logged.
-import {readFile,stat} from 'node:fs/promises';
+import {readFile} from 'node:fs/promises';
+export {readPrivateToken} from './private-token-file-security.mjs';
+import {readPrivateToken} from './private-token-file-security.mjs';
 import {resolve} from 'node:path';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SURFACES=Object.freeze(['products','orders','customers','order_items','conversations','messages']);
-export async function readPrivateToken(filepath){
- const p=resolve(filepath),s=await stat(p);
- if(!s.isFile()||s.size<100||s.size>10000||(process.platform!=='win32'&&(s.mode&0o077)!==0))throw Error('PRIVATE_TOKEN_FILE_MODE_OR_SIZE_DENIED');
- const token=(await readFile(p,'utf8')).trim();if(!/^[A-Za-z0-9._-]+$/.test(token)||token.split('.').length!==3)throw Error('INVALID_TOKEN_FILE');
- return token;
-}
 function ensure(x,msg){if(!x)throw Error(msg);}
 function safeUrl(base){const u=new URL(base);ensure(u.protocol==='https:'&&u.pathname==='/'&&!u.username&&!u.password&&!u.search&&!u.hash&&u.origin==='https://ifxlvrhyjhbzbrkdsida.supabase.co','UNTRUSTED_SUPABASE_ORIGIN');return u.origin;}
 export async function runUat({projectUrl,publishableKey,tokenA,tokenB,canaries,fetcher=fetch}){
