@@ -1,0 +1,54 @@
+name: TIEN404 V17.4P Private Hosted Issuer Access JWT × Secret Gate NO-GO
+on:
+  push:
+    branches:
+      - work/v174p-private-hosted-issuer-owner-gate-20261117
+  pull_request:
+    paths:
+      - 'qa/v174p-private-hosted/**'
+      - '.github/workflows/v174p-private-hosted-issuer-source-qa.yml'
+      - 'docs/ai-handoff/V17_4P_*'
+permissions:
+  contents: read
+jobs:
+  cloudflare-worker-source-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test synthetic private Access JWT and Worker HMAC
+        run: |
+          node --check qa/v174p-private-hosted/hosted-issuer.worker.mjs
+          node --check qa/v174p-private-hosted/hosted-issuer.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs
+      - name: Source risk gates and absence of credentials or live API
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v174p-private-hosted/hosted-issuer.worker.mjs').read_text()
+          assert 'V174P_MODE' in p and "QA_SYNTHETIC_ONLY" in p
+          assert 'Cf-Access-Jwt-Assertion' in p and "RSASSA-PKCS1-v1_5" in p
+          assert 'V174P_ACCESS_JWKS_JSON' in p and 'V174P_SESSION_HMAC_KEY' in p
+          assert 'V174P_REPLAY_DO' in p and 'storage.transaction' in p
+          assert 'UNVERIFIED_QA_ONLY' in p
+          assert 'createHmac' not in p and 'fetch(' in p
+          for banned in ('api.openai.com','graph.facebook.com','ngoctien20.app.n8n.cloud',
+                         'SUPABASE_SERVICE_ROLE','create_order','sendMessage','stripe.com'):
+              assert banned not in p,banned
+          print('V17.4P source staging issuer — no external provider, no real Commerce, no deployed origin')
+          PY
+  external-hosted-browser-uat:
+    name: Real hosted Access-protected Browser UAT — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Wait for independently verified QA host, Access app/audience, secret manager, durable DO and explicit deployment consent'
+  public-commerce-live-release:
+    name: Merchant domain + Store-RLS + customer identity — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Real owner/domain and JWT-RLS evidence required; no real send, model or Commerce writes'
