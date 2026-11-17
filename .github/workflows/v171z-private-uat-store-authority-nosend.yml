@@ -366,10 +366,45 @@ jobs:
           psql -h localhost -U postgres -d t404_v171p_disposable -X -v ON_ERROR_STOP=1 -f qa/v171n-bot-security/disposable_pg17_store_rls_rollback.sql
           test "$(psql -h localhost -U postgres -d t404_v171p_disposable -X -At -c "SELECT count(*) FROM pg_catalog.pg_class WHERE relname='t404_v171n_disposable_store_rls'")" = "0"
           echo 'V171P_DISPOSABLE_PG17_ROW_ISOLATION_ROLLBACK_PASS_NO_REAL_JWT'
+
+  v171z-qa-store-authority-pg17:
+    name: V17.1Z disposable same-Tenant two-Store RLS schema compile/negative QA (not JWT)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_ci_only_password
+          POSTGRES_DB: t404_v171z_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171z_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install disposable PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Compile isolated QA Store authority and test A/B negatives, revocation, ROLLBACK
+        env:
+          PGPASSWORD: disposable_ci_only_password
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d t404_v171z_disposable -X -v ON_ERROR_STOP=1 -f qa/v171z-private-uat/pg17-disposable-bootstrap.sql
+          sed '$d' qa/v171z-private-uat/store-authority-proposal.NOT-APPLIED.sql > /tmp/v171z_disposable_transaction.sql
+          cat qa/v171z-private-uat/pg17-disposable-isolation-assertions.sql >> /tmp/v171z_disposable_transaction.sql
+          psql -h localhost -U postgres -d t404_v171z_disposable -X -v ON_ERROR_STOP=1 -f /tmp/v171z_disposable_transaction.sql
+          test "$(psql -h localhost -U postgres -d t404_v171z_disposable -X -At -c "SELECT to_regclass('tien404_v171z_qa.qa_products') IS NULL")" = "t"
+          echo "V171Z_STORE_A_B_MECHANICAL_RLS_PASS_ROLLED_BACK_NO_REAL_JWT"
+
   real-auth-page-oa-admission-no-go:
     name: V17.1Z Real Protected Access and Same Tenant Store Owner JWT NO GO
     runs-on: ubuntu-24.04
-    needs: [v171z-private-admission-regression,v171z-disposable-pg17-rls]
+    needs: [v171z-private-admission-regression,v171z-disposable-pg17-rls,v171z-qa-store-authority-pg17]
     timeout-minutes: 2
     steps:
       - name: 'Fail closed until independent Auth JWT, same-Tenant owners and Page OA signed canary'
