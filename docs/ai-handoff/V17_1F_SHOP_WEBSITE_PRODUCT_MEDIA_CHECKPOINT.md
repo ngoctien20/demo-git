@@ -37,3 +37,15 @@ Files:
 - CI evidence to be recorded only after exact run finishes.
 
 **Status:** V171F_SOURCE_REF_REGISTRY_IMPLEMENTED_QA_PENDING_HOSTED_NO_GO
+
+## 5. Verified source-only QA receipt — 2026-11-17 JST
+- Tested implementation HEAD: 911e979d27c6dbef884ade242e320929bcb02ad9.
+- GitHub Actions exact run: https://github.com/ngoctien20/demo-git/actions/runs/44006614165
+- Source-only job 133783396326 SUCCESS: **32/32 V17.1F** strict website URL / SKU / tenant/store / no-fetch tests; inherited **28/28 V17.1E** media and model receipt gate; inherited V17.1D **22/22 PNG + 25/25 two-stage link + 5/5 cross-channel synthetic**; total **112/112 Node assertions PASS**.
+- Static no-fetch/no-model/no-SEND/no-hosted-write script PASS.
+- Hosted release-denied job 133783447385 FAILURE intentionally. This gate correctly refused domain/photo ownership, real DNS/SSRF fetch, real Vision inference, real Meta/Zalo UAT, Store RLS and recovery that were not independently established.
+- No user shop website link, real product image source or permission-backed merchant photo was fetched; this is reference validation only.
+- **Lifecycle:** V171F_SOURCE_REGISTRY_IMPLEMENTED_OFFLINE_TESTED_HOSTED_NO_GO.
+- **Rollback:** close Draft PR #256; parent PR #254 and PR #252 remain untouched. No hosted restoration.
+- Documentation-only commit following this receipt may advance HEAD; re-check GitHub Actions status for final HEAD.
+
