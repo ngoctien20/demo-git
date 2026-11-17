@@ -88,3 +88,17 @@ Run on the owner's local Windows PowerShell machine only. Enter the **previously
 - **DIRECT HOSTED POSTFLIGHT 2026-11-18 ~06:40:31 JST:** Worker `workers.dev=false` and previews=false; mode `OWNER_SCOPED_PRIVATE_NO_SEND_ONCE`; `QA_CALLBACK_PATH` binding type `secret_text`; deployed version `20f281c4-c568-45c9-bd7b-e63a0e7d1fc4`; D1 accepted receipts=0. No hosted changes made in DIAG7.
 - **NEXT ADMISSION:** Do not reopen for another live test. The minimum targeted correction is to re-save **only** the QA Worker's `QA_CALLBACK_PATH` from the already-validated local value while Worker is OFF, after owner authorizes that isolated secret mutation and confirms the provider webhook is deleted. This eliminates unknown hosted-vs-local path equality without disclosing either value. Record new Worker version, keep previews/public OFF, and use a **fresh** approved time window later. No old Bot, n8n or Commerce mutations.
 - **Current classification:** `LOCAL_WEBHOOK_URL_MATCH_OWNER_TESTED / HOSTED_SECRET_VALUE_UNKNOWN / CLOUDFLARE_OFF_VERIFIED / D1_ZERO / TARGETED_REBIND_PROPOSED`.
+
+## Hosted QA_CALLBACK_PATH owner rebind — read-only postflight
+
+**OWNER-ATTESTED:** Owner reports manually updated the dedicated QA Worker's `QA_CALLBACK_PATH` from the previously locally validated `$QA_CALLBACK_PATH` source; no secret values shared.
+
+**DIRECT CLOUDFLARE VERIFIED 2026-11-18 ~06:43:19 JST:** deployment changed from `20f281c4-c568-45c9-bd7b-e63a0e7d1fc4` to `aa0685e1-cdb3-45c3-add0-f40674695529`; `QA_CALLBACK_PATH` type remains `secret_text`, as do `QA_HEADER_SECRET`, `QA_CHALLENGE`, and `QA_EVENT_PEPPER`; `workers.dev=false`, previews=false; D1 `qa_canary_once` count=0. `QA_CANARY_MODE=OWNER_SCOPED_PRIVATE_NO_SEND_ONCE`.
+
+**EXPIRED WINDOW VERIFIED:** `QA_START_MS=1794950538271` and `QA_END_MS=1794951738271` (2026-11-18 06:42:18.271 JST) is past at postflight. Do not make another live request under this window.
+
+**LIMIT OF PROOF:** New deployed version and owner assurance do not allow the connector to read or cryptographically compare the encrypted hosted `QA_CALLBACK_PATH`; therefore mark `HOSTED_PATH_OWNER_REBOUND / NOT INDEPENDENTLY VALUE-VERIFIED`. Previous HTTP 404 sender remains unknown and prior D1 0 cannot be retrospectively corrected.
+
+**NEXT GATE:** Before any new scoped test, first confirm the new QA Bot webhook is still absent using private `getWebhookInfo` and establish controlled rollback. Obtain a new 20-minute window immediately before live testing; verify `QA_HEADER_SECRET` equals provider webhook `secret_token` by private operator input; keep previews OFF. Test the exact intended Worker path with one sanctioned no-send/limited request under a strict authorized time window, read aggregate status and D1, then delete QA webhook and close public Worker. Do not change old Bot, Commerce, n8n, or credentials.
+
+**Current stage:** `DIAG7_HOSTED_REBIND_OWNER_REPORTED / VERSION_VERIFIED / ENDPOINT_LOCKED / D1_ZERO / QA_WINDOW_EXPIRED / PROVIDER_DELETE_OWNER_ATTESTED / LIVE_RETRY_NO_GO`.
