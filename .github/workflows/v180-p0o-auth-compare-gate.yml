@@ -35,13 +35,13 @@ jobs:
           const ui=readFileSync('assets/private-auth-evidence-ui.mjs','utf8');
           const page=readFileSync('auth-evidence.html','utf8');
           const bad=[
-            /service_role/i,/\\bfetch\\s*\\(/,/\\bXMLHttpRequest\\b/,
-            /\\bsendBeacon\\s*\\(/,/\\bWebSocket\\s*\\(/,
-            /\\.auth\\.(?:signInWithPassword|signUp|signOut|updateUser|resetPasswordForEmail)\\s*\\(/,
-            /\\.from\\(['"](?:orders|products|customers|order_items|messages|conversations)['"]\\)/,
-            /\\.(?:insert|update|upsert|delete)\\s*\\(/
+            /service_role/i,/\bfetch\s*\(/,/\bXMLHttpRequest\b/,
+            /\bsendBeacon\s*\(/,/\bWebSocket\s*\(/,
+            /\.auth\.(?:signInWithPassword|signUp|signOut|updateUser|resetPasswordForEmail)\s*\(/,
+            /\.from\(['"](?:orders|products|customers|order_items|messages|conversations)['"]\)/,
+            /\.(?:insert|update|upsert|delete)\s*\(/
           ];
-          if(bad.some(p=>p.test(core+'\\n'+ui)))throw Error('FORBIDDEN_HOSTED_WRITE_OR_SECRET');
+          if(bad.some(p=>p.test(core+'\n'+ui)))throw Error('FORBIDDEN_HOSTED_WRITE_OR_SECRET');
           if(!core.includes('comparePeerLocalReceipt')||
             !core.includes('serverSignedProof:false')||
             !core.includes('canonicalStoreAuthority:false')||
