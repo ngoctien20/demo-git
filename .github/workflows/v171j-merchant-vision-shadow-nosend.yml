@@ -1,0 +1,84 @@
+name: TIEN404 V17.1J Merchant Image Vision and Messenger Zalo Shadow NO SEND
+on:
+  push:
+    branches:
+      - work/v171j-owned-merchant-image-vision-shadow-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171j-commerce/**'
+      - 'docs/ai-handoff/V17_1J_*'
+      - '.github/workflows/v171j-merchant-vision-shadow-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-source-qa:
+    name: V17.1J 76 new plus 274 inherited source tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 'Install isolated QA Pillow runtime'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import Image,features; assert features.check('webp') and features.check('jpg')"
+      - name: 'V17.1J Store-owned merchant photo evidence and cost quote'
+        run: node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+      - name: 'V17.1J Messenger Zalo synthetic shadow READ-ONLY NO SEND'
+        run: node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Preserve V17.1I HTTPS origin and Vision budget 82 source tests'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1H actual PNG JPEG WebP 40 source tests'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1G offline pinned DNS and TLS 40 tests'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Preserve V17.1F website store media registry 32 tests'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Preserve V17.1E photo rights and vendor receipt 28 tests'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Preserve V17.1D 52 PNG cross channel acceptance tests'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Static V17.1J no real provider, webhook, external fetch, model or order'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          sources=[
+             Path('qa/v171j-commerce/merchant-evidence-pilot.cjs').read_text(),
+             Path('qa/v171j-commerce/no-send-channel-uat.cjs').read_text()
+          ]
+          for source in sources:
+              for prohibited in (r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+                  r'\bprocess\.env\b',r'\bservice_role\b',r'\bcreateOrder\s*\(',
+                  r'\bsendMessage\s*\(',r'\bmodel\.invoke\s*\(',
+                  r'\baxios\b',r'\bchild_process\b'):
+                  assert not re.search(prohibited,source,re.I),prohibited
+          for required in ('readyForRealVisionPilot:false','canInvokeRealModel:false',
+              'providerSends:0','hostedWrites:0','humanApprovalIndependentlyVerified:false'):
+              assert required in sources[0],required
+          for required in ('realProviderSignatureVerified:false',
+               'liveMessengerUatPassed:false','liveZaloUatPassed:false',
+               'actualOrderQueries:0','providerSends:0','hostedWrites:0',
+               'UAT_REAL_ACTIVE_OR_SIDE_EFFECT_WORKFLOW_DENIED'):
+              assert required in sources[1],required
+          print('V17.1J SAFE_SOURCE_ONLY_GUARD PASS')
+          PY
+  hosted-live-no-go:
+    name: V17.1J real photos paid Vision and genuine Meta Zalo UAT HOSTED NO GO
+    runs-on: ubuntu-24.04
+    needs: [offline-source-qa]
+    timeout-minutes: 3
+    steps:
+      - name: 'Deny live release without independent owner budget signed channel and RLS evidence'
+        run: |
+          echo "::error::V171J_HOSTED_NO_GO_MERCHANT_RIGHTS_REAL_VISION_BUDGET_META_ZALO_OWNER_RLS_ORDER_ACCESS_RESTORE"
+          exit 3
