@@ -1,0 +1,83 @@
+name: V17.7H Inactive Worker Version and Owner Consent NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7H_INACTIVE_WORKER_OWNER_UAT_CHECKPOINT.md"
+      - ".github/workflows/v17-7h-inactive-worker-owner-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deny-all-worker-and-owner-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check all inherited V17.7A-H modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/v17-7a-oa-independent/*.mjs; do node --check "$f"; done
+      - name: All inherited A-G plus V17.7H test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Deny all public Worker, unknown worker resource and owner claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const root='qa/v17-7a-oa-independent/';
+          const config=JSON.parse(readFileSync(root+'v17-7h-inactive-worker-config.json','utf8'));
+          assert.equal(config.name,'tien404-v177h-provider-nosend-inactive-staging');
+          assert.equal(config.workers_dev,false);
+          assert.equal(config.preview_urls,false);
+          assert.deepEqual(config.routes,[]);
+          assert.deepEqual(config.triggers,{crons:[]});
+          assert.equal(config.observability.enabled,false);
+          assert.equal(Object.hasOwn(config,'vars'),false);
+          assert.equal(Object.hasOwn(config,'kv_namespaces'),false);
+          assert.equal(Object.hasOwn(config,'r2_buckets'),false);
+          assert.equal(Object.hasOwn(config,'durable_objects'),false);
+          const code=readFileSync(root+'v17-7h-hosted-deny-all-worker.mjs','utf8');
+          assert.equal((code.match(/\bfetch\s*\(/g)||[]).length,1);
+          assert.equal((code.match(/\bstatus:\s*404/g)||[]).length,1);
+          for(const bad of [
+            /\bawait\s+fetch\s*\(/,
+            /\baxios\s*\./,
+            /\bcrypto\s*\./,
+            /\bWebSocket\b/,
+            /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/,
+            /\b(secret|token|credential|DB|R2|API_KEY)\s*=/,
+          ])if(bad.test(code))throw Error('Unsafe inactive Worker source');
+          const admission=readFileSync(root+'v17-7h-host-and-owner-admission-offline.mjs','utf8');
+          for(const marker of [
+            'canEnablePublicRoute:false','canRegisterWebhook:false',
+            'canInjectCredentials:false','canSendProviderMessage:false',
+            'canReadCommerce:false','canWriteCommerce:false','canPublish:false',
+            'realNativeWebhookReceived:false','realProviderQaBotOrPageOwnerVerified:false'
+          ])assert.ok(admission.includes(marker));
+          const evidence=JSON.parse(readFileSync(root+'v17-7h-hosted-version-evidence.json','utf8'));
+          assert.equal(evidence.project,'TIEN404');
+          assert.equal(evidence.stage,'V17.7H');
+          assert.equal(evidence.owner.realQaPageOrBotOwnershipVerified,false);
+          assert.equal(evidence.provider.realSignedWebhookReceived,false);
+          assert.equal(evidence.provider.messagesSent,0);
+          assert.equal(evidence.commerce.ordersWritten,0);
+          assert.equal(evidence.commerce.stockWritten,0);
+          assert.equal(evidence.release,'REAL_PROVIDER_HOSTED_UAT_NO_GO');
+          const worker=(await import('./qa/v17-7a-oa-independent/v17-7h-hosted-deny-all-worker.mjs')).default;
+          const r=await worker.fetch(new Request('https://example.invalid/test',{method:'POST',body:'secret'}));
+          assert.equal(r.status,404);assert.equal(await r.text(),'');
+          console.log('V17.7H INERT WORKER STATIC + OWNER ADMISSION NO SEND/NO WRITE PASS');
+          NODE
