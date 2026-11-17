@@ -65,11 +65,14 @@ function packet(){
  };
 }
 function atomicTestLedger(){
- const consumed=new Set();
+ const nonceSet=new Set(),targetSet=new Set();
  return {claimOnce:async ({nonce_hash,account_id,worker_name,phase})=>{
-  const key=account_id+'/'+worker_name+'/'+phase+'/'+nonce_hash;
-  if(consumed.has(key))return {claimed:false};
-  consumed.add(key);return {claimed:true,durable_commit_confirmed:true,receipt_id:'synthetic-receipt-id-'+consumed.size};
+  const key=account_id+'/'+worker_name+'/'+phase;
+  // TEST-ONLY synchronous critical section models two SQL unique constraints.
+  // A real distributed operator must use an independently hosted durable DB.
+  if(nonceSet.has(nonce_hash)||targetSet.has(key))return {claimed:false};
+  nonceSet.add(nonce_hash);targetSet.add(key);
+  return {claimed:true,durable_commit_confirmed:true,receipt_id:'synthetic-receipt-id-'+nonceSet.size};
  }};
 }
 const readCurrent=ev=>async()=>structuredClone(ev.inventoryEvidence);
@@ -225,4 +228,16 @@ test('27 refreshed inventory must be no more than 60s old',async()=>{
  const r=await preparePrivatePermitForManualReview({evidence:f,now:NOW,privateLedger:ledger,
   getFreshInventory});
  assert.equal(r.status,'BLOCKED_CLOUD_INVENTORY_DRIFT_PERMIT_CONSUMED');
+});
+test('28 two differently signed nonces for same first-upload Worker cannot both claim target',async()=>{
+ const first=packet(),second=packet(),ledger=atomicTestLedger();
+ second.permit.nonce='c'.repeat(32);
+ second.signatures.owner=sign(second.permit,second.trustAnchors.owner.key_id,owner);
+ second.signatures.security=sign(second.permit,second.trustAnchors.security.key_id,security);
+ const results=await Promise.all([
+  preparePrivatePermitForManualReview({evidence:first,privateLedger:ledger,getFreshInventory:readCurrent(first),now:NOW}),
+  preparePrivatePermitForManualReview({evidence:second,privateLedger:ledger,getFreshInventory:readCurrent(second),now:NOW})
+ ]);
+ assert.equal(results.filter(r=>r.status==='ONE_TIME_PERMIT_RESERVED_FOR_MANUAL_REVIEW_ONLY').length,1);
+ assert.equal(results.filter(r=>r.status==='BLOCKED_NONCE_REPLAY_OR_LEDGER_UNCERTAIN').length,1);
 });
