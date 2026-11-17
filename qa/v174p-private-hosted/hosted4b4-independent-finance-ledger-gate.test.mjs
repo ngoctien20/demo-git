@@ -297,7 +297,7 @@ test('37 missing finance cost review rejects',()=>reject(f=>{
  f.privateRegistry.independent_finance_cost_window_review=false;
 },'two_separate_positive_budgets_and_combined_max_25'));
 test('38 no rollback operator review rejects',()=>reject(f=>{
- f.privateRegistry.independent_rollback_plan_review=false;
+ f.privateRegistry.independent_rollback_plan_reviewed=false;
 },'hosted_ledger_control_plane_and_operator_provenance'));
 test('39 missing least privilege CF identity review rejects',()=>reject(f=>{
  f.privateRegistry.cloudflare_rbac_least_privilege_verified_privately=false;
