@@ -1,0 +1,27 @@
+name: TIEN404 V17.23K Privileged RPC Caller and JWT Plan NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723k/**'
+      - '.github/workflows/v1723k-rpc-caller-jwt-plan-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc-caller-no-go-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      OPENAI_API_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Privileged RPC, caller compatibility, and real JWT no-send negative tests
+        run: node --test qa/v1723k/rpc-caller-admission.test.mjs
+      - name: Never revoke RPC or admit real JWT from GitHub CI
+        run: |
+          node --input-type=module -e "import {inspectRpcSurface,inspectCallerChain,inspectRealJwtAdmission,EXPECTED_RPC_METADATA,PUBLISHED_CALLER_CHAIN} from './qa/v1723k/rpc-caller-admission.mjs'; const r=inspectRpcSurface(EXPECTED_RPC_METADATA),c=inspectCallerChain(PUBLISHED_CALLER_CHAIN),j=inspectRealJwtAdmission(); if(r.canRevoke||r.canDeploy||c.canRevoke||j.canRunHosted||j.canReadOrder||j.canSend||j.canDeploy)process.exit(1); console.log('V1723K_RPC_CALLER_REVIEW_REQUIRED_REAL_JWT_NO_GO_NO_SEND');"
