@@ -1,0 +1,108 @@
+name: V17.7H.4S Existing Zalo Bot Store Authority Cross-Channel NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7H4S_EXISTING_BOT_STORE_CROSSCHANNEL_NO_SEND.md"
+      - ".github/workflows/v17-7h4s-existing-bot-store-crosschannel-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  store-authority-crosschannel-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax verify inherited V17.7A-H.4S
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/v17-7a-oa-independent/*.mjs; do node --check "$f"; done
+      - name: Run inherited n8n/Worker/offline authority and cross-channel negative QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Assert read-only hosted evidence and real Store UAT NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {assessReadOnlyStoreAuthorityMetadata,
+            syntheticStoreAuthorityKinds} from './qa/v17-7a-oa-independent/v17-7h4s-trusted-store-crosschannel-readonly.mjs';
+          const dir='qa/v17-7a-oa-independent/';
+          const evidence=JSON.parse(readFileSync(dir+'v17-7h4s-grounded-hosted-authority-evidence.json','utf8'));
+          assert.equal(evidence.contract,'TIEN404_V17_7H4S_EXISTING_ZALO_BOT_TRUSTED_STORE_CROSS_CHANNEL_NOSEND');
+          assert.equal(evidence.primary_parent_pr,381);
+          assert.equal(evidence.independent_cross_channel_pr,378);
+          assert.equal(evidence.canonical_store_rls_pr,247);
+          assert.equal(evidence.supabase.commerce_surfaces,6);
+          assert.equal(evidence.supabase.force_rls_surfaces,6);
+          assert.equal(evidence.supabase.tenant_id_surfaces,6);
+          assert.equal(evidence.supabase.store_id_surfaces,0);
+          assert.equal(evidence.supabase.qa_same_tenant_ab,0);
+          assert.equal(evidence.supabase.shop_bot_dry_run,2);
+          assert.equal(evidence.supabase.owner_binding_status_paired,2);
+          assert.equal(evidence.supabase.real_store_owner_jwt_ab_verified,false);
+          assert.equal(evidence.n8n.shop_bot_registry_synthetic,2);
+          assert.equal(evidence.n8n.trusted_installation_rows,7);
+          assert.equal(evidence.n8n.trusted_installation_qa_only_rows,7);
+          assert.equal(evidence.n8n.trusted_installation_real_owner_grants_verified,0);
+          assert.equal(evidence.n8n.zalo_bot_active_qa_only_installs,1);
+          assert.equal(evidence.n8n.messenger_active_qa_only_installs,3);
+          assert.equal(evidence.n8n.production_messenger_http_send_node_present,true);
+          assert.equal(evidence.n8n.production_zalo_bot_qa_marker_writes_present,true);
+          assert.equal(evidence.n8n.public_workflows_modified,false);
+          assert.equal(evidence.recovered_bot_evidence.gateway_reports_token_valid,true);
+          assert.equal(evidence.recovered_bot_evidence.gateway_reports_real_bot_store_binding,false);
+          assert.equal(evidence.recovered_bot_evidence.native_provider_admin_proof,false);
+          assert.equal(evidence.cloudflare.deployments,0);
+          assert.equal(evidence.cloudflare.workers_dev_enabled,false);
+          assert.equal(evidence.cloudflare.previews_enabled,false);
+          assert.equal(evidence.cloudflare.bindings,0);
+          assert.equal(evidence.user_goal.same_phone_or_order_id_not_auth,true);
+          assert.equal(evidence.user_goal.allowed_actual_commerce_reads,0);
+          assert.equal(evidence.user_goal.allowed_actual_writes,0);
+          assert.equal(evidence.user_goal.allowed_actual_provider_sends,0);
+          assert.equal(evidence.user_goal.actual_cross_channel_uat_executed,false);
+          assert.equal(evidence.decision,'REAL_SAME_STORE_CUSTOMER_LINK_AND_CROSS_CHANNEL_NO_SEND_UAT_NO_GO');
+          assert.equal(syntheticStoreAuthorityKinds.approvedForRealQuery,false);
+          assert.equal(syntheticStoreAuthorityKinds.approvedForProviderSend,false);
+          const baseline=assessReadOnlyStoreAuthorityMetadata({
+            source:'CONNECTED_STAGING_METADATA',
+            commerceSurfaces:6,rlsForceCount:6,tenantIdSurfaces:6,
+            storeIdSurfaces:0,commerceSelectPolicies:6,
+            qaTenantCount:2,qaSameTenantAbCount:0,qaMaxStoresPerTenant:1,
+            shopBotCount:2,shopBotDryRunCount:2,
+            ownerBindingPairedCount:2,ownerBindingCount:2,
+            n8nQaBotRegistryCount:2,n8nQaBotSyntheticCount:2,
+            n8nInstallationCount:7,n8nQaOnlyInstallationCount:7,
+            n8nZaloBotQaCount:1,n8nMessengerQaCount:3,
+            realNativeOwnerSessionAccepted:false,
+            realCustomerIdentityLinksAccepted:false,
+            externalNoSendAuditAccepted:false
+          });
+          assert.equal(baseline.status,'NO_GO');
+          assert.equal(baseline.canReadOrder,false);
+          const sql=readFileSync(dir+'v17-7h4s-hosted-store-authority-metadata.sql','utf8');
+          const uncommented=sql.split('\n').filter(l=>!l.trimStart().startsWith('--')).join('\n');
+          assert.match(uncommented,/^\s*WITH\s+surfaces/);
+          assert.ok(uncommented.includes('FROM bot CROSS JOIN owners;'));
+          const banned=/\b(INSERT|UPDATE|DELETE|TRUNCATE|ALTER|DROP|CREATE|GRANT|REVOKE|EXECUTE|CALL)\s+(?:[a-z_][a-z0-9_]*\s*)?/i;
+          assert.ok(!banned.test(uncommented),'Read-only metadata SQL must not mutate database');
+          const source=readFileSync(dir+'v17-7h4s-trusted-store-crosschannel-readonly.mjs','utf8');
+          for(const bad of [
+            /\bawait\s+fetch\s*\(/,/\bprocess\s*\.\s*env\b/,
+            /\b(createOrder|sendMessage|writeOrder|writeStock|setWebhook|deployWorker)\s*\(/
+          ])assert.equal(bad.test(source),false,'Forbidden operation in cross-channel gate');
+          console.log('V17.7H.4S SELECT-ONLY HOSTED METADATA + CROSSCHANNEL QA: PASS, LIVE COMMERCE: NO-GO');
+          NODE
