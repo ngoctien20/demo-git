@@ -74,7 +74,7 @@ jobs:
         run: npm run test:runtime
       - name: Enforce no Cloudflare credentials and no external deployment action
         run: |
-          node -e "const c=require('./wrangler.jsonc'); if(c.workers_dev!==false||c.preview_urls!==false||c.routes.length!==0)process.exit(1);"
+          node -e "const c=JSON.parse(require('node:fs').readFileSync('wrangler.jsonc','utf8')); if(c.workers_dev!==false||c.preview_urls!==false||c.routes.length!==0)process.exit(1);"
   chromium-local-https-worker-candidate:
     name: Chromium mobile UAT for Worker source behind simulated Access (NOT hosted)
     runs-on: ubuntu-24.04
