@@ -1,0 +1,44 @@
+name: V17 Zalo OA Source04 - Provider Compatibility Offline NO SEND
+
+on:
+  push:
+    branches:
+      - "work/v17-zalo-source04-*"
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - ".github/workflows/v17-zalo-source04-provider-compat-nosend.yml"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_04_CHECKPOINT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only:
+    name: source-only-provider-compat
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and inherited security tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/zalo-oa-source-admission/oa-oauth-offline.mjs
+          node --check qa/zalo-oa-source-admission/oa-provider-compat-offline.mjs
+          node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Static no-network no-send guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -nE 'fetch[[:space:]]*\(|axios[[:space:]]*\.|http(s)?[[:space:]]*\.[[:space:]]*request[[:space:]]*\(|sendMessage[[:space:]]*\(|createOrder[[:space:]]*\(' \
+            qa/zalo-oa-source-admission/oa-provider-compat-offline.mjs; then
+            echo "Disallowed network or business side effect in source-only candidate" >&2
+            exit 1
+          fi
+          echo 'Source04 no-network/no-send guard PASS'
