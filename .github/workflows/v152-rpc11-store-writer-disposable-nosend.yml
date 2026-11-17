@@ -37,7 +37,7 @@ jobs:
           POSTGRES_PASSWORD: rpc11_disposable_synthetic_only
           POSTGRES_DB: t404_rpc8_ci
         options: >-
-          --health-cmd 'pg_isready -U postgres -d t404_rpc8_ci'
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
