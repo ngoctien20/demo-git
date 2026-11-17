@@ -16,6 +16,11 @@ async function denyAuthenticated(env,status,category){
  if(env.QA_DIAG_MODE==='OWNER_SCOPED_AUTH_REJECTION_ONCE'&&
     QA_DIAG_CATEGORIES.has(category)&&env.QA_EVENT_DB?.prepare){
   try{
+   // Optional Cloudflare Rate Limiting binding, evaluated only after header auth.
+   // Approximate/per-location, NOT a strict global request cap. Missing/error => no D1 diagnostic query.
+   if(typeof env.QA_DIAG_RATE_LIMITER?.limit!=='function')return reply(status);
+   const quota=await env.QA_DIAG_RATE_LIMITER.limit({key:'qa-v1723u-auth-diagnostic'});
+   if(quota?.success!==true)return reply(status);
    await env.QA_EVENT_DB.prepare(QA_DIAG_INSERT).bind(category).run();
   }catch{
    // Diagnostic storage is best-effort. Never change deny status or disclose details.
