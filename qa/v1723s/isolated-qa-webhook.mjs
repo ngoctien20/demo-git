@@ -3,6 +3,26 @@
 const MAX_BODY=8192, MAX_WINDOW_MS=30*60*1000, MAX_SKEW_MS=3*60*1000;
 const headers={'cache-control':'no-store','x-content-type-options':'nosniff'};
 const reply=(status)=>new Response(null,{status,headers});
+// V17.23U source-only optional diagnostics: OFF unless separately admitted.
+// Persist at most one fixed rejection category per QA-only D1, *after* shared-header auth.
+// No user/chat ID, raw payload, token, URL, IP, message text or timestamp is stored.
+// Schema migration and QA_DIAG_MODE activation are NOT included in this candidate.
+const QA_DIAG_CATEGORIES=new Set([
+ 'CONTENT_TYPE','BODY_SIZE','BODY_PARSE','ENVELOPE','EVENT_KIND',
+ 'MESSAGE_SHAPE','CHALLENGE','EVENT_TIME'
+]);
+const QA_DIAG_INSERT="INSERT OR IGNORE INTO qa_auth_rejection_once(reason) VALUES (?)";
+async function denyAuthenticated(env,status,category){
+ if(env.QA_DIAG_MODE==='OWNER_SCOPED_AUTH_REJECTION_ONCE'&&
+    QA_DIAG_CATEGORIES.has(category)&&env.QA_EVENT_DB?.prepare){
+  try{
+   await env.QA_EVENT_DB.prepare(QA_DIAG_INSERT).bind(category).run();
+  }catch{
+   // Diagnostic storage is best-effort. Never change deny status or disclose details.
+  }
+ }
+ return reply(status);
+}
 const isGoodPath=s=>typeof s==='string'&&/^\/qa\/zalo-bot\/[A-Za-z0-9_-]{24,80}$/.test(s);
 function constantTimeHeader(received,expected){
  if(typeof received!=='string'||typeof expected!=='string'||expected.length<16||expected.length>256)return false;
@@ -62,29 +82,38 @@ export async function handleDedicatedQaWebhook(req,env={},now=Date.now()){
  if(!constantTimeHeader(req.headers.get('x-bot-api-secret-token'),env.QA_HEADER_SECRET))
   return reply(403);
  if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers.get('content-type')||''))
-  return reply(415);
+  return denyAuthenticated(env,415,'CONTENT_TYPE');
  let bytes;
- try{bytes=await limitedBody(req)}catch(e){return reply(e.message==='TOO_LARGE'?413:400)}
+ try{bytes=await limitedBody(req)}
+ catch(e){
+  return denyAuthenticated(env,e.message==='TOO_LARGE'?413:400,
+   e.message==='TOO_LARGE'?'BODY_SIZE':'BODY_PARSE');
+ }
  let parsed;try{parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes))}
- catch{return reply(400)}
+ catch{return denyAuthenticated(env,400,'BODY_PARSE')}
  // Official Bot webhook docs document {ok:true,result:{event_name,message}},
  // while third-party observed deliveries can be flat {event_name,message}.
  // Only these two shapes are allowed; never normalize ambiguous/wrong wrappers.
- if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')return reply(422);
+ if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')
+  return denyAuthenticated(env,422,'ENVELOPE');
  const isWrapped=Object.hasOwn(parsed,'ok')||Object.hasOwn(parsed,'result');
  if(isWrapped&&(
    parsed.ok!==true||!parsed.result||Array.isArray(parsed.result)||
    typeof parsed.result!=='object'||Object.hasOwn(parsed,'event_name')||
    Object.hasOwn(parsed,'message')
- ))return reply(422);
+ ))return denyAuthenticated(env,422,'ENVELOPE');
  const event=isWrapped?parsed.result:parsed;
- if(!event||Array.isArray(event)||typeof event!=='object'||event.event_name!=='message.text.received'||
-    !event.message||typeof event.message!=='object'||Array.isArray(event.message))return reply(422);
+ if(!event||Array.isArray(event)||typeof event!=='object'||event.event_name!=='message.text.received')
+  return denyAuthenticated(env,422,'EVENT_KIND');
+ if(!event.message||typeof event.message!=='object'||Array.isArray(event.message))
+  return denyAuthenticated(env,422,'MESSAGE_SHAPE');
  const msg=event.message;
  if(typeof msg.message_id!=='string'||msg.message_id.length<8||msg.message_id.length>128||
-    msg.chat?.chat_type!=='PRIVATE'||msg.from?.is_bot!==false||
-    msg.text!==env.QA_CHALLENGE||!Number.isSafeInteger(msg.date)||
-    Math.abs(now-msg.date)>MAX_SKEW_MS)return reply(422);
+    msg.chat?.chat_type!=='PRIVATE'||msg.from?.is_bot!==false)
+  return denyAuthenticated(env,422,'MESSAGE_SHAPE');
+ if(msg.text!==env.QA_CHALLENGE)return denyAuthenticated(env,422,'CHALLENGE');
+ if(!Number.isSafeInteger(msg.date)||Math.abs(now-msg.date)>MAX_SKEW_MS)
+  return denyAuthenticated(env,422,'EVENT_TIME');
  // No payload, message content, chat ID or user ID is stored or logged.
  let receipt;
  try{
