@@ -78,7 +78,7 @@ function cloneOutput(c, next, action, command, extra = {}) {
  * verified in a private backend. A passed JS object proves nothing in hosted use.
  */
 export function planHandoff({ conversation: c, binding: b, authority: a,
-  command, receipt = null } = {}) {
+  command, receipt = null, staffAssignment = null } = {}) {
   if (!trustedScope(c, b, a)) return fail('SCOPE_OR_AUTHORITY_DENIED');
   if (!command || !REQ.has(command.action) || !validId(command.id) ||
       !Number.isSafeInteger(command.expectedRevision)) return fail('INVALID_COMMAND');
@@ -92,6 +92,20 @@ export function planHandoff({ conversation: c, binding: b, authority: a,
     if (c.status !== 'BOT_ACTIVE' || c.botSuppressed !== false)
       return fail('NOT_BOT_CONTROLLED');
     if (!validId(command.staffId)) return fail('ASSIGNED_STAFF_REQUIRED');
+    // Separate server-attested Store membership. The requester cannot pick
+    // an arbitrary staff ID or invent Page Inbox access.
+    if (!staffAssignment ||
+        staffAssignment.source !== 'TRUSTED_STORE_STAFF_MEMBERSHIP' ||
+        staffAssignment.verified !== true ||
+        staffAssignment.assignmentAllowed !== true ||
+        staffAssignment.tenantId !== c.tenantId ||
+        staffAssignment.storeId !== c.storeId ||
+        staffAssignment.bindingId !== c.bindingId ||
+        staffAssignment.staffId !== command.staffId ||
+        !STAFF.has(staffAssignment.role) ||
+        (b.channel === 'messenger' &&
+          staffAssignment.pageInboxAccessVerified !== true))
+      return fail('STAFF_ASSIGNMENT_NOT_VERIFIED');
     if (a.role === 'SYSTEM' && a.policyApproved !== true)
       return fail('AI_ESCALATION_NOT_APPROVED');
     const isMeta = b.channel === 'messenger';
