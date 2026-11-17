@@ -5,7 +5,8 @@ Checkpoint 2026-11-17 JST. SOURCE QA and isolated locked webhook implemented; ac
 ## VERIFIED existing state (READ ONLY)
 - Messenger Published Z7FdV7uDvApfbURQ remains active 27 nodes, version d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92. Earlier real webhook execution #4176 success, native signature verified=true. This is NOT proof of Page→new Custom Bot binding.
 - TIEN404_COMMERCE_CHANNELS has Messenger connectionStatus=sandbox. Staging Merchant Channels V4.5 Messenger row: owner_verified=false, verified=false, consent=false, enabled=false, Page ID missing. Neither is verified Meta Business Manager ownership.
-- No authenticated Meta Business Manager or Meta Developer browser session was present among available connected tabs; no Meta provider Page-admin tool was connected. Do not infer admin ownership from successful webhook receipt or HMAC verification.
+- Historical operator evidence must be retained distinctly: user previously self-attested Full Control of the Page and prior screenshots showed Meta App Administrator and app webhook messages/messaging_postbacks configuration, with a prior successful subscription setup. These are useful OWNER_ATTESTED / SCREENSHOT_REPORTED facts, but still do NOT independently prove current Business Manager Full Control, an approved separately isolated QA App/Page, a current authorized Page subscribed_apps readback or consent to replace the production callback.
+- No authenticated Meta Business Manager or Meta Developer browser session was present among connected browser tabs in this task; no Meta provider Page-admin tool was connected. Do not infer admin ownership from successful webhook receipt or HMAC verification alone.
 - Existing V17.1-C synthetic Data Table cnSZ6hT7WCbNwGl5 is only synthetic, owner_authority_verified=false; previous manual n8n execution #4341 20/20 synthetic PASS. This is not a merchant-owned registry.
 
 ## IMPLEMENTED / TESTED actual n8n isolated shell
