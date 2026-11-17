@@ -1,6 +1,6 @@
 # TIEN404 AI — RPC17.5 Canonical Store Authority × Real Supabase Auth A/B UAT Preparation
 
-2026-11-17 JST · SOURCE-ONLY · NO DB WRITES · HOSTED NO-GO
+2026-11-17 JST · SOURCE-ONLY · CI 388/388 PASS · NO DB WRITES · HOSTED NO-GO
 
 ## Inheritance
 - Parent RPC17.4 Draft PR #338 exact baseline `8ca86074849b0779c348fd6cac899344108f47b3`.
@@ -24,9 +24,13 @@
 ## Owner approval needed later
 A separately approved disposable Store QA authority schema with pre-migration backup, owner proof and independent operator, explicit Finance/security/rollback acceptance; verified real Store A/B Supabase Auth sessions (out of chat), read-only cross-store RLS negative UAT and no-send hosted gate, then consider scanner/DO. Never infer Store ownership from QA mapping, Tenant membership alone or self-declared metadata.
 
+## Independent CI proof
+- GitHub Actions RPC17.5 run #44086143949 on commit `994ffc7df92717b7298346b01850f7e5f0df5f06`: SUCCESS, 388/388 PASS, zero failures across 12 Node source suites (31 RPC17.5 plus 357 inherited). No Workerd hosted test or real JWT session UAT was performed.
+- Existing separate RPC10 workflow remains failing; this must be audited independently.
+
 ## QA & rollback
 - CI status must be read from exact PR head before declaring PASS.
 - Close Draft PR to roll back source. No hosted rollback needed because zero hosted writes.
 - Existing independent RPC10 workflow failures remain unresolved.
 
-CHECKPOINT: RPC175_CANONICAL_STORE_SOURCE_ONLY · TENANT_RLS_ONLY_OBSERVED · REAL_STORE_AB_NO_GO · HOSTED_NO_GO
+CHECKPOINT: RPC175_PR341 · CI_388_388_PASS · TENANT_RLS_ONLY_OBSERVED · REAL_STORE_AB_NO_GO · HOSTED_NO_GO
