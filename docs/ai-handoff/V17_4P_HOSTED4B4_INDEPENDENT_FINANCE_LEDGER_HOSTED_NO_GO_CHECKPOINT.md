@@ -24,14 +24,14 @@ At **2026-11-17T10:47:45.998Z**:
 `qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.mjs`:
 - Requires an existing valid **owner + security reviewer** Ed25519-signed parent permit for exact Git source SHA-256, immutable manifest digest, private operator email and an independently evidenced fresh full Cloudflare inventory.
 - Requires an authenticated private broker **RS256/MFA operator JWT** bound to exact SHA-256 of the parent permit, correct subject, role and scope. Test broker keys are ephemeral and do not prove a real operator.
-- Requires **two additional independent Ed25519 signatures**: Finance Approver and Ledger Security Reviewer, both over the same canonical finance packet. Finance signer must be separate from owner and original security signer; finance reviewer distinct from ledger security reviewer.
+- Requires **two additional independent Ed25519 signatures**: Finance Approver and Ledger Security Reviewer, both over the same canonical finance packet. Finance signer must be separate from owner and original security signer; finance reviewer distinct from ledger security reviewer, **both by key ID AND actual SPKI public key bytes**. Matching identities hidden behind renamed key IDs are rejected.
 - Signed packet must include account, TWO exact proposed Worker names, ledger class, Git SHA, parent permit digest, inventory digest, exact admitted operator subject hash, independent change window, positive QA Worker USD allocation, positive private ledger USD allocation, combined USD budget **<= 25** and QA allocation **<= parent owner permit's USD**.
 - Explicit acknowledgement: account-wide spend risk, excluded DO storage charges, no hard invoice ceiling. Never modify account spending limit or billing plan automatically.
 - Explicit denial of new public URL, `workers.dev`, preview, Access policy, secrets, model/provider sends, real Commerce, unrelated Worker or DO changes, auto-deployment, and public requests before Access = **zero**.
 - Requires a short-lived <=15m signed finance approval with nonce and private out-of-band owner/finance/operator/reviewer authority, RBAC, rollback and isolation reviews. Caller-supplied `registered_out_of_band:true` is NOT actual authority; only an independent secured identity registry may supply records and logs.
 - Even with all synthetic verification passing, the function returns `can_upload_qa_worker:false`, `can_create_hosted_ledger:false`, `mutations_executed:false`. It is not a deployer. No API clients/network in the module.
 
-`qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs`: 40 proposed positive/negative source tests for signer separation, delegated funds, tampering, stale inventory, RTC expiration, ledger collisions, operator forgery, unsafe budget changes, provider sends and auto deployments.
+`qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs`: 42 positive/negative source tests for signer separation, delegated funds, tampering, stale inventory, RTC expiration, ledger collisions, operator forgery, unsafe budget changes, provider sends and auto deployments.
 
 `qa/v174p-private-hosted/hosted4b4-finance-ledger-approval.pending.example.json`: unsigned placeholder, no real identities, budget, tokens or private keys; flags always false.
 
