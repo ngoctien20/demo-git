@@ -1,0 +1,202 @@
+{
+  "dataset": "V171C_HAND_LABELED_SYNTHETIC_VECTORS_NOT_REAL_IMAGES",
+  "revision": 7,
+  "embeddingVersion": "qa-v1",
+  "stores": [
+    {
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "items": [
+        {
+          "itemId": "prod-a003",
+          "sku": "A003",
+          "imageId": "pic-a003",
+          "embedding": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "itemId": "prod-a004",
+          "sku": "A004",
+          "imageId": "pic-a004",
+          "embedding": [
+            0.8,
+            0.6,
+            0,
+            0
+          ]
+        },
+        {
+          "itemId": "prod-a015",
+          "sku": "A015",
+          "imageId": "pic-a015",
+          "embedding": [
+            0,
+            0,
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "tenantId": "tenant-one",
+      "storeId": "store-b",
+      "items": [
+        {
+          "itemId": "prod-b003",
+          "sku": "A003",
+          "imageId": "pic-b003",
+          "embedding": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "tenantId": "tenant-two",
+      "storeId": "store-c",
+      "items": [
+        {
+          "itemId": "prod-c003",
+          "sku": "A003",
+          "imageId": "pic-c003",
+          "embedding": [
+            0,
+            -1,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "caseId": "qa-a-exact",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "expectedItemId": "prod-a003"
+    },
+    {
+      "caseId": "qa-a-tilt",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0.99,
+        0.1,
+        0,
+        0
+      ],
+      "expectedItemId": "prod-a003"
+    },
+    {
+      "caseId": "qa-a-medium",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0.78,
+        0.62,
+        0,
+        0
+      ],
+      "expectedItemId": "prod-a004"
+    },
+    {
+      "caseId": "qa-a-style",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "expectedItemId": "prod-a015"
+    },
+    {
+      "caseId": "qa-b-only",
+      "tenantId": "tenant-one",
+      "storeId": "store-b",
+      "embedding": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "expectedItemId": "prod-b003"
+    },
+    {
+      "caseId": "qa-c-only",
+      "tenantId": "tenant-two",
+      "storeId": "store-c",
+      "embedding": [
+        0,
+        -1,
+        0,
+        0
+      ],
+      "expectedItemId": "prod-c003"
+    },
+    {
+      "caseId": "qa-a-outside-b",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "expectedItemId": null
+    },
+    {
+      "caseId": "qa-a-outside-c",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0,
+        -1,
+        0,
+        0
+      ],
+      "expectedItemId": null
+    },
+    {
+      "caseId": "qa-a-unknown-opposite",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        -1,
+        0,
+        0,
+        0
+      ],
+      "expectedItemId": null
+    },
+    {
+      "caseId": "qa-a-unknown-lookalike",
+      "tenantId": "tenant-one",
+      "storeId": "store-a",
+      "embedding": [
+        0.91,
+        0.21,
+        0,
+        0
+      ],
+      "expectedItemId": null
+    }
+  ]
+}
