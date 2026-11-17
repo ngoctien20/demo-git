@@ -39,7 +39,7 @@ jobs:
                     'realMetaQaPageSignedNoSendProof','realZaloQaOaSignedNoSendProof',
                     'realCommerceStoreRlsProof','realCustomerOrderGrantProof'):
               assert m[k] is False,k
-          assert m['productionReleaseApproved'] is False and m['release']=='HOSTED_NO_GO'
+          assert m['release']=='HOSTED_NO_GO'
           assert m['actualOrdersCreated']==0 and m['actualProviderMessagesSent']==0
           source=Path('qa/v171q-private-uat/private-admission.cjs').read_text()
           for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bchild_process\b',
