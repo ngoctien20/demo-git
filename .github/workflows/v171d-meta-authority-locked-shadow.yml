@@ -1,0 +1,64 @@
+name: TIEN404 V17.1-D Meta Page Authority × Locked Shadow Callback (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171d-meta-authority/**'
+      - 'docs/ai-handoff/V17_1D_*'
+      - '.github/workflows/v171d-meta-authority-locked-shadow.yml'
+permissions:
+  contents: read
+jobs:
+  offline-operator-readonly-and-locked-callback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Operator Meta Graph API safety QA — fake responses only
+        run: |
+          node --check qa/v171d-meta-authority/page-app-readonly.mjs
+          node --test qa/v171d-meta-authority/page-app-readonly.test.mjs
+      - name: Confirm no opt-in leads to no network
+        run: |
+          node qa/v171d-meta-authority/page-app-readonly.mjs > /tmp/no-opt-in.txt && exit 1 || true
+          grep -q EXPLICIT_LIVE_READONLY_OPT_IN_REQUIRED /tmp/no-opt-in.txt
+      - name: Confirm isolated n8n shadow is locked, credential-free and cannot perform live actions
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('qa/v171d-meta-authority/locked-callback-snapshot.json')
+          s=json.loads(f.read_text())
+          w=s['workflow']; g=s['proof']['guard']
+          assert w['active'] is False and w['activeVersionId'] is None
+          assert len(w['nodes'])==3
+          by_type={x['type']:x for x in w['nodes']}
+          assert set(by_type)=={
+            'n8n-nodes-base.webhook','n8n-nodes-base.code',
+            'n8n-nodes-base.respondToWebhook'
+          }
+          assert all('credentials' not in x for x in w['nodes'])
+          web=by_type['n8n-nodes-base.webhook']['parameters']
+          assert web['httpMethod']=='POST'
+          assert web['path']=='tien404-v171d-meta-shadow-locked-nosend'
+          assert web['options']['rawBody'] is True
+          assert by_type['n8n-nodes-base.respondToWebhook']['parameters']['options']['responseCode']==403
+          assert g['status']=='SHADOW_LOCKED' and g['http_status']==403
+          assert s['proof']['executionId']=='4347'
+          assert g['real_meta_signature_verified'] is False
+          assert g['provider_sends']==g['model_calls']==g['commerce_writes']==0
+          assert s['release_gate']['private_owner_verified'] is False
+          assert s['release_gate']['real_meta_callback_received'] is False
+          print('V17.1-D LOCKED NO SEND CI PASS')
+          PY
+  real-meta-page-to-bot-release:
+    name: Actual Meta Page owner + real signed shadow event + hosted Store RLS — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Requires separately approved Meta app/Page authority and isolated callback test'
