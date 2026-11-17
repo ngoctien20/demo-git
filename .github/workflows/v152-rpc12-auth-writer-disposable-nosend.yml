@@ -1,0 +1,89 @@
+name: TIEN404 RPC12 Auth-Bound Store Writer (PG17 DISPOSABLE NO HOSTED)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc12/**'
+      - '.github/workflows/v152-rpc12-auth-writer-disposable-nosend.yml'
+      - 'docs/ai-handoff/T404_RPC12_*'
+  push:
+    branches:
+      - work/v152-rpc12-auth-uid-store-writer-private-evidence-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc12-source-and-ownership:
+    name: Source guard and original Merchant ownership NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node safety + four unverified Owner record slots
+        run: |
+          node --check qa/v152-rpc12/original-store-ownership-gate.cjs
+          node --test qa/v152-rpc12/source-only.test.cjs
+      - name: Shell syntax and documented real JWT limitations
+        run: |
+          bash -n qa/v152-rpc12/ci-pg17-auth-writer-rehearsal.sh
+          grep -q 'NOT a real JWT test' qa/v152-rpc12/pg17-auth-bound-writer-disposable-only.sql
+          grep -q 'auth.uid()' qa/v152-rpc12/pg17-auth-bound-writer-disposable-only.sql
+          grep -q 'canWriteHosted:false' qa/v152-rpc12/original-store-ownership-gate.cjs
+  rpc12-disposable-pg17:
+    name: AUTH.UID session-claim contract with dedicated RLS actor (PG17 only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc12_private_synthetic_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc12_private_synthetic_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real PG17 contract test (NOT real JWT signed auth)
+        run: |
+          bash -n qa/v152-rpc12/ci-pg17-auth-writer-rehearsal.sh
+          bash qa/v152-rpc12/ci-pg17-auth-writer-rehearsal.sh
+  rpc12-hosted-no-go:
+    name: NO HOSTED writer, store migration or provider send
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source metadata never authorizes hosted action
+        run: |
+          node - <<'NODE'
+          const gate=require('./qa/v152-rpc12/original-store-ownership-gate.cjs');
+          const packet=require('./qa/v152-rpc12/owner-packet-private-template.json');
+          const r=gate.inspect(packet);
+          if(r.canWriteHosted||r.canBackfill||r.canApplyM1||r.canReplaceRls||
+             r.canRevokeRpc||r.canRelease||r.canSendProviderMessages||
+             r.realSupabaseJwtVerified||r.actualStoreOwnerVerified){
+            throw new Error('RPC12_UNSAFE_HOSTED_PROMOTION');
+          }
+          console.log('PASS RPC12 HOSTED_NO_GO: four real source proofs missing');
+          NODE
+          test ! -f qa/v152-rpc12/hosted-deploy.sh
