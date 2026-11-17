@@ -130,6 +130,6 @@ test('missing independent reviewer kill-switch or one tester consent blocked',as
  blocked(g,'PRIVATE_INDEPENDENT_PAGE_OWNER_REVIEW_PENDING');
 });
 test('Page observation cannot be misrepresented as merchant authority',async()=>{
- const f=fixture(await receipt());f.readOnlyReceipt.verified_merchant_business_owner=true;
+ const f=fixture(await receipt());f.readOnlyReceipt={...f.readOnlyReceipt,verified_merchant_business_owner:true};
  blocked(f,'META_PAGE_APP_READ_VISIBILITY_NOT_VERIFIED');
 });
