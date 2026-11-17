@@ -36,6 +36,9 @@ jobs:
           node --check qa/v152-g11/fenced-nosend-lease-adapter.cjs
           node --check qa/v152-g11/fenced-nosend-lease-adapter.test.cjs
           node --test qa/v152-g11/fenced-nosend-lease-adapter.test.cjs
+          node --check qa/v152-g11/INACTIVE_N8N_CRASH_RECOVERY_SDK.js
+          node --check qa/v152-g11/INACTIVE_N8N_CRASH_RECOVERY_SDK.test.cjs
+          node --test qa/v152-g11/INACTIVE_N8N_CRASH_RECOVERY_SDK.test.cjs
       - name: Inherit V17.1E, G0.10 and G0.4–G0.9 source regressions
         run: |
           ln -s .g11_v171 .g10_v171
