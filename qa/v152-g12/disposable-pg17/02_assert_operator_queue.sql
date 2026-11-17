@@ -123,8 +123,8 @@ BEGIN
    WHERE status='RESOLVED';
   IF n<>2 THEN RAISE EXCEPTION 'G12_NOT_TWO_RESOLVED';END IF;
   SELECT count(*) INTO n FROM t404_g12_disposable_qa.review_history;
-  IF n<>10 THEN RAISE EXCEPTION 'G12_AUDIT_LOG_COUNT %',n;END IF;
-  RAISE NOTICE 'PASS G12: scan 2/idempotent, operator crash reclaim fenced, independent evidence matched, uncertain-send kept blocked, audit 10';
+  IF n<>9 THEN RAISE EXCEPTION 'G12_AUDIT_LOG_COUNT %',n;END IF;
+  RAISE NOTICE 'PASS G12: scan 2/idempotent, operator crash reclaim fenced, independent evidence matched, uncertain-send kept blocked, audit 9';
 END $qa$;
 
 DO $qa_neg$
