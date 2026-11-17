@@ -20,7 +20,9 @@ jobs:
         run: |
           node --check qa/v1722-cross-channel-order/cross-channel-qa-core.mjs
           node --check qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs
-          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs
+          node --check qa/v1722-cross-channel-order/qa-command-router.mjs
+          node --check qa/v1722-cross-channel-order/qa-command-router.test.mjs
+          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs
       - name: No provider send, no Commerce write, no external secret/static gate
         run: |
           python3 - <<'PY'
@@ -28,6 +30,8 @@ jobs:
           import re
           src=Path('qa/v1722-cross-channel-order/cross-channel-qa-core.mjs').read_text()
           assert 'SYNTHETIC_LOCAL_NO_SEND_NO_COMMERCE_WRITES' in src
+          router=Path('qa/v1722-cross-channel-order/qa-command-router.mjs').read_text()
+          assert 'PRIVATE_QA_ORDER_CORE_NO_SEND' in router and 'LEGACY_UNCHANGED_NOT_EXECUTED' in router
           assert 'PROVIDER_SEND_DISABLED' in src
           assert 'COMMERCE_WRITE_DISABLED' in src
           assert 'NATIVE_PROVIDER_AUTH_REQUIRED' in src
@@ -35,6 +39,7 @@ jobs:
           for p in [r'\bfetch\s*\(',r'\bprocess\.env\b',r'\bXMLHttpRequest\b',r'\baxios\b',
                     r'\bhttp\.request\s*\(',r'\bconsole\.log\s*\(',r'(?i)sk-[a-z0-9_-]{16,}']:
             assert not re.search(p,src),p
+            assert not re.search(p,router),p
           print('SOURCE ONLY: mock signed providers and in-memory QA Commerce; NO LIVE SEND/ORDER.')
           PY
   live-provider-order-cutover:
