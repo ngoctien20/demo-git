@@ -17,8 +17,12 @@ function gate(input=fixtures()){return sourceRun(1,input);}
 function preview(input=gate()){return sourceRun(2,input);}
 function finish(input=preview()){return sourceRun(3,input);}
 function row(name,profile,source=fixtures()){
- const r=source.cases.find(x=>x.name===name&&
-  [x.channel,x.installationId].join(':')===profile);
+ const i=PROFILES.indexOf(profile);
+ assert.ok(i>=0,'Unknown known fixture profile');
+ // A payload may spoof installation/authUserId; pin case to the trusted
+ // fixture generator's immutable sequential group, never client labels.
+ const r=source.cases.find(x=>x.name===name &&
+   Math.floor((Number(String(x.caseId).slice(2))-1)/52)===i);
  assert.ok(r,'Missing: '+name+' @ '+profile);
  return r;
 }
@@ -27,12 +31,6 @@ const PROFILES=[
  'ZALO:QA_OA_A','ZALO:QA_OA_B'
 ];
 function actualResult(name,profile,source=gate()){
- const target=source.results.find(x=>x.scenario===name&&
-  [x.channel,
-   x.channel==='MESSENGER'?(x.tenantId?x.storeId==='STORE_A'?'QA_PAGE_A':'QA_PAGE_B':
-     profile.split(':')[1]):(x.tenantId?x.storeId==='STORE_A'?'QA_OA_A':'QA_OA_B':
-     profile.split(':')[1])].join(':')===profile);
- // Fixture IDs provide stable source association even if denial redacts Store.
  const fixture=row(name,profile);
  const result=source.results.find(x=>x.caseId===fixture.caseId);
  assert.ok(result);
@@ -89,17 +87,20 @@ test('11 fixture dataset exactly 208',()=>{
 test('12 fixture case IDs globally unique',()=>{
  const f=fixtures();assert.equal(new Set(f.cases.map(x=>x.caseId)).size,208);
 });
-test('13 52 synthetic security cases per Store/channel installation',()=>{
- const f=fixtures();for(const profile of PROFILES){
-  const [channel,installationId]=profile.split(':');
-  assert.equal(f.cases.filter(x=>x.channel===channel&&x.installationId===installationId).length,52);
+test('13 52 QA case IDs per protected profile including a forged installation',()=>{
+ const f=fixtures();
+ for(let i=0;i<PROFILES.length;i++){
+  const group=f.cases.filter(c=>Math.floor((Number(String(c.caseId).slice(2))-1)/52)===i);
+  assert.equal(group.length,52);
+  assert.equal(group.filter(c=>c.installationId==='FAKE_INSTALLATION').length,1);
+  assert.equal(group.filter(c=>c.installationId===PROFILES[i].split(':')[1]).length,51);
  }
 });
 test('14 four profiles represent two separate fake owner IDs under one fake Tenant',()=>{
  const f=fixtures();
  assert.equal(new Set(f.cases.map(x=>x.tenantIdHint)).size,1);
  assert.equal(new Set(f.cases.map(x=>x.authUserIdHint)).size,2);
- assert.equal(new Set(f.cases.map(x=>x.installationId)).size,4);
+ assert.equal(new Set(f.cases.filter(x=>x.installationId!=='FAKE_INSTALLATION').map(x=>x.installationId)).size,4);
 });
 test('15 no real JWT or signed provider proof in fixtures',()=>{
  const f=fixtures();assert.equal(f.realJwtVerified,false);assert.equal(f.realProviderOwnerVerified,false);
@@ -176,8 +177,9 @@ test('31 fake customer event never creates an order',()=>{
  assert.equal(r.actualProviderSends,0);
 });
 test('32 no actual independent provider or JWT receipt anywhere',()=>{
- assert.equal(snap.realJwtStoreAAndBVerified,false);
- assert.equal(snap.independentProviderProof,false);
+ assert.equal(snap.supabaseReadOnlyAsObserved.realTwoOwnerJwtAttested,false);
+ assert.equal(snap.providerAuthority.realMetaSignedQaEventAttested,false);
+ assert.equal(snap.providerAuthority.realZaloSignedQaEventAttested,false);
 });
 const denied=[
 'cross Store catalog','cross Store order','wrong customer sender grant',
@@ -246,7 +248,7 @@ for(const [label,key,value] of forged)test('deny forged otherwise eligible Store
  assert.equal(r.passed,true);
 });
 test('last source QA must not claim real Store JWT proof',()=>{
- assert.equal(snap.hostedRelease,'NO_GO');
+ assert.equal(snap.release,'HOSTED_NO_GO');
  assert.equal(snap.realCommerceReaderConnected,false);
  assert.equal(snap.actualDatabaseReads,0);
 });
