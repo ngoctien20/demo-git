@@ -224,3 +224,27 @@ test('50 durable claim body rejects invalid key without transaction',async()=>{
  const r=await doo.fetch(new Request('https://durable.internal/claim',{method:'POST',body:'{}'}));
  assert.equal(r.status,400);
 });
+
+
+test('51 accepts Cloudflare Secrets Store async .get bindings (QA-only)',async()=>{
+ const managed={...env,
+  V174P_SESSION_HMAC_KEY:{get:async()=>SECRET},
+  V174P_ACCESS_JWKS_JSON:{get:async()=>JSON.stringify({keys:[JWK]})}};
+ const r=await call('GET','/healthz',undefined,{env:managed});
+ assert.equal(r.status,200);assert.equal(r.data.status,'PRIVATE_QA_READY');
+});
+test('52 missing managed secret denies before every route',async()=>{
+ const r=await call('GET','/healthz',undefined,{env:{...env,V174P_SESSION_HMAC_KEY:{}}});
+ assert.equal(r.status,503);
+});
+test('53 unavailable Secrets Store binding fails closed with no leak',async()=>{
+ const r=await call('GET','/healthz',undefined,{env:{...env,
+  V174P_SESSION_HMAC_KEY:{get:async()=>{throw Error('SECRET_VALUE_MUST_NOT_LEAK');}}}});
+ assert.equal(r.status,503);assert.equal(r.data.reason,'SECRET_BINDING_UNAVAILABLE');
+ assert.equal(JSON.stringify(r.data).includes('SECRET_VALUE_MUST_NOT_LEAK'),false);
+});
+test('54 invalid Secrets Store JWKS binding fails closed',async()=>{
+ const r=await call('GET','/healthz',undefined,{env:{...env,
+  V174P_ACCESS_JWKS_JSON:{get:async()=>null}}});
+ assert.equal(r.status,503);
+});
