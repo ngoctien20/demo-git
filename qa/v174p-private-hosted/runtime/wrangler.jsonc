@@ -1,0 +1,28 @@
+{
+  "name": "t404-v174p-local-do-runtime-qa-only",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-11-17",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {
+    "V174P_MODE": "QA_SYNTHETIC_ONLY",
+    "V174P_OWNER_PROOF_STATUS": "UNVERIFIED_QA_ONLY"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "V174P_REPLAY_DO",
+        "class_name": "V174PReplayGuard"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-local-sqlite",
+      "new_sqlite_classes": [
+        "V174PReplayGuard"
+      ]
+    }
+  ]
+}
