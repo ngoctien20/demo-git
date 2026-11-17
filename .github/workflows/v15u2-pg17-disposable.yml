@@ -1,0 +1,38 @@
+name: 'TIEN404 V15.0-10U.2 Disposable PG17 Mapping/RLS (synthetic only)'
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'qa/commerce/v15u2/**'
+      - '.github/workflows/v15u2-pg17-disposable.yml'
+permissions:
+  contents: read
+jobs:
+  pg17-disposable:
+    if: ${{ github.event.pull_request.draft == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tien404_v15u2_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-disposable-fixture-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Static package checks (no network)
+        run: node --test qa/commerce/v15u2/review-safety.test.cjs
+      - name: Real PG17 disposable RLS / rollback, NO hosted calls
+        env:
+          TIEN404_PG17_DISPOSABLE_QA: 'ONE_TIME_APPROVED_ONLY'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGDATABASE: 'tien404_v15u2_disposable'
+          PGUSER: 'postgres'
+          PGPASSWORD: 'local-disposable-fixture-only'
+        run: bash qa/commerce/v15u2/run_pg17_disposable.sh
