@@ -2,7 +2,7 @@
 // NO provider API, no real Merchant, no OAuth, no hosted Worker or DB.
 // Ed25519 public-key verification here tests PRIVATE attestor-shaped receipts using
 // GENERATED TEST KEYS; it does NOT prove Zalo OA ownership or Cloudflare Access.
-import {createHash, verify as verifySignature} from 'node:crypto';
+import {createHash, createPublicKey, timingSafeEqual, verify as verifySignature} from 'node:crypto';
 const ID=/^[A-Za-z0-9_-]{1,128}$/;
 const OA=/^[0-9]{5,25}$/;
 const HEX=/^[a-f0-9]{64}$/;
@@ -35,7 +35,7 @@ export function verifyOfflineAttestationEnvelope(envelope,key,kind){
 
 export function inspectDedicatedAccessConfig(app, pinned){
   if(!app||!pinned||typeof pinned.domain!=='string'||
-      !/^[a-z0-9-]+\.workers\.dev$/.test(pinned.domain)||
+      !/^(?:[a-z0-9-]+\.){1,3}workers\.dev$/.test(pinned.domain)||
       app.type!=='self_hosted'||app.name!==pinned.name||
       app.aud!==pinned.aud||app.domain!==pinned.domain||
       !valid(app.id)||app.enabled!==true||
@@ -67,6 +67,13 @@ export async function evaluatePrivateOaCanaryAdmission(deps){
       typeof deps.reserveOneShot!=='function'||
       !deps.merchantAttestorPublicKey||!deps.operatorAttestorPublicKey||
       !deps.pinnedAccess) return fail('SOURCE_ONLY_TRUST_DEPENDENCIES_MISSING');
+  // Merchant evidence and independent operator approval must use distinct signing keys.
+  try {
+    const merchantKey=createPublicKey(deps.merchantAttestorPublicKey).export({type:'spki',format:'der'});
+    const operatorKey=createPublicKey(deps.operatorAttestorPublicKey).export({type:'spki',format:'der'});
+    if(merchantKey.length===operatorKey.length&&timingSafeEqual(merchantKey,operatorKey))
+      return fail('INDEPENDENT_ATTESTOR_KEYS_REQUIRED');
+  } catch { return fail('ATTESTOR_KEY_REGISTRY_INVALID'); }
   const now=deps.nowMs??Date.now();
   if(!clock(now))return fail('CLOCK_INVALID');
   let owner,operator,merchant,approval,config;
