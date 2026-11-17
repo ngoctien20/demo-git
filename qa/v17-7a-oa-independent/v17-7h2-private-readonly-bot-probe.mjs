@@ -5,8 +5,6 @@
 // Supabase, Cloudflare, n8n or any webhook mutation. NEVER store tokens/URLs.
 // Zalo Bot getMe and getWebhookInfo are POST requests whose Bot Token is part
 // of the URL path. User-facing outputs must not contain token, URL or Bot ID.
-import { createHash } from 'node:crypto';
-
 const BOT_API='https://bot-api.zaloplatforms.com';
 const TOKEN=/^QA_ONLY_[A-Za-z0-9_-]{10,50}:[A-Za-z0-9_-]{10,60}$/;
 const BOT_ID=/^\d{8,24}$/;
