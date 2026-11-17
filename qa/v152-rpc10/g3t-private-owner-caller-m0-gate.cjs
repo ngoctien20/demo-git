@@ -135,7 +135,8 @@ function assess(packet,prevG3S){
    return fail('G3T_WRITER_OR_M0_CONTRACT_DRIFT',['PREVIOUS_ABI_OR_RECOVERY_SCOPE_NOT_MATCHED']);
  const prior=inspectG3S(prevG3S);
  if(prior.reason!=='G3S_CALLER_AND_ORIGINAL_OWNER_RECONCILED_NO_GO'||
-    prior.status!=='STAGING_MIGRATION_NO_GO')
+    prior.status!=='STAGING_MIGRATION_NO_GO'||
+    prior.blockers?.includes('PUBLISHED_VERSION_DRIFT_STOP_REAUDIT'))
    return fail('G3T_PARENT_CALLER_INVENTORY_NOT_RECONCILED',['PARENT_INVENTORY_DRIFT']);
  if(!Array.isArray(prevG3S?.n8n?.publishedWorkflowObservations)||
     prevG3S.n8n.publishedWorkflowObservations.length!==7||
