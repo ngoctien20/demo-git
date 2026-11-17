@@ -1,6 +1,6 @@
 # TIEN404 V18.0-P0F — Canonical Store Migration Compatibility × Private Auth A/B Admission
 
-**Checkpoint:** 2026-11-18 JST · `VERIFIED_READ_ONLY / IMPLEMENTED_SOURCE_ONLY / TEST_PENDING`
+**Checkpoint:** 2026-11-18 JST · `VERIFIED_READ_ONLY / IMPLEMENTED_SOURCE_ONLY / TESTED_OFFLINE 30/30 / HOSTED_NO_GO`
 **Repository lineage:** continue existing Draft PR #385 (based on #362); read-only staging ref `ifxlvrhyjhbzbrkdsida` (PostgreSQL 17.11).
 **Authority:** production NO-GO. Founder has explicitly deferred M0 backup proof **only for read-only/source-only/disposable QA**, not hosted writes, grants, RLS, credentials, customer data or release.
 
@@ -52,6 +52,7 @@ Source-only `qa/v180-p0f/store-auth-compat-preflight.mjs` + tests check that bas
 
 ## 4. Checkpoint & next gate
 
-**Status:** P0F read-only compatibility **VERIFIED**; source gate **IMPLEMENTED**; offline CI **PENDING**; real JWT UAT **NOT RUN**; hosted Store A/B **BLOCKED**; M0 **DEFERRED FOR DISPOSABLE ONLY**; production **NO-GO**.
+**Status:** P0F read-only compatibility **VERIFIED**; source gate **IMPLEMENTED**; offline CI **TESTED 30/30**; real JWT UAT **NOT RUN**; hosted Store A/B **BLOCKED**; M0 **DEFERRED FOR DISPOSABLE ONLY**; production **NO-GO**.
+**Independent CI receipt:** P0F push run https://github.com/ngoctien20/demo-git/actions/runs/44127063516 PASS, and PR run https://github.com/ngoctien20/demo-git/actions/runs/44127080917 PASS at pre-report source HEAD `f841985d0763627ee8cc6f26880841b9b24692b0`. Logs show 30/30 tests PASS, 31 UAT cases remain NOT_RUN, and source matrix status TENANT_ONLY_BASELINE_VERIFIED / HOSTED NO-GO. Later documentation commit requires its own CI check; no claim of passed tests before checking that commit.
 **Rollback:** only Draft source changes, no runtime rollback. Future migration cutover requires tested rollback and M0 evidence.
 **Next:** P0G — Canonical Store Owner Evidence Intake × Zero-Write Real Auth Private Operator Handshake Readiness × Migration Change Set Review, without running hosted DDL.
