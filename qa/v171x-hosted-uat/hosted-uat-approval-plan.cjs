@@ -72,7 +72,7 @@ function createHostedReadinessPlan({expectedCommitSha,readTrustedInfrastructure,
   const fields={
    worker:['name','exists','workersDevEnabled','previewEnabled','customDomains','r2Bound'],
    r2:['name','exists','managedPublicEnabled','customDomains','lockRuleCount'],
-   access:['name','exists','policiesReturned','externalDeniedCanaryVerified'],
+   access:['name','exists','policiesReturned','bypassPolicyCount','externalDeniedCanaryVerified','externalAuthorizedCanaryVerified'],
    replay:['namespacesExist','workerDurableBindingVerified','crossRestartAtomicCanaryVerified'],
    verification:['prefixZeroObjectsVerified','lifecycleBackupRecorded','ownerDeletionConsentRecorded',
      'actualRetentionCanaryVerified','actualScannerCdrVerified','lockConflictIndependentlyReviewed']
@@ -90,7 +90,9 @@ function createHostedReadinessPlan({expectedCommitSha,readTrustedInfrastructure,
    !Number.isSafeInteger(x.r2.customDomains)||x.r2.customDomains<0||
    !Number.isSafeInteger(x.r2.lockRuleCount)||x.r2.lockRuleCount<0||
    !Number.isSafeInteger(x.access.policiesReturned)||x.access.policiesReturned<0||
+   !Number.isSafeInteger(x.access.bypassPolicyCount)||x.access.bypassPolicyCount<0||
    typeof x.access.externalDeniedCanaryVerified!=='boolean'||
+   typeof x.access.externalAuthorizedCanaryVerified!=='boolean'||
    !Number.isSafeInteger(x.replay.namespacesExist)||x.replay.namespacesExist<0||
    typeof x.replay.workerDurableBindingVerified!=='boolean'||
    typeof x.replay.crossRestartAtomicCanaryVerified!=='boolean'||
@@ -119,7 +121,9 @@ function createHostedReadinessPlan({expectedCommitSha,readTrustedInfrastructure,
   const checks={
    PRIVATE_WORKER_EXISTENCE:x.worker.exists&&x.worker.r2Bound,
    WORKER_PUBLIC_SURFACE:!x.worker.workersDevEnabled&&!x.worker.previewEnabled&&x.worker.customDomains===0,
-   ACCESS_APP_UNAUTH_PROBE:x.access.externalDeniedCanaryVerified,
+   ACCESS_APP_UNAUTH_PROBE:x.access.exists===true&&
+     x.access.policiesReturned>=1&&x.access.bypassPolicyCount===0&&
+     x.access.externalDeniedCanaryVerified&&x.access.externalAuthorizedCanaryVerified,
    R2_PRIVATE_ENDPOINTS:!x.r2.managedPublicEnabled&&x.r2.customDomains===0,
    R2_PREFIX_EMPTY_VERIFIED:x.verification.prefixZeroObjectsVerified,
    R2_LIFECYCLE_BACKUP:x.verification.lifecycleBackupRecorded,
