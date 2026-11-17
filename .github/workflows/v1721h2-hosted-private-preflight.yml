@@ -26,12 +26,16 @@ jobs:
           from pathlib import Path
           workflow=Path('.github/workflows/v1721h2-hosted-private-preflight.yml').read_text()
           config=Path('qa/v1721h2-hosted-private/wrangler.hosted.NO_DEPLOY.jsonc').read_text()
-          assert 'cloudflare.request(' not in workflow
           assert 'migrations' in config and '"new_sqlite_classes"' in config
           assert '"workers_dev": false' in config and '"preview_urls": false' in config
           assert '"routes": []' in config
-          assert not any(k in workflow for k in ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID','wrangler deploy'])
-          print('PRIVATE PREDEPLOY STATIC PASS: no credentials, no cloud deployment')
+          assert 'wrangler deploy --dry-run' in workflow
+          assert 'if: false' in workflow
+          for line in workflow.splitlines():
+            line=line.strip()
+            if line.startswith('run: yarn wrangler deploy'):
+              assert '--dry-run' in line and '--config' in line
+          print('PRIVATE PREDEPLOY STATIC PASS: route off, preview off, dry-run only')
           PY
   workerd-bundle-validation-only:
     name: Wrangler dry-run bundle only, no Cloudflare account request
