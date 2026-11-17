@@ -33,7 +33,8 @@ function fixture(phase=PHASE_LEDGER){
   worker_names:names.slice(),script_names:names.slice(),
   do_namespace_names:[
    'tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
-   'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults'
+   'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults',
+   ...(phase===PHASE_QA?[LEDGER+'_V174PPermitLedger']:[])
   ],
   access_app_names:['TIEN404 RPC16 Merchant Evidence Staging — DENY ALL',
    'tien404-ai-git-staging - Cloudflare Pages'],
@@ -245,3 +246,25 @@ test('40 no URL/file reference fields anywhere inside packet positive reference 
  assert(!JSON.stringify(f.packet).includes('https://'));
  assert(f.packet.private_evidence_refs.owner_authority.ref_id.startsWith('EV-'));
 });
+
+test('41 missing V17.5 namespace in otherwise consistent signed inventory blocks',()=>reject(f=>{
+ f.inventory.snapshot.do_namespace_names.shift();
+ f.packet.inventory_sha256=digest(f.inventory.snapshot);
+},'fresh_full_independent_inventory_digest',true));
+test('42 QA Worker requires independently inventoried hosted ledger namespace',()=>reject(f=>{
+ f.inventory.snapshot.do_namespace_names=
+  f.inventory.snapshot.do_namespace_names.filter(n=>n!==LEDGER+'_V174PPermitLedger');
+ f.packet.inventory_sha256=digest(f.inventory.snapshot);
+},'qa_rejected_until_ledger_in_current_inventory',true,PHASE_QA));
+test('43 stale hosted ledger receipt from one day ago cannot authorize QA',()=>reject(f=>{
+ f.priorLedgerAcceptance.receipt.created_at=new Date(NOW-86400001).toISOString();
+ f.packet.ledger_receipt_sha256=digest(f.priorLedgerAcceptance.receipt);
+},'exact_prior_ledger_receipt_bound_to_new_inventory',true,PHASE_QA));
+test('44 unreviewed extra authority field cannot bypass exact signer set',()=>reject(f=>{
+ f.signatures.superadmin={key_id:'synthetic-superadmin',signature:'x'};
+},'five_independently_signed_phase_bound_attestations'));
+test('45 duplicated Worker script name in signed inventory is disallowed',()=>reject(f=>{
+ f.inventory.snapshot.worker_names[0]=f.inventory.snapshot.worker_names[1];
+ f.inventory.snapshot.script_names[0]=f.inventory.snapshot.script_names[1];
+ f.packet.inventory_sha256=digest(f.inventory.snapshot);
+},'fresh_full_independent_inventory_digest',true));
