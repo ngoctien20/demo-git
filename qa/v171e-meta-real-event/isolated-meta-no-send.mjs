@@ -23,6 +23,8 @@ function ready(config) {
     text(config.appSecret)&&config.appSecret.length>=20&&
     text(config.verifyToken)&&config.verifyToken.length>=12&&
     ident(config.qaPageId)&&ident(config.qaTesterPsid)&&
+    ident(config.qaAppId)&&ident(config.productionAppId)&&ident(config.productionPageId)&&
+    config.qaAppId!==config.productionAppId&&config.qaPageId!==config.productionPageId&&
     config.ownerApproval?.qaAppPageIsolated===true&&
     config.ownerApproval?.callbackPermissionGranted===true&&
     config.ownerApproval?.merchantPageControlVerified===true&&
