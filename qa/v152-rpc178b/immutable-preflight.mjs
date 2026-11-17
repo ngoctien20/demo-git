@@ -30,8 +30,9 @@ export function hashApprovedCandidate(sql){
  if(typeof sql!=='string'||sql.length<100||sql.length>100000)return null;
  return createHash('sha256').update(Buffer.from(sql,'utf8')).digest('hex');
 }
-export function inspectRpc178bPreflight({evidence,scope,ddl,baseline}={}){
+export function inspectRpc178bPreflight(input={}){
  try{
+  const {evidence,scope,ddl,baseline}=input||{};
   const missing=REQUIRED.filter(x=>evidence?.[x]!==true);
   const actualHash=hashApprovedCandidate(ddl);
   if(!actualHash||actualHash!==scope?.ddl_sha256)missing.push('EXACT_DDL_SHA_MISMATCH');
