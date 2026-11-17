@@ -1,0 +1,48 @@
+{
+  "checkpoint": "V17.21H.2",
+  "created_at_utc": "2026-11-17T11:38:12.128569Z",
+  "worker_name": "tien404-v1721h2-zalo-replay-private-nosend-staging",
+  "uploaded_version_id": "3c8d979f-cee2-48d5-8118-91ae872a52e6",
+  "deployment_id": "75332af9-7ea7-4683-8e07-e7a59de4adb2",
+  "actual_deployment_config": {
+    "main_module": "zalo-bot-replay-bucket-v2.worker.mjs",
+    "source_module_paths": [
+      "qa/v1721-zalo-durable/zalo-bot-replay-bucket-v2.worker.mjs",
+      "qa/v1721-zalo-durable/zalo-sqlite-claim-v2.mjs"
+    ],
+    "bindings": [],
+    "exports": {
+      "ZaloBotReplayBucketV2": {
+        "type": "durable-object",
+        "storage": "sqlite"
+      }
+    },
+    "worker_subdomain_enabled": false,
+    "preview_urls_enabled": false,
+    "public_routes": [],
+    "public_fetch_handler": false,
+    "observability_enabled": false
+  },
+  "provenance": {
+    "worker_source_git_blob_sha": "456ad2956269216d986154fc7efc224d8903f9e9",
+    "sql_source_git_blob_sha": "21f47db315afc1a3932309f0424db9a90dfc2452"
+  },
+  "hosted_sql_qa": {
+    "statements": 19,
+    "budget_statements": 25,
+    "provider_sends": 0,
+    "commerce_writes": 0,
+    "qa_rows_after_cleanup_by_object": {
+      "SYNTHETIC_A": 0,
+      "SYNTHETIC_B": 0
+    },
+    "data_rollback_passed": true
+  },
+  "outstanding": {
+    "private_rpc_accepted": false,
+    "app_zalo_provider_authenticated": false,
+    "cloudflare_billing_api_readable": false,
+    "infrastructure_rollback_executed": false
+  },
+  "note": "This captures actual Cloudflare JSON API version upload without the unprovisioned binding. The earlier no-deploy Wrangler config is an independent preflight design, not a byte-identical record of the deployed API version. No public URL or caller was added."
+}
