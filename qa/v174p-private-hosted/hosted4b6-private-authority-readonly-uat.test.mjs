@@ -239,3 +239,12 @@ test('38 superadmin member role accepted does NOT imply independent finance or p
  assert.equal(result.real_finance_verified,false);
  assert.equal(result.can_provision_ledger,false);
 });
+
+test('39 different owner script for existing Zalo DO fails even if namespace name unchanged',()=>blocked(f=>{
+ f.cloudflareSnapshot.durable_objects.entries[2].script='attacker-script';
+ f.authorityBinding.cloudflare_snapshot_sha256=digest(f.cloudflareSnapshot);
+},'existing_do_namespace_integrity',true));
+test('40 different class for existing V17.5 DO fails even if namespace name unchanged',()=>blocked(f=>{
+ f.cloudflareSnapshot.durable_objects.entries[0].class='AttackerClass';
+ f.authorityBinding.cloudflare_snapshot_sha256=digest(f.cloudflareSnapshot);
+},'existing_do_namespace_integrity',true));
