@@ -362,6 +362,9 @@ function createPrivateAdmissionGate(opts){
      owners[0].storeId!==intent.stores[0]||
      owners[1].storeId!==intent.stores[1])
     return deny('OPERATOR_TWO_STORE_IDENTITY_MISMATCH');
+  // Atomically consume verified JWT capabilities BEFORE the first awaited signer
+  // registry lookup. Concurrent requests may not enter the approval phase twice.
+  for(const state of ownerStates)state.used=true;
   for(const role of roleOrder){
    const a=approvals.find(x=>x?.role===role);
    if(!a||roleSeen.has(role)||!isString(a.kid,100)||
@@ -409,8 +412,7 @@ function createPrivateAdmissionGate(opts){
      approvals.some(a=>!roleOrder.includes(a?.role))||
      new Set(approvals.map(a=>a?.role)).size!==4)
     return deny('OPERATOR_APPROVAL_ROLE_SET');
-  // Both proof capabilities are atomically consumed before any backend awaits.
-  for(const v of ownerStates)v.used=true;
+  // JWT receipts were consumed before asynchronous signature lookup above.
   const digest=crypto.createHash('sha256').update(JSON.stringify(intent)).digest('hex');
   let reserved;
   try{
