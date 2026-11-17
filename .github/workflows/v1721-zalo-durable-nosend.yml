@@ -76,7 +76,7 @@ jobs:
           node-version: '22'
       - name: Install local-only Cloudflare Workers Vitest integration
         working-directory: qa/v1721-zalo-durable
-        run: npm install --no-save --no-package-lock --no-audit --no-fund vitest@^4.1.0 @cloudflare/vitest-plugin wrangler@^4
+        run: npm install --no-audit --no-fund --package-lock=false
       - name: Isolated Cloudflare Workers runtime tests (no deploy)
         working-directory: qa/v1721-zalo-durable
         run: npx --no-install vitest run --config vitest.config.mjs
