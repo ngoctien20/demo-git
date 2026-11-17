@@ -8,6 +8,7 @@ on:
       - work/v174p-hosted2-access-deployment-real-do-canary-20261117
       - work/v174p-hosted3-workers-runtime-do-replay-qa-20261117
       - work/v174p-hosted4-independent-owner-isolated-deployment-gates-20261117
+      - work/v174p-hosted4a-complete-inventory-operator-proof-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -39,8 +40,10 @@ jobs:
           node --check qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs
           node --check qa/v174p-private-hosted/hosted4-independent-owner-gate.mjs
           node --check qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs
+          node --check qa/v174p-private-hosted/hosted4a-complete-inventory.mjs
+          node --check qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs
       - name: Verify owner authorization template is unsigned, cannot grant deployment
         run: |
           node - <<'NODE'
