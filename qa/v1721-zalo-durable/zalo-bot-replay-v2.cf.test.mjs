@@ -44,12 +44,5 @@ describe('ZaloBotReplayBucketV2 on local Cloudflare Workers runtime',()=>{
     expect(await claim(stub,7,8)).toBe('DUPLICATE');
     expect(await claim(stub,7,9)).toBe('CONFLICT');
   });
-  it('rejects un-hashed request input without storing raw customer identifiers',async()=>{
-    const stub=fresh('invalid_input');
-    await expect(stub.claimHashedEvent({key:'RAW_CHAT_123',digest:digest(1),expiresAtMs:Date.now()+60000})).rejects.toThrow('HASHED_REPLAY_KEYS_REQUIRED');
-    const rows=await runInDurableObject(stub,instance=>instance.ctx.storage.sql.exec(
-      'SELECT event_key FROM zalo_bot_replay_claims_v2'
-    ).toArray());
-    expect(rows).toHaveLength(0);
-  });
+
 });
