@@ -19,13 +19,14 @@ const rget=async(fetchImpl,url,headers)=>{
   const body=await r.json();
   return body;
 };
-export async function evaluatePrivateReadOnlyUat({fetchImpl,apiBase,publishableKey,tokenA,tokenB,fixture,operatorGate}={}){
+export async function evaluatePrivateReadOnlyUat(input={}){
  try{
+  const {fetchImpl,apiBase,publishableKey,tokenA,tokenB,fixture,operatorGate}=input||{};
   if(typeof fetchImpl!=='function'||!validFixture(fixture))return fail('MISSING_QA_FIXTURE');
   const base=new URL(apiBase);
   if(base.origin!==`https://${SAFE_PROJECT}.supabase.co`||base.pathname!=='/'||base.search||base.hash)return fail('PROJECT_NOT_ALLOWLISTED');
   if(typeof publishableKey!=='string'||!publishableKey.startsWith('sb_publishable_')||publishableKey.length>240)return fail('PUBLISHABLE_KEY_REQUIRED');
-  if(!['tokenA','tokenB'].every(k=>typeof arguments[0]?.[k]==='string'&&arguments[0][k].length>20&&arguments[0][k].length<8192))return fail('PRIVATE_AUTH_TOKENS_MISSING');
+  if(![tokenA,tokenB].every(x=>typeof x==='string'&&x.length>20&&x.length<8192))return fail('PRIVATE_AUTH_TOKENS_MISSING');
   if(tokenA===tokenB)return fail('IDENTICAL_TOKENS');
   // Never consider a supplied boolean an independent authorization signature.
   if(operatorGate?.explicitPrivateNoSendMode!=='DISPOSABLE_DIAGNOSTIC_ONLY'||operatorGate?.independentApprovalReceiptPresent!==true)return fail('NO_PRIVATE_OPERATOR_RECEIPT');
