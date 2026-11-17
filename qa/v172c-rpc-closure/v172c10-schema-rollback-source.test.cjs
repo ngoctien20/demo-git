@@ -14,6 +14,7 @@ caseTest('membership references actual auth.users',()=>assert.match(ddl,/REFEREN
 caseTest('membership composite FK',()=>assert.match(ddl,/FOREIGN KEY \(tenant_id,store_id\)/));
 caseTest('all 4 tables enable RLS',()=>assert.equal((ddl.match(/ENABLE ROW LEVEL SECURITY/g)||[]).length,4));
 caseTest('catalog policy checks tenant and store',()=>{assert.match(ddl,/m\.tenant_id=qa_catalog\.tenant_id/);assert.match(ddl,/m\.store_id=qa_catalog\.store_id/);});
+caseTest('membership user RLS indexed',()=>assert.match(ddl,/CREATE INDEX qa_store_memberships_user_active_idx[\s\S]*?\(user_id, active, tenant_id, store_id\)/));
 caseTest('auth.uid checked for membership',()=>assert.match(ddl,/m\.user_id=\(SELECT auth\.uid\(\)\)/));
 caseTest('no public Commerce DDL',()=>assert.doesNotMatch(ddl,/\b(?:ALTER|DROP|CREATE)\s+TABLE\s+public\./i));
 caseTest('no service role exposed',()=>assert.doesNotMatch(ddl,/GRANT\s+.*TO\s+service_role/i));
