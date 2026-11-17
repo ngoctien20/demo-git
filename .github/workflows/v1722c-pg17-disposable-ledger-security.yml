@@ -1,0 +1,94 @@
+name: TIEN404 V17.22C — Cross-Channel QA Ledger PG17 Isolation (NO HOSTED)
+on:
+  pull_request:
+    paths:
+      - 'qa/v1722-cross-channel-order/**'
+      - '.github/workflows/v1722c-pg17-disposable-ledger-security.yml'
+  push:
+    branches:
+      - work/v1722c-crosschannel-ledger-pg17-tenant-store-fk-20261117
+permissions:
+  contents: read
+jobs:
+  pg17-disposable-ledger-foreign-keys:
+    name: Four QA ledger tables, Store/Actor FK, replay and RLS — ephemeral PG17
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: FAKE_ONLY_PG17_CI_NEVER_REAL
+          POSTGRES_DB: t404_v1722_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v1722_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: t404_v1722_ci
+      PGPASSWORD: FAKE_ONLY_PG17_CI_NEVER_REAL
+      CI: "true"
+      GITHUB_ACTIONS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Existing 74 cross-channel exact-command, identity and OTP source tests
+        run: |
+          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs
+      - name: Install PostgreSQL CLI on isolated GitHub runner
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          psql --version
+      - name: Create synthetic Supabase-compatible DENY roles in disposable service ONLY
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF current_database()<>'t404_v1722_ci' OR current_user<>'postgres' OR current_setting('server_version_num')::integer<170000
+              THEN RAISE EXCEPTION 'NOT_DISPOSABLE_PG17'; END IF;
+          END $$;
+          CREATE ROLE anon NOLOGIN NOBYPASSRLS;
+          CREATE ROLE authenticated NOLOGIN NOBYPASSRLS;
+          CREATE ROLE service_role NOLOGIN NOBYPASSRLS;
+          SQL
+      - name: Apply ONLY QA schema source to disposable PostgreSQL (NEVER HOSTED)
+        run: |
+          psql -v ON_ERROR_STOP=1 -f qa/v1722-cross-channel-order/PRIVATE_STAGING_SCHEMA_CANDIDATE.DO_NOT_APPLY.sql
+      - name: Real PG17 negative cross-Tenant Store Actor and replay constraints
+        run: |
+          psql -v ON_ERROR_STOP=1 -f qa/v1722-cross-channel-order/pg17-disposable-scope-fk-security.sql
+      - name: Fail closed if accidental provider, release or grant action is added
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          sql=Path('qa/v1722-cross-channel-order/PRIVATE_STAGING_SCHEMA_CANDIDATE.DO_NOT_APPLY.sql').read_text()
+          qa=Path('qa/v1722-cross-channel-order/pg17-disposable-scope-fk-security.sql').read_text()
+          assert 'DO NOT APPLY TO HOSTED DATABASE' in sql
+          assert 'create schema tien404_v1722_qa;' in sql
+          assert 'if not exists tien404_v1722_qa' not in sql.lower()
+          assert 'v1722_challenge_exact_order_scope' in sql
+          assert 'v1722_link_exact_challenge_scope' in sql
+          assert 'v1722_challenge_verified_link_scope' in sql
+          assert sql.count('force row level security')==4
+          assert 'DISPOSABLE_PG17_STAGING_GUARD_DENIED' in qa
+          for bad in [r'(?i)create\s+policy\b',r'(?i)grant\s+(?:all|select|insert|update|delete)\s+on\b',
+                      r'(?i)security\s+definer\b',r'(?i)alter\s+role\b',r'(?i)drop\s+schema\b',
+                      r'(?i)dblink\b',r'(?i)http_get\s*\(']:
+            assert not re.search(bad,'\n'.join(l for l in sql.splitlines() if not l.lstrip().startswith('--'))),bad
+          print('NO HOSTED DB, NO GRANT, NO PROVIDER SEND, NO LEGACY DEMO COMMERCE ORDER')
+          PY
+  hosted-provider-go-no-go:
+    name: Hosted order ledger, real provider, RLS and channel sends — NOT AUTHORIZED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'HOSTED NO GO until real Store A/B JWT and independent M0 recovery'
