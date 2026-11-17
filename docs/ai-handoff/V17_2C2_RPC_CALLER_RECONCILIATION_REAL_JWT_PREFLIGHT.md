@@ -58,3 +58,7 @@ No Cloudflare deployments, Supabase migrations, Auth creation, RPC grants, provi
 Rollback: close PR #392 or revert this documentation-only commit. Current runtime unaffected.
 
 Next: V17.2C.3 targeted BIO dynamic RPC caller classification + deploy fingerprint reconciliation; recover full n8n caller scan by bounded groups; private Auth A/B admission consent and independent negative JWT UAT.
+
+## BIO RPC refinement (read-only)
+
+Full exact literal extraction of 13 BIO Workers with generic RPC path showed function names restricted to `is_personal_admin`, `bio_published_settings`, `bio_publish_setting`, and `bio_public_media_manifest`; none of three target Commerce/Zalo/owner RPCs appeared. Three BIO v2.4/v2.5/v2.6 content representations contain one additional generic path occurrence beyond those unique literal names each; require context/dynamic target review. This reduces but does not close indirect/dynamic caller uncertainty. No scripts were changed.
