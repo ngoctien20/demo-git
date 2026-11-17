@@ -1,0 +1,144 @@
+name: TIEN404 V17.1P Trusted Store Auth + Commerce Reader Shadow NO SEND
+on:
+  push:
+    branches:
+      - work/v171p-owner-jwt-commerce-reader-admission-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171p-bot-security/**'
+      - 'docs/ai-handoff/V17_1P_*'
+      - '.github/workflows/v171p-trusted-commerce-reader-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171p-independent-source-regression:
+    name: V17.1P independent Store Auth Reader tests and inherited 744 cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'V17.1P replay exact n8n inactive Store Auth reader guard and mutations'
+        run: node --test qa/v171p-bot-security/v171p-n8n-reader.test.cjs
+      - name: 'Inherited V17.1O exact Published V17.17 source and Unicode 57 cases'
+        run: node --test qa/v171o-bot-security/v171o-source-regression.test.cjs
+      - name: 'Inherited V17.1N guarded Core and signed-shaped replay 57 cases'
+        run: node --test qa/v171n-bot-security/v171n-shadow.test.cjs
+      - name: 'Inherited V17.1M same-Tenant simulated Store A/B 48 cases'
+        run: node --test qa/v171m-bot-security/v171m-snapshot.test.cjs
+      - name: 'Inherited V17.1L forged tenant/tool authority and PII-free audit 120 cases'
+        run: |
+          node --test qa/v171l-bot-security/zero-trust-bot-boundary.test.cjs
+          node --test qa/v171l-bot-security/safe-audit-and-quota.test.cjs
+      - name: 'Install disposable-only raster decoder for inherited media suite'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('jpg') and features.check('webp')"
+      - name: 'Inherited V17.1K-S1 hostile media 67 cases'
+        run: |
+          python -m unittest discover -s qa/v171k-security -p 'test_*.py' -v
+          node --test qa/v171k-security/zero-trust-media-review.test.cjs
+      - name: 'Inherited V17.1K staff image proof 45 cases'
+        run: node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Inherited V17.1J merchant corpus and channel shadow 76 cases'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Inherited V17.1I image budget 82 cases'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1H raster 40 cases'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1G pinned DNS 40 cases'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Inherited V17.1F media registry 32 cases'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Inherited V17.1E Vision receipt 28 cases'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Inherited V17.1D PNG and customer challenge 52 cases'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Strict static safety contract - no actual Auth JWT/Provider or Commerce DB'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          p=Path('qa/v171p-bot-security/v171p-n8n-source-snapshot.json')
+          d=json.loads(p.read_text())
+          assert d['contract']=='T404_V171P_AUTH_STORE_COMMERCE_READER_SNAPSHOT_V1'
+          q=d['staging']
+          assert q['workflowId']=='p5OsIaB0NkMDFMw7'
+          assert q['workflowVersionId']=='dec4b734-ab6a-4cdc-b449-bf052b703118'
+          assert q['active'] is False and q['publishedVersionId'] is None
+          assert q['callerPolicy']=='none' and q['noCredentials'] and q['manualOnly']
+          assert q['expectedCases']==208 and q['expectedPassed']==208
+          assert q['expectedDenied']==196 and q['expectedSyntheticCatalogPlans']==8
+          assert q['expectedSyntheticOrderPlans']==4
+          assert len(q['nodes'])==5
+          assert {n['type'] for n in q['nodes']}=={'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
+          assert d['supabaseReadOnlyAsObserved']['sameTenantDistinctStoreOwnerPairs']==0
+          assert d['supabaseReadOnlyAsObserved']['tenantsWithTwoActiveSessionMembers']==0
+          assert d['supabaseReadOnlyAsObserved']['realTwoOwnerJwtAttested'] is False
+          assert d['providerAuthority']['realMetaSignedQaEventAttested'] is False
+          assert d['providerAuthority']['realZaloSignedQaEventAttested'] is False
+          for n in q['source']:
+            for regex in (r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+                          r'\bprocess\.env\b',r'\baxios\b',
+                          r'\bchild_process\b',r'\bpostgrest\b'):
+              assert not re.search(regex,n['code'],re.I),(n['name'],regex)
+          assert d['realOrdersRead']==0 and d['realOrdersWritten']==0
+          assert d['realCustomersRead']==0 and d['actualModelsCalled']==0
+          assert d['providerMessagesSent']==0
+          assert d['realCommerceReaderConnected'] is False and d['release']=='HOSTED_NO_GO'
+          print('V171P_SOURCE_ONLY_NO_DB_NO_PROVIDER_NO_JWT_AUTHENTICATION_CLAIMS_PASS')
+          PY
+  v171p-disposable-pg17-rls:
+    name: V17.1P independent disposable PG17 two-Store RLS rollback (NOT JWT)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_ci_only_password
+          POSTGRES_DB: t404_v171p_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171p_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Install disposable PostgreSQL client'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: 'Create synthetic authenticated ROLE only in throwaway CI container'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: psql -h localhost -U postgres -d t404_v171p_disposable -X -v ON_ERROR_STOP=1 -c "CREATE ROLE authenticated NOLOGIN;"
+      - name: 'Run saved Store A/B RLS and confirm rollback of temp table'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: |
+          psql -h localhost -U postgres -d t404_v171p_disposable -X -v ON_ERROR_STOP=1 -f qa/v171n-bot-security/disposable_pg17_store_rls_rollback.sql
+          test "$(psql -h localhost -U postgres -d t404_v171p_disposable -X -At -c "SELECT count(*) FROM pg_catalog.pg_class WHERE relname='t404_v171n_disposable_store_rls'")" = "0"
+          echo 'V171P_DISPOSABLE_PG17_ROW_ISOLATION_ROLLBACK_PASS_NO_REAL_JWT'
+  real-auth-page-oa-admission-no-go:
+    name: V17.1P real two-Store JWT and signed Meta/Zalo Page/OA authority NO GO
+    runs-on: ubuntu-24.04
+    needs: [v171p-independent-source-regression,v171p-disposable-pg17-rls]
+    timeout-minutes: 2
+    steps:
+      - name: 'Fail closed until independent Auth JWT, same-Tenant owners and Page OA signed canary'
+        run: |
+          echo "::error::V171P_HOSTED_NO_GO_TWO_INDEPENDENT_REAL_AUTH_JWTS_TWO_STORES_SAME_TENANT_META_ZALO_SIGNED_OWNER_NO_SEND_ORDER_ACCESS"
+          exit 3
