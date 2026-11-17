@@ -83,7 +83,7 @@ export function assessBioRpcNames(names){
  if(!Array.isArray(names))return Object.freeze({status:'INVALID_INPUT',unknown:[],privileged:[],canRevokeRpc:false});
  for(const n of names){
   if(COMMERCE_PRIVILEGED_NAMES.includes(n))privileged.push(n);
-  else if(!BIO_STATIC_RPC_NAMES.includes(n))unknown.push(String(n).slice(0,64));
+  else if(!BIO_STATIC_RPC_NAMES.includes(n))unknown.push('UNCLASSIFIED_RPC_NAME');
  }
  return Object.freeze({status:privileged.length||unknown.length?'NEEDS_MANUAL_REVIEW':'BIO_PERSONAL_RPC_STATIC_ONLY',unknown:uniq(unknown),privileged:uniq(privileged),dynamicRuntimeReviewRequired:true,canRevokeRpc:false});
 }
