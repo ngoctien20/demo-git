@@ -16,6 +16,7 @@ on:
       - work/v174p-hosted4b4-independent-finance-hosted-ledger-no-go-20261117
       - work/v174p-hosted4b5-private-attested-evidence-intake-phase-separation-20261117
       - work/v174p-hosted4b6-real-authority-readonly-uat-no-deploy-20261117
+      - work/v174p-hosted4b7-private-owner-finance-consent-no-go-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -63,9 +64,11 @@ jobs:
           node --check qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.test.mjs
           node --check qa/v174p-private-hosted/hosted4b6-private-authority-readonly-uat.mjs
           node --check qa/v174p-private-hosted/hosted4b6-private-authority-readonly-uat.test.mjs
+          node --check qa/v174p-private-hosted/hosted4b7-independent-owner-finance-consent.mjs
+          node --check qa/v174p-private-hosted/hosted4b7-independent-owner-finance-consent.test.mjs
           node --check qa/v174p-private-hosted/runtime/permit-ledger.local.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs qa/v174p-private-hosted/hosted4b3-private-operator-admission.test.mjs qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.test.mjs qa/v174p-private-hosted/hosted4b6-private-authority-readonly-uat.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs qa/v174p-private-hosted/hosted4b3-private-operator-admission.test.mjs qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.test.mjs qa/v174p-private-hosted/hosted4b6-private-authority-readonly-uat.test.mjs qa/v174p-private-hosted/hosted4b7-independent-owner-finance-consent.test.mjs
       - name: Verify owner authorization template is unsigned, cannot grant deployment
         run: |
           node - <<'NODE'
@@ -183,6 +186,27 @@ jobs:
           for(const v of ['cloudflare.request(', 'wrangler deploy', 'wrangler versions upload',
             'execSync(', 'spawn(', 'fetch('])if(s.includes(v))process.exit(1);
           console.log('4B.6 NO DEPLOY: 1 SuperAdmin membership is not independent Finance or owner consent');
+          NODE
+      - name: V17.4P independent Owner/Finance consent remains unsigned and NO DEPLOY
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const t=JSON.parse(fs.readFileSync('qa/v174p-private-hosted/hosted4b7-independent-consent.pending.example.json','utf8'));
+          if(t.state!=='NO_GO_INDEPENDENT_AUTHORITY_OR_BUDGET_NOT_VERIFIED'||
+             t.privately_enrolled_real_owner_identity!==null||
+             t.privately_enrolled_independent_finance_identity!==null||
+             t.cryptographic_owner_consent!==null||
+             t.cryptographic_finance_consent!==null||
+             t.signed_positive_finance_budget_usd!==null||
+             t.verified_actual_billing_spend_evidence!==null||
+             t.cloudflare_get_only.billing_spend_policies!=='FORBIDDEN_OR_CONNECTOR_PERMISSION_ERROR'||
+             t.can_provision_ledger!==false||t.can_upload_qa_worker!==false)process.exit(1);
+          const code=fs.readFileSync('qa/v174p-private-hosted/hosted4b7-independent-owner-finance-consent.mjs','utf8');
+          for(const banned of ['cloudflare.request(', 'wrangler deploy', 'wrangler versions upload',
+            'execSync(', 'spawn(', 'fetch(']) {
+            if(code.includes(banned))process.exit(1);
+          }
+          console.log('4B.7 signed Owner/Finance mathematical gate only: NO DEPLOY');
           NODE
       - name: Source risk gates and absence of credentials or live API
         run: |
