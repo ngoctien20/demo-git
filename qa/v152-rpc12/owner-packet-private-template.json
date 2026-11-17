@@ -1,0 +1,10 @@
+{
+  "contract": "T404_RPC12_FOUR_REAL_ROW_ORIGINAL_STORE_OWNER_COVERAGE_V1",
+  "scope": "PRIVATE_INDEPENDENT_ORIGINAL_SOURCE_REVIEW",
+  "rows": [
+    {"slot":"P1","entity":"PRODUCT","privateRowBindingHmac":null,"privateTenantBindingHmac":null,"privateCanonicalStoreBindingHmac":null,"originalSourceType":null,"originalSourceEvidenceSha256":null,"merchantOwnerAttestationSha256":null,"independentReviewerAttestationSha256":null,"sourceReviewedIndependently":false},
+    {"slot":"P2","entity":"PRODUCT","privateRowBindingHmac":null,"privateTenantBindingHmac":null,"privateCanonicalStoreBindingHmac":null,"originalSourceType":null,"originalSourceEvidenceSha256":null,"merchantOwnerAttestationSha256":null,"independentReviewerAttestationSha256":null,"sourceReviewedIndependently":false},
+    {"slot":"O1","entity":"ORDER","privateRowBindingHmac":null,"privateTenantBindingHmac":null,"privateCanonicalStoreBindingHmac":null,"originalSourceType":null,"originalSourceEvidenceSha256":null,"merchantOwnerAttestationSha256":null,"independentReviewerAttestationSha256":null,"sourceReviewedIndependently":false},
+    {"slot":"O2","entity":"ORDER","privateRowBindingHmac":null,"privateTenantBindingHmac":null,"privateCanonicalStoreBindingHmac":null,"originalSourceType":null,"originalSourceEvidenceSha256":null,"merchantOwnerAttestationSha256":null,"independentReviewerAttestationSha256":null,"sourceReviewedIndependently":false}
+  ]
+}
