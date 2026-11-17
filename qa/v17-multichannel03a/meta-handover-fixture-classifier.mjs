@@ -9,7 +9,7 @@ const fail=(code)=>Object.freeze({
   recognizedFixture:false,code,source:'QA_SYNTHETIC_META_HANDOVER_SHAPE',
   realMetaHmacVerified:false,realPageOwnerVerified:false,
   canAdvanceHandoff:false,canReleaseBot:false,noSend:true,
-  canCallGraph:false,providerCalls:0
+  canCallGraph:false,canDeploy:false,providerCalls:0
 });
 const TYPES=new Set(['pass_thread_control','take_thread_control']);
 const KEYS=['object','entry'];
@@ -61,7 +61,7 @@ export function classifySyntheticMetaHandoverShape(input,context) {
   expectedState:context.expectedState,
   realMetaHmacVerified:false,realPageOwnerVerified:false,
   canAdvanceHandoff:false,canReleaseBot:false,noSend:true,
-  canCallGraph:false,providerCalls:0,
+  canCallGraph:false,canDeploy:false,providerCalls:0,
   requiresIndependentRawHmac:true,requiresNativeSchemaUat:true,
   requiresVerifiedPageAndAtomicReplay:true
  });
