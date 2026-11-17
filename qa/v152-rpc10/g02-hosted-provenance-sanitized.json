@@ -1,0 +1,40 @@
+{
+  "contract": "T404_RPC10_G02_HOSTED_AGGREGATES_V1",
+  "scope": "HOSTED_READ_ONLY_AGGREGATES",
+  "collectedAtUtc": "2026-11-17T02:04:04Z",
+  "tenants": 2,
+  "products": 2,
+  "orders": 2,
+  "customers": 0,
+  "canonicalStoresPresent": false,
+  "storeMembershipsPresent": false,
+  "slotAggregates": [
+    {
+      "slot": 1,
+      "products": 1,
+      "orders": 1,
+      "sourceLabeledOrders": 1,
+      "customerLinkedOrders": 0,
+      "tenantOwnerMemberships": 2,
+      "agentConfigRows": 0
+    },
+    {
+      "slot": 2,
+      "products": 1,
+      "orders": 1,
+      "sourceLabeledOrders": 1,
+      "customerLinkedOrders": 0,
+      "tenantOwnerMemberships": 1,
+      "agentConfigRows": 1
+    }
+  ],
+  "productProvenanceCandidates": 0,
+  "orderProvenanceCandidates": 0,
+  "commerceStoreColumns": 0,
+  "orderSourceColumnPresent": 1,
+  "idempotencyRows": 0,
+  "ordersLinkedToIdempotency": 0,
+  "factoryEvents": 0,
+  "factoryAgentRuns": 0,
+  "legacyPermissiveStorelessReadPolicies": 6
+}

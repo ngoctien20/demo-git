@@ -1,0 +1,143 @@
+{
+  "contract": "T404_RPC10_G03_PUBLISHED_CALLER_SCOPE_V1",
+  "source": "CONNECTED_N8N_METADATA_READ_ONLY",
+  "capturedAtUtc": "2026-11-17T02:38:03Z",
+  "workflowObservations": [
+    {
+      "workflowId": "5Eeh8hbpsoNhuiVo",
+      "activeVersion": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+      "published": true,
+      "kind": "COMMERCE",
+      "codeReadsTenant": true,
+      "codeReadsStore": false,
+      "dataReadsTenant": true,
+      "dataReadsStore": false,
+      "trustedStoreResolverDeployed": false,
+      "activeMembershipRecheckDeployed": false,
+      "storeScopedWriteAuthDeployed": false,
+      "demoDataIsolated": false
+    },
+    {
+      "workflowId": "oOOXicKXGkBskKqh",
+      "activeVersion": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+      "published": true,
+      "kind": "COMMERCE",
+      "codeReadsTenant": true,
+      "codeReadsStore": false,
+      "dataReadsTenant": true,
+      "dataReadsStore": false,
+      "trustedStoreResolverDeployed": false,
+      "activeMembershipRecheckDeployed": false,
+      "storeScopedWriteAuthDeployed": false,
+      "demoDataIsolated": false
+    },
+    {
+      "workflowId": "igPOsSbEgd4NgtRA",
+      "activeVersion": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+      "published": true,
+      "kind": "COMMERCE",
+      "codeReadsTenant": true,
+      "codeReadsStore": false,
+      "dataReadsTenant": true,
+      "dataReadsStore": false,
+      "trustedStoreResolverDeployed": false,
+      "activeMembershipRecheckDeployed": false,
+      "storeScopedWriteAuthDeployed": false,
+      "demoDataIsolated": false
+    },
+    {
+      "workflowId": "Y0WLykMtNAldbgL0",
+      "activeVersion": "3d8b7f89-2058-4a2a-8919-e5ff92c3c484",
+      "published": true,
+      "kind": "COMMERCE",
+      "codeReadsTenant": true,
+      "codeReadsStore": false,
+      "dataReadsTenant": true,
+      "dataReadsStore": false,
+      "trustedStoreResolverDeployed": false,
+      "activeMembershipRecheckDeployed": false,
+      "storeScopedWriteAuthDeployed": false,
+      "demoDataIsolated": false
+    },
+    {
+      "workflowId": "Z7FdV7uDvApfbURQ",
+      "activeVersion": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+      "published": true,
+      "kind": "LEGACY_DEMO",
+      "codeReadsTenant": false,
+      "codeReadsStore": false,
+      "dataReadsTenant": false,
+      "dataReadsStore": false,
+      "trustedStoreResolverDeployed": false,
+      "activeMembershipRecheckDeployed": false,
+      "storeScopedWriteAuthDeployed": false,
+      "demoDataIsolated": false
+    }
+  ],
+  "tableObservations": [
+    {
+      "table": "TIEN404_COMMERCE_CHANNELS",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_TENANTS",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_PRODUCTS",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_ORDERS",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_AUDIT",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_V3_STORE_RULES_SANDBOX",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_V3_PRICE_RULES_SANDBOX",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    },
+    {
+      "table": "TIEN404_COMMERCE_V3_NOTIFICATION_OUTBOX_SANDBOX",
+      "tenantColumn": true,
+      "storeColumn": false,
+      "dataReadOperation": false,
+      "storage": "N8N_DATA_TABLE"
+    }
+  ],
+  "authority": {
+    "realFourRowMerchantOwnerAttested": false,
+    "independentReviewerAttested": false,
+    "canonicalHostedStoreRegistryVerified": false,
+    "realSameTenantJwtTested": false,
+    "independentCurrentRecoveryAccepted": false,
+    "fullCallerInventoryApproved": false
+  }
+}

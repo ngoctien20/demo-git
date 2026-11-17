@@ -1,0 +1,99 @@
+{
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "environment": "staging",
+  "observation": "2026-11-17 read-only metadata; no user, order or row UUID exported",
+  "counts": {
+    "tenants": 2,
+    "products": 2,
+    "orders": 2,
+    "customers": 0,
+    "activeTenantOwners": 3
+  },
+  "canonicalStoresPresent": false,
+  "storeMembershipsPresent": false,
+  "tables": {
+    "products": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    },
+    "orders": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    },
+    "customers": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    },
+    "order_items": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    },
+    "conversations": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    },
+    "messages": {
+      "rlsEnabled": true,
+      "forceRls": true,
+      "tenantId": true,
+      "storeId": false,
+      "legacyTenantPermissiveSelect": true,
+      "storeScopedReadPolicy": false,
+      "writerCompatibilityReviewed": false
+    }
+  },
+  "constraints": {},
+  "scopeClassification": {},
+  "fourRowOwnership": [
+    {
+      "alias": "T1:PRODUCT:1",
+      "merchantPrimarySourceVerified": false,
+      "canonicalStoreProofVerified": false,
+      "independentReviewerVerified": false
+    },
+    {
+      "alias": "T1:ORDER:1",
+      "merchantPrimarySourceVerified": false,
+      "canonicalStoreProofVerified": false,
+      "independentReviewerVerified": false
+    },
+    {
+      "alias": "T2:PRODUCT:1",
+      "merchantPrimarySourceVerified": false,
+      "canonicalStoreProofVerified": false,
+      "independentReviewerVerified": false
+    },
+    {
+      "alias": "T2:ORDER:1",
+      "merchantPrimarySourceVerified": false,
+      "canonicalStoreProofVerified": false,
+      "independentReviewerVerified": false
+    }
+  ],
+  "authority": {}
+}
