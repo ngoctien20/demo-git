@@ -1,0 +1,76 @@
+name: TIEN404 V17.1I Merchant Corpus Secure Acquisition Vision Budget NO-SEND
+on:
+  push:
+    branches:
+      - work/v171i-merchant-secure-acquisition-vision-budget-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171i-commerce/**'
+      - 'docs/ai-handoff/V17_1I_*'
+      - '.github/workflows/v171i-merchant-vision-budget-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contract:
+    name: V17.1I safe URL and corpus/budget fixtures with inherited regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 'Install Pillow QA decoder only'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import Image,features; assert features.check('webp') and features.check('jpg')"
+      - name: 'V17.1I secure acquisition and budget unit security tests'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1H real PNG JPEG WebP decoder tests'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1G offline DNS and TLS fixture tests'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Preserve V17.1F website and PRODUCT_MEDIA tests'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Preserve V17.1E merchant rights and Vision receipt tests'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Preserve V17.1D PNG identity and Commerce tests'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Static NO-MODEL-NO-SEND-NO-DATABASE and explicit authorization gate'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v171i-commerce/secure_merchant_fetch.py').read_text()
+          b=Path('qa/v171i-commerce/merchant_corpus_budget.py').read_text()
+          for required in ['owner_authorizer(registry, reference, proof, now_ms) is not True',
+             'socket.create_connection((self.pinned_ip, 443)', 'server_hostname=self.host',
+             'not addr.is_global','ACQ_STREAM_BODY_CAP_EXCEEDED',
+             'ACQ_NON_200_OR_REDIRECT_DENIED','readyForVisionBenchmark']:
+              assert required in s,required
+          for required in ['QUOTE_ONLY_NEVER_CALL_PROVIDER','approvedForBilling',
+             'canInvokeModel','worstCaseMicroUsd','actualMerchantPhotosIndependentlyVerified',
+             'eligibleForLiveRelease','requiresFinalOrderConfirmation']:
+              assert required in b,required
+          for name,text in [('fetch',s),('budget',b)]:
+              for banned in ['import openai','import requests','service_role',
+               'create_order(','send_message(','supabase.create','execute_vision_provider(']:
+                  assert banned not in text.lower(),(name,banned)
+          print('V17.1I SOURCE_ONLY_AUTHORITY_AND_NO_PROVIDER_SEND PASS')
+          PY
+  real-world-no-go:
+    name: V17.1I HOSTED NO GO real shop domain photo rights budget and Meta Zalo
+    runs-on: ubuntu-24.04
+    needs: [offline-contract]
+    timeout-minutes: 2
+    steps:
+      - name: 'Reject live release without independent merchant/store/provider evidence'
+        run: |
+          echo "::error::V171I_HOSTED_NO_GO_NO_REAL_MERCHANT_CONSENT_DOMAIN_BENCHMARK_BUDGET_PROVIDER_RLS"
+          exit 3
