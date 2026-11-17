@@ -1,0 +1,21 @@
+{
+  "name": "tien404-v1721-local-only",
+  "main": "./zalo-bot-replay-bucket-v2.worker.mjs",
+  "compatibility_date": "2026-11-17",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ZALO_REPLAY_V2",
+        "class_name": "ZaloBotReplayBucketV2"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ZaloBotReplayBucketV2"
+      ]
+    }
+  ]
+}
