@@ -1,0 +1,88 @@
+name: TIEN404 G0.7 Private Provider Authority No-Send Admission
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-g07/**'
+      - 'docs/ai-handoff/T404_G07_*'
+      - '.github/workflows/v152-g07-private-provider-admission-nosend.yml'
+  push:
+    branches:
+      - work/v152-g07-private-provider-authority-admission-nosend-20261117
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g07-private-crypto-source:
+    name: G0.7 signed packet crypto and actual-provider NO-GO preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Type/syntax and private crypto signature tests
+        run: |
+          node --check qa/v152-g07/private-provider-authority-gate.cjs
+          node --check qa/v152-g07/private-provider-authority-gate.test.cjs
+          node --test qa/v152-g07/private-provider-authority-gate.test.cjs
+          node --check qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.js
+          node --check qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs
+          node --test qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs
+      - name: Existing no-send signed channel and per-Store regressions
+        run: |
+          node --test qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+                      qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+                      qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: Enforce source-only no host connector, secret, or network
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('qa/v152-g07/private-provider-authority-gate.cjs').read_text()
+          disallowed=['child_process','process.env','fetch(', 'https.request(', 'axios(',
+                      'createClient(', 'createOrder(', 'sendMessage(', 'privateKey:',
+                      'META_APP_SECRET=', 'ZALO_BOT_SECRET=', 'PRODUCTION_KEY=']
+          for token in disallowed:
+              assert token not in source,token
+          for required in [
+              'canPublish:false','canReceiveRealTraffic:false','canCreateOrder:false',
+              'canReadHostedCommerce:false','actualProviderOwnerAttested:false',
+              'actualZaloOaNativeSignatureVerified:false',
+              'ZALO_OA_NATIVE_VERIFICATION_NOT_PROVEN',
+              'PRIVATE_TRUST_ANCHORS_UNAVAILABLE',
+              'INDEPENDENT_REVIEWER_TRUST_NOT_ESTABLISHED',
+              'currentIndependentRestoreAccepted:false']:
+              assert required in source,required
+          pilot=Path('qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.js').read_text()
+          for token in ('n8n-nodes-base.webhook','n8n-nodes-base.httpRequest',
+                        'n8n-nodes-base.googleSheets','n8n-nodes-base.postgres',
+                        'n8n-nodes-base.supabase','newCredential(','process.env',
+                        'qOrmoXfIobogX16d'):
+              assert token not in pilot,token
+          assert pilot.count("n8n-nodes-base.dataTable")==1
+          assert pilot.count("operation:'get'")==1
+          assert "REAL_SIGNED_NO_SEND_ADMISSION_BLOCKED" in pilot
+          print('G07 n8n manual QA: only synthetic registry GET, no Commerce read or outbound')
+          print('G07 safe-source: no real secrets, no calls and hosted NO-GO')
+          PY
+  g07-hosted-admission-refused:
+    name: G0.7 REAL SIGNED WEBHOOK NO-GO until operator proves original authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce no production traffic and no auto-promotion
+        run: |
+          node - <<'NODE'
+          const gate=require('./qa/v152-g07/private-provider-authority-gate.cjs');
+          const r=gate.verifyProviderPayload({provider:'ZALO_OA',rawBody:Buffer.from('{}')});
+          if(r.canReceiveRealTraffic||r.canPublish||r.status!=='PRIVATE_NO_SEND_ADMISSION_NO_GO')
+            throw Error('OA_MUST_REMAIN_UNVERIFIED');
+          const noTrust=gate.reviewAuthorityPacket(null,null);
+          if(noTrust.canReceiveRealTraffic||noTrust.canReadHostedCommerce||noTrust.canCreateOrder)
+            throw Error('G07_INDEPENDENT_PRIVATE_AUTHORITY_MISSING');
+          console.log('G07 private signed admission remains REAL PROVIDER + HOSTED NO GO');
+          NODE
