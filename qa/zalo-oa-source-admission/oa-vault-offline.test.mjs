@@ -80,8 +80,11 @@ test('different key version or token generation cannot open ciphertext', () => {
 });
 test('tampered ciphertext and tag fail authentication', () => {
   const e = seal();
-  const t = { ...e, ciphertext: e.ciphertext.slice(0, -1) +
-    (e.ciphertext.at(-1) === 'A' ? 'B' : 'A') };
+  // Flip an actual ciphertext byte, not the last Base64URL character:
+  // unused trailing Base64 bits may otherwise decode to identical bytes.
+  const tamperedBytes = Buffer.from(e.ciphertext, 'base64url');
+  tamperedBytes[0] ^= 0x01;
+  const t = { ...e, ciphertext: tamperedBytes.toString('base64url') };
   assert.throws(() => decryptForFixture(t, Buffer.alloc(32, 7)));
   const v = { ...e, tag: 'A'.repeat(22) };
   assert.throws(() => decryptForFixture(v, Buffer.alloc(32, 7)));

@@ -69,7 +69,12 @@ export async function beginOaConnect(input, deps) {
     return deny('OWNER_AUTHORIZATION_DENIED');
   // Crypto material generated only in trusted runtime; do NOT accept client-supplied state/verifier.
   const state = randomBytes(32).toString('base64url');
-  const pkceVerifier = randomBytes(48).toString('base64url');
+  // Zalo OA documentation specifies a 43-character verifier, with upper/lowercase/digits.
+  // 32 random bytes encoded as base64url produce exactly 43 URL-safe characters.
+  let pkceVerifier;
+  do {
+    pkceVerifier = randomBytes(32).toString('base64url');
+  } while (!/[A-Z]/.test(pkceVerifier) || !/[a-z]/.test(pkceVerifier) || !/[0-9]/.test(pkceVerifier));
   const pkceChallenge = createHash('sha256').update(pkceVerifier).digest('base64url');
   const record = {
     stateDigest: sha256(state), pkceVerifier, appId: app.appId,
