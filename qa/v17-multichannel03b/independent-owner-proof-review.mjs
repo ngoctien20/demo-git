@@ -36,7 +36,7 @@ export function inspectSignedOwnerEvidence({claim,signatures,trustStore,nowMs}={
    new Set(signatures.map(s=>s.keyId)).size!==2)
    return fail('INDEPENDENT_TWO_SIGNERS_REQUIRED');
  if(!trustStore||trustStore.source!=='OPERATOR_PINNED_OFFLINE_PUBLIC_KEYS'||
-   trustStore.readonly===false||typeof trustStore.resolveKey!=='function'||
+   trustStore.readonly!==true||typeof trustStore.resolveKey!=='function'||
    trustStore.realHostedAdmissionEnabled!==false)
    return fail('PRIVATE_PINNED_TRUST_STORE_REQUIRED');
  const payload=canonical(claim);
