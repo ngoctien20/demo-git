@@ -94,3 +94,15 @@ https://github.com/ngoctien20/demo-git/actions/runs/43996434462
 - Changes: only GitHub Draft PR #247 source/CI; no hosted DDL/RLS data, n8n Published, provider send, subscription or credentials changed.
 - Rollback: close unmerged Draft PR #247; no hosted rollback necessary.
 - **Checkpoint:** \`RPC10_G1_PG17_6_SURFACE_PASS__G0_G2_G3_HOSTED_NO_GO\`.
+
+## Additional G0/G2 operator inventory — n8n Data Tables, anonymized (READ ONLY)
+Observed in connected n8n project \`WW82YsCCaAxGC9dp\`, without exposing account IDs, tenant/store identifiers, recipient refs or credentials:
+- \`TIEN404_COMMERCE_CHANNELS\`: 6/6 rows have Tenant + channel-account bindings, **0 credential refs**, and **no Store column in this contract**. Cannot establish Shop-level Commerce isolation from this channel mapping.
+- \`AI_SALES_V45_MERCHANT_CHANNELS_STAGING\`: 3/3 rows have \`store_id\`, 2/3 \`owner_verified=true\`, 2/3 \`verified=true\`, 2/3 have recipient binding. **Self-asserted staging fields are not independently authenticated original merchant-to-Store proof, nor safely linked to the four hosted Supabase Commerce rows.**
+- \`TIEN404_V171C_QA_INSTALLATION_BOT_BINDINGS_NO_SEND\`: 3/3 have store/tenant refs, 3/3 are read-only, **0/3** \`owner_authority_verified=true\`. QA-only bindings are not production authority.
+- \`TIEN404_R1_SHOP_BOT_REGISTRY_QA\`: 2/2 rows have store and tenant labels, QA identity metadata only.
+**P0 interface-contract finding:** n8n Commerce resolver and channel registry must move from Tenant-only \`tenantId\` to server-verified canonical \`tenant_id + store_id\`; the provider account/page and store owner proof must be checked out-of-band. Do not take a staging \`owner_verified=true\` flag as authorization for a hosted RLS migration. Never splice DEMO, Merchant Channels staging and Supabase hosted Commerce rows without an approved, audited source mapping.
+
+## GitHub CI evidence
+- On head \`37979edaedbcb49e2c756f35f807ce0d64c3de9f\`: https://github.com/ngoctien20/demo-git/actions/runs/43996434462 — **SUCCESS**, both PostgreSQL 17 disposable and 47 Node gate jobs.
+- Later documentation changes do not change the tested six-surface SQL logic. Re-check GitHub Actions on final HEAD before declaring a newer commit tested.
