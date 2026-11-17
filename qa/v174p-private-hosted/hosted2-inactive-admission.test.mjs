@@ -30,7 +30,7 @@ test('10 owner approval cannot be inferred from approval.json alone',()=>{
 });
 test('11 no real merchant scope can be introduced',()=>assert(run((c,r)=>{r.commercial_read_write_allowed=true}).reasons.includes('no_commerce_or_provider_send')));
 test('12 no automatic deployment, even if other fields are marked',()=>assert(run((c,r)=>{r.deploy_strategy.automatic_deploy=true}).reasons.includes('authorization_still_pending')));
-test('13 can't set Access audience without real linked Access app',()=>assert(run(c=>{c.vars.V174P_ACCESS_AUD='synthetic';}).reasons.includes('no_auto_active_origin_or_audience')));
+test('13 cannot set Access audience without real linked Access app',()=>assert(run(c=>{c.vars.V174P_ACCESS_AUD='synthetic';}).reasons.includes('no_auto_active_origin_or_audience')));
 test('14 no route override shorthand accepted',()=>assert(run(c=>{c.route='https://example.com/*';}).reasons.includes('no_worker_routes')));
 test('15 no accidental cron activation',()=>assert(run(c=>{c.triggers={crons:['* * * * *']};}).reasons.includes('no_cron_or_queue_triggers')));
 test('16 no production model calls in admission request',()=>assert(run((c,r)=>{r.ai_model_calls_allowed=true}).reasons.includes('no_commerce_or_provider_send')));
