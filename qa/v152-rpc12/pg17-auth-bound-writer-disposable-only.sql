@@ -65,6 +65,26 @@ CREATE POLICY rpc12_writer_store ON qa_rpc8.stores
  USING(active AND EXISTS(SELECT 1 FROM qa_rpc8.store_memberships sm
   WHERE sm.tenant_id=stores.tenant_id AND sm.store_id=stores.id
   AND sm.user_id=(SELECT auth.uid()) AND sm.active AND sm.role IN ('owner','manager')));
+-- SELECT ... FOR SHARE is classified as a locking read requiring UPDATE RLS
+-- USING in PG17. WITH CHECK(FALSE) prevents ANY actual status mutation;
+-- QA must ensure no alternative PERMISSIVE UPDATE policy broadens this deny.
+CREATE POLICY rpc12_authority_lock_tenant ON qa_rpc8.tenant_memberships
+ FOR UPDATE TO qa_rpc12_writer
+ USING(user_id=(SELECT auth.uid()) AND active AND role IN ('owner','manager'))
+ WITH CHECK(false);
+CREATE POLICY rpc12_authority_lock_member ON qa_rpc8.store_memberships
+ FOR UPDATE TO qa_rpc12_writer
+ USING(user_id=(SELECT auth.uid()) AND active AND role IN ('owner','manager')
+   AND EXISTS(SELECT 1 FROM qa_rpc8.tenant_memberships tm
+     WHERE tm.tenant_id=store_memberships.tenant_id
+       AND tm.user_id=store_memberships.user_id AND tm.active AND tm.role IN ('owner','manager')))
+ WITH CHECK(false);
+CREATE POLICY rpc12_authority_lock_store ON qa_rpc8.stores
+ FOR UPDATE TO qa_rpc12_writer
+ USING(active AND EXISTS(SELECT 1 FROM qa_rpc8.store_memberships sm
+   WHERE sm.tenant_id=stores.tenant_id AND sm.store_id=stores.id
+     AND sm.user_id=(SELECT auth.uid()) AND sm.active AND sm.role IN ('owner','manager')))
+ WITH CHECK(false);
 CREATE POLICY rpc12_writer_product_select ON qa_rpc8.products
  FOR SELECT TO qa_rpc12_writer
  USING(store_id IS NOT NULL AND EXISTS(SELECT 1 FROM qa_rpc8.store_memberships sm
@@ -174,6 +194,12 @@ GRANT EXECUTE ON FUNCTION qa_rpc12_api.update_price(uuid,text,bigint,bigint) TO 
 DO $post$ BEGIN
  IF (SELECT count(*) FROM pg_policies WHERE schemaname='qa_rpc8' AND policyname LIKE 'rpc12_writer_%') <> 6
  OR (SELECT count(*) FROM pg_roles WHERE rolname='qa_rpc12_writer' AND rolcanlogin=false AND rolbypassrls=false)<>1
+ OR (SELECT count(*) FROM pg_policies WHERE schemaname='qa_rpc8'
+     AND tablename IN('stores','store_memberships','tenant_memberships')
+     AND cmd='UPDATE')<>3
+ OR (SELECT count(*) FROM pg_policies WHERE schemaname='qa_rpc8'
+     AND tablename IN('stores','store_memberships','tenant_memberships')
+     AND cmd='UPDATE' AND btrim(with_check,'() ')='false')<>3
  OR has_table_privilege('qa_rpc12_authenticated','qa_rpc8.products','INSERT')
  OR has_table_privilege('qa_rpc12_authenticated','qa_rpc8.products','UPDATE')
  OR NOT has_table_privilege('qa_rpc12_writer','qa_rpc8.products','UPDATE')
