@@ -1,0 +1,58 @@
+name: V17 Multi Channel 03B - Independent Owner and Meta QA NO-SEND
+on:
+  pull_request:
+    paths:
+      - "qa/v17-multichannel03b/**"
+      - "docs/ai-handoff/V17_MULTI_CHANNEL_03B_INDEPENDENT_OWNER_AUTH_META_GATE_CHECKPOINT.md"
+      - ".github/workflows/v17-multichannel03b-independent-owner-meta-nosend.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only-cryptographic-owner-and-meta-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout pinned existing Meta READ/HMAC source (no real calls)
+        uses: actions/checkout@v4
+        with:
+          repository: ngoctien20/demo-git
+          ref: 652010d33a96b3daf3892fb660099c196cef2cf5
+          path: pinned-pr243-meta-source
+          persist-credentials: false
+      - name: Syntax checks
+        run: |
+          node --version
+          for f in qa/v17-multichannel03b/*.mjs; do node --check "$f"; done
+      - name: New Ed25519 independent witnesses and pinned Meta Page/App mock fetch QA
+        run: node --test qa/v17-multichannel03b/*.test.mjs
+      - name: Inherited private evidence JWT and synthetic handover
+        run: node --test qa/v17-multichannel03a/*.test.mjs
+      - name: Inherited real metadata + pinned Meta HMAC compatibility
+        run: node --test qa/v17-multichannel03/*.test.mjs
+      - name: Inherited staff and four-channel Inbox
+        run: node --test qa/v17-multichannel02/*.test.mjs
+      - name: Inherited handoff and outbound policy
+        run: node --test qa/v17-multichannel-intelligence/*.test.mjs
+      - name: Inherited Zalo OA source gates
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Enforce all new modules are zero-network zero-permission
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          for (const file of ['independent-owner-proof-review.mjs',
+            'meta-private-page-nosend-admission.mjs']) {
+            const s=readFileSync('qa/v17-multichannel03b/'+file,'utf8');
+            if (!s.includes('canDeploy:false') || !s.includes('noSend:true'))
+              throw Error('FAIL_CLOSED_RESULT_MISSING:'+file);
+            for (const r of [/\bfetch\s*\(/,/\bXMLHttpRequest\s*\(/,
+              /\bWebSocket\s*\(/,/\baxios\s*\(/,
+              /\b(sendMessage|passThreadControl|takeThreadControl|createOrder|executeSql)\s*\(/])
+              if (r.test(s)) throw Error('REMOTE_SIDE_EFFECT_FORBIDDEN:'+file);
+          }
+          const meta=readFileSync('qa/v17-multichannel03b/meta-private-page-nosend-admission.mjs','utf8');
+          if(meta.includes('canEnableCallback:true')||
+            meta.includes('canPassThreadControl:true')||
+            meta.includes('canSendMessages:true'))throw Error('META_ACTIVATION_FORBIDDEN');
+          NODE
