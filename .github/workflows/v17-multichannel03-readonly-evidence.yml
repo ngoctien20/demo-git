@@ -1,0 +1,65 @@
+name: V17 Multi Channel 03 - Real Authority Readiness NO-SEND
+on:
+  pull_request:
+    paths:
+      - "qa/v17-multichannel03/**"
+      - "docs/ai-handoff/V17_MULTI_CHANNEL_03_REAL_AUTH_META_HANDOVER_CHECKPOINT.md"
+      - ".github/workflows/v17-multichannel03-readonly-evidence.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readonly-evidence-source-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout pinned V17.1E Meta source (PR #243, exact SHA)
+        uses: actions/checkout@v4
+        with:
+          repository: ngoctien20/demo-git
+          ref: 652010d33a96b3daf3892fb660099c196cef2cf5
+          path: pinned-pr243-meta-source
+          persist-credentials: false
+      - name: Node and syntax check
+        run: |
+          node --version
+          for f in qa/v17-multichannel03/*.mjs; do node --check "$f"; done
+      - name: Current sanitized observed baseline MUST be blocked
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {inspectReadOnlyUatEvidence} from './qa/v17-multichannel03/readiness-evidence-audit.mjs';
+          const raw=JSON.parse(fs.readFileSync('./qa/v17-multichannel03/actual-sanitized-hosted-evidence-20261117.json','utf8'));
+          const r=inspectReadOnlyUatEvidence(raw);
+          if(r.status!=='BLOCKED'||r.realUatAuthorized||r.canDeploy||r.canSend||
+             r.observed.coreStoreColumnCount!==0||r.observed.coreStorePolicyCount!==0)
+             throw Error('AUTHORITY_PREMATURELY_APPROVED');
+          console.log('HOSTED_REAL_UAT_NO_GO', 'blocked_issue_count',r.missing.length);
+          NODE
+      - name: New metadata and pinned Meta source interop QA
+        run: node --test qa/v17-multichannel03/*.test.mjs
+      - name: Inherited Staff/Inbox QA
+        run: node --test qa/v17-multichannel02/*.test.mjs
+      - name: Inherited Handoff/Outbound Policy QA
+        run: node --test qa/v17-multichannel-intelligence/*.test.mjs
+      - name: Inherited Zalo OA admission QA
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Strict static no network, writes or provider send in new modules
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          for (const name of ['readiness-evidence-audit.mjs']) {
+            const source=fs.readFileSync('./qa/v17-multichannel03/'+name,'utf8');
+            for (const r of [/\bfetch\s*\(/,/\baxios\s*\(/,/\bhttp\.request\s*\(/,
+              /\b(sendMessage|createOrder|updateOrder|executeSql|passThreadControl|takeThreadControl)\s*\(/])
+              if (r.test(source)) throw Error('SIDE_EFFECT_FORBIDDEN');
+            if(!source.includes('realUatAuthorized:false')||
+               !source.includes('canSend:false')||!source.includes('canDeploy:false'))
+              throw Error('FAIL_CLOSED_REQUIRED');
+          }
+          const sql=fs.readFileSync('./qa/v17-multichannel03/hosted-readonly-preflight.sql','utf8');
+          if(!/\bselect\b/i.test(sql) ||
+             /\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|GRANT|REVOKE|COPY|TRUNCATE|EXECUTE|DO)\s/i.test(sql.replace(/--[^\n]*/g,'')))
+            throw Error('SQL_READONLY_GATE_FAILED');
+          NODE

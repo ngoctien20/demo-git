@@ -1,0 +1,81 @@
+{
+  "source": "CONNECTED_READ_ONLY_SANITIZED_METADATA",
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "environment": "staging",
+  "snapshotDate": "2026-11-17",
+  "coreTables": [
+    {
+      "name": "products",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    },
+    {
+      "name": "orders",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    },
+    {
+      "name": "customers",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    },
+    {
+      "name": "order_items",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    },
+    {
+      "name": "conversations",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    },
+    {
+      "name": "messages",
+      "hasStoreId": false,
+      "storePolicyCount": 0,
+      "rlsEnabled": true
+    }
+  ],
+  "auth": {
+    "activeMemberUsers": 3,
+    "tenantsWithTwoActiveMembers": 1,
+    "tenantsWithTwoMemberUsersWithDbSessions": 0,
+    "dbSessionRowsWithinNotAfter": 5
+  },
+  "registry": {
+    "canonicalStoreTableCount": 0,
+    "canonicalStoreMembershipTableCount": 0,
+    "commercialStaffRegistryTableCount": 0
+  },
+  "workflow": {
+    "messengerId": "Z7FdV7uDvApfbURQ",
+    "messengerVersion": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+    "zaloBotId": "yIJk8LvJoLF40Z62",
+    "zaloBotVersion": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+    "zaloRouterId": "sIPs6egzIwOY1GNv",
+    "zaloRouterVersion": "8d91d23c-cd87-462f-a112-9cca2340bec8"
+  },
+  "privateUatEvidence": {
+    "realStoreAOwnerJwtReadOnlyVerified": false,
+    "realStoreBOwnerJwtReadOnlyVerified": false,
+    "sameTenantDifferentStoreVerified": false,
+    "storeCrossReadDeniedByRealRls": false,
+    "commercialStaffAssignmentsVerified": false,
+    "revocationTestedWithRealJwt": false,
+    "independentMetaPageOwnershipVerified": false,
+    "independentMetaAppRoleVerified": false,
+    "isolatedQaPageAppDifferentFromProduction": false,
+    "independentMetaHandoverPermissionVerified": false,
+    "signedNativeHandoverEventNoSendVerified": false,
+    "durableAtomicReplayVerified": false,
+    "singleResponderLegacyNotSendingDuringUat": false,
+    "merchantOwnerConsentVerified": false,
+    "independentOperatorApprovalVerified": false,
+    "managedSecretsAndKillSwitchVerified": false
+  }
+}
