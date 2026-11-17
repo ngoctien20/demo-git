@@ -96,7 +96,7 @@ jobs:
           assert d['realOrdersRead']==0 and d['realOrdersWritten']==0
           assert d['realCustomersRead']==0 and d['actualModelsCalled']==0
           assert d['providerMessagesSent']==0
-          assert d['realCommerceReaderConnected'] is False and d['hostedRelease']=='NO_GO'
+          assert d['realCommerceReaderConnected'] is False and d['release']=='HOSTED_NO_GO'
           print('V171P_SOURCE_ONLY_NO_DB_NO_PROVIDER_NO_JWT_AUTHENTICATION_CLAIMS_PASS')
           PY
   v171p-disposable-pg17-rls:
