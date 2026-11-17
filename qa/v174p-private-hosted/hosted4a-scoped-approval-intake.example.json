@@ -1,0 +1,48 @@
+{
+  "contract": "T404_V174P_HOSTED4A_SCOPED_APPROVAL_INTAKE_V1",
+  "date_jst": "2026-11-17",
+  "user_instruction_received": "APPROVED_TO_CONTINUE_PROGRESS",
+  "interpretation": "SOURCE_TEST_READ_ONLY_CONTROL_PLANE_AUTHORIZED; NO HOSTED_MUTATION_AUTHORIZED_WITHOUT_SCOPE",
+  "status": "PENDING_EXACT_BILLING_OPERATOR_AND_HOST_DETAILS",
+  "target": {
+    "account_id": "ac01685529c0a31fc185335f07648edf",
+    "worker_name": "tien404-v174p-private-qa-issuer",
+    "new_replay_class": "V174PReplayGuard",
+    "use_other_v175_namespace": false,
+    "production_workspace": false,
+    "synthetic_only": true,
+    "outbound_provider_sends": false,
+    "real_commerce_data": false
+  },
+  "phase_a": "INACTIVE_UPLOAD_ONLY",
+  "current_permissions": {
+    "github_draft_and_local_ci": true,
+    "cloudflare_control_plane_get_only": true,
+    "create_new_worker": false,
+    "create_new_do_namespace": false,
+    "create_or_change_access": false,
+    "create_or_rotate_secrets": false,
+    "enable_qa_hostname_or_route": false,
+    "run_real_hosted_http_canary": false,
+    "change_billing_limits": false
+  },
+  "needed_for_scoped_hosted_approval": {
+    "owner_verified_private_identity": null,
+    "security_reviewer_separate_identity": null,
+    "private_operator_exact_email_allowlist": null,
+    "dedicated_qa_origin": null,
+    "qa_budget_ceiling_usd": null,
+    "max_real_qa_requests": 96,
+    "no_customer_data": true,
+    "no_provider_send": true,
+    "account_wide_worker_limit_change": false,
+    "account_wide_do_limit_change": false,
+    "rollback_operator_attestation": null
+  },
+  "lock_existing_v175_namespaces": [
+    "tien404-v175e2-durable-replay-nosend-staging_ReplayBucket",
+    "tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults"
+  ],
+  "approval_not_inferred_from_source_file": true,
+  "can_deploy": false
+}
