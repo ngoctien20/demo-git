@@ -1,0 +1,73 @@
+name: TIEN404 G0.5 Inactive n8n Commerce Registry Pilot (NO SEND)
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-g05/**'
+      - 'docs/ai-handoff/T404_G05_*'
+      - '.github/workflows/v152-g05-inactive-n8n-registry-nosend.yml'
+  push:
+    branches:
+      - work/v152-g05-inactive-n8n-commerce-registry-pilot-20261117
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g05-source-repro:
+    name: Node22 G0.5 synthetic QA registry regression (NO NETWORK)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source and fail-closed 21-case fixture replay
+        run: |
+          node --check qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.js
+          node --check qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs
+          node --test qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs
+      - name: No webhook, provider send, order/stock write, credentials or hosted call
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.js').read_text()
+          for disallow in (
+              'n8n-nodes-base.webhook',
+              'n8n-nodes-base.httpRequest',
+              'n8n-nodes-base.googleSheets',
+              'n8n-nodes-base.executeWorkflow',
+              'n8n-nodes-base.supabase',
+              'n8n-nodes-base.postgres',
+              '@n8n/n8n-nodes-langchain',
+              'newCredential(',
+              'process.env',
+              'can_publish:true',
+          ):
+              assert disallow not in p,disallow
+          assert p.count("n8n-nodes-base.dataTable")==2
+          assert p.count("operation:'get'")==2
+          assert 'QA_SYNTHETIC_NO_REAL_OWNER' in p
+          assert 'real_provider_signature_verified:false' in p
+          assert "release_status:'HOSTED_NO_GO'" in p
+          print('PASS G05: only manual Code + 2 QA DataTable GET; immutable hosted NO-GO')
+          PY
+  hosted-no-go:
+    name: Hosted Store authority explicitly NOT certified (NO-GO success)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse incorrect release claims
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const src=fs.readFileSync('qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.js','utf8');
+          if(!src.includes('actual_merchant_owner_verified:false')||
+             !src.includes('hosted_rls_verified:false')||
+             !src.includes('can_publish:false'))
+            throw Error('QA_REGISTRY_CANNOT_AUTHORIZE_REAL_COMMERCE');
+          console.log('G05 SOURCE QA ONLY: HOSTED NO GO; REAL PROVIDER/JWT/OWNER NOT TESTED');
+          NODE
