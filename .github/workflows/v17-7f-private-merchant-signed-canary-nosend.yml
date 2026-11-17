@@ -1,0 +1,82 @@
+name: V17.7F Private Merchant Consent × Signed Provider Offline Canary NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7F_PRIVATE_MERCHANT_SIGNED_CANARY_CHECKPOINT.md"
+      - ".github/workflows/v17-7f-private-merchant-signed-canary-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-consent-signed-provider-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check all V17.7A-F source-only JS
+        run: |
+          set -euo pipefail
+          for f in qa/v17-7a-oa-independent/*.mjs; do node --check "$f"; done
+      - name: Run inherited full QA plus offline native provider crypto and Merchant consent
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Static side-effect gate and actual read-only baseline invariants
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const root='qa/v17-7a-oa-independent/';
+          const source=[
+            'v17-7f-private-owner-consent-preflight.mjs',
+            'v17-7f-provider-crypto-fixture-offline.mjs'
+          ].map(f=>readFileSync(root+f,'utf8'));
+          for(const code of source){
+            for(const forbidden of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+            ])if(forbidden.test(code)) throw Error('NO_SIDE_EFFECT violation');
+            for(const mandatory of [
+              'canPublish:false','canSendProvider:false'
+            ])if(!source[0].includes(mandatory))throw Error('Merchant release NO-GO missing');
+          }
+          for(const key of [
+            'realProviderVerified:false',
+            'realProviderOwnerVerified:false',
+            'realSignedEventReceived:false',
+            'allowProviderSend:false',
+            'allowOrderWrite:false',
+            'canDeploy:false','canPublish:false'
+          ])if(!source[1].includes(key))
+            throw Error('Provider canary no-send invariant missing: '+key);
+          const e=JSON.parse(readFileSync(root+'v17-7f-private-canary-hosted-readonly-evidence.json','utf8'));
+          assert.equal(e.release_status,'REAL_SIGNED_PROVIDER_AND_OWNER_NO_GO');
+          assert.equal(e.cloudflare.merchant_access_inline_allow_policy_count,0);
+          assert.equal(e.cloudflare.merchant_access_inline_bypass_policy_count,0);
+          assert.equal(e.cloudflare.dedicated_v177f_provider_worker_deployed,false);
+          assert.equal(e.cloudflare.merchant_external_access_denial_executed_this_phase,false);
+          assert.equal(e.cloudflare.hosted_durable_object_replay_verified_for_this_canary,false);
+          assert.equal(e.supabase.qa_same_tenant_ab_count,0);
+          assert.equal(e.supabase.real_store_jwt_rls_uat,false);
+          assert.equal(e.supabase.original_four_row_merchant_authority_verified,false);
+          assert.equal(e.n8n.merchant_provider_canary_webhook_live,false);
+          assert.equal(e.tests_performed_this_phase.native_meta_webhook_called,false);
+          assert.equal(e.tests_performed_this_phase.native_zalo_bot_webhook_called,false);
+          assert.equal(e.tests_performed_this_phase.production_workflows_executed,0);
+          assert.equal(e.tests_performed_this_phase.new_cloudflare_resources_created,0);
+          assert.equal(e.tests_performed_this_phase.supabase_writes,0);
+          assert.equal(e.tests_performed_this_phase.merchant_credentials_read,0);
+          assert.equal(e.tests_performed_this_phase.customer_messages_sent,0);
+          assert.equal(e.tests_performed_this_phase.commerce_orders_written,0);
+          console.log('V17.7F NO_SEND / NO_WRITE / NO_DEPLOY / NO_LIVE_PROVIDER: PASS');
+          NODE
