@@ -1,6 +1,6 @@
 # TIEN404 AI — RPC17.2 Real Local Durable Object SQLite × Offline Scanner × Hosted Admission Review
 
-**2026-11-17 JST — SOURCE IMPLEMENTED / CI PENDING / CLOUD HOSTED NO-GO**
+**2026-11-17 JST — SOURCE IMPLEMENTED / LOCAL WORKERD CI VERIFIED / CLOUD HOSTED NO-GO**
 
 ## Verified parent
 - RPC17.1 Draft PR #327 on head `b7a4e1bc92fbeabb580e9c7c2d28c5791661297a`, itself stacked on RPC17 PR #322 and RPC16 PR #313.
@@ -26,8 +26,9 @@ NO Access Allow policy, public route, merchant upload, scanner cloud service, ex
 A future hosted UAT must use dedicated private identity, fresh MFA, scoped host Access, independently confirmed real Store A/B JWT, separate reviewer and rollback, then only no-send canary on synthetic records before real Merchant docs.
 
 ## QA/rollback
-- Confirm exact GitHub run and CI pass counts from logs; do not promote based on local source presence.
+- GitHub Actions run 44081794953: 273/273 PASS, nine suites [10 scanner, 22 independent gate, 7 LOCAL Workerd SQLite, 29 RPC17.1, 26 RPC17, 74 RPC16, 45 RPC15, 19 RPC14, 41 RPC13], zero failures. Commit a5fcf3e7bb67f06344e9f52f8f3e894f65948195. Prior test harness failures were repaired; CI source-only with no deployment. The unrelated RPC10 workflow still fails on this branch.
+- Independent Cloudflare GET-only check 2026-11-17 JST: RPC16 Access 0 policies; Worker workers.dev=false / previews=false; quarantine R2 objects=[] (0), r2.dev disabled; 3 existing DO namespaces, none named RPC17.2. This verifies NO RPC17.2 hosted admission; does not establish real scanner, real identities or hosted DO UAT.
 - Rollback: close/revert source-only child Draft PR; preserve RPC16/RPC17/RPC17.1 and all live cloud resources unchanged.
 - Snapshot: base `b7a4e1bc92fbeabb580e9c7c2d28c5791661297a`.
 
-CHECKPOINT: RPC172_LOCAL_WORKERD_SQLITE_SOURCE · SCANNER_OFFLINE_RECEIPT · PRIVATE_NOHOST · MERCHANT_NO_GO
+CHECKPOINT: RPC172_LOCAL_WORKERD_CI_273_273_PASS · SCANNER_OFFLINE_RECEIPT · PRIVATE_NOHOST · MERCHANT_NO_GO
