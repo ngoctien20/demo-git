@@ -80,3 +80,11 @@ Run on the owner's local Windows PowerShell machine only. Enter the **previously
 5. No n8n change, no credentials copied, no Zalo OA, no Commerce, no hosted QA diagnostics unless separately approved.
 
 **Decision:** `DIAG7_ROLLBACK_OWNER_ATTESTED / WORKER_OFF_VERIFIED / D1_ZERO_VERIFIED / HTTP_404_ROUTING_SUSPECTED / NEXT_TEST_BLOCKED_PENDING_PATH_ATTESTATION`.
+
+## Owner offline result — QA_LOCAL_PATH_MATCH
+
+- **OWNER-TESTED:** The provided private PowerShell URL-shape check returned `QA_LOCAL_PATH_MATCH`. This means the **owner-supplied local saved webhook URL** has the expected exact HTTPS host + allowed path form, no visible extras, and its path is exactly equal (case-sensitive) to the **local** `$QA_CALLBACK_PATH` variable in that PowerShell session.
+- **LIMITATION:** The test does **not** read or attest the encrypted **hosted Cloudflare** `QA_CALLBACK_PATH` binding and does not confirm exactly which URL was registered with Zalo during the live attempt. It does not identify the earlier HTTP 404 source; do not promote to `CLOUDFLARE_PATH_MATCH_VERIFIED` or claim Zalo delivery.
+- **DIRECT HOSTED POSTFLIGHT 2026-11-18 ~06:40:31 JST:** Worker `workers.dev=false` and previews=false; mode `OWNER_SCOPED_PRIVATE_NO_SEND_ONCE`; `QA_CALLBACK_PATH` binding type `secret_text`; deployed version `20f281c4-c568-45c9-bd7b-e63a0e7d1fc4`; D1 accepted receipts=0. No hosted changes made in DIAG7.
+- **NEXT ADMISSION:** Do not reopen for another live test. The minimum targeted correction is to re-save **only** the QA Worker's `QA_CALLBACK_PATH` from the already-validated local value while Worker is OFF, after owner authorizes that isolated secret mutation and confirms the provider webhook is deleted. This eliminates unknown hosted-vs-local path equality without disclosing either value. Record new Worker version, keep previews/public OFF, and use a **fresh** approved time window later. No old Bot, n8n or Commerce mutations.
+- **Current classification:** `LOCAL_WEBHOOK_URL_MATCH_OWNER_TESTED / HOSTED_SECRET_VALUE_UNKNOWN / CLOUDFLARE_OFF_VERIFIED / D1_ZERO / TARGETED_REBIND_PROPOSED`.
