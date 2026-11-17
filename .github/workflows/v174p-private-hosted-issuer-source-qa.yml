@@ -25,6 +25,7 @@ on:
       - work/v174p-hosted4b10-real-finance-broker-preflight-no-deploy-20261117
       - work/v174p-hosted4b11-solo-founder-local-challenge-readiness-20261117
       - work/v174p-hosted4b12-solo-founder-access-billing-cost-canary-nogo-20261117
+      - work/v174p-p1-replay-identity-eviction-stress-nogo-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
