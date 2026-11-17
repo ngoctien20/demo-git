@@ -1,0 +1,132 @@
+name: TIEN404 G0.12 Operator Review × Timeout Reconciliation Restricted QA
+
+on:
+  push:
+    branches:
+      - work/v152-g12-replay-operator-timeout-restricted-qa-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-g12/**'
+      - '.github/workflows/v152-g12-operator-queue-nosend.yml'
+      - 'docs/ai-handoff/T404_G12_*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g12-source-and-inherited:
+    name: G0.12 PII-free operator UI contract and G0.11 inherited source acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin independent V17.1E Meta verifier exact source
+        uses: actions/checkout@v4
+        with:
+          ref: d5fbd6958635069d15343be573cdbd4b55cc036c
+          path: .g12_v171
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: G0.12 source strict-case redacted operator queue tests
+        run: |
+          node --check qa/v152-g12/operator-queue-preview.cjs
+          node --test qa/v152-g12/operator-queue-preview.test.cjs
+      - name: Inherited original Meta and G0.11 to G0.4 suites
+        run: |
+          test "$(git -C .g12_v171 rev-parse HEAD)" = "d5fbd6958635069d15343be573cdbd4b55cc036c"
+          ln -s .g12_v171 .g11_v171
+          ln -s .g12_v171 .g10_v171
+          ln -s .g12_v171 .g09_v171
+          node --test .g12_v171/qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs
+          node --test \
+            qa/v152-g11/fenced-nosend-lease-adapter.test.cjs \
+            qa/v152-g11/INACTIVE_N8N_CRASH_RECOVERY_SDK.test.cjs \
+            qa/v152-g10/bound-atomic-replay-adapter.test.cjs \
+            qa/v152-g09/isolated-meta-private-admission.test.cjs \
+            qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs \
+            qa/v152-g07/private-provider-authority-gate.test.cjs \
+            qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs \
+            qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+            qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+            qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: Source cannot connect to public provider, Orders or real secrets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v152-g12/operator-queue-preview.cjs').read_text()
+          for bad in ('process.env','fetch(','https.request(','child_process',
+                      'createOrder(','sendMessage(','newCredential('):
+              assert bad not in s,bad
+          for required in ('canSend:false','canRetryProvider:false',
+                           'canPublish:false','realOperatorProofEstablished:false',
+                           'providerDeliveryStatusCertified:false'):
+              assert required in s,required
+          print('G12 source: no real customer identities, sends, Orders, hosted DB or credentials')
+          PY
+
+  g12-actual-disposable-pg17:
+    name: PG17 disposable timeout queue × two-party cosign × 24 operator races
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      pg17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: qa
+          POSTGRES_DB: qa
+          POSTGRES_PASSWORD: G12_QA_FAKE_ONLY
+        options: >-
+          --health-cmd "pg_isready -U qa -d qa"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check disposable PostgreSQL 17 environment, not hosted
+        run: |
+          docker exec "${{ job.services.pg17.id }}" psql -U qa -d qa -X -qAt -c "SHOW server_version_num" | grep -E '^17[0-9]+$'
+      - name: Deploy G0.11 parent lease ledger to disposable container ONLY
+        run: |
+          cat qa/v152-g11/disposable-pg17/01_lease_ledger.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Deploy G0.12 operator queue in same disposable container ONLY
+        run: |
+          cat qa/v152-g12/disposable-pg17/01_operator_queue.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Verify timeout queues, operator crash, independent cosign, no auto send
+        run: |
+          cat qa/v152-g12/disposable-pg17/02_assert_operator_queue.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Race 24 real Postgres connections to take ONE case
+        run: |
+          bash qa/v152-g12/disposable-pg17/03_operator_24_workers.sh "${{ job.services.pg17.id }}"
+      - name: Confirm no hosted database connection
+        run: |
+          echo "G12_DISPOSABLE_POSTGRES17_ONLY_NO_SUPABASE_MIGRATION"
+
+  g12-restricted-pilot-block:
+    name: NO-GO real Operator authorization, Messenger Send and hosted promotion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: No public roles, no privileged RLS bypass, no automatic resend
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('qa/v152-g12/disposable-pg17/01_operator_queue.sql').read_text()
+          assert 'SECURITY INVOKER' in s
+          assert 'SECURITY DEFINER' not in s
+          assert 'REVOKE ALL ON SCHEMA' in s
+          assert 'SEND_UNCERTAIN' in s
+          assert 'ON CONFLICT(provider,installation_digest,event_digest) DO NOTHING' in s
+          assert 'review_recorded_no_send' in s
+          assert 'NO_SEND_CLOSED' in s
+          assert 'provider_receipt_required' in s
+          for b in ['sendMessage(','createOrder(','page_access_token']:
+              assert b not in s,b
+          print('G12 real provider and Commerce cutover blocked; private operator proof missing')
+          PY
