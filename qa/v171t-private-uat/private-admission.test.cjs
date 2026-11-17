@@ -554,6 +554,7 @@ function operatorEnv(configOverrides={}){
  }
  let c;
  const config={
+  expectedApprovalCommitSha:'a'.repeat(40),
   lookupPrivateApproverKey:async({role,kid})=>signers[role]?.kid===kid?signers[role]:null,
   reservePrivateApprovalNonceOnce:async({nonce,digest})=>{
    const k=nonce+'|'+digest;
@@ -800,4 +801,23 @@ test('T39 authorized public key not available fails closed',async()=>{
 test('T40 future operator scope issuance is denied',async()=>{
  const e=operatorEnv();e.intent.issuedAtMs=NOW+40000;e.intent.expiresAtMs=NOW+100000;
  await denied(approve(e),'OPERATOR_APPROVAL_EXPIRED');
+});
+
+test('T41 a valid four-party signature for a different commit cannot change code approval',async()=>{
+ const e=operatorEnv();e.intent.commitSha='b'.repeat(40);
+ await denied(approve(e),'OPERATOR_APPROVAL_COMMIT_MISMATCH');
+});
+test('T42 owner signer Store binding changes during commit review and is rejected',async()=>{
+ let calls=0;
+ const e=operatorEnv({lookupPrivateApproverKey:async({role})=>{
+  calls++;
+  if(calls>4&&role==='OWNER_STORE_B')
+   return {...e.signers[role],storeId:'OTHER_STORE'};
+  return e.signers[role];
+ }});
+ await denied(approve(e),'OPERATOR_APPROVER_REVOKED');
+});
+test('T43 private trusted commit SHA not configured fails closed before any approvals',async()=>{
+ const e=operatorEnv({expectedApprovalCommitSha:undefined});
+ await denied(approve(e),'OPERATOR_APPROVAL_SERVICE_NOT_CONFIGURED');
 });
