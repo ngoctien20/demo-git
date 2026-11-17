@@ -152,6 +152,14 @@ export function assessIndependentFinanceAndLedger({
    t.finance?.key_id!==owner.trustAnchors?.owner?.key_id&&
    t.finance?.key_id!==owner.trustAnchors?.security?.key_id&&
    t.ledger_security?.key_id!==t.finance?.key_id&&
+   // Key IDs are editable aliases; test all four independent SPKI key bytes.
+   typeof t.finance?.spki_pem==='string'&&
+   typeof t.ledger_security?.spki_pem==='string'&&
+   t.finance.spki_pem!==owner.trustAnchors?.owner?.spki_pem&&
+   t.finance.spki_pem!==owner.trustAnchors?.security?.spki_pem&&
+   t.ledger_security.spki_pem!==owner.trustAnchors?.owner?.spki_pem&&
+   t.ledger_security.spki_pem!==owner.trustAnchors?.security?.spki_pem&&
+   t.ledger_security.spki_pem!==t.finance.spki_pem&&
    r.finance_signer_segregation_privately_reviewed===true);
  const qa=f.qa_worker_budget_usd,ledger=f.private_ledger_budget_usd;
  check('two_separate_positive_budgets_and_combined_max_25',
