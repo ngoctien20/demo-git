@@ -1,0 +1,86 @@
+name: TIEN404 V17 CBOT Phase A/B/C/D Readonly Contract QA (NO SEND)
+on:
+  push:
+    branches:
+      - work/v17-cbot-uata-channel-vision-context-no-send-20261117
+  pull_request:
+    paths:
+      - 'qa/v17-cbot/**'
+      - 'docs/ai-handoff/V17_CBOT_COMMERCE_UAT_01_*'
+      - '.github/workflows/v17-cbot-commerce-uata-readonly-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  v17-no-send-cbot-unit-and-reuse:
+    name: V17 B/C/D image SKU, cross-channel, security contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 33 V17 image, context and verified link no-send synthetic tests
+        run: |
+          node --check qa/v17-cbot/cbot-readonly-contract.cjs
+          node --test qa/v17-cbot/cbot-readonly-contract.test.cjs
+      - name: Reuse existing V14.3 / V14.7 / V15.2 identity policy regression
+        run: |
+          node --test qa/channel-v143/channel-core.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Strict source-only static no-provider no-DB and no-real-media check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          f=Path('qa/v17-cbot/cbot-readonly-contract.cjs')
+          s=f.read_text()
+          # This is only a source scanner; the injected callbacks in actual
+          # integrations must separately undergo credential and API review.
+          for banned in (r'\bhttps?\.request\s*\(',r'\bfetch\s*\(',
+              r'\brequire\s*\(\s*["\x27](?:axios|node-fetch|n8n)',
+              r'\bprocess\.env\b',r'\bchild_process\b',r'\bservice_role\b',
+              r'\bpg_dump\b',r'\bpg_restore\b'):
+            effective='\n'.join(line for line in s.splitlines()
+              if not line.lstrip().startswith(('*','//')))
+            assert not re.search(banned,effective,re.I),banned
+          for token in ('../channel-v143/channel-core.cjs',
+             'ORDER_LOOKUP_VERIFICATION_REQUIRED',
+             'CROSS_CHANNEL_IDENTITY_LINK_DENIED',
+             'SIMILAR_PRODUCTS_REQUIRES_SKU_SELECTION',
+             'ORDER_DRAFT_AWAITING_CONFIRMATION',
+             'REAL_ORDER_WRITE_DISABLED',
+             'PROVIDER_SEND_DISABLED',
+             'actualWebhookSignatureCheckedHere:false',
+             'actualIdentityProofInspectedHere:false'):
+            assert token in s,token
+          print('PASS: source-only pilot has no direct provider sends, hosted writes or billing')
+          PY
+  v17-hosted-release-gate:
+    name: V17 L3/L4 REAL PROVIDER+JWT+STORE HOSTED RELEASE — NO GO (intentional)
+    needs: [v17-no-send-cbot-unit-and-reuse]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Explicitly prevent synthetic QA from being confused with real UAT
+        run: |
+          node - <<'NODE'
+          const v17=require('./qa/v17-cbot/cbot-readonly-contract.cjs');
+          const p=v17.createReadOnlyPilot({
+           attestInbound:()=>{throw Error('NO_REAL_PROVIDER_VERIFIER');},
+           readCatalog:()=>{throw Error('NO_HOSTED_CATALOG_PERMISSION');},
+           matchImage:()=>{throw Error('NO_LIVE_VISION_MODEL');},
+           resolveVerifiedLink:()=>{throw Error('NO_REAL_CROSS_CHANNEL_PROOF');},
+           lookupOrder:()=>{throw Error('NO_REAL_ORDER_ACCESS_GRANT');}
+          });
+          const x=p.stats();
+          if(x.serverPersisted||x.realIdentityLinked||x.providerSends||
+            typeof p.createOrder!=='function')
+            throw Error('V17_UNSAFE_PROMOTION');
+          console.error('V17_L3_L4_NO_GO_REAL_STORE_RLS_IDENTITY_VISION_PROVIDER_AUTHORITY_REQUIRED');
+          process.exitCode=3;
+          NODE
