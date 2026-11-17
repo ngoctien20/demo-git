@@ -61,7 +61,7 @@ Require **four real hosted source rows**, two Products and two Orders in two ind
 - `qa/v180-p0d/origin-m0-auth-staging.READ_ONLY.sql`: explicit `BEGIN TRANSACTION READ ONLY`, aggregate four-row tenant slots, Store mapping provenance, Auth session presence and RLS inventory, `ROLLBACK`. Not a migration; output is NOT a backup or Owner certificate.
 - `qa/v180-p0d/origin-m0-auth-readiness.mjs`: reports baseline matches/drift with a **permanent NO-GO** output that cannot be flipped by self-reported owner/M0/JWT booleans. No external I/O. This is not a real verifier.
 - Unit/static tests explicitly reject secret/row ID packets and any attempt to promote synthetic counts into M0 or signed JWT success.
-- CI runs only Node and preexisting RPC12/RPC17.8B fail-closed tests, empty hosted credentials.
+- CI runs the new V18.0-P0D Node/no-host tests and inherited RPC17.8B fail-closed tests with empty hosted credentials. RPC12 private operator tests **remain on their owning separate Draft PR #244 branch and are not imported or executed in this child**, because the code does not exist on this stacked branch.
 - `Rollback: close/revert Draft PR`. No real database, hosted schema, Worker, Access, credential, customer data, n8n Published, Supabase branch, billing or Auth user was modified.
 
 **GO/NO-GO: Read-only aggregate and source-only security QA allowed. Original Store assignment, current M0 hosted backup/restore, real signed Supabase JWT A/B, M1 migration, live cross-channel commerce and production all NO-GO.**
