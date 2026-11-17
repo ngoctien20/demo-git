@@ -45,7 +45,7 @@ export function classifyRealGetMeObservation(o={}){
  return Object.freeze({
   status:blockers.length?'REAL_GETME_REAUDIT':'REAL_BOT_GETME_READONLY_OBSERVED',
   blockers:uniq(blockers),
-  readOnlyProviderCredentialValidated:!blockers.length,
+  matchesRecordedReadOnlyObservation:!blockers.length,\n  independentCredentialValidationAccepted:false,
   dedicatedQaBotOwnershipAccepted:false,
   nativeSignedWebhookEventAccepted:false,
   noSendProviderLogsIndependentlyReconciled:false,
