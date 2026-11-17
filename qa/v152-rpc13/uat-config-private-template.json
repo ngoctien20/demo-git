@@ -1,0 +1,15 @@
+{
+  "projectUrl": "https://ifxlvrhyjhbzbrkdsida.supabase.co",
+  "publishableKey": "REPLACE_WITH_PUBLIC_PUBLISHABLE_KEY_ONLY",
+  "originalMerchantProofApproved": false,
+  "recoveryApproved": false,
+  "independentUatApproved": false,
+  "canaries": {
+    "products": {"A": null,"B": null},
+    "orders": {"A": null,"B": null},
+    "customers": {"A": null,"B": null},
+    "order_items": {"A": null,"B": null},
+    "conversations": {"A": null,"B": null},
+    "messages": {"A": null,"B": null}
+  }
+}
