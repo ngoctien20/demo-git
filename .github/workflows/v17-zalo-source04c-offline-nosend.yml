@@ -1,0 +1,63 @@
+name: V17 Zalo OA Source04C - Signed Private Evidence and No-Send Gate
+
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_04C_CHECKPOINT.md"
+      - ".github/workflows/v17-zalo-source04c-offline-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-source04c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check syntax of all inherited and new OA files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/zalo-oa-source-admission/*.mjs; do node --check "$f"; done
+      - name: Full inherited OA synthetic tests and new signed admission cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Reject network, secret exchange, sends and Commerce side effects in SOURCE04C
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/zalo-oa-source-admission/';
+          const paths=['oa-04c-attestation-offline.mjs','oa-04c-signed-canary-offline.mjs'];
+          for(const file of paths){
+            const code=readFileSync(root+file,'utf8');
+            for(const pattern of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|refreshToken|exchangeToken|writeStock)\s*\(/
+            ]) if(pattern.test(code))throw new Error('Disallowed outbound side effect: '+file);
+            if(!code.includes("OFFLINE_FIXTURE_ONLY")||
+               !code.includes('false'))throw new Error('Source-only guard missing: '+file);
+          }
+          const admission=readFileSync(root+'oa-04c-attestation-offline.mjs','utf8');
+          if(!admission.includes('realProviderVerified:false')||
+             !admission.includes('canReceiveRealTraffic:false')||
+             !admission.includes('canSend:false')||
+             !admission.includes('canWriteOrders:false'))
+             throw new Error('Real provider or side-effect NO-GO invariant missing');
+          const canary=readFileSync(root+'oa-04c-signed-canary-offline.mjs','utf8');
+          if(!canary.includes('providerVerified:false')||
+             !canary.includes('canSend:false')||
+             !canary.includes('canWriteOrders:false'))throw new Error('No-send canary invariant missing');
+          console.log('V17 SOURCE04C synthetic no-send gate PASS');
+          NODE
