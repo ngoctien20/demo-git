@@ -35,7 +35,9 @@ const fail=(reason)=>Object.freeze({
   ...DENY,status:'BLOCKED',reason,missing:Object.freeze([])
 });
 function extractShape(o) {
-  if(!o||o.source!=='CONNECTED_READ_ONLY_SANITIZED_METADATA'||
+  if(!strictObject(o,['source','projectRef','environment','snapshotDate','coreTables',
+    'auth','registry','workflow','privateUatEvidence'])||
+    o.source!=='CONNECTED_READ_ONLY_SANITIZED_METADATA'||
     o.projectRef!==REQUIRED_IDS.project||o.environment!=='staging'||
     typeof o.snapshotDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(o.snapshotDate)||
     !Array.isArray(o.coreTables)||o.coreTables.length!==EXPECTED_TABLES.length||
