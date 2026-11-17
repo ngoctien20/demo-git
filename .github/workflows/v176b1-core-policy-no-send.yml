@@ -24,16 +24,16 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Source-only admission and 31 deterministic tests
+      - name: Exact source admission and 31 deterministic assertions
         run: |
           node --version
           node --check qa/v176b1-core-admission/independent-core-adapter.cjs
           node --check qa/v176b1-core-admission/independent-core-adapter.test.cjs
           node --check qa/v176b1-core-admission/no-send-source-canary.cjs
           node --test qa/v176b1-core-admission/independent-core-adapter.test.cjs
-      - name: Independent six-case no-send source canary
+      - name: Fail-closed independent six-case no-send source canary
         run: |
-          node qa/v176b1-core-admission/no-send-source-canary.cjs | python3 -c 'import json,sys; x=json.load(sys.stdin); assert x["caseCount"]==6; assert all(i["verified"] for i in x["outcomes"]); assert all(v==0 for v in x["countedSideEffects"].values()); assert x["productionRelease"]=="NO_GO"; assert x["realJwt"] is False; assert x["realProviderNativeProof"] is False; print("V176B1_6_CASE_SOURCE_ONLY_NO_SEND_ACCEPTANCE_PASS")'
+          node qa/v176b1-core-admission/no-send-source-canary.cjs | python3 -c 'import json,sys; x=json.load(sys.stdin); assert x["contract"].endswith("FAIL_CLOSED"); assert x["caseCount"]==6; assert x["plannedReadCount"]==2 and x["denyCount"]==4; assert all(i["pass"] and i["actualDecision"]==i["expectedDecision"] for i in x["outcomes"]); assert all(v==0 for v in x["countedSideEffects"].values()); assert x["productionRelease"]=="NO_GO"; assert x["realJwt"] is False and x["realProviderNativeProof"] is False and x["realHostedRls"] is False; print("V176B1_FAIL_CLOSED_6_CASE_SOURCE_ONLY_NO_SEND_PASS")'
       - name: Production gates must remain closed
         run: |
           echo 'NO_PROVIDER_SEND; NO_HOSTED_DATABASE; NO_ORDER_WRITER; NO_MODEL_API'
