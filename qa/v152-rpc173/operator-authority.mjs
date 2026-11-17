@@ -22,8 +22,9 @@ export function verifyPinnedPacket(packet,keys,now){
   return parsed;
  }catch{return null;}
 }
-export function authorizeOperatorOffline({operatorPacket,storePacket,operatorPins,storePins,expected,now}={}){
+export function authorizeOperatorOffline(input={}){
  try{
+  const {operatorPacket,storePacket,operatorPins,storePins,expected,now}=input||{};
   if(!expected||!Object.values(expected).every(x=>typeof x==='string'))return DENY('MISSING_CONTEXT');
   const op=verifyPinnedPacket(operatorPacket,operatorPins,now);
   const st=verifyPinnedPacket(storePacket,storePins,now);
