@@ -1,0 +1,35 @@
+{
+  "contract": "T404_MC03A_HOSTED_READONLY_AGGREGATES_V1",
+  "dateJst": "2026-11-17",
+  "supabaseProject": "ifxlvrhyjhbzbrkdsida",
+  "actualReadOnly": {
+    "sixCommerceTablesWithStoreId": 0,
+    "sixCommerceTablesWithStoreRlsPredicate": 0,
+    "publicCanonicalStores": 0,
+    "publicCanonicalStoreMemberships": 0,
+    "sameTenantTwoDistinctActiveMembershipUsersWithDbSessionRows": 0,
+    "syntheticQaOwnerBindingRows": 2,
+    "syntheticQaTenantsWithTwoDistinctStoresAndOwners": 0
+  },
+  "n8nReadOnly": {
+    "messenger": {
+      "workflowId": "Z7FdV7uDvApfbURQ",
+      "versionId": "1064b1b3-d3f1-4a6b-a367-2414ba691522"
+    },
+    "zaloBot": {
+      "workflowId": "yIJk8LvJoLF40Z62",
+      "versionId": "2d912cb0-007f-452f-9536-b92ba12a03e6"
+    },
+    "zaloRouter": {
+      "workflowId": "sIPs6egzIwOY1GNv",
+      "versionId": "8d91d23c-cd87-462f-a112-9cca2340bec8"
+    }
+  },
+  "independentMerchantOriginalProofObserved": false,
+  "independentMetaQaAppPageProofObserved": false,
+  "actualDualStoreSignedJwtUatExecuted": false,
+  "actualNativeMetaHandoverNoSendExecuted": false,
+  "actualProviderCallsByThisPr": 0,
+  "actualHostedWritesByThisPr": 0,
+  "note": "Aggregate metadata only. false means not independently verified in this work, not proof that external rights cannot exist."
+}
