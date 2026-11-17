@@ -15,6 +15,7 @@ function validate(input, trust, now=Date.now()) {
  const reasons=[];
  if (!input || !trust || !Array.isArray(input.receipts) || input.receipts.length!==2) return {status:'DENY',reasons:['missing_receipt_pair']};
  const r=input.receipts;
+ if(r.some(x=>!x || typeof x!=='object')) return {status:'DENY',reasons:['invalid_receipt_shape']};
  if (!trust.project || !trust.tenant || !trust.publicKeys || trust.releaseApproved!==true) reasons.push('missing_trusted_config_or_scope_approval');
  if (!trust.recoveryApproved || !trust.disposableApproved || !trust.reviewerApproved) reasons.push('missing_disposable_recovery_or_review');
  if (r.some(x=>!x || !SLOT.includes(x.slot)) || new Set(r.map(x=>x.slot)).size!==2) reasons.push('actor_slots_not_independent');
