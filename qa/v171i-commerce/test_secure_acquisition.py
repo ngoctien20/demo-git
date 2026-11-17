@@ -173,7 +173,7 @@ class AcquisitionTests(unittest.TestCase):
         response=FakeResponse(b"x"*80,[("Content-Type","image/png"),("Content-Length","80"),("Transfer-Encoding","chunked")])
         self.blocked("FRAMING",lambda:acq._read_bounded(response,acq.MAX_IMAGE))
     def test_39_stream_body_cap_denied(self):
-        self.blocked("STREAM_BODY_CAP",lambda:acq._read_bounded(FakeResponse(b"x"*101),100))
+        self.blocked("STREAM_BODY_CAP",lambda:acq._read_bounded(FakeResponse(b"x"*101,headers=[("Content-Type","image/png")]),100))
     def test_40_truncated_stream_denied(self):
         response=FakeResponse(b"x"*80,[("Content-Type","image/png"),("Content-Length","81")])
         self.blocked("STREAM_BODY_TRUNCATED",lambda:acq._read_bounded(response,acq.MAX_IMAGE))

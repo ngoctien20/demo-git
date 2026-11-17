@@ -114,18 +114,18 @@ class BudgetTests(unittest.TestCase):
         self.assertFalse(q["approvedForBilling"])
         self.assertFalse(q["canInvokeModel"])
         self.assertEqual(q["actualProviderCalls"],0)
-    def test_22_calls_lower_than_number_cases denied(self):
+    def test_22_calls_lower_than_number_cases_denied(self):
         self.denied("CALL_CAP",lambda:quote(max_calls=1))
-    def test_23_proposed_cost_over hard cap denied(self):
+    def test_23_proposed_cost_over_hard_cap_denied(self):
         self.denied("WORST_CASE",lambda:quote(max_total_micro_usd=39999))
-    def test_24_negative_or_zero price denied(self):
+    def test_24_negative_or_zero_price_denied(self):
         for n in (0,-1):
             self.denied("INPUT_OR_CALL",lambda n=n:quote(per_call_max_micro_usd=n))
-    def test_25_float budget inputs denied(self):
+    def test_25_float_budget_inputs_denied(self):
         self.denied("INPUT_OR_CALL",lambda:quote(max_total_micro_usd=80000.0))
-    def test_26_boolean cap inputs denied(self):
+    def test_26_boolean_cap_inputs_denied(self):
         self.denied("INPUT_OR_CALL",lambda:quote(max_calls=True))
-    def test_27_up_to_60 model calls allowed as quote only(self):
+    def test_27_up_to_60_model_calls_allowed_as_quote_only(self):
         q=quote(max_calls=60)
         self.assertEqual(q["maxCalls"],60)
         self.assertFalse(q["canInvokeModel"])
@@ -145,19 +145,19 @@ class BudgetTests(unittest.TestCase):
         rows[0]["candidates"]=["QA_OTHER"]
         r=m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows)
         self.assertEqual(r["outOfStoreOrUnboundSkuCandidates"],1)
-    def test_31_receipt_wrong_store denied(self):
+    def test_31_receipt_wrong_store_denied(self):
         c=corpus();rows=receipts(c);rows[0]["storeId"]="S_QA_B"
         self.denied("RECEIPT_ROW",lambda:m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows))
-    def test_32_receipt_wrong_query_photo sha denied(self):
+    def test_32_receipt_wrong_query_photo_sha_denied(self):
         c=corpus();rows=receipts(c);rows[0]["querySha256"]=SHA3
         self.denied("RECEIPT_ROW",lambda:m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows))
-    def test_33_duplicate_provider_request id denied(self):
+    def test_33_duplicate_provider_request_id_denied(self):
         c=corpus();rows=receipts(c);rows[1]["requestId"]=rows[0]["requestId"]
         self.denied("RECEIPT_ROW",lambda:m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows))
-    def test_34_receipt_claimed_per_case_excess denied(self):
+    def test_34_receipt_claimed_per_case_excess_denied(self):
         c=corpus();rows=receipts(c);rows[0]["claimedMicroUsd"]=30000
         self.denied("RECEIPT_ROW",lambda:m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows))
-    def test_35_duplicate_case_claim denied(self):
+    def test_35_duplicate_case_claim_denied(self):
         c=corpus();rows=receipts(c);rows[1]["caseId"]=rows[0]["caseId"]
         self.denied("RECEIPT_ROW",lambda:m.inspect_unverified_receipts(corpus=c,quote=quote(c),receipts=rows))
     def test_36_source_models_and_customer_order_remain_not_approved(self):
