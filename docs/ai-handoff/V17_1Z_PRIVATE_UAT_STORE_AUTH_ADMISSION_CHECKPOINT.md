@@ -83,3 +83,19 @@ New tests cover actual blockers, no route even if Access app exists, structurall
 - Public provider docs are for design, not account verification: https://developers.cloudflare.com/workers/configuration/cloudflare-access/ and https://supabase.com/docs/guides/auth/sessions .
 
 **Final admission target, not yet achieved:** REAL PRIVATE ACCESS DENY/ALLOW + ISOLATED NEW QA STORE AUTHORITY + TWO REAL JWT STORE READS/NEGATIVES + INDEPENDENT OWNER/REVIEWER ACCEPTANCE. Production remains NO-GO.
+
+
+## 6. VERIFIED source and disposable PostgreSQL17 acceptance — 2026-11-17 JST
+
+**Tested SHA:** c63959beba9134bf8c76de7e492000db898ea7f7
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44103204088
+
+- Job 134108454856 SUCCESS: **30/30** new V17.1Z negative/admission/structural preflight tests and **1,225/1,225** V17.1Y→older source regression cases = **1,255/1,255 source PASS**. The checked-in read-only snapshot explicitly has all real approvals FALSE, no actual Access route and no Store-scoped real Auth JWT claim.
+- New disposable PostgreSQL 17 job 134108454373 SUCCESS: compiled the **isolated, NOT-APPLIED** tien404_v171z_qa schema design on an ephemeral PostgreSQL database using fake auth.users, public.tenants, tenant_memberships, a mock auth.uid() and two non-real QA identities. Created two QA Stores in one synthetic Tenant and one fake product each. Verified **A→A allow, A→B deny, B→B allow, B→A deny**, then revoked QA_OWNER_A membership and verified A→all deny. Checked anonymous lacks schema USAGE; full transaction ROLLBACK and verified QA schema/tables absent. No live Supabase Auth user, no real signed JWT, no staging RLS applied.
+- Inherited disposable PostgreSQL 17 job 134108454858 SUCCESS: earlier same-Tenant Store A/B RLS fixture and full rollback.
+- Real external Access route/authorized operator, real Store Authority migration + two real Auth user JWT and private R2 lifecycle/replay release job 134108806687 FAILURE BY DESIGN. Overall workflow red intentionally, while all three independent preflight/source/PG17 jobs green. Hosted/production stays **NO-GO**.
+- This is more than a syntactic static migration draft: the future Store data/owner role model passed isolated mechanical RLS behavior. It is less than real hosted acceptance: no actual Supabase real JWT verification, session_id live revocation, real provider ingress or real Commerce Store RLS was tested.
+- No actual Worker route, Access policy, R2 lifecycle/lock/object, Supabase schema/identity/membership, n8n Published workflow, provider send, customer order or billing changed. Only new Draft GitHub branch/PR source/test/docs/CI.
+- The checkpoint-only documentation update produces a new HEAD; verify CI on the exact final HEAD before reporting this milestone as TESTED.
+
+**Disposition: VERIFIED live structural blocker / IMPLEMENTED safe QA model / TESTED 1,255 source cases and two disposable PG17 suites / REAL ACCESS AND AUTH JWT UAT BLOCKED / PRODUCTION NO-GO.**
