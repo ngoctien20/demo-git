@@ -44,7 +44,11 @@ function fixture(){
    operator_identity_reviewed_independently:true,
    rollback_plan_reviewed_independently:true,no_public_route_attested:true
   },
-  privateApproval:Object.fromEntries(REQUIRED_PRIVATE_APPROVALS.map(k=>[k,true])),
+  privateApproval:{
+   ...Object.fromEntries(REQUIRED_PRIVATE_APPROVALS.map(k=>[k,true])),
+   max_spend_usd:5,max_qa_requests:96,account_wide_spending_limit_change:false,
+   provider_send_allowed:false,real_commerce_allowed:false,model_calls_allowed:false
+  },
   now:NOW
  };
 }
