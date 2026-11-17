@@ -1,0 +1,82 @@
+name: TIEN404 RPC17.8E — No-Docker Encrypted App Backup QA (NO HOST)
+on:
+  push:
+    branches:
+      - work/v152-rpc178e-windows-nodocker-encrypted-backup-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc178e/**'
+      - 'docs/ai-handoff/T404_RPC178E_*'
+      - '.github/workflows/v152-rpc178e-encrypted-nodocker-qa.yml'
+permissions:
+  contents: read
+jobs:
+  portable-backup-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Streamed encrypted app dump source and tamper checks (mocked backend)
+        run: |
+          node --check qa/v152-rpc178e/stream-encrypted-app-backup.mjs
+          node --check qa/v152-rpc178e/verify-encrypted-app-backup.mjs
+          node --test qa/v152-rpc178e/stream-encrypted-app-backup.test.mjs
+          node --test qa/v152-rpc178e/verify-encrypted-app-backup.test.mjs
+      - name: Real age crypto CLI roundtrip on synthetic QA bytes only
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+          age-keygen -o /tmp/t404-qa-age-key.txt 2>/dev/null
+          RECIPIENT=$(grep -oE 'age1[0-9a-z]+' /tmp/t404-qa-age-key.txt | head -n 1)
+          test -n "$RECIPIENT"
+          printf 'TIEN404_DISPOSABLE_SYNTHETIC_PAYLOAD_ONLY\n' > /tmp/t404-qa.txt
+          age -r "$RECIPIENT" -o /tmp/t404-qa.age /tmp/t404-qa.txt
+          age -d -i /tmp/t404-qa-age-key.txt -o /tmp/t404-qa-verified.txt /tmp/t404-qa.age
+          cmp /tmp/t404-qa.txt /tmp/t404-qa-verified.txt
+          echo 'RPC178E PASS: real age encryption/decryption of synthetic-only fixture'
+          rm -f /tmp/t404-qa.txt /tmp/t404-qa-verified.txt /tmp/t404-qa.age /tmp/t404-qa-age-key.txt
+      - name: Validate Windows PowerShell private launcher syntax (no secret, no DB)
+        shell: pwsh
+        run: |
+          $parseTokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('qa/v152-rpc178e/windows-private-backup.ps1', [ref]$parseTokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw 'RPC178E PowerShell parse failed' }
+          Write-Host 'RPC178E PASS: PowerShell launcher syntax parsed'
+      - name: Default CLI must be no-contact dry-run
+        run: |
+          output=$(node qa/v152-rpc178e/stream-encrypted-app-backup.mjs || true)
+          echo "$output" | grep -F '"mode":"DRY_RUN_NO_DB_CONTACT"'
+          output2=$(node qa/v152-rpc178e/verify-encrypted-app-backup.mjs || true)
+          echo "$output2" | grep -F '"status":"BLOCKED"'
+      - name: Inherited RPC17.8D to RPC13 source security regressions
+        run: |
+          node --test qa/v152-rpc178d/backup-inventory.test.mjs
+          node --test qa/v152-rpc178d/signed-admission.test.mjs
+          node --test qa/v152-rpc178c/owner-contract-audit.test.mjs
+          node --test qa/v152-rpc178c/staging-recovery-gate.test.mjs
+          node --test qa/v152-rpc178b/immutable-preflight.test.mjs
+          node --test qa/v152-rpc178a/migration-admission.test.mjs
+          node --test qa/v152-rpc178/private-readonly-uat.test.mjs
+          node --test qa/v152-rpc177/private-ownership-proof.test.mjs
+          node --test qa/v152-rpc177/real-auth-ab-uat-gate.test.mjs
+          node --test qa/v152-rpc176/private-auth-admission.test.mjs
+          node --test qa/v152-rpc175/canonical-store-authority.test.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Preserve RPC16 hosted NO-GO
+        run: |
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
