@@ -19,6 +19,7 @@ import { isAbsolute, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const PROJECT = 'ifxlvrhyjhbzbrkdsida';
+export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 export const SCHEMAS = Object.freeze([
   'public', 'app_private', 'factory_private',
   'tien404_dialogue_private', 'tien404_r1_qa', 'tien404_v175_qa'
@@ -48,14 +49,12 @@ export function validateRemoteEnv(env={}) {
 export function buildDumpArgs(mode='schema-only') {
   if(!['schema-only','app-data'].includes(mode))throw new Error('INVALID_MODE');
   const args=['--format=custom','--no-owner','--no-acl','--no-password',
-    '--lock-wait-timeout=5000','--verbose=0'];
-  // --verbose=0 is not accepted by all pg_dump versions: avoid it entirely.
-  args.pop();
+    '--lock-wait-timeout=5000'];
   if(mode==='schema-only')args.push('--schema-only');
   for(const name of SCHEMAS)args.push('--schema='+name);
   return args;
 }
-export function validateBackupPlan(plan,env={},cwd=process.cwd()) {
+export function validateBackupPlan(plan,env={},cwd=REPO_ROOT) {
   const opts=plan||{};
   if(opts.execute!==true)return result('BLOCKED','EXPLICIT_EXECUTE_REQUIRED');
   if(!['schema-only','app-data'].includes(opts.mode))return result('BLOCKED','BACKUP_MODE_REQUIRED');
@@ -103,7 +102,7 @@ const waitFor=(proc)=>new Promise(resolve=>{
  proc.once('error',()=>finish(127));
  proc.once('close',code=>finish(code===null?127:code));
 });
-export async function runEncryptedBackup({plan,env=process.env,cwd=process.cwd(),
+export async function runEncryptedBackup({plan,env=process.env,cwd=REPO_ROOT,
   spawnImpl=spawn,tools={pg_dump:'pg_dump',age:'age'}}={}) {
  const approval=validateBackupPlan(plan,env,cwd);
  if(approval.status!=='READY')return approval;
