@@ -1,0 +1,39 @@
+name: V17 Zalo OA Source03 - Private Grant and Vault Offline QA
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_03_CHECKPOINT.md"
+      - ".github/workflows/v17-zalo-source03-offline-nosend.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-private-oa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node environment
+        run: node --version
+      - name: Syntax all OA candidates
+        run: |
+          for f in qa/zalo-oa-source-admission/*.mjs; do node --check "$f"; done
+      - name: Full inherited and new synthetic admission tests
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Refuse provider calls, orders or hosted credentials in source
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const files = ['oa-admission.mjs','oa-oauth-offline.mjs','oa-grant-registry-offline.mjs','oa-vault-offline.mjs'];
+          for (const file of files) {
+            const src = readFileSync('qa/zalo-oa-source-admission/' + file, 'utf8');
+            for (const blocked of [/\bfetch\s*\(/, /\baxios\s*\(/, /\bhttps?\.request\s*\(/,
+                /\b(sendMessage|createOrder|executeCommand|exchangeToken|refreshToken)\s*\(/]) {
+              if (blocked.test(src)) throw Error('Forbidden provider/commerce call in ' + file + ': ' + blocked);
+            }
+          }
+          const grant = readFileSync('qa/zalo-oa-source-admission/oa-grant-registry-offline.mjs','utf8');
+          if (!grant.includes('OFFLINE_FIXTURE_ONLY') || !grant.includes('canReceiveRealTraffic: false') ||
+              !grant.includes('status: \'PENDING_REVIEW\'')) throw Error('Source-only gate missing');
+          NODE
