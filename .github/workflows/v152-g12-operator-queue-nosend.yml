@@ -34,6 +34,9 @@ jobs:
         run: |
           node --check qa/v152-g12/operator-queue-preview.cjs
           node --test qa/v152-g12/operator-queue-preview.test.cjs
+          node --check qa/v152-g12/INACTIVE_OPERATOR_QUEUE_N8N_SDK.js
+          node --check qa/v152-g12/INACTIVE_OPERATOR_QUEUE_N8N_SDK.test.cjs
+          node --test qa/v152-g12/INACTIVE_OPERATOR_QUEUE_N8N_SDK.test.cjs
       - name: Inherited original Meta and G0.11 to G0.4 suites
         run: |
           test "$(git -C .g12_v171 rev-parse HEAD)" = "d5fbd6958635069d15343be573cdbd4b55cc036c"
