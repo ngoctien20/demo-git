@@ -1,0 +1,50 @@
+name: V17 Zalo OA Source04D - Real Access Shape and Callback Binding NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_04D_CHECKPOINT.md"
+      - ".github/workflows/v17-zalo-source04d-offline-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-config-shape-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source syntax for all OA cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/zalo-oa-source-admission/*.mjs; do node --check "$f"; done
+      - name: Full OA regression and Access API/OAuth binding negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: No-network, no-send, no-write guarantee
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          for(const file of ['oa-04d-real-access-audit-offline.mjs','oa-04d-oauth-binding-offline.mjs']){
+            const source=readFileSync('qa/zalo-oa-source-admission/'+file,'utf8');
+            for(const pattern of [/\bfetch\s*\(/,/\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|exchangeToken|refreshToken|writeStock)\s*\(/]){
+              if(pattern.test(source))throw Error('Forbidden side effect in '+file);
+            }
+            if(!source.includes('canSend:false')||!source.includes('canWriteOrders:false')||
+               !source.includes('false'))throw Error('Missing deny invariant in '+file);
+          }
+          console.log('SOURCE04D source-only no-provider no-send PASS');
+          NODE
