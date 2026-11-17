@@ -1,0 +1,68 @@
+name: TIEN404 V18.0-P0P — Real Session Evidence & Canonical Store Contract NO-HOST
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0p/**'
+      - 'docs/ai-handoff/T404_V180_P0P_*'
+      - '.github/workflows/v180-p0p-private-owner-store-contract.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0p/**'
+      - 'docs/ai-handoff/T404_V180_P0P_*'
+      - '.github/workflows/v180-p0p-private-owner-store-contract.yml'
+permissions:
+  contents: read
+jobs:
+  no-host-proof-and-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact Draft candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verify real-session proof is NOT fabricated and schema design cannot apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const base='qa/v180-p0p/';
+          const evidence=JSON.parse(readFileSync(base+'aggregate-evidence-and-gates.json','utf8'));
+          const readOnly=readFileSync(base+'staging-owner-session-readonly.sql','utf8');
+          const design=readFileSync(base+'canonical-store-authority-design.sql','utf8');
+          const doc=readFileSync('docs/ai-handoff/T404_V180_P0P_REAL_AUTH_SESSION_CANONICAL_STORE_OWNER_DESIGN.md','utf8');
+          const forbidden=/^\s*(?:CREATE|ALTER|DROP|TRUNCATE|INSERT|UPDATE|DELETE|MERGE|GRANT|REVOKE|COPY|CALL|DO|EXECUTE)\b/im;
+          if(forbidden.test(readOnly)||forbidden.test(design))
+            throw Error('P0P_SQL_MAY_MUTATE_HOSTED_SCHEMA');
+          if(!/BEGIN TRANSACTION READ ONLY;/.test(readOnly)||
+             !readOnly.trimEnd().endsWith('COMMIT;')||
+             !readOnly.includes('auth.sessions') ||
+             !readOnly.includes('information_schema.tables'))
+            throw Error('P0P_READ_ONLY_PROVENANCE_MISSING');
+          if(!design.includes('-- CREATE TABLE public.stores') ||
+             !design.includes('-- CREATE TABLE public.store_memberships') ||
+             !design.includes('DO NOT EXECUTE') ||
+             !design.includes('tenant_id,user_id')||
+             !design.includes('tenant_id,store_id'))
+            throw Error('P0P_CANONICAL_STORE_MODEL_INCOMPLETE');
+          if(evidence.project_ref!=='ifxlvrhyjhbzbrkdsida' ||
+             evidence.same_tenant_eligible_owners!==2 ||
+             evidence.same_tenant_owners_with_any_session_row!==1 ||
+             evidence.store_authority_tables!==0 ||
+             evidence.core_store_id_columns!==0 ||
+             evidence.actual_private_server_jwt_a_b!=='NOT_VERIFIED' ||
+             evidence.real_p0o_a_b_result!=='NOT_RECEIVED' ||
+             evidence.production!=='NO_GO')
+            throw Error('P0P_FALSE_REAL_AUTH_ADMISSION');
+          if(!doc.includes('NOT_RECEIVED')||!doc.includes('NOT_VERIFIED')||
+             !doc.includes('M0')||!doc.includes('NO-GO'))
+            throw Error('P0P_DOC_SAFETY_BOUNDARY_MISSING');
+          const all=JSON.stringify(evidence);
+          if(/"(?:access_token|refresh_token|session_id|user_id|email|phone|jwt|password)"\s*:/i.test(all))
+            throw Error('P0P_PUBLIC_EVIDENCE_EXPOSES_PRIVATE_IDENTITY');
+          console.log('P0P_SOURCE_DESIGN_CHECKED; TWO_OWNER_COUNTS_VERIFIED; NO_REAL_JWT_PROOF; NO_HOSTED_DDL');
+          NODE
+      - name: Explicit no-hosted-UAT statement
+        run: |
+          echo 'P0P_DOCS_AND_CONTRACT_ONLY; REAL_JWT_PAIR_NOT_RECEIVED; 31_STORE_AB_CASES_NOT_RUN; NO_DB_MIGRATION; NO_PROVIDER_SEND; PRODUCTION_NO_GO'
