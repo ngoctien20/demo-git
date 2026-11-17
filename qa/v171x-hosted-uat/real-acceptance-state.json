@@ -49,7 +49,7 @@
     "realSignedMetaAndZaloCanary": false
   },
   "sourceOnly": true,
-  "newSourceTestCases": 50,
+  "newSourceTestCases": 53,
   "inheritedSourceTestCases": 1132,
   "actualCloudflareWrites": 0,
   "actualR2Writes": 0,
