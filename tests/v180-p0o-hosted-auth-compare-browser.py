@@ -57,13 +57,15 @@ def open_profile(browser, actor, tenant, viewport):
     page.on("pageerror",lambda error: errors.append(str(type(error).__name__)))
     response=page.goto(PAGE,wait_until="domcontentloaded",timeout=30000)
     assert response and response.status==200, "Hosted QA page must be live HTTP 200"
-    expect(page.locator("#compare-receipt")).to_be_visible()
-    expect(page.locator("#peer-receipt")).to_be_visible()
+    expect(page.locator("#compare-receipt")).to_be_hidden()
+    expect(page.locator("#peer-receipt")).to_be_hidden()
     page.locator("#consent").check()
     page.locator("#nonce").fill(NONCE)
     page.locator("#check").click()
     expect(page.locator("#status")).to_contain_text("Đã kiểm tra cục bộ")
     expect(page.locator("#result")).to_be_visible()
+    expect(page.locator("#compare-receipt")).to_be_visible()
+    expect(page.locator("#peer-receipt")).to_be_visible()
     assert page.evaluate("window.__qaCalls.getUser")==1
     assert page.evaluate("window.__qaCalls.getClaims")==1
     assert page.evaluate("window.__qaCalls.db")==1
