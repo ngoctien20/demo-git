@@ -55,7 +55,7 @@ test('oversized raw denied',async()=>{
  const f=fixture();assert.equal((await simulateOaNoSendWebhook({rawBody:Buffer.alloc(128*1024+1)},f)).reason,'RAW_BODY_REQUIRED');
 });
 test('malformed JSON denied',async()=>{
- const f=fixture();assert.equal((await simulateOaNoSendWebhook({rawBody:Buffer.from('{')},f)).reason,'RAW_BODY_REQUIRED');
+ const f=fixture();assert.equal((await simulateOaNoSendWebhook({rawBody:Buffer.from('{{')},f)).reason,'INVALID_JSON');
 });
 test('unsupported outgoing OA event denied',async()=>denied('NOT_A_SUPPORTED_OA_EVENT',f=>{f.event.event_name='oa_send_text';}));
 test('event spoof wrong recipient rejected',async()=>denied('UNTRUSTED_OR_MISMATCHED_OA_INSTALLATION',f=>{f.event.recipient.id='388613280879808646';}));
