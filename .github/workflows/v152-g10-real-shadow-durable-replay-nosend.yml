@@ -1,0 +1,137 @@
+name: TIEN404 G0.10 Real Signed Shadow Durable Replay QA (NO SEND)
+
+on:
+  push:
+    branches:
+      - work/v152-g10-real-shadow-durable-replay-pg17-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-g10/**'
+      - '.github/workflows/v152-g10-real-shadow-durable-replay-nosend.yml'
+      - 'docs/ai-handoff/T404_G10_*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g10-source-regression:
+    name: G0.10 V17.1E pinned callback × 316 inherited source QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout audited V17.1E source only; never use real token
+        uses: actions/checkout@v4
+        with:
+          ref: d5fbd6958635069d15343be573cdbd4b55cc036c
+          path: .g10_v171
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin original signed Meta handler and source-only replay tests
+        run: |
+          test "$(git -C .g10_v171 rev-parse HEAD)" = "d5fbd6958635069d15343be573cdbd4b55cc036c"
+          node --check qa/v152-g10/bound-atomic-replay-adapter.cjs
+          node --check qa/v152-g10/bound-atomic-replay-adapter.test.cjs
+          node --test qa/v152-g10/bound-atomic-replay-adapter.test.cjs
+      - name: Inherited signed handler, G0.9 and G0.4–G0.8 acceptance regression
+        run: |
+          ln -s .g10_v171 .g09_v171
+          node --test .g10_v171/qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs
+          node --test \
+            qa/v152-g09/isolated-meta-private-admission.test.cjs \
+            qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs \
+            qa/v152-g07/private-provider-authority-gate.test.cjs \
+            qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs \
+            qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+            qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+            qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: Static no credentials, send, customer event or public callback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('qa/v152-g10/bound-atomic-replay-adapter.cjs').read_text()
+          doc=Path('qa/v152-g10/redacted-real-signed-shadow-evidence.json').read_text()
+          for disallow in (
+              'process.env','fetch(','https.request(','child_process',
+              'newCredential(','sendMessage(','createOrder(',
+              '"phone"','"senderId"','"psid"','"rawBody"','"accessToken"'
+          ):
+              assert disallow not in src+doc,disallow
+          for required in (
+              'canPublish:false','canSend:false','canAccessRealStore:false',
+              'canMutateOrders:false','canChangeProviderCallback:false',
+              'canMigrateHostedRls:false'
+          ):
+              assert required in src,required
+          assert 'actualOneShotNoSendQAAppPageAccepted": false' in doc
+          print('G10 source: provider/customer identifiers never persisted; no host I/O')
+          PY
+
+  g10-disposable-pg17:
+    name: PG17 disposable atomic 24-session claim and PII-free storage QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      pg17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: qa
+          POSTGRES_DB: qa
+          POSTGRES_PASSWORD: G10_ONLY_DISPOSABLE_FAKE
+        options: >-
+          --health-cmd "pg_isready -U qa -d qa"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prove container is PostgreSQL 17 and isolated disposable database
+        run: |
+          docker exec "${{ job.services.pg17.id }}" psql -U qa -d qa -X -qAt -c "SHOW server_version_num" | grep -E '^17[0-9]+$'
+      - name: Build disposable, private claim ledger only
+        run: |
+          cat qa/v152-g10/disposable-pg17/01_atomic_claim_only.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Test claimed, duplicate, altered MID and denied untrusted role
+        run: |
+          cat qa/v152-g10/disposable-pg17/02_assert_claims.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Race 24 real independent PostgreSQL sessions on same event
+        run: |
+          bash qa/v152-g10/disposable-pg17/03_concurrency_24_workers.sh "${{ job.services.pg17.id }}"
+      - name: Confirm DB is ONLY ephemeral GitHub Actions service
+        run: |
+          echo "PG17_DISPOSABLE_SERVICE_ONLY: zero actual Supabase/Commerce credentials or writes"
+
+  g10-hosted-no-go:
+    name: Real replay not proven, owner Store/RLS and publish remain NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prove single signed Meta event is not a durable live replay acceptance
+        run: |
+          node - <<'NODE'
+          const r=require('./qa/v152-g10/bound-atomic-replay-adapter.cjs');
+          const e=require('./qa/v152-g10/redacted-real-signed-shadow-evidence.json');
+          const flags={
+            realMessengerVerified:e.actualMessenger.signatureVerified,
+            realLegacyProviderSendOccurred:e.actualMessenger.existingLegacyMetaReplyAccepted,
+            shadowBridgeInvoked:e.actualMessenger.shadowInvocationExecuted,
+            shadowCoreDeniedUnknownStore:!e.centralCore.tenantResolved,
+            shadowProviderSends:e.shadowBridge.providerSends,
+            shadowOrdersWritten:e.shadowBridge.ordersWritten,
+            shadowModelCalls:e.shadowBridge.modelsInvoked,
+            atomicReplayConcurrentlyTested:false,
+            realReplayOnSignedWebhookObserved:e.replayReality.realProviderDuplicateUnderConcurrencyTested,
+            independentStoreOwnerProven:e.replayReality.canonicalStoreOwnerVerified
+          };
+          const q=r.summarizeShadowReadiness(flags);
+          if(!q.shadowSingleRealSignedEventVerified||q.canPublish||q.canSend||
+             q.canAccessRealStore||q.realProviderReplayTested)
+            throw Error('G10_STOP_UNAUTHORIZED_LIVE_REPLAY_CLAIM');
+          console.log('REAL_SIGNED_SHADOW_ONE_EVENT_VERIFIED; NO_GO_FOR_LIVE_REPLAY_CORE_OR_PUBLISH');
+          NODE
