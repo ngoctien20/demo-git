@@ -98,3 +98,7 @@ New synthetic suite `qa/v171x-hosted-uat/hosted-uat-approval-plan.test.cjs` exer
 **Rollback for this milestone:** close new Draft child PR, no operational rollback required. For *future authorized* R2 changes, rollback must restore exact captured original rules, after independent check of unintended prior deletions (which cannot be reversed merely by rollback). For *future authorized* QA identity changes, revoke only those newly created QA sessions/users and their scoped resources, never existing Merchant accounts.
 
 **Release:** SOURCE IMPLEMENTED/TESTABLE; HOSTED SECURITY UAT NO-GO; R2 CHANGE NOT APPROVED; REAL AUTH STORE A/B NOT READY; PRODUCTION NO-GO.
+
+## Access independent acceptance hardening (source review)
+
+A genuine hosted Access acceptance requires **both** anonymous/non-member DENY and successfully authenticated authorized-operator READ-ONLY ALLOW on the exact protected route, with **zero Access Bypass policies**. An app named DENY ALL with zero policy records cannot claim that operator ALLOW has been verified. The source gate checks `policiesReturned>=1`, `bypassPolicyCount===0`, `externalDeniedCanaryVerified` and `externalAuthorizedCanaryVerified` from its trusted injected snapshot. These inputs are FAKE in source tests, not evidence of a real external hosted probe. Three additional tests explicitly prevent an allow-by-bypass, deny-only or zero-policy false positive. Expected new source cases: **53**; expected source total **1185** with inherited 1132, pending actual CI.
