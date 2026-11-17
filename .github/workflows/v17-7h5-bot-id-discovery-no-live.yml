@@ -1,0 +1,56 @@
+name: TIEN404 V17.7H.5 Bot ID Discovery getMe Only — NO LIVE API
+on:
+  push:
+    branches:
+      - work/v177h5-getme-bot-id-discovery-no-prior-id-20261118
+  pull_request:
+    paths:
+      - 'qa/v17-7a-oa-independent/v17-7h5-*'
+      - 'scripts/v177h5-*'
+      - '.github/workflows/v17-7h5-bot-id-discovery-no-live.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-bot-id-discovery-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    env:
+      CI: 'true'
+      GITHUB_ACTIONS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run inherited H4 and new H5 synthetic offline tests
+        run: |
+          node --check qa/v17-7a-oa-independent/v17-7h5-private-getme-discovery.mjs
+          node --check scripts/v177h5-discover-bot-id.mjs
+          node --test qa/v17-7a-oa-independent/v17-7h4-private-real-readback.test.mjs qa/v17-7a-oa-independent/v17-7h5-private-getme-discovery.test.mjs
+      - name: Fail closed if new discovery attempts webhook or live credentials in CI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          m=Path('qa/v17-7a-oa-independent/v17-7h5-private-getme-discovery.mjs').read_text()
+          cli=Path('scripts/v177h5-discover-bot-id.mjs').read_text()
+          ps=Path('scripts/v177h5-discover-bot-id.ps1').read_text()
+          assert "transport.postReadOnly('getMe',secret)" in m
+          assert "'getWebhookInfo'" not in m
+          assert "'setWebhook'" not in m and "'sendMessage'" not in m
+          for check in ["independentHumanOwnerVerified:false","merchantStoreVerified:false",
+                        "hostedCanaryApproved:false","canSend:false","canChangeWebhook:false"]:
+            assert check in m,check
+          assert "process.env.CI==='true'" in cli
+          assert "process.stdin.isTTY" in cli
+          assert "-AsSecureString" in ps and "ZeroFreeBSTR" in ps
+          assert "READID" in ps
+          print("GETME_ONLY_OFFLINE_NO_NATIVE_CALL_NO_SEND")
+          PY
+  real-provider-bot-id-discovery:
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'Disabled: only consenting owner can run locally with private masked Bot Token'
