@@ -1,0 +1,13 @@
+{
+  "name": "t404-v174p-private-qa-runtime-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test:runtime": "vitest run --config vitest.config.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.8.3",
+    "vitest": "4.1.0"
+  }
+}
