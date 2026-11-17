@@ -1,0 +1,84 @@
+name: TIEN404 RPC17.8A — Disposable PG17 Private QA Schema × Approval NO-GO
+on:
+  push:
+    branches:
+      - work/v152-rpc178a-private-supabase-schema-preflight-nohost-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc178a/**'
+      - 'docs/ai-handoff/T404_RPC178A_*'
+      - '.github/workflows/v152-rpc178a-private-schema-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  disposable-private-schema:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rpc178a_disposable_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc178a_ci_only_synthetic
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpc178a_disposable_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: rpc178a_disposable_test
+      PGUSER: postgres
+      PGPASSWORD: rpc178a_ci_only_synthetic
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disposable PostgreSQL 17 private DDL negative-grant acceptance
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;'
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/private-schema-candidate.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/disposable-private-schema-assertions.sql
+          if psql -X -v ON_ERROR_STOP=1 -c 'SET ROLE authenticated; SELECT * FROM rpc178_qa.products LIMIT 1;' >/dev/null 2>&1; then
+            echo 'FAIL: authenticated can read private QA schema' >&2
+            exit 1
+          fi
+          echo 'PASS: authenticated cannot SELECT private QA schema'
+          if psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/private-schema-candidate.sql >/dev/null 2>&1; then
+            echo 'FAIL: idempotent rerun should reject schema collision' >&2
+            exit 1
+          fi
+          echo 'PASS: second migration candidate run rejected; no DROP or overwrite'
+          psql -X -v ON_ERROR_STOP=1 -c "SELECT count(*) AS preserved_rows FROM rpc178_qa.products;"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Approvals and private JWT admission synthetic negative cases
+        run: |
+          node --check qa/v152-rpc178a/migration-admission.mjs
+          node --test qa/v152-rpc178a/migration-admission.test.mjs
+      - name: Inherited RPC17.8–RPC13 source QA
+        run: |
+          node --test qa/v152-rpc178/private-readonly-uat.test.mjs
+          node --test qa/v152-rpc177/private-ownership-proof.test.mjs
+          node --test qa/v152-rpc177/real-auth-ab-uat-gate.test.mjs
+          node --test qa/v152-rpc176/private-auth-admission.test.mjs
+          node --test qa/v152-rpc175/canonical-store-authority.test.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Source-only and no hosted public access invariant
+        run: |
+          node --input-type=module -e "import {reviewMigrationCandidate} from './qa/v152-rpc178a/migration-admission.mjs'; const x=reviewMigrationCandidate();if(x.can_migrate||x.can_grant_roles||x.can_deploy||x.can_send||x.can_upload)process.exit(1)"
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
