@@ -1,0 +1,51 @@
+{
+  "schema": "TIEN404_V171Z_READONLY_SNAPSHOT_V1",
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "observedAt": "2026-11-17T23:08:00+09:00",
+  "cloudflare": {
+    "worker": "tien404-rpc16-merchant-evidence-inactive-staging",
+    "bucket": "tien404-merchant-evidence-quarantine-staging",
+    "prefix": "qa-v171x-disposable/",
+    "workerExists": true,
+    "workersDevEnabled": false,
+    "previewsEnabled": false,
+    "workerCustomDomainCount": 0,
+    "workerZoneRouteCount": 0,
+    "accessAppExists": true,
+    "accessPolicyCount": 0,
+    "accessBypassPolicyCount": 0,
+    "accessAnonymousDenyCanaryRun": false,
+    "accessAuthenticatedOperatorCanaryRun": false,
+    "r2PublicDevEnabled": false,
+    "r2CustomDomainCount": 0,
+    "qaPrefixFirstPageCount": 0,
+    "qaPrefixPaginationComplete": true,
+    "qaPrefixContainsObjectData": false,
+    "r2ObjectExpirationRuleCount": 0,
+    "atomicReplayWorkerBindingVerified": false
+  },
+  "supabase": {
+    "mappedTenants": 2,
+    "mappedStores": 2,
+    "ownerLinks": 2,
+    "sameTenantDistinctOwnerPairs": 0,
+    "sameTenantActiveAuthPairs": 0,
+    "legacyCoreStorePolicyCount": 0,
+    "tenantMapUniqueAuthTenantId": true,
+    "tenantMapPrimaryKeyTenantKey": true,
+    "tenantMembershipKey": "(tenant_id,user_id)",
+    "hasPublicStoreMemberships": false,
+    "hasActualStoreLevelRlsJwtAcceptance": false
+  },
+  "approval": {
+    "protectedRouteOwnerApproved": false,
+    "independentSecurityReviewerApproved": false,
+    "identityProvisioningApproved": false,
+    "r2PolicyChangeApproved": false,
+    "paidResourceChangeApproved": false,
+    "disposableQaOnly": true,
+    "noCustomerData": true,
+    "noExternalSends": true,
+    "noExistingMerchantTransfer": true
+  }
+}
