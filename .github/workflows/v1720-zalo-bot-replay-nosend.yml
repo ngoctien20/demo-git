@@ -1,11 +1,5 @@
 name: TIEN404 V17.20 Zalo Bot Replay Admission Candidate NO SEND
 on:
-  push:
-    branches:
-      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
-    paths:
-      - 'qa/v1720-zalo-replay/**'
-      - '.github/workflows/v1720-zalo-bot-replay-nosend.yml'
   pull_request:
     paths:
       - 'qa/v1720-zalo-replay/**'
