@@ -46,7 +46,7 @@ test('10 all flags never changes production through operator matrix',()=>{
  const r=evaluateReleaseGate(x);assert.equal(r.cloudflare_or_render_resource_changed,false);
 });
 test('11 truthy strings not accepted as true proof',()=>{
- const x=Object.fromEntries(all.map(k=>[k:'yes']));
+ const x=Object.fromEntries(all.map(k=>[k,'yes']));
  assert.equal(evaluateReleaseGate(x).status,'BLOCKED');
 });
 test('12 invalid or null evidence fails closed',()=>{
