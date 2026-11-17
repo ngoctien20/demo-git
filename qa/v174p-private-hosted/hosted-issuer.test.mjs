@@ -19,9 +19,10 @@ function reset(){
   V174P_REPLAY_DO:{
    idFromName:name=>name,
    get:()=>({fetch:async req=>{
-    const {key,fingerprint}=await req.json(),prev=seen.get(key);
-    const status=prev?(prev===fingerprint?'duplicate':'conflict'):'claimed';
-    if(!prev)seen.set(key,fingerprint);
+    const {kind,key,fingerprint}=await req.json();
+    const status=kind==='session'?'admitted':(kind==='message'?
+       (seen.has(key)?(seen.get(key)===fingerprint?'duplicate':'conflict'):'claimed'):'DENY');
+    if(status==='claimed')seen.set(key,fingerprint);
     return new Response(JSON.stringify({status}),{status:200});
    }})
   }
@@ -221,7 +222,9 @@ test('49 Durable Object class enforces path',async()=>{
 });
 test('50 durable claim body rejects invalid key without transaction',async()=>{
  const doo=new V174PReplayGuard({storage:{transaction:async()=>{throw Error('MUST_NOT_EXECUTE');}}});
- const r=await doo.fetch(new Request('https://durable.internal/claim',{method:'POST',body:'{}'}));
+ const r=await doo.fetch(new Request('https://durable.internal/gate',{method:'POST',
+  headers:{'content-type':'application/json'},
+  body:JSON.stringify({kind:'message',key:'not-a-valid-HMAC',fingerprint:'x',expires_at:0})}));
  assert.equal(r.status,400);
 });
 
