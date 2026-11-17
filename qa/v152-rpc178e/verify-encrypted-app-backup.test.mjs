@@ -43,28 +43,36 @@ test('manifest cannot claim real restore or platform full backup',async()=>{
  const x=await verifyEncryptedArchive({archive,identity:key,repoRoot:repo,spawnImpl:()=>{throw Error('should not spawn')}});
  assert.equal(x.reason,'MANIFEST_SCOPE_OR_FORMAT_MISMATCH');safe(x);
 });
-test('invalid mock age decrypt fails and reveals no content',async()=>{
+test('invalid fake age decrypt fails and reveals no content',async()=>{
  reset();
- const fake=(command)=>{
-  const p=new EventEmitter();p.stdout=new PassThrough();p.stdin=new PassThrough();p.stderr=new PassThrough();p.kill=()=>{};
-  if(command==='age')setImmediate(()=>{p.stdout.end();p.emit('close',1)});
-  else {p.stdin.on('end',()=>setImmediate(()=>p.emit('close',1)));p.stdin.resume()}
+ const fake=()=>{
+  const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();p.kill=()=>{};
+  setImmediate(()=>{p.stdout.end();p.emit('close',1)});
   return p;
  };
  const x=await verifyEncryptedArchive({archive,identity:key,repoRoot:repo,spawnImpl:fake});
- assert.equal(x.reason,'ARCHIVE_DECRYPT_OR_TOC_FAILED');safe(x);
+ assert.equal(x.reason,'AGE_DECRYPTION_OR_AUTHENTICATION_FAILED');safe(x);
 });
-test('mock successful TOC check remains NOT restorable admission',async()=>{
+test('decryption with wrong binary header is rejected',async()=>{
+ reset();
+ const fake=()=>{
+  const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();p.kill=()=>{};
+  setImmediate(()=>{p.stdout.end(Buffer.from('NOT_A_VALID_PG_DUMP_ARCHIVE'));p.emit('close',0)});
+  return p;
+ };
+ const x=await verifyEncryptedArchive({archive,identity:key,repoRoot:repo,spawnImpl:fake});
+ assert.equal(x.reason,'POSTGRESQL_CUSTOM_ARCHIVE_HEADER_INVALID');safe(x);
+});
+test('mocked age valid authenticated stream still NOT restore acceptance',async()=>{
  reset();const calls=[];
  const fake=(command,args)=>{
   calls.push({command,args});
-  const p=new EventEmitter();p.stdout=new PassThrough();p.stdin=new PassThrough();p.stderr=new PassThrough();p.kill=()=>{};
-  if(command==='age')setImmediate(()=>{p.stdout.end(Buffer.from('FAKE_TEST_PGDUMP_ARCHIVE'));p.emit('close',0)});
-  else {p.stdin.on('end',()=>setImmediate(()=>p.emit('close',0)));p.stdin.resume()}
+  const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();p.kill=()=>{};
+  setImmediate(()=>{p.stdout.end(Buffer.from('PGDMP_SYNTHETIC_BACKUP_STREAM_NO_REAL_DATA'));p.emit('close',0)});
   return p;
  };
  const x=await verifyEncryptedArchive({archive,identity:key,repoRoot:repo,spawnImpl:fake});
- assert.equal(x.status,'ENCRYPTED_ARCHIVE_TOC_VERIFIED_NOT_RESTORED');safe(x);
- assert.equal(calls.length,2);assert.equal(calls[0].command,'age');assert.ok(calls[1].args.includes('--list'));
+ assert.equal(x.status,'ENCRYPTED_ARCHIVE_DECRYPT_HEADER_VERIFIED_NOT_RESTORED');safe(x);
+ assert.equal(calls.length,1);assert.equal(calls[0].command,'age');assert.ok(calls[0].args.includes('-d'));
  assert.equal(JSON.stringify(x).includes('PRIVATE_KEY'),false);
 });
