@@ -1,0 +1,128 @@
+name: TIEN404 G0.11 Crash Recovery × Inactive No-Send QA
+
+on:
+  push:
+    branches:
+      - work/v152-g11-replay-cutover-crash-recovery-inactive-qa-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-g11/**'
+      - 'docs/ai-handoff/T404_G11_*'
+      - '.github/workflows/v152-g11-crash-recovery-nosend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g11-code-and-inherited:
+    name: Node22 G11 pinned Meta → fenced No-Send and inherited tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout actual approved V17.1E Meta handler at pinned SHA
+        uses: actions/checkout@v4
+        with:
+          ref: d5fbd6958635069d15343be573cdbd4b55cc036c
+          path: .g11_v171
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify pinned source hash and G11 crash/fencing tests
+        run: |
+          test "$(git -C .g11_v171 rev-parse HEAD)" = "d5fbd6958635069d15343be573cdbd4b55cc036c"
+          node --check qa/v152-g11/fenced-nosend-lease-adapter.cjs
+          node --check qa/v152-g11/fenced-nosend-lease-adapter.test.cjs
+          node --test qa/v152-g11/fenced-nosend-lease-adapter.test.cjs
+      - name: Inherit V17.1E, G0.10 and G0.4–G0.9 source regressions
+        run: |
+          ln -s .g11_v171 .g10_v171
+          ln -s .g11_v171 .g09_v171
+          node --test .g11_v171/qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs
+          node --test \
+            qa/v152-g10/bound-atomic-replay-adapter.test.cjs \
+            qa/v152-g09/isolated-meta-private-admission.test.cjs \
+            qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs \
+            qa/v152-g07/private-provider-authority-gate.test.cjs \
+            qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs \
+            qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+            qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+            qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: No outgoing provider call or real hosted Customer/Order/Store access
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          x=Path('qa/v152-g11/fenced-nosend-lease-adapter.cjs').read_text()
+          for banned in (
+              'process.env','fetch(','axios(','http.request(','https.request(',
+              'child_process','sendMessage(','createOrder(','newCredential(',
+              'META_ACCESS_TOKEN=','SUPABASE_SERVICE_ROLE_KEY='
+          ):
+              assert banned not in x,banned
+          for required in (
+              'canSend:false','canReadRealCommerce:false','canCreateOrders:false',
+              "status:'BLOCKED'", "releaseStatus:'HOSTED_NO_GO'",
+              'realProviderUatCompletedHere:false'
+          ):
+              assert required in x,required
+          print('G11 Node22: pinned signed fake Meta HMAC, no provider sends or hosted I/O')
+          PY
+
+  g11-disposable-pg17:
+    name: Disposable PG17 24-session lease, crash expiry, uncertain-send safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      pg17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: qa
+          POSTGRES_DB: qa
+          POSTGRES_PASSWORD: G11_SYNTHETIC_DISPOSABLE_ONLY
+        options: >-
+          --health-cmd "pg_isready -U qa -d qa"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure isolated PostgreSQL 17 disposable service
+        run: |
+          docker exec "${{ job.services.pg17.id }}" psql -U qa -d qa -X -qAt -c "SHOW server_version_num" | grep -E '^17[0-9]+$'
+      - name: Create private disposable lease ledger only
+        run: |
+          cat qa/v152-g11/disposable-pg17/01_lease_ledger.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Verify simulated crash, lease fencing and SEND_UNCERTAIN manual review
+        run: |
+          cat qa/v152-g11/disposable-pg17/02_crash_recovery_assert.sql |
+            docker exec -i "${{ job.services.pg17.id }}" psql -U qa -d qa -X -v ON_ERROR_STOP=1
+      - name: Race 24 real isolated PostgreSQL sessions
+        run: |
+          bash qa/v152-g11/disposable-pg17/03_parallel_24_leases.sh "${{ job.services.pg17.id }}"
+      - name: Close-only ephemeral database acceptance
+        run: |
+          echo "G11 disposable PG17 only; NOT Supabase hosted; NO provider sends/Orders"
+
+  g11-no-hosted-promotion:
+    name: Real Messenger MID cutover denied without production approval
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject unsafe migration or automatic send retry on uncertainty
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const src=fs.readFileSync('qa/v152-g11/fenced-nosend-lease-adapter.cjs','utf8');
+          const sql=fs.readFileSync('qa/v152-g11/disposable-pg17/01_lease_ledger.sql','utf8');
+          if(!src.includes("releaseStatus:'HOSTED_NO_GO'")||
+             !sql.includes("'SEND_UNCERTAIN'")||
+             !sql.includes("RETURN QUERY SELECT 'manual_review'")||
+             /SECURITY DEFINER/i.test(sql)) {
+            throw Error('G11_RELEASE_GATE_UNSAFE');
+          }
+          console.log('G11 production cutover refused; crash/replay accepted only in disposable QA');
+          NODE
