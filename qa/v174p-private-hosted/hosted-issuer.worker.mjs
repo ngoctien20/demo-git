@@ -12,6 +12,7 @@ const INSTALL='QA_WEB_WIDGET_A';
 const TENANT='QA_TENANT_1', STORE='QA_STORE_A',BOT='QA_BOT_A';
 const SCOPE='QA_CATALOG_ONLY';
 const MAX_BODY=2048;
+export const QA_RATE_POLICY=Object.freeze({sessionPerMinute:64,messagePerMinute:120,cleanupBatch:128});
 const ASCII=new TextEncoder();
 const DECODE=new TextDecoder();
 function bytes(x){return ASCII.encode(x);}
@@ -41,6 +42,7 @@ function reply(value,status=200,html=false){
   'Content-Type':html?'text/html; charset=utf-8':'application/json; charset=utf-8',
   'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY',
   'Referrer-Policy':'no-referrer',
+  ...(status===429?{'Retry-After':'60'}:{}),
   'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'"
  }});
 }
@@ -103,6 +105,19 @@ async function resolveManagedSecret(value){
  if(value&&typeof value.get==='function')return await value.get(); // Cloudflare Secrets Store binding
  return null; // fail closed: never use a mock/default key in hosted mode
 }
+async function durableGate(env,operatorSig,data){
+ if(!env.V174P_REPLAY_DO?.idFromName||!env.V174P_REPLAY_DO?.get)return null;
+ try {
+  // Dedicated per-Access-subject object; no raw email/subject is stored in its name.
+  const id=env.V174P_REPLAY_DO.idFromName('QA_OPERATOR_'+operatorSig);
+  const stub=env.V174P_REPLAY_DO.get(id);
+  const r=await stub.fetch(new Request('https://durable.internal/gate',{method:'POST',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}));
+  if(!r.ok)return null;
+  const v=await r.json();
+  return typeof v?.status==='string'?v.status:null;
+ }catch{return null;} // hard fail; never mint sessions or return fake replies on DO errors
+}
 async function handler(req,bindings){
  // Resolve both managed Secrets Store bindings before any route, including healthz.
  // No secret values, exceptions or Access JWTs are returned/logged to clients.
@@ -132,6 +147,9 @@ async function handler(req,bindings){
  const subSig=await hmac(env.V174P_SESSION_HMAC_KEY,access.sub);
  if(url.pathname==='/v1/website/sessions'){
   if(!exact(b,['installation_ref'])||b.installation_ref!==INSTALL)return deny('UNBOUND_QA_WIDGET');
+  const admitted=await durableGate(env,subSig,{kind:'session'});
+  if(admitted==='rate_limited')return deny('QA_SESSION_RATE_LIMIT',429);
+  if(admitted!=='admitted')return deny('DURABLE_RATE_UNAVAILABLE',503);
   const sid=b64u(crypto.getRandomValues(new Uint8Array(24)));
   const payload={v:1,iss:env.V174P_ISSUER_ORIGIN,aud:'t404-qa-widget',iat:now,exp:now+300,sid,
    channel:'website',installation_ref:INSTALL,tenant_ref:TENANT,store_ref:STORE,
@@ -158,17 +176,11 @@ async function handler(req,bindings){
  typeof p.sid!=='string'||!/^[A-Za-z0-9_-]{32}$/.test(p.sid)||
  !Number.isSafeInteger(p.iat)||!Number.isSafeInteger(p.exp)||p.exp-p.iat!==300||p.iat>now+30||p.exp<=now)
  return deny('SESSION_SCOPE_INVALID');
- if(!env.V174P_REPLAY_DO?.idFromName||!env.V174P_REPLAY_DO?.get)return deny('DURABLE_CLAIM_NOT_CONFIGURED',503);
  const k=await hmac(env.V174P_SESSION_HMAC_KEY,p.sid+'|'+b.event_id);
  const fingerprint=await hmac(env.V174P_SESSION_HMAC_KEY,b.text+'|'+b.requested_tool);
- let claim;
- try{
-  const stub=env.V174P_REPLAY_DO.get(env.V174P_REPLAY_DO.idFromName('QA_ONLY_V174P'));
-  const resp=await stub.fetch(new Request('https://durable.internal/claim',{method:'POST',
-   headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,fingerprint,expires_at:p.exp})}));
-  if(!resp.ok)return deny('DURABLE_CLAIM_UNAVAILABLE',503);
-  claim=(await resp.json()).status;
- }catch{return deny('DURABLE_CLAIM_UNAVAILABLE',503);}
+ const claim=await durableGate(env,subSig,{kind:'message',key:k,fingerprint,expires_at:p.exp});
+ if(claim==='rate_limited')return deny('QA_MESSAGE_RATE_LIMIT',429);
+ if(claim===null)return deny('DURABLE_CLAIM_UNAVAILABLE',503);
  if(claim==='duplicate')return reply({status:'DUPLICATE_IGNORED',provider_sends:0,model_calls:0,commerce_writes:0});
  if(claim!=='claimed')return deny('REPLAY_OR_CLAIM_CONFLICT');
  return reply({status:'QA_REPLY_PREPARED',reply:'Ví dụ QA: QA_SKU_001 giá 159000 VND, tồn 5.',
@@ -179,23 +191,79 @@ async function handler(req,bindings){
 export default {fetch:handler};
 
 /**
- * Deploy requires SQLite-backed Durable Object namespace binding (NOT created).
- * Use transactional storage to prevent duplicate-claim races across isolates.
+ * QA-only operator-scoped Durable Object. SQLite-backed KV transactions + alarms.
+ * CREATE is NOT authorized: the production deployment needs explicit Access/DO approval.
+ * Namespaces MUST be created with new_sqlite_classes and bound only to the QA Worker.
+ * All external inputs are validated by Worker; this internal guard independently validates.
  */
 export class V174PReplayGuard {
  constructor(state){this.state=state;}
+
  async fetch(request){
-  if(new URL(request.url).pathname!=='/claim'||request.method!=='POST')return reply({status:'DENY'},405);
-  let body;try{body=await request.json();}catch{return reply({status:'DENY'},400);}
-  if(!body||typeof body.key!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(body.key)||
-  typeof body.fingerprint!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(body.fingerprint)||
-  !Number.isSafeInteger(body.expires_at))return reply({status:'DENY'},400);
-  const result=await this.state.storage.transaction(async txn=>{
-   const prior=await txn.get('event:'+body.key);
-   if(prior)return prior.fingerprint===body.fingerprint?'duplicate':'conflict';
-   await txn.put('event:'+body.key,{fingerprint:body.fingerprint,expires_at:body.expires_at});
-   return 'claimed';
-  });
-  return reply({status:result});
+  if(new URL(request.url).pathname!=='/gate'||request.method!=='POST')
+   return reply({status:'DENY'},405);
+  if(request.headers.get('content-type')!=='application/json')return reply({status:'DENY'},400);
+  let body;
+  try{body=await request.json();}catch{return reply({status:'DENY'},400);}
+  const kind=body?.kind;
+  const isSession=kind==='session'&&exact(body,['kind']);
+  const isMessage=kind==='message'&&exact(body,['kind','key','fingerprint','expires_at']);
+  const now=Math.floor(Date.now()/1000);
+  if(!isSession&&!isMessage)return reply({status:'DENY'},400);
+  if(isMessage&&(
+    typeof body.key!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(body.key)||
+    typeof body.fingerprint!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(body.fingerprint)||
+    !Number.isSafeInteger(body.expires_at)||body.expires_at<=now||body.expires_at>now+300
+  ))return reply({status:'DENY'},400);
+  const storage=this.state?.storage;
+  if(!storage?.transaction||!storage?.getAlarm||!storage?.setAlarm||
+     !storage?.list||!storage?.delete)return reply({status:'DENY'},503);
+  const exp=(Math.floor(now/60)+1)*60;
+  const rateKey='r:'+String(exp).padStart(10,'0')+':'+kind;
+  const eventKey=isMessage?'e:'+String(body.expires_at).padStart(10,'0')+':'+body.key:null;
+  const limit=isSession?QA_RATE_POLICY.sessionPerMinute:QA_RATE_POLICY.messagePerMinute;
+  try{
+   const status=await storage.transaction(async txn=>{
+    const count=(await txn.get(rateKey))??0;
+    if(!Number.isSafeInteger(count)||count<0)return 'storage_corrupt';
+    if(count>=limit)return 'rate_limited';
+    await txn.put(rateKey,count+1);
+    if(isSession)return 'admitted';
+    const prev=await txn.get(eventKey);
+    if(prev!==undefined&&prev!==null)
+     return prev.fingerprint===body.fingerprint?'duplicate':'conflict';
+    await txn.put(eventKey,{fingerprint:body.fingerprint});
+    return 'claimed';
+   });
+   if(status==='storage_corrupt')return reply({status:'DENY'},503);
+   // Schedule cleanup without extending the retention of older keys.
+   // An alarm failure is fail-closed, even if the rate counter was committed.
+   const due=Math.min(exp,isMessage?body.expires_at:exp)*1000+1000;
+   const priorAlarm=await storage.getAlarm();
+   if(priorAlarm===null||priorAlarm>due)await storage.setAlarm(due);
+   return reply({status});
+  }catch{return reply({status:'DENY'},503);}
+ }
+
+ async alarm(){
+  const storage=this.state?.storage;
+  if(!storage?.list||!storage?.delete||!storage?.setAlarm)
+   throw Error('DURABLE_STORAGE_NOT_AVAILABLE');
+  const now=Date.now();
+  let next=null,backlog=false;
+  // Time-prefix makes lexicographic listing an expiry-ordered bounded scan.
+  for(const prefix of ['e:','r:']){
+   const entries=await storage.list({prefix,limit:QA_RATE_POLICY.cleanupBatch});
+   let deleted=0;
+   for(const [key] of entries){
+    const expiry=Number(key.slice(2,12))*1000+1000;
+    if(!Number.isSafeInteger(expiry))continue; // malformed keys never created by this version
+    if(expiry<=now){await storage.delete(key);deleted++;}
+    else {next=next===null?expiry:Math.min(next,expiry);break;}
+   }
+   if(deleted>=QA_RATE_POLICY.cleanupBatch)backlog=true;
+  }
+  if(backlog)await storage.setAlarm(now+1000);
+  else if(next!==null)await storage.setAlarm(Math.max(now+1000,next));
  }
 }

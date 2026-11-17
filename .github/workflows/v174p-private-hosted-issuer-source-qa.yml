@@ -4,6 +4,7 @@ on:
     branches:
       - work/v174p-private-hosted-issuer-owner-gate-20261117
       - work/v174p-hosted-access-secrets-canary-admission-20261117
+      - work/v174p-hosted1-durable-replay-rate-access-admission-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -26,8 +27,11 @@ jobs:
           node --check qa/v174p-private-hosted/hosted-issuer.test.mjs
           node --check qa/v174p-private-hosted/browser-hosted-canary.mjs
           node --check qa/v174p-private-hosted/browser-hosted-canary.test.mjs
+          node --check qa/v174p-private-hosted/durable-replay-hardening.test.mjs
+          node --check qa/v174p-private-hosted/access-deployment-admission.mjs
+          node --check qa/v174p-private-hosted/access-deployment-admission.test.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs
       - name: Source risk gates and absence of credentials or live API
         run: |
           python3 - <<'PY'

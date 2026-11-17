@@ -19,9 +19,10 @@ function reset(){
   V174P_REPLAY_DO:{
    idFromName:name=>name,
    get:()=>({fetch:async req=>{
-    const {key,fingerprint}=await req.json(),prev=seen.get(key);
-    const status=prev?(prev===fingerprint?'duplicate':'conflict'):'claimed';
-    if(!prev)seen.set(key,fingerprint);
+    const {kind,key,fingerprint}=await req.json();
+    const status=kind==='session'?'admitted':(kind==='message'?
+       (seen.has(key)?(seen.get(key)===fingerprint?'duplicate':'conflict'):'claimed'):'DENY');
+    if(status==='claimed')seen.set(key,fingerprint);
     return new Response(JSON.stringify({status}),{status:200});
    }})
   }
@@ -221,7 +222,9 @@ test('49 Durable Object class enforces path',async()=>{
 });
 test('50 durable claim body rejects invalid key without transaction',async()=>{
  const doo=new V174PReplayGuard({storage:{transaction:async()=>{throw Error('MUST_NOT_EXECUTE');}}});
- const r=await doo.fetch(new Request('https://durable.internal/claim',{method:'POST',body:'{}'}));
+ const r=await doo.fetch(new Request('https://durable.internal/gate',{method:'POST',
+  headers:{'content-type':'application/json'},
+  body:JSON.stringify({kind:'message',key:'not-a-valid-HMAC',fingerprint:'x',expires_at:0})}));
  assert.equal(r.status,400);
 });
 
@@ -246,5 +249,29 @@ test('53 unavailable Secrets Store binding fails closed with no leak',async()=>{
 test('54 invalid Secrets Store JWKS binding fails closed',async()=>{
  const r=await call('GET','/healthz',undefined,{env:{...env,
   V174P_ACCESS_JWKS_JSON:{get:async()=>null}}});
+ assert.equal(r.status,503);
+});
+
+
+test('55 no Durable Object blocks issuing QA sessions before mint',async()=>{
+ const r=await issue({env:{...env,V174P_REPLAY_DO:null}});
+ assert.equal(r.status,503);assert.equal(r.data.status,'BLOCKED');
+});
+test('56 real worker maps DO session rate_limited to 429 with Retry-After',async()=>{
+ const blockedDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'rate_limited'})})};
+ const r=await issue({env:{...env,V174P_REPLAY_DO:blockedDo}});
+ assert.equal(r.status,429);assert.equal(r.data.reason,'QA_SESSION_RATE_LIMIT');
+ assert.equal(r.headers.get('retry-after'),'60');
+});
+test('57 real worker maps DO message rate_limited to 429 and no send',async()=>{
+ const token=(await issue()).data.token;
+ const blockedDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'rate_limited'})})};
+ const r=await message(token,{event_id:'QA_MSG_RATE_LIMIT_0057'},{env:{...env,V174P_REPLAY_DO:blockedDo}});
+ assert.equal(r.status,429);assert.equal(r.data.reason,'QA_MESSAGE_RATE_LIMIT');
+ assert.deepEqual([r.data.provider_sends,r.data.model_calls,r.data.commerce_writes],[0,0,0]);
+});
+test('58 unknown DO answer never mints a session',async()=>{
+ const unknownDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'unknown'})})};
+ const r=await issue({env:{...env,V174P_REPLAY_DO:unknownDo}});
  assert.equal(r.status,503);
 });

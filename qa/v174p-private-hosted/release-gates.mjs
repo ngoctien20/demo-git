@@ -15,7 +15,11 @@ const sourceLabels=Object.freeze([
  'durable_object_bound_and_atomic_tested',
  'private_uat_operator_approved',
  'cost_scope_approved',
- 'browser_uat_on_hosted_origin_passed'
+ 'browser_uat_on_hosted_origin_passed',
+ 'worker_access_all_routes_and_preview_verified',
+ 'access_operator_only_no_bypass_verified',
+ 'do_replay_ttl_alarm_hosted_verified',
+ 'operator_rate_429_hosted_verified'
 ]);
 const liveLabels=Object.freeze([
  'actual_merchant_domain_dns_challenge_verified',
