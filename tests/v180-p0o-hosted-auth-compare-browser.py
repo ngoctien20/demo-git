@@ -99,7 +99,7 @@ def compare(browser,viewport,designation):
         pa.locator("#compare-receipt").click()
         expect(pa.locator("#compare-status")).to_contain_text("CHƯA ĐẠT: NO_COMMON_OWNER_TENANT")
 
-        pa.locator("#peer-receipt").fill("{not-json")
+        pa.locator("#peer-receipt").fill("{not-json" + "x"*55)
         pa.locator("#compare-receipt").click()
         expect(pa.locator("#compare-status")).to_contain_text("CHƯA ĐẠT: INVALID_RECEIPT_JSON")
 
