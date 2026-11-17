@@ -45,3 +45,14 @@ BLOCKED: real Store A/B Auth JWT, independent owner evidence, recoverable hosted
 CHANGED: GitHub Draft files only. No Supabase hosted SQL writes, Auth account changes, n8n Published, customer data, credential, Cloudflare deployment or provider send.
 ROLLBACK: close child Draft PR, leave canonical PR #247 and hosted systems unchanged.
 Decision: G3R_AUTH_OWNER_SLOTS_IDENTIFIED_BUT_STORE_AUTH_NO_GO.
+
+## VERIFIED independent CI acceptance — source code SHA 46d098ad7ee924f371dd38854bb07b34ba1faaac
+
+At the exact tested code SHA, GitHub Actions two independent workflows SUCCESS:
+- G3R source/metadata workflow: https://github.com/ngoctien20/demo-git/actions/runs/44120978213 — 230/230 Node tests PASS, 0 failed, 0 skipped. SQL metadata-only source guard, strict no-provider/secret/hosted-IO gate, repaired 3-job workflow structural guard all PASS.
+- Restored canonical RPC10 workflow: https://github.com/ngoctien20/demo-git/actions/runs/44120978335 — 3/3 jobs SUCCESS: G0/G1 Node provenance and source policy checks; actual disposable PostgreSQL17 six-surface A/B/C isolation, atomic rollback and FK negative QA; actual disposable PostgreSQL17 concurrent-reader policy cutover/rollback.
+- Initial G3R CI on earlier SHA failed only because static checker matched the spelled-out environment API name inside a source COMMENT. Updated comment only, retained the strict static checker, reran exact code HEAD fully green.
+- The restored original workflow runs again after the syntax correction. This is REAL PostgreSQL17 CI testing in isolated ephemeral GitHub containers, but NOT a real Supabase hosted Store migration, nor a cryptographically verified user JWT or live provider event.
+- Source and hosted read-only evidence have remained separate; no credential, customer row, no DB writes or message sends.
+
+This checkpoint-only documentation update introduces no code changes beyond the tested SHA; recheck exact final child PR HEAD CI before labeling any newer HEAD fully TESTED.
