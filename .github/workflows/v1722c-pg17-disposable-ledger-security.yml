@@ -41,7 +41,7 @@ jobs:
           node-version: '22'
       - name: Existing 74 cross-channel exact-command, identity and OTP source tests
         run: |
-          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs qa/v1722-cross-channel-order/private-channel-identity-admission.test.mjs
+          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs qa/v1722-cross-channel-order/private-channel-identity-admission.test.mjs qa/v1722-cross-channel-order/native-proof-private-issuer-nosend.test.mjs
       - name: Install PostgreSQL CLI on isolated GitHub runner
         run: |
           sudo apt-get update -qq
@@ -95,6 +95,18 @@ jobs:
           assert "scope!=='SYNTHETIC_ONLY'" in identity and "p.native_verified!==false" in identity
           assert "p.owner_verified!==false" in identity and "p.no_send!==true" in identity
           assert 'Buffer.from(JSON.stringify(p)' in identity and "verify(null," in identity
+          native=Path('qa/v1722-cross-channel-order/native-proof-private-issuer-nosend.mjs').read_text()
+          native_qa=Path('qa/v1722-cross-channel-order/native-proof-private-issuer-nosend.test.mjs').read_text()
+          assert "createPrivateQaIdentityRoute" in native
+          assert "privateQaSenderHash" in native
+          assert "PRIVATE_QA_ORDER_CORE_NO_SEND" in native
+          assert "HMAC(secret,envelope.raw_body)" in native
+          assert "ZALO_BOT_SHARED_HEADER_DENIED" in native
+          assert "native_verified:false,owner_verified:false,no_send:true" in native
+          assert "F33 composed Messenger QA order" in native_qa
+          for p in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\b',
+                    r'\bhttp\.request\s*\(',r'\bconsole\.log\s*\(']:
+            assert not re.search(p,native),p
           concurrent=Path('qa/v1722-cross-channel-order/pg17-disposable-concurrent-otp-claim.sh').read_text()
           assert 't404_v1722_ci' in concurrent and 'pg_stat_activity' in concurrent
           assert "PASS_REAL_TWO_PG17_CLIENTS_SINGLE_CONSUME_NO_SEND" in concurrent
