@@ -28,6 +28,8 @@ jobs:
           node --check qa/v171c-commerce/synthetic-vision-retrieval.cjs
           node --test qa/v171c-commerce/private-cross-channel-link.test.cjs
           node --test qa/v171c-commerce/synthetic-vision-retrieval.test.cjs
+      - name: Reproducible 10-query synthetic vector benchmark with honest unknown false positives
+        run: node qa/v171c-commerce/run-synthetic-vision-benchmark.cjs
       - name: Preserve V17 pilot / V14.3 Channel / V14.7 Studio / V15.2 JWT contracts
         run: |
           node --test qa/v17-cbot/cbot-readonly-contract.test.cjs
