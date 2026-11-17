@@ -1,0 +1,61 @@
+{
+  "contract": "T404_V174P_HOSTED4B9_BROKER_FINANCE_ALTERNATIVE_PENDING_V1",
+  "decision": "HARD_NO_GO_PRIVATE_BROKER_AND_FINANCE_EVIDENCE_MISSING",
+  "parent_pr": 333,
+  "parent_sha": "8d669d152ed8df1c47b2bf2b52256f770948f8fc",
+  "inspected_at_utc": "2026-11-17T12:28:23.573Z",
+  "cloudflare_read_only_summary": {
+    "workers": "30/30",
+    "scripts": 30,
+    "durable_objects": "3/3",
+    "access_apps": 2,
+    "member_roles_observed": [
+      "Super Administrator - All Privileges"
+    ],
+    "existing_rpc16_v175_zalo_unchanged": true,
+    "target_private_ledger_present": false,
+    "target_qa_worker_present": false,
+    "billing_spend_policies_get": "403_FORBIDDEN",
+    "billing_usage_get": "403_FORBIDDEN"
+  },
+  "finance_alternatives": {
+    "cloudflare_api_readonly": {
+      "enabled": false,
+      "billing_permission": "NOT_AVAILABLE",
+      "verified_auditor_receipt": null
+    },
+    "private_finance_dual_review": {
+      "enabled": false,
+      "private_storage": "NOT_PROVISIONED",
+      "private_scanner": "NOT_PROVISIONED",
+      "private_reference": null,
+      "real_finance_signature": null,
+      "independent_auditor_signature": null,
+      "reviewed_billing_period": null
+    }
+  },
+  "private_broker": {
+    "status": "SOURCE_CONTRACT_ONLY_NOT_HOSTED",
+    "access_all_traffic_verified": false,
+    "private_idp_configured": false,
+    "owner_fido2_or_equivalent_verified": false,
+    "finance_fido2_or_equivalent_verified": false,
+    "independent_trust_roots_installed": false,
+    "revocation_check_operational": false,
+    "durable_nonce_ledger_verified": false,
+    "zero_public_url_verified": false,
+    "real_merchant_files_uploaded": false
+  },
+  "owner_approval_for_hosted_ledger": null,
+  "independent_finance_approval_for_hosted_ledger": null,
+  "approved_ledger_budget_usd": null,
+  "approved_qa_worker_budget_usd": null,
+  "approved_cost_window": null,
+  "rollback_operator_consent": null,
+  "can_create_hosted_ledger": false,
+  "can_upload_qa_worker": false,
+  "can_change_access": false,
+  "can_change_billing": false,
+  "can_upload_private_documents": false,
+  "can_touch_customer_data": false
+}
