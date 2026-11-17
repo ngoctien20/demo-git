@@ -1,0 +1,23 @@
+{
+  "contract": "TIEN404_RPC16_HOSTED_INACTIVE_PRIVATE_ADMISSION_20261117",
+  "environment": "cloudflare_account_staging_only",
+  "worker": "tien404-rpc16-merchant-evidence-inactive-staging",
+  "sourceSha256": "112e72fd840066c8f74016ed84aff43eed5e9decb83c1454a325d4536e63ff59",
+  "workersDevEnabled": false,
+  "previewUrlsEnabled": false,
+  "binding": "R2_QUARANTINE",
+  "bucket": "tien404-merchant-evidence-quarantine-staging",
+  "publicR2DomainEnabled": false,
+  "customR2DomainCount": 0,
+  "r2ObjectCount": 0,
+  "accessApp": "TIEN404 RPC16 Merchant Evidence Staging — DENY ALL",
+  "accessAllowPolicyCount": 0,
+  "accessSessionDuration": "15m",
+  "billingAlertThresholdDollars": 1,
+  "merchantProofReceived": false,
+  "realJwtTwoStoreUatAccepted": false,
+  "acceptsUploads": false,
+  "servesObjectBytes": false,
+  "productionStoreRlsChanged": false,
+  "releaseState": "HOSTED_INACTIVE_NO_GO"
+}
