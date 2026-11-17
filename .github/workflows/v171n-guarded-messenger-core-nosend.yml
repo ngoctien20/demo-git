@@ -1,0 +1,127 @@
+name: TIEN404 V17.1N Messenger Core Guarded Shadow & Disposable PG17 NO SEND
+on:
+  push:
+    branches:
+      - work/v171n-messenger-core-shadow-actual-provider-gates-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171n-bot-security/**'
+      - 'docs/ai-handoff/V17_1N_*'
+      - '.github/workflows/v171n-guarded-messenger-core-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-shadow-source:
+    name: V17.1N 57 independent shadow tests plus 630 inherited no-send regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'V17.1N independently replay exact n8n guarded shadow snapshot'
+        run: node --test qa/v171n-bot-security/v171n-shadow.test.cjs
+      - name: 'Inherited V17.1M 48 Store A/B n8n QA snapshot tests'
+        run: node --test qa/v171m-bot-security/v171m-snapshot.test.cjs
+      - name: 'Inherited V17.1L 120 signed-shaped ingress and tool security tests'
+        run: |
+          node --test qa/v171l-bot-security/zero-trust-bot-boundary.test.cjs
+          node --test qa/v171l-bot-security/safe-audit-and-quota.test.cjs
+      - name: 'Install test-only pinned Pillow decoder'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('jpg') and features.check('webp')"
+      - name: 'Inherited V17.1K-S1 67 hostile media security tests'
+        run: |
+          python -m unittest discover -s qa/v171k-security -p 'test_*.py' -v
+          node --test qa/v171k-security/zero-trust-media-review.test.cjs
+      - name: 'Inherited V17.1K 45 manual media and one-shot quote tests'
+        run: node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Inherited V17.1J 76 photo evidence and cross-channel tests'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Inherited V17.1I 82 secure media and budget tests'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1H 40 actual media raster tests'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1G 40 pinned DNS/TLS security tests'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Inherited V17.1F 32 Store-scoped media registry tests'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Inherited V17.1E 28 image corpus and proof tests'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Inherited V17.1D 52 image and cross-channel identity tests'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Inspect snapshot capabilities and enforce zero hosted IO'
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          d=json.loads(Path('qa/v171n-bot-security/v171n-shadow-snapshot.json').read_text())
+          assert d['stagingWorkflowId']=='99eZrseGb4d650at'
+          assert d['stagingVersionId']=='4635bed6-a274-4f8a-902b-0bbd39aa9221'
+          assert d['stagingActive'] is False and d['stagingActiveVersionId'] is None
+          assert d['stagingNoCredentials'] is True and d['stagingCallerPolicy']=='none'
+          assert d['sourceDerivedReplicaOnly'] is True and d['verbatimProductionNodesCopied'] is False
+          assert d['expectedCases']==144 and d['expectedPass']==144
+          assert d['release']=='HOSTED_NO_GO'
+          assert len(d['nodeTypes'])==7
+          assert {n['type'] for n in d['nodeTypes']}=={'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
+          for n in d['source']:
+            for forbidden in (r'\bprocess\.env\b',r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+                              r'\baxios\b',r'\bchild_process\b',r'\bservice_role\b'):
+              assert not re.search(forbidden,n['jsCode'],re.I),(n['name'],forbidden)
+          print('V171N_SOURCE_NO_EXTERNAL_IO_PRESERVES_V1715_PASS')
+          PY
+  pg17-disposable-store-rls:
+    name: V17.1N independent disposable PostgreSQL 17 transactional Store A/B RLS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_ci_only_password
+          POSTGRES_DB: t404_disposable_qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_disposable_qa"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Install only disposable postgres client'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: 'Create synthetic PostgreSQL authenticated role in disposable CI container'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: psql -h localhost -U postgres -d t404_disposable_qa -X -v ON_ERROR_STOP=1 -c "CREATE ROLE authenticated NOLOGIN;"
+      - name: 'Execute same-Tenant two-Store transactional RLS then ROLLBACK'
+        env:
+          PGPASSWORD: synthetic_ci_only_password
+        run: |
+          psql -h localhost -U postgres -d t404_disposable_qa -X -v ON_ERROR_STOP=1 -f qa/v171n-bot-security/disposable_pg17_store_rls_rollback.sql
+          test "$(psql -h localhost -U postgres -d t404_disposable_qa -X -At -c "SELECT count(*) FROM pg_catalog.pg_class WHERE relname='t404_v171n_disposable_store_rls'")" = "0"
+          echo 'V171N_DISPOSABLE_PG17_ROLLBACK_AND_RLS_PASS'
+  real-provider-and-hosted-jwt-release-no-go:
+    name: V17.1N Real Meta Zalo OA signed provider and real JWT Store RLS NO GO
+    needs: [isolated-shadow-source,pg17-disposable-store-rls]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: 'Do not allow production without actual signed provider ownership JWT/RLS and server tools'
+        run: |
+          echo "::error::V171N_LIVE_NO_GO_PROVIDER_OWNER_REAL_SECRET_SIGNED_NO_SEND_JWT_STORE_A_B_ATOMIC_TOOL_GATE"
+          exit 3
