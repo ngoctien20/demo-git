@@ -1,0 +1,27 @@
+name: TIEN404 V17.23L RPC Caller Ingress JWT No-Host
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723l/**'
+      - '.github/workflows/v1723l-rpc-ingress-jwt-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-review-no-send:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Active n8n RPC caller bounded inventory, provider and JWT negative QA
+        run: node --test qa/v1723l/caller-ingress-admission.test.mjs
+      - name: No hosted permission or RPC revoke by public CI
+        run: |
+          node --input-type=module -e "import {KNOWN,inspectCallerReconciliation,inspectIngressAdmission,inspectPrivateJwtAdmission} from './qa/v1723l/caller-ingress-admission.mjs';const a=inspectCallerReconciliation(KNOWN),b=inspectIngressAdmission({provider:'zalo'}),c=inspectPrivateJwtAdmission();if(a.canRevokeRpc||b.canReadOrder||b.canSend||c.canReadOrder||c.canWrite||c.canDeploy)process.exit(1);console.log('V1723L_NO_REVOKE_NO_PROVIDER_SIGNED_PROOF_REAL_JWT_NO_GO');"
