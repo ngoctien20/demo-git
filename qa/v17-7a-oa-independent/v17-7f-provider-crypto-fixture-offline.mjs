@@ -107,10 +107,19 @@ export async function inspectSyntheticProviderReceipt(input,expected,deps){
       body.entry[0].messaging[0]?.message?.mid!==expected.eventRef)
       return deny('META_PAGE_AND_MESSAGE_BINDING_MISMATCH');
  }else{
-   if(body.event_name!=='message.text.received'||
-      body.message?.message_id!==expected.eventRef||
-      typeof body.message?.text!=='string'||
-      !body.message.text||body.message.text.length>4096)
+   // Official Zalo Bot envelope: { ok:true, result:{ event_name, message } }.
+   // The previous V17.7F root event_name fixture was not the provider shape.
+   const event=body.result;
+   if(body.ok!==true||!event||typeof event!=='object'||
+      rootClientClaims.some(k=>Object.hasOwn(event,k))||
+      event.event_name!=='message.text.received'||
+      event.message?.message_id!==expected.eventRef||
+      typeof event.message?.text!=='string'||
+      !event.message.text||event.message.text.length>4096||
+      typeof event.message?.from?.id!=='string'||
+      event.message?.chat?.chat_type!=='PRIVATE'||
+      !Number.isSafeInteger(event.message?.date)||
+      Math.abs(deps.nowMs-event.message.date)>5*60*1000)
       return deny('ZALO_BOT_TEXT_EVENT_SHAPE_INVALID');
  }
  // A mock reserve() is not hosted durable replay evidence.

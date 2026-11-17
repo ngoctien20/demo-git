@@ -1,0 +1,79 @@
+{
+  "contract": "TIEN404_V17_7G_PROVIDER_CANARY_NATIVE_REQUEST_PREHOST_NO_GO",
+  "captured_date_jst": "2026-11-17",
+  "source": "GITHUB_CLOUDFLARE_N8N_SUPABASE_READ_ONLY_PLUS_OFFICIAL_PROVIDER_DOCS",
+  "parent_pr": 337,
+  "parent_sha": "8950e0000ee8ec910519e3fbabeea69b69d63730",
+  "cloudflare": {
+    "account_context": "TIEN404_STAGING",
+    "current_rpc16_merchant_access_app": "f994d4b2-d4f9-419b-8585-5d33be506f13",
+    "rpc16_merchant_access_inline_allow_count": 0,
+    "rpc16_merchant_access_inline_bypass_count": 0,
+    "created_v177g_worker": false,
+    "created_or_modified_access_policy": false,
+    "created_or_modified_worker_routes": false,
+    "external_edge_deny_test_executed": false,
+    "durable_replay_hosted_test_executed": false,
+    "canary_public_route_enabled": false
+  },
+  "provider": {
+    "messenger_expected_auth": "X-Hub-Signature-256 HMAC-SHA256 raw bytes",
+    "zalo_bot_expected_auth": "X-Bot-Api-Secret-Token shared header",
+    "zalo_bot_official_body": "ok.result.event_name / ok.result.message",
+    "prior_v177f_body_mismatch_found": true,
+    "prior_v177f_fixture_corrected_in_child": true,
+    "synthetic_request_test_only": true,
+    "actual_provider_messages_received": 0,
+    "actual_provider_messages_sent": 0,
+    "actual_signed_provider_events_verified": false,
+    "production_webhook_routing_changed": false,
+    "external_meta_page_owner_grant_verified": false,
+    "external_zalo_bot_owner_grant_verified": false
+  },
+  "n8n": {
+    "existing_inactive_manual_fixture_workflow": "MQcbjLWZ5QUTJW0k",
+    "workflow_remains_inactive": true,
+    "previous_manual_execution": "5026",
+    "modified_published_workflows": false,
+    "newly_created_webhook_workflows": 0,
+    "executed_real_channel_workflows": 0
+  },
+  "merchant": {
+    "rpc16_worker_existing": true,
+    "rpc16_merchant_deny_all_preserved": true,
+    "original_four_row_owner_consent_verified": false,
+    "independent_reviewer_authenticated": false,
+    "merchant_documents_processed": 0,
+    "owner_private_access_policy_changed": false
+  },
+  "supabase": {
+    "project_id": "ifxlvrhyjhbzbrkdsida",
+    "current_qa_tenants": 2,
+    "current_max_stores_per_qa_tenant": 1,
+    "real_same_tenant_store_ab_jwt_uat": false,
+    "public_commerce_store_scoped_rls_accepted": false,
+    "schema_changed": false,
+    "customer_rows_accessed": 0,
+    "commerce_writes": 0
+  },
+  "scope": {
+    "source_only": true,
+    "local_worker_request_test_mode": "OFFLINE_FIXTURE_ONLY",
+    "local_qa_hostname": "canary.invalid",
+    "default_worker_fetch_deny_all": true,
+    "no_network_or_provider_message_sends": true,
+    "no_orders_or_inventory_writes": true,
+    "no_token_or_secret_material_read": true,
+    "approvals_for_hosted_provider_callback_collected": false
+  },
+  "release_status": "REAL_PROVIDER_OWNER_AND_HOSTED_NO_GO",
+  "remaining_gates": [
+    "INDEPENDENT_QA_BOT_OR_META_PAGE_OWNER_AUTHORITY",
+    "OPERATOR_SCOPE_COST_AND_ROLLBACK_APPROVAL",
+    "DEDICATED_NOT_PUBLIC_NOSEND_HOSTED_CANARY_WITH_NATIVE_SECRET_BINDING",
+    "REAL_EDGE_ANONYMOUS_DENIAL_AND_DURABLE_REPLAY_RATE_UAT",
+    "ONE_EXPLICIT_QA_INBOUND_PROVIDER_EVENT_WITH_CONSENT",
+    "EXTERNAL_PROVIDER_SEND_AND_COMMERCE_WRITES_ZERO_AUDIT",
+    "CANONICAL_STORE_RLS_WITH_REAL_SAME_TENANT_AB_AUTH_JWT"
+  ]
+}
