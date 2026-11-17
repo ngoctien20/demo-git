@@ -59,20 +59,26 @@ class IsolatedDiagnosticSchemaTests(unittest.TestCase):
     def test_invalid_category_rejected_without_record(self):
         for payload in ("", "OTHER", "CHAT_ID_123456", "SECRET_TOKEN", "CHALLENGE extra"):
             with self.subTest(reason=payload):
-                with self.assertRaises(sqlite3.IntegrityError):
-                    self.db.execute(INSERT, (payload,))
+                # OR IGNORE deliberately drops invalid rows, never persists PII.
+                self.db.execute(INSERT, (payload,))
                 self.assertEqual(self.count(), 0)
+                with self.assertRaises(sqlite3.IntegrityError):
+                    self.db.execute(
+                        "INSERT INTO qa_auth_rejection_once(reason) VALUES (?)", (payload,)
+                    )
 
     def test_null_reason_rejected(self):
-        with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute(INSERT, (None,))
+        self.db.execute(INSERT, (None,))
         self.assertEqual(self.count(), 0)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO qa_auth_rejection_once(reason) VALUES (?)", (None,))
 
     def test_sql_injection_remains_data_and_cannot_change_schema(self):
         malicious = "CHALLENGE'); DROP TABLE qa_auth_rejection_once; --"
-        with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute(INSERT, (malicious,))
+        self.db.execute(INSERT, (malicious,))
         self.assertEqual(self.count(), 0)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO qa_auth_rejection_once(reason) VALUES (?)", (malicious,))
         self.assertEqual(self.db.execute(
             "SELECT name FROM sqlite_master WHERE name='qa_auth_rejection_once'"
         ).fetchone()[0], "qa_auth_rejection_once")
