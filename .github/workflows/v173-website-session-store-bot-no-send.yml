@@ -23,7 +23,9 @@ jobs:
         run: |
           node --check qa/v173-website-session/website-session-core.mjs
           node --check qa/v173-website-session/website-session-core.test.mjs
-          node --test qa/v173-website-session/website-session-core.test.mjs
+          node --check qa/v173-website-session/website-client-qa-adapter.mjs
+          node --check qa/v173-website-session/website-client-qa-adapter.test.mjs
+          node --test qa/v173-website-session/website-session-core.test.mjs qa/v173-website-session/website-client-qa-adapter.test.mjs
       - name: No external requests / page token / credentials / provider send
         run: |
           python3 - <<'PY'
