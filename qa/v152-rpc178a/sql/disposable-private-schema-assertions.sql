@@ -26,8 +26,8 @@ BEGIN
   IF has_table_privilege(role_name,'rpc178_qa.products','SELECT,INSERT,UPDATE,DELETE') THEN RAISE EXCEPTION 'RPC178A FAIL: % has products table privilege',role_name; END IF;
   RAISE NOTICE 'RPC178A PASS: % has no QA schema/table access',role_name;
  END LOOP;
- IF has_schema_privilege('public','rpc178_qa','USAGE') THEN RAISE EXCEPTION 'RPC178A FAIL: public has schema access'; END IF;
- RAISE NOTICE 'RPC178A PASS: public has no schema usage';
+ IF EXISTS (SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) AS a WHERE n.nspname='rpc178_qa' AND a.grantee=0 AND a.privilege_type IN ('USAGE','CREATE')) THEN RAISE EXCEPTION 'RPC178A FAIL: PUBLIC role has schema access'; END IF;
+ RAISE NOTICE 'RPC178A PASS: PUBLIC has no schema usage';
 END $$;
 -- Table FK and member role/version constraints, synthetic row seeded only in disposable CI.
 INSERT INTO rpc178_qa.tenants(tenant_id) VALUES ('11111111-1111-4111-8111-111111111111');
