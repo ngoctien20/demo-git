@@ -57,6 +57,10 @@ deny(){ local identity="$1" stmt="$2" name="$3"
 }
 
 check 6 "select count(*) from pg_policies where schemaname='qa_rpc8' and policyname like 'rpc12_writer_%'" 'RLS writer policies installed'
+check 0 "select count(*) from pg_policies where schemaname='qa_rpc8' and tablename in ('stores','store_memberships','tenant_memberships') and cmd='UPDATE' and policyname like 'rpc12_%'" 'writer cannot update authority tables through RLS'
+check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.stores','active','UPDATE')" 'row lock column privilege on Store'
+check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.store_memberships','active','UPDATE')" 'row lock column privilege on Store Membership'
+check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.tenant_memberships','active','UPDATE')" 'row lock column privilege on Tenant Membership'
 check f "select rolbypassrls from pg_roles where rolname='qa_rpc12_writer'" 'dedicated DB writer cannot bypass RLS'
 check f "select rolcanlogin from pg_roles where rolname='qa_rpc12_writer'" 'dedicated DB writer cannot log in'
 check f "select has_table_privilege('qa_rpc12_authenticated','qa_rpc8.products','UPDATE')" 'client has no direct product UPDATE'
