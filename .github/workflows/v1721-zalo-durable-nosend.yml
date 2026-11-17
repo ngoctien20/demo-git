@@ -1,0 +1,68 @@
+name: TIEN404 V17.21 Zalo SQLite Durable Replay Candidate NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v1721-zalo-durable/**'
+      - '.github/workflows/v1721-zalo-durable-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  sqlite-durable-replay:
+    name: Node 22 SQLite replay + integration candidate (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check V2 SQLite, DO source, binding and regression
+        run: |
+          node --check qa/v1721-zalo-durable/zalo-sqlite-claim-v2.mjs
+          node --check qa/v1721-zalo-durable/zalo-bot-replay-bucket-v2.worker.mjs
+          node --check qa/v1721-zalo-durable/zalo-bot-replay-binding-v2.mjs
+          node --check qa/v1721-zalo-durable/zalo-sqlite-claim-v2.test.mjs
+      - name: Native SQLite + admission-integration tests
+        run: |
+          node --test qa/v1721-zalo-durable/zalo-sqlite-claim-v2.test.mjs
+      - name: Static no network, no token and NO-SEND candidate guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v1721-zalo-durable')
+          expected={
+            'zalo-sqlite-claim-v2.mjs',
+            'zalo-bot-replay-bucket-v2.worker.mjs',
+            'zalo-bot-replay-binding-v2.mjs',
+            'zalo-sqlite-claim-v2.test.mjs'
+          }
+          files=list(root.glob('*.mjs'))
+          assert {p.name for p in files}==expected,'QA executable file inventory drift'
+          for p in files:
+            s=p.read_text()
+            if p.name.endswith('.test.mjs'):
+              assert "import test from 'node:test'" in s
+              assert "import {DatabaseSync} from 'node:sqlite'" in s
+              assert not re.search(r'\bfetch\s*\(',s.replace('fetch(','')),'test accidental fetch'
+              continue
+            for token in [
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+              r'\bprocess\.env\b',r'\bchild_process\b',r'\bhttp\.request\s*\(',
+              r'(?i)sk-[a-z0-9_-]{16,}',r'\bconsole\.log\s*\('
+            ]:
+              # Exclude comments from executable static scan.
+              code='\n'.join(line.split('//',1)[0] for line in s.splitlines())
+              assert re.search(token,code) is None,(p.name,token)
+          doc=(root/'zalo-bot-replay-bucket-v2.worker.mjs').read_text()
+          assert 'export default' not in '\n'.join(x for x in doc.splitlines() if not x.lstrip().startswith(('//','*')))
+          assert 'ZaloBotReplayBucketV2' in doc
+          assert 'claimReplayV2' in doc
+          print('V17.21 SOURCE ONLY: no HTTP fetch, no send, no merchant data, no deploy')
+          PY
+  hosted-private-do-release:
+    name: Hosted Cloudflare DO migration, Bot webhook cutover and OA — BLOCKED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'NO GO until owner approval, deployment isolation, independent provider contract and hosted acceptance'
