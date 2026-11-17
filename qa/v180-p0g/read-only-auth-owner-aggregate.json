@@ -1,0 +1,48 @@
+{
+  "checkpoint": "V18.0-P0G",
+  "captured_at_jst": "2026-11-18",
+  "environment": "TIEN404_SUPABASE_STAGING",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "data_class": "AGGREGATE_ONLY_NO_IDENTIFIERS_NO_SECRETS",
+  "source": "CONNECTED_SUPABASE_SQL_READ_ONLY",
+  "auth_cohort": {
+    "active_tenant_membership_rows": 3,
+    "active_owner_tenant_membership_rows": 3,
+    "confirmed_not_banned_active_memberships": 3,
+    "eligible_members_with_unexpired_session_record": 2,
+    "same_tenant_two_owner_session_record_groups": 0,
+    "same_tenant_two_member_session_record_groups": 0,
+    "real_jwt_signature_verified": false,
+    "real_jwt_session_id_correlated": false,
+    "real_jwt_issuer_audience_verified": false,
+    "unexpired_session_record_is_real_jwt_proof": false
+  },
+  "legacy_qa_owner_pairing": {
+    "challenges_total": 19,
+    "challenges_unused_and_unexpired": 0,
+    "challenges_used": 9,
+    "claims_total": 4,
+    "claims_confirmed": 0,
+    "channel_identities_nonrevoked": 0,
+    "order_ownership_verified": 0,
+    "legacy_pairing_is_trusted_store_owner": false
+  },
+  "hosted_store_authority": {
+    "public_stores_tables": 0,
+    "public_store_membership_tables": 0,
+    "public_commerce_store_id_columns": 0,
+    "store_scoped_product_rpc_count": 0,
+    "canonical_two_store_owner_proof": false
+  },
+  "current_permissions": {
+    "source_only": true,
+    "read_only_authorized": true,
+    "synthetic_disposable_allowed": true,
+    "private_owner_consent_attestation": "NOT_COLLECTED",
+    "real_auth_jwt_uat": "NOT_RUN",
+    "native_provider_signed_uat": "NOT_RUN",
+    "hosted_store_migration": "NO_GO",
+    "production": "NO_GO",
+    "m0_backup_provenance": "DEFERRED_SOURCE_DISPOSABLE_ONLY"
+  }
+}
