@@ -1,0 +1,57 @@
+name: V17.7A OA-Independent Multi-Channel + Zalo OA OpenAPI Offline NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7A_ZALO_OPENAPI_OFFLINE_CHECKPOINT.md"
+      - ".github/workflows/v17-7a-oa-independent-no-send.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-openapi-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check independent QA modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/v17-7a-oa-independent/*.mjs; do node --check "$f"; done
+      - name: Full source-only channels + Zalo OA contracts QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Enforce source-only zero real API calls, zero Commerce and no credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          for(const file of [
+            'offline-channel-gate.mjs',
+            'zalo-oa-openapi-offline.mjs',
+            'zalo-oa-webhook-offline.mjs'
+          ]) {
+            const s=readFileSync('qa/v17-7a-oa-independent/'+file,'utf8');
+            for(const re of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+            ]) if(re.test(s))throw Error('Forbidden side effect: '+file);
+            if(!s.includes('canSend:false')&&!s.includes('noSend:true'))
+              throw Error('Missing no-send invariant: '+file);
+            if(!s.includes('canWriteOrders:false')&&!s.includes('noOrderWrite:true'))
+              throw Error('Missing no-order-write invariant: '+file);
+          }
+          console.log('V17.7A ALL OFFLINE modules NO-SEND/NO-HTTP/NO-WRITE PASS');
+          NODE
