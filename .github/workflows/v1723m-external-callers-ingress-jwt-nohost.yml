@@ -1,0 +1,27 @@
+name: TIEN404 V17.23M Worker Edge Native Provider JWT NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723m/**'
+      - '.github/workflows/v1723m-external-callers-ingress-jwt-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-source-deny:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test cross-platform caller inventory, native signatures and private JWT denials
+        run: node --test qa/v1723m/external-caller-provider-jwt-gates.test.mjs
+      - name: Ensure public CI cannot authorize any hosted RPC or JWT action
+        run: |
+          node --input-type=module -e "import {BASELINE,assessGlobalCallerCoverage,assessProviderEvidence,assessPrivateJwtUat} from './qa/v1723m/external-caller-provider-jwt-gates.mjs';const a=assessGlobalCallerCoverage(BASELINE),b=assessProviderEvidence('zalo'),c=assessPrivateJwtUat();if(a.canRevokeRpc||a.canDeploy||b.canPair||b.canSend||c.canReadOrders||c.canDeploy)process.exit(1);console.log('V1723M_GLOBAL_CALLER_UNVERIFIED_NATIVE_PROVIDER_UNVERIFIED_REAL_JWT_NO_GO');"
