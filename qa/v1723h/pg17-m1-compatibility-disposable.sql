@@ -45,7 +45,7 @@ CREATE POLICY tenant_permissive ON t404_h.orders FOR SELECT TO t404_h_member USI
 ALTER TABLE t404_h.store_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE t404_h.store_memberships FORCE ROW LEVEL SECURITY;
 CREATE POLICY active_self ON t404_h.store_memberships FOR SELECT TO t404_h_member USING (active AND user_id=(SELECT t404_h.current_actor()));
-CREATE POLICY store_restrictive AS RESTRICTIVE ON t404_h.orders FOR SELECT TO t404_h_member USING (store_id IS NOT NULL AND EXISTS(
+CREATE POLICY store_restrictive ON t404_h.orders AS RESTRICTIVE FOR SELECT TO t404_h_member USING (store_id IS NOT NULL AND EXISTS(
  SELECT 1 FROM t404_h.store_memberships m WHERE m.tenant_id=orders.tenant_id AND m.store_id=orders.store_id AND m.user_id=(SELECT t404_h.current_actor()) AND m.active AND m.role IN ('owner','manager')
 ));
 GRANT SELECT ON t404_h.orders,t404_h.store_memberships TO t404_h_member;
