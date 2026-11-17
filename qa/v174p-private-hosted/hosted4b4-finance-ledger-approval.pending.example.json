@@ -1,0 +1,55 @@
+{
+  "contract": "T404_V174P_HOSTED4B4_PRIVATE_FINANCE_LEDGER_PENDING_V1",
+  "status": "PENDING_VERIFIED_INDEPENDENT_APPROVAL",
+  "parent_pr": 312,
+  "parent_head_sha": "53dda238068039e1cc45336239eada7b0eacb9ad",
+  "scope": "TWO_ISOLATED_INACTIVE_FIRST_UPLOADS_NO_SEND",
+  "account_alias": "CURRENT_SHARED_CLOUDFLARE_ACCOUNT_VERIFY_OUT_OF_BAND",
+  "resources": {
+    "qa_worker": {
+      "name": "tien404-v174p-private-qa-issuer",
+      "class": "V174PReplayGuard",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [],
+      "public_requests_before_access": 0
+    },
+    "private_permit_ledger": {
+      "name": "tien404-v174p-private-permit-ledger",
+      "class": "V174PPermitLedger",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [],
+      "public_requests_before_access": 0
+    }
+  },
+  "real_owner_verified": false,
+  "independent_security_review_verified": false,
+  "independent_finance_review_verified": false,
+  "operator_identity_mfa_verified": false,
+  "rollback_operator_verified": false,
+  "private_ledger_access_topology_verified": false,
+  "approved_qa_worker_budget_usd": null,
+  "approved_ledger_budget_usd": null,
+  "approved_total_budget_usd": null,
+  "strict_hard_cloudflare_cost_cap_possible": false,
+  "shared_account_budget_limits_mutation_allowed": false,
+  "paid_account_tier_change_allowed": false,
+  "signed_finance_packet": null,
+  "signatures": {
+    "finance": null,
+    "ledger_security": null
+  },
+  "external_private_trust_keys": "NOT_IN_GITHUB",
+  "owner_signed_permit_reissue_required": true,
+  "current_complete_cloudflare_inventory": "RECOLLECT_BEFORE_CONSENT_NOT_THIS_TEMPLATE",
+  "nonce_ledger_hosted_proof": "MISSING",
+  "private_operator_gateway_proof": "MISSING",
+  "allow_qa_worker_inactive_upload": false,
+  "allow_private_ledger_inactive_upload": false,
+  "allow_access_or_dns_changes": false,
+  "allow_secret_upload": false,
+  "allow_real_commerce": false,
+  "allow_production_provider_send": false,
+  "can_provision_any_resource": false
+}
