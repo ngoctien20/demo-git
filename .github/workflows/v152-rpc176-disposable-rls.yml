@@ -1,0 +1,69 @@
+name: TIEN404 RPC17.6 — Disposable Postgres Store RLS × Private Auth NO-GO
+on:
+  push:
+    branches:
+      - work/v152-rpc176-disposable-store-rls-nohost-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc176/**'
+      - 'docs/ai-handoff/T404_RPC176_*'
+      - '.github/workflows/v152-rpc176-disposable-rls.yml'
+permissions:
+  contents: read
+jobs:
+  disposable-pg17-independent-rls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rpc176_disposable_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc176_synthetic_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpc176_disposable_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: rpc176_disposable_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc176_synthetic_ci_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disposable PostgreSQL 17 RLS fixture and independent negative QA
+        run: |
+          psql --version
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc176/sql/disposable-schema.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc176/sql/independent-rls-negative.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC17.6 private real JWT admission readiness (never handles tokens)
+        run: |
+          node --check qa/v152-rpc176/private-auth-admission.mjs
+          node --test qa/v152-rpc176/private-auth-admission.test.mjs
+      - name: Inherited RPC17.5 through RPC13 source security regressions
+        run: |
+          node --test qa/v152-rpc175/canonical-store-authority.test.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: No-send guard and inherited RPC16 public endpoints disabled
+        run: |
+          node --input-type=module -e "import {reviewRealAbAdmission} from './qa/v152-rpc176/private-auth-admission.mjs'; const r=reviewRealAbAdmission();if(r.can_accept_real_auth||r.can_upload||r.can_send||r.can_deploy||r.can_open_access)process.exit(1)"
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
