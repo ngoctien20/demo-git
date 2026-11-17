@@ -7,6 +7,11 @@
  */
 const expected=Object.freeze({
   tenants:2,products:2,orders:2,customers:0,authUsers:3,
+  confirmedAuthUsers:3,sessionRows:7,sessionHistoryUsers:2,
+  ownerUsersWithSessionHistory:2,activeTenantOwnerUsers:3,
+  ordersWithSourceLabel:2,
+  idempotencyRows:0,factoryEvents:0,agentRuns:0,
+  authCustomerBindings:0,channelIdentityRows:0,orderOwnershipRows:0,
   qaIdentityMaps:2,qaOwnerBindings:2,qaPairingMatches:2,
   sameTenantStoreGroups:0,commerceStoreColumns:0,
   publicStores:false,publicStoreMemberships:false,rpc178Qa:false,
