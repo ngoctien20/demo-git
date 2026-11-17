@@ -25,6 +25,7 @@ jobs:
         run: |
           node --check qa/v152-rpc10/store-gate.cjs
           node --test qa/v152-rpc10/store-gate.test.cjs
+          node --test qa/v152-rpc10/workflow-shape-integrity.test.mjs
       - name: RPC10 G0.1 alias canonical authority structural preflight
         run: |
           node --check qa/v152-rpc10/alias-bridge-preflight.cjs
