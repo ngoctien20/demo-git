@@ -20,7 +20,7 @@ const respond=(body,status=200)=>new Response(JSON.stringify(body),{status,heade
 export class V174PPermitLedgerLocal{
  constructor(state){
   this.storage=state.storage;
-  this.storage.sql.exec(\`CREATE TABLE IF NOT EXISTS claims (
+  this.storage.sql.exec(`CREATE TABLE IF NOT EXISTS claims (
     nonce_hash TEXT PRIMARY KEY,
     permit_hash TEXT NOT NULL,
     account_id TEXT NOT NULL,
@@ -31,7 +31,7 @@ export class V174PPermitLedgerLocal{
     expires_at INTEGER NOT NULL,
     receipt_id TEXT NOT NULL,
     UNIQUE (account_id,worker_name,phase)
-  )\`);
+  )`);
  }
  async fetch(request){
   if(new URL(request.url).pathname!=='/private/claim-once'||request.method!=='POST')
@@ -59,9 +59,9 @@ export class V174PPermitLedgerLocal{
   // Never release a claimed key, even on failure after this insertion.
   const receipt=crypto.randomUUID();
   try{
-   this.storage.sql.exec(\`INSERT INTO claims
+   this.storage.sql.exec(`INSERT INTO claims
     (nonce_hash,permit_hash,account_id,worker_name,phase,operator_subject_hash,claimed_at,expires_at,receipt_id)
-    VALUES (?,?,?,?,?,?,?,?,?)\`,
+    VALUES (?,?,?,?,?,?,?,?,?)`,
     b.nonce_hash,b.permit_hash,b.account_id,b.worker_name,b.phase,
     b.operator_subject_hash,Date.now(),b.expires_at,receipt);
   }catch{
