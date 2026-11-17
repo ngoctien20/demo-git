@@ -85,7 +85,7 @@ jobs:
           assert {n['type'] for n in q['nodes']}=={'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
           assert d['supabaseReadOnlyAsObserved']['sameTenantDistinctStoreOwnerPairs']==0
           assert d['supabaseReadOnlyAsObserved']['tenantsWithTwoActiveSessionMembers']==0
-          assert d['realJwtStoreAAndBVerified'] is False
+          assert d['supabaseReadOnlyAsObserved']['realTwoOwnerJwtAttested'] is False
           assert d['providerAuthority']['realMetaSignedQaEventAttested'] is False
           assert d['providerAuthority']['realZaloSignedQaEventAttested'] is False
           for n in q['source']:
