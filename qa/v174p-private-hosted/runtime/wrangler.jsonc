@@ -14,6 +14,10 @@
       {
         "name": "V174P_REPLAY_DO",
         "class_name": "V174PReplayGuard"
+      },
+      {
+        "name": "V174P_PERMIT_LEDGER_LOCAL",
+        "class_name": "V174PPermitLedgerLocal"
       }
     ]
   },
@@ -22,6 +26,12 @@
       "tag": "v1-local-sqlite",
       "new_sqlite_classes": [
         "V174PReplayGuard"
+      ]
+    },
+    {
+      "tag": "v2-local-first-upload-permit-ledger",
+      "new_sqlite_classes": [
+        "V174PPermitLedgerLocal"
       ]
     }
   ]
