@@ -50,3 +50,10 @@ BLOCKED: real Bot installation owner, exact Store mapping, RLS JWT A/B, real cus
 NEXT: operator-approved private Bot identity/installation evidence then canonical Store UAT. No repeated customer test needed until one of those changes.
 
 Checkpoint: V17_7H4T_CUSTOMER_MARKER_CONFIRMED__INTENTIONAL_OA_SHADOW_DENIAL__ZALO_BOT_REGISTER_MISSING__REAL_COMMERCE_NO_GO.
+
+## V17.7H.4U — Follow-up resolving Bot Creator numeric ID blocker
+- Owner had confirmed the current Zalo Bot Creator did not display a numeric Bot ID, so PR #381's pre-pinned ID prerequisite blocked private operator use.
+- Added **new** read-only **one-method** private `getMe` identity discovery in `qa/v17-7a-oa-independent/v17-7h4u-private-bot-id-discovery.mjs` and masked-token Windows launcher `scripts/v177h4u-private-bot-id-discovery.ps1`. Reuses the PR #381 exact-host HTTPS transport; no new provider adapter or webhook changes.
+- Local private operator may view numeric Bot ID returned by Zalo; must not paste it, token, raw transcript or webhook URL in ChatGPT/GitHub. Source-only tests cannot verify a real Bot Creator owner, Store authority or provider identity.
+- See `docs/ai-handoff/V17_7H4U_WINDOWS_PRIVATE_BOT_ID_DISCOVERY_NOHOST.md` for Windows usage, consent, privacy, caveats and rollback.
+- **Additional hard NO-GO**: getMe token access != human Bot ownership, Store JWT/RLS, customer consent or permission to send/issue orders. No live getMe invoked in CI.
