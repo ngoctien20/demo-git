@@ -251,3 +251,27 @@ test('54 invalid Secrets Store JWKS binding fails closed',async()=>{
   V174P_ACCESS_JWKS_JSON:{get:async()=>null}}});
  assert.equal(r.status,503);
 });
+
+
+test('55 no Durable Object blocks issuing QA sessions before mint',async()=>{
+ const r=await issue({env:{...env,V174P_REPLAY_DO:null}});
+ assert.equal(r.status,503);assert.equal(r.data.status,'BLOCKED');
+});
+test('56 real worker maps DO session rate_limited to 429 with Retry-After',async()=>{
+ const blockedDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'rate_limited'})})};
+ const r=await issue({env:{...env,V174P_REPLAY_DO:blockedDo}});
+ assert.equal(r.status,429);assert.equal(r.data.reason,'QA_SESSION_RATE_LIMIT');
+ assert.equal(r.headers.get('retry-after'),'60');
+});
+test('57 real worker maps DO message rate_limited to 429 and no send',async()=>{
+ const token=(await issue()).data.token;
+ const blockedDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'rate_limited'})})};
+ const r=await message(token,{event_id:'QA_MSG_RATE_LIMIT_0057'},{env:{...env,V174P_REPLAY_DO:blockedDo}});
+ assert.equal(r.status,429);assert.equal(r.data.reason,'QA_MESSAGE_RATE_LIMIT');
+ assert.deepEqual([r.data.provider_sends,r.data.model_calls,r.data.commerce_writes],[0,0,0]);
+});
+test('58 unknown DO answer never mints a session',async()=>{
+ const unknownDo={idFromName:x=>x,get:()=>({fetch:async()=>Response.json({status:'unknown'})})};
+ const r=await issue({env:{...env,V174P_REPLAY_DO:unknownDo}});
+ assert.equal(r.status,503);
+});
