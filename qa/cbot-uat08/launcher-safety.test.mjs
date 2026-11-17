@@ -56,3 +56,16 @@ test('13 rejects dirty or injected working checkout even when pinned SHA matches
  assert.match(source,/RPC7_PINNED_CHECKOUT_NOT_CLEAN/);
  assert.ok(source.indexOf('status --porcelain')<source.indexOf('GetFullPath($ArchivePath)'));
 });
+
+test('14 RPC7 receipt digit-bearing denial flags survive exact allowlist',()=>{
+ const identifier=/^[A-Za-z][A-Za-z0-9]*$/;
+ assert.ok(identifier.test('m0Approved'));
+ assert.ok(identifier.test('m1Authorized'));
+ for(const injected of ['m0Approved=TRUE','m1Authorized.extra','tenant_id','0mApproved'])
+   assert.equal(identifier.test(injected),false,injected);
+ assert.ok(text.includes("if ($key -notmatch '^[A-Za-z][A-Za-z0-9]*$') { continue }"));
+ assert.match(source,/"m0Approved","m1Authorized"/);
+ assert.match(source,/\$summary\["m0Approved"\] -ne "false"/);
+ assert.match(source,/\$summary\["m1Authorized"\] -ne "false"/);
+ assert.match(source,/\$summary\["receiptSavedLocally"\] -ne "true"/);
+});
