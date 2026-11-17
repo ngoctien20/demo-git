@@ -40,6 +40,37 @@ jobs:
               assert banned not in p,banned
           print('V17.4P source staging issuer — no external provider, no real Commerce, no deployed origin')
           PY
+  chromium-local-https-worker-candidate:
+    name: Chromium mobile UAT for Worker source behind simulated Access (NOT hosted)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chromium runner without modifying app lockfile
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Generate temporary loopback TLS certificate
+        run: |
+          openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes -keyout /tmp/v174p-qa-key.pem -out /tmp/v174p-qa-cert.pem -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1"
+          chmod 600 /tmp/v174p-qa-key.pem
+      - name: Run 21 browser UAT cases using local worker HTTPS proxy and synthetic Access
+        env:
+          T404_V174P_QA_TLS_KEY_FILE: /tmp/v174p-qa-key.pem
+          T404_V174P_QA_TLS_CERT_FILE: /tmp/v174p-qa-cert.pem
+          T404_V174P_SCREENSHOT: /tmp/v174p-private-browser.png
+        run: node --test qa/v174p-private-hosted/browser-local-worker-simulator.test.mjs
+      - name: Preserve synthetic screenshot only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v174p-synthetic-local-worker-browser
+          path: /tmp/v174p-private-browser.png
+          retention-days: 7
+          if-no-files-found: ignore
   external-hosted-browser-uat:
     name: Real hosted Access-protected Browser UAT — BLOCKED
     if: false
