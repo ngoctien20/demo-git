@@ -31,3 +31,13 @@ These outputs prove only current provider configuration for the supplied token, 
 - Dedicated QA Worker workers.dev and previews OFF, D1 original accepted receipts 0, diagnostic mode/schema not installed. Keep that state.
 - After owner-only read-only verification, review provider registration vs controlled one-event testing; new public exposure, migrations, and diagnostic storage require separate scoped security/budget approval.
 - Production Commerce and original Zalo Bot remain out of scope.
+
+
+## Owner diagnostic result: getMe application 404
+
+- OWNER-REPORTED: Local PowerShell getMe (POST) returned JSON `{ok:false,error_code:404}`. The call did NOT reach getWebhookInfo, so webhook presence/absence cannot be inferred.
+- VERIFIED in official Zalo Bot error table: application error 404 = `Not found` / invalid access request, whereas 401 denotes invalid/expired token. This does NOT prove credential validity, and 404 may reflect a malformed/token-wrong-endpoint access request.
+- VERIFIED in official getMe docs: path must be `https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/getMe`, POST, using raw Bot API Token. Local UI must distinguish Bot API Token from Webhook Secret Token, Bot ID, full URL or challenge. A raw Token should follow Zalo Bot Token example containing a colon; the code itself prepends `bot`, so pasted token must not include that prefix.
+- SECURITY: no token, endpoint path, private identity or raw API response was pasted to chat/GitHub; no reset, webhook modification, message send, D1 mutation or network admission authorized. Keep Cloudflare Worker OFF.
+- NEXT: owner locally recopy Bot API Token of new QA Bot (without resetting); examine token **shape** privately, never print token. Repeat read-only getMe only after local shape check. If still application 404, stop and use Bot Creator / vendor support, no repeated blind requests. Then getWebhookInfo only after getMe validates NEW QA Bot identity.
+- STATUS: `ZALO_BOT_IDENTITY_404_BLOCKED / OWNER_TOKEN_SHAPE_CHECK_PENDING / WEBHOOK_STATE_UNVERIFIED / NO_GO`.
