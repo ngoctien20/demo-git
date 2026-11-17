@@ -61,3 +61,29 @@ New isolated `qa/v171v-hosting-readiness/private-hosting-readiness.cjs` implemen
 
 ## 7. Version/reporting checkpoint
 Record exact branch SHA, test suites/jobs, first failures and fixes, residual blockers, release gate and operator approvals with each next change. **Do not mark hosted TESTED or real owner VERIFIED without real independent evidence.**
+
+
+## 8. VERIFIED actual Cloudflare staging inventory (read-only, 2026-11-17 JST)
+
+The earlier generic architecture did not assume that resources existed. An additional **direct, read-only Cloudflare API inventory** now confirms matching **PRE-EXISTING** resources. They were not created, edited or deployed during V17.1V:
+
+- Account has **30 Worker scripts**, **1 R2 bucket** and **2 Access applications** in the visible account.
+- Worker `tien404-rpc16-merchant-evidence-inactive-staging` **EXISTS**; `workers.dev` subdomain `enabled=false`, `previews_enabled=false`; no matching Worker custom domain in the returned domain inventory. The Script Settings response exposes a single binding: `R2_QUARANTINE` of type `r2_bucket`. No Durable Object or managed secret binding appears in that snapshot. That is **not proof they cannot exist elsewhere**; a complete host end-to-end review is still required.
+- R2 bucket `tien404-merchant-evidence-quarantine-staging` **EXISTS**, located in APAC. R2 managed public-development domain `enabled=false`, no R2 custom domains attached. The endpoint that would retrieve CORS configuration was **UNVERIFIED** on this account; do not infer CORS controls.
+- R2 lifecycle endpoint returns **one enabled default multipart abort rule**, **not an independently verified 24-hour object-deletion rule**. Bucket Lock endpoint returns **zero lock rules**. Therefore evidence retention and object immutability are **P1 readiness gaps**, not proof a file has leaked or malicious content has been accepted. No object contents or names were read.
+- Cloudflare Access application `TIEN404 RPC16 Merchant Evidence Staging — DENY ALL` **EXISTS**, type `self_hosted`, 15-minute session configuration, one domain reference and **zero Access application policies** returned. No Allow policy was seen; an independent external denied/allowed route canary is still required to prove Access enforcement. No policy was changed.
+- A previously existing inactive Worker+R2+Access footprint should be **reused after independent attestation**, not rebuilt. It cannot yet satisfy V17.1V's exact-source blueprint (no documented real scanner/CDR, atomic durable replay, content retention/locks, private verifier secrets, external Access proof). **HOSTED NO-GO** remains correct.
+
+## 9. VERIFIED source and disposable-DB acceptance
+
+Tested source SHA `441621576fe85aa2856513a7de65feca74a6b4b4`.
+GitHub Actions run: https://github.com/ngoctien20/demo-git/actions/runs/44080556950
+
+- Independent source job `134029720766` **SUCCESS**: **58/58** new V17.1V Ed25519/fake hosting design tests and **1030/1030** inherited regression tests = **1088/1088 source PASS**. All test keys, signers, Stores and infrastructure records in this suite are synthetic.
+- Disposable PostgreSQL 17 job `134029720457` **SUCCESS**: synthetic same-Tenant Store A/B RLS fixture, full ROLLBACK and cleanup; this is **NOT real signed Supabase Auth JWT or real Commerce Store RLS**.
+- Hosted real Cloudflare Access/R2/private evidence and real two-owner Auth JWT admission job `134030013365` **FAILURE BY DESIGN**. Production and live hosted admission remain **NO-GO**.
+- Source hardening after first CI: the one-use design review nonce is now bound globally to **all blueprint/plan reference combinations**, not merely one pair, before the first awaited callback. The new adversarial test rejects same-nonce review against a second valid plan; no permit path was relaxed.
+- No API POST/PUT/PATCH/DELETE was sent to Cloudflare, Supabase or n8n by this milestone. Only the isolated GitHub Draft branch and PR source/tests/docs/CI were written. Existing staging resources and all Published bot workflows remain untouched.
+- Final checkpoint documentation is a new Git commit after the tested SHA; exact-HEAD source+PG17 CI must be rechecked before final signoff.
+
+**Disposition:** EXISTING INACTIVE HOSTING COMPONENTS PARTIALLY VERIFIED / NEW DESIGN SOURCE IMPLEMENTED & TESTED / REAL HOSTED AUTH+FILE SCAN+RLS BLOCKED / PRODUCTION NO-GO.
