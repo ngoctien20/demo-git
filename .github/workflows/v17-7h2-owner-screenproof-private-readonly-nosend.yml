@@ -1,0 +1,106 @@
+name: V17.7H.2 Owner Bot Creator Screenshot × Private Read-only Zalo Contract NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7H2_OWNER_SCREENSHOT_PRIVATE_GETME_CHECKPOINT.md"
+      - ".github/workflows/v17-7h2-owner-screenproof-private-readonly-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owner-ui-private-readback-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check all inherited A-H.1 + H.2 source syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: Full inherited A-H.1 + H.2 native owner / operator QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Verify SHA-bound user screenshot, no native provider calls and real NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {inspectOwnerListScreenshotReceipt,inspectOneNativeEventGate,
+           screenshotSha256,privateReadOnlyCallPlan}
+           from './qa/v17-7a-oa-independent/v17-7h2-bot-owner-ui-readback-no-go.mjs';
+          const base='qa/v17-7a-oa-independent/';
+          const e=JSON.parse(readFileSync(base+'v17-7h2-screenshot-private-readback-evidence.json','utf8'));
+          assert.equal(e.contract,'TIEN404_V17_7H2_OWNER_SCREENSHOT_AND_PRIVATE_READBACK_NO_SEND');
+          assert.equal(e.observed_material.evidence_sha256,screenshotSha256);
+          assert.equal(e.observed_material.image_uploaded_to_repository,false);
+          assert.equal(e.observed_material.visible_bot_count,1);
+          assert.equal(e.observed_material.displayed_bot_capacity,3);
+          assert.equal(e.observed_material.ui_screen_shows_bot_id,false);
+          assert.equal(e.observed_material.ui_screen_shows_bot_token,false);
+          assert.equal(e.observed_material.provider_session_independently_authenticated,false);
+          assert.equal(e.observed_material.native_provider_admin_role_verified,false);
+          assert.equal(e.private_readback.actual_getMe_called,false);
+          assert.equal(e.private_readback.actual_getWebhookInfo_called,false);
+          assert.equal(e.private_readback.actual_bot_id_known,false);
+          assert.equal(e.private_readback.expected_bot_id,null);
+          assert.equal(e.private_readback.bot_token_obtained,false);
+          assert.equal(e.private_readback.raw_webhook_url_recorded,false);
+          assert.equal(e.private_readback.setWebhook_called,false);
+          assert.equal(e.private_readback.deleteWebhook_called,false);
+          assert.equal(e.private_readback.sendMessage_called,false);
+          assert.deepEqual(e.private_readback.allowed_api_operations,['getMe','getWebhookInfo']);
+          assert.equal(e.cloudflare.deployment_count,0);
+          assert.equal(e.cloudflare.workers_dev_enabled,false);
+          assert.equal(e.cloudflare.preview_urls_enabled,false);
+          assert.equal(e.cloudflare.binding_count,0);
+          assert.equal(e.cloudflare.existing_worker_changed_in_v177h2,false);
+          assert.equal(e.n8n.manual_qa_is_inactive,true);
+          assert.equal(e.n8n.changed_published_workflows,false);
+          assert.equal(e.supabase.same_tenant_store_ab_count,0);
+          assert.equal(e.supabase.real_jwt_rls_acceptance,false);
+          assert.equal(e.external_event_readiness.native_one_event_admission,'NO_GO');
+          assert.equal(e.external_event_readiness.approved_exactly_one_real_message,false);
+          assert.equal(e.activity_this_phase.real_provider_api_calls,0);
+          assert.equal(e.activity_this_phase.provider_message_sends,0);
+          assert.equal(e.activity_this_phase.modified_cloudflare_resources,0);
+          assert.equal(e.activity_this_phase.modified_n8n_workflows,0);
+          assert.equal(e.activity_this_phase.modified_supabase_tables_or_policies,0);
+          assert.equal(e.release,'REAL_PROVIDER_GETME_AND_NATIVE_ONE_EVENT_UAT_NO_GO');
+          const src=[
+            'v17-7h2-bot-owner-ui-readback-no-go.mjs',
+            'v17-7h2-private-operator-readback-mock.mjs'
+          ].map(file=>readFileSync(base+file,'utf8'));
+          for(const s of src)for(const forbidden of [
+            /\bfetch\s*\(/,
+            /\baxios\s*\./,
+            /\bhttps?\s*\.\s*request\s*\(/,
+            /\b(setWebhook|deleteWebhook|sendMessage|createOrder|writeOrder|writeStock|deployWorker)\s*\(/
+          ])if(forbidden.test(s))throw Error('Provider/send/write unexpectedly present in source');
+          assert.equal(privateReadOnlyCallPlan().noNetworkExecuted,true);
+          const ui=inspectOwnerListScreenshotReceipt({
+            mode:'REDACTED_USER_SCREENSHOT_RECEIPT',source:'USER_UPLOADED_IMAGE',
+            screenshotSha256,displayName:'Bot TIEN404 AI',
+            observedBotCount:1,observedBotCapacity:3,
+            observedSurface:'ZALO_BOT_CREATOR_BETA_BOT_LIST',
+            userConfirmsAdmin:true,botIdVisible:false,botTokenVisible:false,
+            actualProviderSessionVerified:false
+          });
+          assert.equal(ui.shapeCandidate,true);
+          assert.equal(ui.actualBotOwnerAuthenticated,false);
+          const real=inspectOneNativeEventGate({allGreen:true});
+          assert.equal(real.status,'REAL_NATIVE_ONE_EVENT_NO_GO');
+          assert.equal(real.allowedQaMessageCount,0);
+          console.log('V17.7H.2 UI PHOTO SHA + PRIVATE GETME CONTRACT + REAL NO_SEND/NO_LIVE-GO PASS');
+          NODE
