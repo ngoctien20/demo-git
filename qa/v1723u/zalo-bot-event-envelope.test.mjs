@@ -109,3 +109,23 @@ test('no real JWT/Commerce/bot calls in receiver candidate',async()=>{
  assert.equal(r.status,200);
  assert.deepEqual([...db.rows.keys()],['ONE']);
 });
+
+test('runtime Cloudflare fetch passes real clock, not ExecutionContext (410 regression)',async()=>{
+ const liveNow=Date.now(),db=fakeD1();
+ const active={...settings(db),QA_START_MS:String(liveNow-30000),QA_END_MS:String(liveNow+30000)};
+ const worker=(await import('../v1723s/isolated-qa-webhook.mjs')).default;
+ const context={waitUntil(){throw Error('SHOULD_NOT_USE_CONTEXT_AS_TIME')}};
+ const badHeaderReq=new Request('https://inactive.invalid'+path,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
+ const response=await worker.fetch(badHeaderReq,active,context);
+ assert.equal(response.status,403,'active runtime should reject missing header, not return time-window 410');
+ assert.equal(db.rows.size,0);
+});
+test('runtime Cloudflare fetch rejects expired QA window with 410',async()=>{
+ const liveNow=Date.now(),db=fakeD1();
+ const expired={...settings(db),QA_START_MS:String(liveNow-120000),QA_END_MS:String(liveNow-60000)};
+ const worker=(await import('../v1723s/isolated-qa-webhook.mjs')).default;
+ const req=new Request('https://inactive.invalid'+path,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
+ const response=await worker.fetch(req,expired,{});
+ assert.equal(response.status,410);
+ assert.equal(db.rows.size,0);
+});
