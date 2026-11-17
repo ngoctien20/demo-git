@@ -1,0 +1,95 @@
+name: RPC10 G3R Hosted Auth Eligibility × Existing PG17 CI Repair NO HOST
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc10/**'
+      - 'docs/ai-handoff/T404_RPC10_G3R_HOSTED_AUTH_AND_CI_REPAIR_CHECKPOINT.md'
+      - '.github/workflows/v152-rpc10-six-surface-nohost.yml'
+      - '.github/workflows/v180-rpc10-g3r-hosted-auth-nohost.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g3r-hosted-metadata-and-rls-eligibility:
+    name: G3R independent READ-ONLY metadata and NO-GO offline regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: All inherited RPC10 source safety regressions incl new G3R
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v152-rpc10/g3r-hosted-auth-eligibility.cjs
+          node --test qa/v152-rpc10/*.test.cjs
+      - name: Hosted evidence sanity and SQL SELECT-only guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const e=require('./qa/v152-rpc10/g3r-hosted-auth-eligibility-evidence.json');
+          const gate=require('./qa/v152-rpc10/g3r-hosted-auth-eligibility.cjs');
+          const out=gate.inspect(e);
+          assert.equal(out.status,'HOSTED_STORE_AUTH_AND_JWT_NO_GO');
+          assert.equal(out.code,'G3R_METADATA_AUDITED_NO_REAL_JWT');
+          assert.equal(out.scopedQaActorSlotsAvailable,true);
+          assert.equal(out.realAuthSessionEvidenceObserved,false);
+          assert.equal(out.canExecuteRealJwtUat,false);
+          assert.equal(out.canReadHostedOrders,false);
+          assert.equal(out.canMigrateM1,false);
+          assert.equal(out.canExecuteAtomicM2M4,false);
+          assert.equal(out.canRevokePublicRpc,false);
+          assert.ok(out.blockers.includes('LEGACY_TENANT_PERMISSIVE_POLICY_OR_BYPASS_RISK'));
+          assert.ok(out.blockers.includes('CANONICAL_STORE_COLUMNS_AND_MEMBERSHIP_NOT_HOSTED'));
+          const src=fs.readFileSync('qa/v152-rpc10/g3r-hosted-auth-eligibility.cjs','utf8');
+          for(const re of [
+            /\bfetch\s*\(/,/\bprocess\s*\.\s*env\b/,
+            /\bchild_process\b/,/\bhttps?\s*\.\s*request\s*\(/,
+            /\bcreateClient\s*\(/,/\bexecSync\s*\(/,
+            /\b(service_role|bypassrls)\s*\(/i
+          ])assert.equal(re.test(src),false,'Source-only gate unexpectedly has I/O');
+          console.log('G3R exact connected Supabase snapshot: NO-GO, 2 Auth owner subjects, no Store RLS/JWT');
+          NODE
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          sql=Path('qa/v152-rpc10/g3r-hosted-auth-eligibility-readonly.sql').read_text()
+          lines=[line for line in sql.splitlines() if not line.lstrip().startswith('--')]
+          body='\n'.join(lines)
+          no_sql_strings=re.sub(r"'(?:''|[^'])*'", "''", body)
+          assert re.match(r'\s*WITH\s+six\s+AS\s*\(',body,re.I)
+          assert re.search(r'\bSELECT\b',body,re.I)
+          assert body.strip().endswith(';')
+          for bad in (r'\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|EXECUTE|CALL|COPY|VACUUM)\b',
+                      r'\b(pg_sleep|dblink|http_post|net\.http_post)\s*\('):
+            assert not re.search(bad,no_sql_strings,re.I),bad
+          assert not re.search(r'\b(SELECT\s+\*\s+FROM\s+(?:public\.)?(?:orders|customers))\b',
+                               no_sql_strings,re.I)
+          assert 'has_function_privilege' in body
+          print('PASS: metadata SELECT-only, no PII/real orders, no UPDATE/DDL/provider I/O')
+          PY
+      - name: Assert canonical RPC10 legacy workflow CI is structurally repaired
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/v152-rpc10-six-surface-nohost.yml').read_text()
+          assert w.count('\n  rpc10-offline-gate:')==1
+          assert w.count('\n  rpc10-disposable-pg17:')==1
+          assert w.count('\n  rpc10-concurrent-reader-blackout:')==1
+          assert "assert re.search(r'COMMIT\\s*;\\s*$',no_comments,re.I)" in w
+          assert '\n,no_comments,re.I)' not in w
+          assert "t404_rpc8_ci" in w
+          assert "RPC10_REFUSES_HOSTED" in w
+          assert "bash qa/v152-rpc10/ci-pg17-concurrent-reader-blackout.sh" in w
+          print('PASS: 3 distinct RPC10 CI jobs, heredoc intact, disposable guards intact')
+          PY
