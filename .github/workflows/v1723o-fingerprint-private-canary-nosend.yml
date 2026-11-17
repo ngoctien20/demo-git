@@ -1,0 +1,31 @@
+name: TIEN404 V17.23O Deployed Fingerprint and Provider Canary NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723o/**'
+      - '.github/workflows/v1723o-fingerprint-private-canary-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bounded-fingerprint-and-native-fixtures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_APP_SECRET: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      ZALO_OA_SECRET: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Re-run V17.23N synthetic Meta and route regression
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs
+      - name: Test V17.23O verified Cloudflare ETag and caller inventory fixtures
+        run: node --test qa/v1723o/v1723o.test.mjs
+      - name: Require private signed provider and hosted JWT NO-GO
+        run: |
+          node --input-type=module -e "import {BASELINE,BIO_PRODUCTION,assessCallerCoverage,reconcileWorkerVersionMetadata} from './qa/v1723o/deployed-fingerprint-caller-closure.mjs'; import {inspectPrivateCanary} from './qa/v1723o/native-provider-private-canary.mjs';const r=assessCallerCoverage(BASELINE), d=reconcileWorkerVersionMetadata({...BIO_PRODUCTION,scriptListETag:BIO_PRODUCTION.metadataScriptETag,versionResourceETag:BIO_PRODUCTION.metadataScriptETag}),c=inspectPrivateCanary({provider:'zalo-oa',mode:'NO_SEND_NO_WRITE'}); if(r.canRevokeRpc||d.sourceByteEqualityProven||c.canSend||c.canReadOrders||c.canDeploy||c.canOpenCanary)process.exit(1);console.log('V1723O_SOURCE_QA_PASS_GLOBAL_CALLER_NO_GO_REAL_PROVIDER_CANARY_NO_GO');"
