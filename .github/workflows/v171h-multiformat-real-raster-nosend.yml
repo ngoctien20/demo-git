@@ -1,0 +1,73 @@
+name: TIEN404 V17.1H Real JPEG WebP PNG Raster QA (No Merchant Fetch / No Send)
+on:
+  push:
+    branches:
+      - work/v171h-multiformat-media-preflight-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171h-commerce/**'
+      - 'docs/ai-handoff/V17_1H_*'
+      - '.github/workflows/v171h-multiformat-real-raster-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171h-local-real-raster:
+    name: V17.1H 40 actual raster + 152 source regression and static no send
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned image decoder in disposable CI only (not runtime)
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import Image,features; assert features.check('webp') and features.check('jpg'); print('Pillow codec ready')"
+      - name: Decode actual generated PNG JPEG WebP bytes, reject unsafe image/scopes
+        run: |
+          python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: Preserve V17.1G offline DNS/TLS fixture and Store/SKU authorization
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: Preserve V17.1F direct website and PRODUCT_MEDIA registry
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: Preserve V17.1E product photo declaration and vision receipt metrics
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: Preserve V17.1D original image pixels, source-confirmed link and Commerce fixture
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Source-only security audit - no HTTP, provider, database or model calls'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v171h-commerce/multiformat-local-media.py').read_text()
+          for banned in (r'\brequests\b',r'\burllib\b',r'\bhttp\.client\b',
+              r'\bsocket\b',r'\bsubprocess\b',r'\bos\.environ\b',
+              r'\bopenai\b',r'\bservice_role\b',r'\bcreate_order\b',
+              r'\bsend_provider\b',r'\bimport\s+httpx\b'):
+            assert not re.search(banned,s,re.I),banned
+          for required in ('merchantPhotoOriginIndependentlyVerified',
+              'storeOwnershipIndependentlyVerified',
+              'actualExternalHttpRequests', 'requiresCustomerSkuSelection',
+              'requiresFinalOrderConfirmation', 'MAX_BYTES',
+              'imageMetadataDiscardedFromResult'):
+            assert required in s,required
+          print('V171H SOURCE_ONLY_NO_SEND_GUARD: PASS')
+          PY
+  v171h-hosted-denial:
+    name: V17.1H Real Merchant Corpus / Live Vision / Meta Zalo HOSTED NO-GO
+    runs-on: ubuntu-24.04
+    needs: [v171h-local-real-raster]
+    timeout-minutes: 3
+    steps:
+      - name: Deny live activation before certified merchant photo and signed provider evidence
+        run: |
+          echo "::error::V171H_HOSTED_NO_GO_NO_REAL_MERCHANT_PHOTO_LICENSE_LIVE_NETWORK_VISION_PROVIDER_PAGE_OA_STORE_RLS_RESTORE"
+          exit 3
