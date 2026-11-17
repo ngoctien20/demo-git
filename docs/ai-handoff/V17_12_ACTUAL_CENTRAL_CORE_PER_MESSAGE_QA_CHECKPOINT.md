@@ -7,7 +7,7 @@
 New original **inactive** n8n workflow under Personal / `90_QA - DIAGNOSTICS`:
 - Workflow ID `7XzLd51D7C6tlaS4`
 - [Open native n8n workflow](https://ngoctien20.app.n8n.cloud/workflow/7XzLd51D7C6tlaS4)
-- Current workflow version `4be28203-ef05-43d8-b192-ecfb0d90b16f` was the intermediate version; latest final version must be retrieved from connector. It was built with the validated n8n Workflow SDK (4 nodes), then updated to 5 nodes.
+- Final read-back QA workflow draft version `21f1c645-878d-46e8-851c-54b1cfa568ab` (**inactive, not Published**). Initially built with validated n8n Workflow SDK (4 nodes), then updated to 5 nodes.
 - Components: manual-only QA trigger -> synthetic untrusted message -> generator of eight scoped invalid channel cases -> **Execute Sub-workflow** invoking existing central Commerce Agent `iyfGUiEsZlNTBWOR` -> strict fail-closed assertion.
 - `Invoke Actual Commerce Core - Sandbox Only` explicitly sets `mode = each` to avoid n8n processing multiple messages as one.
 - No Webhook trigger, no Meta/Zalo outbound, no Google Sheets tool, no order modification, no payment, no credential or billable model node in the new QA workflow. It is not Published.
