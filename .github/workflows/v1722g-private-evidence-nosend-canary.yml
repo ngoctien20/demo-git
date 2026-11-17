@@ -54,4 +54,5 @@ jobs:
     if: false
     runs-on: ubuntu-24.04
     steps:
-      - run: echo 'BLOCKED: no real owner, provider originals, Store Auth/RLS or independent M0 recovery'
+      - run: |
+          echo 'BLOCKED: no real owner, provider originals, Store Auth/RLS or independent M0 recovery'
