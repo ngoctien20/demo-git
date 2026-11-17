@@ -1,0 +1,66 @@
+name: TIEN404 RPC11 Store Writer V2 (SYNTHETIC PG17 ONLY)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc11/**'
+      - '.github/workflows/v152-rpc11-store-writer-disposable-nosend.yml'
+  push:
+    branches:
+      - work/v152-rpc11-store-writer-v2-disposable-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-safety:
+    name: RPC11 Node safety + shell checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node --test qa/v152-rpc11/source-safety.test.cjs
+          bash -n qa/v152-rpc11/ci-pg17-store-writer-v2-rehearsal.sh
+  disposable-pg17:
+    name: RPC11 actual PG17 synthetic Store writer / negative access
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc11_disposable_synthetic_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc11_disposable_synthetic_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Actual PG17 non-hosted regression
+        run: |
+          bash -n qa/v152-rpc11/ci-pg17-store-writer-v2-rehearsal.sh
+          bash qa/v152-rpc11/ci-pg17-store-writer-v2-rehearsal.sh
+  hosted-block:
+    name: RPC11 has no hosted writer deployment
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          test ! -f qa/v152-rpc11/hosted-deploy.sh
+          echo 'HOSTED_NO_GO — synthetic function cannot authorize production Store writes'
