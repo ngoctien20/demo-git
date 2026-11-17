@@ -78,3 +78,10 @@ Exact deployed Cloudflare Worker script/route caller scan; full GitHub work-bran
 
 ### Evidence
 PR #392, source-only local Node test 18/18 PASS; parent V17.2B PR #384; staging Supabase `ifxlvrhyjhbzbrkdsida`. No runtime rollback necessary.
+
+
+### Additional Cloudflare six-script bounded scan
+
+Cloudflare API listed Worker script names in the connected account. A read-only `GET /workers/scripts/{name}/content/v2` response was inspected for six relevant scripts: `tien404-rpc16-merchant-evidence-inactive-staging`, `tien404-v1721h2-zalo-replay-private-nosend-staging`, `tien404-v175e1-private-issuer-nosend-staging`, `tien404-v175e2-ab-gateway-nosend-staging`, `tien404-v177h-provider-nosend-inactive-staging`, and `tien404-zalo-outbound-v1-staging`. Returned content representation had no literal occurrence of the three exact RPC names or `/rest/v1/rpc/`. **Bounded scan only**: not all scripts, modules, external call chains, and routes are covered; absence of matches is NOT a full deployed caller proof.
+
+Source contract test independently reproduced in a local Node runtime with **18/18 PASS**, no network. GitHub HEAD workflow status must be verified separately.
