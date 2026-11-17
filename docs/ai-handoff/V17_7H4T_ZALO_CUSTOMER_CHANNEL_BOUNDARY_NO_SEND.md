@@ -33,7 +33,13 @@
 5. **Customer reply:** explicitly approve bounded outbound Zalo Bot sends after independently verified provider-native ingress, real Store RLS, one-event no-send canary and guarded delivery test; do not open output from the existing Shadow.
 6. **Pricing / stock:** current `F01` snapshot is stale (2026-11-14T12:41:35Z vs 3-hour TTL); do not use it for a product quote or real order.
 
-## 5. Permission and rollback
+## 5. Source CI verified and exact evidence
+- Draft PR **#389**, child of existing PR #383, remains OPEN/DRAFT, NO MERGE or hosted deployment.
+- GitHub Actions run [#44122184485](https://github.com/ngoctien20/demo-git/actions/runs/44122184485) at source HEAD `71c6c0053028fe44cd4d1119dcd6cd6c61ea10dc`: **91/91 Node tests PASS (33 new + 58 inherited), 0 FAIL**; offline source-only, not a live Bot/Store registration or JWT authentication.
+- Test gate asserts Shadow technical denial, no provider sends, no order reads and no channel registry shortcut. Existing n8n published workflows, QA marker logs, token and Cloudflare untouched.
+- The unrelated RPC10 CI issue and Supabase Free staging backup/restore gate remain independent.
+
+## 6. Permission and rollback
 No Supabase schema migration, n8n Data Table insert/update, existing workflow draft/publish, Cloudflare route, Access Allow, R2, credentials or Bot token change, Messenger/Zalo sends, real order reads/writes, billing or paid resource. QA marker records from customer's earlier test are preserved. Existing RPC17.8E backup gating remains independent.
 
 Rollback: close Draft PR; all connected runtime remains as it was.
