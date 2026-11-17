@@ -1,0 +1,131 @@
+name: TIEN404 V17.1C Identity Link × Durable Context × Synthetic Vision QA (NO HOSTED)
+on:
+  push:
+    branches:
+      - work/v171c-private-link-durable-context-vision-qa-20261117
+  pull_request:
+    paths:
+      - 'qa/v171c-commerce/**'
+      - 'docs/ai-handoff/V17_1C_PRIVATE_*'
+      - '.github/workflows/v171c-private-link-context-vision-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  v171c-contract-and-vision:
+    name: 39 new identity/vision + 119 inherited source tests (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V17.1C private link HMAC challenge + numeric image retrieval
+        run: |
+          node --check qa/v171c-commerce/private-cross-channel-link.cjs
+          node --check qa/v171c-commerce/synthetic-vision-retrieval.cjs
+          node --test qa/v171c-commerce/private-cross-channel-link.test.cjs
+          node --test qa/v171c-commerce/synthetic-vision-retrieval.test.cjs
+      - name: Reproducible 10-query synthetic vector benchmark with honest unknown false positives
+        run: node qa/v171c-commerce/run-synthetic-vision-benchmark.cjs
+      - name: Preserve V17 pilot / V14.3 Channel / V14.7 Studio / V15.2 JWT contracts
+        run: |
+          node --test qa/v17-cbot/cbot-readonly-contract.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Disallow hosted IO, secrets, real provider SEND and unsafe SQL
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v171c-commerce')
+          for name in ('private-cross-channel-link.cjs',
+                       'synthetic-vision-retrieval.cjs'):
+            s=(root/name).read_text()
+            executable='\n'.join(line for line in s.splitlines()
+              if not line.lstrip().startswith(('*','//')))
+            for disallowed in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+                r'\bchild_process\b',r'\bhttps?\.request\s*\(',
+                r'\bservice_role\b',r'\bpg_dump\b',r'\bpg_restore\b'):
+              assert not re.search(disallowed,executable,re.I),(name,disallowed)
+          for name in ('pg17-private-link-context-disposable-only.sql',
+                       'ci-pg17-private-link-context-rehearsal.sh'):
+            s=(root/name).read_text()
+            assert 't404_v171c_ci' in s and 'RPC171C_DISPOSABLE' in s
+            assert 'qa_v171c.' in s
+            assert 'ifxlvrhyjhbzbrkdsida' not in s
+            effective='\n'.join(line for line in s.splitlines()
+              if not line.lstrip().startswith(('--','#')))
+            for disallowed in (r'\bpublic\.(?:orders|products|customers|stores)\b',
+               r'\bauth\.users\b',r'\bservice_role\b',
+               r'\bpg_dump\b',r'\bpg_restore\b',r'\bcurl\b',r'\bwget\b'):
+              assert not re.search(disallowed,effective,re.I),(name,disallowed)
+          link=(root/'private-cross-channel-link.cjs').read_text()
+          assert "TTL_MS=5*60*1000" in link
+          assert 'crypto.createHmac' in link
+          assert 'consumeAndBind' in link
+          assert "canReadOrder:false" in link
+          catalog=(root/'synthetic-vision-retrieval.cjs').read_text()
+          assert 'MERCHANT_APPROVED' in catalog
+          assert 'actualVisualRecognitionBenchmarked:false' in catalog
+          sql=(root/'pg17-private-link-context-disposable-only.sql').read_text()
+          assert sql.count('FORCE ROW LEVEL SECURITY')>=4
+          assert 'CREATE ROLE qa_v171c_untrusted' in sql
+          assert 'REVOKE ALL ON ALL TABLES' in sql
+          print('PASS V17.1C: disposable, no hosted SQL/network/provider output')
+          PY
+
+  v171c-disposable-postgres17:
+    name: Real PG17 private challenge, durable context CAS and parallel replay QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v171c_synthetic_pg17_ci_only
+          POSTGRES_DB: t404_v171c_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171c_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_V171C_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_v171c_ci
+      PGUSER: postgres
+      PGPASSWORD: v171c_synthetic_pg17_ci_only
+      PGOPTIONS: '-c tien404.v171c_ephemeral=RPC171C_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute PG17 disposable identity challenge and session concurrency
+        run: |
+          bash -n qa/v171c-commerce/ci-pg17-private-link-context-rehearsal.sh
+          bash qa/v171c-commerce/ci-pg17-private-link-context-rehearsal.sh
+
+  v171c-hosted-real-identity-vision-release-no-go:
+    name: Real Messenger-Zalo identity and Vision hosted release — NO GO (intentional)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    needs: [v171c-contract-and-vision,v171c-disposable-postgres17]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test receipts cannot certify provider, Store RLS, media or production deployment
+        run: |
+          node - <<'NODE'
+          const l=require('./qa/v171c-commerce/private-cross-channel-link.cjs');
+          const v=require('./qa/v171c-commerce/synthetic-vision-retrieval.cjs');
+          if(l.TTL_MS>300000||v.CONTRACT!=='T404_V171C_SYNTHETIC_VISION_RETRIEVAL_V1')
+             throw Error('UNSAFE_CONFIG');
+          console.error('V171C_HOSTED_NO_GO_PRIVATE_STORE_RLS_SIGNED_CHANNEL_CHALLENGE_PROVIDER_PROOF_AND_REAL_VISION_IMAGES_MISSING');
+          process.exitCode=3;
+          NODE
