@@ -50,9 +50,15 @@ test('09 exactly 64 tests per channel',()=>{
  const s=seed();for(const ch of ['MESSENGER','ZALO','WEBSITE'])
  assert.equal(s.cases.filter(x=>x.channel===ch).length,64);
 });
-test('10 Store A and B are represented by distinct installations per channel',()=>{
- const s=seed();for(const ch of ['MESSENGER','ZALO','WEBSITE'])
- assert.equal(new Set(s.cases.filter(x=>x.channel===ch).map(x=>x.installationId)).size,2);
+test('10 Store A/B have two valid registered installations per channel; forged third is denied',()=>{
+ const s=seed();
+ for(const ch of ['MESSENGER','ZALO','WEBSITE']){
+   const selected=s.cases.filter(x=>x.channel===ch);
+   const trusted=new Set(selected.map(x=>x.installationId).filter(x=>x.startsWith('QA_')));
+   assert.equal(trusted.size,2);
+   assert.ok(selected.some(x=>x.installationId==='OTHER_INSTALLATION'));
+   assert.equal(decision('unknown installation',ch),'DENY');
+ }
 });
 test('11 baseline source code outputs 192/192 correct decisions',()=>{
  const r=evaluate();assert.equal(r.total,192);assert.equal(r.passed,192);
