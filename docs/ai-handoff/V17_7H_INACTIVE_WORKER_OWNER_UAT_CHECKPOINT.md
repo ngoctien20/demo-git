@@ -1,7 +1,7 @@
 # TIEN404 AI — V17.7H Scoped Inactive Hosted Worker × Verified QA Owner Consent × Native No-Send UAT
 
 Checkpoint date: 2026-11-17 JST.
-State: DRAFT SOURCE AND PREDEPLOY SAFETY CANDIDATE. REAL OWNER, REAL PROVIDER WEBHOOK AND REAL STORE A/B ARE **NO-GO**.
+State: INACTIVE HOSTED WORKER VERSION VERIFIED (NO DEPLOYMENT/ROUTE/URL); REAL OWNER, REAL PROVIDER WEBHOOK AND REAL STORE A/B ARE **NO-GO**.
 Parent Draft PR #342 head 05cabc1fb8f30dcfa47f656cc03a885ddee75b46 (435/435 local Request/WebCrypto tests, 7/7 CI). No merge.
 
 ## 1. Verified read-only baseline and why a separate Worker is needed
@@ -67,3 +67,22 @@ C — Native no-send provider UAT (NOT PERFORMED):
 - Source rollback: close this Draft child PR. For any newly created **inactive version-only** Worker, verify exact script ownership/version ID before any cleanup and require explicit separate confirmation before deleting it. Never delete RPC16 Merchant worker or other projects.
 
 NEXT suggested: V17.7H.1 — Operator/Owner Evidence Identity Challenge × Inactive Worker Version Hosting Readback × Bounded Native Canary Approval.
+
+## 6. ACTUAL CLOUDFLARE HOSTED VERSION-ONLY OUTCOME (VERIFIED 2026-11-17 JST)
+
+After exact source CI 484/484 PASS, Cloudflare API was called for **this one new Worker only**, with no credential or callback route:
+
+1. First attempt to **POST only a version** against a nonexistent script returned HTTP 404 / error 10007 `This Worker does not exist on your account`. No PUT/auto-deploy workaround was used.
+2. Verified new Workers API supports **Create Worker metadata with `subdomain.enabled=false`, `subdomain.previews_enabled=false`**. Created exactly one new independent Worker `tien404-v177h-provider-nosend-inactive-staging`, immutable Worker ID `0265c4d1f3d64f9196eb7587b8f1a552`, `deployed_on=null`, workers.dev/preview both false at creation.
+3. Uploaded exact GitHub 404-only Worker source (at commit `3535ee2f0e212c846c547c171f0f1b545f6d341d`) via **POST `/workers/scripts/{name}/versions`**, NO deployment endpoint. Uploaded version ID `c39b8e9d-2dfc-454d-b29d-40b495ff2043`.
+4. Independently re-read Cloudflare Worker metadata, script subdomain, preview, versions, deployments, bindings, account Worker domains, cron schedules and all Worker routes of the account's one zone. Confirmed: **1 uploaded version, 0 deployments, deployed_on=null, workers.dev=false, previews=false, 0 custom domains, 0 zone routes, 0 cron triggers, 0 bindings, observability disabled**. No public provider endpoint exists.
+5. Existing RPC16 Merchant evidence Worker and Access DENY ALL remain unchanged. Existing n8n QA `MQcbjLWZ5QUTJW0k` remains Inactive. No OAuth, real QA owner login, Merchant files, actual provider messages, DB reads/writes or channel sends occurred.
+6. The new Worker metadata/version is a hosted resource, NOT an activated runtime. Its JavaScript default fetch is 404-only, but no actual edge execution occurred: it has zero deployments and no address, so independent external Access deny and native provider UAT are NOT YET POSSIBLE.
+7. This new dormant Worker is stored in the existing Cloudflare account. **It might count as an account resource; no request-based spend was observed or measured and no new paid binding was provisioned. Do not claim a provider-guaranteed zero incremental bill without billing verification.**
+
+### Updated rollback — preserves owner consent and all existing resources
+
+- GitHub source: close Draft child PR only if intentionally abandoning it.
+- Cloudflare: new dormant worker `tien404-v177h-provider-nosend-inactive-staging` with version ID above is the only new hosted resource. It is nonpublic and inert. **Do not delete it automatically**; to remove, obtain explicit owner approval, verify exact ID+version+0 deployments+0 routes, then delete only that newly created Worker after preserving audit evidence.
+- No live routes, Auth/RLS, OAuth, Discord/Zalo/Meta subscriptions, Customer data, legacy n8n workflows, RPC16, R2 or Access policies changed. Nothing needs live rollback.
+- NEXT requires independently proven QA Bot/Page admin ownership and separate operator/finance authorization for a scoped real native callback and hosted durable replay, not the 404-only Worker.
