@@ -1,0 +1,60 @@
+{
+  "contract": "T404_V174P_HOSTED2_PRIVATE_QA_AUTHORIZATION_REQUEST_V1",
+  "created_jst": "2026-11-17",
+  "status": "AWAITING_EXPLICIT_OWNER_APPROVAL",
+  "scope": "SYNTHETIC_PRIVATE_QA_NO_SEND_NO_COMMERCE",
+  "source_pr": 273,
+  "worker_name": "tien404-v174p-private-qa-issuer",
+  "deploy_strategy": {
+    "phase_a": "INACTIVE_NO_ROUTES_workers_dev_false_preview_urls_false",
+    "phase_b": "ACCESS_ALL_TRAFFIC_PRIVATE_OPERATOR_ONLY_AFTER_INDEPENDENT_CHECK",
+    "phase_c": "EXTERNAL_ACCESS_CANARY_ONLY_AFTER_APPROVAL",
+    "automatic_deploy": false,
+    "github_actions_hosted_jobs_enabled": false
+  },
+  "changes_requested": [
+    "create_dedicated_qa_worker",
+    "create_sqlite_backed_durable_object",
+    "create_dedicated_access_application_and_reusable_operator_policy",
+    "configure_managed_secrets_and_jwks_rotation",
+    "enable_qa_origin_only_after_access_attestation",
+    "run_bounded_real_do_and_browser_canary"
+  ],
+  "production_resources_unchanged": true,
+  "commercial_read_write_allowed": false,
+  "provider_send_allowed": false,
+  "ai_model_calls_allowed": false,
+  "approval_required": {
+    "exact_qa_origin": null,
+    "account_isolation_approved": false,
+    "authorized_operator_list_private_attested": false,
+    "owner_authorization_record": null,
+    "max_qa_requests": null,
+    "qa_spend_envelope_usd": null,
+    "worker_account_wide_limit_reviewed": false,
+    "durable_object_account_wide_limit_reviewed": false,
+    "stored_data_charge_reviewed": false,
+    "rollback_owner_attested": false
+  },
+  "infrastructure_evidence": {
+    "cloudflare_account_authenticated": true,
+    "existing_scripts_count": 23,
+    "existing_worker_entities_count": 10,
+    "existing_access_apps_count": 1,
+    "existing_reusable_access_policies_count": 0,
+    "existing_durable_object_namespaces_count": 0,
+    "dedicated_qa_worker_exists": false
+  },
+  "canary_requirements": {
+    "access_all_traffic_including_previews_verified": false,
+    "unauthenticated_rejected_at_edge": false,
+    "revoked_operator_rejected_at_edge": false,
+    "separate_qa_access_audience_verified": false,
+    "real_durable_replay_concurrency_passed": false,
+    "real_durable_rate_429_passed": false,
+    "real_durable_alarm_cleanup_passed": false,
+    "external_browser_canary_passed": false,
+    "rollback_drill_passed": false
+  },
+  "authorization_effect": "NONE_EVEN_IF_FIELDS_MODIFIED_REQUIRES_INDEPENDENT_OPERATOR_CONSENT"
+}
