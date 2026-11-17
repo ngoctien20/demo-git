@@ -98,7 +98,20 @@ function apiGuard(req,env,access){
 }
 const HTML='<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TIEN404 V17.4P private QA</title></head><body><h1>TIEN404 Private QA — No Send</h1><p id="disclaimer">CHỈ TEST — không phải shop thật, không tạo đơn hoặc gửi tin.</p><section aria-label="Hội thoại QA" id="messages"></section><form id="form"><label for="message">Tin nhắn QA</label><input id="message" maxlength="500" required><button>Gửi thử</button></form><p id="status" role="status">Chưa cấp phiên</p><script src="/qa-client.js" type="module"></script></body></html>';
 const JS=String.raw`let jwt=null,expires=0;const log=document.getElementById('messages');const form=document.getElementById('form');const status=document.getElementById('status');function add(txt){const e=document.createElement('p');e.textContent=txt;log.appendChild(e)}form.addEventListener('submit',async e=>{e.preventDefault();const input=document.getElementById('message');const text=input.value;input.value='';try{if(!jwt||Date.now()>=expires){const r=await fetch('/v1/website/sessions',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({installation_ref:'QA_WEB_WIDGET_A'})});if(!r.ok)throw Error('NO_SESSION');const j=await r.json();if(j.status!=='QA_SESSION_ISSUED')throw Error('NO_SESSION');jwt=j.token;expires=Date.now()+Math.min(j.expires_in_sec,300)*1000}const id='QA_MSG_'+crypto.randomUUID().replaceAll('-','').toUpperCase();const r=await fetch('/v1/website/messages',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},body:JSON.stringify({installation_ref:'QA_WEB_WIDGET_A',event_id:id,requested_tool:'catalog_read',text})});if(!r.ok)throw Error('REJECTED');const j=await r.json();if(j.status!=='QA_REPLY_PREPARED'||j.provider_sends!==0||j.commerce_writes!==0)throw Error('UNSAFE');add(j.reply);status.textContent='QA NO SEND — không có đơn thật'}catch{add('QA bị chặn — không có thao tác thật');status.textContent='BLOCKED'}});`;
-async function handler(req,env){
+async function resolveManagedSecret(value){
+ if(typeof value==='string')return value; // Per-Worker secret binding
+ if(value&&typeof value.get==='function')return await value.get(); // Cloudflare Secrets Store binding
+ return null; // fail closed: never use a mock/default key in hosted mode
+}
+async function handler(req,bindings){
+ // Resolve both managed Secrets Store bindings before any route, including healthz.
+ // No secret values, exceptions or Access JWTs are returned/logged to clients.
+ let env;
+ try {
+  env={...bindings,
+   V174P_SESSION_HMAC_KEY:await resolveManagedSecret(bindings?.V174P_SESSION_HMAC_KEY),
+   V174P_ACCESS_JWKS_JSON:await resolveManagedSecret(bindings?.V174P_ACCESS_JWKS_JSON)};
+ }catch{return deny('SECRET_BINDING_UNAVAILABLE',503);}
  if(!configured(env))return deny('NOT_CONFIGURED',503);
  let url;try{url=new URL(req.url);}catch{return deny('INVALID_URL');}
  if(url.origin!==env.V174P_ISSUER_ORIGIN)return deny('UNAPPROVED_HOST');
