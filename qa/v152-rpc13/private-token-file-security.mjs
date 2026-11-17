@@ -24,7 +24,7 @@ export async function verifyWindowsPrivateFileAcl(filepath){
   "if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){exit 22}",
   "$current=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value",
   "$acl=Get-Acl -LiteralPath $p -ErrorAction Stop",
-  "$owner=(New-Object Security.Principal.NTAccount($acl.Owner)).Translate([Security.Principal.SecurityIdentifier]).Value",
+  "$owner=(New-Object -TypeName Security.Principal.NTAccount -ArgumentList $acl.Owner).Translate([Security.Principal.SecurityIdentifier]).Value",
   "if($owner -ne $current){exit 23}",
   "$allowed=@($current,'S-1-5-18','S-1-5-32-544')",
   "$rules=$acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])",
@@ -36,7 +36,7 @@ export async function verifyWindowsPrivateFileAcl(filepath){
   "}",
   "if(-not $hasRead){exit 26}",
   "Write-Output 'ACL_OK'"
- ].join(';');
+ ].join('\n');
  try{
   const {stdout}=await runFile('powershell.exe',
    ['-NoProfile','-NonInteractive','-Command',ps],
