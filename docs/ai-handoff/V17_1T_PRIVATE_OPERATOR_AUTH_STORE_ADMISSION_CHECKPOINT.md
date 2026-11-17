@@ -41,3 +41,20 @@ Official Auth documentation: https://supabase.com/docs/reference/javascript/auth
 - These tests are still entirely SOURCE-ONLY, with generated QA keys and fake session/owner fixtures. No private real owner keys or sessions have been provided.
 
 CI exact run and results must be appended after verified execution. Hosted real JWT/provider/Commerce admission remains deliberately NO-GO.
+
+
+## Verified independent CI and release receipt — 2026-11-17 JST
+
+**Tested source commit:** `cd6c13ab3784424001ebf51fa4a3ae78adc29003`.
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44074256721.
+
+- **Source job `134008081926` SUCCESS:** `150/150` new V17.1T cryptographic JWT/Ed25519/four-party authorization tests, plus `855/855` inherited V17.1P–V17.1D regressions, **1005/1005 PASS**. Static contract check for no real network/secrets/DB/I/O and hosted admission HOSTED_NO_GO PASS.
+- **Independent disposable PG17 `134008082479` SUCCESS:** same-Tenant synthetic Store A/B RLS test, temp data transaction ROLLBACK and cleanup. Console prints `DISPOSABLE_SAME_TENANT_STORE_A_B_RLS_PASS` with explicit scope `NO_REAL_JWT_NO_COMMERCE_TABLES`.
+- **Hosted real private operator and owner JWT / Meta/Zalo release `134008406762`: FAILURE BY DESIGN**. No genuine two-owner same-Tenant Auth JWT evidence, owner/operator signers or native QA provider signed no-send events. Overall workflow marked failure intentionally as a security release gate.
+- CI initial flaw: duplicate simultaneous requests could both observe JWT receipt unused before asynchronous approver registry lookup; the code was corrected to **consume owner receipts before the first await**. A source gate metadata assertion was reconciled against the actual plan name, without altering access controls. Further source hardening pinned operator approval to a trusted commit SHA and ensured owner consent signer Store/Tenant binding remained unchanged at commit; 3 additional adversarial tests passed.
+- **Real hosted UAT was NOT run.** Current live mapping does not yet provide two eligible owners in a same Tenant; no operator/merchant identity or provider credential was imported, accessed or modified. Source test signatures use ephemeral QA keys only.
+- Owner-sensitive changes remain blocked. Only this GitHub Draft PR may be closed for rollback; there is no production/n8n/Supabase change to restore.
+
+**Disposition:** IMPLEMENTED source-only four-party approval gate / TESTED 1005 source tests and disposable PG17 / REAL OPERATOR+OWNER UAT BLOCKED / PRODUCTION HOSTED NO-GO.
+
+The checkpoint-only documentation commit will create a new SHA; final-HEAD CI must be checked again before final signoff.
