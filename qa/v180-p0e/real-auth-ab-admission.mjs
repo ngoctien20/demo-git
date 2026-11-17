@@ -21,9 +21,12 @@ export function inspectRealAuthAdmission(input){
  const blockers=[];
  if(input==null || typeof input!=='object' || Array.isArray(input))
   return Object.freeze({status:'BLOCKED',blockers:['INVALID_EVIDENCE_CONTAINER'],canMigrate:false,canPublish:false,canSend:false});
- const keysToCheck=[input,input.checks,input.evidence_hashes];
- if(keysToCheck.some(o=>o && typeof o==='object' && Object.keys(o).some(k=>blockedKeys.test(k))))
-  blockers.push('RAW_SECRET_OR_TOKEN_FIELD_PROHIBITED');
+ // Known release-check flag names (e.g. no_service_role_bypass_used) are NOT secret fields.
+ // Unknown secret-like keys are rejected even when nested under checks.
+ const suspicious = Object.keys(input).some(k=>blockedKeys.test(k)) ||
+  [input.checks,input.evidence_hashes].some(o=>o && typeof o==='object' &&
+    Object.keys(o).filter(k=>!baseFlags.includes(k)).some(k=>blockedKeys.test(k)));
+ if(suspicious)blockers.push('RAW_SECRET_OR_TOKEN_FIELD_PROHIBITED');
  if(input.environment!=='PRIVATE_STAGING_NO_SEND')blockers.push('PRIVATE_STAGING_NO_SEND_REQUIRED');
  if(input.project_ref!=='ifxlvrhyjhbzbrkdsida')blockers.push('WRONG_SUPABASE_PROJECT');
  if(!UUID.test(input.tenant_id||''))blockers.push('INVALID_TENANT_ID');
