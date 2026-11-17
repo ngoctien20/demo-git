@@ -1,0 +1,35 @@
+name: TIEN404 V18.0-P0N — Live Browser Anonymous Auth QA (No JWT)
+on:
+  push:
+    branches:
+      - work/supabase-auth-staging-v1
+    paths:
+      - 'tests/v180-p0n-hosted-auth-browser-smoke.py'
+      - '.github/workflows/v180-p0n-anonymous-browser.yml'
+  pull_request:
+    paths:
+      - 'tests/v180-p0n-hosted-auth-browser-smoke.py'
+      - '.github/workflows/v180-p0n-anonymous-browser.yml'
+permissions:
+  contents: read
+jobs:
+  chromium-ux-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned Chromium test runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install playwright==1.58.0
+          python -m playwright install chromium
+      - name: Test real hosted desktop and mobile interface with ONLY synthetic Auth transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/v180-p0n-hosted-auth-browser-smoke.py
+      - name: Explicit safety boundary
+        run: |
+          echo 'REAL_HTTPS_CHROMIUM_UI_ONLY; NO_REAL_AUTH_LOGIN; NO_JWT_OR_PASSWORD; NO_SUPABASE_WRITE; NO_PROVIDER_SEND; NO_STORE_A_B_ADMISSION'
