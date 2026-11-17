@@ -49,3 +49,42 @@ jobs:
           assert "STRUCTURAL_SELF_REPORT_REQUIRES_EXTERNAL_ATTESTATION" in p
           print('PASS: offline-only and immutable HOSTED NO-GO')
           PY
+
+  rpc10-disposable-pg17:
+    name: PG17 disposable six-surface RLS/FK rollback and isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc10_ephemeral_synthetic_only
+          POSTGRES_DB: t404_rpc8_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_RPC8_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_rpc8_ci
+      PGUSER: postgres
+      PGPASSWORD: rpc10_ephemeral_synthetic_only
+      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse any unguarded SQL path in RPC10
+        run: |
+          grep -F -q "RPC10_REFUSES_HOSTED" qa/v152-rpc10/pg17-six-surface-atomic-cutover-disposable-only.sql
+          grep -F -q "RPC10_DISPOSABLE_ONLY" qa/v152-rpc10/pg17-six-surface-fixture.sql
+          grep -F -q "t404_rpc8_ci" qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
+          bash -n qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
+      - name: Actual PostgreSQL 17 six Commerce surfaces, atomic rollback and cross-store denial
+        run: |
+          bash qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
