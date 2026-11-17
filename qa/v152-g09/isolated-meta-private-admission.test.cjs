@@ -261,5 +261,5 @@ test('no private operation may infer live Page ownership from crypto success',as
 });
 test('only one valid DI policy constructor path',()=>{
  assert.throws(()=>createCandidate({}),/G09_PRIVATE_INJECTION_REQUIRED/);
- assert.equal(FIELD_KEYS.length,15);
+ assert.equal(FIELD_KEYS.length,16);
 });
