@@ -27,6 +27,8 @@ jobs:
         run: node --test qa/v1723u/zalo-bot-event-envelope.test.mjs
       - name: Authenticated rejection diagnostics source-only (never hosted)
         run: node --test qa/v1723u/qa-auth-rejection-diagnostic.test.mjs
+      - name: Independent disposable SQLite migration and rollback QA (memory only)
+        run: python3 qa/v1723u/qa_d1_disposable_schema_test.py
       - name: All entrypoints fail closed with missing private credentials
         run: |
           node --input-type=module -e "import {handleDedicatedQaWebhook} from './qa/v1723s/isolated-qa-webhook.mjs'; const r=await handleDedicatedQaWebhook(new Request('https://test.invalid/qa/zalo-bot/NO_REAL_BOT_AND_NO_WEBHOOK',{method:'POST',body:'{}'}),{});if(r.status!==404)process.exit(1);console.log('V1723U_SOURCE_ONLY_DEFAULT_404_PRIVATE_ROUTE_AND_D1_NOT_AUTHORIZED');"
