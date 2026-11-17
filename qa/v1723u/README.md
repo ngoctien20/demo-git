@@ -56,3 +56,24 @@ Track U-C (**Commerce JWT**) remains NO-GO: M0, canonical Store A/B ownership, S
 **BLOCKED:** public/QA-only callback exposure and webhook enrollment until explicit scoped Owner approval, approved private secret handling, time-bounded variables, callback test and rollback. Never use existing staging Bot; avoid exposing the random callback path or shared secrets in public GitHub/ChatGPT.
 
 **Rollback plan:** leave this QA Worker with workers.dev/preview off and no routes; no provider rollback needed because no webhook was changed. Deletion of the isolated D1/Worker is a separate destructive step requiring authorization. Closing Draft PR reverts only source changes, not these new hosted QA resources.
+
+
+## DIAGNOSTIC_POST_WEBHOOK_DELETION — 18 Nov 2026 JST
+
+**Observed and bounded checkpoint**
+- Owner confirms the webhook was removed from the **new QA Zalo Bot** through Bot Creator. This is OWNER-ATTESTED, not independently provider-API-VERIFIED.
+- Cloudflare read-only postflight: dedicated `tien404-v1723u-qa-inbound-locked-staging` has `workers.dev=false`, previews disabled; isolated D1 `qa_canary_once` has **0 receipts**. No new provider requests, no network exposure, no Commerce.
+- An earlier no-token POST returned HTTP 403, proving the exact QA path reached an active Worker and failed secret-header auth. This **does not prove** any Zalo request arrived.
+- Source regression identified and fixed a Cloudflare entrypoint `ExecutionContext`/clock confusion that caused false HTTP 410. Fixed Draft PR #394 source passed the V17.23U and V17.23S GitHub synthetic workflows; source tested != real webhook acceptance.
+- Zalo Bot's official example uses `X-Bot-Api-Secret-Token`, event `message.text.received`, `message.date` as 13-digit milliseconds, `message.chat.chat_type=PRIVATE`, and a string message ID. See https://docs.zaloplatforms.com/docs/BOT/webhook. Do not substitute Zalo OA event contract.
+- The first owner-sent message was not the exact challenge; a subsequent owner-reported exact challenge still produced zero D1 receipts. Unknown whether the latter request reached Cloudflare, failed header authentication, failed a strict event check, or was sent outside the live admission window.
+
+**PROPOSED — private no-content diagnostic before any further provider send**
+1. Keep `workers.dev` and preview **OFF** and Zalo QA webhook **removed** until an independently approved narrow diagnostic is reviewed. Do not send new messages yet. **No** mutations to the old Bot, n8n Published, Commerce, customers or production.
+2. Offline verify all negative QA statuses at the actual Worker runtime entrypoint, including 404 path/mode, 405 method, 410 expired clock, 403 absent/wrong header, 415 content type, 400 malformed JSON, 422 schema/challenge/timestamp, 503 dependency and 200 one-slot-only accepted. Keep test payloads fully synthetic.
+3. For real retry observability, choose *minimally sufficient* Cloudflare aggregate request counters (no URL path / query / request header/body). If further diagnosis is necessary, review a new **opt-in** diagnostic design: only after successful shared-header authentication, store a **bounded fixed-category rejection reason** in an isolated disposable QA table, with no raw payload, timestamp finer than required, token, chat/user ID, message text, Bot API credential or IP address; do not write any diagnostic event for unauthenticated traffic. Use one-slot/strict per-category bounds to prevent uncontrolled usage. Independently review retention, cost and anti-flood before any deployment.
+4. Current endpoint's response codes alone are not a durable audit log: `qa_canary_once=0` says no accepted record, not whether there were rejected requests. Never equate 403 from an operator probe with Zalo's live delivery.
+5. Review Zalo QA webhook registration and token sameness only within private owner UI, without revealing the callback random suffix or tokens. Verify the app's *new QA Bot*, not existing published Bot. Do not activate the webhook or a new 20-minute canary until the diagnostic plan, QA owner, read-only counters and rollback are approved.
+6. After any approved retry, collect exactly one challenge, independently confirm receipt vs rejection category, verify no-send and no Commerce. In all cases disable workers.dev, preview, and test mode, and delete QA Bot webhook; recheck D1. Keep release/prod **NO-GO**.
+
+**State:** `CLOUDFLARE_INGRESS_OFF VERIFIED / D1_ZERO VERIFIED / ZALO_QA_WEBHOOK_DELETED OWNER-ATTESTED / REAL_EVENT_ACCEPTANCE BLOCKED / DIAGNOSTIC_ONLY PROPOSED`.
