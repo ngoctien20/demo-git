@@ -25,6 +25,22 @@ jobs:
         run: |
           node --check qa/v152-rpc10/store-gate.cjs
           node --test qa/v152-rpc10/store-gate.test.cjs
+      - name: RPC10 G0.1 alias canonical authority structural preflight
+        run: |
+          node --check qa/v152-rpc10/alias-bridge-preflight.cjs
+          node --test qa/v152-rpc10/alias-bridge-preflight.test.cjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('qa/v152-rpc10/alias-bridge-preflight.cjs').read_text()
+          for pattern in [r'\bfetch\s*\(', r'\bhttps?\.request\s*\(',
+                          r'\bchild_process\b', r'\bcreateClient\s*\(',
+                          r'\bprocess\.env\b']:
+              assert not re.search(pattern,s),pattern
+          for flag in ('canRelease:false','canResolveRealStore:false','actualOwnerProofAuthenticated:false'):
+              assert flag in s,flag
+          print('RPC10 G0.1 source-only, no hosted authorization')
+          PY
       - name: Assert current baseline is denied, never connected or authorized
         run: |
           node - <<'NODE'
