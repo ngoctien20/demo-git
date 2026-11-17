@@ -34,4 +34,11 @@ The strongest acceptance provided is that **PG17 SQL execution** correctly denie
 
 All new SQL is guarded with **DO_NOT_APPLY** filenames and runs solely inside a disposable GitHub Actions PostgreSQL service. Rollback of source change = close/revert this Draft PR; **no Supabase, Cloudflare, n8n or customer data rollback required**. If a future independently approved hosted migration occurs, establish its own tested inverse procedure and real staging restore proof; neither is granted here.
 
-**Release decision: [IMPLEMENTED SOURCE-ONLY] · [PG17 CI STATUS PENDING UNTIL WORKFLOW SUCCESS] · [REAL SUPABASE JWT UAT NOT TESTED] · [PRODUCTION NO-GO].**
+## Verified independent CI evidence (as of branch checkpoint 7bf70ff)
+
+- [GitHub Push run #44172122119](https://github.com/ngoctien20/demo-git/actions/runs/44172122119): SUCCESS, disposable PostgreSQL **17.12**, all 10 substantive SQL acceptance notices including final fail-closed acceptance, inherited Node security **67/67 PASS**, zero failures.
+- [GitHub Pull Request run #44172132462](https://github.com/ngoctien20/demo-git/actions/runs/44172132462): SUCCESS, same independent actual PostgreSQL acceptance and **67/67 Node PASS**.
+- This provides **real disposable PostgreSQL execution**, **not** a real Supabase Auth JWT/hosted RLS test. Both CI jobs run on ephemeral GitHub services; SQL fixtures do not leave the runner.
+- **Inherited CI workflow anomaly:** `.github/workflows/v152-rpc10-six-surface-nohost.yml` has a pre-existing malformed heredoc in the parent branch, creating FAIL runs with **zero jobs** (GitHub [P1 Issue #397](https://github.com/ngoctien20/demo-git/issues/397)). It has been **restored byte-for-byte** to parent blob `825ce7daeb388f9132831a3ae4dec16d3bbbd73d` in this child branch; no RPC10 ownership or behavior change is part of this PR. Do not claim that the full inherited workflow check suite is green.
+
+**Release decision: [IMPLEMENTED SOURCE-ONLY] · [DISPOSABLE PG17 TESTED PASS] · [REAL SUPABASE JWT UAT NOT TESTED] · [P1 INHERITED RPC10 CI OPEN] · [PRODUCTION NO-GO].**
