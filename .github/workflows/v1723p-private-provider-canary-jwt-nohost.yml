@@ -1,0 +1,31 @@
+name: TIEN404 V17.23P Dedicated Provider Synthetic Canary and Private JWT NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723p/**'
+      - '.github/workflows/v1723p-private-provider-canary-jwt-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-provider-and-private-identity-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_APP_SECRET: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      ZALO_OA_SECRET: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Inherited V17.23N and V17.23O synthetic provider/RPC regression
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs qa/v1723o/v1723o.test.mjs
+      - name: V17.23P Meta/OA/Bot isolated synthetic signed event and replay negative QA
+        run: node --test qa/v1723p/synthetic-provider-canary.test.mjs
+      - name: Cannot convert public self-report or QA fixture into real authority
+        run: |
+          node --input-type=module -e "import {reviewQaInstallationAdmission,SYNTHETIC_MARKER,SyntheticReplayMemory,simulateOneCanary} from './qa/v1723p/synthetic-provider-canary.mjs'; const r=reviewQaInstallationAdmission({provider:'zalo-bot',target:'DEDICATED_DISPOSABLE_QA_INSTALLATION',mode:'PRIVATE_NO_SEND_NO_WRITE',ownerDecision:'PRIVATE_INDEPENDENT_CONSENT_PENDING'});const c=simulateOneCanary({marker:SYNTHETIC_MARKER,operation:'SIMULATE_NO_SEND'},new SyntheticReplayMemory());if(r.canOpenProviderCanary||r.canReadOrder||r.canDeploy||r.canSend||c.canSend||c.realJwtVerified||c.actualNativeProviderEventVerified)process.exit(1);console.log('V1723P_PUBLIC_CI_SYNTHETIC_ONLY_REAL_PROVIDER_OWNER_JWT_NO_GO_NO_SEND');"
