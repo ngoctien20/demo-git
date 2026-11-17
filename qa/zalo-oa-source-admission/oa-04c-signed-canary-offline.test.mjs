@@ -23,7 +23,7 @@ function fixture(){
 function request(f){
  const rawBody=Buffer.from(JSON.stringify(f.event));
  const sig=createHash('sha256').update(f.appId,'utf8')
-  .update(rawBody).update(f.event.timestamp,'utf8').update(f.secret,'utf8').digest('hex');
+  .update(rawBody).update(String(f.event.timestamp),'utf8').update(f.secret,'utf8').digest('hex');
  return {rawBody,headers:{'x-zevent-signature':'mac='+sig,'content-type':'application/json'}};
 }
 async function denied(code,mutate){
