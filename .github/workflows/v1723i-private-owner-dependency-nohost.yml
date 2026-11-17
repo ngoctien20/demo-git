@@ -1,0 +1,27 @@
+name: TIEN404 V17.23I Store Owner and Migration Dependencies NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723i/**'
+      - '.github/workflows/v1723i-private-owner-dependency-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-admission-source-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test all migration prerequisites, injection and fail-closed boundaries
+        run: node --test qa/v1723i/dependency-admission.test.mjs
+      - name: Assert no release or runtime secrets in source-only contract
+        run: |
+          node --input-type=module -e "import {reviewMigrationAdmission} from './qa/v1723i/dependency-admission.mjs'; const r=reviewMigrationAdmission(); if(r.status!=='HOSTED_NO_GO'||r.canApplyM1||r.canRunRealJwt||r.canSend||r.canDeploy) process.exit(1); console.log('V1723I_REAL_AUTH_AND_MIGRATION_BLOCKED');"
