@@ -1,0 +1,35 @@
+name: TIEN404 V18.0-P0O — Hosted Two-Profile Browser Comparison (No JWT)
+on:
+  push:
+    branches:
+      - work/supabase-auth-staging-v1
+    paths:
+      - 'tests/v180-p0o-hosted-auth-compare-browser.py'
+      - '.github/workflows/v180-p0o-hosted-auth-compare.yml'
+  pull_request:
+    paths:
+      - 'tests/v180-p0o-hosted-auth-compare-browser.py'
+      - '.github/workflows/v180-p0o-hosted-auth-compare.yml'
+permissions:
+  contents: read
+jobs:
+  real-https-synthetic-browser-pair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact Auth staging source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned Chromium QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install playwright==1.58.0
+          python -m playwright install chromium
+      - name: Run two-profile real HTTPS QA without real Auth credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/v180-p0o-hosted-auth-compare-browser.py
+      - name: Do not claim independent JWT or Store Authorization
+        run: |
+          echo 'P0O_LIVE_STATIC_BROWSER_UX_ONLY; AUTH_CLIENT_MOCKED; NO_REAL_SESSION; NO_SUPABASE_WRITE; NO_PROVIDER_SEND; PRODUCTION_NO_GO'
