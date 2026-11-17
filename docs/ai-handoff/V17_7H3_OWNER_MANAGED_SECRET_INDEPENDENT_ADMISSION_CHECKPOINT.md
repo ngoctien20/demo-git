@@ -60,3 +60,40 @@ E. Commerce Store A/B real JWT/RLS remains independent under canonical PR #247. 
 - Rollback: close child Draft PR. Preserve both H.2 drafts for review, existing inactive Worker, RPC16, n8n Published and DEMO/Commerce boundaries. Do not delete or rotate credentials automatically.
 
 **Final security checkpoint:** V17_7H3_PARALLEL_H2_RECONCILED__MANAGED_SECRET_MOCK_ONLY__REAL_OWNER_AND_ONE_EVENT_NO_GO.
+
+
+## 7. ADDENDUM — Previously completed real Zalo Bot ingress and gateway getMe evidence, RECOVERED 2026-11-17 JST
+
+The earlier statement "real getMe was never executed" **must be understood as only describing the V17.7H.2/H.3 child code and its offline mock**, NOT the broader TIEN404 project history. It was incomplete as an account of earlier Zalo staging work.
+
+### LIVE PROVIDER INGRESS — VERIFIED via current n8n PII-free QA Data Table (read-only)
+
+- Actual Data Table **TIEN404_ZALO_QA_PROBE_TEMP_20261113**, ID `iu4YwmjRzW1SDGMg`, project `WW82YsCCaAxGC9dp`, currently contains **2** rows for `TIEN404_TEST_08`.
+- 2026-11-13 11:48:50 UTC: `origin=SIMULATED_MANUAL`, `event_type=message.text.received`, `accepted=true`.
+- 2026-11-13 11:51:22 UTC: **`origin=WEBHOOK_PRODUCTION`**, `event_type=message.text.received`, `accepted=true`.
+- Interpretation: PII-free internal QA marker **supports that the existing Zalo Bot production webhook accepted a provider-routed inbound test**, separate from the simulated row. This is a database-recorded event, NOT a cryptographic independent proof of every native header, nor real tenant/store scope.
+- Existing active Zalo Bot workflow `yIJk8LvJoLF40Z62`, exact currently inspected version `2d912cb0-007f-452f-9536-b92ba12a03e6`, includes `Zalo Bot Webhook (Protected)`, `Ack Zalo (No Message Sent)`, and **two DataTable UPSERT nodes** for QA markers. It must NOT be represented as an absolute No-Write ingress; the marker writes are intentional. This workflow was NOT edited or triggered in this reconciliation.
+
+### PRIOR getMe READ-ONLY GATEWAY — VERIFIED via 4 n8n execution readbacks (read-only)
+
+- Existing inactive workflow `TIEN404_V145Z_LIVE01_BOT_READONLY_PREFLIGHT_NO_SEND`, ID `xayBLEyUwd64mcLK`, version `6bf96508-60f6-480a-a5c4-aa8012992a43`, has Manual Trigger → HTTP POST **Zalo getMe via existing locked Gateway** (existing credential reference) → **Sanitize Bot check and enforce no send**.
+- Four prior manual executions directly read back: `3843` (2026-11-15 15:17 UTC), `3854` (16:31 UTC), `3869` (19:28 UTC), `3875` (20:05 UTC), all SUCCESS.
+- The **sanitized node output of each execution**, not merely workflow status, reports: `result=ZALO_GETME_READONLY_CONFIRMED`, `http_status=200`, `bot_token_valid=true`, `provider_sends=0`, `orders_written=0`, `webhook_changed=false`.
+- All four **also** state `bot_shop_binding_verified=false`, `owner_recipient_binding_verified=false`, `live_uat_ready=false`.
+- Security interpretation: this proves a **prior successful read-only TIEN404 locked-gateway Bot-token preflight**, not that a separately authenticated human currently owns the Bot, nor that Zalo directly signed an independent owner proof. Because the HTTP target is an **existing TIEN404 gateway**, not a separately inspected direct official Zalo API session in this phase, label `GATEWAY_GETME_READONLY_VERIFIED` rather than `INDEPENDENT_NATIVE_BOT_CREATOR_OWNER_VERIFIED`.
+- The earlier reported `getWebhookInfo` execution `3823` was **NOT re-located by current workflow-ID-scoped execution lookups**. It is historical reported evidence only, **not newly VERIFIED** in this addendum. Do not guess its workflow ID or replay an existing Bot webhook to re-create proof.
+
+### BOT CREATOR SCREENSHOTS — preserved without reupload
+
+- User-supplied mobile Bot Creator UI/QR/Deeplink images from November 13–14 and user-provided Bot Creator screenshot evidence in sibling Draft PR #360 already exist as prior conversation evidence. The #360 redacted screenshot SHA `da459617e310e2341eb7f27430b8c6e0c6fe3f745560ab54e2be771b74b54258` is retained and not recreated.
+- Previously observed QR/Deeplink points at `zalo.me/3417151977437872773`; **DO NOT infer this is the native getMe result ID without an independent provider readback**. No token, QR-bearing private authorization, identity data, or raw screenshot bytes are introduced into this PR.
+- No need to ask the user to repeat all screenshots or create another Bot merely for lack of historical context. The existing Bot can be preserved; a disposable QA Bot is needed only if isolation of real callback tests cannot otherwise be guaranteed.
+
+### REVISED V17.7H REAL GO/NO-GO
+
+- **VERIFIED (past, read-only inspected now)**: inbound Zalo Bot TEST_08 accepted QA marker from production webhook; 4 locked-gateway getMe preflight outputs with HTTP 200 and `bot_token_valid=true`, 0 sends/writes to Orders in those particular executions.
+- **STILL NO-GO**: present private Bot Creator owner/admin role via trusted issuer, confirmed actual Bot ID matching gateway output, Bot-to-Store installation authority, independent QA operator/reviewer, authenticated Store A/B JWT/RLS, hosted durable replay, one-event external zero-send + zero-Commerce-write end-to-end.
+- **No work repeated**: no additional provider API calls, messages, credential read, active n8n executions, Cloudflare Worker deploy or DB mutation in this addendum.
+- **NEXT (evidence reuse)**: perform a **read-only owner/Store binding admission** against the existing Bot identity and trusted staging registry; scope any later isolated signed one-event UAT to an approved disposable Bot/installation. Do not overwrite the existing webhook or share DEMO/Commerce credentials.
+
+This addendum supersedes blanket "never tested real Zalo" language, while preserving **REAL OWNER / REAL STORE JWT / REAL NEW CANARY = NO-GO**.
