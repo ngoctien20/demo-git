@@ -70,7 +70,7 @@ test('Worker route matched denied',()=>checkInactive('UNEXPECTED_PUBLIC_WORKER_R
 test('Worker custom domain matched denied',()=>checkInactive('UNEXPECTED_PUBLIC_WORKER_ROUTE_OR_DOMAIN',f=>{f.domains.push({service:f.expected.scriptName})}));
 test('Access app absent denied',()=>checkInactive('DEDICATED_ACCESS_APP_NOT_UNIQUELY_BOUND',f=>{f.accessApps=[]}));
 test('two Access apps for same worker denied',()=>checkInactive('DEDICATED_ACCESS_APP_NOT_UNIQUELY_BOUND',f=>{f.accessApps.push({...f.accessApps[0]})}));
-test('preview-only Access insufficient',()=>checkInactive('DEDICATED_ACCESS_APP_NOT_UNIQUELY_BOUND',f=>{f.accessApps[0].destinations[0].type='preview_worker'}));
+test('preview-only Access insufficient',()=>checkInactive('ACCESS_API_POLICY_NOT_STRICTLY_PINNED',f=>{f.accessApps[0].destinations[0].type='preview_worker'}));
 test('bypass Access policy denied',()=>checkInactive('ACCESS_API_POLICY_NOT_STRICTLY_PINNED',f=>{f.accessApps[0].policies[0].decision='bypass'}));
 test('existing Pages staging Access cannot be used',()=>checkInactive('DEDICATED_ACCESS_APP_NOT_UNIQUELY_BOUND',f=>{f.accessApps[0].destinations=[{type:'public',uri:'*.tien404-ai-git-staging.pages.dev'}]}));
 test('invented worker ID not permitted',()=>checkInactive('MISSING_TRUSTED_ISOLATED_WORKER_EXPECTATION',f=>{f.expected.workerId='fake-id'}));
