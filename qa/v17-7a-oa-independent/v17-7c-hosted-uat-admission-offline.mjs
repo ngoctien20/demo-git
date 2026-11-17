@@ -82,7 +82,8 @@ export function inspectPrivateUatReceipt(receipt,expected){
   if(Object.keys(receipt).some(k=>!allowed.includes(k)||
     SENSITIVE_KEYS.test(k)))
     return deny('SENSITIVE_OR_UNTRUSTED_EVIDENCE_FIELD');
-  if(receipt.workflowId!==CUSTOMERS[receipt.channel].workflowId||
+  if(!/^[a-f0-9]{8}-[a-f0-9-]{27,40}$/i.test(expected.pinnedWorkflowVersion??'')||
+    receipt.workflowId!==CUSTOMERS[receipt.channel].workflowId||
     receipt.workflowVersion!==expected.pinnedWorkflowVersion)
     return deny('WORKFLOW_ID_OR_VERSION_DRIFT');
   if(!REFERENCE.test(receipt.caseRef??'')||
