@@ -101,3 +101,24 @@ PENDING: GitHub CI 57 independent QA snapshot tests + 630 inherited source tests
 
 NO production chat webhook modifications, no customer contact, order mutation, payment change, real model or Vision spending, credential change, public deploy or GitHub merge.
 Rollback: close child Draft PR; leave the separate inactive QA workflow untouched. Archive only after explicit authorization. SQL temporary tables and policies were rolled back, so no Supabase data/schema rollback is required.
+
+
+## 7. VERIFIED GitHub and PostgreSQL release evidence — 2026-11-17 JST
+
+Source HEAD tested: 4efe7a641771460097c40c9e4a70ae9648ed2f3e
+GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44036877710
+
+- Independent source job 133881773957 SUCCESS: 57/57 new V17.1N shadow snapshot, fake Messenger HMAC/Zalo signature, spoofed Store and owner, denied write/send, replay and mutation tests PASS. Inherited 630/630 V17.1M–V17.1D source tests PASS. **687/687 total source tests, zero failures**. Static inspection confirms no external HTTP/AI/DB/credential nodes in the staging shadow.
+- Dedicated disposable PostgreSQL 17 CI job 133881773223 SUCCESS: synthetic authenticated role in a throwaway PG17 service; checked-in RLS transaction returned DISPOSABLE_SAME_TENANT_STORE_A_B_RLS_PASS; ROLLBACK completed; database temporary table count zero. This is independent of the n8n test evaluator.
+- Real provider and hosted JWT release job 133881999959 **intentionally FAILURE**: no independent Page/OA owner secret/binding or real Auth JWT/Commerce Store/OrderAccessGrant evidence. Overall workflow conclusion FAILURE is deliberate NO-GO, not source/PostgreSQL QA failure.
+- In actual tien404-staging Supabase, read-only pg_catalog.pg_class query returned leftover_disposable_table_count=0 after the staging rollback.
+- Manual n8n final shadow execution 4950 SUCCESS, 144/144 PASS (132 DENY, 8 simulated READ plans, 4 simulated order PROPOSALS), exact workflow version 4635bed6-a274-4f8a-902b-0bbd39aa9221 and INACTIVE.
+- Historical real Messenger execution signature-node booleans were VERIFIED=true for executions 4762, 4754, 4746 and 4544, without accessing App Secret or raw customer messages. This is not independent native signed provider authority.
+
+**Verdict:** V17.1N SOURCE IMPLEMENTED / N8N STAGING TESTED / DISPOSABLE PG17 RLS TESTED / ACTUAL SUPABASE RLS METADATA INSPECTED / PRODUCTION SECURITY RELEASE NO-GO.
+
+**Remaining P0:** authorized real Meta/Zalo Page/OA signed no-send callback; real independent Auth JWT + trusted same-Tenant Store A/B RLS; OrderAccessGrant and atomic server-side tool authorization before production model tools; merchant image quarantine/antivirus/sandbox; privileged anonymous callable SECURITY DEFINER RPC review.
+
+Rollback: close child Draft PR #282; new n8n QA workflow remains INACTIVE (archive only upon explicit separate approval); original Messenger, Zalo, existing credentials and Commerce customer data untouched. SQL fixture transaction already rolled back.
+
+Documentation-only commit changes the branch head; recheck final GitHub CI on this exact SHA.
