@@ -137,31 +137,7 @@ try {
     if ($separator -lt 1) { continue }
     $key = $raw.Substring(0,$separator)
     $value = $raw.Substring($separator+1)
-    if ($key -notmatch '^[A-Za-z][A-Za-z0-9]*
-    if ($value -notmatch '^[A-Za-z0-9_+-]{0,100}$') { continue }
-    if ($allowed -contains $key) { $summary[$key] = $value }
-  }
-  if ($summary["receiptSavedLocally"] -ne "true" -or
-      $summary["m0Approved"] -ne "false" -or
-      $summary["m1Authorized"] -ne "false") {
-    Write-Output ("CBOT08_SAFE_RECEIPT_FIELD_COUNT=" + $summary.Count)
-    Stop-Safely "RPC7_READ_ONLY_RECEIPT_NOT_CONFIRMED"
-  }
-  Write-Output "CBOT08_RESULT=LOCAL_ARCHIVE_INSPECTED_NOT_CERTIFIED"
-  foreach ($key in $allowed) {
-    if ($summary.ContainsKey($key)) {
-      Write-Output ("CBOT08_" + $key + "=" + $summary[$key])
-    }
-  }
-  Write-Output "CBOT08_PRIVATE_RESTORE_WITNESSED=false"
-  Write-Output "CBOT08_M0_ACCEPTED=false"
-  Write-Output "CBOT08_HOSTED_MIGRATION_AUTHORIZED=false"
-  Write-Output "CBOT08_NEXT=INDEPENDENT_PRIVATE_AUTH_STORAGE_ACL_OFFHOST_RESTORE"
-} catch {
-  # Do NOT echo raw exception (may contain local path, script line, input hash).
-  Stop-Safely "LOCAL_ARCHIVE_INSPECTION_BLOCKED"
-}
-) { continue }
+    if ($key -notmatch '^[A-Za-z][A-Za-z0-9]*$') { continue }
     if ($value -notmatch '^[A-Za-z0-9_+-]{0,100}$') { continue }
     if ($allowed -contains $key) { $summary[$key] = $value }
   }
