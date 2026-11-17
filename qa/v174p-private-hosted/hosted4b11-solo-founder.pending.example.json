@@ -1,0 +1,57 @@
+{
+  "contract": "T404_V174P_HOSTED4B11_SOLO_FOUNDER_READINESS_PENDING_V1",
+  "governance": {
+    "role_model": "OWNER_AND_FINANCE_SAME_REAL_HUMAN",
+    "user_stated_permission": "LOCAL_STAGING_SOURCE_QA_DELEGATED_IN_CHAT",
+    "user_stated_permission_cryptographically_authenticated": false,
+    "independent_human_finance_available": false,
+    "independent_human_auditor_available": false,
+    "fabricated_separate_human_signers": false,
+    "compensating_controls": [
+      "PINNED_LOCAL_SIGNED_CHALLENGE_MATH",
+      "IN_MEMORY_REPLAY_TESTS_ONLY",
+      "EXACT_HEAD_GITHUB_ACTIONS",
+      "NO_DEPLOY_HARD_BLOCK",
+      "FRESH_ACCOUNT_READ_ONLY_AUDIT",
+      "NO_PRODUCTION_OR_CUSTOMER_WRITES"
+    ],
+    "real_session_identity_binding_verified": false
+  },
+  "cloudflare_get_only": {
+    "observed_at_utc": "2026-11-17T12:52:51.188Z",
+    "workers": "30/30",
+    "scripts": "30/30",
+    "durable_object_namespaces": "3/3",
+    "accepted_superadmin_members": 1,
+    "access_apps": 2,
+    "private_ledger_exists": false,
+    "qa_issuer_exists": false,
+    "billing_spend_policies_http_status": 403,
+    "billing_usage_http_status": 403,
+    "finance_cost_approval_verified": false
+  },
+  "local_readiness": {
+    "signed_challenge_mathematical_tests_expected": true,
+    "test_owner_key_pinned_by_qa_fixture_only": true,
+    "private_external_identity_registry_real": false,
+    "private_browser_hosted_uat_real": false,
+    "durable_hosted_nonce_ledger_real": false,
+    "user_direct_billing_ui_cost_approval_real": false,
+    "source_phase": "LOCAL_QA_ONLY_NO_DEPLOY",
+    "source_qa_completion": "PENDING_CI"
+  },
+  "cost_and_release": {
+    "positive_usd_budget_approved": null,
+    "account_wide_workers_do_spend_cap_confirmed": false,
+    "independent_cost_risk_acceptance_real": false,
+    "authenticated_owner_mfa_for_this_change_verified": false,
+    "can_create_hosted_ledger": false,
+    "can_upload_qa_worker": false,
+    "can_create_access_policy": false,
+    "can_modify_billing": false,
+    "can_upload_real_documents": false,
+    "can_write_commerce": false,
+    "can_send_messenger_or_zalo": false,
+    "decision": "HARD_NO_GO_HOSTED_LOCAL_QA_ALLOWED"
+  }
+}
