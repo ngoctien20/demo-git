@@ -1,0 +1,86 @@
+name: TIEN404 RPC17.8B — Owner Scope Preflight × Disposable Restore Drill (NO HOST)
+on:
+  push:
+    branches:
+      - work/v152-rpc178b-owner-preflight-restore-drill-nohost-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc178b/**'
+      - 'docs/ai-handoff/T404_RPC178B_*'
+      - '.github/workflows/v152-rpc178b-restore-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  disposable-pg17-restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rpc178b_synthetic_ci_only
+          POSTGRES_DB: rpc178b_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpc178b_disposable"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: rpc178b_disposable
+      PGUSER: postgres
+      PGPASSWORD: rpc178b_synthetic_ci_only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New immutable scope and approval-negative tests
+        run: |
+          node --check qa/v152-rpc178b/immutable-preflight.mjs
+          node --test qa/v152-rpc178b/immutable-preflight.test.mjs
+      - name: Rehearse candidate private schema, ACL and disposable backup restore
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;'
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/private-schema-candidate.sql
+          psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/disposable-private-schema-assertions.sql
+          pg_dump --no-owner --no-privileges --schema=rpc178_qa --format=plain --file=/tmp/rpc178b_private_restore.sql
+          sha256sum /tmp/rpc178b_private_restore.sql
+          psql -X -v ON_ERROR_STOP=1 -c 'DROP SCHEMA rpc178_qa CASCADE;'
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/rpc178b_private_restore.sql
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$DECLARE n integer;BEGIN SELECT count(*) INTO n FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace WHERE ns.nspname='rpc178_qa' AND c.relkind='r' AND c.relrowsecurity AND c.relforcerowsecurity; IF n<>4 THEN RAISE EXCEPTION 'RLS restore failed: %',n;END IF; RAISE NOTICE 'RPC178B PASS: four RLS + FORCE RLS restored';END\$\$;"
+          psql -X -v ON_ERROR_STOP=1 -c "DO \$\$BEGIN IF (SELECT count(*) FROM rpc178_qa.products)<>1 THEN RAISE EXCEPTION 'data restore mismatch'; END IF; RAISE NOTICE 'RPC178B PASS: synthetic data restored';END\$\$;"
+          if psql -X -v ON_ERROR_STOP=1 -c 'SET ROLE authenticated; SELECT * FROM rpc178_qa.products LIMIT 1;' >/dev/null 2>&1; then
+            echo 'FAIL: restored QA access leaked'
+            exit 1
+          fi
+          echo 'RPC178B PASS: restored private schema denies authenticated'
+          psql -X -v ON_ERROR_STOP=1 -c "SELECT count(*) AS restored_data_rows FROM rpc178_qa.products;"
+      - name: Inherited RPC17.8A–RPC13 source security regressions
+        run: |
+          node --test qa/v152-rpc178a/migration-admission.test.mjs
+          node --test qa/v152-rpc178/private-readonly-uat.test.mjs
+          node --test qa/v152-rpc177/private-ownership-proof.test.mjs
+          node --test qa/v152-rpc177/real-auth-ab-uat-gate.test.mjs
+          node --test qa/v152-rpc176/private-auth-admission.test.mjs
+          node --test qa/v152-rpc175/canonical-store-authority.test.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Keep RPC16 worker private and fail closed
+        run: |
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          node --input-type=module -e "import {liveNoSendDecision} from './qa/v152-rpc178b/immutable-preflight.mjs';const x=liveNoSendDecision();if(x.can_apply_migration||x.can_send||x.can_open_access)process.exit(1)"
