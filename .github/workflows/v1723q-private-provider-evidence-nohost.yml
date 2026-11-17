@@ -1,0 +1,31 @@
+name: TIEN404 V17.23Q Real Bot Readonly Evidence and Private Provider NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723q/**'
+      - '.github/workflows/v1723q-private-provider-evidence-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-provider-evidence-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_APP_SECRET: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      ZALO_OA_SECRET: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Previous N O P synthetic and fail-closed security regression
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs qa/v1723o/v1723o.test.mjs qa/v1723p/synthetic-provider-canary.test.mjs
+      - name: V17.23Q independently signed evidence structural consistency and authority denial
+        run: node --test qa/v1723q/private-provider-evidence.test.mjs
+      - name: Never authorize real Provider, JWT or send based on read-only getMe or caller keys
+        run: |
+          node --input-type=module -e "import {REAL_GETME_OBSERVATION,classifyRealGetMeObservation,checkDetachedPrivateReceipt} from './qa/v1723q/private-provider-evidence.mjs'; const r=classifyRealGetMeObservation(REAL_GETME_OBSERVATION),p=checkDetachedPrivateReceipt();if(r.canStartPrivateCanary||r.dedicatedQaBotOwnershipAccepted||r.canSend||p.canStartCanary||p.canUseJwt||p.canSetWebhook||p.canReadOrder||p.canDeploy)process.exit(1);console.log('V1723Q_REAL_GETME_OBSERVED_PROVIDER_OWNER_NOT_ATTESTED_SIGNED_INGRESS_JWT_NO_GO');"
