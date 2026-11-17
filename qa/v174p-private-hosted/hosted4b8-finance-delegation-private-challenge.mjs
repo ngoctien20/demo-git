@@ -24,7 +24,7 @@ const ownerFields=['contract','account_id','phase','target_worker','owner_subjec
  'claim_hard_invoice_cap'].sort();
 const challengeFields=['contract','account_id','delegation_sha256','nonce',
  'owner_subject_sha256','finance_subject_sha256','owner_session_sha256',
- 'finance_session_sha256','owner_auth_at','finance_auth_at','mfa_method',
+ 'finance_session_sha256','owner_auth_at','finance_auth_at','owner_mfa_method','finance_mfa_method',
  'audience','phase','issued_at','expires_at','ledger_receipt_sha256'].sort();
 const receiptFields=['contract','nonce_sha256','delegation_sha256','status',
  'issued_at','expires_at','ledger_instance_sha256'].sort();
@@ -140,10 +140,14 @@ export function reviewDelegationAndChallenge({
   hash(c.owner_session_sha256)&&hash(c.finance_session_sha256)&&
   c.owner_session_sha256!==c.finance_session_sha256&&
   c.audience==='t404:private:finance-delegation-review'&&
-  c.mfa_method==='phishing_resistant'&&
+  c.owner_mfa_method==='phishing_resistant'&&
+  c.finance_mfa_method==='phishing_resistant'&&
   typeof c.nonce==='string'&&/^[a-f0-9]{64}$/.test(c.nonce)&&c.nonce!==d.nonce);
  assert('fresh_challenge_and_both_recent_MFA_sessions',
   fresh(c.issued_at,c.expires_at,now,120)&&
+  iso(d.issued_at)&&iso(d.expires_at)&&
+  Date.parse(c.issued_at)>=Date.parse(d.issued_at)&&
+  Date.parse(c.expires_at)<=Date.parse(d.expires_at)&&
   iso(c.owner_auth_at)&&iso(c.finance_auth_at)&&
   Date.parse(c.owner_auth_at)<=now&&Date.parse(c.finance_auth_at)<=now&&
   now-Date.parse(c.owner_auth_at)<=300000&&
@@ -156,10 +160,13 @@ export function reviewDelegationAndChallenge({
   checkSignature(c,sig.finance_response,t.finance,'FINANCE_CHALLENGE_RESPONSE'));
  assert('strict_nonce_reservation_fields',hasFields(nr,receiptFields));
  assert('nonce_receipt_binds_challenge_not_expired',
-  nr.contract===CONTRACT&&nr.status==='RESERVED_LOCAL_OR_PRIVATE_LEDGER'&&
+  nr.contract===CONTRACT&&nr.status==='SYNTHETIC_RECEIPT_NOT_HOSTED_PROOF'&&
   nr.nonce_sha256===sha(c.nonce)&&nr.delegation_sha256===digest(d)&&
   hash(nr.ledger_instance_sha256)&&
   fresh(nr.issued_at,nr.expires_at,now,120)&&
+  iso(c.issued_at)&&iso(c.expires_at)&&
+  Date.parse(nr.issued_at)>=Date.parse(c.issued_at)&&
+  Date.parse(nr.expires_at)<=Date.parse(c.expires_at)&&
   c.ledger_receipt_sha256===digest(nr));
  assert('independent_signed_nonce_reservation',
   checkSignature(nr,sig.challenge_ledger,t.challenge_ledger,'CHALLENGE_LEDGER_RESERVATION'));
@@ -175,6 +182,24 @@ export function reviewDelegationAndChallenge({
   s.durable_objects?.count===s.durable_objects?.total_count&&
   Array.isArray(s.workers?.entries)&&
   !s.workers.entries.includes(LEDGER)&&!s.workers.entries.includes(WORKER));
+ const wn=s.workers?.entries,sc=s.scripts?.entries,ns=s.durable_objects?.entries;
+ const protectedDo=[
+  ['tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
+   'tien404-v175e2-durable-replay-nosend-staging','ReplayBucket'],
+  ['tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults',
+   'tien404-v175e2a-private-hosted-runner-nosend-staging','RunnerResults'],
+  ['tien404-v1721h2-zalo-replay-private-nosend-staging_ZaloBotReplayBucketV2',
+   'tien404-v1721h2-zalo-replay-private-nosend-staging','ZaloBotReplayBucketV2']
+ ];
+ assert('protected_parallel_workers_do_and_script_integrity',
+  Array.isArray(wn)&&Array.isArray(sc)&&Array.isArray(ns)&&
+  wn.length===s.workers?.count&&sc.length===s.scripts?.count&&
+  ns.length===s.durable_objects?.count&&
+  new Set(wn).size===wn.length&&
+  JSON.stringify([...wn].sort())===JSON.stringify([...sc].sort())&&
+  protectedDo.every(([name,script,klass])=>ns.some(x=>
+    x.name===name&&x.script===script&&x.class===klass))&&
+  !ns.some(x=>String(x.name).includes(LEDGER)||String(x.name).includes(WORKER)));
  assert('snapshot_fresh_and_exact_inventory_hash',
   Number.isSafeInteger(s.capture_time_ms)&&s.capture_time_ms<=now&&
   now-s.capture_time_ms<=60000&&
