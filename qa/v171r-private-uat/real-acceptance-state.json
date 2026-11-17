@@ -1,0 +1,31 @@
+{
+  "phase": "V17.1R_EPHEMERAL_RECEIPT_OWNER_CANARY_HARDENING",
+  "parentPr": 293,
+  "parentPublishedLive": {
+    "messengerWorkflowId": "Z7FdV7uDvApfbURQ",
+    "messengerVersion": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+    "zaloWorkflowId": "yIJk8LvJoLF40Z62",
+    "zaloVersion": "2d912cb0-007f-452f-9536-b92ba12a03e6"
+  },
+  "hostedSupabaseSameTenantTwoDistinctStoreOwners": false,
+  "hostedTwoIndependentRealAuthJwts": false,
+  "hostedRealMetaSignedOwnerCanary": false,
+  "hostedRealZaloSignedOwnerCanary": false,
+  "hostedStoreScopedCommerceRls": false,
+  "hostedIndependentCustomerOrderGrant": false,
+  "hostedRealProviderNoSend": false,
+  "securityFixes": [
+    "unique_jwk_kid_required",
+    "auth_claims_not_returned",
+    "opaque_receipt_ttl_60s",
+    "single_use_provider_receipt",
+    "single_use_owner_receipt",
+    "consume_order_receipt_before_async_grant",
+    "consume_canary_pair_before_store_match"
+  ],
+  "sourceOnly": true,
+  "liveModificationApproved": false,
+  "realCustomerDataAccess": false,
+  "productionReleaseApproved": false,
+  "release": "HOSTED_NO_GO"
+}
