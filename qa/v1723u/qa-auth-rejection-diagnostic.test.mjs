@@ -9,6 +9,10 @@ const secret='FAKE_ONLY_WEBHOOK_SHARED_HEADER_SECRET_123456';
 const pepper='FAKE_ONLY_DIAGNOSTIC_PEPPER_1234567890';
 const challenge='TIEN404-QA-FAKE-CHALLENGE-1234567890';
 const SQL="INSERT OR IGNORE INTO qa_auth_rejection_once(reason) VALUES (?)";
+function fakeRateLimiter({allowed=true,throwError=false}={}){
+ const keys=[];
+ return {keys, async limit({key}){keys.push(key);if(throwError)throw Error('LIMITER_UNAVAILABLE');return {success:allowed};}};
+}
 const REASONS=new Set(['CONTENT_TYPE','BODY_SIZE','BODY_PARSE','ENVELOPE',
  'EVENT_KIND','MESSAGE_SHAPE','CHALLENGE','EVENT_TIME']);
 const valid={event_name:'message.text.received',message:{
@@ -41,6 +45,7 @@ function fakeDb({diagnosticsError=false}={}){
 }
 function env(db,diagMode='OWNER_SCOPED_AUTH_REJECTION_ONCE'){
  return {QA_CANARY_MODE:'OWNER_SCOPED_PRIVATE_NO_SEND_ONCE',QA_CALLBACK_PATH:route,
+  QA_DIAG_RATE_LIMITER:fakeRateLimiter(),
   QA_START_MS:String(now-30000),QA_END_MS:String(now+30000),
   QA_HEADER_SECRET:secret,QA_EVENT_PEPPER:pepper,QA_CHALLENGE:challenge,
   QA_EVENT_DB:db,...(diagMode===null?{}:{QA_DIAG_MODE:diagMode})};
@@ -139,4 +144,46 @@ test('diagnostic not yet on hosted: no outbound messages, no Commerce access in 
  const r=await handleDedicatedQaWebhook(request({contentType:'text/plain'}),e,now);
  assert.equal(r.status,415);
  assert.deepEqual([...db.diagnoses],['CONTENT_TYPE']);
+});
+
+test('no limiter binding skips diagnostic SQL while preserving 422 and no PII',async()=>{
+ const db=fakeDb(),settings=env(db);
+ delete settings.QA_DIAG_RATE_LIMITER;
+ const r=await handleDedicatedQaWebhook(request({payload:{...valid,message:{...valid.message,text:'INVALID'}}}),settings,now);
+ assert.equal(r.status,422);
+ assert.equal(db.attempts.length,0);
+ assert.equal(db.accepted.size,0);
+});
+for(const scenario of [{allowed:false},{throwError:true}]){
+ test('rate limiter unavailable or exhausted skips D1, preserves denial status '+JSON.stringify(scenario),async()=>{
+  const db=fakeDb(),settings=env(db);
+  const gate=fakeRateLimiter(scenario);
+  settings.QA_DIAG_RATE_LIMITER=gate;
+  const r=await handleDedicatedQaWebhook(request({payload:{...valid,message:{...valid.message,text:'WRONG'}}}),settings,now);
+  assert.equal(r.status,422);
+  assert.equal(await r.text(),'');
+  assert.deepEqual(gate.keys,['qa-v1723u-auth-diagnostic']);
+  assert.equal(db.attempts.length,0);
+ });
+}
+test('unauthenticated request never calls limiter or D1',async()=>{
+ const db=fakeDb(),settings=env(db);
+ const gate=fakeRateLimiter();
+ settings.QA_DIAG_RATE_LIMITER=gate;
+ const r=await handleDedicatedQaWebhook(request({header:null}),settings,now);
+ assert.equal(r.status,403);
+ assert.equal(gate.keys.length,0);
+ assert.equal(db.attempts.length,0);
+});
+test('one fixed limiter bucket only after authentication, never token or PII key',async()=>{
+ const db=fakeDb(),settings=env(db),gate=fakeRateLimiter();
+ settings.QA_DIAG_RATE_LIMITER=gate;
+ for(const wrong of ['WRONG_A','WRONG_B']){
+  const r=await handleDedicatedQaWebhook(request({payload:{...valid,message:{...valid.message,text:wrong}}}),settings,now);
+  assert.equal(r.status,422);
+ }
+ assert.deepEqual(gate.keys,['qa-v1723u-auth-diagnostic','qa-v1723u-auth-diagnostic']);
+ assert.equal(db.diagnoses.size,1);
+ for(const privateValue of [secret,challenge,'FAKE_USER_ID','FAKE_CHAT_ID'])
+  assert.ok(!gate.keys.join('').includes(privateValue));
 });
