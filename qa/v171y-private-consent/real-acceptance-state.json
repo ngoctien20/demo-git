@@ -1,0 +1,60 @@
+{
+  "version": "V17.1Y_PRIVATE_ACCESS_CANARY_R2_PREFIX_QA_OWNER_CONSENT",
+  "date": "2026-11-17",
+  "parentDraftPr": 359,
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "realReadOnlyEvidence": {
+    "exactBucket": "tien404-merchant-evidence-quarantine-staging",
+    "queriedPrefix": "qa-v171x-disposable/",
+    "r2ObjectsReturned": 0,
+    "r2HasMore": false,
+    "prefixEmptyAtReadTime": true,
+    "r2ObjectPayloadsFetched": false,
+    "prefixRecheckBeforeAnyLifecycleWriteRequired": true,
+    "existingWorkerPresent": true,
+    "workerWorkersDevDisabled": true,
+    "workerPreviewDisabled": true,
+    "noMatchingWorkerCustomDomain": true,
+    "accessAppPresent": true,
+    "accessAppPoliciesReturned": 0,
+    "externalDeniedProtectedCanaryRun": false,
+    "externalAuthorizedOperatorCanaryRun": false,
+    "existingR2ObjectExpirationRuleCount": 0,
+    "existingMultipartAbortMaxAgeSeconds": 604800,
+    "durableWorkerReplayBindingProven": false,
+    "ownerPairSameTenantCount": 0,
+    "independentAuthSessionPairSameTenantCount": 0,
+    "storeRlsCorePoliciesCount": 0
+  },
+  "realHumanConsent": {
+    "verifiedFounderPrivateMfaSigner": false,
+    "independentSecurityReviewer": false,
+    "signedScopedOperatorPermission": false,
+    "twoIndependentRealMerchantOwnerProofs": false,
+    "twoDisposableRealAuthUserSessions": false
+  },
+  "proposedOnly": {
+    "canaryMode": "PREPARE_ONLY",
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "requestCap": 4,
+    "target": "EXISTING_PROTECTED_PRIVATE_QA_ROUTE_ONLY",
+    "publicRouteCreationApproved": false,
+    "r2LifecycleChangeApproved": false,
+    "realQaAccountProvisioningApproved": false,
+    "maxAddedSpendAuthorizedUsd": 0
+  },
+  "sourceOnly": true,
+  "newSourceTests": 40,
+  "inheritedSourceTests": 1185,
+  "actualCloudflareMutations": 0,
+  "actualSupabaseAuthUsersCreated": 0,
+  "actualTenantStoreMembershipChanges": 0,
+  "actualR2ObjectWrites": 0,
+  "actualCustomerMessages": 0,
+  "actualProviderWebhooksSent": 0,
+  "liveReleaseApproved": false,
+  "release": "HOSTED_NO_GO"
+}
