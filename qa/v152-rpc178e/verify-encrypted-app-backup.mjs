@@ -10,7 +10,7 @@ import {createHash} from 'node:crypto';
 import {createReadStream,existsSync,readFileSync,statSync} from 'node:fs';
 import {isAbsolute,resolve,dirname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {PROJECT,SCHEMAS} from './stream-encrypted-app-backup.mjs';
+import {PROJECT,SCHEMAS,REPO_ROOT} from './stream-encrypted-app-backup.mjs';
 
 const deny=reason=>Object.freeze({status:'BLOCKED',reason,
   can_restore_live:false,can_migrate:false,can_send:false,
@@ -26,7 +26,7 @@ const fileHash=path=>new Promise((done,fail)=>{
  s.on('data',chunk=>hash.update(chunk));s.on('error',fail);
  s.on('end',()=>done(hash.digest('hex')));
 });
-export function validateArchiveLocation({archive,identity,repoRoot=process.cwd()}={}){
+export function validateArchiveLocation({archive,identity,repoRoot=REPO_ROOT}={}){
  if(typeof archive!=='string'||!isAbsolute(archive)||!archive.endsWith('.age')||
     typeof identity!=='string'||!isAbsolute(identity))
    return deny('ABSOLUTE_AGE_ARCHIVE_AND_PRIVATE_IDENTITY_REQUIRED');
