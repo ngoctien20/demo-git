@@ -22,6 +22,10 @@ jobs:
           node --check qa/v17-multichannel02/ui/unified-inbox-qa.js
       - name: Staff authority, Meta ACK and unified Inbox synthetic QA
         run: node --test qa/v17-multichannel02/*.test.mjs
+      - name: Actual Chromium browser QA (QA fixtures only, 3 viewports)
+        run: |
+          command -v google-chrome || command -v chromium
+          node qa/v17-multichannel02/ui-chromium-smoke.cjs
       - name: Inherited Handoff and Outbound Policy QA
         run: node --test qa/v17-multichannel-intelligence/*.test.mjs
       - name: Inherited Zalo OA source security QA
