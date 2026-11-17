@@ -56,3 +56,21 @@ No real provider SEND, n8n Published change, order/stock/customer mutation, Supa
 
 **Rollback:** close Draft PR. No hosted database or provider rollback required.
 **Checkpoint:** `V171C_SOURCE_IDENTITY_LINK_PG17_CONTEXT_VISION_RETRIEVAL_CANDIDATE_HOSTED_NO_GO`.
+
+
+### 7. Verified exact-source CI acceptance and reproducible benchmark — 17 November 2026 JST
+
+**Tested source commit:** `9868e112b65edd45e4a3aca735d75e9094c5a1fe`  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/43998457127
+
+**TESTED:**
+- Source QA job **SUCCESS**: 20/20 new cross-channel challenge tests + 19/19 new synthetic vision retrieval tests + 33/33 V17 pilot + 36/36 V14.3 Channel + 36/36 V14.7 Studio + 14/14 V15.2 identity/gateway = **158/158 Node PASS**. Static no-direct-provider/hosted-write/network/credential scanner PASS.
+- Genuine throwaway PostgreSQL 17 CI job **SUCCESS**: 18 explicit SQL/bounded assertions PASS, including Hash-only private challenge, wrong Tenant/Store/Zalo variant rejects, atomic redeem→link, replay refusal, conflict rollback without consuming token, expiry refusal, persistent conversation across new connections, CAS revision 1→2 with stale rejection, Store-specific query isolation, expired session refusal, **two concurrent PostgreSQL connections one-event/one-claim**, four FORCE-RLS private tables and no untrusted grants.
+- Reproducible benchmark executed in CI with `node qa/v171c-commerce/run-synthetic-vision-benchmark.cjs`, static `synthetic-vision-benchmark-corpus.json` dataset, **10/10 labeled numeric vector queries** comprising 6 present-SKU and 4 absent-SKU queries: `syntheticRecallAt1=1.0`, `syntheticRecallAt3=1.0`, `syntheticUnknownFalsePositiveRate=0.25` (1 out-of-catalog lookalike matched a catalog candidate). This deliberate negative illustrates that similarity **does NOT establish SKU identity**. These statistics have zero measured real image recognition value; `realImageBytesExamined=0`, `realModelCalls=0`, `productionThresholdApproved=false`.
+- Hosted L3/L4 release job is deliberately **NO-GO**, exiting 3; overall GitHub run therefore appears FAILURE while both offline QA jobs are green. This is policy enforcement, not a failed source or PostgreSQL test.
+
+**P0 caution:** a stolen unexpired pairing token might be presented from an attacker-controlled authenticated destination. Before any real linkage, require an independently verified destination identity and revocation/consent recheck at redemption; additionally consider explicit confirmation on the originating verified channel after displaying the masked target binding. The QA Map / anonymous callback inputs and PG17 test fixtures are **NOT an approved real end-to-end identity system**.
+
+**No changes to Pubished Messenger/Zalo, Supabase hosted, real customer Orders, Auth/Storage or credentials.** The owner-accepted H11R limited Application local QA archive remains unchanged; M0 full independent restore and Store JWT/RLS still BLOCKED.
+
+**Canonical classification:** `V171C_PRIVATE_CHALLENGE_AND_PG17_CONTEXT_SYNTHETIC_VISION_TESTED_L3L4_HOSTED_NO_GO`.
