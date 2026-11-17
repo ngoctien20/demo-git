@@ -172,7 +172,7 @@ function createNoSendCommerceAdapter({verifyInbound,readInstallationBinding,
      needsReconfirmQuantity:true,canCreateOrder:false});
    }else{
     const total=item.priceVnd*req.quantity;
-    if(!Number.isSafeInteger(total))fail('VND_TOTAL_OVERFLOW');
+    if(!safeMoney(total))fail('VND_TOTAL_OVERFLOW'); // bounded VND order preview
     result=receipt('STORE_CART_PREVIEW_REQUIRES_CONFIRMATION',{
      sku:item.sku,name:item.name,quantity:req.quantity,
      unitPriceVnd:item.priceVnd,totalVnd:total,
