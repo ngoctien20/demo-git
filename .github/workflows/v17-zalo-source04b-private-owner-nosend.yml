@@ -1,0 +1,56 @@
+name: V17 Zalo OA Source04B - Private Owner Access NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_04B_CHECKPOINT.md"
+      - ".github/workflows/v17-zalo-source04b-private-owner-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-owner-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check all OA candidates
+        run: |
+          set -euo pipefail
+          for f in qa/zalo-oa-source-admission/*.mjs; do node --check "$f"; done
+      - name: All inherited OA tests + private owner and Worker access tests
+        run: |
+          set -euo pipefail
+          node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Assert 04B private worker no provider or Commerce side effects
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/zalo-oa-source-admission/';
+          const owner=readFileSync(root+'oa-private-owner-04b-offline.mjs','utf8');
+          const worker=readFileSync(root+'oa-private-access-worker-04b.mjs','utf8');
+          if(!owner.includes('OFFLINE_FIXTURE_ONLY')||
+             !owner.includes('canReceiveProviderTraffic:false')||
+             !owner.includes('noSend:true')||
+             !worker.includes('ctx.access.aud')||
+             !worker.includes('PROVIDER_ENDPOINT_NOT_HOSTED_HERE')||
+             !worker.includes('canSend:false'))
+            throw Error('Source-only no-send and Access admission invariant missing');
+          for(const [file,source] of [['owner',owner],['worker',worker]]){
+            for(const pattern of [/\bawait\s+fetch\s*\(/,
+              /\bglobalThis\s*\.\s*fetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|refreshToken|exchangeToken)\s*\(/]){
+              if(pattern.test(source))throw Error('Forbidden provider or business side effect in '+file);
+            }
+          }
+          console.log('SOURCE04B source-only / operator Access / no outbound guard PASS');
+          NODE
