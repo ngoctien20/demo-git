@@ -1,0 +1,74 @@
+name: TIEN404 G0.8 Real Provider DEMO vs Central Commerce No-Send Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-g08/**'
+      - 'docs/ai-handoff/T404_G08_*'
+      - '.github/workflows/v152-g08-provider-to-core-nosend.yml'
+  push:
+    branches:
+      - work/v152-g08-signed-admission-core-no-send-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-gates:
+    name: G0.8 signed DEMO/core provenance guard and inherited regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New G0.8 direct read-only evidence matrix
+        run: |
+          node --check qa/v152-g08/real-provider-to-core-nosend-gate.cjs
+          node --check qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs
+          node --test qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs
+      - name: Inherited G0.7 G0.6 G0.5 G0.4 offline and source acceptance
+        run: |
+          node --test \
+            qa/v152-g07/private-provider-authority-gate.test.cjs \
+            qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs \
+            qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+            qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+            qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: Static confidentiality and no-hosted-operation audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          c=Path('qa/v152-g08/real-provider-to-core-nosend-gate.cjs').read_text()
+          d=Path('qa/v152-g08/live-vs-nosend-source-receipts.json').read_text()
+          for forbidden in (
+              'process.env','fetch(','http.request(','axios(','child_process',
+              'createOrder(','sendMessage(','newCredential(',
+              '"rawBody"','"phone"','"senderId"','"appSecret"','"accessToken"'
+          ):
+              assert forbidden not in c+d,forbidden
+          for required in (
+              'mayReuseDemoCallback:false','mayWriteCommerceOrders:false',
+              'maySendProviderReply:false','mayPublish:false','mayMigrate:false',
+              'sourceTestsNeverAuthorizeHostedRls:true'
+          ):
+              assert required in c,required
+          print('G08 source: redacted only, existing production callbacks unchanged')
+          PY
+  live-admission-not-authorized:
+    name: Deny any live Page/OA, real Commerce or production-callback cutover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Entire go-live is NO-GO on source-only evidence
+        run: |
+          node - <<'NODE'
+          const r=require('./qa/v152-g08/real-provider-to-core-nosend-gate.cjs');
+          const s=require('./qa/v152-g08/live-vs-nosend-source-receipts.json');
+          const t=r.inspect(s,'2026-11-17T03:47:10Z');
+          if(t.mayPublish||t.mayReuseDemoCallback||t.mayReadCommerceOrders||
+             t.maySendProviderReply||t.mayMigrate||t.status!=='REAL_SIGNED_COMMERCE_NOSEND_ADMISSION_NO_GO')
+            throw Error('G08_STOP_DANGEROUS_AUTO_CUTOVER');
+          console.log('G08 signed DEMO webhook is NOT a no-send Commerce authorization');
+          NODE

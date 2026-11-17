@@ -1,0 +1,56 @@
+{
+  "contract": "T404_G08_LIVE_VS_NO_SEND_PROVENANCE_V1",
+  "source": "N8N_CONNECTED_EXECUTION_METADATA_READ_ONLY",
+  "snapshotAtUtc": "2026-11-17T03:47:00Z",
+  "observations": [
+    {
+      "sourceKind": "LEGACY_MESSENGER_DEMO_WEBHOOK",
+      "workflowId": "Z7FdV7uDvApfbURQ",
+      "executionId": "4176",
+      "status": "success",
+      "mode": "webhook",
+      "realProviderEventObserved": true,
+      "signatureVerifiedFlag": true,
+      "providerSendNodeRan": true,
+      "commerceStoreAuthorityVerified": false,
+      "syntheticTest": false,
+      "hostedWritesCheckedHere": false
+    },
+    {
+      "sourceKind": "CENTRAL_COMMERCE_CORE_UNBOUND_NEGATIVE",
+      "workflowId": "7XzLd51D7C6tlaS4",
+      "executionId": "4381",
+      "status": "success",
+      "mode": "manual",
+      "realProviderEventObserved": false,
+      "signatureVerifiedFlag": false,
+      "providerSendNodeRan": false,
+      "commerceStoreAuthorityVerified": false,
+      "syntheticTest": true,
+      "hostedWritesCheckedHere": false
+    },
+    {
+      "sourceKind": "G07_REAL_ADMISSION_REFUSAL_QA",
+      "workflowId": "mmt3ToandWrLAcjH",
+      "executionId": "4401",
+      "status": "success",
+      "mode": "manual",
+      "realProviderEventObserved": false,
+      "signatureVerifiedFlag": false,
+      "providerSendNodeRan": false,
+      "commerceStoreAuthorityVerified": false,
+      "syntheticTest": true,
+      "hostedWritesCheckedHere": false
+    }
+  ],
+  "current": {
+    "realProviderNoSendOwnerAuthorized": false,
+    "realMerchantStoreOwnershipAttested": false,
+    "canonicalStoreRegistryVerified": false,
+    "durableReplayAcrossWorkersVerified": false,
+    "realSignedNoSendCommerceUatPassed": false,
+    "realSameTenantStoreRlsJwtPassed": false,
+    "currentIndependentRestoreAccepted": false,
+    "productionCallbackIsolationApproved": false
+  }
+}
