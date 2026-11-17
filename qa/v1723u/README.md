@@ -207,3 +207,15 @@ User consented to **prepare and retry the dedicated new QA Bot** after reporting
 **PENDING:** Owner locally copies generated secret to the dedicated QA Worker's `QA_HEADER_SECRET`, verifies exact new QA Bot identity and then privately matches it to Bot Creator's Webhook Secret Token. Time-bound public activation and one challenge require separate final admission/rollback readiness; no longer-lived open endpoint.
 
 **STATUS:** `DIAG6_RUNBOOK_IMPLEMENTED / HOSTED_WORKER_OFF_VERIFIED / LIVE_QA_NOT_STARTED / PRODUCTION_NO_GO`.
+
+## V17.23U-DIAG6 — Owner secret correction: hosted postflight
+
+**OWNER-ATTESTED:** Owner says they successfully corrected the existing `QA_HEADER_SECRET` setting in Cloudflare for the dedicated QA Worker. No secret value was transmitted to or inspected by the assistant.
+
+**DIRECT CLOUDFLARE POSTFLIGHT VERIFIED (read-only, 2026-11-18 JST):** Dedicated Worker `tien404-v1723u-qa-inbound-locked-staging` now reports deployment version `8e7e904f-2a0a-4079-956c-830a8e5a4328` versus prior baseline `75d9a289-64c3-4fe1-bc13-18c0051b529f`; binding `QA_HEADER_SECRET` exists with type `secret_text`, `QA_CALLBACK_PATH` and `QA_CHALLENGE` remain `secret_text`, Worker `workers.dev=false`, previews disabled, `qa_canary_once` receipts 0, no hosted DIAG bindings.
+
+**IMPORTANT EVIDENCE LIMIT:** Deploy version change plus owner report confirms a new hosted version and the presence of a secret binding, NOT equality between the hidden Cloudflare value and future Zalo provider `setWebhook.secret_token`. Do not claim live webhook verification or historical root-cause closure.
+
+**NEXT GATE (no action yet):** Owner must privately synchronize Bot Creator webhook `secret_token` with corrected `QA_HEADER_SECRET` value, using the NEW QA Bot only; verify identity, callback path and a fresh 20-min time window. Never activate ingress or send a challenge until final bounded no-send/rollback admission. Old Bot, n8n and Commerce unchanged.
+
+**STATUS:** `OWNER_REPORTED_SECRET_CORRECTED / WORKER_NEW_DEPLOYMENT_VERIFIED / SECRET_EQUALITY_UNVERIFIED / PUBLIC_OFF / D1_ZERO / UAT_PENDING`.
