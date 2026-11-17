@@ -48,7 +48,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;'
           psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/private-schema-candidate.sql
           psql -X -v ON_ERROR_STOP=1 -f qa/v152-rpc178a/sql/disposable-private-schema-assertions.sql
-          pg_dump --no-owner --no-privileges --schema=rpc178_qa --format=plain --file=/tmp/rpc178b_private_restore.sql
+          # Execute PG17 client inside matching disposable PG17 service container.\n          PG_CONTAINER=$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n 1)\n          test -n "$PG_CONTAINER"\n          docker exec -e PGPASSWORD=rpc178b_synthetic_ci_only "$PG_CONTAINER" pg_dump -U postgres -d rpc178b_disposable --no-owner --no-privileges --schema=rpc178_qa --format=plain > /tmp/rpc178b_private_restore.sql
           sha256sum /tmp/rpc178b_private_restore.sql
           psql -X -v ON_ERROR_STOP=1 -c 'DROP SCHEMA rpc178_qa CASCADE;'
           psql -X -v ON_ERROR_STOP=1 -f /tmp/rpc178b_private_restore.sql
