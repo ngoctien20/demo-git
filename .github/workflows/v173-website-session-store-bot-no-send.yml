@@ -1,0 +1,51 @@
+name: TIEN404 V17.3 Trusted Website Session × Store-Bound Bot (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v173-website-session/**'
+      - '.github/workflows/v173-website-session-store-bot-no-send.yml'
+      - 'docs/ai-handoff/V17_3_*'
+permissions:
+  contents: read
+jobs:
+  website-session-offline-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify issuer, signature, origin, expiry, revocation, Store and Bot version checks
+        run: |
+          node --check qa/v173-website-session/website-session-core.mjs
+          node --check qa/v173-website-session/website-session-core.test.mjs
+          node --test qa/v173-website-session/website-session-core.test.mjs
+      - name: No external requests / page token / credentials / provider send
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v173-website-session')
+          src=(root/'website-session-core.mjs').read_text()
+          for p in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                    r'\bcreateServer\s*\(',r'\bprocess\.env\b',r'\bhttp\.request\s*\(',
+                    r'(?i)sk-[A-Za-z0-9_-]{16,}',r'(?i)Bearer\s+eyJ[A-Za-z0-9_.-]+'):
+            assert re.search(p,src) is None,p
+          for marker in ('timingSafeEqual','createHmac','SESSION_INSTALLATION_REVOKED',
+                         'BOT_PROFILE_OR_STORE_VERSION_CHANGED','ORDER_OR_WRITE_TOOL_NOT_AUTHORIZED',
+                         'CLIENT_TENANT_STORE_BOT_CLAIM_DENIED',
+                         'ATOMIC_MESSAGE_CLAIM_UNAVAILABLE','MOCK_ONLY_NOT_SENT'):
+            assert marker in src,marker
+          assert 'OWNER_APPROVED' in src and 'SYNTHETIC_ONLY' in src
+          print('PASS — no live network, no keys, no default in-memory auth or send/write executor')
+          PY
+  live-website-commerce-release:
+    name: Hosted website origin / private issuer key / Store JWT-RLS / real catalog — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Requires independently verified Store ownership, real server-issued session, rate limiter and hosted Store/RLS acceptance'
