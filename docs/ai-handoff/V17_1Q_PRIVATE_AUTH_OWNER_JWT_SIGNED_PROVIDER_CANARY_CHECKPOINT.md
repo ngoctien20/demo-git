@@ -50,3 +50,20 @@ Official references:
 - https://supabase.com/docs/guides/auth/sessions
 - https://developers.facebook.com/docs/graph-api/webhooks/getting-started/
 - https://stc-developers.zdn.vn/docs/v2/official-account/webhook/tin-nhan/su-kien-nguoi-dung-gui-tin-nhan
+
+
+## V17.1Q Independent CI acceptance and release gate (VERIFIED 2026-11-17 JST)
+
+Tested code SHA: c2b4fa34fc8a1c1085d6c29d4fc708eca51f96b8.
+GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44051494481
+
+- Cryptographic source CI job 133930178638 SUCCESS: 66/66 new GitHub Node crypto QA cases and 855/855 inherited V17.1P through V17.1D cases, 921/921 combined tests PASS. Static checks confirm no external network, process.env, subprocess or credential/DB access and real acceptance manifest explicitly HOSTED_NO_GO.
+- Independent disposable PostgreSQL 17 job 133930178356 SUCCESS: throwaway same-Tenant Store A/B temporary RLS, ROLLBACK, DISPOSABLE_SAME_TENANT_STORE_A_B_RLS_PASS, proof scope NO_REAL_JWT_NO_COMMERCE_TABLES.
+- Real Meta/Zalo QA Page/OA + Supabase owner JWT release job 133930453684 FAILURE BY DESIGN: actual separate owner-approved same-Tenant Store A/B JWT pair, native managed-secret signed NO-SEND event and least-privilege Store RLS/OrderAccessGrant are absent. Overall GitHub run RED intentionally, NOT a source QA failure.
+- An initial source CI at SHA 8a236acca70e113300520eae936eec7488a95e16 ran 66/66 crypto and PG17 successfully but stopped at metadata validator referencing an absent manifest field. The validator was corrected to assert the existing HOSTED_NO_GO field. Cryptography and permissions were not relaxed.
+- A separately created downloadable portable ZIP contains an extended 84/84 locally passing crypto suite. It is distinct from GitHub 66 tests; the combined GitHub source count is 921, NOT 1005.
+- Actual production owner JWTs: NOT read/verified. Real Meta/Zalo provider signed callback: NOT admitted. An isolated cryptographic test with synthetic private RSA/EC keys and synthetic App/OA secrets is not a real provider UAT.
+
+Final release: HOSTED NO-GO. Preserve four original V17.15 Messenger nodes and published Messenger V17.17/Zalo V17.19. No production workflow, Auth user, Store owner mapping, credentials, secrets, customer/commerce data, payments or provider sends changed by this milestone.
+
+Rollback: close the child Draft PR. The source-only gate has no deployment or live workflow to revert. The checkpoint documentation-only update triggers a new GitHub CI run; independently verify exact final HEAD again.
