@@ -76,10 +76,10 @@ jobs:
           node-version: '22'
       - name: Install local-only Cloudflare Workers Vitest integration
         working-directory: qa/v1721-zalo-durable
-        run: npm install --no-audit --no-fund --package-lock=false
+        run: yarn install --no-lockfile --non-interactive
       - name: Isolated Cloudflare Workers runtime tests (no deploy)
         working-directory: qa/v1721-zalo-durable
-        run: npx --no-install vitest run --config vitest.config.mjs
+        run: yarn vitest run --config vitest.config.mjs
   hosted-private-do-release:
     name: Hosted Cloudflare DO migration, Bot webhook cutover and OA — BLOCKED
     if: false
