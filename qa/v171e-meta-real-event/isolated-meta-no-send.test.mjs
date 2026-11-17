@@ -8,6 +8,7 @@ const verifyToken='QA_TEST_ONLY_VERIFY_TOKEN';
 const known=()=>{const seen=new Set();return {claimOnce:async key=>{if(seen.has(key))return 'duplicate';seen.add(key);return 'claimed'}}};
 const policy=(extra={})=>({
  appSecret,verifyToken,qaPageId:pageId,qaTesterPsid:tester,
+ qaAppId:'8800000002',productionAppId:'8800000001',productionPageId:'9900000009',
  ownerApproval:{qaAppPageIsolated:true,callbackPermissionGranted:true,
  merchantPageControlVerified:true,evidenceReference:'PRIVATE_QA_APPROVAL_001',
  productionAppCallbackUnchanged:true},
@@ -94,4 +95,20 @@ test('44 test never provides an HTTP server',async()=>{
 });
 test('45 event metadata not accepted as independent owner evidence',async()=>{
  const r=await invoke();assert.equal(r.owner_approval_reference_scope,'PRIVATE_OPERATOR_ATTESTATION');
+});
+
+test('46 identical QA and production Page rejected even with manual owner flags',async()=>{
+ await blocked(post(),policy({productionPageId:pageId}),/PRIVATE_QA/);
+});
+test('47 identical QA and production App rejected even with manual owner flags',async()=>{
+ await blocked(post(),policy({productionAppId:'8800000002'}),/PRIVATE_QA/);
+});
+test('48 missing QA App ID denied',async()=>{
+ await blocked(post(),policy({qaAppId:''}),/PRIVATE_QA/);
+});
+test('49 missing production App ID denied',async()=>{
+ await blocked(post(),policy({productionAppId:''}),/PRIVATE_QA/);
+});
+test('50 missing production Page ID denied',async()=>{
+ await blocked(post(),policy({productionPageId:''}),/PRIVATE_QA/);
 });
