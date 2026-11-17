@@ -93,7 +93,9 @@ jobs:
                           r'\bprocess\.env\b',r'\baxios\b',
                           r'\bchild_process\b',r'\bpostgrest\b'):
               assert not re.search(regex,n['code'],re.I),(n['name'],regex)
-          assert d['actualDatabaseReads']==0 and d['actualOrdersWritten']==0
+          assert d['realOrdersRead']==0 and d['realOrdersWritten']==0
+          assert d['realCustomersRead']==0 and d['actualModelsCalled']==0
+          assert d['providerMessagesSent']==0
           assert d['realCommerceReaderConnected'] is False and d['hostedRelease']=='NO_GO'
           print('V171P_SOURCE_ONLY_NO_DB_NO_PROVIDER_NO_JWT_AUTHENTICATION_CLAIMS_PASS')
           PY
