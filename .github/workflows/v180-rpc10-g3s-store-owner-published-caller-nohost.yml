@@ -1,0 +1,119 @@
+name: RPC10 G3S Original Store Owner × Published Caller Migration GO-NOGO (SOURCE ONLY)
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc10/**'
+      - 'docs/ai-handoff/T404_RPC10_G3S_STORE_OWNERSHIP_PUBLISHED_CALLER_STAGING_NOGO.md'
+      - '.github/workflows/v180-rpc10-g3s-store-owner-published-caller-nohost.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g3s-reconciled-owner-caller-compat:
+    name: REAL READ-ONLY evidence × ORIGINAL STORE and SEVEN Published Caller NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inherited RPC10 safety tests and G3S adversarial regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v152-rpc10/g3s-store-ownership-published-caller-gate.cjs
+          node --test qa/v152-rpc10/*.test.cjs
+      - name: Exact connected evidence + immutable real Store migration NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const root='./qa/v152-rpc10/';
+          const snapshot=require(root+'g3s-connected-published-owner-mapping-evidence.json');
+          const proof=require(root+'g3s-hosted-original-provenance-evidence.json');
+          const {inspect,CURRENT,COMMERCE_TABLES}=
+            require(root+'g3s-store-ownership-published-caller-gate.cjs');
+          assert.equal(snapshot.parentPr,387);
+          assert.equal(snapshot.canonicalMigrationPr,247);
+          assert.equal(snapshot.supabase.legacyProductRows,2);
+          assert.equal(snapshot.supabase.legacyOrderRows,2);
+          assert.equal(snapshot.supabase.legacyCustomerRows,0);
+          assert.equal(snapshot.supabase.fourOriginalRowsOwnerAuthentic,false);
+          assert.equal(snapshot.supabase.storeOwnerReviewerAuthentic,false);
+          assert.equal(snapshot.supabase.storeIdTables,0);
+          assert.equal(snapshot.supabase.tenantPermissiveSelectPolicies,6);
+          assert.equal(snapshot.supabase.storeQualifiedSelectPolicies,0);
+          assert.equal(snapshot.supabase.saveMerchantProduct.storeIdMentioned,false);
+          assert.equal(snapshot.n8n.commerceTableCount,16);
+          assert.equal(snapshot.n8n.commerceTablesWithTenantId,14);
+          assert.equal(snapshot.n8n.commerceTablesWithStoreId,0);
+          assert.equal(snapshot.n8n.publishedWorkflowsObserved,7);
+          assert.equal(snapshot.n8n.publishedLegacyMessengerHasOutboundSend,true);
+          assert.equal(snapshot.n8n.publishedZaloQaHasMarkerWrites,true);
+          assert.equal(COMMERCE_TABLES.length,16);
+          assert.equal(Object.keys(CURRENT).length,7);
+          assert.equal(proof.contract,'T404_RPC10_G3S_FOUR_ROW_SOURCE_COVERAGE_READONLY_V1');
+          assert.equal(proof.source,'EXECUTED_EXACT_COMMITTED_SUPABASE_METADATA_SQL');
+          assert.equal(proof.tenantCount,2);
+          assert.equal(proof.legacyProductRows,2);
+          assert.equal(proof.legacyOrderRows,2);
+          assert.equal(proof.ordersWithSourceLabel,2);
+          assert.equal(proof.customerLinkedOrders,0);
+          assert.equal(proof.definerRpcCount,3);
+          assert.equal(proof.definerRpcsWithoutStoreReference,3);
+          assert.equal(proof.tenantWriterLacksStoreReference,1);
+          assert.equal(proof.privateMerchantAttestationCollected,false);
+          assert.equal(proof.independentReviewerOriginalRowProofCollected,false);
+          const out=inspect(snapshot);
+          assert.equal(out.status,'STAGING_MIGRATION_NO_GO');
+          assert.equal(out.reason,'G3S_CALLER_AND_ORIGINAL_OWNER_RECONCILED_NO_GO');
+          assert.equal(out.canApplyHostedM1,false);
+          assert.equal(out.canApplyHostedM2M4,false);
+          assert.equal(out.canReadHostedCommerce,false);
+          assert.equal(out.canPublishN8n,false);
+          assert.equal(out.canChangePrivilegedRpc,false);
+          assert.ok(out.blockers.includes('FOUR_ORIGINAL_ROWS_SOURCE_AND_INDEPENDENT_OWNER_ATTESTATION_MISSING'));
+          assert.ok(out.blockers.includes('FOUR_PUBLISHED_COMMERCE_CALLERS_TENANT_ONLY'));
+          assert.ok(out.blockers.includes('N8N_COMMERCE_DATA_TABLES_NOT_STORE_SCOPED'));
+          console.log('RPC10 G3S: REAL CONNECTED SNAPSHOT VERIFIED, MIGRATION NO-GO');
+          NODE
+      - name: Strict SOURCE ONLY executable + exact committed Supabase SELECT audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          r=Path('qa/v152-rpc10')
+          source=(r/'g3s-store-ownership-published-caller-gate.cjs').read_text()
+          for p in (r'\bfetch\s*\(',r'\bprocess\s*\.\s*env\b',
+                    r'\bcreateClient\s*\(',r'\bchild_process\b',
+                    r'\bhttps?\s*\.\s*request\s*\(',r'\bexecSync\s*\(',
+                    r'\b(setWebhook|sendMessage|createOrder|applyMigration)\s*\('):
+            assert not re.search(p,source),p
+          sql=(r/'g3s-hosted-original-row-provenance-readonly.sql').read_text()
+          uncommented='\n'.join(
+            line for line in sql.splitlines() if not line.lstrip().startswith('--'))
+          no_literals=re.sub(r"'(?:''|[^'])*'","''",uncommented)
+          assert re.match(r'\s*WITH\s+tenant_slots\s+AS',uncommented,re.I)
+          assert uncommented.strip().endswith(';')
+          assert not re.search(r'\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|EXECUTE|CALL|COPY|VACUUM)\b',no_literals,re.I)
+          assert not re.search(r'\b(SERVICE_ROLE|BYPASSRLS)\b',no_literals,re.I)
+          assert 'pg_get_functiondef' in sql
+          assert 'order_source' in sql
+          assert 'customer_id IS NOT NULL' in sql
+          x=json.loads((r/'g3s-connected-published-owner-mapping-evidence.json').read_text())
+          assert all(not tab['hasStoreId'] for tab in x['n8n']['commerceDataTables'])
+          assert all(not w['trustedCanonicalStoreAuthorityVerified']
+             for w in x['n8n']['publishedWorkflowObservations'])
+          assert x['decision']['approvedToRunMigration'] is False
+          assert x['decision']['actualProviderEventsThisPhase']==0
+          assert x['decision']['dbHostedWritesThisPhase']==0
+          print('PASS: committed SQL is aggregate-only, source gate has no live I/O')
+          PY
