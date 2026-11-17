@@ -73,7 +73,7 @@ jobs:
           assert.equal(e.pg.explicit_store_predicate_count,0);
           assert.equal(e.pg.qa_same_tenant_two_store_count,0);
           assert.equal(e.pg.anon_executable_definer_count,1);
-          assert.equal(e.api_calls_made,0);
+          assert.equal(e.provider_api_calls_made,0);
           assert.equal(e.provider_sends,0);
           assert.equal(e.commerce_writes,0);
           assert.equal(e.merchant_credential_reads,0);
