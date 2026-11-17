@@ -84,7 +84,7 @@ export function createCrossChannelQaLab({now=()=>Date.parse('2026-11-17T12:00:00
   const v=actorFailures.get(actor);return !!v&&v.until>time&&v.count>3;
  }
  function formatOrder(order){
-  return out('ORDER_STATUS',{order_ref:order.id,status:order.status,sku:order.sku,
+  return out('ORDER_STATUS',{order_ref:order.id,order_status:order.status,sku:order.sku,
     quantity:order.qty,total_vnd:order.total,origin:'messenger',qa_only:true});
  }
  function status(ctx,orderId,fromZalo){
@@ -120,7 +120,7 @@ export function createCrossChannelQaLab({now=()=>Date.parse('2026-11-17T12:00:00
    const id=ref('ORD'),o={id,owner:ctx.actor,tenant:p.tenant,store:p.store,
     sku:p.sku,qty:p.qty,price:p.price,total:p.total,status:'qa_pending',created:time};
    orders.set(id,o);
-   return out('QA_ORDER_CREATED',{order_ref:id,status:o.status,total_vnd:o.total,
+   return out('QA_ORDER_CREATED',{order_ref:id,order_status:o.status,total_vnd:o.total,
     message:'Đơn QA đã được lưu trong bộ nhớ thử nghiệm, KHÔNG phải đơn thương mại.'});
   }
   if((m=/^QA_ORDER STATUS (QA-ORD-\d{5})$/.exec(t)))return status(ctx,m[1],false);
