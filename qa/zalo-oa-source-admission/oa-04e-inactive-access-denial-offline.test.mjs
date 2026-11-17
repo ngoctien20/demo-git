@@ -11,10 +11,10 @@ const AUD='737646a56ab1df6ec9bddc7e5ca84eaf3b0768850f3ffb5d74f1534911fe3893';
 function infra(){
  const scriptName='tien404-zalo-qa-04e-inactive';
  const workerId='c81a2d22c29840ed9d61681a3270dbff';
- const access={name:'TIEN404 OA QA PRIVATE',aud:AUD,workerId,
+ const access={accessName:'TIEN404 OA QA PRIVATE',aud:AUD,workerId,
    exactOperatorEmails:['approved-operator@qa.invalid']};
  const app={id:'f174e90a-fafe-4643-bbbc-4a0ed4fc8415',
-   name:access.name,aud:AUD,type:'self_hosted',session_duration:'1h',
+   name:access.accessName,aud:AUD,type:'self_hosted',session_duration:'1h',
    destinations:[{type:'worker',worker_id:workerId}],
    policies:[{decision:'allow',include:[{email:{email:'approved-operator@qa.invalid'}}]}]};
  return {
