@@ -1,0 +1,134 @@
+{
+  "created_at": "2026-11-17 12:45 JST / V17.13 PRE-CHANGE SNAPSHOT",
+  "stage": "before published Messenger draft append",
+  "live": {
+    "workflow_id": "Z7FdV7uDvApfbURQ",
+    "name": "TIEN404_MESSENGER_TEST",
+    "version_id": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "published_version_id": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "active": true,
+    "source_node_count": 27,
+    "source_node_names": [
+      "When clicking ‘Execute workflow’",
+      "Webhook",
+      "If",
+      "Respond to Webhook",
+      "Respond to Webhook1",
+      "Webhook1",
+      "Respond to Webhook2",
+      "Crypto",
+      "Verify Meta Signature",
+      "Respond to Webhook3",
+      "Verify Signature Timing-Safe",
+      "Extract Messenger Text",
+      "Skip Duplicate Message ID",
+      "Loop One Message",
+      "Messenger AI Agent",
+      "Messenger OpenAI Chat Model",
+      "Messenger Memory",
+      "Read Products - Messenger Read Only",
+      "Prepare Messenger Reply",
+      "Send Messenger Reply - CONFIGURE TOKEN",
+      "Record Successful Messenger MID",
+      "Verify Messenger Send Result",
+      "create_order",
+      "update_order_address",
+      "manage_order",
+      "get_order_status",
+      "create_support_ticket"
+    ],
+    "connection_node_names": {
+      "Webhook": [
+        "If"
+      ],
+      "If": [
+        "Respond to Webhook",
+        "Respond to Webhook1"
+      ],
+      "Webhook1": [
+        "Crypto"
+      ],
+      "Verify Meta Signature": [
+        "Respond to Webhook2",
+        "Respond to Webhook3"
+      ],
+      "Crypto": [
+        "Verify Signature Timing-Safe"
+      ],
+      "Verify Signature Timing-Safe": [
+        "Verify Meta Signature"
+      ],
+      "Respond to Webhook2": [
+        "Extract Messenger Text"
+      ],
+      "Extract Messenger Text": [
+        "Skip Duplicate Message ID"
+      ],
+      "Skip Duplicate Message ID": [
+        "Loop One Message"
+      ],
+      "Loop One Message": [
+        "Messenger AI Agent"
+      ],
+      "Messenger OpenAI Chat Model": [
+        "Messenger AI Agent"
+      ],
+      "Messenger Memory": [
+        "Messenger AI Agent"
+      ],
+      "Read Products - Messenger Read Only": [
+        "Messenger AI Agent"
+      ],
+      "Messenger AI Agent": [
+        "Prepare Messenger Reply"
+      ],
+      "Prepare Messenger Reply": [
+        "Send Messenger Reply - CONFIGURE TOKEN"
+      ],
+      "Record Successful Messenger MID": [
+        "Loop One Message"
+      ],
+      "Send Messenger Reply - CONFIGURE TOKEN": [
+        "Verify Messenger Send Result"
+      ],
+      "Verify Messenger Send Result": [
+        "Record Successful Messenger MID"
+      ],
+      "create_order": [
+        "Messenger AI Agent"
+      ],
+      "update_order_address": [
+        "Messenger AI Agent"
+      ],
+      "manage_order": [
+        "Messenger AI Agent"
+      ],
+      "get_order_status": [
+        "Messenger AI Agent"
+      ],
+      "create_support_ticket": [
+        "Messenger AI Agent"
+      ]
+    }
+  },
+  "bridge": {
+    "workflow_id": "dw1JOxWOEY8csTnm",
+    "version_id": "450f2693-aad9-47d8-aaba-ac7a94abe644",
+    "published_version_id": null,
+    "active": false,
+    "node_count": 8,
+    "caller_policy": "workflowsFromAList",
+    "caller_ids": "Z7FdV7uDvApfbURQ"
+  },
+  "expected_additive_change": {
+    "node": "TIEN404 V17.13 Signed Shadow -> Central Core (NO SEND)",
+    "tap_source": "Skip Duplicate Message ID",
+    "original_downstream": "Loop One Message",
+    "additive": true,
+    "provider_outbound_changes": 0,
+    "commercial_write_changes": 0,
+    "raw_customer_data_forwarded": false,
+    "shielded_core_denies_unregistered": true
+  },
+  "rollback": "Publish previous immutable Messenger version d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92 if and only if published modification occurs; verify Page webhook and provider reply after restoring. If only draft is changed do not republish and revert draft additive node."
+}
