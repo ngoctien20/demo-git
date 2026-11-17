@@ -1,0 +1,18 @@
+{
+  "phase": "V17.1Q_PRIVATE_AUTH_OWNER_UAT_SIGNED_PROVIDER_CANARY",
+  "checkpoint": "2026-11-17",
+  "parent": "V17.1P Draft PR #290",
+  "evidenceType": "SOURCE_ONLY_SECURITY_DESIGN",
+  "realSupabaseTwoStoreSameTenantOwnerProof": false,
+  "realTwoIndependentSupabaseAuthJwtProof": false,
+  "realMetaQaPageSignedNoSendProof": false,
+  "realZaloQaOaSignedNoSendProof": false,
+  "realCommerceStoreRlsProof": false,
+  "realCustomerOrderGrantProof": false,
+  "sourceOnlySyntheticCryptographicTests": true,
+  "actualProviderMessagesSent": 0,
+  "actualCommerceReads": 0,
+  "actualOrdersCreated": 0,
+  "liveWorkflowsChanged": false,
+  "release": "HOSTED_NO_GO"
+}
