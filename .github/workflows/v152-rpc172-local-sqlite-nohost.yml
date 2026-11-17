@@ -27,7 +27,7 @@ jobs:
           node --check qa/v152-rpc172/scanner-bridge.mjs
           node --test qa/v152-rpc172/scanner-bridge.test.mjs
       - name: Real local Workerd SQLite durable object tests
-        run: node --test qa/v152-rpc172/sqlite-runtime.test.mjs
+        run: timeout 90s node --test qa/v152-rpc172/sqlite-runtime.test.mjs
       - name: Inherited RPC17.1 - RPC13 regressions
         run: |
           node --test qa/v152-rpc171/atomic-admission.test.mjs
