@@ -6,4 +6,6 @@ CREATE SCHEMA auth;
 CREATE TABLE auth.users (id uuid PRIMARY KEY);
 CREATE FUNCTION auth.uid()
 RETURNS uuid LANGUAGE sql STABLE
-AS $fn$ SELECT null::uuid $fn$;
+AS $fn$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true),'')::uuid $fn$;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
