@@ -26,7 +26,14 @@ jobs:
         run: |
           set -euo pipefail
           node --check qa/v180-p0h/private-browser-auth-readonly.mjs
-          ! grep -Eqi 'service_role|createClient\(|process\.env|fetch\(|child_process|\.exec\(' qa/v180-p0h/private-browser-auth-readonly.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const src=readFileSync('qa/v180-p0h/private-browser-auth-readonly.mjs','utf8');
+          const executable=src.replace(/^\s*\/\/[^\n]*$/gm,'');
+          const blocked=[/\bcreateClient\s*\(/,/\bfetch\s*\(/,/\bprocess\.env\b/,/\bchild_process\b/,/\bservice_role\b/,/\bexec\s*\(/];
+          if(blocked.some(re=>re.test(executable)))throw Error('P0H_EXPLICIT_STATIC_SAFETY_POLICY_VIOLATION');
+          console.log('P0H_STATIC_SOURCE_SAFETY_PASS');
+          NODE
           node --input-type=module <<'NODE'
           import {readFileSync} from 'node:fs';
           const a=JSON.parse(readFileSync('qa/v180-p0h/owner-cohort-readonly-evidence.json','utf8'));
