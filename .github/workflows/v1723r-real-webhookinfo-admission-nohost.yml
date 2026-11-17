@@ -1,0 +1,29 @@
+name: TIEN404 V17.23R Real WebhookInfo Dedicated QA Admission NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723r/**'
+      - '.github/workflows/v1723r-real-webhookinfo-admission-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-observations-source-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      ZALO_BOT_TOKEN: ""
+      ZALO_OA_SECRET: ""
+      META_APP_SECRET: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Inherited V17.23N O P Q source and synthetic regression
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs qa/v1723o/v1723o.test.mjs qa/v1723p/synthetic-provider-canary.test.mjs qa/v1723q/private-provider-evidence.test.mjs
+      - name: New observed getMe and getWebhookInfo real-identity-boundary tests
+        run: node --test qa/v1723r/provider-real-evidence-gate.test.mjs
+      - name: Existing Bot NOT authorized to reassign webhook, accept real events, or read orders
+        run: |
+          node --input-type=module -e "import {evaluateCurrentBotForDedicatedCanary,evaluateOneRealEventAdmission,PRIVATE_EVENT_REQUIRED} from './qa/v1723r/provider-real-evidence-gate.mjs';const b=evaluateCurrentBotForDedicatedCanary(),a=evaluateOneRealEventAdmission({channel:'zalo-bot',mode:'PRIVATE_NO_SEND_NO_WRITE',claims:Object.fromEntries(PRIVATE_EVENT_REQUIRED.map(k=>[k,true]))});if(!b.matchesExistingStagingWebhook||b.canReassignWebhook||b.canReceiveRealEvent||b.canSend||a.canAcceptPrivateEvent||a.canUseRealJwt||a.canDeploy)process.exit(1);console.log('V1723R_EXISTING_STAGING_BOT_NOT_DEDICATED_REAL_PROVIDER_EVENT_NO_GO_NO_SEND');"
