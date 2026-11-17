@@ -285,9 +285,13 @@ test('58 local synthetic Access identity still NO GO and returns 503',async()=>{
  assert.equal(data.code,'PRIVATE_BROKER_NOT_DEPLOYED_NO_FINANCE_AUTHORITY');
 });
 test('59 local broker response excludes raw simulated identity/credentials',async()=>{
- const {r}=await call(undefined,'GET',{access:{getIdentity:async()=>({email:'private-fixture@example.com',secret:'synthetic'})}});
- const body=await r.text().catch(()=>null);
- assert.equal(body,null);
+ const r=await privateBrokerNoDeployPreflight(new Request('https://internal.invalid/private/admission/preflight'),
+  {},{access:{getIdentity:async()=>({email:'private-fixture@example.com',secret:'synthetic'})}});
+ const body=await r.text();
+ assert.equal(r.status,503);
+ assert.equal(body.includes('private-fixture@example.com'),false);
+ assert.equal(body.includes('synthetic'),false);
+ assert.equal(body.includes('secret'),false);
 });
 test('60 local no-deploy broker never claims real hosted deployment even if ctx.access is present',async()=>{
  const {data}=await call(undefined,'GET',{access:{getIdentity:async()=>({email:'owner@synthetic.invalid'})}});
