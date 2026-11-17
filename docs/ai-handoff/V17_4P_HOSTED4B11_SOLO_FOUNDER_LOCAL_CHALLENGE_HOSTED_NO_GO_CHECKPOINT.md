@@ -54,3 +54,13 @@ Official references:
 - https://developers.cloudflare.com/billing/manage/spend-management/
 - https://developers.cloudflare.com/workers/configuration/cloudflare-access/
 - https://developers.cloudflare.com/durable-objects/platform/spend-management/
+
+## 6. Solo-Founder promotion criteria (not satisfied)
+
+- **QA_READY:** source CI and in-memory local signed-challenge negatives confirmed. This can be accepted without hiring staff.
+- **PRIVATE_IDENTITY_READY:** same founder must use an independently verified real Cloudflare Access account and phishing-resistant MFA session; the chat permission is not identity proof.
+- **COST_READY:** independently read Cloudflare Billing using appropriate least-privilege human session OR an approved private, sanitized Finance evidence intake. Set a positive USD amount and record that shared-account limits/DO storage fees are not hard caps.
+- **HOSTED_CANARY_READY:** approve a narrowly scoped *separate* staging Worker/DO cost and rollback envelope, verify existing DO namespaces, install an Access-protected isolated private endpoint with no public URL and no provider/customer linkage.
+- **PRODUCTION_READY:** requires independently validated tenant/store and channel security. This Solo-Founder local exception does not waive customer data isolation or live financial transaction rules.
+
+**Current grant:** QA_READY preparation only. All other stages remain NO-GO. Prevent automatic state promotion; a signed real session and explicit per-stage approval are prerequisites.
