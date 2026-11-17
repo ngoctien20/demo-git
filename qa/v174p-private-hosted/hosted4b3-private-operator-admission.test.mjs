@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {generateKeyPairSync,sign as rsaSign} from 'node:crypto';
+import {generateKeyPairSync,sign as rsaSign,createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import {verifyPrivateOperatorAdmission,reviewPrivateOperatorAndReservePermit,hashPermit} from './hosted4b3-private-operator-admission.mjs';
 const pair=generateKeyPairSync('rsa',{modulusLength:2048});
 const now=Date.parse('2026-11-17T10:00:00.000Z'),seconds=now/1000;
@@ -94,4 +95,106 @@ test('25 valid JWT alone cannot bypass missing owner signatures or claim ledger'
  assert.equal(result.status,'BLOCKED_PERMIT_PREFLIGHT');
  assert.equal(called,false);
  assert.equal(result.can_upload,false);
+});
+
+test('26 operator must validate before ledger even if claim adapter advertises success',async()=>{
+ let claimCalled=false;
+ const broken=issue({...base(),amr:['password']});
+ const result=await reviewPrivateOperatorAndReservePermit({
+  operatorJwt:broken,trustConfig:trust(),evidence:{permit:p},
+  privateLedger:{claimOnce:async()=>{claimCalled=true;return {claimed:true}}},
+  getFreshInventory:async()=>{claimCalled=true;return {}},now
+ });
+ assert.equal(result.identity_admitted_for_private_review,false);
+ assert.equal(claimCalled,false);
+});
+test('27 synthetic full owner and operator signatures pass ONLY into hash-bound ledger reservation',async()=>{
+ // Never use these ephemeral keys, role flags or operator@example.com as
+ // real human/operator evidence. This is an OFFLINE contract integration test.
+ const canonical=x=>Array.isArray(x)?'['+x.map(canonical).join(',')+']':
+  (x!==null&&typeof x==='object'?
+   '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}':
+   JSON.stringify(x));
+ const source=readFileSync(new URL('./hosted-issuer.worker.mjs',import.meta.url),'utf8');
+ const manifest=JSON.parse(readFileSync(new URL('./wrangler.hosted4b.inactive.example.json',import.meta.url),'utf8'));
+ const all=[...[
+  'tien404-v175e1-private-issuer-nosend-staging',
+  'tien404-v175e2-ab-gateway-nosend-staging',
+  'tien404-v175e2-durable-replay-nosend-staging',
+  'tien404-v175e2-installation-registry-nosend-staging',
+  'tien404-v175e2a-private-hosted-runner-nosend-staging'
+ ],...Array.from({length:23},(_,i)=>'synthetic-existing-'+i)].sort();
+ const inventory={
+  account_id:'ac01685529c0a31fc185335f07648edf',
+  source:'CLOUDFLARE_CONTROL_PLANE_READ_ONLY',collected_at_ms:now-20_000,
+  script_names:all,worker_names:all.slice(),
+  do_namespace_names:[
+   'tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
+   'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults'
+  ],access_app_names:['existing Pages staging'],
+  page_verification:{status:'COMPLETE',cross_consistent:true,total_workers:28,total_scripts:28}
+ };
+ const permit={
+  contract:'T404_V174P_HOSTED4B1_PRIVATE_PHASE_A_SIGNED_PERMIT_V1',
+  intent:'FIRST_UPLOAD_INACTIVE_ONLY',
+  account_id:'ac01685529c0a31fc185335f07648edf',
+  worker_name:'tien404-v174p-private-qa-issuer',new_sqlite_class:'V174PReplayGuard',
+  source_git_sha:'b9992731e5878eacb0f0c0cd091439b7ce2a935a',
+  source_sha256:createHash('sha256').update(source).digest('hex'),
+  manifest_sha256:hashPermit(manifest),inventory_sha256:hashPermit(inventory),
+  signed_at:new Date(now-1000).toISOString(),expires_at:new Date(now+180000).toISOString(),
+  nonce:'b'.repeat(32),deployment_operator_email:'operator@example.com',
+  rollback_operator_email:'rollback@example.com',
+  incremental_budget_usd:5,max_external_requests:0,accept_shared_account_cost_risk:true,
+  ack_spending_limit_not_hard_cap:true,ack_do_storage_charges_excluded:true,
+  no_account_wide_limit_change:true,no_public_routes:true,no_preview_url:true,
+  no_workers_dev:true,no_secret_upload:true,no_access_modifications:true,
+  no_real_customer_data:true,no_outbound_provider_send:true,no_ai_model_calls:true,
+  no_commerce_writes:true,create_new_qa_worker_and_sqlite_do_only:true
+ };
+ const owner=generateKeyPairSync('ed25519'),security=generateKeyPairSync('ed25519');
+ const trustAnchors={
+  owner:{role:'owner',key_id:'synthetic-owner',registered_out_of_band:true,
+   spki_pem:owner.publicKey.export({format:'pem',type:'spki'})},
+  security:{role:'security_reviewer',key_id:'synthetic-security',registered_out_of_band:true,
+   spki_pem:security.publicKey.export({format:'pem',type:'spki'})}
+ };
+ const sig=(pair,kid)=>({key_id:kid,signature:rsaSign(null,
+   Buffer.from('T404_V174P_HOSTED4B1_PHASE_A_PERMIT\n'+canonical(permit)),
+   pair.privateKey).toString('base64url')});
+ const evidence={
+  permit,signatures:{owner:sig(owner,'synthetic-owner'),security:sig(security,'synthetic-security')},
+  trustAnchors,registryEvidence:{
+   independently_verified_git_sha:permit.source_git_sha,
+   independently_verified_source_hash:permit.source_sha256,
+   inventory_collected_by_independent_connector:true,
+   v175_durable_ownership_independently_reviewed:true,
+   nonce_uniqueness_verified_by_durable_private_ledger:true,
+   deployment_operator_email:permit.deployment_operator_email,
+   rollback_operator_email:permit.rollback_operator_email,
+   operator_verified_out_of_band:true,rollback_operator_verified_out_of_band:true,
+   finance_owner_cost_reviewed_out_of_band:true,
+   owner_real_identity_verified_out_of_band:true,
+   security_reviewer_real_identity_verified_out_of_band:true
+  },
+  sourceArtifact:source,manifestArtifact:manifest,
+  inventoryEvidence:{status:'COMPLETE_READ_ONLY_NEEDS_INDEPENDENT_REVIEW',errors:[],inventory}
+ };
+ let observed=null;
+ const ledger={claimOnce:async claim=>{
+  observed=claim;
+  return {claimed:true,durable_commit_confirmed:true,receipt_id:'synthetic-only-receipt-1234'};
+ }};
+ const jwt=issue({...base(),permit_sha256:hashPermit(permit)});
+ const result=await reviewPrivateOperatorAndReservePermit({
+  operatorJwt:jwt,trustConfig:trust(),evidence,privateLedger:ledger,
+  getFreshInventory:async()=>structuredClone(evidence.inventoryEvidence),now
+ });
+ assert.equal(result.status,'ONE_TIME_PERMIT_RESERVED_FOR_MANUAL_REVIEW_ONLY',
+  JSON.stringify(result.reasons||result.signer_gate_reasons||[]));
+ assert.match(observed.operator_subject_hash,/^[a-f0-9]{64}$/);
+ assert.equal(observed.permit_hash,hashPermit(permit));
+ assert.equal(result.can_upload,false);
+ assert.equal(result.can_deploy,false);
+ assert.equal(result.real_identity_independently_proven,false);
 });
