@@ -1,0 +1,101 @@
+{
+  "contract": "T404_V171P_AUTH_STORE_COMMERCE_READER_SNAPSHOT_V1",
+  "checkpointDate": "2026-11-17 JST",
+  "stage": "V17.1P_OFFLINE_SHA_STAGING",
+  "parentDraftPr": 283,
+  "parentsSourceSha": "db8f3f55e3986be535c769224e26d696ab88df0e",
+  "staging": {
+    "workflowId": "p5OsIaB0NkMDFMw7",
+    "workflowVersionId": "dec4b734-ab6a-4cdc-b449-bf052b703118",
+    "name": "TIEN404_V171P_TRUSTED_AUTH_STORE_COMMERCE_READER_STAGING_NO_SEND",
+    "active": false,
+    "publishedVersionId": null,
+    "callerPolicy": "none",
+    "nodes": [
+      {
+        "name": "V17.1P Manual Trusted Identity QA Only",
+        "type": "n8n-nodes-base.manualTrigger"
+      },
+      {
+        "name": "V17.1P Generate Same Tenant Store Auth QA Fixtures",
+        "type": "n8n-nodes-base.code"
+      },
+      {
+        "name": "V17.1P Verify Synthetic Authority and Fail Closed for Real JWT",
+        "type": "n8n-nodes-base.code"
+      },
+      {
+        "name": "V17.1P Simulate Store Scoped Commerce Reader NO DB",
+        "type": "n8n-nodes-base.code"
+      },
+      {
+        "name": "V17.1P Independent Acceptance Real Provider JWT NO GO",
+        "type": "n8n-nodes-base.code"
+      }
+    ],
+    "source": [
+      {
+        "name": "V17.1P Generate Same Tenant Store Auth QA Fixtures",
+        "code": "\nconst profiles=[\n {channel:'MESSENGER',installationId:'QA_PAGE_A',destinationId:'QA_PAGE_DEST_A',tenantId:'TENANT_SHARED_QA',storeId:'STORE_A',authUserId:'AUTH_USER_A',senderId:'QA_SENDER_A',sku:'SKU_A',orderId:'ORDER_A',priceVnd:159000},\n {channel:'MESSENGER',installationId:'QA_PAGE_B',destinationId:'QA_PAGE_DEST_B',tenantId:'TENANT_SHARED_QA',storeId:'STORE_B',authUserId:'AUTH_USER_B',senderId:'QA_SENDER_B',sku:'SKU_B',orderId:'ORDER_B',priceVnd:189000},\n {channel:'ZALO',installationId:'QA_OA_A',destinationId:'QA_OA_DEST_A',tenantId:'TENANT_SHARED_QA',storeId:'STORE_A',authUserId:'AUTH_USER_A',senderId:'QA_SENDER_A',sku:'SKU_A',orderId:'ORDER_A',priceVnd:159000},\n {channel:'ZALO',installationId:'QA_OA_B',destinationId:'QA_OA_DEST_B',tenantId:'TENANT_SHARED_QA',storeId:'STORE_B',authUserId:'AUTH_USER_B',senderId:'QA_SENDER_B',sku:'SKU_B',orderId:'ORDER_B',priceVnd:189000}\n];\nconst cases=[];\nlet seq=0;\nfor(const p of profiles){\n const firstEventId='QA_EVT_'+String(seq+1).padStart(4,'0');\n const foreign=p.storeId==='STORE_A'?'STORE_B':'STORE_A';\n const foreignSku=p.storeId==='STORE_A'?'SKU_B':'SKU_A';\n const foreignOrder=p.storeId==='STORE_A'?'ORDER_B':'ORDER_A';\n const foreignSender=p.storeId==='STORE_A'?'QA_SENDER_B':'QA_SENDER_A';\n const foreignAuth=p.storeId==='STORE_A'?'AUTH_USER_B':'AUTH_USER_A';\n function add(name,changed,expected='DENY'){\n   const eventId='QA_EVT_'+String(++seq).padStart(4,'0');\n   cases.push({caseId:'P_'+String(seq).padStart(4,'0'),\n    name,channel:p.channel,installationId:p.installationId,\n    destinationId:p.destinationId,tenantIdHint:p.tenantId,\n    authUserIdHint:p.authUserId,senderId:p.senderId,\n    eventId,occurredAtMs:1794899000000,\n    source:'SYNTHETIC_QA_ONLY',authReceipt:'QA_FAKE_AUTH_PROOF',\n    providerReceipt:'QA_FAKE_PROVIDER_PROOF',isEcho:false,\n    installationActive:true,ownershipActive:true,\n    jwtSessionActive:true,atomicReplayAccepted:true,rateAllowed:true,\n    action:'READ_PUBLIC_CATALOG',sku:p.sku,orderId:p.orderId,\n    accessGrantStoreId:p.storeId,accessGrantSenderId:p.senderId,\n    accessGrantValid:true,query:'áo thun size M',\n    quantity:1,expectedTotalVnd:p.priceVnd,\n    customerConfirmed:true,modelOrigin:'MODEL_PROPOSAL',\n    expected, ...changed});\n }\n add('own catalog preview',{},'SIMULATED_CATALOG_READ_PLAN');\n add('own catalog exact SKU',{query:'SKU'},'SIMULATED_CATALOG_READ_PLAN');\n add('own order status scoped',{action:'READ_OWN_ORDER_STATUS'},'SIMULATED_ORDER_STATUS_PLAN');\n add('cross Store catalog',{sku:foreignSku});\n add('cross Store order',{action:'READ_OWN_ORDER_STATUS',orderId:foreignOrder});\n add('wrong customer sender grant',{action:'READ_OWN_ORDER_STATUS',accessGrantSenderId:foreignSender});\n add('foreign customer Store grant',{action:'READ_OWN_ORDER_STATUS',accessGrantStoreId:foreign});\n add('missing order access grant',{action:'READ_OWN_ORDER_STATUS',accessGrantValid:false});\n add('expired auth session',{jwtSessionActive:false});\n add('disabled owner Store binding',{ownershipActive:false});\n add('disabled channel installation',{installationActive:false});\n add('wrong Page OA destination',{destinationId:'FOREIGN_DEST'});\n add('unknown installation ID',{installationId:'FAKE_INSTALLATION'});\n add('spoof tenant ID',{tenantId:'TENANT_FOREIGN'});\n add('spoof store ID',{storeId:foreign});\n add('spoof auth user ID',{authUserId:foreignAuth});\n add('client declares owner',{ownerVerified:true});\n add('client declares admin',{isAdmin:true});\n add('client declares service role',{serviceRole:'service_role'});\n add('client supplies jwt',{jwt:'QA_CLIENT_FAKE_JWT'});\n add('client supplies user metadata',{user_metadata:{storeId:foreign}});\n add('client supplies app metadata',{app_metadata:{role:'super_admin'}});\n add('client supplies order grant',{orderAccessGrant:'QA_FORGED'});\n add('client supplies provider signature flag',{signatureVerified:true});\n add('client supplies credential',{credential:'not_real_credential'});\n add('client supplies modelWriteAllowed',{modelCanWrite:true});\n add('wrong auth server receipt',{authReceipt:'CLIENT_BOOLEAN_VERIFIED'});\n add('wrong provider receipt',{providerReceipt:'CLIENT_BOOLEAN_VERIFIED'});\n add('signed provider proof missing',{providerReceipt:null});\n add('JWT verified by source only',{authReceipt:'REAL_JWT'});\n add('provider proof verified by source only',{providerReceipt:'REAL_PROVIDER'});\n add('signed event stale',{occurredAtMs:1794899000000-300001});\n add('sender self echo',{isEcho:true});\n add('rate limited',{rateAllowed:false});\n add('replay cache denied',{atomicReplayAccepted:false});\n add('duplicate event replay',{eventId:firstEventId});\n add('unauthorized send',{action:'SEND_MESSAGE'});\n add('unauthorized create order',{action:'CREATE_ORDER'});\n add('unauthorized update order',{action:'UPDATE_ORDER'});\n add('unauthorized change price',{action:'UPDATE_PRICE'});\n add('unauthorized change stock',{action:'UPDATE_STOCK'});\n add('unauthorized credential read',{action:'READ_CREDENTIAL'});\n add('arbitrary URL fetch',{action:'FETCH_EXTERNAL_URL'});\n add('image injection provenance',{modelOrigin:'PRODUCT_IMAGE'});\n add('catalog injection provenance',{modelOrigin:'PRODUCT_CATALOG'});\n add('RAG injection provenance',{modelOrigin:'KNOWLEDGE_DOCUMENT'});\n add('invalid query payload',{query:'https://attacker.example'});\n add('invalid excessive query',{query:'x'.repeat(130)});\n add('propose order cannot execute write',{action:'PROPOSE_ORDER'});\n add('customer cross-channel identity without challenge',{action:'READ_CROSS_CHANNEL_ORDER'});\n add('unknown new tool',{action:'PLUGINS_INSTALL'});\n add('forced production admission attempt',{admissionMode:'REAL_PRODUCTION'});\n}\nreturn [{json:{contract:'T404_V171P_SAME_TENANT_AUTH_STORE_READER_GATE_QA_V1',\n mode:'INACTIVE_MANUAL_SYNTHETIC_ONLY',syntheticOnly:true,\n sourceCheckpoint:'V17.1O',publishedMessengerVersion:'1064b1b3-d3f1-4a6b-a367-2414ba691522',\n publishedZaloVersion:'2d912cb0-007f-452f-9536-b92ba12a03e6',\n realJwtVerified:false,realProviderOwnerVerified:false,actualReaderAttached:false,\n nowMs:1794899000000,fixturesPerProfile:cases.length/4,total:cases.length,cases}}];\n"
+      },
+      {
+        "name": "V17.1P Verify Synthetic Authority and Fail Closed for Real JWT",
+        "code": "\nconst indata=$input.first()?.json||{};\nif(indata.contract!=='T404_V171P_SAME_TENANT_AUTH_STORE_READER_GATE_QA_V1'||\n indata.mode!=='INACTIVE_MANUAL_SYNTHETIC_ONLY'||indata.syntheticOnly!==true||\n !Array.isArray(indata.cases)||indata.total!==indata.cases.length||\n indata.total<150||indata.total>250||\n indata.realJwtVerified!==false||indata.realProviderOwnerVerified!==false||\n indata.actualReaderAttached!==false)throw Error('V171P_INGRESS_NOT_SYNTHETIC_NO_GO');\nconst reg={\n 'MESSENGER:QA_PAGE_A':{destinationId:'QA_PAGE_DEST_A',tenantId:'TENANT_SHARED_QA',storeId:'STORE_A',authUserId:'AUTH_USER_A',senderId:'QA_SENDER_A',sku:'SKU_A',orderId:'ORDER_A'},\n 'MESSENGER:QA_PAGE_B':{destinationId:'QA_PAGE_DEST_B',tenantId:'TENANT_SHARED_QA',storeId:'STORE_B',authUserId:'AUTH_USER_B',senderId:'QA_SENDER_B',sku:'SKU_B',orderId:'ORDER_B'},\n 'ZALO:QA_OA_A':{destinationId:'QA_OA_DEST_A',tenantId:'TENANT_SHARED_QA',storeId:'STORE_A',authUserId:'AUTH_USER_A',senderId:'QA_SENDER_A',sku:'SKU_A',orderId:'ORDER_A'},\n 'ZALO:QA_OA_B':{destinationId:'QA_OA_DEST_B',tenantId:'TENANT_SHARED_QA',storeId:'STORE_B',authUserId:'AUTH_USER_B',senderId:'QA_SENDER_B',sku:'SKU_B',orderId:'ORDER_B'}\n};\nconst forbidden=['tenantId','storeId','authUserId','ownerVerified','isAdmin','serviceRole','jwt','user_metadata','app_metadata','orderAccessGrant','signatureVerified','credential','modelCanWrite','apiKey','targetRecipientId','authorization','privateKey'];\nconst seen=new Set();\nconst results=[];\nfor(const c of indata.cases){\n let reason='DEFAULT_DENY',decision='DENY',scope=reg[c.channel+':'+c.installationId];\n if(!scope||c.destinationId!==scope.destinationId||\n   c.source!=='SYNTHETIC_QA_ONLY'||c.admissionMode!==undefined||\n   c.authReceipt!=='QA_FAKE_AUTH_PROOF'||\n   c.providerReceipt!=='QA_FAKE_PROVIDER_PROOF'||\n   c.installationActive!==true||c.ownershipActive!==true||\n   c.jwtSessionActive!==true||c.senderId!==scope.senderId||\n   c.authUserIdHint!==scope.authUserId||\n   c.tenantIdHint!==scope.tenantId||c.isEcho===true)\n  reason='FAKE_OR_UNVERIFIED_AUTH_PROVIDER_INSTALLATION';\n else if(forbidden.some(k=>Object.prototype.hasOwnProperty.call(c,k)))\n  reason='CLIENT_CLAIMED_PRIVILEGE_OR_STORE';\n else if(!Number.isSafeInteger(c.occurredAtMs)||\n    Math.abs(indata.nowMs-c.occurredAtMs)>300000)reason='STALE_EVENT';\n else {\n  const key=scope.tenantId+':'+scope.storeId+':'+c.channel+':'+c.installationId+':'+c.eventId;\n  if(!/^QA_EVT_[0-9]{4}$/.test(String(c.eventId||''))||seen.has(key)||c.atomicReplayAccepted!==true)reason='REPLAY_OR_NOT_DURABLY_ACCEPTED';\n  else {\n   seen.add(key);\n   if(c.rateAllowed!==true||c.modelOrigin!=='MODEL_PROPOSAL'||\n      typeof c.query!=='string'||c.query.length>120||!/[\\p{L}\\p{N}]/u.test(c.query)||!/^[\\p{L}\\p{N}_ .-]{1,120}$/u.test(c.query)||\n      /https?:\\/\\/|www\\.|(?:password|token|credential|api.?key|secret|otp)/i.test(c.query))\n      reason='RATE_OR_UNTRUSTED_TOOL_INPUT';\n   else if(c.action==='READ_PUBLIC_CATALOG'){\n      if(c.sku===scope.sku){\n       decision='SIMULATED_CATALOG_READ_PLAN';reason='QA_CATALOG_PLAN_ONLY';\n      }else reason='CROSS_STORE_CATALOG_DENIED';\n   }else if(c.action==='READ_OWN_ORDER_STATUS'){\n      if(c.orderId===scope.orderId&&\n        c.accessGrantValid===true&&\n        c.accessGrantStoreId===scope.storeId&&\n        c.accessGrantSenderId===scope.senderId){\n       decision='SIMULATED_ORDER_STATUS_PLAN';reason='QA_ORDER_GRANT_PLAN_ONLY';\n      }else reason='CROSS_STORE_OR_CUSTOMER_ORDER_DENIED';\n   }else reason='NOT_IN_SOURCE_ONLY_READ_ALLOWLIST';\n  }\n }\n results.push({caseId:c.caseId,scenario:c.name,channel:c.channel,\n  expected:c.expected,decision,passed:decision===c.expected,\n  reason,tenantId:decision==='DENY'?null:scope?.tenantId,\n  storeId:decision==='DENY'?null:scope?.storeId,\n  sku:decision==='SIMULATED_CATALOG_READ_PLAN'?scope.sku:null,\n  orderId:decision==='SIMULATED_ORDER_STATUS_PLAN'?scope.orderId:null,\n  actualCommerceReaderExecuted:false,\n  independentRealJwtVerified:false,\n  independentRealProviderEventVerified:false,\n  actualWrites:0,actualSends:0});\n}\nreturn [{json:{contract:indata.contract,mode:'SOURCE_ONLY_ADMISSION_GATE',\n total:results.length,passed:results.filter(x=>x.passed).length,\n denied:results.filter(x=>x.decision==='DENY').length,\n catalogPlans:results.filter(x=>x.decision==='SIMULATED_CATALOG_READ_PLAN').length,\n orderStatusPlans:results.filter(x=>x.decision==='SIMULATED_ORDER_STATUS_PLAN').length,\n results,realJwtAuthorizations:0,realProviderSignedEvents:0,\n actualCommerceReads:0,actualCommerceWrites:0,actualProviderMessagesSent:0,\n hostedRlsVerified:false,hostedJwtStoreAAndBVerified:false,liveReleaseApproved:false}}];\n"
+      },
+      {
+        "name": "V17.1P Simulate Store Scoped Commerce Reader NO DB",
+        "code": "\nconst d=$input.first()?.json||{};\nif(d.contract!=='T404_V171P_SAME_TENANT_AUTH_STORE_READER_GATE_QA_V1'||\n d.mode!=='SOURCE_ONLY_ADMISSION_GATE'||!Array.isArray(d.results))throw Error('V171P_UNTRUSTED_READER_PLAN');\nconst catalog={STORE_A:{sku:'SKU_A',priceVnd:159000},STORE_B:{sku:'SKU_B',priceVnd:189000}};\nconst orders={STORE_A:{orderId:'ORDER_A',status:'PENDING_FAKE'},STORE_B:{orderId:'ORDER_B',status:'PENDING_FAKE'}};\nconst previews=[];\nfor(const p of d.results){\n if(p.decision==='SIMULATED_CATALOG_READ_PLAN'){\n  const item=catalog[p.storeId];\n  if(!item||p.sku!==item.sku||p.tenantId!=='TENANT_SHARED_QA')throw Error('V171P_CATALOG_PLAN_SCOPE_MISMATCH');\n  previews.push({caseId:p.caseId,kind:'CATALOG',\n    storeId:p.storeId,sku:item.sku,priceVnd:item.priceVnd,\n    dataSource:'SYNTHETIC_CODE_ONLY',canReadHostedDatabase:false});\n }\n if(p.decision==='SIMULATED_ORDER_STATUS_PLAN'){\n  const item=orders[p.storeId];\n  if(!item||p.orderId!==item.orderId||p.tenantId!=='TENANT_SHARED_QA')throw Error('V171P_ORDER_PLAN_SCOPE_MISMATCH');\n  previews.push({caseId:p.caseId,kind:'OWN_ORDER_STATUS',\n    storeId:p.storeId,orderId:item.orderId,status:item.status,\n    dataSource:'SYNTHETIC_CODE_ONLY',canReadHostedDatabase:false});\n }\n}\nreturn [{json:{...d,previews,actualPostgrestRequests:0,\n actualCustomerDataRead:0,realCommerceReaderInvocations:0,\n sourceOnlyModelIdentityProof:false}}];\n"
+      },
+      {
+        "name": "V17.1P Independent Acceptance Real Provider JWT NO GO",
+        "code": "\nconst x=$input.first()?.json||{};\nif(x.contract!=='T404_V171P_SAME_TENANT_AUTH_STORE_READER_GATE_QA_V1'||\n x.mode!=='SOURCE_ONLY_ADMISSION_GATE'||!Number.isSafeInteger(x.total)||\n x.total<150||x.total>250||x.passed!==x.total||\n x.results.some(r=>!r.passed)||x.catalogPlans!==8||x.orderStatusPlans!==4||\n x.denied!==x.total-12||x.previews.length!==12||\n x.previews.some(p=>p.dataSource!=='SYNTHETIC_CODE_ONLY'||p.canReadHostedDatabase!==false)||\n x.actualPostgrestRequests!==0||x.actualCustomerDataRead!==0||\n x.realCommerceReaderInvocations!==0||\n x.realJwtAuthorizations!==0||x.realProviderSignedEvents!==0||\n x.actualCommerceReads!==0||x.actualCommerceWrites!==0||\n x.actualProviderMessagesSent!==0||x.hostedRlsVerified!==false||\n x.hostedJwtStoreAAndBVerified!==false||x.liveReleaseApproved!==false)\n throw Error('V171P_TRUSTED_COMMERCE_READER_STAGING_QA_FAILED');\nreturn [{json:{contract:x.contract,\n qaStatus:'V171P_STORE_AUTH_READER_SOURCE_ONLY_ACCEPTANCE_PASS',\n total:x.total,passed:x.passed,denied:x.denied,\n simulatedCatalogReads:x.catalogPlans,simulatedOrderStatusReads:x.orderStatusPlans,\n realJwtStoreAuthVerified:false,\n realProviderSignatureVerified:false,\n realCommerceReaderConnected:false,\n sourceOfCatalog:'WHOLLY_SYNTHETIC',\n actualHostedDbReads:0,actualCommerceWrites:0,actualProviderSends:0,\n release:'HOSTED_NO_GO'}}];\n"
+      }
+    ],
+    "noCredentials": true,
+    "manualOnly": true,
+    "acceptedExecutionId": "5010",
+    "expectedCases": 208,
+    "expectedPassed": 208,
+    "expectedDenied": 196,
+    "expectedSyntheticCatalogPlans": 8,
+    "expectedSyntheticOrderPlans": 4
+  },
+  "publishedPreserved": {
+    "messengerWorkflowId": "Z7FdV7uDvApfbURQ",
+    "messengerVersionId": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+    "zaloWorkflowId": "yIJk8LvJoLF40Z62",
+    "zaloVersionId": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+    "allMessengerV1715NodesStillPresent": true,
+    "publishedChangedByThisStage": false
+  },
+  "supabaseReadOnlyAsObserved": {
+    "projectRef": "ifxlvrhyjhbzbrkdsida",
+    "distinctMappedTenants": 2,
+    "distinctMappedStores": 2,
+    "ownerReferences": 2,
+    "exactStoreOwnerBindingLinks": 2,
+    "sameTenantDistinctStoreOwnerPairs": 0,
+    "tenantsWithTwoActiveSessionMembers": 0,
+    "legacyStoreScopedPolicies": 0,
+    "legacyTenantScopedPolicies": 3,
+    "qaLegacyCoreTablesStoreColumnPresent": false,
+    "qaV175ActorsBothSameStore": true,
+    "realTwoOwnerJwtAttested": false,
+    "fakeSqlSetRoleIsNotJwtEvidence": true
+  },
+  "providerAuthority": {
+    "realMetaSignedQaEventAttested": false,
+    "realZaloSignedQaEventAttested": false,
+    "currentZaloLiveRawBodySigningEvidenceIncomplete": true,
+    "existingMessengerVerifiedNodeIsNotIndependentProof": true,
+    "realPageOaOwnershipAttested": false
+  },
+  "realOrdersRead": 0,
+  "realOrdersWritten": 0,
+  "realCustomersRead": 0,
+  "actualModelsCalled": 0,
+  "providerMessagesSent": 0,
+  "realCommerceReaderConnected": false,
+  "rollback": "Close Draft child PR; QA n8n remains inactive; no DB changes",
+  "release": "HOSTED_NO_GO"
+}
