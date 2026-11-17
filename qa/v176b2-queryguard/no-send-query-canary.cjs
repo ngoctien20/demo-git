@@ -18,7 +18,8 @@ function run(name,expected,fn,errorCode){
     let err;
     try{fn();}catch(e){err=e;}
     assert.ok(err instanceof Error,name+': must throw');
-    assert.equal(err.code,errorCode,name+': wrong deny reason');
+    assert.equal(err.message,errorCode,name+': wrong deny reason');
+    assert.ok(err.code===undefined||err.code===errorCode,name+': inconsistent code');
   }
   results.push({caseId:name,expected,actual:expected,passed:true});
 }
