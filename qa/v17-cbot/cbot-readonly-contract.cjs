@@ -169,7 +169,7 @@ function createReadOnlyPilot({attestInbound,readCatalog,matchImage,
    return preview('CONFIRMATION_CANNOT_EXECUTE_IN_SOURCE_ONLY',{
      requiresTrustedServerAction:true,needsFinalOrderConfirmation:true});
   }
-  const skuMention=text.match(/\b[A-Z]\d{3}\b/i);
+  const skuMention=text.match(/\b(?:[A-Z]\d{3}|[A-Z]{2,8}(?:-[A-Z0-9]{1,12}){1,3})\b/i);
   if(skuMention){
     const sku=skuMention[0].toUpperCase();
     const found=c.products.filter(p=>p.sku.toUpperCase()===sku);

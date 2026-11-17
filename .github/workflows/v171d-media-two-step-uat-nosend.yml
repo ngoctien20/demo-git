@@ -1,0 +1,126 @@
+name: TIEN404 V17.1D Real PNG Pixel Intake × Two-Step Messenger Zalo UAT (NO HOSTED)
+on:
+  push:
+    branches:
+      - work/v171d-media-intake-two-step-link-confirm-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171d-commerce/**'
+      - 'qa/v17-cbot/cbot-readonly-contract.cjs'
+      - 'docs/ai-handoff/V17_1D_*'
+      - '.github/workflows/v171d-media-two-step-uat-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171d-source-regressions:
+    name: V17.1D 52 media+two-step+E2E and 158 inherited contract cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Actual PNG byte/pixel and malicious media controls (22 cases)
+        run: |
+          node --check qa/v171d-commerce/png-media-intake.cjs
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+      - name: Stolen-token source-confirmation and read-only order proof (25 cases)
+        run: |
+          node --check qa/v171d-commerce/two-step-link-readonly.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+      - name: Full fixture image → Commerce SKU → customer draft confirmation → Zalo lookup (5 cases)
+        run: node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: Inherited V17.1C link and synthetic vector tests (39 cases)
+        run: |
+          node --test qa/v171c-commerce/private-cross-channel-link.test.cjs
+          node --test qa/v171c-commerce/synthetic-vision-retrieval.test.cjs
+          node qa/v171c-commerce/run-synthetic-vision-benchmark.cjs
+      - name: Inherited V17/V14/V15 Channel, Studio and verified identity (119 cases)
+        run: |
+          node --test qa/v17-cbot/cbot-readonly-contract.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Static NO SEND and no live media, storage or credential access
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for f in ('qa/v171d-commerce/png-media-intake.cjs',
+                    'qa/v171d-commerce/two-step-link-readonly.cjs'):
+            s=Path(f).read_text()
+            executable='\n'.join(line for line in s.splitlines()
+                if not line.lstrip().startswith(('*','//')))
+            for banned in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+                r'\bchild_process\b',r'\baxios\b',r'\bservice_role\b',
+                r'\bpg_dump\b',r'\bpg_restore\b',r'\bhttps?\.request\s*\(',
+                r'\bcreateOrder\s*\(',r'\bsendProvider\s*\('):
+              assert not re.search(banned,executable,re.I),(f,banned)
+          media=Path('qa/v171d-commerce/png-media-intake.cjs').read_text()
+          assert 'MEDIA_CRC_MISMATCH' in media and 'MEDIA_COMPRESSED_PAYLOAD_INVALID_OR_BOMB' in media
+          assert 'MEDIA_METADATA_ANIMATION_OR_UNKNOWN_CHUNK_DENIED' in media
+          assert 'realProductPhotoCertified:false' in media
+          assert 'realPixelDecodePerformed:true' in media
+          link=Path('qa/v171d-commerce/two-step-link-readonly.cjs').read_text()
+          for token in ('AWAIT_SOURCE_APPROVAL','SOURCE_CONFIRMATION_PROOF_REQUIRED',
+              'ORDER_ACCESS_DENIED','canCreateOrder:false',
+              'actualMetaZaloProofVerifiedHere:false'):
+            assert token in link,token
+          pilot=Path('qa/v17-cbot/cbot-readonly-contract.cjs').read_text()
+          assert "[A-Z]{2,8}(?:-[A-Z0-9]{1,12}){1,3}" in pilot
+          assert 'REAL_ORDER_WRITE_DISABLED' in pilot and 'PROVIDER_SEND_DISABLED' in pilot
+          print('PASS V17.1D: QA-only real PNG pixels, no hosted writes or sends')
+          PY
+  v171d-disposable-pg17-two-step:
+    name: V17.1D PostgreSQL17 destination pending then verified source approves — no hosted
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v171d_fake_pg17_ci_only
+          POSTGRES_DB: t404_v171c_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171c_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_V171C_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_v171c_ci
+      PGUSER: postgres
+      PGPASSWORD: v171d_fake_pg17_ci_only
+      PGOPTIONS: '-c tien404.v171c_ephemeral=RPC171C_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original challenge DB + two-step pending and source-controlled commit
+        run: |
+          bash -n qa/v171d-commerce/ci-pg17-two-step-link-rehearsal.sh
+          bash qa/v171d-commerce/ci-pg17-two-step-link-rehearsal.sh
+
+  v171d-release-no-go:
+    name: V17.1D REAL Page/OA, Vision model, Store ownership and Order writes — NO GO (intentional)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    needs: [v171d-source-regressions,v171d-disposable-pg17-two-step]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse promotion from synthetic real PNG bytes to real Customer UAT
+        run: |
+          node - <<'NODE'
+          const media=require('./qa/v171d-commerce/png-media-intake.cjs');
+          const link=require('./qa/v171d-commerce/two-step-link-readonly.cjs');
+          if(!media.VERSION.endsWith('PIXEL_QA_V1')||!link.VERSION.endsWith('ORDER_UAT_V1'))
+            throw Error('SOURCE_VERSION_MISMATCH');
+          console.error('V171D_L3_L4_HOSTED_NO_GO_MERCHANT_PHOTOS_REAL_VISION_PROVIDER_PROOF_CUSTOMER_STORE_RLS_AND_ORDER_AUTHORITY_MISSING');
+          process.exitCode=3;
+          NODE
