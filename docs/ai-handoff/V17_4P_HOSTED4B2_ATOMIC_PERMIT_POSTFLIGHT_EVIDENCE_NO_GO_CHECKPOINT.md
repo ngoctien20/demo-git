@@ -36,7 +36,7 @@ The new `assessInactiveCloudflareChangeSet` strictly compares **complete raw** p
 The comparator never calls Cloudflare. A locally passing comparator does not mean a real Worker exists.
 
 ### 4. QA and security limitations
-- Synthetic test ledger uses in-memory atomic `Set` **only for unit tests**, NOT viable across distributed operators or restarts. Production ledger needs a real dedicated database and nonrepudiable operator identity service, with mandatory private review and approval before provisioning.
+- Synthetic test ledger uses in-memory atomic `Set` **only for unit tests**, NOT viable across distributed operators or restarts. The suite also tests two differently signed nonces targeting the same first-upload Worker: exactly one wins. Production ledger needs a real dedicated database and nonrepudiable operator identity service, with mandatory private review and approval before provisioning.
 - Atomic nonce and target collision check avoids repeated permits within that ledger; it **does not solve all Cloudflare time-of-check/time-of-use races** against other actors who do not use this ledger. Cloudflare account RBAC and a single scoped deployment operator remain required.
 - A document containing strings `claimed:true` or `registered_out_of_band:true` can be fabricated. A separate trusted service must independently attest its durable commit and operator identity; no such service has been provisioned or verified in this conversation.
 - No irreversible deletion; a future QA namespace rollback requires separate owner authorization.
