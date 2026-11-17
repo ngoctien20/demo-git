@@ -1,0 +1,35 @@
+name: V17 Zalo OA Source Admission - Offline No Send
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - ".github/workflows/v17-zalo-oa-source-admission-nosend.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node version
+        run: node --version
+      - name: JavaScript syntax check
+        run: |
+          node --check qa/zalo-oa-source-admission/oa-admission.mjs
+          node --check qa/zalo-oa-source-admission/oa-admission.test.mjs
+      - name: Synthetic OA admission and isolation tests
+        run: node --test qa/zalo-oa-source-admission/oa-admission.test.mjs
+      - name: Mandatory no-send source guard
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('qa/zalo-oa-source-admission/oa-admission.mjs','utf8');
+          for (const pattern of [/fetch\s*\(/, /https?\.request\s*\(/, /sendMessage\s*\(/, /createOrder\s*\(/, /executeCommand\s*\(/]) {
+            if (pattern.test(source)) throw new Error('Forbidden side-effect API found: '+pattern);
+          }
+          if (!source.includes('noSend: true') || !source.includes('noOrderWrite: true')) {
+            throw new Error('No-send contract missing');
+          }
+          NODE
