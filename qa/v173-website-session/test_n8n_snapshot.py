@@ -63,13 +63,13 @@ class V173WebsiteSessionAcceptance(unittest.TestCase):
         self.assertTrue(all(C['QA_V173_'+str(i).zfill(2)]['status']=='DENY' for i in (12,13,35)))
     def test_35_wrong_origin_and_widget_denied(self):
         self.assertTrue(all(C['QA_V173_'+str(i).zfill(2)]['status']=='DENY' for i in (8,9,10,37,38)))
-    def test_36 cross_store_bot_versions_denied(self):
+    def test_36_cross_store_bot_versions_denied(self):
         self.assertTrue(all(C['QA_V173_'+str(i).zfill(2)]['status']=='DENY' for i in (17,18,19,20,36)))
     def test_37_order_and_write_denied(self):
         self.assertTrue(all(C['QA_V173_'+str(i).zfill(2)]['status']=='DENY' for i in (23,24,25)))
-    def test_38 untrusted client claims denied(self):
+    def test_38_untrusted client claims denied(self):
         self.assertTrue(all(C['QA_V173_'+str(i).zfill(2)]['status']=='DENY' for i in (29,30,31,32,33,34)))
-    def test_39 no_denied_case_leaks_store(self):
+    def test_39_no_denied_case_leaks_store(self):
         self.assertTrue(all(x['store'] is None and x['bot'] is None for x in C.values() if x['status']=='DENY'))
     def test_40_qa_source_has_fake_key_marker(self):
         code=N['Mint QA Server Session and 38 Browser Messages']['parameters']['jsCode']
