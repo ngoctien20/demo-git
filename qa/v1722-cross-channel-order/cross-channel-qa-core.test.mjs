@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {CONTRACT,MODE,createCrossChannelQaLab,qaEvent,signQaEnvelope} from './cross-channel-qa-core.mjs';
@@ -310,4 +311,19 @@ test('no outbound provider or real checkout tools implemented in source',()=>{
  const f=fixture();
  assert.deepEqual(Object.fromEntries(['provider_sends','commerce_writes','model_calls','live_orders'].map(k=>[k,f.lab.inspection()[k]])),
    {provider_sends:0,commerce_writes:0,model_calls:0,live_orders:0});
+});
+
+test('private staging schema source is non-exposed, RLS forced and no endpoint grants',()=>{
+ const s=readFileSync(new URL('./PRIVATE_STAGING_SCHEMA_CANDIDATE.DO_NOT_APPLY.sql',import.meta.url),'utf8');
+ assert.match(s,/DO NOT APPLY TO HOSTED DATABASE YET/);
+ assert.match(s,/create schema if not exists tien404_v1722_qa/);
+ assert.match(s,/revoke all on schema tien404_v1722_qa from public, anon, authenticated, service_role/);
+ for(const name of ['orders','link_challenges','channel_links','provider_replay']){
+  assert.ok(s.includes('alter table tien404_v1722_qa.'+name+' enable row level security;'));
+  assert.ok(s.includes('alter table tien404_v1722_qa.'+name+' force row level security;'));
+ }
+ assert.ok(s.includes('revoke all on all tables in schema tien404_v1722_qa'));
+ assert.equal(/security\s+definer/i.test(s.replace(/^--.*$/gm,'')),false);
+ assert.equal(/\bgrant\s+(select|insert|update|delete|usage|execute)\s+on\b/i.test(s),false);
+ assert.equal(s.includes('AI_SALES_DEMO'),true);
 });
