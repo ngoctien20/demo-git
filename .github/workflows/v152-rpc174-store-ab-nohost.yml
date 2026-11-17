@@ -1,0 +1,42 @@
+name: TIEN404 RPC17.4 — Real Store A/B UAT Readiness (NO HOST)
+on:
+  push:
+    branches:
+      - work/v152-rpc174-store-ab-real-jwt-uat-readiness-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-rpc174/**'
+      - 'docs/ai-handoff/T404_RPC174_*'
+      - '.github/workflows/v152-rpc174-store-ab-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  read-only-store-ab-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: RPC17.4 real Store A/B admission negative UAT
+        run: |
+          node --check qa/v152-rpc174/real-store-ab-readiness.mjs
+          node --test qa/v152-rpc174/real-store-ab-readiness.test.mjs
+      - name: Inherited RPC17.3 through RPC13 source security regressions
+        run: |
+          node --test qa/v152-rpc173/operator-authority.test.mjs
+          node --test qa/v152-rpc173/hosted-change-gate.test.mjs
+          node --test qa/v152-rpc172/scanner-bridge.test.mjs
+          node --test qa/v152-rpc172/independent-hosted-gate.test.mjs
+          node --test qa/v152-rpc171/atomic-admission.test.mjs
+          node --test qa/v152-rpc17/private-admission.test.mjs
+          node --test qa/v152-rpc16/inactive-worker.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: RPC16 public endpoint remains disabled
+        run: |
+          grep -Eq '"workers_dev"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          grep -Eq '"preview_urls"[[:space:]]*:[[:space:]]*false' qa/v152-rpc16/wrangler.jsonc
+          node --input-type=module -e "import {noSendCanaryDecision} from './qa/v152-rpc174/real-store-ab-readiness.mjs';const r=noSendCanaryDecision();if(r.can_send||r.can_upload||r.can_deploy||r.can_open_access)process.exit(1)"
