@@ -58,3 +58,16 @@ Windows PowerShell can place each generated value into the clipboard without pri
 - This runbook does **not** assert that a secret has been changed, webhook registered, public Worker enabled, a message sent, or D1 accepted.
 - Tests and code published at older branch commits verify only synthetic input handling. A source-only GitHub CI PASS is not equivalent to a live Zalo callback acceptance.
 - Checkpoint `PREPARED_OFFLINE / LOCAL_PRIVATE_SECRETS_NEEDED / OWNER_READY_GATE / LIVE_TEST_NOT_EXECUTED / PRODUCTION_NO_GO`.
+
+## Owner time-window update — verified before public admission
+
+Owner reported updating `QA_START_MS` / `QA_END_MS`. Cloudflare read-only postflight around 2026-11-18 06:23 JST **verified**:
+- `QA_START_MS` = 1794950538271 (2026-11-18 06:22:18.271 JST).
+- `QA_END_MS` = 1794951738271 (2026-11-18 06:42:18.271 JST).
+- Duration exactly 20 min; both values are safe integer milliseconds; start was in the past at inspection and end was in the future.
+- Dedicated Worker deployed version is now `20f281c4-c568-45c9-bd7b-e63a0e7d1fc4`, workers.dev OFF, preview OFF, `qa_canary_once` receipt count remains 0.
+- `QA_HEADER_SECRET`, `QA_CALLBACK_PATH`, `QA_CHALLENGE`, and `QA_EVENT_PEPPER` still bound as `secret_text`; actual values are non-readable, thus secret equality and callback/challenge recoverability remain unverified.
+
+**Live admission remains blocked:** Before enabling public Worker, privately verify the owner still possesses the current randomized callback path and exact challenge and can complete provider registration, one-message acceptance and webhook deletion before expiry. **Never leave public ingress enabled if there is insufficient time; refresh the bounded QA window only immediately before an authorized single-message test.**
+
+**No** webhook registration, Worker public activation, secret mutation or customer-message send was performed by this checkpoint.
