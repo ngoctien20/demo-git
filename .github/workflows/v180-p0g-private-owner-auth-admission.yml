@@ -1,0 +1,76 @@
+name: TIEN404 V18.0-P0G — Private Owner Auth Admission (SOURCE ONLY)
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0g/**'
+      - '.github/workflows/v180-p0g-private-owner-auth-admission.yml'
+      - 'docs/ai-handoff/T404_V180_P0G_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0g/**'
+      - '.github/workflows/v180-p0g-private-owner-auth-admission.yml'
+      - 'docs/ai-handoff/T404_V180_P0G_*'
+permissions:
+  contents: read
+jobs:
+  source-only-private-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Reject network, hosted APIs, mutable state or secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0g/private-owner-consent-admission.mjs
+          ! grep -Eqi 'child_process|createClient\(|process\.env|fetch\(|https?\.request\(|\.exec\(' qa/v180-p0g/private-owner-consent-admission.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const file='qa/v180-p0g/private-read-only-auth-cohort.sql';
+          const s=readFileSync(file,'utf8').replace(/^--[^\n]*$/gm,'');
+          if(!s.includes('BEGIN TRANSACTION READ ONLY;') ||
+             !s.trimEnd().endsWith('COMMIT;') ||
+             /\b(INSERT|UPDATE|DELETE|CREATE|DROP|TRUNCATE|ALTER|GRANT|REVOKE|CALL|COPY|DO|EXECUTE|VACUUM)\b/i.test(s))
+            throw Error('P0G_SQL_NOT_STRICTLY_READ_ONLY');
+          const p=JSON.parse(readFileSync('qa/v180-p0g/read-only-auth-owner-aggregate.json','utf8'));
+          if(p.data_class!=='AGGREGATE_ONLY_NO_IDENTIFIERS_NO_SECRETS' ||
+             JSON.stringify(p).match(/"(email|phone|password|access_token|refresh_token|session_id|user_id|private_key)"\s*:/i))
+            throw Error('P0G_EVIDENCE_PRIVACY_VIOLATION');
+          console.log('PASS_P0G_AGGREGATES_AND_READ_ONLY_SQL');
+          NODE
+      - name: Run independent fail-closed owner consent and session checker unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v180-p0g/private-owner-consent-admission.test.mjs
+      - name: Verify 31 inherited real UAT scenarios remain NOT_RUN
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {evaluateOwnerCohort,inheritedNoSendMatrix} from './qa/v180-p0g/private-owner-consent-admission.mjs';
+          const a=JSON.parse(readFileSync('qa/v180-p0g/read-only-auth-owner-aggregate.json','utf8'));
+          const b=JSON.parse(readFileSync('qa/v180-p0f/canonical-store-compatibility-metadata.json','utf8'));
+          const r=evaluateOwnerCohort(a,b);
+          const cases=inheritedNoSendMatrix();
+          if(r.status!=='NO_GO'||!r.exactAggregateReadOnlyVerified ||
+             r.canRunHostedAB||r.canGrantStoreMembership||
+             cases.length!==31||
+             cases.some(c=>c.actual!=='NOT_RUN'||c.runtimeVerified||c.evidence_sha256!==null))
+            throw Error('P0G_FAIL_CLOSED_GATE_REGRESSION');
+          console.log(JSON.stringify({
+            checkpoint:'P0G',actualReadOnlyAggregateVerified:true,
+            twoEligibleSameTenantOwnerSessionGroups:a.auth_cohort.same_tenant_two_owner_session_record_groups,
+            canonicalStoreTables:a.hosted_store_authority.public_stores_tables,
+            privateOwnerConsent:'NOT_COLLECTED',realJWT:'NOT_RUN',realUatCasesNotRun:cases.length,
+            canMigrate:false,production:'NO_GO'
+          }));
+          NODE
+      - name: No-host no-send policy receipt
+        shell: bash
+        run: |
+          printf '%s\n' 'P0G_ONLY_SOURCE_AND_READ_ONLY_AGGREGATES; NO_JWT_SECRETS; NO_OWNER_ACCOUNT_CHANGES; NO_HOSTED_MIGRATION; NO_PROVIDER_SEND; M0_DEFERRED_SOURCE_ONLY'
