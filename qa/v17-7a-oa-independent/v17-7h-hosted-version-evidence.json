@@ -1,0 +1,88 @@
+{
+  "project": "TIEN404",
+  "stage": "V17.7H",
+  "date_jst": "2026-11-17",
+  "parent_pr": 342,
+  "parent_sha": "05cabc1fb8f30dcfa47f656cc03a885ddee75b46",
+  "proposed_worker": {
+    "name": "tien404-v177h-provider-nosend-inactive-staging",
+    "script_code": "v17-7h-hosted-deny-all-worker.mjs",
+    "upload_method": "POST workers/scripts/{script_name}/versions ONLY",
+    "allowed_worker_code": "HTTP 404 all paths no body no external side effects",
+    "no_deployment_requested": true,
+    "no_route_requested": true,
+    "no_preview_requested": true,
+    "no_workers_dev_requested": true,
+    "no_bindings": true,
+    "no_secrets": true,
+    "hosted_version_upload_verified": true,
+    "hosted_version_id": "c39b8e9d-2dfc-454d-b29d-40b495ff2043",
+    "hosted_deployment_count_verified_zero": true,
+    "hosted_workers_dev_disabled_verified": true,
+    "hosted_previews_disabled_verified": true,
+    "hosted_route_count_verified_zero": true,
+    "scope_approved_for_real_events": false,
+    "hosted_worker_id": "0265c4d1f3d64f9196eb7587b8f1a552",
+    "hosted_worker_registered": true,
+    "hosted_version_count": 1,
+    "hosted_deployment_count": 0,
+    "hosted_route_count": 0,
+    "hosted_custom_domain_count": 0,
+    "hosted_cron_count": 0,
+    "hosted_binding_count": 0,
+    "hosted_deployed_on": null,
+    "source_commit_at_upload": "3535ee2f0e212c846c547c171f0f1b545f6d341d",
+    "upload_operation": "Cloudflare Create Worker metadata with disabled subdomain then POST scripts/{name}/versions without deployment"
+  },
+  "existing": {
+    "rpc16_private_merchant_worker_preserved": true,
+    "rpc16_access_app_id": "f994d4b2-d4f9-419b-8585-5d33be506f13",
+    "rpc16_access_inline_allow_policies": 0,
+    "rpc16_access_inline_bypass_policies": 0,
+    "n8n_qa_workflow_id": "MQcbjLWZ5QUTJW0k",
+    "n8n_qa_active": false,
+    "n8n_qa_last_execution": "5026",
+    "existing_published_messenger_or_zalo_bot_modified": false
+  },
+  "owner": {
+    "realQaPageOrBotOwnershipVerified": false,
+    "independentOperatorVerified": false,
+    "privateOwnerConsentVerified": false,
+    "realMerchantStoreOwnershipVerified": false
+  },
+  "provider": {
+    "realSignedWebhookReceived": false,
+    "nativeQaBotEventCaptured": false,
+    "nativeMetaPageEventCaptured": false,
+    "messagesSent": 0,
+    "publicWebhookActive": false,
+    "separateRealSignatureUatCompleted": false
+  },
+  "commerce": {
+    "realSameTenantStoreAbJwtRlsProved": false,
+    "ordersWritten": 0,
+    "stockWritten": 0,
+    "productsReadFromRealStore": 0,
+    "storeCutoverChanged": false
+  },
+  "external_qa": {
+    "independentEdgeDenyVerified": false,
+    "hostedDurableReplayVerified": false,
+    "hostedRateLimiterVerified": false,
+    "realCustomerMessagesUsed": false,
+    "inactive_worker_current_config_readback_verified": true,
+    "actual_worker_runtime_request_executed": false,
+    "external_access_denial_verified": false,
+    "real_provider_webhook_verified": false
+  },
+  "finance": {
+    "new_paid_resources_created": false,
+    "incremental_cost_claimed": null,
+    "zero_cost_guaranteed_by_provider": false,
+    "bounded_inactive_staging_only": true,
+    "new_inactive_worker_metadata_registered": true,
+    "new_worker_versions_uploaded": 1,
+    "current_usage_cost_verified": false
+  },
+  "release": "REAL_PROVIDER_HOSTED_UAT_NO_GO"
+}
