@@ -56,3 +56,32 @@ test('13 rejects dirty or injected working checkout even when pinned SHA matches
  assert.match(source,/RPC7_PINNED_CHECKOUT_NOT_CLEAN/);
  assert.ok(source.indexOf('status --porcelain')<source.indexOf('GetFullPath($ArchivePath)'));
 });
+
+test('14 RPC7 receipt digit-bearing denial flags survive exact allowlist',()=>{
+ const identifier=/^[A-Za-z][A-Za-z0-9]*$/;
+ assert.ok(identifier.test('m0Approved'));
+ assert.ok(identifier.test('m1Authorized'));
+ for(const injected of ['m0Approved=TRUE','m1Authorized.extra','tenant_id','0mApproved'])
+   assert.equal(identifier.test(injected),false,injected);
+ assert.ok(text.includes("if ($key -notmatch '^[A-Za-z][A-Za-z0-9]*$') { continue }"));
+ assert.match(source,/"m0Approved","m1Authorized"/);
+ assert.match(source,/\$summary\["m0Approved"\] -ne "false"/);
+ assert.match(source,/\$summary\["m1Authorized"\] -ne "false"/);
+ assert.match(source,/\$summary\["receiptSavedLocally"\] -ne "true"/);
+});
+
+test('15 guide uses exact pinned tested PR339 and backup-free local Preflight',()=>{
+ const guide=readFileSync(new URL('../../docs/ai-handoff/CBOT_UAT08_WINDOWS_M0_OPERATOR_QUICKSTART.md',import.meta.url),'utf8');
+ const stage=guide.slice(guide.indexOf('## 1.'),guide.indexOf('## 3.'));
+ assert.ok(stage.length>1000,'reviewed setup and preflight sections required');
+ assert.match(stage,/PR #339 exact tested launcher/);
+ assert.match(stage,/de28444ab78e1ff418d84bc2297ddd4db58a6597/);
+ assert.match(stage,/4f7bef71f54ee17b88449026b90803ccf9743e30/);
+ assert.match(stage,/git clone --no-checkout/);
+ assert.match(stage,/worktree add --detach/);
+ assert.match(stage,/PINNED_SOURCE_CHECKOUTS_READY/);
+ assert.match(stage,/-Mode Preflight -Rpc7Checkout \$rpc7/);
+ assert.doesNotMatch(stage,/& \$launcher -Mode InspectExistingArchive/);
+ assert.match(guide,/STOP GATE/);
+ assert.match(guide,/QA_LIKELY_NOT_VERIFIED_SYNTHETIC/);
+});

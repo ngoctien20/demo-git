@@ -137,7 +137,7 @@ try {
     if ($separator -lt 1) { continue }
     $key = $raw.Substring(0,$separator)
     $value = $raw.Substring($separator+1)
-    if ($key -notmatch '^[A-Za-z]+$') { continue }
+    if ($key -notmatch '^[A-Za-z][A-Za-z0-9]*$') { continue }
     if ($value -notmatch '^[A-Za-z0-9_+-]{0,100}$') { continue }
     if ($allowed -contains $key) { $summary[$key] = $value }
   }
