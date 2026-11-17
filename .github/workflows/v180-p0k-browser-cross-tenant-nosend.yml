@@ -1,0 +1,33 @@
+name: V18.0-P0K Browser Real JWT Cross-Tenant COUNT-ONLY QA Source
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - "qa/v180-p0k/**"
+      - "docs/ai-handoff/T404_V180_P0K_REAL_BROWSER_CROSS_TENANT_COUNT_ONLY.md"
+      - ".github/workflows/v180-p0k-browser-cross-tenant-nosend.yml"
+  pull_request:
+    paths:
+      - "qa/v180-p0k/**"
+      - "docs/ai-handoff/T404_V180_P0K_REAL_BROWSER_CROSS_TENANT_COUNT_ONLY.md"
+      - ".github/workflows/v180-p0k-browser-cross-tenant-nosend.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only-browser-rls-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-only browser operator source (never invoke against production)
+        run: node --check qa/v180-p0k/private-browser-cross-tenant-counts.js
+      - name: Static six-surface no-send no-write negative QA
+        run: node --test qa/v180-p0k/private-browser-cross-tenant-counts.test.mjs
+      - name: Explicit hosted NO-GO
+        run: |
+          echo "V18.0-P0K CI checks SOURCE ONLY. No Auth JWT, Supabase DB, browser session, Bot API, provider sends or writes exercised."
