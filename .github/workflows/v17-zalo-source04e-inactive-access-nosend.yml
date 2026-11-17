@@ -1,0 +1,54 @@
+name: V17 Zalo OA Source04E - Private Owner Inactive Worker Access Denial OFFLINE
+
+on:
+  pull_request:
+    paths:
+      - "qa/zalo-oa-source-admission/**"
+      - "docs/ai-handoff/V17_ZALO_SOURCE_04E_CHECKPOINT.md"
+      - ".github/workflows/v17-zalo-source04e-inactive-access-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source04e-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check every inherited and new OA module
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/zalo-oa-source-admission/*.mjs; do node --check "$f"; done
+      - name: Run full inherited and new private Access UAT synthetic tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Assert 04E contains zero hosted, provider or Commerce side effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/zalo-oa-source-admission/';
+          const f='oa-04e-inactive-access-denial-offline.mjs';
+          const source=readFileSync(root+f,'utf8');
+          for(const rx of [
+            /\bfetch\s*\(/,
+            /\baxios\s*\./,
+            /\bhttps?\s*\.\s*request\s*\(/,
+            /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker|mutateAccess)\s*\(/
+          ]) if(rx.test(source))throw Error('Forbidden side effect in '+f);
+          for(const must of [
+            'realOwnerProved:false','edgeAccessProved:false',
+            'canCreateWorker:false','canDeploy:false','canSend:false',
+            'canWriteOrders:false','canReceiveZalo:false'
+          ]) if(!source.includes(must))throw Error('NO-GO marker missing: '+must);
+          console.log('SOURCE04E source-only no-send/no-Cloudflare-write gate PASS');
+          NODE
