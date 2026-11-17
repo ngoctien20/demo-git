@@ -4,17 +4,6 @@ set -euo pipefail
 cid="$1"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-setup="DO \\\$seed\\\$ DECLARE
- t timestamptz:='2026-11-17 00:00:00+00';
- a bytea:=decode(repeat('aa',32),'hex');
- e bytea:=decode(repeat('ab',32),'hex');
- p bytea:=decode(repeat('ac',32),'hex');
- x text;
-BEGIN
- SELECT disposition INTO x FROM t404_g11_disposable_qa.acquire_nosend(
- 'MESSENGER',a,e,p,t,10);
- IF x<>'claimed' THEN RAISE EXCEPTION 'G12_DISPOSABLE_QUEUE_SEED_FAILED';END IF;
-END \\\$seed\\\$;"
 # simpler: claim one at an old timestamp, then enqueue at a newer one
 docker exec "$cid" psql -X -q -v ON_ERROR_STOP=1 -U qa -d qa -c "
 SELECT disposition FROM t404_g11_disposable_qa.acquire_nosend(
