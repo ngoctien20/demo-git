@@ -16,7 +16,8 @@ function validate(input, trust, now=Date.now()) {
  if (!input || !trust || !Array.isArray(input.receipts) || input.receipts.length!==2) return {status:'DENY',reasons:['missing_receipt_pair']};
  const r=input.receipts;
  if(r.some(x=>!x || typeof x!=='object')) return {status:'DENY',reasons:['invalid_receipt_shape']};
- if (!trust.project || !trust.tenant || !trust.publicKeys || trust.releaseApproved!==true) reasons.push('missing_trusted_config_or_scope_approval');
+ if (!trust.project || !trust.tenant || !trust.publicKeys || !trust.expectedIssuerRefs || !trust.expectedSubjectRefs || trust.releaseApproved!==true) reasons.push('missing_trusted_config_or_scope_approval');
+ if(!trust.publicKeys?.QA_A || !trust.publicKeys?.QA_B || trust.publicKeys.QA_A===trust.publicKeys.QA_B) reasons.push('issuer_keys_not_distinct');
  if (!trust.recoveryApproved || !trust.disposableApproved || !trust.reviewerApproved) reasons.push('missing_disposable_recovery_or_review');
  if (r.some(x=>!x || !SLOT.includes(x.slot)) || new Set(r.map(x=>x.slot)).size!==2) reasons.push('actor_slots_not_independent');
  if (r.some(x=>x.project!==trust.project || x.tenant!==trust.tenant)) reasons.push('project_or_tenant_mismatch');
@@ -27,6 +28,7 @@ function validate(input, trust, now=Date.now()) {
    if(x.version!==1 || x.scope!=='synthetic_catalog_readonly_no_send_no_write') reasons.push('scope_or_version_mismatch');
    const a=Date.parse(x.issuedAt), b=Date.parse(x.expiresAt);
    if(!Number.isFinite(a)||!Number.isFinite(b)||a>now||b<=now||b-a>24*3600*1000) reasons.push('invalid_or_expired_receipt');
+   if(x.issuerRef!==trust.expectedIssuerRefs?.[x.slot] || x.subjectRef!==trust.expectedSubjectRefs?.[x.slot]) reasons.push('issuer_or_subject_not_independently_bound');
    const publicKey=trust.publicKeys?.[x.slot];
    try{
      if(!publicKey || typeof x.signature!=='string' ||
