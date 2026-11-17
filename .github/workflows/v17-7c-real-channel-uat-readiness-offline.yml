@@ -1,0 +1,59 @@
+name: V17.7C Real Channel UAT Readiness - OFFLINE NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7C_REAL_CHANNEL_UAT_READINESS_CHECKPOINT.md"
+      - ".github/workflows/v17-7c-real-channel-uat-readiness-offline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  channel-uat-admission-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check all source-only V17.7A/B/C modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: Run inherited OpenAPI + multichannel + hosted-readiness QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Assert NO_SEND and no hosted/Commerce side effects in V17.7C modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/v17-7a-oa-independent/';
+          const code=readFileSync(root+'v17-7c-hosted-uat-admission-offline.mjs','utf8');
+          for(const ban of [
+            /\bfetch\s*\(/,/\baxios\s*\./,
+            /\bhttps?\s*\.\s*request\s*\(/,
+            /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+          ]) if(ban.test(code)) throw Error('side effect found in V17.7C module');
+          for(const gate of [
+            'realProviderVerified:false','realStoreJwtVerified:false',
+            'realSameTenantABVerified:false','realCrossStoreDenied:false',
+            'publicChannelSendAllowed:false','commerceReadAllowed:false',
+            'commerceWriteAllowed:false','canPublish:false'
+          ]) if(!code.includes(gate))throw Error('MISSING_NO_GO_GATE '+gate);
+          const sql=readFileSync(root+'v17-7c-hosted-readonly-store-preflight.sql','utf8')
+            .replace(/--[^\n]*/g,'');
+          if(!sql.trimStart().startsWith('WITH public_surfaces AS'))
+            throw Error('Preflight must start with read-only WITH');
+          if(/\b(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|EXECUTE)\b/i.test(sql))
+            throw Error('Mutating SQL forbidden');
+          console.log('V17.7C OFFLINE NO_SEND/NO_COMMERCE_WRITE/READONLY_SQL PASS');
+          NODE
