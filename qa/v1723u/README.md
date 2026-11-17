@@ -77,3 +77,46 @@ Track U-C (**Commerce JWT**) remains NO-GO: M0, canonical Store A/B ownership, S
 6. After any approved retry, collect exactly one challenge, independently confirm receipt vs rejection category, verify no-send and no Commerce. In all cases disable workers.dev, preview, and test mode, and delete QA Bot webhook; recheck D1. Keep release/prod **NO-GO**.
 
 **State:** `CLOUDFLARE_INGRESS_OFF VERIFIED / D1_ZERO VERIFIED / ZALO_QA_WEBHOOK_DELETED OWNER-ATTESTED / REAL_EVENT_ACCEPTANCE BLOCKED / DIAGNOSTIC_ONLY PROPOSED`.
+
+
+## V17.23U-DIAG1 — Authenticated Rejection-Only Diagnostic Candidate
+
+**Status: IMPLEMENTED in Draft PR source + synthetic tests only; NOT DEPLOYED; QA webhook REMOVED per owner confirmation; endpoint OFF.** This is an optional, fail-closed diagnostic for the **new dedicated QA Zalo Bot**, not Zalo OA or the old staging bot.
+
+### Contract and security properties
+
+- The code introduces optional plain-text flag \`QA_DIAG_MODE=OWNER_SCOPED_AUTH_REJECTION_ONCE\`. **This flag is ABSENT on hosted Worker and must remain absent until separately reviewed and approved.** Existing 8 bindings, Commerce and source-only real event intake are unaffected when it is absent.
+- A diagnostic write is attempted only after: correct random callback path, POST method, bounded active time window, required QA-only env and D1, and **successful constant-time comparison against the Webhook Secret Token header**. Wrong/missing token (403), wrong path (404), wrong method (405), expired window (410), missing prerequisites (503) never issue diagnostics SQL or read/write any diagnostic record.
+- The only stored value is one **fixed reason code**, with eight possible values: \`CONTENT_TYPE\` (415), \`BODY_SIZE\` (413), \`BODY_PARSE\` (400), \`ENVELOPE\` (422), \`EVENT_KIND\` (422), \`MESSAGE_SHAPE\` (422), \`CHALLENGE\` (422), \`EVENT_TIME\` (422). **No** request body/text, sender, chat/user/message ID, token, IP, URL, event HMAC, timestamp or raw exception is stored for rejected events.
+- One row per unique reason globally; \`INSERT OR IGNORE\` and D1 schema CHECK cap storage at eight rows. The accepted one-event table \`qa_canary_once\` stays independent and unchanged.
+- The diagnostic records are never sent to Zalo or returned in HTTP responses. Original response codes, empty-body ACK and valid event semantics remain unchanged. A diagnostic SQL failure is swallowed, preserving original rejection status.
+- **No provider header HMAC verification:** the Zalo Bot Webhook Secret Token is a bearer-style shared header, not cryptographic attestation of an incoming payload. This helper does not independently prove Zalo generated a request.
+- A persistent fixed-row schema bounds **stored rows, not total query attempts**. Repeated bad requests from anyone possessing the header can consume D1 queries. **Independent rate-limit/WAF, spend cap, tenancy scope, test retention and rollback review are mandatory** before any hosted opt-in.
+- Since unauthenticated delivery is intentionally not logged, the diagnostic table **cannot prove** whether a webhook was delivered with a missing/wrong Secret Token; use provider delivery status or approved aggregate Cloudflare metrics without sensitive data for that question.
+
+### Proposed QA-only D1 migration — **DO NOT EXECUTE without a separate deployment decision**
+
+\`\`\`sql
+CREATE TABLE IF NOT EXISTS qa_auth_rejection_once (
+  reason TEXT PRIMARY KEY CHECK (reason IN (
+    'CONTENT_TYPE','BODY_SIZE','BODY_PARSE','ENVELOPE',
+    'EVENT_KIND','MESSAGE_SHAPE','CHALLENGE','EVENT_TIME'
+  ))
+) WITHOUT ROWID;
+\`\`\`
+
+Query for authorised read-only acceptance (after migration, in private operator UI):
+
+\`\`\`sql
+SELECT reason FROM qa_auth_rejection_once ORDER BY reason;
+\`\`\`
+
+No extra D1 instance is required: use **only** the already-isolated disposable QA D1 if separately approved; never Supabase, customer data, Orders or a shared staging database. Lifecycle and explicit cleanup/retention approval are outstanding. **No D1 schema has been modified in this milestone.**
+
+### Test / independent pre-deployment admission
+
+- New synthetic suite: \`node --test qa/v1723u/qa-auth-rejection-diagnostic.test.mjs\`. It exercises each of eight categories; no-write on unauthenticated/wrong-path/wrong-method/expired/inactive; disabled/missing flag; diagnostic table error; duplicate and concurrent requests; zero PII persisted; preserved one valid receipt.
+- GitHub Actions workflow \`.github/workflows/v1723u-qa-bot-wrapper-locked-staging.yml\` is extended to execute this suite beside prior no-send regression tests. CI results must be checked on the **latest** commit before claiming TESTED.
+- Independent QA reviewer must verify exact source SHA, D1 migration preview, a bounded/no-content staging read/write test in an offline or disposable environment, negative bearer-header behavior, provider registration state, rate-limiting protection, no-send, no-PII storage, retention and a documented rollback.
+- Deployment sequence after explicit approval: keep Worker OFF; apply only the approved QA-only schema; verify preflight + baseline 0; configure optional QA_DIAG_MODE; run negative synthetic Worker requests **without provider credentials**; open a fresh ≤20-minute QA-only window; verify one real challenge; immediately disable workers.dev + QA mode and remove new Bot webhook; inspect only fixed reason codes and qa_canary_once receipt; purge diagnostics under separately approved retention procedure.
+- **Current GO/NO-GO: NO-GO for any webhook re-enrollment, network exposure, hosted diagnostic mode or production merge.** Owner's prior approval for the earlier one-event receiver does **not** automatically authorize this new diagnostic data processing or schema migration.
