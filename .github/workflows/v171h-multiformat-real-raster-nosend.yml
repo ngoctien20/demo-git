@@ -42,7 +42,7 @@ jobs:
           node --test qa/v171d-commerce/png-media-intake.test.cjs
           node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
           node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
-      - name: Source-only security audit: no http, provider, database or model calls
+      - name: 'Source-only security audit - no HTTP, provider, database or model calls'
         run: |
           python - <<'PY'
           from pathlib import Path
