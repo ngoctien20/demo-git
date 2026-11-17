@@ -27,6 +27,15 @@ Status: IMPLEMENTED SOURCE ONLY / CI 629/629 PASS / HOSTED NO-GO.
 - `docs/ai-handoff/T404_RPC178D_STAGING_RECOVERY_OWNER_GO_NO_GO.md` evidence checklist, backup operator instructions, no-cost branch and rollback.
 - No Supabase write, Vault read, owner grant, Cloudflare deploy, R2, n8n, Messenger/Zalo send or customer data modification.
 
+
+## Owner-provided Supabase Dashboard backup evidence — 2026-11-17 JST
+- Screenshot in project conversation of `supabase.com/dashboard/project/ifxlvrhyjhbzbrkdsida/database/backups/scheduled`, showing organization plan **FREE** and explicit UI notice **"Free Plan does not include project backups."**
+- This upgrades backup *entitlement* to VERIFIED: **Scheduled daily backups are NOT included for this project**. It does not establish whether the operator has independently exported a manual logical dump; therefore **actual usable recovery evidence remains MISSING**.
+- Dashboard header `main PRODUCTION` refers to the main environment of the **staging project**, not proof that the TIEN404 SaaS production release is deployed.
+- Supabase official backup documentation recommends Free projects maintain independent off-site CLI logical backups. For a comprehensive export plan use three commands (`--role-only`, schema dump, `--data-only --use-copy`) from a private authorized workstation/server with secure DB connection credentials; CLI dump depends on Docker. Never paste connection URIs, passwords, dump files or raw backup metadata in chat or GitHub.
+- **Next required operator action:** private export plus encrypted, access-controlled copy and a successful isolated PostgreSQL/Supabase-compatible restore rehearsal. Manual dump availability and restoration must be independently verified before any `rpc178_qa` migration.
+- Decision: `FREE_SCHEDULED_BACKUP_UNAVAILABLE · MANUAL_BACKUP_NOT_YET_VERIFIED · STAGING_MIGRATION_NO_GO`. No Supabase DDL/restore or other hosted action performed from this screenshot.
+
 ## Decision
 - BACKUP LIST NOT YET VERIFIED; RESTORE NOT YET VERIFIED; OWNER A/B NOT VERIFIED; REAL JWT NOT VERIFIED.
 - Staging schema `rpc178_qa` migration remains **NO-GO**.
