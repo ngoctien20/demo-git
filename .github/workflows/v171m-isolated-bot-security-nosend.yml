@@ -1,0 +1,94 @@
+name: TIEN404 V17.1M Isolated Bot Security Staging 192 Cases NO SEND
+on:
+  push:
+    branches:
+      - work/v171m-isolated-bot-security-uat-192-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171m-bot-security/**'
+      - 'docs/ai-handoff/V17_1M_*'
+      - '.github/workflows/v171m-isolated-bot-security-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-security-source-qa:
+    name: V17.1M n8n snapshot 48 tests and inherited V17.1L-D source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'V17.1M exact n8n snapshot, Store A B and adversarial mutation QA'
+        run: node --test qa/v171m-bot-security/v171m-snapshot.test.cjs
+      - name: 'Inherited V17.1L 120 native-shaped ingress and tool security QA'
+        run: |
+          node --test qa/v171l-bot-security/zero-trust-bot-boundary.test.cjs
+          node --test qa/v171l-bot-security/safe-audit-and-quota.test.cjs
+      - name: 'Install disposable Pillow for inherited hostile media test fixtures'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('jpg') and features.check('webp')"
+      - name: 'Inherited V17.1K-S1 hostile media 67 tests'
+        run: |
+          python -m unittest discover -s qa/v171k-security -p 'test_*.py' -v
+          node --test qa/v171k-security/zero-trust-media-review.test.cjs
+      - name: 'Inherited V17.1K staff image manual intake 45 tests'
+        run: node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Inherited V17.1J merchant image and channel shadow 76 tests'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Inherited V17.1I safe image acquisition 82 tests'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1H bounded encoded raster 40 tests'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1G DNS and TLS 40 tests'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Inherited V17.1F image registry 32 tests'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Inherited V17.1E Vision receipt 28 tests'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Inherited V17.1D PNG and cross-channel order 52 tests'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Static: enforce NO-SEND and no model, network, credential or hosted write'
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          p=Path('qa/v171m-bot-security/v171m-n8n-qa-snapshot.json')
+          d=json.loads(p.read_text())
+          assert d['n8nWorkflowId']=='dtyaL3RnuNQQwpMX'
+          assert d['n8nVersionId']=='01fad246-5e17-4b58-a43a-63b4376d0296'
+          assert d['active'] is False and d['activeVersionId'] is None
+          assert d['noCredentials'] is True and d['manualOnly'] is True
+          assert d['expectedCases']==192 and d['expectedPassed']==192
+          assert d['release']=='HOSTED_NO_GO'
+          assert len(d['nodeTypes'])==4
+          assert {n['type'] for n in d['nodeTypes']}=={
+            'n8n-nodes-base.manualTrigger','n8n-nodes-base.code'}
+          for n in d['securityCode']:
+            s=n['jsCode']
+            for forbidden in (r'\bfetch\s*\(',r'\brequire\s*\(',
+                 r'\bprocess\.env\b',r'\baxios\b',r'\$http\b',r'\bchild_process\b'):
+                assert not re.search(forbidden,s,re.I),(n['name'],forbidden)
+          print('V171M_NO_EXTERNAL_IO_NO_HOSTED_AUTH_PASS')
+          PY
+  hosted-security-release-no-go:
+    name: V17.1M Real Provider Signatures and Hosted Store A B RLS NO GO
+    needs: [synthetic-security-source-qa]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: 'Deny release without independent Meta Zalo Page OA and JWT Store grants'
+        run: |
+          echo "::error::V171M_HOSTED_NO_GO_NATIVE_PROVIDER_OWNER_JWT_RLS_ATOMIC_REPLAY_ORDER_ACCESS"
+          exit 3
