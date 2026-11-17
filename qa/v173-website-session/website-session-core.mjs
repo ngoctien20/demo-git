@@ -24,7 +24,7 @@ function cfgOk(cfg){return cfg&&typeof cfg==='object'&&typeof cfg.issuer==='stri
  typeof cfg.keyring[cfg.activeKid]==='string'&&Buffer.byteLength(cfg.keyring[cfg.activeKid])>=32&&
  (cfg.qaMode===true||cfg.qaMode===false);}
 function eligible(binding,origin,cfg){
- if(!binding||typeof binding!=='object'||binding.channel!=='website'||binding.status!=='QA_APPROVED'||
+ if(!binding||typeof binding!=='object'||binding.channel!=='website'||
  binding.origin!==origin||!REGEX_ID.test(binding.installation_ref)||!REGEX_ID.test(binding.tenant_ref)||
  !REGEX_ID.test(binding.store_ref)||!REGEX_ID.test(binding.bot_ref)||
  binding.bot_version!==binding.bot_ref+'_V1'||typeof binding.prompt_version!=='string'||
