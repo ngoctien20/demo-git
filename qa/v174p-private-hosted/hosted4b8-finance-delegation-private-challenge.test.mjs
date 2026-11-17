@@ -77,7 +77,7 @@ function freshFixture(){
   owner_session_sha256:'b'.repeat(64),finance_session_sha256:'c'.repeat(64),
   owner_auth_at:new Date(NOW-20_000).toISOString(),
   finance_auth_at:new Date(NOW-15_000).toISOString(),
-  mfa_method:'phishing_resistant',audience:'t404:private:finance-delegation-review',
+  owner_mfa_method:'phishing_resistant',finance_mfa_method:'phishing_resistant',audience:'t404:private:finance-delegation-review',
   phase:'LEDGER_FIRST_INACTIVE_UPLOAD',
   issued_at:new Date(NOW-5_000).toISOString(),
   expires_at:new Date(NOW+60_000).toISOString(),
@@ -85,7 +85,7 @@ function freshFixture(){
  };
  const nonceReceipt={
   contract:CONTRACT,nonce_sha256:sh(challenge.nonce),
-  delegation_sha256:digest(delegation),status:'RESERVED_LOCAL_OR_PRIVATE_LEDGER',
+  delegation_sha256:digest(delegation),status:'SYNTHETIC_RECEIPT_NOT_HOSTED_PROOF',
   issued_at:new Date(NOW-4000).toISOString(),
   expires_at:new Date(NOW+60_000).toISOString(),
   ledger_instance_sha256:'d'.repeat(64)
@@ -213,7 +213,7 @@ test('27 challenge intended for wrong audience denied',()=>blocked(f=>{
  f.challenge.audience='t404:commerce:write';
 },'challenge_binds_owner_finance_and_delegation',true));
 test('28 Finance must have phishing-resistant MFA',()=>blocked(f=>{
- f.challenge.mfa_method='password_only';
+ f.challenge.finance_mfa_method='password_only';
 },'challenge_binds_owner_finance_and_delegation',true));
 test('29 Finance MFA stale >5 minutes fails',()=>blocked(f=>{
  f.challenge.finance_auth_at=new Date(NOW-300001).toISOString();
@@ -271,3 +271,28 @@ test('45 signing private receipt alone does not prove durable nonce storage',()=
  assert.equal(result.nonce_replay_durable_verified,false);
  assert.equal(result.can_create_ledger,false);
 });
+
+test('46 Owner phishing-resistant MFA is independent from Finance session',()=>blocked(f=>{
+ f.challenge.owner_mfa_method='password_only';
+},'challenge_binds_owner_finance_and_delegation',true));
+test('47 signed challenge created before signed mandate is invalid',()=>blocked(f=>{
+ f.challenge.issued_at=new Date(NOW-120000).toISOString();
+},'fresh_challenge_and_both_recent_MFA_sessions',true));
+test('48 nonce claimed before challenge issuance is invalid',()=>blocked(f=>{
+ f.nonceReceipt.issued_at=new Date(NOW-30000).toISOString();
+},'nonce_receipt_binds_challenge_not_expired',true));
+test('49 detached nonce receipt exceeding challenge expiry is denied',()=>blocked(f=>{
+ f.nonceReceipt.expires_at=new Date(NOW+65000).toISOString();
+},'nonce_receipt_binds_challenge_not_expired',true));
+test('50 V17.5 ReplayBucket silently reassigned to wrong Worker fails',()=>blocked(f=>{
+ f.cloudflareSnapshot.durable_objects.entries[0].script='attacker';
+ f.delegation.inventory_sha256=inventoryDigest(f.cloudflareSnapshot);
+},'protected_parallel_workers_do_and_script_integrity',true));
+test('51 Zalo replay class replacement under same DO namespace fails',()=>blocked(f=>{
+ f.cloudflareSnapshot.durable_objects.entries[2].class='AttackerBucket';
+ f.delegation.inventory_sha256=inventoryDigest(f.cloudflareSnapshot);
+},'protected_parallel_workers_do_and_script_integrity',true));
+test('52 cross-script duplicate names cannot hide a new Worker',()=>blocked(f=>{
+ f.cloudflareSnapshot.scripts.entries[0]='attacker';
+ f.delegation.inventory_sha256=inventoryDigest(f.cloudflareSnapshot);
+},'protected_parallel_workers_do_and_script_integrity',true));
