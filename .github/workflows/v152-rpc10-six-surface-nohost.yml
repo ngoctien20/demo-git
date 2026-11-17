@@ -60,10 +60,7 @@ jobs:
           sql=Path('qa/v152-rpc10/g02-provenance-hosted-READ_ONLY.sql').read_text()
           no_comments='\n'.join(line for line in sql.splitlines() if not line.lstrip().startswith('--'))
           assert re.search(r'BEGIN\s+TRANSACTION\s+READ\s+ONLY\s*;',no_comments,re.I)
-          assert re.search(r'COMMIT\s*;\s*$',no_comments,re.I)
-          print('RPC10 G0.2 PASS: SQL read-only transaction boundary')
-          PY
-      - name: RPC10 immutable HOSTED NO-GO baseline gate
+          assert re.search(r'COMMIT\s*;\s*
         run: |
           node - <<'NODE'
           const base=require('./qa/v152-rpc10/hosted-baseline-sanitized.json');
