@@ -1,0 +1,40 @@
+name: TIEN404 V17.6-B.1 Independent Core Source Admission NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v176b1-core-admission/**'
+      - 'qa/v171l-bot-security/zero-trust-bot-boundary.cjs'
+      - '.github/workflows/v176b1-core-policy-no-send.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-no-send-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      NODE_ENV: test
+    steps:
+      - name: Checkout reviewed source without persistent GitHub credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Source-only admission and 31 deterministic tests
+        run: |
+          node --version
+          node --check qa/v176b1-core-admission/independent-core-adapter.cjs
+          node --check qa/v176b1-core-admission/independent-core-adapter.test.cjs
+          node --check qa/v176b1-core-admission/no-send-source-canary.cjs
+          node --test qa/v176b1-core-admission/independent-core-adapter.test.cjs
+      - name: Independent six-case no-send source canary
+        run: |
+          node qa/v176b1-core-admission/no-send-source-canary.cjs | python3 -c 'import json,sys; x=json.load(sys.stdin); assert x["caseCount"]==6; assert all(i["verified"] for i in x["outcomes"]); assert all(v==0 for v in x["countedSideEffects"].values()); assert x["productionRelease"]=="NO_GO"; assert x["realJwt"] is False; assert x["realProviderNativeProof"] is False; print("V176B1_6_CASE_SOURCE_ONLY_NO_SEND_ACCEPTANCE_PASS")'
+      - name: Production gates must remain closed
+        run: |
+          echo 'NO_PROVIDER_SEND; NO_HOSTED_DATABASE; NO_ORDER_WRITER; NO_MODEL_API'
+          echo 'SOURCE_ONLY_QA_IS_NOT_PRODUCTION_AUTHORIZATION'
