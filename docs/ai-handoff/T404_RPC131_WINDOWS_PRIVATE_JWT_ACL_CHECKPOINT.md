@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-17 JST. **Source-only / FAKE JWT tests / real JWT NOT used.**
 
-**Parent:** [RPC13 PR #285](https://github.com/ngoctien20/demo-git/pull/285), exact pinned HEAD ead41f53df4d0609fb5f5b2733a6c3c0e91ac0. Related [V17.03B PR #310](https://github.com/ngoctien20/demo-git/pull/310), provenance QA_LIKELY not independently established.
+**Parent:** [RPC13 PR #285](https://github.com/ngoctien20/demo-git/pull/285), exact pinned HEAD ead41f53df4d0609fb5f5f6b2733a6c3c0e91ac0. Related [V17.03B PR #310](https://github.com/ngoctien20/demo-git/pull/310), provenance QA_LIKELY not independently established.
 
 ## Concrete security defect and fix
 
