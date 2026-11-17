@@ -219,3 +219,17 @@ User consented to **prepare and retry the dedicated new QA Bot** after reporting
 **NEXT GATE (no action yet):** Owner must privately synchronize Bot Creator webhook `secret_token` with corrected `QA_HEADER_SECRET` value, using the NEW QA Bot only; verify identity, callback path and a fresh 20-min time window. Never activate ingress or send a challenge until final bounded no-send/rollback admission. Old Bot, n8n and Commerce unchanged.
 
 **STATUS:** `OWNER_REPORTED_SECRET_CORRECTED / WORKER_NEW_DEPLOYMENT_VERIFIED / SECRET_EQUALITY_UNVERIFIED / PUBLIC_OFF / D1_ZERO / UAT_PENDING`.
+
+## V17.23U-DIAG7 — Owner QA Webhook Deletion and Private Callback URL Triage
+
+**OWNER-ATTESTED:** New Bot QA webhook deleted in Bot Creator after the one-challenge test, independently provider read-only `getWebhookInfo` not yet rerun.
+
+**DIRECT CLOUDFLARE VERIFIED:** Dedicated QA Worker `workers.dev=false`, previews OFF, no custom domain; deployed Worker unchanged at `20f281c4-c568-45c9-bd7b-e63a0e7d1fc4`; D1 accepted receipts 0; `QA_CANARY_MODE` correct. Cloudflare analytics only one weighted HTTP 404 in 06:30–06:36 JST; sender unknown.
+
+**SOURCE CODE AUDIT:** With verified correct QA mode, receiver returns HTTP 404 for incorrect `pathname` or any `url.search`; path check is BEFORE `POST` method and `QA_HEADER_SECRET` comparison, making route mismatch the primary hypothesis, NOT an established Zalo-origin attribution.
+
+**NEXT:** Private read-only Zalo getWebhookInfo check and owner-side masked URL shape comparison. Do NOT paste URL, path or tokens into chat. Rebind `QA_CALLBACK_PATH` under Worker OFF only with separate owner approval if values cannot be proven equal. Do not reopen on an expired window.
+
+Full [DIAG7 owner-only URL check and rollback evidence](./DIAG7_OWNER_WEBHOOK_DELETION_AND_PRIVATE_PATH_MATCH.md).
+
+**Decision:** `HOSTED_OFF_VERIFIED / ZALO_DELETED_OWNER_ATTESTED / HTTP_404_ROUTING_HYPOTHESIS / NO_FURTHER_SEND`.
