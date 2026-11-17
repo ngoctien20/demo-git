@@ -57,3 +57,18 @@ Files added in `qa/v1720-zalo-replay/`:
 - NO additional owner approval required for source-only additive code and synthetic GitHub QA already authorized in the project. **Fresh scoped approval required** to deploy a real replay ingress proxy, modify vendor webhook routes/secrets, change hosted Store DB permissions/production traffic, enable Zalo outbound, or alter business Orders/stock/payment.
 - Rollback: close Draft PR #243 or revert V17.20-only files/CI. **No n8n Published version rollback required** because none was touched.
 - PR remains **DRAFT / UNMERGED**. Next action: audit an existing hosted atomic replay asset with read-only connector and require compatibility gate, rather than create a duplicate service or falsely declare production anti-replay complete.
+
+
+## 7. Additional VERIFIED read-only Cloudflare asset reuse audit
+
+The connected Cloudflare account was queried using read-only GET on Worker script listings, settings and deployments after the V17.20 source-only CI; **no deployments, route changes, secret reads/updates, provider sends or Durable Object writes** were made.
+
+**Existing private/QA staging chain VERIFIED via deployed Worker service bindings:**
+
+1. `tien404-v175e2a-private-hosted-runner-nosend-staging`: service binding **`QA_GATEWAY` → `tien404-v175e2-ab-gateway-nosend-staging`**; also `RUN_STATUS` Durable Object class `RunnerResults`.
+2. `tien404-v175e2-ab-gateway-nosend-staging`: service binding **`REPLAY_LEDGER` → `tien404-v175e2-durable-replay-nosend-staging`**, plus `INSTALLATION_REGISTRY` service binding → `tien404-v175e2-installation-registry-nosend-staging`. Secret bindings exist but neither their values nor raw keys were retrieved or reproduced in this report.
+3. `tien404-v175e2-durable-replay-nosend-staging`: **`REPLAY_DB` durable_object_namespace** binding to class `ReplayBucket`. Worker and deployment metadata present. The candidate therefore has **existing coordination infrastructure** to investigate before creating another replay service.
+
+**Important limits:** The presence of Durable Object and service bindings is **NOT** proof that `ReplayBucket` exposes the V17.20 `claimAtomic({key,digest,expiresAtMs})` contract, uses durable unique claims, enforces stale/duplicate/conflict exactly once, or accepts the correct Zalo Bot ingress identity. Source/API, authenticated request path, namespace separation, TTL and concurrency/crash tests have NOT yet been independently matched to this candidate. There is no direct connection from the current n8n Bot V1 webhook to this Worker chain, and no such connection was introduced.
+
+**Reuse priority:** Audit the existing `ReplayBucket` contract and published routing under a separate private no-send UAT; build only a narrow adapter if that contract is compatible. Do not create a new DO namespace/service or change the live `setWebhook` callback prematurely.
