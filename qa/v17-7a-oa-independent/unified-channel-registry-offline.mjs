@@ -27,7 +27,6 @@ const NOTIFY=Object.freeze({
 const REF=/^[a-zA-Z0-9][a-zA-Z0-9_-]{7,127}$/;
 const EVENT_FIELDS=new Set(['channel','installationRef','eventRef','providerActorRef','receivedAtMs']);
 const PROOF_FIELDS=new Set(['source','verified','channel','installationRef','eventRef','kind']);
-const DAY_MS=24*60*60*1000;
 const hash=o=>createHash('sha256').update(JSON.stringify(o)).digest('hex');
 const blocked=reason=>Object.freeze({
   candidate:false,reason,mode:'SYNTHETIC_ONLY',
@@ -105,7 +104,7 @@ export async function inspectUnifiedSalesPreview(event,bindings){
      !ref(installation.tenantRef)||!ref(installation.storeRef)||
      !ref(installation.botVersion)||!ref(installation.policyVersion)||
      installation.syntheticOwnerBindingVerified!==true||
-     installation.readOnly===false||installation.allowSend!==false||
+     installation.readOnly!==true||installation.allowSend!==false||
      installation.allowCommerceWrite!==false)
     return blocked('UNTRUSTED_CHANNEL_TO_STORE_INSTALLATION');
   // A provider-scoped actor cannot be used to infer identities across
