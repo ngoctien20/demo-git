@@ -73,11 +73,45 @@ jobs:
           assert 'REAL_ORDER_WRITE_DISABLED' in pilot and 'PROVIDER_SEND_DISABLED' in pilot
           print('PASS V17.1D: QA-only real PNG pixels, no hosted writes or sends')
           PY
+  v171d-disposable-pg17-two-step:
+    name: V17.1D PostgreSQL17 destination pending then verified source approves — no hosted
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    container:
+      image: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v171d_fake_pg17_ci_only
+          POSTGRES_DB: t404_v171c_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v171c_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      T404_V171C_DISPOSABLE: 'YES'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: t404_v171c_ci
+      PGUSER: postgres
+      PGPASSWORD: v171d_fake_pg17_ci_only
+      PGOPTIONS: '-c tien404.v171c_ephemeral=RPC171C_DISPOSABLE'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original challenge DB + two-step pending and source-controlled commit
+        run: |
+          bash -n qa/v171d-commerce/ci-pg17-two-step-link-rehearsal.sh
+          bash qa/v171d-commerce/ci-pg17-two-step-link-rehearsal.sh
+
   v171d-release-no-go:
     name: V17.1D REAL Page/OA, Vision model, Store ownership and Order writes — NO GO (intentional)
     runs-on: ubuntu-24.04
     timeout-minutes: 3
-    needs: [v171d-source-regressions]
+    needs: [v171d-source-regressions,v171d-disposable-pg17-two-step]
     steps:
       - uses: actions/checkout@v4
       - name: Refuse promotion from synthetic real PNG bytes to real Customer UAT
