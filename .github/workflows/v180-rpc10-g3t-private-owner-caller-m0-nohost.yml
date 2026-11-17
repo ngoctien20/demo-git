@@ -1,0 +1,112 @@
+name: RPC10 G3T Private Owner Four-Row × Store Caller ABI × M0 Recovery NO HOST
+
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc10/**'
+      - 'docs/ai-handoff/T404_RPC10_G3T_PRIVATE_OWNER_CALLER_M0_ADMISSION.md'
+      - '.github/workflows/v180-rpc10-g3t-private-owner-caller-m0-nohost.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-g0-m0-published-store-contract:
+    name: G3T real aggregate Auth and hosted migration NO-GO source QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inherited G0 to G3S regression plus G3T private gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v152-rpc10/g3t-private-owner-caller-m0-gate.cjs
+          node --test qa/v152-rpc10/*.test.cjs
+      - name: Validate original source and recovery NO-GO, no privileged hosted actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const root='qa/v152-rpc10/';
+          const e=require('./'+root+'g3t-real-private-admission-evidence.json');
+          const p=require('./'+root+'g3s-connected-published-owner-mapping-evidence.json');
+          const {assess,buildTargetContract,EXPECTED_ALIASES}=require('./'+root+'g3t-private-owner-caller-m0-gate.cjs');
+          assert.equal(e.projectRef,'ifxlvrhyjhbzbrkdsida');
+          assert.equal(e.canonicalStoreMigrationPr,247);
+          assert.equal(e.privateOwnerIntakePr,244);
+          assert.equal(e.windowsRecoveryToolkitPr,382);
+          assert.equal(e.existingRealAuthAdmissionPr,385);
+          assert.equal(e.auth.authUsersTotal,3);
+          assert.equal(e.auth.tenantsWithTwoEligibleOwnerIds,1);
+          assert.equal(e.auth.eligibleMembersWithSessionRecord,2);
+          assert.equal(e.auth.tenantsWithTwoEligibleOwnerSessionRows,0);
+          assert.equal(e.fourRows.ownerAttestedRowCount,0);
+          assert.deepEqual(e.fourRows.rowAliases,[...EXPECTED_ALIASES]);
+          assert.equal(e.fourRows.customerLinkedOrders,0);
+          assert.equal(e.published.tenantOnlyCoreCommerceWorkflowCount,4);
+          assert.equal(e.published.commerceDataTablesWithStoreId,0);
+          assert.equal(e.writer.currentHasStoreArgument,false);
+          assert.equal(e.recovery.historicalArchiveAuthUsersCovered,0);
+          assert.equal(e.recovery.currentAuthUsers,3);
+          assert.equal(e.recovery.currentFullServiceRecoveryProven,false);
+          assert.equal(e.recovery.ownerScopeDecision,'UNDECIDED');
+          assert.equal(e.action.hostedMigrationApplied,0);
+          assert.equal(e.action.hostedSqlWrites,0);
+          assert.equal(e.action.credentialOrTokenValuesRead,0);
+          const out=assess(e,p);
+          assert.equal(out.status,'STAGING_M1_AND_STORE_CUTOVER_NO_GO');
+          assert.equal(out.canApplyHostedStoreMigration,false);
+          assert.equal(out.canAssignRealRowStore,false);
+          assert.equal(out.canReadRealCustomerOrders,false);
+          assert.ok(out.blockers.includes('FOUR_ROW_PRIVATE_MERCHANT_PRIMARY_SOURCE_OWNER_PROOF_REQUIRED'));
+          assert.ok(out.blockers.includes('M0_CURRENT_RESTORABLE_SCOPE_NOT_INDEPENDENTLY_ACCEPTED'));
+          assert.ok(out.blockers.includes('TENANT_ONLY_PRIVILEGED_PRODUCT_WRITER_MUST_BE_VERSIONED_AND_SCOPED'));
+          assert.ok(out.blockers.includes('REAL_AUTH_TWO_OWNER_SESSION_AND_SAME_TENANT_STORE_AB_UNVERIFIED'));
+          const design=buildTargetContract();
+          assert.equal(design.canDeploy,false);
+          assert.equal(design.newWriterRequiresDbVerifiedStoreMembership,true);
+          for(const name of ['fetch','axios','createClient','execSync']){
+            const source=fs.readFileSync(root+'g3t-private-owner-caller-m0-gate.cjs','utf8');
+            assert.equal(new RegExp('\\b'+name+'\\s*\\(').test(source),false,'No I/O operation');
+          }
+          console.log('G3T VERIFIED real aggregate readiness, FOUR ROW + AUTH JWT + CURRENT M0 + STORE ABI ALL NO-GO');
+          NODE
+      - name: Exact committed Supabase query metadata-only and no private leakage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          folder=Path('qa/v152-rpc10')
+          sql=(folder/'g3t-current-owner-m0-metadata-only.sql').read_text()
+          stripped='\n'.join(x for x in sql.splitlines() if not x.lstrip().startswith('--'))
+          literals=re.sub(r"'(?:''|[^'])*'","''",stripped)
+          assert re.match(r'^\s*WITH\s+cohort\s+AS\s*\(',stripped,re.I)
+          assert stripped.strip().endswith(';')
+          forbidden=[
+            r'\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|CALL|EXECUTE|COPY)\b',
+            r'\b(pg_sleep|dblink|http_post|net\.http_post)\s*\(',
+            r'\b(SELECT\s+\*\s+FROM\s+(?:auth\.users|public\.orders|public\.products))'
+          ]
+          for bad in forbidden: assert not re.search(bad,literals,re.I),bad
+          assert 'auth.sessions' in sql
+          assert 'pg_get_function_identity_arguments' in sql
+          assert 'count(*)' in sql
+          e=json.loads((folder/'g3t-real-private-admission-evidence.json').read_text())
+          assert e['action']['actualCustomerOrOrderRowsRead']==0
+          assert e['action']['credentialOrTokenValuesRead']==0
+          assert e['action']['n8nWorkflowExecuted']==0
+          assert e['action']['providerEventsSent']==0
+          assert e['recovery']['backupToolkitExecutedThisPhase'] is False
+          assert e['fourRows']['privateOperatorIntakeExecutedThisPhase'] is False
+          assert e['recovery']['sourceOnlyAndDisposableBackupProofDeferred'] is True
+          print('PASS: exact current SQL is read-only aggregate, no current Store/owner JWT approval')
+          PY
