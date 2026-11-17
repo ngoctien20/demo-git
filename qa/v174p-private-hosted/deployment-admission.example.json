@@ -1,0 +1,68 @@
+{
+  "schema_version": "T404_V174P_PRIVATE_HOSTED_ISSUER_DEPLOYMENT_PROPOSAL_V1",
+  "date_jst": "2026-11-17",
+  "status": "NOT_DEPLOYED_NO_PERMISSION_FOR_NEW_SECRETS_OR_BILLABLE_RESOURCES",
+  "target": "Cloudflare Workers",
+  "candidate_worker_name": "tien404-v174p-private-qa-issuer",
+  "implementation_path": "qa/v174p-private-hosted/hosted-issuer.worker.mjs",
+  "host": "PENDING_APPROVED_ISOLATED_QA_HOST",
+  "existing_cloudflare_pages_evidence": {
+    "account_authenticated": true,
+    "project": "tien404-ai-git-staging",
+    "host": "tien404-ai-git-staging.pages.dev",
+    "branch": "gh-pages",
+    "access_app_name": "tien404-ai-git-staging - Cloudflare Pages",
+    "access_scope": "*.tien404-ai-git-staging.pages.dev",
+    "applies_to_v174p_worker": false
+  },
+  "personal_domain_evidence": {
+    "name": "ngoctien20.io.vn",
+    "cloudflare_zone_active": true,
+    "suitable_as_shop_domain": false
+  },
+  "merchant_store_website_domain": {
+    "verified": false,
+    "domain": null,
+    "dns_challenge_evidence": null,
+    "store_membership_verified": false
+  },
+  "runtime_vars_required": {
+    "V174P_MODE": "QA_SYNTHETIC_ONLY",
+    "V174P_OWNER_PROOF_STATUS": "UNVERIFIED_QA_ONLY",
+    "V174P_ISSUER_ORIGIN": "OPERATOR_TO_SET_APPROVED_HTTPS_ISSUER_ORIGIN",
+    "V174P_ACCESS_ISSUER": "OPERATOR_TO_SET_DEDICATED_ACCESS_TEAM_ISSUER",
+    "V174P_ACCESS_AUD": "OPERATOR_TO_SET_DEDICATED_ACCESS_APP_AUDIENCE"
+  },
+  "server_only_secret_binding_names": [
+    "V174P_SESSION_HMAC_KEY",
+    "V174P_ACCESS_JWKS_JSON"
+  ],
+  "private_runtime_requirements": {
+    "dedicated_cloudflare_access_app_required": true,
+    "access_jwt_rs256_and_issuer_audience_validation": true,
+    "session_key_length_min_bytes": 32,
+    "key_rotation_and_jwks_rotation_required": true,
+    "workers_dev_route_public_without_access_not_allowed": true,
+    "replay_do_binding": "V174P_REPLAY_DO",
+    "replay_do_export": "V174PReplayGuard",
+    "replay_do_storage": "SQLite-backed Durable Object transaction",
+    "qa_rate_limit_implementation_required_before_hosted_go": true,
+    "commerce_api_bindings_allowed": false,
+    "llm_or_provider_send_bindings_allowed": false
+  },
+  "current_release_gate": {
+    "cloudflare_worker_created": false,
+    "access_policy_issuer_attached": false,
+    "jwt_jwks_secret_configured": false,
+    "hmac_key_secret_configured": false,
+    "replay_do_created": false,
+    "real_hosted_browser_uat_passed": false,
+    "real_merchant_domain_verified": false,
+    "hosted_store_rls_verified": false,
+    "production_release_authorized": false
+  },
+  "rollback": {
+    "preferred": "Do not deploy until scoped approval",
+    "if_deployed": "Disable Access-protected QA host, disable Worker route/subdomain, revoke secrets, archive DO after operator approval and verify Published unaffected"
+  }
+}
