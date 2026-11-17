@@ -1,0 +1,57 @@
+name: TIEN404 V17.22G Private Native Evidence Same-Store Offline Canary NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.*'
+      - '.github/workflows/v1722g-private-evidence-nosend-canary.yml'
+  push:
+    branches:
+      - work/v1722g-private-native-evidence-samestore-nosend-canary-gate-20261117
+permissions:
+  contents: read
+jobs:
+  offline-private-four-signer-canary:
+    name: Private evidence signatures x4, same-Store and isolated fake one-event NO SEND
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      CI: "true"
+      T404_EXECUTION_MODE: "OFFLINE_SYNTHETIC_NO_SEND"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: No credentials, host services or side-effect runtime required
+        run: |
+          test "$T404_EXECUTION_MODE" = "OFFLINE_SYNTHETIC_NO_SEND"
+          node --check qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.mjs
+          node --check qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.test.mjs
+          node --test qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.test.mjs
+      - name: Static privilege and no-provider-send guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.mjs').read_text()
+          test=Path('qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.test.mjs').read_text()
+          for phrase in ['mayRunHostedNoSendCanary:false','mayReadCustomerOrders:false',
+                         'nativeMetaProviderVerified:false','nativeZaloBotProviderVerified:false',
+                         'realJWTStoreVerified:false','privateOriginalsReviewed:false',
+                         'productionUnchanged!==true','sourceProofAccepted!==false',
+                         'G_CONTRACT','privateEvidenceManifestHash']:
+            assert phrase in code,phrase
+          for pattern in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',
+                          r'\baxios\b',r'\bconsole\.log\s*\(',r'\bprocess\.env\b']:
+            assert not re.search(pattern,code),pattern
+          assert "G23 isolated one-event source-only canary" in test
+          print("PRIVATE_4_REVIEWER_QA_ONLY_ZERO_SEND_ZERO_COMMERCE_ZERO_REAL_PROVIDER_ADMISSION")
+          PY
+  hosted-native-provider-canary:
+    name: Live signed Page/Bot same-Store hosted no-send canary — INDEPENDENT APPROVAL REQUIRED
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'BLOCKED: no real owner, provider originals, Store Auth/RLS or independent M0 recovery'
