@@ -192,7 +192,7 @@ export function createCrossChannelQaLab({now=()=>Date.parse('2026-11-17T12:00:00
   const prior=replay.get(key);
   if(prior){
    if(prior.digest!==ctx.digest)fail('CONFLICTING_PROVIDER_EVENT_REPLAY');
-   return prior.reply;
+   return out('DUPLICATE_IGNORED',{message:'Sự kiện QA đã xử lý; không phát lại mã xác nhận hoặc phản hồi.'});
   }
   let reply;
   if(isBlocked(ctx.actor,time))reply=deny();
