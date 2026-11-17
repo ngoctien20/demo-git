@@ -20,10 +20,12 @@ const ca=(caseId,imageId,labelType,partition='HOLDOUT',extra={})=>({...scope,
   labeler:'qa-labeler-1',independentReviewer:'qa-labeler-2',...extra});
 const candidate=()=>({ ...scope,products:[product()],
   media:[media('img-a'),media('img-b',{origin:'QA_GENERATED'}),
-    media('img-c',{origin:'QA_GENERATED'})],
-  cases:[ca('case-positive','img-a','positive'),
-    ca('case-unknown','img-b','unknown'),
-    ca('case-hard','img-c','hard_negative')]});
+    media('img-c',{origin:'QA_GENERATED'}),
+    media('img-d',{origin:'QA_GENERATED',sha256:'d'.repeat(64)})],
+  cases:[ca('case-ref','img-a','positive','REFERENCE'),
+    ca('case-positive','img-b','positive','HOLDOUT'),
+    ca('case-unknown','img-c','unknown','HOLDOUT'),
+    ca('case-hard','img-d','hard_negative','HOLDOUT')]});
 test('01 current empty Commerce media registry remains NOT_ADMISSIBLE',()=>{
  const r=auditCorpus({...scope,products:[product()],media:[],cases:[]});
  assert.equal(r.status,'NOT_ADMISSIBLE');
