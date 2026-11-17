@@ -73,3 +73,32 @@ No live workflow Publish, Supabase migration, Auth user/role change, customer da
 Rollback: close Draft child PR; leave inactive QA workflow isolated (archive only with separate approval). No production restore required.
 
 Source CI evidence must be filled after confirmed job result and exact final commit SHA.
+
+
+## 8. VERIFIED independent GitHub CI and n8n acceptance evidence — 2026-11-17 JST
+
+**Tested source HEAD:** 0946f8fda8ca96f262d812d73ba07ef865c2d030
+**GitHub Actions push run:** https://github.com/ngoctien20/demo-git/actions/runs/44046440401
+
+- Job 133913182055 SUCCESS: V17.1P independent Node VM tests replaying exact n8n manual QA scripts **111/111 PASS**, plus inherited V17.1O–V17.1D **744/744 PASS**, total **855/855 SOURCE TESTS PASS**. Static no real JWT, no provider, no DB/network/AI access check also PASS.
+- Job 133913181664 SUCCESS: independent disposable PostgreSQL 17 service with dummy authenticated NOLOGIN role, TEMP TABLE RLS across two Stores under same FAKE Tenant, ROLLBACK; output DISPOSABLE_SAME_TENANT_STORE_A_B_RLS_PASS, proof scope NO_REAL_JWT_NO_COMMERCE_TABLES. Post-rollback absence of temporary table verified.
+- Job 133913567350 is intentionally the HOSTED NO-GO release gate. It is expected to fail until two true signed Auth owner JWT identities across Store A/B in the SAME Tenant, independently owned signed Meta/Zalo OA callbacks, Store-level Commerce Reader authorization and customer OrderAccessGrant are proven. Source and disposable RLS PASS do not satisfy these prerequisites.
+- n8n V17.1P execution 5009 SUCCESS, then hardened version dec4b734-ab6a-4cdc-b449-bf052b703118 execution **5010 SUCCESS** with 208/208 cases: 196 DENY, 8 SIMULATED_CATALOG_READ_PLAN, 4 SIMULATED_ORDER_STATUS_PLAN. The allowed plans are NOT real database reads and no customer data/model/provider was accessed.
+
+### Honest regression history
+
+The first GitHub CI attempt had 106/111 source tests PASS and 5 invalid test assertions: a deliberately forged fifth installation confused the test case grouping and some snapshot field names differed from test expectations. Test grouping now uses immutable caseId fixture ranges, independent of the attacker-controlled installation field; this improves the test rather than relaxing the policy.
+
+Subsequent run had 110/111 source tests PASS because one further test expected an absent snapshot field. This was corrected to check explicit realOrdersRead, realCustomersRead and realOrdersWritten fields. Later all 111/111 tests and inherited 744/744 passed, but the static YAML metadata validator used stale field names. These were reconciled against the exact JSON snapshot schema, and the final source job passed without policy concessions. No changes to real Auth, provider, Commerce or Published nodes were made during these fixes.
+
+### Final security verdict
+
+VERIFIED: current mapping cannot demonstrate SAME-TENANT two-Store ownership; actual session/membership join has no qualifying pair; existing legacy RLS is Tenant level. Treat as a **P0 deployment blocker, not an exploit claim**.
+
+IMPLEMENTED: separate INACTIVE no-send/code-only n8n QA, immutable source snapshots and Draft PR. TESTED: 208/208 hosted synthetic and 855/855 offline source with disposable PostgreSQL RLS QA.
+BLOCKED: genuine Meta/Zalo signed no-send Page/OA verification, two independently signed real Auth JWTs for different Stores in same Tenant, real Store-level JWT/RLS or trusted server scope, protected Commerce Reader and per-tool OrderAccessGrant.
+LIVE release: **NO-GO**.
+
+Rollback: close child Draft PR and leave the QA workflow INACTIVE, callerPolicy none. No production restoration required since no published, credential, customer, billing or Commerce business changes occurred.
+
+This checkpoint documentation-only commit changes the branch HEAD. Final HEAD CI must be checked again before reporting the documentation commit as verified.
