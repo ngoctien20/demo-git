@@ -1,0 +1,59 @@
+name: V17 Multi Channel 03A - Private Intake JWT Handover Source NO-SEND
+on:
+  pull_request:
+    paths:
+      - "qa/v17-multichannel03a/**"
+      - "docs/ai-handoff/V17_MULTI_CHANNEL_03A_PRIVATE_INTAKE_JWT_META_CHECKPOINT.md"
+      - ".github/workflows/v17-multichannel03a-offline-no-send.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-send-private-evidence-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout original pinned V17.1E HMAC source for inherited PR304 QA
+        uses: actions/checkout@v4
+        with:
+          repository: ngoctien20/demo-git
+          ref: 652010d33a96b3daf3892fb660099c196cef2cf5
+          path: pinned-pr243-meta-source
+          persist-credentials: false
+      - name: Syntax check all new modules/tests
+        run: |
+          node --version
+          for f in qa/v17-multichannel03a/*.mjs; do node --check "$f"; done
+      - name: New private evidence JWT Meta handover source tests
+        run: node --test qa/v17-multichannel03a/*.test.mjs
+      - name: Original inherited PR304 real metadata and pinned Meta compatibility
+        run: node --test qa/v17-multichannel03/*.test.mjs
+      - name: Staff/Inbox inherited PR298
+        run: node --test qa/v17-multichannel02/*.test.mjs
+      - name: Handoff/Outbound inherited PR295
+        run: node --test qa/v17-multichannel-intelligence/*.test.mjs
+      - name: OA source inherited PR294
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: No credential, provider, customer data, hosted write or own Auth claims
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const src=['private-evidence-intake.mjs','dual-store-jwt-uat-rehearsal.mjs',
+                     'meta-handover-fixture-classifier.mjs'];
+          for (const name of src) {
+            const v=readFileSync('qa/v17-multichannel03a/'+name,'utf8');
+            for (const bad of [/\bfetch\s*\(/,/\baxios\s*\(/,/\bXMLHttpRequest\s*\(/,
+             /\bWebSocket\s*\(/,/\b(sendMessage|createOrder|executeSql|passThreadControl|takeThreadControl)\s*\(/]) {
+              if (bad.test(v))throw Error('SOURCE_SIDE_EFFECT_FORBIDDEN: '+name);
+            }
+            if (!v.includes('noSend:true') || !v.includes('canDeploy:false'))
+              throw Error('SOURCE_NOSEND_GATE_MISSING: '+name);
+          }
+          const b=JSON.parse(readFileSync('qa/v17-multichannel03a/observed-readonly-baseline-20261117.json'));
+          if(b.actualReadOnly.sixCommerceTablesWithStoreId!==0||
+            b.actualReadOnly.syntheticQaTenantsWithTwoDistinctStoresAndOwners!==0||
+            b.actualDualStoreSignedJwtUatExecuted!==false ||
+            b.actualNativeMetaHandoverNoSendExecuted!==false)
+             throw Error('UNAUTHORIZED_REAL_UAT_CLAIM');
+          NODE
