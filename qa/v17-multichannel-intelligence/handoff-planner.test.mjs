@@ -17,7 +17,11 @@ function fixture(channel = 'messenger') {
       sessionActive: true, actorId: 'owner-A', role: 'OWNER',
       tenantId: 'tenant-A', storeId: 'store-A' },
     command: { action: 'REQUEST_HUMAN', id: 'request-H', expectedRevision: 1,
-      staffId: 'staff-A' }
+      staffId: 'staff-A' },
+    staffAssignment: { source: 'TRUSTED_STORE_STAFF_MEMBERSHIP',
+      verified: true, assignmentAllowed: true, tenantId: 'tenant-A',
+      storeId: 'store-A', bindingId: 'binding-A', staffId: 'staff-A',
+      role: 'STAFF', pageInboxAccessVerified: true }
   };
 }
 function receipt(f, action = 'ACK_HUMAN') {
@@ -242,4 +246,17 @@ test('Invalid action and source-only actor cannot escalate', () => {
   denied('INVALID_COMMAND', f);
   const g = fixture(); g.authority.source = 'CLIENT_SELF_REPORTED';
   denied('SCOPE_OR_AUTHORITY_DENIED', g);
+});
+
+test('Requested staff must be independently authorized for exact Store', () => {
+  const f = fixture(); f.staffAssignment.storeId = 'store-B';
+  denied('STAFF_ASSIGNMENT_NOT_VERIFIED', f);
+});
+test('Messenger human takeover requires provider Page Inbox access evidence', () => {
+  const f = fixture(); f.staffAssignment.pageInboxAccessVerified = false;
+  denied('STAFF_ASSIGNMENT_NOT_VERIFIED', f);
+});
+test('Attacker cannot self-attest staff membership', () => {
+  const f = fixture(); f.staffAssignment.source = 'CLIENT_CONTROLLED';
+  denied('STAFF_ASSIGNMENT_NOT_VERIFIED', f);
 });
