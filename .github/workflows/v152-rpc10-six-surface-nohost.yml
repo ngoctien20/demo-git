@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   rpc10-offline-gate:
-    name: Node gates G0.1 + G0.2 + HOSTED NO-GO (no DB)
+    name: Node gates G0.1/G0.2/G0.3 + HOSTED NO-GO (no DB)
     runs-on: ubuntu-24.04
     timeout-minutes: 7
     steps:
@@ -172,6 +172,31 @@ jobs:
           for gate in ('canAssignStore:false','canMigrate:false','canRelease:false','originalMerchantEvidenceAuthenticatedHere:false'):
               assert gate in js,gate
           print('G0.2 read-only aggregates and hard HOSTED OWNER NO-GO enforced')
+          PY
+      - name: RPC10 G0.3 published Commerce/store contracts fail closed
+        run: |
+          node --check qa/v152-rpc10/g03-published-caller-readiness.cjs
+          node --test qa/v152-rpc10/g03-published-caller-readiness.test.cjs
+          node - <<'NODE'
+          const base=require('./qa/v152-rpc10/g03-published-caller-sanitized.json');
+          const {audit}=require('./qa/v152-rpc10/g03-published-caller-readiness.cjs');
+          const status=audit(base,'2026-11-17T02:39:00Z');
+          if(status.status!=='PUBLISHED_COMMERCE_STORE_CUTOVER_NO_GO' ||
+             status.canMigrate || status.canPublish || status.canReadHostedCommerce ||
+             status.realCustomerRowsAccessed !== 0 || status.blockers.length<10)
+             throw Error('RPC10_G03_UNSAFE_CUTOVER_GATE');
+          console.log(JSON.stringify({status:status.status,blockerTypes:status.blockers.length,canMigrate:false}));
+          NODE
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          module=Path('qa/v152-rpc10/g03-published-caller-readiness.cjs').read_text()
+          for pattern in [r'\bfetch\s*\(',r'\bchild_process\b',r'\bcreateClient\s*\(',
+                          r'\bprocess\.env\b',r'\bhttps?\.request\s*\(']:
+              assert not re.search(pattern,module),pattern
+          for marker in ['canMigrate:false','canReadHostedCommerce:false','canPublish:false','canSendProvider:false']:
+              assert marker in module,marker
+          print('G0.3 metadata-only, all hosted Commerce actions hard-denied')
           PY
       - name: Assert current baseline is denied, never connected or authorized
         run: |
