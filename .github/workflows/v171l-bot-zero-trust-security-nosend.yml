@@ -1,0 +1,93 @@
+name: TIEN404 V17.1L Bot Zero Trust Security Regression NO SEND
+on:
+  push:
+    branches:
+      - work/v171l-bot-zero-trust-tool-authority-qa-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171l-bot-security/**'
+      - 'docs/ai-handoff/V17_1L_*'
+      - '.github/workflows/v171l-bot-zero-trust-security-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-security:
+    name: V17.1L signed ingress, multi-store tool authorizer, prompt injection and inherited QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'New V17.1L independent native-event and tool security contract'
+        run: node --test qa/v171l-bot-security/zero-trust-bot-boundary.test.cjs
+      - name: 'New V17.1L safe audit and cost/rate quota proposals'
+        run: node --test qa/v171l-bot-security/safe-audit-and-quota.test.cjs
+      - name: 'Install disposable Pillow for inherited raster security tests'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('jpg') and features.check('webp')"
+      - name: 'Inherited V17.1K-S1 hostile media security'
+        run: |
+          python -m unittest discover -s qa/v171k-security -p 'test_*.py' -v
+          node --test qa/v171k-security/zero-trust-media-review.test.cjs
+      - name: 'Inherited V17.1K manual staff one-shot source'
+        run: node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Inherited V17.1J merchant evidence and cross channel'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Inherited V17.1I image acquisition and Vision budget'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1H bounded real raster decoder'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Inherited V17.1G DNS TLS QA'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Inherited V17.1F registry QA'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Inherited V17.1E model receipt QA'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Inherited V17.1D PNG and channel order QA'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Static fail-closed tool security and no execution'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=[Path('qa/v171l-bot-security/zero-trust-bot-boundary.cjs'),
+             Path('qa/v171l-bot-security/safe-audit-and-quota.cjs')]
+          txt=[v.read_text() for v in p]
+          for s in txt:
+            for regex in (r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',
+               r'\bprocess\.env\b',r'\bservice_role\b',r'\baxios\b',
+               r'\bchild_process\b',r'\bcreateOrder\s*\(',
+               r'\bsendMessage\s*\(',r'\bmodel\.invoke\s*\('):
+              assert not re.search(regex,s,re.I),(p,regex)
+          for required in ('verifyProviderEvent','resolveInstallation',
+             'reserveReplayOnce','allowRateAndCost','verifyOrderAccess',
+             'verifyCustomerConfirmation','verifyServerQuote',
+             'TOOL_HIGH_RISK_DISABLED_IN_SHADOW','SOURCE_ONLY_READ_PLAN'):
+             assert required in txt[0],required
+          for required in ('customerMessageLogged:false','credentialLogged:false',
+             'canExecuteLiveInference:false','serverAtomicQuotaVerified:false'):
+             assert required in txt[1],required
+          print('V17.1L_SOURCE_NO_WRITE_NO_SEND_NO_NATIVE_PROVIDER_CLAIM PASS')
+          PY
+  hosted-admission-denied:
+    name: V17.1L LIVE Bot and Commerce permission release gate NO GO
+    runs-on: ubuntu-24.04
+    needs: [offline-security]
+    timeout-minutes: 2
+    steps:
+      - name: 'Require independent signed native provider, Store RLS and tool grants'
+        run: |
+          echo "::error::V171L_LIVE_NO_GO_REAL_META_ZALO_OWNERSHIP_JWT_RLS_DURABLE_REPLAY_ATOMIC_RATE_QUOTA_ORDER_GRANTS"
+          exit 3
