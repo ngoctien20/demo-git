@@ -1,0 +1,53 @@
+{
+  "contract": "T404_G10_REAL_SIGNED_SHADOW_REPLAY_READINESS_V1",
+  "inspectedAtUtc": "2026-11-17T04:15:00Z",
+  "sourceKind": "CONNECTED_N8N_EXECUTION_METADATA_NO_CUSTOMER_FIELDS",
+  "actualMessenger": {
+    "workflowId": "Z7FdV7uDvApfbURQ",
+    "pinnedPublishedVersion": "ff7a57d2-519a-4283-933c-37a854df92d2",
+    "executionId": "4431",
+    "mode": "webhook",
+    "status": "success",
+    "signatureVerified": true,
+    "existingLegacyModelExecuted": true,
+    "existingLegacyMetaReplyAccepted": true,
+    "shadowInvocationExecuted": true,
+    "realProviderPageOwnershipIndependentlyVerified": false
+  },
+  "shadowBridge": {
+    "workflowId": "dw1JOxWOEY8csTnm",
+    "pinnedPublishedVersion": "450f2693-aad9-47d8-aaba-ac7a94abe644",
+    "executionId": "4432",
+    "mode": "integrated",
+    "status": "success",
+    "fixtureOnly": false,
+    "contextAccepted": true,
+    "sourceSenderOrMessageForwarded": false,
+    "providerSends": 0,
+    "ordersWritten": 0,
+    "modelsInvoked": 0
+  },
+  "centralCore": {
+    "workflowId": "iyfGUiEsZlNTBWOR",
+    "pinnedPublishedVersion": "ddc3ce5b-365e-47e2-a06d-08daffceb9a8",
+    "executionId": "4433",
+    "mode": "integrated",
+    "status": "success",
+    "tenantResolved": false,
+    "reason": "unknown_or_duplicate_channel",
+    "ordersWritten": 0,
+    "providerSends": 0,
+    "modelsInvoked": 0
+  },
+  "replayReality": {
+    "legacyCheckOperation": "rowNotExists",
+    "legacyRecordOccursAfterSuccessfulProviderReply": true,
+    "atomicBeforeShadowClaimVerified": false,
+    "realProviderDuplicateUnderConcurrencyTested": false,
+    "privatePostgresReplayAdapterDeployed": false,
+    "actualOneShotNoSendQAAppPageAccepted": false,
+    "canonicalStoreOwnerVerified": false,
+    "hostedRlsJwtVerified": false,
+    "currentRecoveryApproved": false
+  }
+}
