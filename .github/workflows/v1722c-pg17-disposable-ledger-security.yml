@@ -107,7 +107,7 @@ jobs:
           for p in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\b',
                     r'\bhttp\.request\s*\(',r'\bconsole\.log\s*\(']:
             assert not re.search(p,native),p
-                    concurrent=Path('qa/v1722-cross-channel-order/pg17-disposable-concurrent-otp-claim.sh').read_text()
+          concurrent=Path('qa/v1722-cross-channel-order/pg17-disposable-concurrent-otp-claim.sh').read_text()
           assert 't404_v1722_ci' in concurrent and 'pg_stat_activity' in concurrent
           assert "PASS_REAL_TWO_PG17_CLIENTS_SINGLE_CONSUME_NO_SEND" in concurrent
           for bad in [r'(?i)create\s+policy\b',r'(?i)grant\s+(?:all|select|insert|update|delete)\s+on\b',
