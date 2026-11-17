@@ -5,14 +5,13 @@
  * identity via PRIVATE operator configuration. Never commit these values.
  * Production adapter requires signed owner evidence + atomic durable claim.
  */
-import {createHmac,createHash,timingSafeEqual} from 'node:crypto';
+import {createHmac,timingSafeEqual} from 'node:crypto';
 
 export const CONTRACT='T404_V171E_ISOLATED_SIGNED_NOSEND_V1';
 export const LIMIT_BYTES=32768;
 const text=v=>typeof v==='string';
 const ident=v=>text(v)&&/^[0-9]{5,30}$/.test(v);
 const compare=(a,b)=>text(a)&&text(b)&&a.length===b.length&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
-const hexhash=b=>createHash('sha256').update(b).digest('hex');
 const result=(status,reason,code,detail={})=>Object.freeze({
   contract:CONTRACT,status,reason,http_status:code,
   meta_outbound:0,model_calls:0,commerce_writes:0,
@@ -85,7 +84,7 @@ export async function handleIsolatedMeta({method,url,headers={},rawBody},cfg={},
   catch{return reject('SIGNED_EVENT_NOT_ELIGIBLE_FOR_QA');}
   // Claim needs to be an atomic durable operation in any real hosted test.
   // If claimOnce returns unknown, DENY — never silently use local memory.
-  const receiptId=hexhash(Buffer.from(cfg.qaPageId+':'+parsed.mid));
+  const receiptId=createHmac('sha256',cfg.appSecret).update(cfg.qaPageId+':'+parsed.mid).digest('hex');
   let claimed;
   try{claimed=await cfg.claimOnce(receiptId)}
   catch{return reject('DURABLE_CLAIM_FAILED',503);}
