@@ -1,0 +1,60 @@
+name: TIEN404 V17.1F Website and PRODUCT_MEDIA Sources NO-FETCH NO-SEND
+on:
+  push:
+    branches:
+      - work/v171f-shop-website-product-media-registry-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171f-commerce/**'
+      - 'docs/ai-handoff/V17_1F_*'
+      - '.github/workflows/v171f-shop-media-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-regression:
+    name: V17.1F shop website and media rows offline QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Shop website/SKU/Store/reference security controls
+        run: |
+          node --check qa/v171f-commerce/shop-media-source-registry.cjs
+          node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: Inherited V17.1E merchant receipt and UAT gate
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: Inherited V17.1D pixel and cross-channel offline regression
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: Static no-fetch no-model no-write no-send
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('qa/v171f-commerce/shop-media-source-registry.cjs').read_text()
+          for prohibited in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+             r'\bhttps?\.request\s*\(',r'\bchild_process\b',
+             r'\baxios\b',r'\bsendProvider\s*\(',r'\bcreateOrder\s*\('):
+            assert not re.search(prohibited,src,re.I),prohibited
+          for mandatory in ('actualHttpRequests:0','authorizedToFetch:false',
+              'shopDomainOwnershipIndependentlyVerified:false','visionModelCalls:0',
+              'providerSends:0','hostedWrites:0','PAGE_TO_IMAGE_MAPPING_REQUIRED'):
+            assert mandatory in src, mandatory
+          print('V17.1F SOURCE_NO_FETCH_NO_SEND PASS')
+          PY
+  hosted-no-go:
+    name: V17.1F real website fetch/model/Meta/Zalo UAT HOSTED NO GO
+    runs-on: ubuntu-24.04
+    needs: [source-regression]
+    timeout-minutes: 3
+    steps:
+      - name: Fail closed until independent store domain photo licensing and recovery
+        run: |
+          echo "::error::V171F_HOSTED_NO_GO_DOMAIN_RIGHTS_DNS_SSRF_REAL_PIXELS_VISION_PROVIDER_RLS_MISSING"
+          exit 3
