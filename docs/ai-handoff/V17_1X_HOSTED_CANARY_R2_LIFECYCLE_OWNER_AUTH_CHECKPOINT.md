@@ -102,3 +102,19 @@ New synthetic suite `qa/v171x-hosted-uat/hosted-uat-approval-plan.test.cjs` exer
 ## Access independent acceptance hardening (source review)
 
 A genuine hosted Access acceptance requires **both** anonymous/non-member DENY and successfully authenticated authorized-operator READ-ONLY ALLOW on the exact protected route, with **zero Access Bypass policies**. An app named DENY ALL with zero policy records cannot claim that operator ALLOW has been verified. The source gate checks `policiesReturned>=1`, `bypassPolicyCount===0`, `externalDeniedCanaryVerified` and `externalAuthorizedCanaryVerified` from its trusted injected snapshot. These inputs are FAKE in source tests, not evidence of a real external hosted probe. Three additional tests explicitly prevent an allow-by-bypass, deny-only or zero-policy false positive. Expected new source cases: **53**; expected source total **1185** with inherited 1132, pending actual CI.
+
+
+## G. VERIFIED independent CI and release gate (2026-11-17 JST)
+
+**Tested code HEAD:** `67160ecffc8de024a35758fcb3f66bb46280b3e6`.
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44094521576
+
+- Source job `134078007991` **SUCCESS**: **53/53 V17.1X** adversarial test cases and **1,132/1,132 inherited** security/Commerce source regression cases = **1,185/1,185 PASS**. CI source-only manifest enforces `HOSTED_NO_GO`, no real R2 settings/Access/Auth/n8n/payment/provider changes, and a disabled candidate lifecycle rule.
+- Disposable PostgreSQL 17 job `134078007545` **SUCCESS**: same-Tenant fake Store A/B row-level security and ROLLBACK; **NOT** real Supabase Auth JWT or real production Store-scoped Commerce RLS.
+- Real hosted Access/R2 lifecycle/replay and two-owner JWT admission job `134078358630` **FAILED BY DESIGN**: no independent protected route canary, no authorized R2 expiry rule, no genuine scanner/CDR or durable replay acceptance, no two real owner sessions in same Tenant and no live Store-level RLS. Overall GitHub workflow RED intentionally, with both offline jobs GREEN.
+- Additional hardened source checks require Access policy count at least 1, zero Bypass policies, a successful **independent denied anonymous canary** and an **independent authorized operator canary**; none has run. A named Access application with zero policy records is not a positive hosted acceptance.
+- Cloudflare actual read-only API inventory and Supabase aggregate checks remain separate from the **synthetic** test data and are not cryptographically attested by this source gate. The adapter always returns NO-GO; private actual hosted collection is not wired.
+- Change scope is a child Draft GitHub PR only. No Worker host route opened, no R2 lifecycle PUT, no bucket lock or private file upload, no Auth user/tenant/Store/RLS, no n8n change, no provider send and no new spend.
+- This checkpoint-only docs update creates a new SHA; recheck final-HEAD CI before final VERIFIED designation.
+
+**Disposition: VERIFIED READ-ONLY CLOUD CONFIG / SOURCE IMPLEMENTED / TESTED 1,185 CASES + PG17 / REAL HOSTED AND AUTH BLOCKED / PRODUCTION NO-GO.**
