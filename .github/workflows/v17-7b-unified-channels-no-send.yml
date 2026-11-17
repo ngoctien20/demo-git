@@ -1,0 +1,62 @@
+name: V17.7B Unified Channels Store Isolation OFFLINE NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7B_UNIFIED_CHANNELS_CHECKPOINT.md"
+      - ".github/workflows/v17-7b-unified-channels-no-send.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unified-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check inherited V17.7A + V17.7B modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/v17-7a-oa-independent/*.mjs; do node --check "$f"; done
+      - name: Full inherited 7A OpenAPI + unified 7B channel QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Source-only side effect gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const modules=[
+            'offline-channel-gate.mjs',
+            'zalo-oa-openapi-offline.mjs',
+            'zalo-oa-webhook-offline.mjs',
+            'unified-channel-registry-offline.mjs'
+          ];
+          for(const module of modules){
+            const src=readFileSync('qa/v17-7a-oa-independent/'+module,'utf8');
+            for(const deny of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+            ]) if(deny.test(src))throw Error('Forbidden effect in '+module);
+          }
+          const unified=readFileSync('qa/v17-7a-oa-independent/unified-channel-registry-offline.mjs','utf8');
+          for(const required of [
+            'allowProviderSend:false','allowCommerceReader:false',
+            'allowOrderWrite:false','allowStockWrite:false',
+            'allowNotificationSend:false','realJwtRlsVerified:false',
+            'crossChannelIdentityLinked:false','canPublish:false'
+          ])if(!unified.includes(required))throw Error('Missing NO-GO invariant: '+required);
+          console.log('V17.7B full source-only no-send/no-Commerce-write: PASS');
+          NODE
