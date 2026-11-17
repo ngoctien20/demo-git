@@ -1,0 +1,88 @@
+name: TIEN404 V17.6-B.3 Private Store Authority and Disposable PG17 RLS NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v176b3-private-authority/**'
+      - '.github/workflows/v176b3-private-store-rls-nosend.yml'
+      - 'qa/v176b2-queryguard/**'
+      - 'qa/v176b1-core-admission/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-admission-review:
+    name: B.3 private admission gate (metadata only, real JWT BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      NODE_ENV: test
+      OPENAI_API_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+    steps:
+      - name: SHA-pinned checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: B.1 independent Core policy source regression
+        run: node --test qa/v176b1-core-admission/independent-core-adapter.test.cjs
+      - name: B.2 trusted SKU source-only query guard
+        run: node --test qa/v176b2-queryguard/trusted-catalog-read-plan.test.cjs
+      - name: B.3 metadata-only private authority NO-GO assertions
+        run: node --test qa/v176b3-private-authority/hosted-jwt-admission.test.cjs
+      - name: Disallow real JWT acceptance from public runner
+        run: |
+          node -e "const x=require('./qa/v176b3-private-authority/HOSTED_JWT_READINESS_SNAPSHOT.json'); if(x.productionRelease!=='NO_GO'||x.actualHostedJwtTestCount!==0||x.independentlyProvenSameTenantTwoStores!==false)process.exit(3); console.log('V176B3_REAL_JWT_PRIVATE_ADMISSION_BLOCKED');"
+  disposable-pg17-rls:
+    name: PG17 disposable two-Store RLS, negative claims, rollback (NO REAL JWT)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: QA_ONLY_DISPOSABLE_PG17_NOT_A_SECRET
+          POSTGRES_DB: t404_b3_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_b3_disposable"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGDATABASE: t404_b3_disposable
+      PGUSER: postgres
+      PGPASSWORD: QA_ONLY_DISPOSABLE_PG17_NOT_A_SECRET
+      T404_B3_DISPOSABLE_ONLY: YES
+      CI: "true"
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - name: SHA-pinned checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client, not Supabase SDK
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Verify local DB target, PG17, user Store RLS, no hosted writes
+        shell: bash
+        run: bash qa/v176b3-private-authority/ci-disposable-pg17.sh
+      - name: No residual test objects and no real JWT admission
+        run: |
+          echo "V176B3_DISPOSABLE_ONLY__NO_REAL_SUPABASE_AUTH__NO_META_ZALO_PROVIDER__NO_HOSTED_WRITES"
+  hosted-jwt-no-go:
+    name: Real JWT same-tenant Store Owner UAT BLOCKED (no send)
+    needs: [source-admission-review,disposable-pg17-rls]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Retain production no-go without requesting secrets
+        run: |
+          echo "::warning::REAL_JWT_NO_GO: Owner A/B private proof and same-Tenant two-Store hosted RLS are not independently verified"
+          echo "SOURCE_AND_DISPOSABLE_ACCEPTANCE_IS_NOT_HOSTED_AUTHORIZATION"
+          echo "NO_MERGE_NO_HOSTED_RLS_NO_CREDENTIALS_NO_SEND_NO_ORDER_WRITES"
