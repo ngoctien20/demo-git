@@ -75,7 +75,8 @@ function createPrivateAdmissionGate(opts){
  const {jwks,issuer,audience='authenticated',lookupSession,lookupOwnerStore,
    lookupInstallation,getProviderSecret,reserveReplayOnce,
    lookupCustomerOrderGrant,clock=()=>Date.now(),
-   lookupPrivateApproverKey,reservePrivateApprovalNonceOnce}=opts||{};
+   lookupPrivateApproverKey,reservePrivateApprovalNonceOnce,
+   expectedApprovalCommitSha}=opts||{};
  if([lookupSession,lookupOwnerStore,lookupInstallation,getProviderSecret,
      reserveReplayOnce,lookupCustomerOrderGrant,clock].some(x=>typeof x!=='function')||
    !jwks||!issuer)throw new Error('REQUIRED_PRIVATE_DEPENDENCIES');
@@ -319,7 +320,8 @@ function createPrivateAdmissionGate(opts){
  // from the client-provided approval envelope or user_metadata.
  async function planOperatorAuthorizedTwoStoreAuth({intent,approvals,owners}={}){
   if(typeof lookupPrivateApproverKey!=='function'||
-     typeof reservePrivateApprovalNonceOnce!=='function')
+     typeof reservePrivateApprovalNonceOnce!=='function'||
+     !/^[a-f0-9]{40}$/.test(String(expectedApprovalCommitSha||'')))
     return deny('OPERATOR_APPROVAL_SERVICE_NOT_CONFIGURED');
   if(!intent||typeof intent!=='object'||Array.isArray(intent)||
      !Array.isArray(owners)||owners.length!==2||owners[0]===owners[1]||
@@ -343,6 +345,8 @@ function createPrivateAdmissionGate(opts){
      intent.expiresAtMs<=intent.issuedAtMs||
      intent.expiresAtMs-intent.issuedAtMs>600000)
     return deny('OPERATOR_APPROVAL_SCOPE');
+  if(intent.commitSha!==expectedApprovalCommitSha)
+    return deny('OPERATOR_APPROVAL_COMMIT_MISMATCH');
   const now=validClock();
   if(intent.issuedAtMs>now+30000||intent.expiresAtMs<=now)
     return deny('OPERATOR_APPROVAL_EXPIRED');
@@ -406,7 +410,9 @@ function createPrivateAdmissionGate(opts){
     }
    }catch{valid=false;}
    if(!valid)return deny('OPERATOR_APPROVAL_SIGNATURE_INVALID');
-   actorRecords.push({role,kid:a.kid,signerRef:record.signerRef,pubX:pub.x});
+   actorRecords.push({role,kid:a.kid,signerRef:record.signerRef,
+     pubX:pub.x,ownerUserId:record.ownerUserId,tenantId:record.tenantId,
+     storeId:record.storeId});
   }
   if(roleSeen.size!==4||signerSeen.size!==4||
      approvals.some(a=>!roleOrder.includes(a?.role))||
@@ -444,7 +450,10 @@ function createPrivateAdmissionGate(opts){
     if(fresh?.active!==true||fresh?.ownerProof!=='PRIVATELY_ENROLLED_SIGNER'||
        fresh?.role!==actor.role||fresh?.kid!==actor.kid||
        fresh?.signerRef!==actor.signerRef||
-       fresh?.publicJwk?.x!==actor.pubX||fresh?.publicJwk?.d!==undefined)
+       fresh?.publicJwk?.x!==actor.pubX||fresh?.publicJwk?.d!==undefined||
+       (actor.role.startsWith('OWNER_STORE_')&&(
+        fresh?.ownerUserId!==actor.ownerUserId||
+        fresh?.tenantId!==actor.tenantId||fresh?.storeId!==actor.storeId)))
       return deny('OPERATOR_APPROVER_REVOKED');
    }
   }catch{return deny('OPERATOR_AUTHORITY_RECHECK_UNAVAILABLE');}
