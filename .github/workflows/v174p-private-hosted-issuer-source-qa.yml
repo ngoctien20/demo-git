@@ -1,5 +1,8 @@
 name: TIEN404 V17.4P Private Hosted Issuer Access JWT × Secret Gate NO-GO
 on:
+  # Optional manual SOURCE/LOCAL QA only; workflow_dispatch visibility requires
+  # this workflow to be registered on the repository default branch.
+  workflow_dispatch:
   push:
     branches:
       - work/v174p-private-hosted-issuer-owner-gate-20261117
