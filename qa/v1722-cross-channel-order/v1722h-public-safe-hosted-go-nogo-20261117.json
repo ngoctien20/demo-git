@@ -1,0 +1,100 @@
+{
+  "contract": "TIEN404_V17_22H_PUBLIC_SAFE_DECISION_RECORD_V1",
+  "recorded_date_jst": "2026-11-17",
+  "decision": "NO_GO",
+  "decision_scope": "REAL_SAME_STORE_MESSENGER_ZALO_HOSTED_NO_SEND_CANARY",
+  "evidence_class": "READ_ONLY_CONNECTED_METADATA_AND_EXISTING_PINNED_SOURCE",
+  "pinned_parent": {
+    "pr": 376,
+    "head": "57e697ab9661cc78512c01e5b959e13a1c76012b"
+  },
+  "direct_read_only_snapshot": {
+    "supabase": {
+      "project_alias": "TIEN404_STAGING",
+      "observed_at_utc": "2026-11-17T14:39:04Z",
+      "stores_table_exists": false,
+      "store_memberships_table_exists": false,
+      "channel_identity_links_exists": false,
+      "hosted_v1722_qa_orders_exists": false,
+      "store_id_columns_present_in_six_commerce_tables": 0,
+      "commerce_tables_observed": 6,
+      "public_orders_permissive_select_policy_count": 1
+    },
+    "n8n": {
+      "messenger": {
+        "workflow_id": "Z7FdV7uDvApfbURQ",
+        "published": true,
+        "version_id": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+        "node_count": 32,
+        "webhook_execution_metadata_observed": true,
+        "native_meta_provider_owner_proved_by_execution_metadata": false
+      },
+      "zalo_bot": {
+        "workflow_id": "yIJk8LvJoLF40Z62",
+        "published": true,
+        "version_id": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+        "node_count": 12,
+        "recent_listed_execution_mode": "manual",
+        "native_zalo_getme_authenticated_readback_verified": false
+      },
+      "qa_manual_fixture": {
+        "workflow_id": "MQcbjLWZ5QUTJW0k",
+        "mode_last_observed": "manual",
+        "real_provider_evidence": false
+      }
+    }
+  },
+  "inherited_owner_evidence": {
+    "meta_owner": {
+      "source_pr": 310,
+      "proof_class": "SOURCE_ONLY_PRIVATE_SIGNED_METADATA",
+      "real_meta_page_app_business_admin_proven": false,
+      "dedicated_qa_page_app_native_owner_approval_proven": false
+    },
+    "zalo_bot_owner": {
+      "source_pr": 360,
+      "proof_class": "USER_CONFIRMED_BOT_CREATOR_UI_ONLY",
+      "provider_authenticated_getMe_performed": false,
+      "provider_authenticated_getWebhookInfo_performed": false,
+      "owner_to_store_binding_verified": false
+    },
+    "store_auth": {
+      "source_pr": 354,
+      "proof_class": "SOURCE_ONLY_NO_REAL_AUTH",
+      "real_same_tenant_store_ab_owner_jwt_rls_pass": false
+    },
+    "recovery": {
+      "source_pr": 372,
+      "proof_class": "RECOVERY_INVENTORY_AND_RESTORE_NOT_ACCEPTED",
+      "current_independent_restoration_accepted": false
+    }
+  },
+  "admission_gates": {
+    "independent_native_meta_qa_page_app_ownership": false,
+    "independent_native_zalo_bot_owner_readback": false,
+    "same_canonical_store_page_and_bot_verified": false,
+    "live_supabase_same_tenant_store_ab_jwt_rls_verified": false,
+    "current_independent_m0_restore_accepted": false,
+    "isolated_hosted_one_event_kill_switch_and_no_send_approved": false,
+    "explicitly_authorized_native_provider_no_send_test": false
+  },
+  "controls": {
+    "source_only": true,
+    "no_provider_send": true,
+    "no_order_or_stock_write": true,
+    "no_credential_intake": true,
+    "no_deployment": true,
+    "no_cost_change": true,
+    "no_customer_data_access": true,
+    "real_hosted_canary_executed": false,
+    "no_secret_material_in_this_record": true,
+    "Windows_M0_local_preflight_deferred_not_waived": true
+  },
+  "next_unblockers": [
+    "PRIVATE_PROVIDER_OWNER_GETME_AND_META_PAGE_APP_READ_ONLY_PROOF",
+    "INDEPENDENT_CANONICAL_STORE_OWNER_AUTH_AND_RLS_UAT",
+    "PRIVATE_BACKUP_AND_OFF_HOST_RESTORE_ACCEPTANCE",
+    "APPROVED_BOUND_ONE_EVENT_NO_SEND_HOSTED_CANARY"
+  ],
+  "checkpoint": "V17_22H_OBSERVED_READ_ONLY_NO_GO_20261117"
+}
