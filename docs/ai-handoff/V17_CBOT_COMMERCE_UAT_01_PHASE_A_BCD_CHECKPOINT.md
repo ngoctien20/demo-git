@@ -115,3 +115,19 @@ Next safe step is a *server-side* verified provider adapter + ephemeral catalog 
 
 **Current canonical checkpoint:** `V17_PHASE_A_VERIFIED_BCD_SOURCE_CONTRACT_TESTED_L3L4_NO_GO`.
 **No hosted or provider side effects**; rollback is close Draft PR.
+
+
+### 11. Actual n8n manual synthetic QA (not just source) — 2026-11-17 JST
+
+Before executing, inspected both exact workflow graphs in n8n Cloud and confirmed they were **Inactive**, each using one Manual Trigger and exactly three Code nodes, no provider HTTP, credential-dependent node, Execute Workflow, database write or external sender. The code was screened for HTTP/network, host data or send calls. This step executed existing source as-is; **no workflow configuration or Published version changed**.
+
+| Manual QA workflow | n8n ID | Execution | Actual result | Scope |
+|---|---|---|---|---|
+| `TIEN404_V171A_CHANNEL_STORE_CUSTOM_BOT_READONLY_QA_NO_SEND` | `DCj7mQbovyYNf7Li` | **4342** | **SUCCESS, 5/5** synthetic QA events | Shop A/B same Tenant + Shop C different Tenant, per-Shop bot/prompt/knowledge/price; `provider_sends=0`, `orders_written=0`, `model_calls=0` |
+| `TIEN404_V171B_NATIVE_INGRESS_HMAC_BOT_BINDING_QA_NO_SEND` | `Bs4QX1fP2S226N8j` | **4343** | **SUCCESS, 18/18** synthetic native protocol cases: 3 ALLOW, 14 DENY, 1 DUPLICATE | Synthetic Meta HMAC + Zalo Bot test header/binding, bad signature/page/replay/route denied; `provider_sends=0`, `orders_written=0`, `model_calls=0` |
+
+These are **real n8n Cloud executions of synthetic fixtures**, not real Messenger or Zalo OA inbound/outbound: `meta_qa_proof_only=true`, `zalo_bot_qa_proof_only=true`, `zalo_oa_owner_and_event_signature_verified=false`, `hosted_store_rls_verified=false`, `real_vendor_delivery_verified=false`. Neither workflow writes Commerce or sends anything; logs contain only QA synthetic markers.
+
+**Additional validation completed:** n8n manual QA `5/5 + 18/18 PASS`. These counts are separate from the **119/119 Node** source contract tests and are not the old 96+36 benchmark set. This does not promote L3/L4 acceptance.
+
+**Actions performed:** only manual execution #4342/#4343 of inactive QA workflows, which creates standard n8n QA execution records. No credential, production workflow graph, provider API, actual Commerce order or hosted DB row changed.
