@@ -1,0 +1,67 @@
+name: TIEN404 V18.0-P0L — Private Auth Evidence UI Candidate (NO HOST)
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0l/**'
+      - '.github/workflows/v180-p0l-private-auth-evidence-ui.yml'
+      - 'docs/ai-handoff/T404_V180_P0L_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0l/**'
+      - '.github/workflows/v180-p0l-private-auth-evidence-ui.yml'
+      - 'docs/ai-handoff/T404_V180_P0L_*'
+permissions:
+  contents: read
+jobs:
+  private-auth-ui-source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout pinned commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Node pure Auth and owner RLS regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0l/private-auth-evidence-core.mjs
+          node --check qa/v180-p0l/private-auth-evidence-ui.mjs
+          node --test qa/v180-p0l/private-auth-evidence-core.test.mjs
+      - name: Fail closed on origin, scope and source-only production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const base='qa/v180-p0l/';
+          const core=readFileSync(base+'private-auth-evidence-core.mjs','utf8');
+          const ui=readFileSync(base+'private-auth-evidence-ui.mjs','utf8');
+          const html=readFileSync(base+'private-auth-evidence.html','utf8');
+          const sources=core+'\n'+ui;
+          const deny=[
+            /\bservice_role\b/i,/\blocalStorage\b/,/\bsessionStorage\b/,
+            /\bfetch\s*\(/,/\bXMLHttpRequest\b/,
+            /\b(?:sendBeacon|WebSocket)\s*\(/,
+            /\.auth\.(?:signInWithPassword|signUp|resetPasswordForEmail|signOut|updateUser)\s*\(/,
+            /\.from\(['"](?:orders|order_items|products|messages|customers|conversations)['"]\)/,
+            /\.(?:insert|upsert|delete|update)\s*\(/
+          ];
+          if(deny.some(x=>x.test(sources)))throw Error('P0L_PROHIBITED_CALL_IN_BROWSER_CANDIDATE');
+          if(!ui.includes("https://tien404-auth-staging.onrender.com") ||
+             !ui.includes("'/auth-evidence.html'") ||
+             !core.includes("client.auth.getUser()") ||
+             !core.includes("client.auth.getClaims()") ||
+             !core.includes("tenant_memberships") ||
+             !core.includes("canGrantRoles:false") ||
+             !core.includes("canMigrate:false") ||
+             !core.includes("canSend:false") ||
+             !html.includes('noindex,nofollow') ||
+             !html.includes('id="consent"') ||
+             !html.includes('id="check"'))
+             throw Error('P0L_AUTH_UI_SOURCE_CONTRACT_MISSING');
+          console.log('PASS_P0L_SOURCE_PRIVATE_OWNER_UI_NOT_HOSTED');
+          NODE
+      - name: Confirm deliberate staging release NO-GO
+        run: |
+          printf '%s\n' 'P0L_SOURCE_ONLY_CANDIDATE; NO_RENDER_DEPLOY; NO_REAL_AUTH_SESSION_EXECUTED; NO_STORE_MEMBERSHIPS; NO_PROVIDER_SEND; M0_DEFERRED_SOURCE_ONLY; PRODUCTION_NO_GO'
