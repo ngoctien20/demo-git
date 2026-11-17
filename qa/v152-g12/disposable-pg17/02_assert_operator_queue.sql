@@ -157,7 +157,18 @@ BEGIN
  WHERE pronamespace IN ('t404_g11_disposable_qa'::regnamespace,
                          't404_g12_disposable_qa'::regnamespace) AND prosecdef;
  IF n<>0 THEN RAISE EXCEPTION 'G12_UNSAFE_DEFINER';END IF;
- RAISE NOTICE 'PASS G12: bounded scan, actor & resolution validation, no PII/SECURITY DEFINER';
+ BEGIN
+   UPDATE t404_g12_disposable_qa.review_history
+   SET actor_tag='tampered' WHERE audit_id=(
+      SELECT min(audit_id) FROM t404_g12_disposable_qa.review_history);
+   RAISE EXCEPTION 'G12_AUDIT_UPDATE_UNEXPECTEDLY_ALLOWED';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+ BEGIN
+   DELETE FROM t404_g12_disposable_qa.review_history
+   WHERE audit_id=(SELECT min(audit_id) FROM t404_g12_disposable_qa.review_history);
+   RAISE EXCEPTION 'G12_AUDIT_DELETE_UNEXPECTEDLY_ALLOWED';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+ RAISE NOTICE 'PASS G12: bounded scan, actor & resolution validation, append-only audit, no PII/SECURITY DEFINER';
 END $qa_neg$;
 
 CREATE ROLE g12_unauthorized_no_login NOLOGIN;
