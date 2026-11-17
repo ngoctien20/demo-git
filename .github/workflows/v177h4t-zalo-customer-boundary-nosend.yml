@@ -23,6 +23,25 @@ jobs:
         run: |
           node --check qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.mjs
           node --test qa/v17-7a-oa-independent/v17-7h4t-zalo-customer-boundary-readonly.test.mjs
+      - name: V17.7H.4U getMe-only local Bot ID discovery (mocked, NO LIVE TOKEN)
+        run: |
+          node --check qa/v17-7a-oa-independent/v17-7h4u-private-bot-id-discovery.mjs
+          node --check scripts/v177h4u-private-bot-id-discovery.mjs
+          node --test qa/v17-7a-oa-independent/v17-7h4u-private-bot-id-discovery.test.mjs
+          set +e
+          output=$(node scripts/v177h4u-private-bot-id-discovery.mjs)
+          code=$?
+          set -e
+          test "$code" -eq 4
+          echo "$output" | grep -q 'PRIVATE_OPERATOR_BLOCKED'
+      - name: Windows local operator launcher syntax only (NO NETWORK)
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('scripts/v177h4u-private-bot-id-discovery.ps1', [ref]$tokens, [ref]$errors) | Out-Null
+          if($errors.Count -ne 0){ throw 'PowerShell private operator parse failure' }
+          Write-Host 'V17.7H.4U private operator PowerShell syntax PASS'
       - name: Inherited V17.7H.4S existing Bot Store/Customer contract source regressions
         run: |
           node --test qa/v17-7a-oa-independent/v17-7h4s-trusted-store-crosschannel-readonly.test.mjs
