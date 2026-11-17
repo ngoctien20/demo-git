@@ -305,3 +305,10 @@ test('39 missing least privilege CF identity review rejects',()=>reject(f=>{
 test('40 extra unknown field cannot hide privileges',()=>reject(f=>{
  f.financePacket.allow_cron_job=true;
 },'strict_finance_packet_fields',true));
+
+test('41 finance different key ID but reusing owner public key is not independent',()=>reject(f=>{
+ f.financeTrust.finance.spki_pem=f.ownerEvidence.trustAnchors.owner.spki_pem;
+},'finance_and_owner_are_distinct_principals'));
+test('42 ledger security different key ID but reusing parent reviewer key is not independent',()=>reject(f=>{
+ f.financeTrust.ledger_security.spki_pem=f.ownerEvidence.trustAnchors.security.spki_pem;
+},'finance_and_owner_are_distinct_principals'));
