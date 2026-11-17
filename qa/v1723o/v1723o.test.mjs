@@ -36,6 +36,7 @@ for(const rpc of COMMERCE_PRIVILEGED_NAMES)test('BIO potential privileged '+rpc+
 });
 test('BIO dynamic unknown caller not cleared',()=>{const x=assessBioRpcNames(['variable_rpc']);assert.equal(x.status,'NEEDS_MANUAL_REVIEW')});
 test('BIO wrong input rejected',()=>assert.equal(assessBioRpcNames(null).status,'INVALID_INPUT'));
+test('unknown RPC input never echoed into the report',()=>{const x=assessBioRpcNames(['PRIVATE_SENSITIVE_DO_NOT_ECHO_012345']);assert.equal(x.status,'NEEDS_MANUAL_REVIEW');assert.equal(JSON.stringify(x).includes('PRIVATE_SENSITIVE_DO_NOT_ECHO_012345'),false)});
 
 const metaRaw=Buffer.from('{"object":"page","entry":[{"id":"SYNTHETIC"}]}','utf8');
 const metaSecret='SYNTHETIC_META_APP_SECRET_NOT_REAL_12345';
