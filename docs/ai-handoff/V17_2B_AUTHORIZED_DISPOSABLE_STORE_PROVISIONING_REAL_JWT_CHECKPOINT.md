@@ -66,3 +66,20 @@ New 40 source-only private authorization/identity approval regression cases, inh
 **Next UAT prerequisites:** exact operator/owner consent + independent security review + verified backup/restore + separate approval for two QA accounts and view + secure private runner. Anything absent leaves **REAL JWT HOSTED NO-GO / PRODUCTION NO-GO**.
 
 Official docs: https://supabase.com/docs/guides/auth/sessions ; https://supabase.com/docs/guides/api/securing-your-api ; https://supabase.com/docs/guides/database/views .
+
+
+## 6. Independent CI on first source commit — VERIFIED
+
+**Commit tested:** `028e805de2e9054cda6efc7df1ac1016a221165a`.  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44114062548
+
+- **Job 134147156574 — SUCCESS:** new **40/40** synthetic signed owner/security approval, bounded resource, concurrent replay, invalid request, trust-registry, stale evidence and fake-authorized all-green cases plus **1290/1290 inherited** source regression cases = **1330/1330 source PASS**. Exact sum verified from CI: 1,177 Node tests + 153 Python tests, no failures. **All signers and approval records in these tests are generated fake fixtures**, not live human MFA/signature receipts.
+- **Job 134147156560 — SUCCESS:** inherited PostgreSQL17 actual `security_invoker` QA view with two synthetic Store identities, cross-Store negative tests, Store/Tenant membership revocation, anon denied and full ROLLBACK, **NOT** real Supabase Auth JWT.
+- **Job 134147156594 — SUCCESS:** inherited PostgreSQL17 isolated same-Tenant two-Store Store Authority/RLS negative QA + ROLLBACK.
+- **Job 134147156090 — SUCCESS:** inherited PostgreSQL17 generic Store isolation rollback QA.
+- **Job 134147827884 — FAILURE BY DESIGN:** true hosted owner MFA authorization, actual migration/private QA user provisioning, real Supabase Auth signed two-user JWT sessions, same-store/cross-store real Data API reads and signed native Meta/Zalo no-send evidence do **not** exist. The workflow is deliberately RED for HOSTED NO-GO.
+- The source gate never calls Supabase Auth Admin, SQL migrations, Cloudflare APIs, n8n providers, public PostgREST or payment APIs. Only GitHub Draft child files changed.
+
+The successful source and disposable PostgreSQL jobs are not proof of two real Auth users, a public QA view on staging, current session revocation, or independently consenting real Merchant owners.
+
+**This documentation-only update changes the branch HEAD; verify independent QA on the exact final HEAD before closing the checkpoint.**
