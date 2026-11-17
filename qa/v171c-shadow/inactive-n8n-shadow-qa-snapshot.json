@@ -1,0 +1,369 @@
+{
+  "schema_version": "T404_V171C_INACTIVE_NATIVE_SHADOW_QA_SNAPSHOT_V1",
+  "checkpoint_date_jst": "2026-11-17",
+  "n8n": {
+    "workflow_id": "AKgE96Xvbqxw4rGb",
+    "name": "TIEN404_V171C_AUTHORITY_BOUND_MESSENGER_SHADOW_QA_NO_SEND",
+    "version_id": "dbfc0311-c08c-4c0d-86b9-92074608e127",
+    "active": false,
+    "active_version_id": null,
+    "qa_folder": "90_QA - DIAGNOSTICS",
+    "purpose": "REPRODUCIBLE_QA_ONLY_NOT_PUBLISHED",
+    "nodes": [
+      {
+        "name": "Manual Shadow Ingress QA (Not Public)",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "parameters": {}
+      },
+      {
+        "name": "Generate 20 Meta Signed QA Cases",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst crypto=require('crypto');\nconst secret='QA_SHADOW_HMAC_ONLY_NEVER_META_CREDENTIAL';\nconst now=Date.now();\nconst m=(id,page='9900000001',opt={})=>{\n const mid=opt.mid||'QA_V171C_MID_'+id;\n const msg={sender:{id:'9900000999'},recipient:{id:opt.recipient||page},timestamp:now+(opt.age_ms||0),\n   message:{mid,text:opt.text===undefined?'QA_SKU_001':opt.text,...(opt.echo?{is_echo:true}:{})}};\n const body={object:'page',entry:[{id:page,messaging:[msg]}],...(opt.storeClaim?{store_id:'QA_STORE_B'}:{}),\n  ...(opt.botClaim?{bot_id:'QA_BOT_B'}:{}),...(opt.tenantClaim?{tenant_id:'QA_TENANT_2'}:{})};\n const raw=JSON.stringify(body);\n const sig='sha256='+crypto.createHmac('sha256',secret).update(raw).digest('hex');\n return {case_id:id,expected:opt.expected||'QA_ALLOW',route:opt.route||'QA_SHADOW_META_ONLY',\n  raw_body:opt.empty?'':raw,header:opt.missing?'':opt.badSig?('sha256='+('f'.repeat(64))):\n   opt.badFormat?('SHA256='+sig.slice(7)):sig,fixture_only:true};\n};\nconst first=m('QA_V171C_01');\nconst cases=[\n first,\n m('QA_V171C_02','9900000002'),\n m('QA_V171C_03','9900000001',{badSig:true,expected:'QA_DENY'}),\n m('QA_V171C_04','9900000001',{missing:true,expected:'QA_DENY'}),\n m('QA_V171C_05','9900000001',{recipient:'9900000002',expected:'QA_DENY'}),\n m('QA_V171C_06','9900000001',{storeClaim:true,expected:'QA_DENY'}),\n m('QA_V171C_07','9900000004',{expected:'QA_DENY'}),\n m('QA_V171C_08','9900000003',{expected:'QA_DENY'}),\n m('QA_V171C_09','9900000001',{age_ms:-3600000,expected:'QA_DENY'}),\n m('QA_V171C_10','9900000001',{age_ms:3600000,expected:'QA_DENY'}),\n m('QA_V171C_11','9900000001',{echo:true,expected:'QA_DENY'}),\n {...first,case_id:'QA_V171C_12',expected:'QA_DUPLICATE'},\n m('QA_V171C_13','9900000001',{mid:'QA_V171C_MID_QA_V171C_01',text:'QA_CHANGED',expected:'QA_DENY'}),\n m('QA_V171C_14','9900000001',{botClaim:true,expected:'QA_DENY'}),\n m('QA_V171C_15','9900000001',{empty:true,expected:'QA_DENY'}),\n m('QA_V171C_16','9900000001',{route:'QA_WRONG_ROUTE',expected:'QA_DENY'}),\n m('QA_V171C_17','9900000001',{badFormat:true,expected:'QA_DENY'}),\n m('QA_V171C_18','9900000001',{tenantClaim:true,expected:'QA_DENY'}),\n m('QA_V171C_19','9900000002',{mid:'QA_V171C_MID_NEW_B',expected:'QA_ALLOW'}),\n m('QA_V171C_20','9900000001',{text:'',expected:'QA_DENY'})\n];\nreturn [{json:{contract:'V171C_SYNTHETIC_INGRESS_BATCH_ONLY',source_tag:'MANUAL_TRIGGER_NO_WEBHOOK',cases}}];\n"
+        }
+      },
+      {
+        "name": "Verify Raw Meta QA Signature and Normalize",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst crypto=require('crypto');\nconst key='QA_SHADOW_HMAC_ONLY_NEVER_META_CREDENTIAL';\nconst first=$input.first()?.json;\nif(first?.contract!=='V171C_SYNTHETIC_INGRESS_BATCH_ONLY'||\n first.source_tag!=='MANUAL_TRIGGER_NO_WEBHOOK'||!Array.isArray(first.cases)||first.cases.length!==20)throw Error('INVALID_QA_INPUT_BATCH');\nconst seen=new Map(),attestations=[];\nfor(const caseInfo of first.cases){\n const c=caseInfo;\n let status='QA_DENY',reason='UNVERIFIED',installation_ref=null,source_class='NOT_VERIFIED';\n try{\n  if(c.fixture_only!==true||!/^QA_V171C_\\d\\d$/.test(c.case_id))throw Error('NON_QA_ENVELOPE');\n  if(c.route!=='QA_SHADOW_META_ONLY')throw Error('UNAPPROVED_SHADOW_ROUTE');\n  if(typeof c.raw_body!=='string'||c.raw_body.length<5||c.raw_body.length>3500)throw Error('INVALID_BODY_LENGTH');\n  if(typeof c.header!=='string'||!/^sha256=[a-f0-9]{64}$/.test(c.header))throw Error('MISSING_META_HMAC');\n  const computed='sha256='+crypto.createHmac('sha256',key).update(c.raw_body).digest('hex');\n  if(!crypto.timingSafeEqual(Buffer.from(computed,'utf8'),Buffer.from(c.header,'utf8')))throw Error('BAD_META_HMAC');\n  const p=JSON.parse(c.raw_body);\n  if(p.tenant_id!==undefined||p.store_id!==undefined||p.bot_id!==undefined||p.verification_status!==undefined)throw Error('CLIENT_SCOPE_SPOOF');\n  if(p.object!=='page'||!Array.isArray(p.entry)||p.entry.length!==1)throw Error('BAD_META_ENVELOPE');\n  const e=p.entry[0],item=e.messaging?.[0];\n  if(!e||!/^990000000[1-9]$/.test(String(e.id||''))||!Array.isArray(e.messaging)||e.messaging.length!==1)throw Error('NOT_QA_PAGE');\n  if(item?.recipient?.id!==e.id||String(item?.sender?.id)!=='9900000999')throw Error('WRONG_META_RECIPIENT');\n  if(!Number.isSafeInteger(item.timestamp)||Math.abs(Date.now()-item.timestamp)>300000)throw Error('STALE_OR_FUTURE_META_EVENT');\n  if(item.message?.is_echo===true||item.message?.is_deleted===true||item.message?.is_unsupported===true)throw Error('ECHO_OR_UNSUPPORTED');\n  if(typeof item.message?.mid!=='string'||!/^QA_V171C_MID_[A-Z0-9_]+$/.test(item.message.mid))throw Error('UNTRUSTED_MID');\n  if(typeof item.message.text!=='string'||item.message.text.length<1||item.message.text.length>300)throw Error('MESSAGE_TYPE_NOT_SUPPORTED');\n  const replayKey=e.id+'|'+item.message.mid,hash=crypto.createHash('sha256').update(c.raw_body).digest('hex');\n  if(seen.has(replayKey)){\n   if(seen.get(replayKey)!==hash)throw Error('CONFLICTING_MID_REPLAY');\n   status='QA_DUPLICATE';reason='IDENTICAL_MESSAGE_REPLAY';source_class='QA_HMAC_ONLY';\n  }else{\n   seen.set(replayKey,hash);status='QA_PRE_VERIFIED';reason='QA_HMAC_VALID';source_class='QA_HMAC_ONLY';\n  }\n  installation_ref='QA_PAGE_'+e.id;\n }catch(err){status='QA_DENY';reason=String(err?.message||'UNVERIFIED').slice(0,70);source_class='NOT_VERIFIED';}\n attestations.push({case_id:c.case_id,expected:c.expected,status,reason,installation_ref,source_class});\n}\nreturn [{json:{contract:first.contract,source_tag:first.source_tag,attestations}}];\n"
+        }
+      },
+      {
+        "name": "Read Server QA Installation Bot Bindings",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "cnSZ6hT7WCbNwGl5",
+            "cachedResultName": "TIEN404_V171C_QA_INSTALLATION_BOT_BINDINGS_NO_SEND"
+          },
+          "returnAll": true
+        }
+      },
+      {
+        "name": "Apply Trusted QA Registry Bot Policy and Mock Only",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst s=$('Verify Raw Meta QA Signature and Normalize').first()?.json;\nif(s?.contract!=='V171C_SYNTHETIC_INGRESS_BATCH_ONLY'||!Array.isArray(s.attestations)||s.attestations.length!==20)\n throw Error('MISSING_VERIFIED_QA_BATCH');\nconst db=$input.all().map(x=>x.json||{});\nif(db.length!==3)throw Error('QA_BINDING_REGISTRY_ROW_COUNT_MISMATCH');\nconst allowedSchema=['channel','installation_ref','tenant_ref','store_ref','bot_profile_ref','bot_version','prompt_version','knowledge_version','policy_version','approval_scope','binding_status','owner_authority_verified','read_only'];\nconst results=s.attestations.map(a=>{\n let status=a.status,reason=a.reason,store=null,bot=null,price=null;\n if(status==='QA_PRE_VERIFIED'){\n  const matches=db.filter(row=>row.channel==='messenger'&&row.installation_ref===a.installation_ref);\n  if(matches.length!==1){status='QA_DENY';reason='UNBOUND_OR_DUPLICATE_INSTALLATION';}\n  else {\n   const r=matches[0];\n   const valid=allowedSchema.every(k=>Object.hasOwn(r,k))&&\n    r.approval_scope==='SYNTHETIC_ONLY'&&r.binding_status==='QA_APPROVED'&&\n    r.owner_authority_verified===false&&r.read_only===true&&\n    /^QA_TENANT_[12]$/.test(r.tenant_ref)&&/^QA_STORE_[AB]$/.test(r.store_ref)&&\n    /^QA_BOT_[AB]$/.test(r.bot_profile_ref)&&\n    r.bot_version===r.bot_profile_ref+'_V1'&&/^QA_PROMPT_[AB]_V1$/.test(r.prompt_version)&&\n    /^QA_KNOWLEDGE_[AB]_V1$/.test(r.knowledge_version)&&r.policy_version==='QA_POLICY_V1'&&\n    ((r.store_ref==='QA_STORE_A'&&r.bot_profile_ref==='QA_BOT_A')||(r.store_ref==='QA_STORE_B'&&r.bot_profile_ref==='QA_BOT_B'));\n   if(!valid){status='QA_DENY';reason='INSTALLATION_POLICY_OR_STORE_BINDING_DENIED';}\n   else{\n    store=r.store_ref;bot=r.bot_profile_ref;price=store==='QA_STORE_A'?159000:259000;\n    status='QA_ALLOW';reason='PERSISTED_QA_INSTALLATION_BINDS_BOT';\n   }\n  }\n }\n return {case_id:a.case_id,expected:a.expected,status,reason,\n  trusted_store:store,trusted_bot:bot,price_vnd:price,\n  source_attestation:a.source_class,raw_provider_event_replayed:false,\n  real_page_owner_verified:false,hosted_store_rls_verified:false,model_calls:0,provider_sends:0,orders_written:0};\n});\nif(results.length!==20||results.some(x=>x.status!==x.expected))throw Error('P0_SHADOW_BINDING_QA_EXPECTATION_FAILED');\nfor(const r of results){\n if(r.model_calls!==0||r.provider_sends!==0||r.orders_written!==0)throw Error('REAL_ACTION_GATE_FAILED');\n if(r.status==='QA_ALLOW'&&(!r.trusted_store||!r.trusted_bot||!r.price_vnd))throw Error('AUTHORIZED_QA_BINDING_EMPTY');\n if(r.status==='QA_DENY'&&(r.trusted_store||r.trusted_bot))throw Error('BLOCKED_SCOPE_LEAK');\n}\nreturn [{json:{status:'V171C_SHADOW_PERSISTED_REGISTRY_QA_PASS',suite:'MANUAL_SYNTHETIC_ONLY_NO_WEBHOOK',total:results.length,\n passed:results.length,allowed:results.filter(x=>x.status==='QA_ALLOW').length,\n denied:results.filter(x=>x.status==='QA_DENY').length,\n duplicate:results.filter(x=>x.status==='QA_DUPLICATE').length,\n registry_records:db.length,registry_type:'N8N_PERSISTENT_QA_ONLY',\n page_owner_verified:false,hosted_store_rls_verified:false,\n real_meta_webhook_received:false,send:'MOCK_ONLY_NOT_SENT',\n provider_sends:0,orders_written:0,model_calls:0,\n cases:results.map(x=>({case_id:x.case_id,status:x.status,reason:x.reason,store:x.trusted_store,bot:x.trusted_bot,price_vnd:x.price_vnd}))}}];\n"
+        }
+      },
+      {
+        "name": "Fail Closed Twenty Case Shadow Acceptance",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "return $input.all().map(x=>{const r=x.json;if(r.status!=='V171C_SHADOW_PERSISTED_REGISTRY_QA_PASS'||r.total!==20||r.passed!==20||r.allowed!==3||r.denied!==16||r.duplicate!==1||r.registry_records!==3||r.model_calls!==0||r.provider_sends!==0||r.orders_written!==0||r.real_meta_webhook_received!==false||r.page_owner_verified!==false||r.hosted_store_rls_verified!==false)throw Error('V171C_RELEASE_GATE_DENIED');return {json:{...r,release_status:'QA_ONLY_GO_REAL_META_NO_GO',runtime_mode:'INACTIVE_MANUAL_ONLY'}};});"
+        }
+      }
+    ],
+    "connections": {
+      "Manual Shadow Ingress QA (Not Public)": {
+        "main": [
+          [
+            {
+              "node": "Generate 20 Meta Signed QA Cases",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate 20 Meta Signed QA Cases": {
+        "main": [
+          [
+            {
+              "node": "Verify Raw Meta QA Signature and Normalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verify Raw Meta QA Signature and Normalize": {
+        "main": [
+          [
+            {
+              "node": "Read Server QA Installation Bot Bindings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Read Server QA Installation Bot Bindings": {
+        "main": [
+          [
+            {
+              "node": "Apply Trusted QA Registry Bot Policy and Mock Only",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apply Trusted QA Registry Bot Policy and Mock Only": {
+        "main": [
+          [
+            {
+              "node": "Fail Closed Twenty Case Shadow Acceptance",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "registry": {
+    "data_table_id": "cnSZ6hT7WCbNwGl5",
+    "name": "TIEN404_V171C_QA_INSTALLATION_BOT_BINDINGS_NO_SEND",
+    "rows": [
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_PAGE_9900000001",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_profile_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V1",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "binding_status": "QA_APPROVED",
+        "owner_authority_verified": false,
+        "read_only": true
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_PAGE_9900000002",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_profile_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V1",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "binding_status": "QA_APPROVED",
+        "owner_authority_verified": false,
+        "read_only": true
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_PAGE_9900000003",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_profile_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V1",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "binding_status": "REVOKED",
+        "owner_authority_verified": false,
+        "read_only": true
+      }
+    ],
+    "authority_claim": "QA_FIXTURES_ONLY_NO_OWNER_PROOF"
+  },
+  "execution": {
+    "id": "4341",
+    "status": "success",
+    "mode": "manual",
+    "result_summary": {
+      "total": 20,
+      "passed": 20,
+      "allowed": 3,
+      "denied": 16,
+      "duplicate": 1
+    },
+    "cases": [
+      {
+        "case_id": "QA_V171C_01",
+        "status": "QA_ALLOW",
+        "reason": "PERSISTED_QA_INSTALLATION_BINDS_BOT",
+        "store": "QA_STORE_A",
+        "bot": "QA_BOT_A",
+        "price_vnd": 159000
+      },
+      {
+        "case_id": "QA_V171C_02",
+        "status": "QA_ALLOW",
+        "reason": "PERSISTED_QA_INSTALLATION_BINDS_BOT",
+        "store": "QA_STORE_B",
+        "bot": "QA_BOT_B",
+        "price_vnd": 259000
+      },
+      {
+        "case_id": "QA_V171C_03",
+        "status": "QA_DENY",
+        "reason": "BAD_META_HMAC",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_04",
+        "status": "QA_DENY",
+        "reason": "MISSING_META_HMAC",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_05",
+        "status": "QA_DENY",
+        "reason": "WRONG_META_RECIPIENT",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_06",
+        "status": "QA_DENY",
+        "reason": "CLIENT_SCOPE_SPOOF",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_07",
+        "status": "QA_DENY",
+        "reason": "UNBOUND_OR_DUPLICATE_INSTALLATION",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_08",
+        "status": "QA_DENY",
+        "reason": "INSTALLATION_POLICY_OR_STORE_BINDING_DENIED",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_09",
+        "status": "QA_DENY",
+        "reason": "STALE_OR_FUTURE_META_EVENT",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_10",
+        "status": "QA_DENY",
+        "reason": "STALE_OR_FUTURE_META_EVENT",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_11",
+        "status": "QA_DENY",
+        "reason": "ECHO_OR_UNSUPPORTED",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_12",
+        "status": "QA_DUPLICATE",
+        "reason": "IDENTICAL_MESSAGE_REPLAY",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_13",
+        "status": "QA_DENY",
+        "reason": "CONFLICTING_MID_REPLAY",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_14",
+        "status": "QA_DENY",
+        "reason": "CLIENT_SCOPE_SPOOF",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_15",
+        "status": "QA_DENY",
+        "reason": "INVALID_BODY_LENGTH",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_16",
+        "status": "QA_DENY",
+        "reason": "UNAPPROVED_SHADOW_ROUTE",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_17",
+        "status": "QA_DENY",
+        "reason": "MISSING_META_HMAC",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_18",
+        "status": "QA_DENY",
+        "reason": "CLIENT_SCOPE_SPOOF",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      },
+      {
+        "case_id": "QA_V171C_19",
+        "status": "QA_ALLOW",
+        "reason": "PERSISTED_QA_INSTALLATION_BINDS_BOT",
+        "store": "QA_STORE_B",
+        "bot": "QA_BOT_B",
+        "price_vnd": 259000
+      },
+      {
+        "case_id": "QA_V171C_20",
+        "status": "QA_DENY",
+        "reason": "MESSAGE_TYPE_NOT_SUPPORTED",
+        "store": null,
+        "bot": null,
+        "price_vnd": null
+      }
+    ]
+  },
+  "release_gate": {
+    "test_only": true,
+    "provider_owner_verified": false,
+    "verified_real_event_routed_to_new_bot": false,
+    "hosted_store_rls_verified": false,
+    "model_calls": 0,
+    "provider_sends": 0,
+    "orders_written": 0
+  }
+}
