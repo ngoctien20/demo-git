@@ -1,0 +1,99 @@
+name: V17.7H.1 Private QA Bot Owner and Operator Signed Challenge NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7H1_PRIVATE_OWNER_NATIVE_NO_SEND_CHECKPOINT.md"
+      - ".github/workflows/v17-7h1-private-owner-native-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owner-three-role-signed-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check all V17.7A-H and H.1 offline adapters
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: Execute all inherited native channel and three-role crypto regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Read-only evidence, no provider-call, no-send and no-host admission guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {
+            prohibitRealAdmissionFromSelfReportedGreen
+          } from './qa/v17-7a-oa-independent/v17-7h1-three-role-owner-challenge-offline.mjs';
+          import {
+            requireActualPrivateOwnerAndReadOnlyGetMe
+          } from './qa/v17-7a-oa-independent/v17-7h1-zalo-owner-readback-offline.mjs';
+          const root='qa/v17-7a-oa-independent/';
+          const code=[
+            'v17-7h1-three-role-owner-challenge-offline.mjs',
+            'v17-7h1-zalo-owner-readback-offline.mjs'
+          ].map(x=>readFileSync(root+x,'utf8'));
+          for(const source of code){
+            for(const bad of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(setWebhook|deleteWebhook|sendMessage|createOrder|writeOrder|writeStock|deployWorker)\s*\(/
+            ]) if(bad.test(source))throw Error('FORBIDDEN_PROVIDER_OR_COMMERCE_EFFECT_IN_OFFLINE_GATE');
+          }
+          const evidence=JSON.parse(readFileSync(root+'v17-7h1-hosted-owner-readiness-evidence.json','utf8'));
+          assert.equal(evidence.contract,'TIEN404_V17_7H1_PRIVATE_OWNER_OPERATOR_NATIVE_CANARY_READINESS');
+          assert.equal(evidence.mode,'SOURCE_ONLY_PRIVATE_CONSENT_PREPARATION');
+          assert.equal(evidence.cloudflare.existing_worker_name,'tien404-v177h-provider-nosend-inactive-staging');
+          assert.equal(evidence.cloudflare.existing_version_id,'c39b8e9d-2dfc-454d-b29d-40b495ff2043');
+          assert.equal(evidence.cloudflare.deployment_count,0);
+          assert.equal(evidence.cloudflare.workers_dev_enabled,false);
+          assert.equal(evidence.cloudflare.preview_urls_enabled,false);
+          assert.equal(evidence.cloudflare.binding_count,0);
+          assert.equal(evidence.cloudflare.new_worker_created_this_phase,false);
+          assert.equal(evidence.cloudflare.existing_worker_modified_this_phase,false);
+          assert.equal(evidence.cloudflare.public_provider_route_enabled,false);
+          assert.equal(evidence.n8n.no_send_manual_fixture_active,false);
+          assert.equal(evidence.n8n.new_or_edited_workflows_this_phase,0);
+          assert.equal(evidence.supabase.qa_same_tenant_store_ab_count,0);
+          assert.equal(evidence.supabase.real_store_rls_jwt_acceptance,false);
+          assert.equal(evidence.official_zalo_bot_contract.real_getMe_readback_executed,false);
+          assert.equal(evidence.official_zalo_bot_contract.real_getWebhookInfo_readback_executed,false);
+          assert.equal(evidence.official_zalo_bot_contract.setWebhook_this_phase,'NEVER_CALLED');
+          assert.equal(evidence.official_zalo_bot_contract.raw_bot_token_collected,false);
+          assert.equal(evidence.consent.private_owner_portal_session_authenticated,false);
+          assert.equal(evidence.consent.owner_operator_reviewer_three_role_real_signatures_verified,false);
+          assert.equal(evidence.consent.approved_live_callback,false);
+          assert.equal(evidence.consent.approved_test_message_count,0);
+          assert.equal(evidence.external_uat.live_signed_provider_event_received,false);
+          assert.equal(evidence.external_uat.hosted_durable_replay_acceptance,false);
+          assert.equal(evidence.external_uat.provider_webhook_reconfigured,false);
+          assert.equal(evidence.external_uat.actual_provider_messages_sent,0);
+          assert.equal(evidence.external_uat.actual_orders_written,0);
+          assert.equal(evidence.external_uat.actual_stock_writes,0);
+          assert.equal(evidence.release,'REAL_OWNER_AND_NATIVE_EXTERNAL_CANARY_NO_GO');
+          const owner=prohibitRealAdmissionFromSelfReportedGreen({
+            owner:true,operator:true,reviewer:true,bot:true,canSend:true
+          });
+          const zalo=requireActualPrivateOwnerAndReadOnlyGetMe({owner:true,botToken:true});
+          assert.equal(owner.canOpenPublicCallback,false);
+          assert.equal(owner.canPublish,false);
+          assert.equal(zalo.canSetWebhook,false);
+          assert.equal(zalo.canSendMessage,false);
+          console.log('V17.7H.1 OFFLINE 3-ROLE OWNER CRYPTO + GETME READBACK SHAPE PASS; REAL OWNER/PROVIDER NO-GO');
+          NODE
