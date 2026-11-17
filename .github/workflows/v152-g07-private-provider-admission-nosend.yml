@@ -29,6 +29,9 @@ jobs:
           node --check qa/v152-g07/private-provider-authority-gate.cjs
           node --check qa/v152-g07/private-provider-authority-gate.test.cjs
           node --test qa/v152-g07/private-provider-authority-gate.test.cjs
+          node --check qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.js
+          node --check qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs
+          node --test qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs
       - name: Existing no-send signed channel and per-Store regressions
         run: |
           node --test qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
@@ -53,6 +56,16 @@ jobs:
               'INDEPENDENT_REVIEWER_TRUST_NOT_ESTABLISHED',
               'currentIndependentRestoreAccepted:false']:
               assert required in source,required
+          pilot=Path('qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.js').read_text()
+          for token in ('n8n-nodes-base.webhook','n8n-nodes-base.httpRequest',
+                        'n8n-nodes-base.googleSheets','n8n-nodes-base.postgres',
+                        'n8n-nodes-base.supabase','newCredential(','process.env',
+                        'qOrmoXfIobogX16d'):
+              assert token not in pilot,token
+          assert pilot.count("n8n-nodes-base.dataTable")==1
+          assert pilot.count("operation:'get'")==1
+          assert "REAL_SIGNED_NO_SEND_ADMISSION_BLOCKED" in pilot
+          print('G07 n8n manual QA: only synthetic registry GET, no Commerce read or outbound')
           print('G07 safe-source: no real secrets, no calls and hosted NO-GO')
           PY
   g07-hosted-admission-refused:
