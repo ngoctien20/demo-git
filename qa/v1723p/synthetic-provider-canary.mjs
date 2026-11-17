@@ -96,7 +96,9 @@ export function reviewQaInstallationAdmission(packet={}){
  }
  reasons.push('PRIVATE_PROVIDER_INSTALLATION_OWNER_AUTHORITY_NOT_ATTESTED');
  reasons.push('PROVIDER_NATIVE_SIGNED_EVENT_NOT_INDEPENDENTLY_CAPTURED');
- reasons.push('CANONICAL_STORE_AB_AND_M0_RECOVERY_GATE_CLOSED');
+ // Commerce/JWT admission remains separately blocked. Provider-only QA ingress can
+ // be independently reviewed later without touching Orders, Store or real customer data.
+ reasons.push('COMMERCE_STORE_AB_AND_M0_RECOVERY_GATE_SEPARATELY_CLOSED');
  return Object.freeze({status:'PRIVATE_AUTHORITY_NO_GO',reasonCodes:Object.freeze([...new Set(reasons)]),
   realProviderOwnerVerified:false,privateEvidenceAccepted:false,realJwtCanaryAuthorized:false,
   canOpenProviderCanary:false,canReadOrder:false,canWriteOrder:false,canSend:false,canDeploy:false});
