@@ -1,0 +1,45 @@
+name: TIEN404 V17.2C15 Ephemeral PostgreSQL Store A/B RLS and Rollback Drill
+on:
+  pull_request:
+    paths:
+      - 'qa/v172c-rpc-closure/**'
+      - '.github/workflows/v172c15-ephemeral-postgres-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-postgresql-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: tien404-ci-ephemeral-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: tien404-ci-ephemeral-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL command-line client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Verify ephemeral database is only localhost
+        run: |
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "postgres"
+          psql -X -tAc "SELECT current_database()" | grep -Fx postgres
+      - name: PostgreSQL schema, RLS, revoke and guarded rollback drill (synthetic only)
+        run: bash qa/v172c-rpc-closure/v172c15-ephemeral-postgres-drill.sh
