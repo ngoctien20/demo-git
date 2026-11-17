@@ -1,0 +1,68 @@
+name: TIEN404 V18.0-P0E — Migration Preview × Real Auth Admission NO-HOST
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0e/**'
+      - '.github/workflows/v180-p0e-migration-auth-preflight.yml'
+      - 'docs/ai-handoff/T404_V180_P0E_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0e/**'
+      - '.github/workflows/v180-p0e-migration-auth-preflight.yml'
+      - 'docs/ai-handoff/T404_V180_P0E_*'
+permissions:
+  contents: read
+jobs:
+  isolated-preview-and-auth-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: p0e_disposable_synthetic_only
+          POSTGRES_DB: t404_v180_p0e_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0e_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: p0e_disposable_synthetic_only
+      PGDATABASE: t404_v180_p0e_ci
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate source-only and no-host safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${PGDATABASE}" = "t404_v180_p0e_ci"
+          grep -Fq 'P0E_DISPOSABLE_PG17_ONLY' qa/v180-p0e/canonical-migration-preview-disposable.sql
+          ! grep -Eqi 'supabase\.co|app\.n8n\.cloud|pages\.dev|curl |wget |service_role|fetch\(' qa/v180-p0e/canonical-migration-preview-disposable.sql
+      - name: 20 metadata-only real Auth A/B admission negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0e/real-auth-ab-admission.mjs
+          node --test qa/v180-p0e/real-auth-ab-admission.test.mjs
+      - name: Disposable PG17 authority-bound backfill preview and full ROLLBACK
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v180-p0e/canonical-migration-preview-disposable.sql
+      - name: Confirm no persistent preview schema remains
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(psql -XAtq -c "select to_regnamespace('p0e_preview') is null")"
+          test "${result}" = "t"
+          printf '%s\n' 'P0E_DISPOSABLE_ONLY; HOSTED_NO_GO; NO_REAL_JWT; NO_BACKUP_ATTESTATION; NO_PROVIDER_SEND'
