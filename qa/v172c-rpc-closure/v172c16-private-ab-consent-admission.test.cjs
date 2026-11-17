@@ -12,6 +12,8 @@ const pub=x=>x.publicKey.export({type:'spki',format:'pem'});
 const trust={
  project:'disposable-project-only',tenant:'synthetic-tenant',
  publicKeys:{QA_A:pub(keyA),QA_B:pub(keyB)},
+ expectedIssuerRefs:{QA_A:'synthetic-issuer-a',QA_B:'synthetic-issuer-b'},
+ expectedSubjectRefs:{QA_A:'opaque-synthetic-a',QA_B:'opaque-synthetic-b'},
  releaseApproved:true,recoveryApproved:true,disposableApproved:true,
  reviewerApproved:true,privateActorSessionBindingVerified:true,
  independentConsentAudited:true
@@ -65,3 +67,6 @@ test('DENY untrusted replacement public key',()=>{
  assert.equal(check(pair(),{...trust,publicKeys:{...trust.publicKeys,QA_A:pub(fake)}}).status,'DENY');
 });
 test('DENY zero trust config',()=>assert.equal(validate(pair(),null,now).status,'DENY'));
+
+test('DENY same pinned issuer key for both slots',()=>assert.equal(check(pair(),{...trust,publicKeys:{QA_A:pub(keyA),QA_B:pub(keyA)}}).status,'DENY'));
+test('DENY different private trusted Auth subject mapping',()=>assert.equal(check(pair(),{...trust,expectedSubjectRefs:{...trust.expectedSubjectRefs,QA_B:'unexpected-subject'}}).status,'DENY'));
