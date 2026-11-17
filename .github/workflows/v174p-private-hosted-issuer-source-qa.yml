@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Install pinned local-only Workers Vitest runtime packages
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Test real local SQLite-backed DO transactions, replay, alarms, eviction
