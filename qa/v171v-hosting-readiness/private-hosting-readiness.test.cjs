@@ -207,6 +207,13 @@ test('V30 no direct client secret can be included in ref input',async()=>{
  const e=fixture();await denied(review(e,{...e.args,secret:'malicious'}),
  'HOSTING_REFERENCE_SHAPE');
 });
+test('V31 one review nonce cannot be reused against another blueprint and plan pair',async()=>{
+ const f=fixture();assert.equal((await review(f)).ok,true);
+ f.infra.ref='infra_'+'J'.repeat(28);
+ f.qa.ref='qaplan_'+'W'.repeat(28);
+ await denied(review(f,{infrastructureRef:f.infra.ref,
+  qaPlanRef:f.qa.ref,reviewNonce:NONCE}),'HOSTING_REVIEW_ALREADY_ATTEMPTED');
+});
 const hostileInfrastructure=[
  ['Access bypass',x=>x.worker.bypass='ENABLED'],
  ['public Workers route',x=>x.worker.publicWebhooks='ENABLED'],
