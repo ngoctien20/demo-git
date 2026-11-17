@@ -181,3 +181,17 @@ No extra D1 instance is required: use **only** the already-isolated disposable Q
 **SECURITY:** Do not use the old Zalo Bot token, Zalo OA, n8n published credentials or Commerce, do not send additional challenge, and do not register a new webhook. Continue only after verifying which bot the token belongs to.
 
 **Current stage:** DIAG4_PREFLIGHT_DOCUMENTED / PROVIDER_STATUS_PENDING_OWNER_EVIDENCE / WORKER_LOCKED / PRODUCTION_NO_GO.
+
+## V17.23U-DIAG5 — Wrong Bot Token at Worker Root-Cause Reassessment
+
+**OWNER-ATTESTED:** Owner identified incorrect Bot Token input during earlier Worker setup. This must now be part of the root-cause assessment instead of assuming webhook header configuration was correct.
+
+**DIRECT CLOUDFLARE SOURCE VERIFIED:** Deployed Worker compares incoming `X-Bot-Api-Secret-Token` with `env.QA_HEADER_SECRET`; no Bot API Token binding or outbound Zalo API calls exist. Encrypted secret values cannot be read. If the Bot API Token was pasted into `QA_HEADER_SECRET`, this is a **high-priority mismatch hypothesis**, but 403 origins remain unattributed.
+
+**Read-only hosted snapshot:** `workers.dev=false`, previews disabled, original QA D1 accepted receipts 0, no DIAG2 diagnostic binding deployed; hosted version remains `75d9a289-64c3-4fe1-bc13-18c0051b529f`. No n8n secret or Worker secret changed.
+
+**Next gate:** new QA Bot identity match and owner-authorized, reversible **separate Webhook Secret Token** synchronization between provider `setWebhook.secret_token` and Cloudflare `QA_HEADER_SECRET`. Preserve the distinct Bot API Token; never use one in place of the other.
+
+Detailed [DIAG5 security audit, root-cause matrix and recovery proposal](./DIAG5_WRONG_BOT_TOKEN_ROOT_CAUSE_AUDIT.md).
+
+**Checkpoint:** `OWNER_WRONG_TOKEN_CONFIRMED / WORKER_NO_BOT_API_BINDING_VERIFIED / HEADER_MISMATCH_SUSPECTED_NOT_PROVEN / HOSTED_NO_CHANGES / NO_GO`.
