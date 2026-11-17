@@ -11,8 +11,9 @@ export const STORE_AUTHORITY_SCHEMA=Object.freeze({
  memberships:Object.freeze(['store_id','tenant_id','user_id','role','active','authority_version']),
  // These are proposed canonical tables. They DO NOT yet exist in staging.
 });
-export function evaluateStoreAuthorityOffline({principal,store,membership,tenantMembership,nowSeconds}={}){
+export function evaluateStoreAuthorityOffline(input={}){
  try{
+  const {principal,store,membership,tenantMembership,nowSeconds}=input||{};
   if(!principal||!store||!membership||!tenantMembership||!Number.isSafeInteger(nowSeconds))return DENY('EVIDENCE_MISSING');
   if(!EXACT_KEYS(principal,['sub','session_id','tenant_id','issuer','aud','exp','iat','verified_by_private_gateway','session_confirmed']))return DENY('UNTRUSTED_PRINCIPAL');
   if(!valid(principal.sub)||!valid(principal.session_id)||!valid(principal.tenant_id)||principal.verified_by_private_gateway!==true||principal.session_confirmed!==true)return DENY('PRINCIPAL_UNVERIFIED');
