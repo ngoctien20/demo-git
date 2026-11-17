@@ -1,0 +1,78 @@
+name: TIEN404 V18.0-P0O — Private Two-Actor Local Comparison Staging Gate
+on:
+  push:
+    branches:
+      - work/supabase-auth-staging-v1
+    paths:
+      - 'auth-evidence.html'
+      - 'assets/private-auth-evidence-*.mjs'
+      - 'tests/v180-p0m-auth-evidence.test.mjs'
+      - '.github/workflows/v180-p0o-auth-compare-gate.yml'
+  pull_request:
+    paths:
+      - 'auth-evidence.html'
+      - 'assets/private-auth-evidence-*.mjs'
+      - 'tests/v180-p0m-auth-evidence.test.mjs'
+      - '.github/workflows/v180-p0o-auth-compare-gate.yml'
+permissions:
+  contents: read
+jobs:
+  staging-predeploy-no-secret:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact staging commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Static safety and no-hosted-write guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/private-auth-evidence-core.mjs
+          node --check assets/private-auth-evidence-ui.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const core=readFileSync('assets/private-auth-evidence-core.mjs','utf8');
+          const ui=readFileSync('assets/private-auth-evidence-ui.mjs','utf8');
+          const page=readFileSync('auth-evidence.html','utf8');
+          const bad=[
+            /service_role/i,/\\bfetch\\s*\\(/,/\\bXMLHttpRequest\\b/,
+            /\\bsendBeacon\\s*\\(/,/\\bWebSocket\\s*\\(/,
+            /\\.auth\\.(?:signInWithPassword|signUp|signOut|updateUser|resetPasswordForEmail)\\s*\\(/,
+            /\\.from\\(['"](?:orders|products|customers|order_items|messages|conversations)['"]\\)/,
+            /\\.(?:insert|update|upsert|delete)\\s*\\(/
+          ];
+          if(bad.some(p=>p.test(core+'\\n'+ui)))throw Error('FORBIDDEN_HOSTED_WRITE_OR_SECRET');
+          if(!core.includes('comparePeerLocalReceipt')||
+            !core.includes('serverSignedProof:false')||
+            !core.includes('canonicalStoreAuthority:false')||
+            !core.includes('getUser()')||!core.includes('getClaims()')||
+            !core.includes("tenant_memberships")||
+            !ui.includes("'/auth-evidence.html'")||
+            !ui.includes("navigator.clipboard.writeText(value)")||
+            !page.includes('id="peer-receipt"')||
+            !page.includes('id="compare-receipt"')||
+            !page.includes('noindex,nofollow'))
+              throw Error('MISSING_STRICT_P0O_LOCAL_COMPARISON_CONTRACT');
+          console.log('P0O_SOURCE_SECURITY_NO_SEND_NO_HOSTED_AUTH_PASS');
+          NODE
+      - name: Pure JS Auth and receipt comparison tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/v180-p0m-auth-evidence.test.mjs
+      - name: Exact Auth Render static build and existing entrypoint preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-auth-preview.mjs
+          grep -Fq 'id="peer-receipt"' auth-preview-dist/auth-evidence.html
+          test -s auth-preview-dist/assets/private-auth-evidence-core.mjs
+          test -s auth-preview-dist/assets/private-auth-evidence-ui.mjs
+          cmp assets/auth-client.js auth-preview-dist/assets/auth-client.js
+          cmp assets/auth-account.js auth-preview-dist/assets/auth-account.js
+          cmp assets/auth-login.js auth-preview-dist/assets/auth-login.js
+          grep -Fq 'id="account-status"' auth-preview-dist/account.html
+          grep -Fq 'signInWithPassword' auth-preview-dist/assets/auth-login.js
+      - name: Do not claim verified real JWT or Store authority
+        run: |
+          echo 'P0O_SOURCE_ONLY_TESTED; NO_HOSTED_AUTH_BROWSER_LOGIN; NO_JWT; NO_STORE_GRANTS; NO_REAL_PROVIDER_SEND; PRODUCTION_NO_GO'
