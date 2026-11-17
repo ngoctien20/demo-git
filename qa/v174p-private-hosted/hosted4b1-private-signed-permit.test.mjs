@@ -262,8 +262,10 @@ test('40 truncated partial Cloudflare Workers response rejected',()=>{
 });
 test('41 missing V17.5 script in snapshot rejected',()=>{
  deny(f=>{
-  f.inventoryEvidence.inventory.worker_names.pop();
-  f.inventoryEvidence.inventory.script_names.pop();
+  f.inventoryEvidence.inventory.worker_names=f.inventoryEvidence.inventory.worker_names
+   .filter(x=>x!==PROTECTED_V175_RESOURCES.scripts[0]);
+  f.inventoryEvidence.inventory.script_names=f.inventoryEvidence.inventory.script_names
+   .filter(x=>x!==PROTECTED_V175_RESOURCES.scripts[0]);
   f.inventoryEvidence.inventory.page_verification.total_workers=27;
   f.inventoryEvidence.inventory.page_verification.total_scripts=27;
   f.permit.inventory_sha256=hash(f.inventoryEvidence.inventory);
