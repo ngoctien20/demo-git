@@ -34,7 +34,7 @@
   "hostedDeploymentApproved": false,
   "realQaIdentityProvisioningApproved": false,
   "paidResourcesApproved": false,
-  "sourceReviewTestCases": 57,
+  "sourceReviewTestCases": 58,
   "inheritedSourceRegressionCases": 1030,
   "release": "HOSTED_NO_GO"
 }
