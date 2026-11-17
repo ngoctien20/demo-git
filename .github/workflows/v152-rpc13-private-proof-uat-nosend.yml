@@ -1,0 +1,62 @@
+name: TIEN404 RPC13 — Private Merchant Proof and Real JWT UAT Admission (OFFLINE ONLY)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc13/**'
+      - 'docs/ai-handoff/T404_RPC13_*'
+      - '.github/workflows/v152-rpc13-private-proof-uat-nosend.yml'
+  push:
+    branches:
+      - work/v152-rpc13-private-merchant-proof-auth-uat-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-auth-gates:
+    name: Access JWT crypto, Supabase Auth mock, strict source-only denial
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node source security unit tests (FAKE actor and fake tokens)
+        run: |
+          node --check qa/v152-rpc13/dual-verified-identity.mjs
+          node --check qa/v152-rpc13/private-intake-core.mjs
+          node --check qa/v152-rpc13/live-auth-uat.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: No live account UAT and no data/secrets hosted mutation allowed in CI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v152-rpc13')
+          for f in p.iterdir():
+            assert f.is_file(),f
+            s=f.read_text(encoding='utf8')
+            assert 'service_role' not in s and 'SUPABASE_SERVICE_ROLE' not in s,f
+            assert 'pg_dump' not in s and 'pg_restore' not in s,f
+          script=(p/'live-auth-uat.mjs').read_text()
+          assert "process.env.CI==='true'" in script
+          assert "process.env.GITHUB_ACTIONS==='true'" in script
+          assert 'method:\'GET\'' in script
+          assert 'SIX_SURFACE_CANARIES_REQUIRED' in script
+          assert 'SIGNED_IN_VERIFIED_USER_REQUIRED' in script
+          doc=(p/'uat-config-private-template.json').read_text()
+          assert doc.count('false')==3
+          assert 'privateRowBindingHmac' not in doc
+          print('OFFLINE ONLY: no JWT, real Auth, hosted migration, uploads, or provider sends')
+          PY
+  hosted-no-go:
+    name: Hosted migration, RLS, credential and Merchant upload intentionally disabled
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deny production deploy adapter or worker config
+        run: |
+          test ! -e qa/v152-rpc13/worker-deploy.sh
+          test ! -e qa/v152-rpc13/wrangler.toml
+          test ! -e qa/v152-rpc13/secrets.json
+          grep -q 'INTAKE_NOT_DEPLOYED=true' qa/v152-rpc13/private-intake-core.mjs
+          grep -q 'FOUR_ROW_OWNER_HOSTED_NO_GO' qa/v152-rpc13/owner-evidence-admission.mjs
