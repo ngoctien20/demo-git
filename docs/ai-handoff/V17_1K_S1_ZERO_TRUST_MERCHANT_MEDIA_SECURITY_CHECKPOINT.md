@@ -33,3 +33,24 @@ OWASP File Upload Cheat Sheet: allowlist, verify content and file signature, ran
 New offline Python image reconstruction security fixtures + Node malicious URL/two-person review fixtures. Preserve 395 inherited cases from V17.1K to V17.1D. Count only after GitHub Actions logs.
 Production NO-GO intentionally red. Zero real malicious files uploaded, zero real websites fetched, zero real scanner/hosted JWT/RLS tested, zero real Vision calls or Messenger/Zalo sends, zero hosted changes.
 Rollback by closing child Draft PR; parent PR #267 and all hosted data unchanged.
+
+
+## VERIFIED — GitHub Actions security QA receipt (2026-11-17 JST)
+
+Implementation tested HEAD: 8ea59ec6b2afcc5455db5cea93beebfcfabcc78b.
+Actions: https://github.com/ngoctien20/demo-git/actions/runs/44015248230
+
+- New V17.1K-S1 Python actual encoded PNG/JPEG/WebP, malicious prefix, trailing payload removal through reconstructed pixels, EXIF metadata strip, animation refusal, decompression size limits, SKU/store scope and false hosted-authority claims: 31/31 PASS.
+- New V17.1K-S1 Node malicious URL, non-clickable link digest, staff impersonation, scope mismatch, forged scanner/private storage declarations, two-person MFA review and denied public/model release: 36/36 PASS.
+- Inherited V17.1K 45/45, V17.1J 76/76, V17.1I 82/82, V17.1H 40/40, V17.1G 40/40, V17.1F 32/32, V17.1E 28/28, V17.1D 52/52: 395/395 PASS.
+- Total 462/462 offline source tests PASS, zero failed. Source job 133811498277 SUCCESS; source-only no-network/no-provider/no-secret static guard PASS.
+- Hosted security release job 133811656462 intentionally FAILURE. Overall workflow conclusion FAILURE by policy, NOT because source test failed.
+- There was NO real malware scanner, NO independently verified developer sandbox/egress policy, NO private media bucket, NO verified Store JWT/RLS, NO real staff MFA workflow, NO malicious external URL opened, NO genuine merchant image uploaded, NO vendor model call or Messenger/Zalo SEND. Synthetic test callbacks and scanner receipts are not trusted external proofs.
+
+**Classification:** V17.1K-S1 IMPLEMENTED / OFFLINE TESTED / P0 HOSTED FILE INTAKE NO-GO.
+
+**Remaining P0 gates:** independent image decoder worker isolation; no-network/no-credential enforcement; fail-closed real AV scanner; Store RLS on private upload/storage and revocation; secure staff panel (MFA, CSRF, roles, 2-person independent review); protected media object signed receipts; upload abuse/rate/size/CPU quotas; no automatic URL fetch; adversarial cross-tenant tests and rollback rehearsal; independent security review. None can be waived merely because a staff member clicked Approve.
+
+**Rollback:** close Draft child PR #270; parent #267 and production data unchanged. No hosted backup restoration required.
+
+**Checkpoint-only documentation change:** reverify CI at the final HEAD before declaring the final commit tested.
