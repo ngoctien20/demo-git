@@ -23,7 +23,8 @@ jobs:
         run: |
           node --check qa/v174p-private-hosted/hosted-issuer.worker.mjs
           node --check qa/v174p-private-hosted/hosted-issuer.test.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs
+          node --check qa/v174p-private-hosted/release-gates.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs
       - name: Source risk gates and absence of credentials or live API
         run: |
           python3 - <<'PY'
