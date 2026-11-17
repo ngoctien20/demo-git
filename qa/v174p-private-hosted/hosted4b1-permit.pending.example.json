@@ -1,0 +1,33 @@
+{
+  "contract": "T404_V174P_HOSTED4B1_PRIVATE_PHASE_A_PENDING_V1",
+  "status": "PENDING_PRIVATE_APPROVAL",
+  "scope": "FIRST_UPLOAD_INACTIVE_ONLY",
+  "checkpoint_parent_pr": 287,
+  "checkpoint_parent_sha": "40682fbc38e63713e3a05d15c27d792bb7bb301a",
+  "worker": "tien404-v174p-private-qa-issuer",
+  "new_qa_sqlite_class": "V174PReplayGuard",
+  "permit": null,
+  "signatures": {
+    "owner": null,
+    "security": null
+  },
+  "private_trust_anchors": "NOT_STORED_IN_REPOSITORY",
+  "private_operator_identity": "PENDING_PRIVATE_VERIFICATION",
+  "private_security_reviewer": "PENDING_PRIVATE_VERIFICATION",
+  "private_rollback_operator": "PENDING_PRIVATE_VERIFICATION",
+  "approved_budget_usd": null,
+  "cost_envelope_is_hard_cloudflare_cap": false,
+  "account_wide_spending_limit_change_authorized": false,
+  "durable_data_storage_costs_excluded_from_spend_cap_acknowledged": false,
+  "max_external_requests_before_worker_level_access": 0,
+  "no_public_url": true,
+  "no_private_keys_in_git": true,
+  "allow_resource_upload": false,
+  "allow_new_durable_namespace": false,
+  "allow_secret_changes": false,
+  "allow_access_changes": false,
+  "allow_real_hosted_uat": false,
+  "allow_commerce_write": false,
+  "protected_v175_resources_untouched": true,
+  "can_mutate_cloudflare": false
+}
