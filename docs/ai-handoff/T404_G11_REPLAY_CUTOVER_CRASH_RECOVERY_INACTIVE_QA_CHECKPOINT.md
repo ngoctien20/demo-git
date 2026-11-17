@@ -7,7 +7,7 @@
 
 ## 1. What was independently VERIFIED before any new writes
 
-Current connected n8n Published versions, unchanged during G0.11:
+Baseline connected n8n Published versions at G0.11 audit start. **This baseline was superseded by a separate parallel V17.15 release during G0.11; see section 7**:
 - Messenger DEMO \`Z7FdV7uDvApfbURQ\` at \`ff7a57d2-519a-4283-933c-37a854df92d2\`. Real signed webhook \`4431\` verifies Meta HMAC; **legacy AI Sales bot ran and Meta accepted one reply**.
 - Private Messenger→Core Shadow \`dw1JOxWOEY8csTnm\` at \`450f2693-aad9-47d8-aaba-ac7a94abe644\`. Real derived \`4432\`: private PII-minimized receipt, 0 **Shadow** sends, 0 Order writes, 0 model calls.
 - Central Commerce Core \`iyfGUiEsZlNTBWOR\` at \`ddc3ce5b-365e-47e2-a06d-08daffceb9a8\`. Nested real \`4433\`: rejects deliberate unknown Store, no positive Store authorization.
@@ -96,10 +96,23 @@ All pin-only negatives are ephemeral inputs, NOT persistent Data Table writes.
 
 **Separate approval needed before any risky action:** create persistent hosted replay schema, attach DB credential, migrate current \`rowNotExists\` check to atomic claim **before** send/Shadow, change Send error handling or n8n Published version, alter Meta callback, test real duplicate webhook, read actual customer Orders or create outbound reconciliation. Each requires snapshot, Operator/Reviewer approval, test evidence and rollback. The G0.11 implementation is **not** that approval.
 
-**Rollback now:** Leave new G0.11 workflow Inactive and close Draft PR #275 if unwanted; no live deployment or production data affected. Do not remove QA workflow/tables without explicit cleanup authorization. Live Messenger/Shadow/Core Published versions stay pinned to the three IDs in section 1.
+**Rollback now:** Leave new G0.11 workflow Inactive and close Draft PR #275 if unwanted; no live deployment or production data affected. Do not remove QA workflow/tables without explicit cleanup authorization. G0.11 did not modify any Published workflow. **Do not use the old versions in section 1 as current rollback targets**; consult the newer V17.15 version evidence in section 7 and re-audit live state first.
 
 ## 6. Merchant-facing operational simplicity
 
 Store owners are not asked to back up databases, manage keys or understand leases. Future customer dashboard/operator console should show simple statuses **Đang xử lý / Hoàn tất / Cần nhân viên kiểm tra**. TIEN404's internal operator monitors \`SEND_UNCERTAIN\` and resolves possible duplicated/missing provider replies; no blind retry. Admin should not falsely mark an Order or response delivered from event ACK alone.
 
 **Next proposed G0.12:** Shadow Replay Operator Queue × Lease Timeout Reconciliation × Restricted Pilot Acceptance. Source-only/private operator QA first; no live cutover without explicit owner approval.
+
+## 7. IMPORTANT — Parallel V17.15 release detected during G0.11 (read-only re-audit)
+
+After source and n8n G0.11 QA, a final read-only n8n version check detected concurrent changes from the separate V17.15 integration team. **Do not claim Published Messenger/Core were unchanged across the entire G0.11 time window. G0.11 itself made no Published edits.**
+
+- Messenger `Z7FdV7uDvApfbURQ`: **current Published `2b869035-fe39-46fb-a253-18fefe4ecbfd`**, 32 nodes. It has new opt-in `QA_CORE:` sample-only Core consultation plus the existing single Meta Send. **The earlier `rowNotExists` duplicate check and later `Record Successful Messenger MID` remain present**, so the potential concurrent check-then-record race is NOT resolved by V17.15.
+- Central Core `iyfGUiEsZlNTBWOR`: **current Published `3d3905a4-0d26-4253-8a1d-57fd73b043c2`**, 18 nodes, new read-only DEMO catalog route and restricted internal caller allowlist. **Not a verified merchant Store/JWT/RLS Commerce service.**
+- Private restricted Shadow `dw1JOxWOEY8csTnm`: remains Published `450f2693-aad9-47d8-aaba-ac7a94abe644`.
+- G0.11 Inactive QA `8rVwGfA88dUqDPCI`: remains Inactive, draft version `9208bfec-abc6-476c-af52-ad5f2d0f5dd6`, 0 credentials, 0 external I/O, no saved pinData.
+- New actual Messenger GET negative `4538` is not a positive signed `QA_CORE:` POST. V17.15 original source report explicitly identifies the positive signed QA_CORE post-response as PENDING; earlier one-event signed `4431` predates V17.15. **No G0.11 real replay or post-V17.15 signed positive validation was performed.**
+- Parallel source checkpoint: [V17.15 Messenger Core DEMO Consult × Zalo/Web Shadow](https://github.com/ngoctien20/demo-git/blob/work/v171a-channel-store-bot-vertical-slice-nosend-20261117/docs/ai-handoff/V17_15_MESSENGER_CORE_DEMO_CONSULT_ZALO_WEB_SHADOW_CHECKPOINT.md). Zalo Bot staging and Website demo have separate protected Core-deny probes; G0.11 does not change them.
+
+**Revised rollback rule:** Before any future live replay change or rollback, re-read active Published versions, capture new V17.15 graph/branch pre-change snapshot and obtain explicit owner approval. Do not republish `ff7a57d2...` or older Messenger/Core versions automatically; this would risk removing the concurrently deployed V17.15 features.
