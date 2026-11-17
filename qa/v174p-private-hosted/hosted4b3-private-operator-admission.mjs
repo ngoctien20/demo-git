@@ -107,8 +107,16 @@ export async function reviewPrivateOperatorAndReservePermit({
  });
  if(!admission.identity_admitted_for_private_review)
   return Object.freeze({...admission,permit_ledger_attempted:false});
+ // Narrow the ledger call to the *verified* operator principal and canonical
+ // signed permit digest. Never accept identity hashes supplied by the caller.
+ const admittedLedger=privateLedger&&typeof privateLedger.claimOnce==='function'
+   ? {claimOnce:(claim)=>privateLedger.claimOnce({
+       ...claim,permit_hash:hashPermit(evidence.permit),
+       operator_subject_hash:admission.operator_subject_hash
+     })}
+   : null;
  const reservation=await preparePrivatePermitForManualReview({
-  evidence,privateLedger,getFreshInventory,now
+  evidence,privateLedger:admittedLedger,getFreshInventory,now
  });
  return Object.freeze({
   ...reservation,operator_admission_state:admission.state,
