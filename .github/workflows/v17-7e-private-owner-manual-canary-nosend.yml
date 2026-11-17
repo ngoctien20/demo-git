@@ -1,0 +1,110 @@
+name: V17.7E Private Owner Proof × Inactive Hosted Manual Canary NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7E_PRIVATE_OWNER_HOSTED_MANUAL_CANARY_CHECKPOINT.md"
+      - ".github/workflows/v17-7e-private-owner-manual-canary-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owner-private-manual-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check all inherited V17.7A to E source modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: Run all independent channel, Store, owner and canary regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Check actual manual n8n QA evidence is bounded and no host side effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {
+            inspectInactiveHostedManualQaShape,
+            inspectPrivateFourRowOwnerEnvelope,
+            evaluateRealChannelCanaryRelease
+          } from './qa/v17-7a-oa-independent/v17-7e-owner-private-manual-canary-offline.mjs';
+          const base='qa/v17-7a-oa-independent/';
+          const e=JSON.parse(readFileSync(base+'v17-7e-hosted-manual-no-send-redacted-evidence.json','utf8'));
+          assert.equal(e.workflow_id,'MQcbjLWZ5QUTJW0k');
+          assert.equal(e.workflow_version,'b8aaf94c-def1-472c-bd92-fccea1d946b8');
+          assert.equal(e.active,false);
+          assert.equal(e.published_version,null);
+          assert.equal(e.node_count,2);
+          assert.equal(e.webhook_nodes,0);
+          assert.equal(e.http_nodes,0);
+          assert.equal(e.database_nodes,0);
+          assert.equal(e.credentials_attached,0);
+          assert.equal(e.qa_execution_id,'5026');
+          assert.equal(e.qa_execution_status,'success');
+          assert.equal(e.qa_cases_passed,12);
+          assert.equal(e.qa_cases_total,12);
+          assert.equal(e.qa_cases_failed,0);
+          assert.equal(e.provider_uat,false);
+          assert.equal(e.real_owner_proof,false);
+          assert.equal(e.real_same_tenant_store_ab_jwt,false);
+          for(const v of Object.values(e.zero_side_effect_result))
+            assert.equal(v,0);
+          assert.equal(e.release_status,'NO_GO');
+          const s=readFileSync(base+'v17-7e-owner-private-manual-canary-offline.mjs','utf8');
+          for(const bad of [
+            /\bfetch\s*\(/,/\baxios\s*\./,
+            /\bhttps?\s*\.\s*request\s*\(/,
+            /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+          ])if(bad.test(s))throw Error('Forbidden side effect in source-only owner/canary gate');
+          for(const required of [
+            'realOwnerProofVerified:false',
+            'realProviderSignatureVerified:false',
+            'realStoreAuthJwtRlsVerified:false',
+            'providerSendAllowed:false',
+            'commerceReadAllowed:false','commerceWriteAllowed:false',
+            'canDeploy:false','canPublish:false'
+          ])if(!s.includes(required))throw Error('No-go invariant missing: '+required);
+          const shaped=inspectInactiveHostedManualQaShape({
+            id:e.workflow_id,version:e.workflow_version,name:e.workflow_name,
+            projectId:'WW82YsCCaAxGC9dp',
+            folderId:'d3ZVrZ9cNiW2SJ1q',
+            active:e.active,publishedVersion:e.published_version,
+            hasPublicWebhook:e.webhook_nodes>0,
+            credentialCount:e.credentials_attached,
+            nodes:e.nodes.map((name,i)=>({name,type:e.node_types[i],credentials:false}))
+          },{
+            workflowId:e.workflow_id,executionId:e.qa_execution_id,
+            executionMode:e.qa_execution_mode,status:e.qa_execution_status,
+            contract:e.original_hosted_result_contract,testStatus:'QA_PASS',
+            passed:e.qa_cases_passed,total:e.qa_cases_total,
+            failedCount:e.qa_cases_failed,fixtureOnly:true,
+            actualProviderEvents:0,outboundMessages:0,
+            commerceReads:0,commerceWrites:0,ordersWritten:0,
+            stockWritten:0,modelCalls:0,webhookInstalled:false,
+            credentialsUsed:false,realProviderSignatureVerified:false,
+            realStoreOwnerVerified:false,realJwtRlsVerified:false,
+            canPublish:false,realHostedCanary:'NO_GO'
+          });
+          assert.equal(shaped.shapeCandidate,true);
+          assert.equal(shaped.realOwnerProofVerified,false);
+          assert.equal(shaped.realProviderSignatureVerified,false);
+          assert.equal(shaped.canPublish,false);
+          const real=evaluateRealChannelCanaryRelease({pretendFullAccess:true});
+          assert.equal(real.status,'REAL_CHANNEL_HOSTED_NO_GO');
+          assert.equal(real.canPublish,false);
+          console.log('V17.7E HOSTED MANUAL 12/12 RECEIPT SHAPE PASS; REAL PROVIDER/OWNER/JWT NO-GO');
+          NODE
