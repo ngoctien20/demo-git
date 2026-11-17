@@ -34,14 +34,17 @@ export async function inspectMetaHandoffAck(input,deps) {
    !['HANDOFF_PENDING','RESUME_PENDING'].includes(op.status)||
    !valid(op.tenantId)||!valid(op.storeId)||!valid(op.bindingId)||
    !valid(op.conversationId)||!valid(op.pageRef)||!valid(op.appRef)||
-   !valid(op.expectedMetaEvent)||!valid(op.pendingRequestId)||
+   !['pass_thread_control','take_thread_control'].includes(op.expectedMetaEvent)||
+   (op.status==='HANDOFF_PENDING'&&op.expectedMetaEvent!=='pass_thread_control')||
+   (op.status==='RESUME_PENDING'&&op.expectedMetaEvent!=='take_thread_control')||
+   !valid(op.pendingRequestId)||
    !Number.isSafeInteger(op.revision)||op.revision<1)
    return deny('TRUSTED_PENDING_STATE_MISSING');
  if(!receipt||receipt.source!=='QA_SYNTHETIC_META_RAW_HMAC_RECEIPT'||
    receipt.syntheticSignatureVerified!==true||
    receipt.realMetaSignatureVerified!==false ||
    receipt.method!=='META_X_HUB_SIGNATURE_256'||
-   receipt.qaOnly===true&&receipt.allowSend===true ||
+   receipt.qaOnly!==true||receipt.allowSend!==false ||
    !valid(receipt.receiptId)||!valid(receipt.eventId)||
    receipt.eventId!==input.receiptRef ||
    !Number.isSafeInteger(receipt.occurredAtMs)||
