@@ -230,11 +230,11 @@ $$;
 -- externally signed audit system or independently authenticated real reviewer.
 CREATE OR REPLACE FUNCTION t404_g12_disposable_qa.deny_history_mutation()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
-SET search_path=pg_catalog,t404_g12_disposable_qa AS $
+SET search_path=pg_catalog,t404_g12_disposable_qa AS $g12_hist$
 BEGIN
   RAISE EXCEPTION USING ERRCODE='42501',
     MESSAGE='G12_REVIEW_AUDIT_APPEND_ONLY';
-END $;
+END $g12_hist$;
 CREATE TRIGGER g12_review_history_append_only
 BEFORE UPDATE OR DELETE ON t404_g12_disposable_qa.review_history
 FOR EACH ROW EXECUTE FUNCTION t404_g12_disposable_qa.deny_history_mutation();
