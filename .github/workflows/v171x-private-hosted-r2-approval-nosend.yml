@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   v171x-hosted-approval-regression:
-    name: V17.1X 50 lifecycle/canary/Auth planning cases + 1132 inherited source regression
+    name: V17.1X 53 lifecycle/canary/Auth planning cases + 1132 inherited source regression
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -36,7 +36,7 @@ jobs:
           from pathlib import Path
           m=json.loads(Path('qa/v171x-hosted-uat/real-acceptance-state.json').read_text())
           assert m['release']=='HOSTED_NO_GO' and m['sourceOnly'] is True
-          assert m['newSourceTestCases']==50 and m['inheritedSourceTestCases']==1132
+          assert m['newSourceTestCases']==53 and m['inheritedSourceTestCases']==1132
           assert m['productionReleaseApproved'] is False
           assert m['hostedPrivateCanaryApproved'] is False
           assert m['r2LifecycleChangeApproved'] is False
