@@ -27,7 +27,6 @@ test('source contract and current real hosted sanitized baseline are exactly ali
   'FACTORY_EVENT_OR_AGENT_LINEAGE_NOT_AVAILABLE','REAL_FOUR_ROW_OWNER_ORIGINAL_SOURCES_NOT_ATTESTED',
   'INDEPENDENT_RECOVERY_AND_REAL_JWT_NOT_CERTIFIED'])assert.ok(r.blockers.includes(b),b);
 });
-blocked('reject null',()=>{},'UNTRUSTED_AGGREGATE_CONTRACT');
 test('null untrusted input is denied',()=>assert.equal(gate(null).blockers[0],'UNTRUSTED_AGGREGATE_CONTRACT'));
 blocked('reject altered contract',x=>x.contract='untrusted','UNTRUSTED_AGGREGATE_CONTRACT');
 blocked('reject unsafe source mode',x=>x.scope='HOSTED_WRITE','UNTRUSTED_AGGREGATE_CONTRACT');
