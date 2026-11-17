@@ -225,6 +225,21 @@ SET search_path=pg_catalog,t404_g12_disposable_qa AS $$
  GROUP BY 1 ORDER BY 1;
 $$;
 
+-- Append-only under normal SQL DML, even for the disposable table owner.
+-- A PostgreSQL superuser can disable a trigger: this is NOT a tamper-proof
+-- externally signed audit system or independently authenticated real reviewer.
+CREATE OR REPLACE FUNCTION t404_g12_disposable_qa.deny_history_mutation()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
+SET search_path=pg_catalog,t404_g12_disposable_qa AS $
+BEGIN
+  RAISE EXCEPTION USING ERRCODE='42501',
+    MESSAGE='G12_REVIEW_AUDIT_APPEND_ONLY';
+END $;
+CREATE TRIGGER g12_review_history_append_only
+BEFORE UPDATE OR DELETE ON t404_g12_disposable_qa.review_history
+FOR EACH ROW EXECUTE FUNCTION t404_g12_disposable_qa.deny_history_mutation();
+REVOKE ALL ON FUNCTION t404_g12_disposable_qa.deny_history_mutation() FROM PUBLIC;
+
 REVOKE ALL ON FUNCTION t404_g12_disposable_qa.enqueue_timeout_and_uncertain(timestamptz,integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION t404_g12_disposable_qa.take_for_review(uuid,text,timestamptz,integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION t404_g12_disposable_qa.submit_operator_evidence(uuid,text,uuid,bytea,text,timestamptz) FROM PUBLIC;
