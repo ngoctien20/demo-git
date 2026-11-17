@@ -27,3 +27,24 @@ V17.1H addresses a real gap in V17.1G: store websites commonly use JPEG or WebP,
 **Rollback:** close child Draft PR only; parent #257 and upstream PRs preserved, no hosted restoration required.
 
 **Pre-CI classification:** V171H_REAL_RASTER_LOCAL_SOURCE_IMPLEMENTED_HOSTED_NO_GO.
+
+## VERIFIED — GitHub Actions QA receipt (2026-11-17 JST)
+
+**Tested code HEAD:** `e54f55a56cda6758d2f6b88023eaeff4a5194966`  
+**Run:** https://github.com/ngoctien20/demo-git/actions/runs/44008286779  
+**Job:** 133788827368 — source-only SUCCESS
+
+- V17.1H Pillow 12.3.0 generated actual encoded PNG/JPEG/WebP bytes: **40/40 Python unittest PASS**. Supports JPEG EXIF stripping, animated WebP refusal, SHA-256 byte comparison, size/pixel budget, spoofed MIME rejection, cross-Store SKU refusal, rights/retention declaration and separate customer SKU/order confirmation.
+- Inherited V17.1G fake DNS/TLS 40/40, V17.1F website/media 32/32, V17.1E receipt/rights 28/28, V17.1D PNG 22/22 + link 25/25 + cross-channel 5/5: **152/152 PASS**, 0 fail.
+- Total **192/192 source-only tests PASS**; static no-network/no-real-vision/no-send/no-hosted-write scanner PASS.
+- Initial V17.1H CI found two test-specification issues: truncated WebP was below the minimum length guard, and changed image URL did not match its rights declaration. Both tests were corrected to assess the intended security behavior; final source CI passed.
+- The hosted release-denial job is intentionally RED: *actual merchant photo provenance, owned shop domain, HTTP/DNS hardened live fetch, model billed inference, Meta/Zalo Page/OA signatures, signed customer identity, hosted Store RLS and recovery still unverified*.
+- Images are generated local test patterns encoded as real raster files. Real merchant picture recognition, model Recall@K and photo-level semantic accuracy are **NOT TESTED**.
+- The current Python interface accepts only supplied local byte buffers, not HTTP/URL connections; source assertions still **cannot** prove actual owner or licensed use. Isolated media worker, dependency vulnerability scanning and independent reviewer are required before production use.
+- No Google Sheets, Supabase, n8n Published, Messenger/Zalo, hosted Storage or Commerce Order state has changed.
+
+**Lifecycle:** V171H_REAL_RASTER_PNG_JPEG_WEBP_IMPLEMENTED_OFFLINE_TESTED_HOSTED_NO_GO.  
+**Rollback:** close Draft child PR #259; preserve parent #257 and upstream. No hosted restore necessary.  
+**Next safe gate:** privately supply merchant-authorized product image URL or file samples, verify ownership/rights and build a reviewed network proxy and human-labeled vision eval before any external inference or provider canary.
+
+**Note:** Documentation-only checkpoint commit will advance Git HEAD. Verify exact CI at final HEAD.
