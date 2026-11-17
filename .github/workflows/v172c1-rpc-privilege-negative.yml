@@ -17,4 +17,4 @@ jobs:
         with:
           node-version: '22'
       - name: Source-only privilege contract QA (NO hosted RPC invocation)
-        run: node --test qa/v172c-rpc-closure/privilege-negative-contract.test.cjs
+        run: node --test qa/v172c-rpc-closure/*.test.cjs
