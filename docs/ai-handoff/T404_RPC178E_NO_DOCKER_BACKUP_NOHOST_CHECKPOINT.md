@@ -1,7 +1,7 @@
 # TIEN404 AI — RPC17.8E Exact Checkpoint
 
 Date: 2026-11-17 JST
-Stage: SOURCE IMPLEMENTED · NO WINDOWS LIVE BACKUP EXECUTED · REAL STAGING RESTORE NO-GO.
+Stage: SOURCE IMPLEMENTED / CI 666/666 VERIFIED / NO WINDOWS LIVE BACKUP EXECUTED / REAL STAGING RESTORE NO-GO.
 
 ## Parent & prior live evidence
 - Inherited parent RPC17.8D PR #372, HEAD `f7af7e28a441d0e68214d2008f57769b7ee75194` after Owner Free-plan backup screenshot evidence.
@@ -25,7 +25,8 @@ Stage: SOURCE IMPLEMENTED · NO WINDOWS LIVE BACKUP EXECUTED · REAL STAGING RES
 - Rollback: close Draft PR. No hosted resources created or changed.
 
 ## QA
-- Review exact final GitHub Actions run/HEAD and record measured tests before claiming SUCCESS.
+- GitHub Actions run #44111019956 on commit `faaa413d72c080fb12e10f0f054b6c2490178d77`: SUCCESS **666/666 Node tests PASS, 0 fail** (27 new backup stream + 10 new encrypted verifier + 629 inherited), genuine age encryption/decryption verified on synthetic bytes, PowerShell launcher parsed successfully with pwsh and default CLI no-DB dry-run confirmed. Real pg_dump against Supabase is NOT tested and no real restore occurred.
+- Post-QA Supabase read-only catalog confirmed `rpc178_qa`, `public.stores`, `public.store_memberships` absent; zero `store_id` on `public.products/orders`. No hosted write.
 - Existing unrelated RPC10 six-surface workflow remains FAIL outside this checkpoint.
 
-CHECKPOINT: RPC178E_SOURCE_ONLY · WINDOWS_NO_DOCKER_ENCRYPTED_APP_BACKUP_READY_FOR_QA · LIVE_STAGING_BACKUP_NOT_CAPTURED · STAGING_RECOVERY_NO_GO · STORE_JWT_AB_NO_GO · SCHEMA_MIGRATION_NO_GO
+CHECKPOINT: RPC178E_PR382 · CI_666_666_PASS · WINDOWS_NODE_PG17_AGE_SOURCE_TESTED · LIVE_STAGING_BACKUP_NOT_CAPTURED · STAGING_RECOVERY_NO_GO · STORE_JWT_AB_NO_GO · SCHEMA_MIGRATION_NO_GO
