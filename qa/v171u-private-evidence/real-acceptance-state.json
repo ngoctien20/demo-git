@@ -1,0 +1,33 @@
+{
+  "version": "V17.1U_PRIVATE_EVIDENCE_INTAKE_IDENTITY_PROVISIONING_REVIEW",
+  "parentPr": 318,
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "date": "2026-11-17",
+  "evidenceIntakeMode": "OPAQUE_PRIVATE_REFERENCES_ONLY",
+  "hostedRealEvidence": {
+    "verifiedPrivateOperatorSigner": false,
+    "verifiedIndependentSecurityReviewer": false,
+    "verifiedOwnerStoreA": false,
+    "verifiedOwnerStoreB": false,
+    "twoAuthenticatedOwnerSessionsSameTenant": false,
+    "privateAttestedEvidenceRegistry": false,
+    "realUploadedMerchantEvidence": false,
+    "independentMalwareSanitizedObjectReview": false,
+    "realStoreRlsCommerceReader": false,
+    "realMetaSignedNoSend": false,
+    "realZaloSignedNoSend": false,
+    "independentRealHostedUat": false
+  },
+  "sourceOnly": true,
+  "noEvidenceUploaded": true,
+  "noRealJwtImported": true,
+  "realUsersProvisioned": 0,
+  "realMembershipsChanged": 0,
+  "realDbRowsChanged": 0,
+  "realProviderMessagesSent": 0,
+  "productionDeployment": false,
+  "productionReleaseApproved": false,
+  "sourceIntakeTestCases": 25,
+  "sourceInheritedTestCases": 1005,
+  "release": "HOSTED_NO_GO"
+}
