@@ -207,7 +207,7 @@ class TestMedia(unittest.TestCase):
                         context(raw, "PNG"))
 
     def test_30_truncated_webp_rejected(self):
-        data = picture("WEBP")
+        data = picture("WEBP", size=(128, 128))
         self.denied("MEDIA_PIXEL_DECODE_REJECTED",
                     context(data[:-15], "WEBP"))
 
@@ -253,7 +253,8 @@ class TestMedia(unittest.TestCase):
     def test_38_file_extension_never_trusted_over_mime_magic(self):
         ctx = context()
         ctx["reference"]["url"] = "https://img.shop-example.vn/photo/changed.jpg"
-        self.denied("MEDIA_STORE_OR_REFERENCE_SCOPE_DENIED", ctx)
+        ctx["grant"]["imageUrl"] = ctx["reference"]["url"]
+        self.assertEqual(run(ctx)["mediaMime"], "image/webp")
 
     def test_39_reference_emitted_by_other_store_not_accepted(self):
         ctx = context()
