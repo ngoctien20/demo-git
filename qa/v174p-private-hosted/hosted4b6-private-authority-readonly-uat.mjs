@@ -16,8 +16,12 @@ import {ACCOUNT,WORKER,LEDGER} from './hosted4b4-independent-finance-ledger-gate
 export const CONTRACT='T404_V174P_HOSTED4B6_PRIVATE_AUTHORITY_READONLY_NO_DEPLOY_V1';
 export const PHASE='LEDGER_FIRST_INACTIVE_UPLOAD';
 const PROTECTED=[
- 'tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
- 'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults'
+ {name:'tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
+  script:'tien404-v175e2-durable-replay-nosend-staging',class:'ReplayBucket'},
+ {name:'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults',
+  script:'tien404-v175e2a-private-hosted-runner-nosend-staging',class:'RunnerResults'},
+ {name:'tien404-v1721h2-zalo-replay-private-nosend-staging_ZaloBotReplayBucketV2',
+  script:'tien404-v1721h2-zalo-replay-private-nosend-staging',class:'ZaloBotReplayBucketV2'}
 ];
 const isObj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const keys=x=>isObj(x)?Object.keys(x).sort():[];
@@ -110,13 +114,13 @@ export function assessHostedNoDeployAuthority({
  }
  const wn=s.workers?.entries,sc=s.scripts?.entries,ns=s.durable_objects?.entries,ap=s.access_apps?.entries;
  check('distinct_worker_and_script_names_no_target_collision',
-   unique(wn)&&unique(sc)&&equal([...Array.isArray(wn)?wn:[]].sort(),[...Array.isArray(sc)?sc:[]].sort())&&
+   unique(wn)&&unique(sc)&&equal([...(Array.isArray(wn)?wn:[])].sort(),[...(Array.isArray(sc)?sc:[])].sort())&&
    !wn?.includes(WORKER)&&!wn?.includes(LEDGER));
  check('existing_do_namespace_integrity',
    Array.isArray(ns)&&ns.every(x=>isObj(x)&&equal(keys(x),namespaceFields)&&
     typeof x.name==='string'&&typeof x.script==='string'&&typeof x.class==='string')&&
    unique(Array.isArray(ns)?ns.map(x=>x.name):[])&&
-   PROTECTED.every(n=>ns.some(x=>x.name===n))&&
+   PROTECTED.every(n=>ns.some(x=>x.name===n.name&&x.script===n.script&&x.class===n.class))&&
    !ns.some(x=>x.name.includes(WORKER)||x.name.includes(LEDGER)));
  check('two_current_access_apps_without_v174p',
    Array.isArray(ap)&&unique(ap)&&!ap.some(x=>x.includes(WORKER)||x.includes(LEDGER)));
