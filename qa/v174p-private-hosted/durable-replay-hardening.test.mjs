@@ -12,7 +12,7 @@ class MemoryStorage {
   await preceding;
   try{
    if(this.fail)throw Error('DISK_FAILURE');
-   return await fn({get:async x=>this.data.get(x),put:async(x,v)=>this.data.set(x,v)});
+   return await fn({get:async x=>this.data.get(x),put:async(x,v)=>this.data.set(x,v),delete:async x=>this.data.delete(x)});
   }finally{release();}
  }
  async getAlarm(){return this.when;}
@@ -54,6 +54,26 @@ test('05 reused event with changed payload is a conflict',async()=>{
  const {guard}=inst(),v=payload('message');
  assert.equal((await gate(guard,v)).status,'claimed');
  assert.equal((await gate(guard,{...v,fingerprint:other})).status,'conflict');
+});
+test('04A changed expiry cannot mint a second message claim for the same key',async()=>{
+ const {storage,guard}=inst(),v=payload('message',{expires_at:Math.floor(Date.now()/1000)+180});
+ assert.equal((await gate(guard,v)).status,'claimed');
+ assert.equal((await gate(guard,{...v,expires_at:v.expires_at+30})).status,'duplicate');
+ assert.equal((await gate(guard,{...v,expires_at:v.expires_at+30,fingerprint:other})).status,'conflict');
+ assert.equal([...storage.data.keys()].filter(x=>x.startsWith('e:')).length,1);
+ assert.deepEqual([...storage.data.keys()].filter(x=>x.startsWith('k:')),['k:'+k]);
+});
+test('04B expired event cleanup removes its index together, preventing stale cross-expiry replay state',async()=>{
+ const {storage,guard}=inst(),base=Date.now(),nowSec=Math.floor(base/1000),original=Date.now;
+ const msg=payload('message',{expires_at:nowSec+1});
+ assert.equal((await gate(guard,msg)).status,'claimed');
+ assert.equal(storage.data.has('k:'+k),true);
+ try{
+  Date.now=()=>base+2200;
+  await storage.fire(guard);
+  assert.equal(storage.data.has('k:'+k),false);
+  assert.equal([...storage.data.keys()].filter(x=>x.startsWith('e:')).length,0);
+ }finally{Date.now=original;}
 });
 test('06 session rate 64 per minute and attempt 65 blocked',async()=>{
  const {guard}=inst();
