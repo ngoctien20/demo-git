@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {makeOfflineCallbackFixtureHash,inspectOaOAuthCallbackBinding} from './oa-04d-oauth-binding-offline.mjs';
 
 const NOW=1794900000000;
-const nonce='aB5CdEfGhIJkLmnOpQRS_tuVwXyZ01234567890-aBcD';
+const nonce='aB5CdEfGhIJkLmnOpQRS_tuVwXyZ01234567890-aBc';
 const hash=makeOfflineCallbackFixtureHash;
 function f(mode='STATE_QUERY'){
  const ctx={ownerAuthenticated:true,ownerRevoked:false,
