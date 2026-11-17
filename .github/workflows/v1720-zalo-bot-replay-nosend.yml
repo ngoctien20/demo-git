@@ -56,4 +56,4 @@ jobs:
     if: false
     runs-on: ubuntu-24.04
     steps:
-      - run: echo 'Blocked: separate owner approval + hosted atomic claim and credential compatibility acceptance.'
+      - run: echo 'Blocked until separate owner approval and hosted atomic claim acceptance'
