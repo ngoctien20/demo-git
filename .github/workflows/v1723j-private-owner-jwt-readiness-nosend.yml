@@ -1,0 +1,27 @@
+name: TIEN404 V17.23J Private Owner Evidence and JWT Admission NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723j/**'
+      - '.github/workflows/v1723j-private-owner-jwt-readiness-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-owner-evidence-source-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test public four-row metadata and private JWT fail-closed contracts
+        run: node --test qa/v1723j/private-owner-provenance-gate.test.mjs
+      - name: Ensure default has no real JWT, owner, migration, or provider permission
+        run: |
+          node --input-type=module -e "import {reviewFourRowManifest,inspectHostedJwtReadiness} from './qa/v1723j/private-owner-provenance-gate.mjs'; const m=reviewFourRowManifest();const j=inspectHostedJwtReadiness();if(m.storeOwnershipCertified||m.canApplyM1||j.realOwnerProofAccepted||j.canReadOrder||j.canDeploy||j.canSend||j.canSubmitJwt)process.exit(1);console.log('V1723J_NO_REAL_JWT_NO_STORE_OWNER_PROOF_NO_SEND_NO_DEPLOY');"
