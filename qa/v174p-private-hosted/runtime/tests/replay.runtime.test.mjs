@@ -75,6 +75,40 @@ describe('V17.4P production-candidate Durable Object on LOCAL real Workers runti
   }
   expect(await keys(stub,'e:')).toHaveLength(1);
  });
+ it('12 independent local SQLite Durable Objects preserve identity through eviction and shifted-expiry replay',async()=>{
+  for(let i=0;i<12;i++){
+   const stub=newStub('eviction-stability-'+i);
+   const msg=message({expires_at:now()+250});
+   expect((await gate(stub,msg)).status).toBe('claimed');
+   expect(await keys(stub,'k:')).toEqual(['k:'+key]);
+   expect(await keys(stub,'e:')).toHaveLength(1);
+   await evictDurableObject(stub);
+   expect(await keys(stub,'k:')).toEqual(['k:'+key]);
+   expect((await gate(stub,{...msg,expires_at:msg.expires_at-1})).status).toBe('duplicate');
+   expect((await gate(stub,{...msg,expires_at:msg.expires_at-2,fingerprint:'C'.repeat(43)})).status).toBe('conflict');
+   expect(await keys(stub,'e:')).toHaveLength(1);
+  }
+ },60000);
+ it('corrupt persisted identity index fails closed after local eviction without a new event',async()=>{
+  const stub=newStub('corruptindex');
+  const msg=message();
+  expect((await gate(stub,msg)).status).toBe('claimed');
+  await runInDurableObject(stub,async(_,state)=>{
+   await state.storage.put('k:'+key,{fingerprint:finger,expires_at:'corrupted'});
+  });
+  await evictDurableObject(stub);
+  const r=await gate(stub,msg);
+  expect(r.http).toBe(503);
+  expect(r.status).toBe('DENY');
+  expect(await keys(stub,'e:')).toHaveLength(1);
+ },30000);
+ it('session rate limit state survives eviction of same local Durable Object',async()=>{
+  const stub=newStub('evictionrate');
+  for(let i=0;i<64;i++)expect((await gate(stub,session())).status).toBe('admitted');
+  expect((await gate(stub,session())).status).toBe('rate_limited');
+  await evictDurableObject(stub);
+  expect((await gate(stub,session())).status).toBe('rate_limited');
+ },60000);
  it('cleanup atomically removes only matching expired immutable index',async()=>{
   const stub=newStub('keycleanup');
   expect((await gate(stub,session())).status).toBe('admitted');
