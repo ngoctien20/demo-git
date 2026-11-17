@@ -100,11 +100,11 @@ test('17 mislabeled positive SKU denied',()=>{
  assert(auditCorpus(x).reasons.includes('POSITIVE_LABEL_NOT_GROUNDED_IN_PRODUCT'));
 });
 test('18 ungrounded supposed negative cannot carry actual SKU',()=>{
- const x=candidate();x.cases[1].expectedSku='QA-F-001';
+ const x=candidate();x.cases[2].expectedSku='QA-F-001';
  assert(auditCorpus(x).reasons.includes('UNKNOWN_LABEL_HAS_EXPECTED_SKU'));
 });
 test('19 source image appearing in both reference and holdout is leakage',()=>{
- const x=candidate();x.cases.push(ca('case-leaked','img-a','positive','REFERENCE'));
+ const x=candidate();x.cases.push(ca('case-leaked','img-a','positive','HOLDOUT'));
  assert(auditCorpus(x).reasons.includes('REFERENCE_HOLDOUT_IMAGE_LEAKAGE'));
 });
 test('20 no private image bytes or credentials are in audit report',()=>{
