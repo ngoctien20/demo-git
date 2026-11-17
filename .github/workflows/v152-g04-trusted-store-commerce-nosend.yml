@@ -1,0 +1,68 @@
+name: TIEN404 G0.4 Trusted Store Commerce Adapter (NO SEND)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-g04/**'
+      - '.github/workflows/v152-g04-trusted-store-commerce-nosend.yml'
+      - 'docs/ai-handoff/T404_G04_*'
+  push:
+    branches:
+      - work/v152-rpc10-g04-trusted-store-commerce-adapter-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  g04-source-qa:
+    name: Node22 G0.4 Store A-B-C isolation and fail-closed NO-SEND
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax + same-Tenant Shop A-B-C UAT (fake identities/data only)
+        run: |
+          node --check qa/v152-g04/trusted-store-commerce-adapter.cjs
+          node --check qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+          node --test qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: G0.1-G0.3 ancestor Source QA, never real hosted call
+        run: |
+          node --test qa/v152-rpc10/store-gate.test.cjs \
+            qa/v152-rpc10/alias-bridge-preflight.test.cjs \
+            qa/v152-rpc10/g02-provenance-readiness.test.cjs \
+            qa/v152-rpc10/g03-published-caller-readiness.test.cjs
+      - name: Inspect no network/DB/secret/provider sends and NO GO flags
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('qa/v152-g04/trusted-store-commerce-adapter.cjs').read_text()
+          for rx in [r'\bfetch\s*\(',r'\bhttps?\.request\s*\(',r'\bchild_process\b',
+                     r'\bprocess\.env\b',r'\bcreateClient\s*\(',r'\bpg\.Client\s*\(',
+                     r'\baxios\s*\(',r'\bexecSync\s*\(']:
+              assert not re.search(rx,p),rx
+          for s in ['canPublish:false','canCreateOrder:false','hostedWrites:0',
+                    'actualProviderSignatureVerifiedHere:false','actualJwtVerifiedHere:false',
+                    'durableReplayProtection:false']:
+              assert s in p,s
+          assert 'readInstallationBinding' in p
+          assert 'authorizeStoreRead' in p
+          assert 'readCatalogSnapshot' in p
+          print('G0.4 API candidate: no hosted credentials or provider I/O; NO GO preserved')
+          PY
+  g04-hosted-release-denied:
+    name: Hosted Store deployment refused (intentional NO-GO)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Explicit source-stage release gate
+        run: |
+          node - <<'NODE'
+          const m=require('./qa/v152-g04/trusted-store-commerce-adapter.cjs');
+          if(m.CONTRACT!=='T404_RPC10_G04_TRUSTED_STORE_COMMERCE_READONLY_V1')
+            throw Error('CONTRACT_MISMATCH');
+          console.log('HOSTED_NOT_AUTHORIZED; NO_PROVIDER_SEND; NO_REAL_STORE_OWNER; NO_CURRENT_RECOVERY');
+          NODE
+          # Intentional SUCCESS of refusal check, not a certification to deploy.
