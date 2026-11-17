@@ -29,9 +29,9 @@ function eligible(binding,origin,cfg){
  !REGEX_ID.test(binding.store_ref)||!REGEX_ID.test(binding.bot_ref)||
  binding.bot_version!==binding.bot_ref+'_V1'||typeof binding.prompt_version!=='string'||
  typeof binding.knowledge_version!=='string'||typeof binding.policy_version!=='string'||
- binding.tool_allowlist!=='catalog_read'||binding.subscription_active!==true||binding.store_paused!==false)return false;
- if(cfg.qaMode===true)return binding.approval_scope==='SYNTHETIC_ONLY'&&binding.owner_authority_verified===false;
- return binding.approval_scope==='OWNER_APPROVED'&&binding.owner_authority_verified===true&&binding.read_only===true;
+ binding.tool_allowlist!=='catalog_read'||binding.read_only!==true||binding.subscription_active!==true||binding.store_paused!==false)return false;
+ if(cfg.qaMode===true)return binding.status==='QA_APPROVED'&&binding.approval_scope==='SYNTHETIC_ONLY'&&binding.owner_authority_verified===false;
+ return binding.status==='OWNER_APPROVED'&&binding.approval_scope==='OWNER_APPROVED'&&binding.owner_authority_verified===true;
 }
 function signingInput(kid,payload){return 't404s1.'+kid+'.'+payload;}
 function mac(key,message){return createHmac('sha256',key).update(message,'utf8').digest('base64url');}
