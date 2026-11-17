@@ -35,3 +35,26 @@
 - Rollback: close child Draft PR, leaving V17.1F parent and all hosted data untouched. No restore required.
 
 **Pre-CI status:** V171G_SOURCE_IMPLEMENTED_CI_PENDING_HOSTED_NO_GO
+
+## 5. Independent GitHub Actions acceptance receipt — 2026-11-17 JST
+
+**Implementation tested HEAD:** cbed97aa115f36e939f96de1ca66021c35beb1d9  
+**Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44007387713
+
+- VERIFIED source-only job 133785904347 SUCCESS.
+- New pinned DNS / TLS fixture / content hash / Store-scoped media checks: **40/40 PASS**, 0 fail.
+- Inherited V17.1F shop media registry: **32/32 PASS**, 0 fail.
+- Inherited V17.1E merchant rights / vision receipt metrics: **28/28 PASS**, 0 fail.
+- Inherited V17.1D real PNG synthetic pixels **22/22**, two-step identity **25/25**, integration **5/5**, all PASS.
+- **152/152 total offline source assertions PASS**. Static scanner confirmed no actual HTTPS/HTTP client, no credential access, no hosted write, no actual model or provider SEND.
+- Hosted-admission-denied job 133785960861 FAILURE by deliberate NO-GO policy. Overall workflow conclusion FAILURE intentionally. No production/UAT capability is certified by source QA.
+
+**Observed scope limitations:** DNS answers and HTTPS/TLS receipts were injected fake fixtures. Pixel decoder examined synthetic in-memory PNG data. No real shop website URL, genuine merchant image license, domain ownership challenge, live DNS/HTTPS fetch, JPEG/WebP decoding, hosted store JWT/RLS authorization, signed Messenger/Zalo Page/OA webhook, model inference, paid billing or customer consent UAT was verified.
+
+**Security note:** Even if an approved live URL is later provided, the QA fixture transport must never be passed off as a live HTTP proxy. A separately audited outbound network implementation and independent legal/media/Store authority are mandatory before connecting this code.
+
+**Lifecycle:** V171G_SOURCE_IMPLEMENTED_OFFLINE_TESTED_REAL_VISION_AND_HOSTED_NO_GO.
+
+**Rollback:** close Draft child PR #257. No hosted writes to roll back, parents #256/#254/#252 preserved.
+
+**Checkpoint HEAD:** This documentation-only update advances the branch; reverify CI status for the final commit.
