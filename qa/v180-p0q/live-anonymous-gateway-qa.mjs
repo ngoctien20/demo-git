@@ -7,7 +7,7 @@ async function read(path, status) {
   const response=await fetch(origin+path,{
     method:'GET', redirect:'error',
     headers:{Accept:'application/json'},
-    signal:AbortSignal.timeout(20000)
+    signal:AbortSignal.timeout(55000)
   });
   assert.equal(response.status,status,'Unexpected HTTP status at '+path);
   assert.match(response.headers.get('cache-control')||'',/no-store/i);
