@@ -71,3 +71,25 @@ Independent PG17 service reruns V17.1N transactional RLS fixture and checks roll
 P0 real release blockers: independent Meta/Zalo QA Page/OA owner admission with genuine managed-secret signed NO-SEND callback; two real Auth JWT identities bound to two different Stores same Tenant; Store RLS/OrderAccessGrant/customer challenge/atomic replay; per-tool server authorization; privileged anon RPC audit; hosted image sandbox and malware controls.
 
 Rollback: close Draft child PR; leave new n8n QA workflow INACTIVE with callerPolicy none (archive only by explicit separate approval). No change to Published Messenger/Zalo/Core, no Commerce data rewrite, no paid model use, no customer messages.
+
+
+## 8. VERIFIED independent CI and milestone acceptance — 2026-11-17 JST
+
+Tested source HEAD: c5771df747498aa3001697a9aabce48a182b6737.
+GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44040282377
+
+- Source QA job 133892908476 **SUCCESS**. New V17.1O exact Published classifier, Unicode order denial, privacy and Page/source drift cases: 57/57 PASS. Inherited V17.1N through V17.1D: 687/687 PASS. Total **744/744 OFFLINE TESTS PASS**, no source assertion failures.
+- Independent PG17 QA service job 133892908156 **SUCCESS**. Replayed temporary same-Tenant Store A/B RLS in disposable PostgreSQL 17, verified ROLLBACK and temporary-table removal. This is not real Auth JWT evidence.
+- Live provider/Auth JWT release job 133893140840 deliberately **FAILURE**. Overall GitHub workflow result FAILURE is an intentional HOSTED NO-GO security release gate, not a failed source or PG17 QA.
+- Actual n8n staging execution **5006** SUCCESS, **132/132** decision fixtures with 124 DENY, 8 synthetic read-only plans, two current Published V17.17 Unicode Đ order-intent misroutes confirmed and blocked by a staging-only guard. No real model calls, DB writes/reads or provider sends.
+- Neither verified presence of credentials nor native Meta/Zalo owner/secret access was required; no real signed external webhook passed through the new QA workflow.
+- All original V17.15 nodes remain in the Published Messenger graph, and the V17.17 Published workflow was not edited by this milestone.
+
+### Release classification
+**V17.1O IMPLEMENTED SOURCE / TESTED SYNTHETIC N8N / TESTED OFFLINE CI / TESTED DISPOSABLE PG17 / REAL META-ZALO AND SAME-TENANT STORE AUTH JWT NO-GO.**
+
+Before live cutover obtain separate real Auth QA owner identities for Store A and B, independently signed Meta/Zalo owner proof, managed-secret verified no-send events, server-side Store ownership and customer/order grant, and reviewed permission boundary prior to any model write/send tool. Review the PUBLIC anon-executable SECURITY DEFINER claim RPC and the Unicode Đ classification correction under owner-controlled change procedure.
+
+**Rollback:** close child Draft PR #283; inactive n8n QA workflow remains locked against subworkflow invocation (archive/delete only after explicit separate approval). No production snapshot recovery needed because no Published code, business data, credentials or auth settings were changed.
+
+Checkpoint-only documentation update changes the SHA; reverify the final HEAD in GitHub Actions before attributing CI to the latest commit.
