@@ -1,0 +1,52 @@
+name: TIEN404 V18.0-P0C — Deployed RPC Logic in Disposable PG17
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0c/**'
+      - '.github/workflows/v180-p0c-disposable-rpc-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0c/**'
+      - '.github/workflows/v180-p0c-disposable-rpc-qa.yml'
+permissions:
+  contents: read
+jobs:
+  independent-rpc-pg17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: disposable_ci_only
+          POSTGRES_DB: t404_v180_p0c_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0c_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: disposable_ci_only
+      PGDATABASE: t404_v180_p0c_ci
+    steps:
+      - name: Fetch pinned source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Run 3 RPCs against fake Auth and fake Vault, no provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql --no-psqlrc -X -v ON_ERROR_STOP=1 -f qa/v180-p0c/actual-rpc-disposable-pg17.sql
+      - name: Restrict admission to this isolated fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${PGDATABASE}" = "t404_v180_p0c_ci"
+          test ! -e .env
+          printf '%s\n' 'LOCAL_ONLY_PG17_QA; NO_STAGING_WRITE; NO_REAL_JWT; NO_NATIVE_PROVIDER; NO_BACKUP_ATTESTATION'
