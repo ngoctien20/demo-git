@@ -1,0 +1,70 @@
+{
+  "project": "TIEN404",
+  "stage": "V17.7H",
+  "date_jst": "2026-11-17",
+  "parent_pr": 342,
+  "parent_sha": "05cabc1fb8f30dcfa47f656cc03a885ddee75b46",
+  "proposed_worker": {
+    "name": "tien404-v177h-provider-nosend-inactive-staging",
+    "script_code": "v17-7h-hosted-deny-all-worker.mjs",
+    "upload_method": "POST workers/scripts/{script_name}/versions ONLY",
+    "allowed_worker_code": "HTTP 404 all paths no body no external side effects",
+    "no_deployment_requested": true,
+    "no_route_requested": true,
+    "no_preview_requested": true,
+    "no_workers_dev_requested": true,
+    "no_bindings": true,
+    "no_secrets": true,
+    "hosted_version_upload_verified": false,
+    "hosted_version_id": null,
+    "hosted_deployment_count_verified_zero": false,
+    "hosted_workers_dev_disabled_verified": false,
+    "hosted_previews_disabled_verified": false,
+    "hosted_route_count_verified_zero": false,
+    "scope_approved_for_real_events": false
+  },
+  "existing": {
+    "rpc16_private_merchant_worker_preserved": true,
+    "rpc16_access_app_id": "f994d4b2-d4f9-419b-8585-5d33be506f13",
+    "rpc16_access_inline_allow_policies": 0,
+    "rpc16_access_inline_bypass_policies": 0,
+    "n8n_qa_workflow_id": "MQcbjLWZ5QUTJW0k",
+    "n8n_qa_active": false,
+    "n8n_qa_last_execution": "5026",
+    "existing_published_messenger_or_zalo_bot_modified": false
+  },
+  "owner": {
+    "realQaPageOrBotOwnershipVerified": false,
+    "independentOperatorVerified": false,
+    "privateOwnerConsentVerified": false,
+    "realMerchantStoreOwnershipVerified": false
+  },
+  "provider": {
+    "realSignedWebhookReceived": false,
+    "nativeQaBotEventCaptured": false,
+    "nativeMetaPageEventCaptured": false,
+    "messagesSent": 0,
+    "publicWebhookActive": false,
+    "separateRealSignatureUatCompleted": false
+  },
+  "commerce": {
+    "realSameTenantStoreAbJwtRlsProved": false,
+    "ordersWritten": 0,
+    "stockWritten": 0,
+    "productsReadFromRealStore": 0,
+    "storeCutoverChanged": false
+  },
+  "external_qa": {
+    "independentEdgeDenyVerified": false,
+    "hostedDurableReplayVerified": false,
+    "hostedRateLimiterVerified": false,
+    "realCustomerMessagesUsed": false
+  },
+  "finance": {
+    "new_paid_resources_created": false,
+    "incremental_cost_claimed": 0,
+    "zero_cost_guaranteed_by_provider": false,
+    "bounded_inactive_staging_only": true
+  },
+  "release": "REAL_PROVIDER_HOSTED_UAT_NO_GO"
+}
