@@ -46,3 +46,17 @@ Receipt lifetime and one-use controls do **not** themselves make external replay
 Source-only child Draft PR. No n8n workflow created or modified in V17.1R, no Supabase SQL writes or migration, no real Auth identities/memberships, provider secrets, webhook, orders, payments, customer messages or production deploy. The original V17.1Q source remains available for diff and rollback.
 
 Rollback: close this child Draft PR. Existing Published bot workflows remain untouched. Real Hosted release must remain NO-GO until independent identities and signed provider evidence exist.
+
+
+## 6. VERIFIED CI and acceptance receipts — 2026-11-17 JST
+
+- Tested candidate SHA: `72a36b8b6e7957cf17de295bc8bd052fd10fda39`.
+- GitHub Actions [run 44059873621](https://github.com/ngoctien20/demo-git/actions/runs/44059873621):
+  - `133958664255` **SUCCESS** — 82/82 cryptographic identity, TTL/one-use receipt and cross-Store canary tests, plus 855/855 inherited independent regressions; **937/937 source PASS**.
+  - `133958664409` **SUCCESS** — disposable PostgreSQL 17 same-Tenant Store A/B RLS on temporary rows, transaction ROLLBACK and cleanup. **NOT real Supabase JWT or Commerce RLS proof.**
+  - Real hosted Auth/JWT + Meta/Zalo signed-owner gate is deliberately **HOSTED NO-GO** (intentional failure). Never convert source-only proof into hosted release.
+- Initial candidate commit `4f108c2fae0fe45257c030a2838054a53c36ef8a` had 81/82 source tests PASS because an unknown JWT `kid` returned the new ambiguous-key reason. The separate zero-key branch was restored to `JWT_KEY` and duplicate-key branch remains `JWT_KEY_AMBIGUOUS`. No cryptographic or access check was weakened.
+- Real owner and provider signed event proofs remain unavailable. Supabase still lacks same-Tenant 2 distinct mapped Store owners, and legacy core policies lack Store-scoped predicates. No live workflow, provider sends, n8n credential, Supabase Auth, permanent DB, orders, stock, payment or customer data modified.
+- Checkpoint-only documentation update changes branch HEAD, so verify the new final SHA's GitHub source and PG17 results before final handoff.
+
+**Status**: IMPLEMENTED source / TESTED independent cryptographic regression / TESTED disposable PostgreSQL 17 / REAL AUTH OWNER & NATIVE PROVIDER NO-GO / LIVE UNCHANGED.
