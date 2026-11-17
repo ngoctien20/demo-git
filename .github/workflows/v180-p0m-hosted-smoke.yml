@@ -1,0 +1,28 @@
+name: TIEN404 V18.0-P0M — Hosted HTTPS Auth Staging Read-Only QA
+on:
+  push:
+    branches:
+      - work/supabase-auth-staging-v1
+    paths:
+      - 'docs/ai-handoff/T404_V180_P0M_HOSTED_SMOKE_RECEIPT.md'
+      - 'tests/v180-p0m-hosted-smoke.mjs'
+      - '.github/workflows/v180-p0m-hosted-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  independently-check-live-staging:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout reviewed Auth staging source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate expected PUBLIC static paths only, without Auth credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tests/v180-p0m-hosted-smoke.mjs
+          ! grep -Eqi 'service_role|password|access_token|refresh_token|Authorization: Bearer|\.auth\.signIn' tests/v180-p0m-hosted-smoke.mjs
+          node tests/v180-p0m-hosted-smoke.mjs
+      - name: Explicit identity and production NO-GO
+        run: |
+          printf '%s\n' 'P0M_HOSTED_STATIC_ONLY; NO_BROWSER_LOGIN_TEST; NO_REAL_JWT_A_B; NO_SUPABASE_WRITE; NO_PROVIDER_SEND; PRODUCTION_NO_GO'
