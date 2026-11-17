@@ -3,16 +3,18 @@ import {evaluateReleaseGate,GATE_CONTRACT} from './release-gates.mjs';
 const all=['separate_worker_created','host_control_verified','access_app_bound_to_issuer',
 'access_jwt_audience_confirmed','session_secret_in_secret_manager','jwk_rotation_runbook_approved',
 'durable_object_bound_and_atomic_tested','private_uat_operator_approved','cost_scope_approved',
-'browser_uat_on_hosted_origin_passed','actual_merchant_domain_dns_challenge_verified',
+'browser_uat_on_hosted_origin_passed','worker_access_all_routes_and_preview_verified',
+'access_operator_only_no_bypass_verified','do_replay_ttl_alarm_hosted_verified',
+'operator_rate_429_hosted_verified','actual_merchant_domain_dns_challenge_verified',
 'store_owner_membership_verified_independently','hosted_store_rls_a_b_passed',
 'customer_identity_proof_approved','production_recovery_gate_approved',
 'real_provider_authority_approved','live_rollout_scope_approved'];
 test('01 contract',()=>assert.match(GATE_CONTRACT,/V174P/));
 test('02 all missing defaults BLOCKED',()=>{
- const r=evaluateReleaseGate();assert.equal(r.status,'BLOCKED');assert.equal(r.private_qa_missing.length,10);
+ const r=evaluateReleaseGate();assert.equal(r.status,'BLOCKED');assert.equal(r.private_qa_missing.length,14);
 });
 test('03 current Cloudflare Pages control is not enough',()=>{
- const r=evaluateReleaseGate({host_control_verified:true});assert.equal(r.status,'BLOCKED');assert.equal(r.private_qa_missing.length,9);
+ const r=evaluateReleaseGate({host_control_verified:true});assert.equal(r.status,'BLOCKED');assert.equal(r.private_qa_missing.length,13);
 });
 test('04 existing Pages Access app is not issuer Access',()=>{
  const r=evaluateReleaseGate({host_control_verified:true,access_app_bound_to_issuer:false});assert.equal(r.status,'BLOCKED');
@@ -27,13 +29,13 @@ test('06 even with all operator flags, code never independently certifies hosted
  assert.equal(r.real_commerce_authorized,false);
 });
 test('07 each private QA release requirement is separately mandatory',()=>{
- for(const k of all.slice(0,10)){
+ for(const k of all.slice(0,14)){
   const x=Object.fromEntries(all.map(v=>[v,true]));x[k]=false;
   assert.equal(evaluateReleaseGate(x).status,'BLOCKED',k);
  }
 });
 test('08 all private flags but Store missing never grants live release',()=>{
- const x=Object.fromEntries(all.slice(0,10).map(k=>[k,true]));
+ const x=Object.fromEntries(all.slice(0,14).map(k=>[k,true]));
  const r=evaluateReleaseGate(x);assert.equal(r.real_commerce_authorized,false);
  assert.equal(r.real_commerce_missing.length,7);
 });
@@ -68,4 +70,22 @@ test('15 owner domain proof is separate from platform hosting',()=>{
 test('16 failed Store-RLS preflight always excludes real Commerce',()=>{
  const r=evaluateReleaseGate({hosted_store_rls_a_b_passed:false});
  assert(r.real_commerce_missing.includes('hosted_store_rls_a_b_passed'));
+});
+
+test('17 private gate includes new all-route Worker Access and no-bypass proof',()=>{
+ const x=Object.fromEntries(all.map(k=>[k,true]));
+ x.worker_access_all_routes_and_preview_verified=false;
+ assert.equal(evaluateReleaseGate(x).status,'BLOCKED');
+ assert(evaluateReleaseGate(x).private_qa_missing.includes('worker_access_all_routes_and_preview_verified'));
+ x.worker_access_all_routes_and_preview_verified=true;
+ x.access_operator_only_no_bypass_verified=false;
+ assert.equal(evaluateReleaseGate(x).status,'BLOCKED');
+});
+test('18 private gate refuses hosted admission without DO alarm and real 429',()=>{
+ const x=Object.fromEntries(all.map(k=>[k,true]));
+ x.do_replay_ttl_alarm_hosted_verified=false;
+ assert.equal(evaluateReleaseGate(x).status,'BLOCKED');
+ x.do_replay_ttl_alarm_hosted_verified=true;
+ x.operator_rate_429_hosted_verified=false;
+ assert.equal(evaluateReleaseGate(x).status,'BLOCKED');
 });
