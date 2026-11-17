@@ -25,9 +25,19 @@ The module contains no HTTP endpoint, external database or provider send call. P
 6. Independent security QA receipt and separate release/cost approval before any hosted deployment.
 
 ## QA, rollback and release decision
-- New candidate test suite includes 107 inherited V17.1S tests plus 40 new source-only cryptographic four-party approval tests: 147 expected. Older inherited suites: 855 expected. Combined candidate 1002, subject to independent CI.
+- New candidate test suite includes 107 inherited V17.1S tests plus 43 new source-only cryptographic four-party approval tests: 150 expected. Older inherited suites: 855 expected. Combined candidate 1005, subject to independent CI.
 - Disposable PostgreSQL17 RLS job uses only temporary synthetic records and rollback.
 - Hosted independent owner, provider and Commerce admission is intentionally blocked and CI marks it NO-GO.
 - Rollback: close V17.1T Draft PR. The parent and published workflows remain intact. No Supabase writes, billing, credential or merchant messages were performed by this work.
 
 Official Auth documentation: https://supabase.com/docs/reference/javascript/auth-getclaims and https://supabase.com/docs/guides/auth/sessions
+
+## Source security hardening added during CI review
+
+- GitHub CI first encountered a real concurrency acceptance flaw: the two owner JWT receipts were consumed after asynchronous signer lookups. The code was changed to consume both JWT capabilities **before the first awaited signer registry call**. This closes duplicate concurrent approval attempts, rather than weakening the concurrency assertion. The revised 147/147 source tests passed that check.
+- Approval intent commit SHA is now checked against a **trusted private operator configuration value**; a syntactically valid but different SHA is rejected even if four Ed25519 QA signers sign it. Missing pin fails closed.
+- On the final authority recheck, both merchant owner consent signer bindings must still match the original Auth subject, Store and Tenant; public signer key rotation or reassignment also denies admission.
+- Three additional independent negative tests cover incorrect signed commit, late owner signer Store reassignment and absent trusted commit pin; total **150 V17.1T source tests plus 855 inherited = 1005 expected** at final CI.
+- These tests are still entirely SOURCE-ONLY, with generated QA keys and fake session/owner fixtures. No private real owner keys or sessions have been provided.
+
+CI exact run and results must be appended after verified execution. Hosted real JWT/provider/Commerce admission remains deliberately NO-GO.
