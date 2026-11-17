@@ -12,7 +12,7 @@ const guard=[
 'REVIEW_ONLY_V15_0_10U1_NO_APPROVED_MIGRATION','REVIEW_ONLY_NO_APPROVED_JWT_ROLE_BRIDGE','REVIEW_ONLY_ROLLBACK_NOT_APPROVED'];
 const base='/mnt/data/tien404_v15_0_10u_1';
 const src='00_LEGACY_SYNTHETIC_FIXTURE.sql',data='04_V2_SYNTHETIC_FIXTURE.sql',judge='05_DISPOSABLE_ASSERTIONS.sql',rollback='06_ROLLBACK_ASSERTIONS.sql';
-const workflow='v15u2-pg17-disposable.yml';
+const workflow='../../../.github/workflows/v15u2-pg17-disposable.yml';
 for(let i=0;i<files.length;i++){
  const f=files[i],s=read(f);
  test('canonical '+f+' has intact unconditional guard',()=>{
