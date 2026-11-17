@@ -1,0 +1,87 @@
+{
+  "contract": "TIEN404_V17_7H1_PRIVATE_OWNER_OPERATOR_NATIVE_CANARY_READINESS",
+  "date_jst": "2026-11-17",
+  "mode": "SOURCE_ONLY_PRIVATE_CONSENT_PREPARATION",
+  "parent_pr": 343,
+  "parent_sha": "f04b2d28d9aa6d2897fa6f36f31bdd539eb47829",
+  "cloudflare": {
+    "existing_worker_name": "tien404-v177h-provider-nosend-inactive-staging",
+    "existing_worker_id": "0265c4d1f3d64f9196eb7587b8f1a552",
+    "existing_version_id": "c39b8e9d-2dfc-454d-b29d-40b495ff2043",
+    "deployed_on": null,
+    "deployment_count": 0,
+    "workers_dev_enabled": false,
+    "preview_urls_enabled": false,
+    "binding_count": 0,
+    "schedule_count": 0,
+    "domain_count": 0,
+    "version_count": 1,
+    "new_worker_created_this_phase": false,
+    "existing_worker_modified_this_phase": false,
+    "public_provider_route_enabled": false,
+    "independent_external_edge_denial_proved": false
+  },
+  "n8n": {
+    "no_send_manual_fixture_id": "MQcbjLWZ5QUTJW0k",
+    "no_send_manual_fixture_active": false,
+    "no_send_manual_fixture_version": "b8aaf94c-def1-472c-bd92-fccea1d946b8",
+    "zalo_bot_published_ingress": "yIJk8LvJoLF40Z62",
+    "published_zalo_bot_has_qa_marker_upsert": true,
+    "reused_published_webhook_for_canary": false,
+    "new_or_edited_workflows_this_phase": 0
+  },
+  "supabase": {
+    "staging_project_ref": "ifxlvrhyjhbzbrkdsida",
+    "qa_tenant_count": 2,
+    "maximum_stores_per_qa_tenant": 1,
+    "qa_same_tenant_store_ab_count": 0,
+    "real_store_rls_jwt_acceptance": false,
+    "merchant_data_rows_accessed_this_phase": 0,
+    "commerce_writes_this_phase": 0
+  },
+  "official_zalo_bot_contract": {
+    "owner_setup": "Bot Creator via Zalo Bot Manager; Bot Token issued to creating Zalo account",
+    "getMe": "POST Bot API getMe read-only semantics; returns bot id/account_name",
+    "getWebhookInfo": "POST Bot API getWebhookInfo read-only semantics; check existing URL without changing it",
+    "setWebhook_this_phase": "NEVER_CALLED",
+    "webhook_header": "X-Bot-Api-Secret-Token",
+    "native_bot_owner_admin_session_verified": false,
+    "real_getMe_readback_executed": false,
+    "real_getWebhookInfo_readback_executed": false,
+    "raw_bot_token_collected": false
+  },
+  "consent": {
+    "test_channel_priority": "ZALO_BOT_FIRST",
+    "qa_bot_provider_ref_verified": false,
+    "private_owner_portal_session_authenticated": false,
+    "independent_operator_authenticated": false,
+    "independent_security_reviewer_authenticated": false,
+    "owner_operator_reviewer_three_role_real_signatures_verified": false,
+    "synthetic_test_crypto_only": true,
+    "challenge_ttl_max_minutes": 10,
+    "approved_live_callback": false,
+    "approved_test_message_count": 0,
+    "approval_for_new_budget_or_production_changes": false
+  },
+  "external_uat": {
+    "live_signed_provider_event_received": false,
+    "hosted_durable_replay_acceptance": false,
+    "live_rate_limit_acceptance": false,
+    "independent_no_send_audit": false,
+    "external_unauthenticated_request_denial_test": false,
+    "actual_provider_messages_sent": 0,
+    "actual_orders_written": 0,
+    "actual_stock_writes": 0,
+    "provider_webhook_reconfigured": false
+  },
+  "safety": {
+    "github_source_only_change": true,
+    "oauth_or_provider_credentials_changed": false,
+    "cloudflare_access_modified": false,
+    "cloudflare_worker_modified": false,
+    "merchant_private_evidence_uploaded": false,
+    "customer_data_accessed": false,
+    "additional_cost_this_phase_not_verified": true
+  },
+  "release": "REAL_OWNER_AND_NATIVE_EXTERNAL_CANARY_NO_GO"
+}
