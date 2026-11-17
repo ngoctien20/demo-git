@@ -1,0 +1,77 @@
+name: RPC13.1 - Real Windows NTFS JWT File ACL OS-Matrix QA (NO LIVE TOKENS)
+on:
+  pull_request:
+    paths:
+      - "qa/v152-rpc13/**"
+      - "docs/ai-handoff/T404_RPC131_*"
+      - ".github/workflows/v152-rpc131-jwt-file-acl-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  acl-os-matrix:
+    name: "Private fake JWT ACL on ${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    env:
+      CI: "true"
+      GITHUB_ACTIONS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate code syntax
+        shell: bash
+        run: |
+          node --version
+          node --check qa/v152-rpc13/private-token-file-security.mjs
+          node --check qa/v152-rpc13/private-token-file-security.test.mjs
+          node --check qa/v152-rpc13/live-auth-uat.mjs
+      - name: Run fake-token ACL tests (including REAL OS ACL on Windows)
+        shell: bash
+        run: node --test qa/v152-rpc13/private-token-file-security.test.mjs
+      - name: Verify absence of real JWT, Supabase, Meta and R2 calls
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const s=readFileSync('qa/v152-rpc13/private-token-file-security.mjs','utf8');
+          if(!s.includes('PRIVATE_TOKEN_WINDOWS_ACL_DENIED') ||
+             !s.includes('verifyWindowsPrivateFileAcl') ||
+             !s.includes('const fd=await open') ||
+             !s.includes('constants.O_NOFOLLOW') ||
+             s.includes('service_role') ||
+             /\bfetch\s*\(/.test(s))throw Error('RPC13_ACL_ADMISSION_NOT_FAIL_CLOSED');
+          const original=readFileSync('qa/v152-rpc13/live-auth-uat.mjs','utf8');
+          if(!original.includes('export {readPrivateToken}') ||
+            !original.includes("process.env.CI==='true'") ||
+            !original.includes("process.env.GITHUB_ACTIONS==='true'"))
+            throw Error('LIVE_UAT_CI_BLOCKER_MISSING');
+          NODE
+  legacy-rpc13-security-regression:
+    name: Existing 41 RPC13 security tests (mock only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CI: "true"
+      GITHUB_ACTIONS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
+      - name: Explicitly block any operator mode in CI
+        run: |
+          node --input-type=module <<'NODE'
+          import {operatorRun} from './qa/v152-rpc13/live-auth-uat.mjs';
+          let blocked=false;
+          try {await operatorRun({configPath:'nonexistent',tokenAPath:'nonexistent',tokenBPath:'nonexistent'});}
+          catch(e){blocked=e.message==='LIVE_AUTH_UAT_FORBIDDEN_IN_CI';}
+          if(!blocked)throw Error('REAL_JWT_OPERATOR_MODE_MUST_BE_BLOCKED');
+          NODE
