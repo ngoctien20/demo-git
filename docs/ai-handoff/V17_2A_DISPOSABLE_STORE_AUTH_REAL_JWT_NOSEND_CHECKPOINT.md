@@ -50,3 +50,20 @@ For V17.2A source milestone, rollback = close Draft PR. For any future authorize
 Remaining approval items: schema + public invoker view, new disposable Tenant/Stores, two real Auth QA identities, private runtime credentials/consent, independent review and budget. They are NOT implicitly granted by the milestone title.
 
 Supabase docs: https://supabase.com/docs/guides/auth/sessions ; https://supabase.com/docs/reference/javascript/auth-getclaims ; https://supabase.com/docs/guides/database/postgres/row-level-security ; https://supabase.com/docs/guides/database/views
+
+
+## 6. Independent CI acceptance — 2026-11-17 JST
+
+**Tested source SHA:** 9c2dc59a79b582462415b3c5406c6379d4207419  
+**GitHub Actions run:** https://github.com/ngoctien20/demo-git/actions/runs/44108029254
+
+- **Source job 134125646780 SUCCESS:** 35/35 new V17.2A real-JWT-ADAPTER synthetic attack/readout cases, plus 1,255/1,255 inherited source security and Commerce regressions = **1,290/1,290 source PASS**. All JWTs and claims in source tests are FAKE strings, and callbacks never contact Supabase Auth.
+- **New independent PG17 job 134125645953 SUCCESS:** compiled the exact QA schema and public security_invoker view; verified A→A allow, A→B deny, B→B allow, B→A deny, Store membership revoke, parent Tenant membership revoke, anonymous SELECT grant absent and authenticated INSERT absent. Full transaction ROLLBACK, checked proposed QA catalog/view not persisted. This uses fake auth.uid() and two fake UUIDs, **NOT genuine JWTs**.
+- **Inherited disposable PG17 jobs 134125646444 and 134125648853 SUCCESS**: previous isolated Store A/B security/rollback cases. No live staging migration was applied.
+- **Real hosted Auth JWT, private operator consent, PostgREST and native Meta/Zalo cross-channel NO-SEND job 134126236706 expected FAILURE BY DESIGN**: needed actual approved two QA Auth users, same-Tenant Store authority, a genuinely signed JWT/active session test and private operator acceptance. Overall workflow RED is the correct release guard, not a source regression.
+- The live Supabase security advisors were read without changing database objects. Existing RLS-enabled/no-policy warnings include private tables that may deliberately be default-deny; do not interpret aggregate notices as an authorization to auto-grant. The old public qa_shop_b_zalo_claim anon-executable SECURITY DEFINER remains a separate security review candidate, not fixed here.
+- Current documentation update changes Git HEAD only. Before final signoff, re-run or verify the CI on **this exact final HEAD**.
+
+**Actual work:** GitHub child Draft PR source/tests/docs/workflow only. ZERO staging Auth users/roles, Tenant/Store memberships, public views, RLS, real JWTs, credentials, Cloudflare, n8n workflows, Messenger/Zalo sends, real orders/payments or paid resources created or changed.
+
+**Approval needed:** explicitly authorized disposable Tenant and two QA users; backup/rollback evidence; reviewer-approved QA Store schema and public invoker view; private getClaims/session registry + end-user JWT PostgREST no-send reader. This code alone is not real UAT consent.
