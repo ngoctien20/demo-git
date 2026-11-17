@@ -124,3 +124,34 @@ test('68 no customer PII in tokens',async()=>{
  const t=(await issue()).token;assert(!t.includes('phone'));assert(!t.includes('customer_name'));
 });
 test('69 script has no network listener',()=>assert.equal(typeof issueWebsiteSession,'function'));
+
+test('70 QA binding read_only false cannot mint session',async()=>{
+ registry[instA]=mkBinding('A',{read_only:false});
+ assert.equal((await issue()).status,'DENY');reset();
+});
+test('71 QA binding status Owner Approved not allowed in synthetic lane',async()=>{
+ registry[instA]=mkBinding('A',{status:'OWNER_APPROVED'});
+ assert.equal((await issue()).status,'DENY');reset();
+});
+test('72 QA binding tool allowlist extra privilege cannot mint',async()=>{
+ registry[instA]=mkBinding('A',{tool_allowlist:'catalog_read,create_order'});
+ assert.equal((await issue()).status,'DENY');reset();
+});
+test('73 private issuer requires independently owner-approved status in prod config',async()=>{
+ registry[instA]=mkBinding('A',{approval_scope:'OWNER_APPROVED',owner_authority_verified:true,status:'OWNER_APPROVED'});
+ const r=await issue(instA,originA,{config:{...cfg,qaMode:false}});
+ assert.equal(r.status,'SESSION_ISSUED');assert.equal(r.customer_identity_verified,false);
+ reset();
+});
+test('74 production-mode message cannot access QA catalog or write',async()=>{
+ registry[instA]=mkBinding('A',{approval_scope:'OWNER_APPROVED',owner_authority_verified:true,status:'OWNER_APPROVED'});
+ const realCfg={...cfg,qaMode:false};
+ const sess=await issue(instA,originA,{config:realCfg});
+ const r=await processWebsiteMessage({request:{token:sess.token,origin:originA,installationRef:instA,eventId:'QA_MSG_099',text:'QA_SKU_001',requestedTool:'catalog_read'},
+   config:realCfg,resolveBinding:resolve,claimMessage:atom(),readQaCatalog:catalog,now});
+ assert.equal(r.status,'DENY');assert.equal(r.reason,'HOSTED_STORE_AND_DURABLE_CLAIM_NOT_CERTIFIED');reset();
+});
+test('75 production-mode owner flag cannot authorize an unapproved owner status',async()=>{
+ registry[instA]=mkBinding('A',{approval_scope:'OWNER_APPROVED',owner_authority_verified:true,status:'QA_APPROVED'});
+ assert.equal((await issue(instA,originA,{config:{...cfg,qaMode:false}})).status,'DENY');reset();
+});
