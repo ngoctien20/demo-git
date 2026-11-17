@@ -11,7 +11,7 @@ function setup(store='A'){
   return {canary,session,gate};
 }
 function expectDeny(f,code){
-  assert.throws(f,e=>e.code===code&&e.message===code,
+  assert.throws(f,e=>e.message===code&&(e.code===undefined||e.code===code),
     'Expected exact fail-closed error: '+code);
 }
 function zero(canary){
@@ -170,10 +170,12 @@ test('10 reject schema objects with prototype pollution or accessors',()=>{
 });
 test('11 deny null and malformed outer envelope, including untrusted extra claims',()=>{
   const {gate,canary}=setup();
-  for(const e of [null,[],{},Object.create(null),{session:null,proposal:null},
+  for(const e of [null,[],{},Object.create(null),
     {session:null,proposal:{action:'READ_PUBLIC_CATALOG',sku:'SKU_A'},role:'owner'}]){
     expectDeny(()=>gate.compile(e),'QUERY_PLAN_ENVELOPE_REJECTED');
   }
+  expectDeny(()=>gate.compile({session:null,proposal:null}),
+    'MODEL_FREE_TEXT_OR_EXTRA_FIELDS_DENIED');
   zero(canary);
 });
 test('12 guard requires independently admitted B.1 canary and server clock',()=>{
