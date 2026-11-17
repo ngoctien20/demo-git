@@ -1,0 +1,101 @@
+name: V17.7H.2 Private getMe Mock Readback × One Event NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7H2_PRIVATE_BOT_READBACK_ONE_EVENT_CHECKPOINT.md"
+      - ".github/workflows/v17-7h2-private-getme-one-event-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-getme-one-event-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check inherited A-H.2 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in qa/v17-7a-oa-independent/*.mjs; do node --check "$file"; done
+      - name: All channel and owner regressions A-H.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Exact no-credential, no live Bot API, no webhook and no-send evidence guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {
+            runSyntheticPrivateBotReadback
+          } from './qa/v17-7a-oa-independent/v17-7h2-private-readonly-bot-probe.mjs';
+          import {
+            inspectOneEventNoSendPlan,oneEventDefaultPlan
+          } from './qa/v17-7a-oa-independent/v17-7h2-one-event-nosend-admission.mjs';
+          const root='qa/v17-7a-oa-independent/';
+          for(const file of [
+            'v17-7h2-private-readonly-bot-probe.mjs',
+            'v17-7h2-one-event-nosend-admission.mjs'
+          ]){
+            const src=readFileSync(root+file,'utf8');
+            for(const forbidden of [
+              /\bfetch\s*\(/,/\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\bprocess\s*\.\s*env\b/,
+              /\b(sendMessage|setWebhook|deleteWebhook|getUpdates|createOrder|writeOrder|writeStock|deployWorker)\s*\(/
+            ]) if(forbidden.test(src))throw Error('Unsafe Bot API or Commerce operation: '+file);
+          }
+          const probe=readFileSync(root+'v17-7h2-private-readonly-bot-probe.mjs','utf8');
+          for(const expected of [
+            "'OFFLINE_MOCK_READONLY'",
+            "'OFFLINE_FIXED_MOCK'",
+            "['getMe','getWebhookInfo']",
+            "'EXISTING_WEBHOOK_DO_NOT_REPOINT'",
+            'canSendMessage:false','canChangeWebhook:false',
+            'realBotOwnerVerified:false','canPublish:false'
+          ])assert.ok(probe.includes(expected),'Missing read-only invariant '+expected);
+          const e=JSON.parse(readFileSync(root+'v17-7h2-real-owner-one-event-evidence.json','utf8'));
+          assert.equal(e.contract,'TIEN404_V17_7H2_PRIVATE_GETME_ONE_EVENT_READINESS');
+          assert.equal(e.release,'REAL_OWNER_GETME_AND_NATIVE_ONE_EVENT_NO_GO');
+          assert.equal(e.cloudflare.deployment_count,0);
+          assert.equal(e.cloudflare.workers_dev_enabled,false);
+          assert.equal(e.cloudflare.preview_urls_enabled,false);
+          assert.equal(e.cloudflare.binding_count,0);
+          assert.equal(e.cloudflare.existing_inactive_worker_modified,false);
+          assert.equal(e.n8n.qa_fixture_inactive,true);
+          assert.equal(e.n8n.active_workflows_changed,0);
+          assert.equal(e.supabase.tenants_with_same_tenant_ab,0);
+          assert.equal(e.zalo_bot.real_bot_creator_owner_authenticated,false);
+          assert.equal(e.zalo_bot.real_getMe_executed,false);
+          assert.equal(e.zalo_bot.real_getWebhookInfo_executed,false);
+          assert.equal(e.zalo_bot.qa_bot_token_ever_read_this_phase,false);
+          assert.equal(e.zalo_bot.setWebhook_calls,0);
+          assert.equal(e.zalo_bot.sendMessage_calls,0);
+          assert.equal(e.one_event.proposed_max_inbound,1);
+          assert.equal(e.one_event.proposed_max_outbound,0);
+          assert.equal(e.one_event.proposed_max_orders_written,0);
+          assert.equal(e.one_event.consent_for_single_real_event_verified,false);
+          assert.equal(e.one_event.live_message_delivered_to_canary,false);
+          assert.equal(e.one_event.provider_signed_native_event_received,false);
+          assert.equal(e.one_event.hosted_durable_replay_verified,false);
+          assert.equal(e.one_event.independent_external_audit_performed,false);
+          const p=inspectOneEventNoSendPlan(oneEventDefaultPlan);
+          assert.equal(p.shapePrepared,true);
+          assert.equal(p.canReceiveRealEvent,false);
+          assert.equal(p.canSendProvider,false);
+          const r=await runSyntheticPrivateBotReadback({mode:'REAL'},null);
+          assert.equal(r.status,'NO_GO');
+          assert.equal(r.realBotOwnerVerified,false);
+          console.log('V17.7H.2 SYNTHETIC GETME/WEBHOOKINFO + ONE EVENT NO-SEND TESTED, REAL OWNER / REAL PROVIDER NO-GO');
+          NODE
