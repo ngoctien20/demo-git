@@ -45,3 +45,27 @@
 - Next authorized integration: private merchant rights + domain proof and uploaded licensed photo sample, verified provider quote/balance, explicitly approved bounded model call, isolated read-only signed Messenger/Zalo canary with no customer reply, Store RLS/OrderAccessGrant, independent Restore acceptance.
 
 **Classification:** V171J_SOURCE_ONLY_PREPARED_HOSTED_NO_GO.
+
+## 5. VERIFIED — GitHub Actions Source QA (2026-11-17 JST)
+
+**Implementation HEAD tested:** `aefcb122e0e5feec08d9046f66d28e96342f60a5`.
+
+**GitHub Actions run:** https://github.com/ngoctien20/demo-git/actions/runs/44012914298
+
+- Node 22 new V17.1J merchant-owned image evidence / scoped Vision quote and claimed receipt tests: **40/40 PASS**.
+- Node 22 new V17.1J Messenger/Zalo synthetic shadow No-Send, cross-Store SKU and OrderAccessGrant tests: **36/36 PASS**.
+- Inherited V17.1I HTTPS and Vision budget (Python) **82/82**, V17.1H PNG/JPEG/WebP (Python) **40/40**, V17.1G DNS/TLS (Node) **40/40**, V17.1F website image registry (Node) **32/32**, V17.1E corpus receipt (Node) **28/28**, V17.1D original PNG/media/identity/Commerce (Node) **22+25+5=52/52**, all PASS.
+- **350/350 total OFFLINE source tests PASS**. Static check forbidding actual network HTTP fetch, model invocation, provider SEND, order creation or hosted DB writes in V17.1J modules PASS.
+- Source-only job 133803925032 **SUCCESS**. Hosted release NO-GO job 133804132179 **FAILURE by design**. Overall workflow status shows FAILURE intentionally. No genuine model or provider acceptance implied.
+- Verified n8n workflow inventory earlier in this milestone is read-only: live Messenger TEST has HTTP Send and order tool routes; active Zalo Bot Lab includes QA marker DataTable writes, so neither should be casually executed as No-Send. Inactive G06/G07 and Messenger shadow only provide synthetic/manual preparation; no signed real Page/OA event was admitted.
+- Neither a merchant-owned photo nor rights/license/domain proof was supplied. Zero actual photo bytes ingested, zero paid Vision calls and real billing receipts, zero Meta/Zalo real callback, no real customer Order query, no production changes.
+
+### Release posture and evidence intake
+
+**Status:** V17.1J SOURCE IMPLEMENTED / OFFLINE TESTED / REAL VISION AND SIGNED CHANNEL UAT HOSTED NO-GO.
+
+**For first real merchant pilot:** privately obtain one Store owner-admin verified source (merchant website URL plus approved image host, or direct original image uploads), at least one SKU-linked image rights/consent proof, a distinct holdout photo set with blind labels and out-of-catalog negatives, and verified provider price/balance. Operator must separately approve bounded actual Vision spend and independently verified store ownership; production-secure outbound fetch and hosted Store RLS/recovery checks precede any live provider canary. Real Messenger/Zalo native signature authority and two-step cross-channel customer identity cannot be simulated for release.
+
+**Rollback:** close child Draft PR #264; parent #261 and older PRs unchanged, and no hosted restore necessary.
+
+**Checkpoint-only documentation commit following this source run must be reverified for exact final HEAD CI.**
