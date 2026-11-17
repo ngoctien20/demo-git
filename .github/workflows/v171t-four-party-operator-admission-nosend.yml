@@ -50,7 +50,7 @@ jobs:
               assert not re.search(bad,source),bad
           assert 'planOperatorAuthorizedTwoStoreAuth' in source
           assert 'PRIVATE_TWO_STORE_NO_SEND_AUTH_ADMISSION' in source
-          assert 'PRIVATE_TWO_OWNER_AUTH_SETUP_ONLY' in source
+          assert 'PRIVATE_OPERATOR_TWO_OWNER_AUTH_SETUP_ONLY' in source
           print('V171T_OPERATOR_SIGNED_AUTH_SOURCE_ONLY_HOSTED_NO_GO_PASS')
           PY
       - name: 'V17.1P replay exact n8n inactive Store Auth reader guard and mutations'
