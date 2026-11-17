@@ -48,12 +48,13 @@ jobs:
           set -euo pipefail
           node --check qa/v180-p0d/origin-m0-auth-readiness.mjs
           node --test qa/v180-p0d/origin-m0-auth-readiness.test.mjs
-      - name: Inherited RPC12 local-only private evidence and current recovery tests
+      - name: Preserve independently owned RPC12 private intake boundary
         shell: bash
         run: |
           set -euo pipefail
-          node --test qa/v152-rpc12/current-recovery-scope-decision.test.cjs
-          node --test qa/v152-rpc12/private-operator-intake.test.cjs
+          # RPC12 belongs to a separate Draft PR #244, not this stacked branch.
+          # Do not copy private intake code or fabricate evidence just to pass.
+          node --input-type=module -e "import {inspectSnapshot,SNAPSHOT_REFERENCE} from './qa/v180-p0d/origin-m0-auth-readiness.mjs';const x=inspectSnapshot({...SNAPSHOT_REFERENCE});if(x.m0CurrentRecoveryApproved||x.realSupabaseJwtAandBVerified||x.canApplyMigration)process.exit(1)"
       - name: Inherited RPC17.8B private schema and real JWT NO-GO
         shell: bash
         run: |
