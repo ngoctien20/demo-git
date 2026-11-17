@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   v171v-hosting-security-regression:
-    name: V17.1V 57 signed hosting QA cases + 1030 inherited source regression
+    name: V17.1V 58 signed hosting QA cases + 1030 inherited source regression
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -47,7 +47,7 @@ jobs:
                     'actualMembershipChanges','actualCustomerRowsTouched',
                     'actualProviderMessagesSent'):
               assert m[k]==0,k
-          assert m['sourceReviewTestCases']==57 and m['inheritedSourceRegressionCases']==1030
+          assert m['sourceReviewTestCases']==58 and m['inheritedSourceRegressionCases']==1030
           source=Path('qa/v171v-hosting-readiness/private-hosting-readiness.cjs').read_text()
           for bad in (r'\bfetch\s*\(',r'\bprocess\.env\b',
                       r'\bchild_process\b',r'\bhttps?\.request\s*\(',r'\baxios\b'):
