@@ -60,3 +60,13 @@
 - **NEXT ZALO UAT:** verify one real Bot Creator private message in staging (not OA), protected webhook, no-send ACK and Core DENY; OA merchant integration requires separate official OA installation and owner proof.
 
 **Outcome:** `IMPLEMENTED_PUBLISHED_READONLY_MESSENGER_DEMO_CANARY` + `IMPLEMENTED_PUBLISHED_ZALO_BOT_AND_WEBSITE_TECH_SHADOW`; **`NO_GO_REAL_STORE_COMMERCIAL_CORE_ADVICE_OR_ORDER_STOCK`**. Real postdeployment positive inbound/send UAT pending.
+
+
+## 6. Additional actual Messenger live regression — legacy DEMO remains a writer
+
+Post-publication `Z7FdV7uDvApfbURQ` real signed POST executions (native HMAC verified):
+- **#4503 SUCCESS**: `V17.15 Route QA_CORE Only?` false branch → existing `Messenger AI Agent` → exactly one `Send Messenger Reply` with accepted Meta message ID. **No V17.15 Core pilot** executed for this ordinary non-prefixed customer chat. This independently supports existing reply path continuity.
+- **#4493 SUCCESS** included an invocation of legacy `create_order` tool but returned a rejection (no successful order ID).
+- **#4498 SUCCESS** included an invocation of the SAME existing legacy `create_order` tool with **`action=created`** and an order identifier (which is deliberately omitted here). This tool is bound to **`KrSn4DNR9ALX5ng4` Create Order Tool (AI_SALES_DEMO)**, NOT to central Commerce Core.
+- **IMPORTANT SECURITY/RELEASE QUALIFICATION:** `NO NEW COMMERCE WRITES` and `NEW QA_CORE PILOT IS READ-ONLY` are proven, but **the full Messenger Page is NOT globally write-disabled** because its original DEMO AI Agent still exposes legacy create/update/manage order tools. Do **not** market the Page as commercial read-only globally. Do not silently remove longstanding DEMO tools without scoped owner approval; if Page-wide read-only is the desired new policy, explicitly isolate/disable legacy DEMO write tools and run a separate rollback-backed regression.
+- No new real `QA_CORE:` customer message was observed in these executions. The first positive LIVE pilot reply UAT remains pending.
