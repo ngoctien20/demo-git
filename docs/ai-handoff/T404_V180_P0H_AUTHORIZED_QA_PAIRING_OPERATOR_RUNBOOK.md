@@ -57,3 +57,33 @@ Never infer Store ownership from `tenant_memberships`, QA `store_key` text, bot 
 Continue source-level operator preparation; no database DDL/RLS/grant or customer/merchant data mutation, no Auth sign-in done by assistant, no production publish, no Meta/Zalo send. M0 waived by founder solely for read-only/source-only/disposable; reopening M0 required when a hosted schema change is actually requested. Runtime rollback not applicable; source changes can be reverted on Draft PR #385.
 
 **Next actionable dependency:** the authorized owner of the *second existing QA account in the same tenant* logs in through the trusted staging Auth app, and separately approves private read-only verification. We can only evaluate Store ownership once a canonical Store Registry and trusted operator evidence is available. Do not add new QA account or perform provider UAT as workaround.
+
+## P0I — Actual deployed Auth staging operator handoff (read-only audit)
+
+**2026-11-18 JST — VERIFIED BUILD/DEPLOY METADATA, NOT LIVE BROWSER UAT.** The Render connector identifies the static service `tien404-auth-staging` (`srv-dbpj4irm8hqs73e2h2rg`) as not suspended, autoDeploy **OFF**, branch `work/supabase-auth-staging-v1`, deployed commit **`b14501a0ebf04d991302cb32b5d548a68d6b39bd`**, last live deployment `dep-dbsa4fl6e07s7399ab30` at 2026-11-14T18:02:46Z. This is different from the P0H source-only Draft PR head. The external HTTP view of the Render site could not be independently fetched in this chat environment; don't claim browser login success.
+
+### Exactly what the already-deployed code supports
+
+- Render static build `scripts/build-auth-preview.mjs` explicitly copies `login.html`, `account.html`, `merchant-portal.html` and Auth assets into a no-index static preview. `/` redirects to `/login.html` by generated `index.html`.
+- Auth login source `assets/auth-login.js` runs `auth.signInWithPassword()` on form submit, clears password input, then navigates to `account.html`. Existing account script `assets/auth-account.js` calls **`auth.getUser()`**, reads active `tenant_memberships` filtered to Auth subject, and looks up `tenants`, then displays tenant membership. It does **not** call `auth.getClaims()` or query canonical `store_memberships`.
+- The `auth-config.js` source references staging Supabase `ifxlvrhyjhbzbrkdsida`; no `service_role` string was found in the reviewed public client config. This is a source scan, not a secret-exposure certification.
+- The Render preview build disables the **Forgot Password** trigger, pending recovery URL allowlist. Do not use password reset or create extra accounts as a shortcut.
+- The account page contains links to orders/other sections under **tenant** permissions; **DO NOT inspect or mutate Orders, Products, Owner Pairing or Provider settings** during this no-send identity-only test. The existing owner UI is NOT a Store A/B scope verifier.
+
+### Human operator instructions, each account in a separate browser profile
+
+1. Only the authorized owner of a QA identity (or an explicitly delegated operator) may perform this test. Confirm private consent for Actor A and Actor B independently; do not reuse real customer identities.
+2. Use Profile A (normal browser profile) to visit `https://tien404-auth-staging.onrender.com/login.html`, sign in to existing authorized staging Owner A and observe navigation to `https://tien404-auth-staging.onrender.com/account.html`. If A is already signed in, use its existing session without unnecessary logout or re-login.
+3. Use **a different browser profile** (not just a normal tab in the same browser profile) for existing authorized Owner B of that same tenant, at the same Auth staging login URL. Sign in using credentials only inside the website; never paste credentials/token/IDs into chat or PR.
+4. Observe only the status paragraph, that tenant is listed as expected, and that the webpage is using the verified `https://tien404-auth-staging.onrender.com` origin. Do not claim Store ownership because the UI currently displays **tenant** membership only.
+5. If login fails, URL inaccessible, owner B has no approved access, or recovery is required: **STOP**, record only `A_LOGIN_OK/B_LOGIN_BLOCKED`, and do not change passwords, create accounts, trigger resets, use server-admin tokens or change any database roles.
+6. Return to checkpoint with ONLY the de-identified summary `A_LOGIN_OK or FAILED`, `B_LOGIN_OK or FAILED`, and `SAME_TENANT_VISIBLE in both browser profiles: YES/NO/UNKNOWN`. Do not send screenshots showing email, tenant ID, personal info, browser storage, JWT or headers.
+
+### How this affects admission
+
+Even two successful logins give at most `TWO_INDEPENDENT_BROWSER_LOGIN_UX_OBSERVED`, not `REAL_JWT_SIGNATURE_VERIFIED`, `SESSION_REVOKED_CHECKED`, `TWO_ACTORS_INDEPENDENTLY_BOUND_TO_STORES` or `UAT_PASS`.
+Trusted Store A/B acceptance requires **a server-controlled canonical Store registry, independent real actor authorization, and two-way hosted deny tests**. None currently exist. Before any new hosted schema, account permission or RLS changes the M0 backup/restore verification and explicit scope approval must be restored. For source-only/read-only QA M0 remains deferred.
+
+### Current gate
+
+`P0I_OPERABLE_LOGIN_CODE_VERIFIED / RENDER_DEPLOY_LIVE_BY_API / DIRECT_HTTP_AND_HUMAN_LOGIN_NOT_VERIFIED / P0H_HELPER_NOT_DEPLOYED / PRIVATE_PAIR_CONSENT_NOT_COLLECTED / STORE_AB_HOSTED_NO_GO / PRODUCTION_NO_GO`.
