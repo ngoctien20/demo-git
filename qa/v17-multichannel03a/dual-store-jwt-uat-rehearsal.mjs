@@ -60,7 +60,7 @@ export async function inspectDualStoreUatRehearsal(deps) {
  if(!revocation || revocation.source!=='QA_SYNTHETIC_REVOCATION_RECEIPT'||
    revocation.tenantRef!==a.tenantRef ||
    revocation.staffRoleRevokedDenied!==true ||
-   revocation.afterRevocationFreshAuthDenied===false ||
+   revocation.afterRevocationFreshAuthDenied!==true ||
    revocation.noWrites!==true)
   return FAIL('REVOCATION_READBACK_NOT_PROVED');
  return Object.freeze({
