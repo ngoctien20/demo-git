@@ -26,6 +26,8 @@ jobs:
           node --check qa/v173-website-session/website-client-qa-adapter.mjs
           node --check qa/v173-website-session/website-client-qa-adapter.test.mjs
           node --test qa/v173-website-session/website-session-core.test.mjs qa/v173-website-session/website-client-qa-adapter.test.mjs
+      - name: Independent actual n8n execution #4363 and Store Bot registry evidence
+        run: python3 -m unittest discover -v -s qa/v173-website-session -p 'test_n8n_snapshot.py'
       - name: No external requests / page token / credentials / provider send
         run: |
           python3 - <<'PY'
