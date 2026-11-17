@@ -1,0 +1,309 @@
+{
+  "contract": "T404_RPC10_G3S_HOSTED_ORIGINAL_STORE_CALLER_COMPAT_V1",
+  "auditDateJst": "2026-11-18",
+  "source": "CONNECTED_SUPABASE_N8N_READONLY_METADATA",
+  "parentPr": 387,
+  "canonicalMigrationPr": 247,
+  "supabase": {
+    "project": "ifxlvrhyjhbzbrkdsida",
+    "commerceSixTables": 6,
+    "forceRlsCount": 6,
+    "tenantIdTables": 6,
+    "storeIdTables": 0,
+    "tenantPermissiveSelectPolicies": 6,
+    "storeQualifiedSelectPolicies": 0,
+    "legacyProductRows": 2,
+    "legacyOrderRows": 2,
+    "legacyCustomerRows": 0,
+    "tenantsWithProductAndOrder": 2,
+    "tenantsWithTwoOwnerAuthIds": 1,
+    "sameTenantTwoStoreQaCount": 0,
+    "canonicalStoresPresent": false,
+    "canonicalStoreMembershipsPresent": false,
+    "fourOriginalRowsOwnerAuthentic": false,
+    "storeOwnerReviewerAuthentic": false,
+    "actualFourRowSourceRead": false,
+    "publicSecurityDefinerRpcCount": 3,
+    "publicPrivilegedAnonExecutable": 1,
+    "publicPrivilegedAuthenticatedExecutable": 2,
+    "saveMerchantProduct": {
+      "routine": "save_merchant_product",
+      "ownerAuthCheckMentioned": true,
+      "tenantMembershipMentioned": true,
+      "tenantIdMentioned": true,
+      "storeIdMentioned": false,
+      "storeScopedWriterVerified": false
+    },
+    "qaShopBClaim": {
+      "routine": "qa_shop_b_zalo_claim",
+      "anonExecutable": true,
+      "storeIdMentioned": false
+    },
+    "qaOwnerPairing": {
+      "routine": "qa_owner_pairing",
+      "authenticatedExecutable": true,
+      "storeIdMentioned": false
+    }
+  },
+  "n8n": {
+    "commerceDataTables": [
+      {
+        "name": "TIEN404_COMMERCE_AUDIT",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_CHANNELS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_FEATURE_FLAGS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_ORDERS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_PRODUCTS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_QUOTES",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_SUPPORT_TICKETS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_TENANTS",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_CHECKPOINTS",
+        "hasTenantId": false,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_NOTIFICATION_OUTBOX_SANDBOX",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_NOTIFY_POLICIES",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_PRICE_RULES_SANDBOX",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_PRICEBOOK",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_STORE_POLICIES",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_V3_STORE_RULES_SANDBOX",
+        "hasTenantId": true,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      },
+      {
+        "name": "TIEN404_COMMERCE_VERTICAL_PROFILES",
+        "hasTenantId": false,
+        "hasStoreId": false,
+        "storeColumnCount": 0
+      }
+    ],
+    "commerceTableCount": 16,
+    "commerceTablesWithTenantId": 14,
+    "commerceTablesWithStoreId": 0,
+    "publishedWorkflowObservations": [
+      {
+        "workflowId": "5Eeh8hbpsoNhuiVo",
+        "classification": "COMMERCE_TENANT_RESOLVER",
+        "published": true,
+        "publishedVersion": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+        "sameAsDraft": true,
+        "totalNodes": 6,
+        "dataTableReadNodes": 3,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_DATA_TABLES"
+      },
+      {
+        "workflowId": "oOOXicKXGkBskKqh",
+        "classification": "COMMERCE_CATALOG",
+        "published": true,
+        "publishedVersion": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+        "sameAsDraft": true,
+        "totalNodes": 5,
+        "dataTableReadNodes": 1,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_DATA_TABLES"
+      },
+      {
+        "workflowId": "igPOsSbEgd4NgtRA",
+        "classification": "COMMERCE_CART",
+        "published": true,
+        "publishedVersion": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+        "sameAsDraft": true,
+        "totalNodes": 5,
+        "dataTableReadNodes": 1,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_DATA_TABLES"
+      },
+      {
+        "workflowId": "Y0WLykMtNAldbgL0",
+        "classification": "COMMERCE_V3_BUSINESS",
+        "published": true,
+        "publishedVersion": "3d8b7f89-2058-4a2a-8919-e5ff92c3c484",
+        "sameAsDraft": true,
+        "totalNodes": 8,
+        "dataTableReadNodes": 4,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_DATA_TABLES"
+      },
+      {
+        "workflowId": "Z7FdV7uDvApfbURQ",
+        "classification": "LEGACY_MESSENGER_DEMO",
+        "published": true,
+        "publishedVersion": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+        "sameAsDraft": true,
+        "totalNodes": 32,
+        "dataTableReadNodes": 0,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 1,
+        "toolWorkflowNodes": 5,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "LEGACY_GOOGLE_SHEETS_AND_N8N_DEMO"
+      },
+      {
+        "workflowId": "yIJk8LvJoLF40Z62",
+        "classification": "ZALO_BOT_STAGING_QA",
+        "published": true,
+        "publishedVersion": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+        "sameAsDraft": true,
+        "totalNodes": 12,
+        "dataTableReadNodes": 0,
+        "dataTableWriteNodes": 2,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": false,
+        "codeMentionsTenantId": false,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_QA_REGISTRY_AND_SHADOW"
+      },
+      {
+        "workflowId": "sIPs6egzIwOY1GNv",
+        "classification": "ZALO_PRIVATE_QA_ROUTER",
+        "published": true,
+        "publishedVersion": "8d91d23c-cd87-462f-a112-9cca2340bec8",
+        "sameAsDraft": true,
+        "totalNodes": 6,
+        "dataTableReadNodes": 3,
+        "dataTableWriteNodes": 0,
+        "httpRequestNodes": 0,
+        "toolWorkflowNodes": 0,
+        "codeMentionsStoreId": true,
+        "codeMentionsTenantId": true,
+        "trustedCanonicalStoreAuthorityVerified": false,
+        "storeScopedPublishedReaderVerified": false,
+        "storeScopedPublishedWriterVerified": false,
+        "canBeTreatedAsSafeNoSendCanary": false,
+        "dataSource": "N8N_QA_REGISTRY_AND_SHADOW"
+      }
+    ],
+    "publishedWorkflowsObserved": 7,
+    "publicCommerceReadersCanSelectStore": false,
+    "legacyDemoDataIsolatedFromCommerceAuthorization": true,
+    "publishedLegacyMessengerHasOutboundSend": true,
+    "publishedZaloQaHasMarkerWrites": true,
+    "liveWorkflowsUpdatedThisPhase": 0,
+    "liveWorkflowsExecutedThisPhase": 0,
+    "qaTableCustomerRowsRead": 0
+  },
+  "decision": {
+    "ownerOriginalSource": "HOLD_PRIVATE_FOUR_ROW_ATTESTATION_MISSING",
+    "readerCallerContract": "NO_GO_TENANT_ONLY",
+    "writerCallerContract": "NO_GO_SUPABASE_RPC_AND_N8N_TENANT_ONLY",
+    "existingJwtAB": "NO_GO_SAME_TENANT_STORE_A_B_MISSING",
+    "stagingMigration": "NO_GO_NOT_APPROVED",
+    "crossChannelCommerce": "NO_GO_MESSENGER_ZALO_STORE_AND_CUSTOMER_LINK",
+    "actualProviderEventsThisPhase": 0,
+    "dbHostedWritesThisPhase": 0,
+    "botSendsThisPhase": 0,
+    "secretReadsThisPhase": 0,
+    "approvedToEnableRealOrderRead": false,
+    "approvedToPublish": false,
+    "approvedToRunMigration": false
+  }
+}
