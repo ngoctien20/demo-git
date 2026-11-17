@@ -69,8 +69,10 @@ export async function evaluatePrivateOaCanaryAdmission(deps){
       !deps.pinnedAccess) return fail('SOURCE_ONLY_TRUST_DEPENDENCIES_MISSING');
   // Merchant evidence and independent operator approval must use distinct signing keys.
   try {
-    const merchantKey=createPublicKey(deps.merchantAttestorPublicKey).export({type:'spki',format:'der'});
-    const operatorKey=createPublicKey(deps.operatorAttestorPublicKey).export({type:'spki',format:'der'});
+    const toDer=key=>(typeof key?.export==='function'?key:createPublicKey(key))
+      .export({type:'spki',format:'der'});
+    const merchantKey=toDer(deps.merchantAttestorPublicKey);
+    const operatorKey=toDer(deps.operatorAttestorPublicKey);
     if(merchantKey.length===operatorKey.length&&timingSafeEqual(merchantKey,operatorKey))
       return fail('INDEPENDENT_ATTESTOR_KEYS_REQUIRED');
   } catch { return fail('ATTESTOR_KEY_REGISTRY_INVALID'); }
