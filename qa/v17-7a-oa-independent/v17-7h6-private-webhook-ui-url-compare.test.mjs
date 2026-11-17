@@ -72,7 +72,8 @@ test('H6-08 no URL or sensitive URL digest is ever included in receipt',()=>{
 });
 test('H6-09 blank/malformed URL fails closed',()=>{
  for(const x of ['',null,undefined,'abc','https://',42]){
-  const r=c(x,base);assert.equal(r.status,'LOCAL_UI_WEBHOOK_PAIRING_NO_GO');allDeny(r);
+  const r=comparePrivateOperatorWebhookUrls({creatorSavedUrl:x,n8nPublishedPostUrl:base});
+  assert.equal(r.status,'LOCAL_UI_WEBHOOK_PAIRING_NO_GO');allDeny(r);
  }
 });
 test('H6-10 host capitalization accepted with exact path casing retained',()=>{
