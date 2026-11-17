@@ -31,8 +31,9 @@ const env={
  V174P_REPLAY_DO:{idFromName:()=> 'qa',get:()=>({fetch:async req=>{
   const data=await req.json();
   const prev=events.get(data.key);
-  const status=prev?(prev===data.fingerprint?'duplicate':'conflict'):'claimed';
-  if(!prev)events.set(data.key,data.fingerprint);
+  const status=data.kind==='session'?'admitted':(data.kind==='message'?
+    (prev?(prev===data.fingerprint?'duplicate':'conflict'):'claimed'):'DENY');
+  if(status==='claimed')events.set(data.key,data.fingerprint);
   return new Response(JSON.stringify({status}),{status:200});
  }})}
 };
