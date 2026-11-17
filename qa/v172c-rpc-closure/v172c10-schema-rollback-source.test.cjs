@@ -27,3 +27,10 @@ caseTest('rollback checks external dependencies',()=>assert.match(rollback,/Exte
 caseTest('rollback no cascade',()=>assert.doesNotMatch(rollback,/DROP (?:TABLE|SCHEMA)[^;]*CASCADE/i));
 caseTest('rollback restricts schema drop',()=>assert.match(rollback,/DROP SCHEMA tien404_v172c10_disposable RESTRICT/));
 caseTest('no external network or credential code',()=>assert.equal([ddl,rollback].some(x=>/https?:\/\//.test(x)),false));
+
+caseTest('rollback refuses non-empty QA catalog, memberships, stores and tenant tables',()=>{
+ for(const table of ['qa_catalog','qa_store_memberships','qa_stores','qa_tenants']){
+  assert.match(rollback,new RegExp('EXISTS \\(SELECT 1 FROM tien404_v172c10_disposable\\.'+table+' LIMIT 1\\)'));
+ }
+ assert.match(rollback,/Disposable schema has QA rows/);
+});
