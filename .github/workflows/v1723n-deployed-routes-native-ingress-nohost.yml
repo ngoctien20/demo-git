@@ -1,0 +1,28 @@
+name: TIEN404 V17.23N Deployed Routes BIO RPC Native Signed Ingress NO HOSTED
+on:
+  pull_request:
+    paths:
+      - 'qa/v1723n/**'
+      - '.github/workflows/v1723n-deployed-routes-native-ingress-nohost.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  route-and-native-fixture-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_APP_SECRET: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Cloudflare route observations and synthetic-only Meta signature negative tests
+        run: node --test qa/v1723n/deployed-route-ingress.test.mjs
+      - name: Keep runtime signed provider and deployment admissions NO GO
+        run: |
+          node --input-type=module -e "import {OBSERVATION,evaluateDeployedRoutes,assessNativeIngress} from './qa/v1723n/deployed-route-ingress.mjs'; const r=evaluateDeployedRoutes(OBSERVATION),m=assessNativeIngress('meta-messenger'),z=assessNativeIngress('zalo-bot');if(r.canChangeRoutes||r.canRevokeRpc||m.realNativeSignatureVerified||m.canSend||z.canReadOrder||z.canDeploy) process.exit(1); console.log('V1723N_NO_CLOUDFLARE_CHANGE_NO_REAL_SIGNED_PROVIDER_NO_JWT_NO_SEND');"
