@@ -3,12 +3,15 @@
 -- Neither an existing public Commerce migration nor an AI_SALES_DEMO table.
 -- All event IDs and actor references MUST be server-produced HMAC hex, not raw PSID/Zalo ID.
 -- No API grants, no runtime principal, no security definer RPC, no real customer data.
+-- COMPOSITE FKs prevent cross-Tenant, cross-Store and cross-actor links even if a future writer misbinds an order.
+-- They do NOT prove OTP consumption, customer consent, provider signatures or real JWT authority.
 
 begin;
-create schema if not exists tien404_v1722_qa;
+-- FAIL CLOSED on a previously existing schema; this is a new candidate, not an automatic migration.
+create schema tien404_v1722_qa;
 revoke all on schema tien404_v1722_qa from public, anon, authenticated, service_role;
 
-create table if not exists tien404_v1722_qa.orders (
+create table tien404_v1722_qa.orders (
   order_ref text primary key check(order_ref ~ '^QA-ORD-[0-9]{5,12}$'),
   tenant_key text not null check(tenant_key ~ '^QA_[A-Z0-9_]+$'),
   store_key text not null check(store_key ~ '^QA_[A-Z0-9_]+$'),
@@ -19,14 +22,16 @@ create table if not exists tien404_v1722_qa.orders (
   total_vnd bigint not null check(total_vnd = quantity * unit_price_vnd),
   status text not null default 'qa_pending' check(status in ('qa_pending','qa_cancelled','qa_completed')),
   created_at timestamptz not null default now(),
-  expires_at timestamptz not null
+  expires_at timestamptz not null,
+  constraint v1722_orders_scope_key unique (order_ref,tenant_key,store_key,messenger_actor_hmac),
+  constraint v1722_orders_valid_expiry check (expires_at > created_at)
 );
 create index if not exists v1722_qa_orders_scope
  on tien404_v1722_qa.orders(tenant_key,store_key,messenger_actor_hmac);
 
-create table if not exists tien404_v1722_qa.link_challenges (
+create table tien404_v1722_qa.link_challenges (
   link_ref text primary key check(link_ref ~ '^QA-LINK-[0-9]{5,12}$'),
-  order_ref text not null references tien404_v1722_qa.orders(order_ref),
+  order_ref text not null,
   tenant_key text not null,
   store_key text not null,
   messenger_actor_hmac text not null check(messenger_actor_hmac ~ '^[0-9a-f]{64}$'),
@@ -37,26 +42,38 @@ create table if not exists tien404_v1722_qa.link_challenges (
   expires_at timestamptz not null,
   consumed_at timestamptz,
   created_at timestamptz not null default now(),
-  check ((zalo_actor_hmac is null) = (zalo_otp_hmac is null))
+  check ((zalo_actor_hmac is null) = (zalo_otp_hmac is null)),
+  constraint v1722_challenge_exact_order_scope foreign key
+   (order_ref,tenant_key,store_key,messenger_actor_hmac)
+   references tien404_v1722_qa.orders(order_ref,tenant_key,store_key,messenger_actor_hmac),
+  constraint v1722_challenge_verified_link_scope unique
+   (link_ref,tenant_key,store_key,messenger_actor_hmac,zalo_actor_hmac),
+  constraint v1722_challenge_valid_expiry check (expires_at > created_at),
+  constraint v1722_challenge_valid_consume check
+   (consumed_at is null or (consumed_at >= created_at and consumed_at <= expires_at))
 );
 create index if not exists v1722_qa_challenge_expiry
  on tien404_v1722_qa.link_challenges(expires_at);
 
-create table if not exists tien404_v1722_qa.channel_links (
+create table tien404_v1722_qa.channel_links (
   tenant_key text not null,
   store_key text not null,
   messenger_actor_hmac text not null check(messenger_actor_hmac ~ '^[0-9a-f]{64}$'),
   zalo_actor_hmac text not null check(zalo_actor_hmac ~ '^[0-9a-f]{64}$'),
   verified_at timestamptz not null default now(),
   revoked_at timestamptz,
-  verified_challenge_ref text not null references tien404_v1722_qa.link_challenges(link_ref),
-  primary key(tenant_key,store_key,zalo_actor_hmac)
+  verified_challenge_ref text not null,
+  primary key(tenant_key,store_key,zalo_actor_hmac),
+  constraint v1722_link_exact_challenge_scope foreign key
+   (verified_challenge_ref,tenant_key,store_key,messenger_actor_hmac,zalo_actor_hmac)
+   references tien404_v1722_qa.link_challenges
+   (link_ref,tenant_key,store_key,messenger_actor_hmac,zalo_actor_hmac)
 );
 create index if not exists v1722_qa_links_messenger_scope
  on tien404_v1722_qa.channel_links(tenant_key,store_key,messenger_actor_hmac)
  where revoked_at is null;
 
-create table if not exists tien404_v1722_qa.provider_replay (
+create table tien404_v1722_qa.provider_replay (
   provider_key_hmac text primary key check(provider_key_hmac ~ '^[0-9a-f]{64}$'),
   payload_digest_hmac text not null check(payload_digest_hmac ~ '^[0-9a-f]{64}$'),
   expires_at timestamptz not null,
