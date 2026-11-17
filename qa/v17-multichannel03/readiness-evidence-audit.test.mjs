@@ -138,6 +138,7 @@ test('injecting raw tokens in top level does not alter safe summary',()=>{
  const a=fresh();a.accessToken='DO_NOT_SHARE';
  const v=audit(a);
  assert.equal(v.realUatAuthorized,false);
+ assert.equal(v.reason,'SOURCE_EVIDENCE_SHAPE_OR_SCOPE_INVALID');
  assert.equal(JSON.stringify(v).includes('DO_NOT_SHARE'),false);
 });
 test('all core table names are fixed',()=>{
