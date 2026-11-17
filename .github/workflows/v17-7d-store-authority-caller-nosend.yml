@@ -1,0 +1,92 @@
+name: V17.7D Trusted Store Authority Caller Admission OFFLINE NO SEND
+
+on:
+  pull_request:
+    paths:
+      - "qa/v17-7a-oa-independent/**"
+      - "docs/ai-handoff/V17_7D_STORE_AUTHORITY_CHANNEL_ADMISSION_CHECKPOINT.md"
+      - ".github/workflows/v17-7d-store-authority-caller-nosend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-caller-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check all inherited V17.7A/B/C/D offline modules
+        run: |
+          set -euo pipefail
+          for p in qa/v17-7a-oa-independent/*.mjs; do node --check "$p"; done
+      - name: All inherited channel + Store/RPC/no-send admission tests
+        run: |
+          set -euo pipefail
+          node --test qa/v17-7a-oa-independent/*.test.mjs
+      - name: Source-only side effects, readonly SQL and pinned hosted evidence
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {inspectPinnedPublishedCallers} from './qa/v17-7a-oa-independent/v17-7d-authority-caller-admission-offline.mjs';
+          const dir='qa/v17-7a-oa-independent/';
+          for(const file of [
+            'offline-channel-gate.mjs',
+            'zalo-oa-openapi-offline.mjs',
+            'zalo-oa-webhook-offline.mjs',
+            'unified-channel-registry-offline.mjs',
+            'v17-7c-hosted-uat-admission-offline.mjs',
+            'v17-7d-authority-caller-admission-offline.mjs'
+          ]){
+            const src=readFileSync(dir+file,'utf8');
+            for(const forbidden of [
+              /\bfetch\s*\(/,
+              /\baxios\s*\./,
+              /\bhttps?\s*\.\s*request\s*\(/,
+              /\b(sendMessage|createOrder|writeOrder|writeStock|exchangeToken|refreshToken|deployWorker)\s*\(/
+            ])if(forbidden.test(src))throw Error('network/send/write forbidden: '+file);
+          }
+          const src=readFileSync(dir+'v17-7d-authority-caller-admission-offline.mjs','utf8');
+          for(const marker of [
+            'status:\x27HOSTED_RELEASE_NO_GO\x27',
+            'canReadCommerce:false','canWriteOrders:false',
+            'canWriteStock:false','canSendProvider:false',
+            'canChangeDatabase:false','canDeploy:false','canPublish:false'
+          ])if(!src.includes(marker))throw Error('missing explicit NO-GO '+marker);
+          const sql=readFileSync(dir+'v17-7d-store-rpc-published-readonly.sql','utf8')
+            .replace(/--[^\n]*/g,'').replace(/'(?:''|[^'])*'/g,"''");
+          if(!sql.trimStart().startsWith('WITH core AS'))
+            throw Error('only catalog SELECT WITH query permitted');
+          if(/\b(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|EXECUTE)\b/i.test(sql))
+            throw Error('mutating SQL operation forbidden');
+          const e=JSON.parse(readFileSync(dir+'v17-7d-hosted-caller-store-redacted-evidence.json','utf8'));
+          assert.equal(e.release_status,'HOSTED_NO_GO');
+          assert.equal(e.pg.core_table_count,6);
+          assert.equal(e.pg.rls_force_count,6);
+          assert.equal(e.pg.store_column_count,0);
+          assert.equal(e.pg.store_predicate_count,0);
+          assert.equal(e.pg.qa_same_tenant_two_store_count,0);
+          assert.equal(e.pg.anon_executable_definer_count,1);
+          assert.equal(e.provider_api_calls_made,0);
+          assert.equal(e.provider_sends,0);
+          assert.equal(e.commerce_writes,0);
+          assert.equal(e.merchant_credential_reads,0);
+          const wf=[...e.n8n.commerce_workflows,...e.n8n.source_channel_workflows].map(w=>({
+            id:w.id,publishedVersion:w.published_version,
+            draftVersion:w.published_version,active:w.active,
+            hasTrustedStoreScope:false
+          }));
+          const pin=inspectPinnedPublishedCallers(wf);
+          assert.equal(pin.manifestShapeMatched,true);
+          assert.equal(pin.canReadCommerce,false);
+          assert.equal(pin.canPublish,false);
+          for(const key of Object.keys(e.n8n.table_columns))
+            assert.equal(e.n8n.table_columns[key].hasStoreId,false);
+          console.log('V17.7D PINNED HOSTED METADATA + NO_SEND/NO_WRITE/NO_SQL_MUTATION PASS');
+          NODE
