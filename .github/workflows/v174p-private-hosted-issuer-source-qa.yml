@@ -6,6 +6,7 @@ on:
       - work/v174p-hosted-access-secrets-canary-admission-20261117
       - work/v174p-hosted1-durable-replay-rate-access-admission-20261117
       - work/v174p-hosted2-access-deployment-real-do-canary-20261117
+      - work/v174p-hosted3-workers-runtime-do-replay-qa-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -53,6 +54,27 @@ jobs:
               assert banned not in p,banned
           print('V17.4P source staging issuer — no external provider, no real Commerce, no deployed origin')
           PY
+  cloudflare-local-sqlite-do-runtime-qa:
+    name: Isolated real Workers runtime SQLite DO replay/TTL/eviction (LOCAL ONLY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: qa/v174p-private-hosted/runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned local-only Workers Vitest runtime packages
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Test real local SQLite-backed DO transactions, replay, alarms, eviction
+        run: npm run test:runtime
+      - name: Enforce no Cloudflare credentials and no external deployment action
+        run: |
+          node -e "const c=require('./wrangler.jsonc'); if(c.workers_dev!==false||c.preview_urls!==false||c.routes.length!==0)process.exit(1);"
   chromium-local-https-worker-candidate:
     name: Chromium mobile UAT for Worker source behind simulated Access (NOT hosted)
     runs-on: ubuntu-24.04
