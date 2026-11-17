@@ -1,0 +1,94 @@
+name: TIEN404 V17.1E Private Merchant Image Corpus × Vision Cost/Meta-Zalo UAT NO-GO
+on:
+  push:
+    branches:
+      - work/v171e-private-merchant-media-vision-benchmark-uat-nogo-20261117
+  pull_request:
+    paths:
+      - 'qa/v171e-commerce/**'
+      - 'docs/ai-handoff/V17_1E_*'
+      - '.github/workflows/v171e-merchant-vision-uat-admission-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v171e-private-corpus-vision-uat-readonly:
+    name: V17.1E 49 new corpus, Vision budget, Meta/Zalo admission tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 22 provenance, copyright, private Store scope and holdout cases
+        run: |
+          node --check qa/v171e-commerce/merchant-corpus-readiness.cjs
+          node --test qa/v171e-commerce/merchant-corpus-readiness.test.cjs
+      - name: 15 Vision output/Recall/unknown errors and provider cost NO-GO cases
+        run: |
+          node --check qa/v171e-commerce/vision-model-benchmark-gate.cjs
+          node --test qa/v171e-commerce/vision-model-benchmark-gate.test.cjs
+      - name: 12 real Meta Page/Zalo OA/Store/JWT UAT admission refusal cases
+        run: |
+          node --check qa/v171e-commerce/meta-zalo-uat-admission.cjs
+          node --test qa/v171e-commerce/meta-zalo-uat-admission.test.cjs
+      - name: Reuse 52 V17.1D and 158 V17.1C/inherited regression cases
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+          node --test qa/v171c-commerce/private-cross-channel-link.test.cjs
+          node --test qa/v171c-commerce/synthetic-vision-retrieval.test.cjs
+          node --test qa/v17-cbot/cbot-readonly-contract.test.cjs
+          node --test qa/channel-v143/channel-core.test.cjs
+          node --test qa/v147-custom-studio/studio-core.test.cjs
+          node --test qa/v152-advanced-actions/canonical-gateway-identity-nonce.test.cjs
+      - name: Verify current reference has no independent merchant media or real provider authority
+        run: |
+          node qa/v171e-commerce/read-current-corpus-gate.cjs
+      - name: Static ban network, local customer files, credentials and paid AI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          files=list(Path('qa/v171e-commerce').glob('*.cjs'))
+          assert len(files)>=7
+          for path in files:
+            s=path.read_text()
+            code='\n'.join(ln for ln in s.splitlines()
+                 if not ln.lstrip().startswith(('*','//')))
+            for pattern in (r'\bfetch\s*\(',r'\bchild_process\b',
+                  r'\bprocess\.env\b',r'\bservice_role\b',
+                  r'\bhttps?\.request\s*\(',r'\bpg_dump\b',
+                  r'\bpg_restore\b',r'\baxios\b'):
+              assert not re.search(pattern,code,re.I),(str(path),pattern)
+          p=Path('qa/v171e-commerce/vision-model-benchmark-gate.cjs').read_text()
+          assert 'canInvokePaidModel:false' in p
+          assert 'V171E_REAL_PAID_VISION_NEEDS_SEPARATE' in p
+          g=Path('qa/v171e-commerce/meta-zalo-uat-admission.cjs').read_text()
+          assert 'canSendProvider:false' in g
+          assert 'V171E_REAL_PROVIDER_UAT_REQUIRES_PRIVATE' in g
+          print('PASS V17.1E no provider/inference/hosted SQL credential access')
+          PY
+  v171e-hosted-real-model-provider-admission-no-go:
+    name: V17.1E Merchant photos, actual Vision, verified Page/OA and Store JWT — NO-GO (intentional)
+    needs: [v171e-private-corpus-vision-uat-readonly]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Host release gate always RED until independently audited primary sources
+        run: |
+          node - <<'NODE'
+          const {review}=require('./qa/v171e-commerce/meta-zalo-uat-admission.cjs');
+          const r=review({projectRef:'ifxlvrhyjhbzbrkdsida'});
+          if(r.status!=='REAL_MESSENGER_ZALO_UAT_NO_GO'||
+             r.canSendProvider||r.canCallRealVision||r.canPublishWorkflow)
+            throw Error('V171E_UNSAFE_RELEASE_GATE');
+          console.error('V171E_HOSTED_NO_GO_NO_MERCHANT_PHOTO_OR_RIGHTS_NO_REAL_MODEL_NO_META_ZALO_OA_PROOF_NO_STORE_RLS_NO_APPROVED_BUDGET');
+          process.exitCode=3;
+          NODE
