@@ -1,0 +1,67 @@
+name: TIEN404 V17.1G Pinned DNS Media Preflight NO REAL WEB/NO SEND
+on:
+  push:
+    branches:
+      - work/v171g-pinned-dns-vision-preflight-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171g-commerce/**'
+      - 'docs/ai-handoff/V17_1G_*'
+      - '.github/workflows/v171g-pinned-media-preflight-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only:
+    name: V17.1G 40 security and 112 inherited no-send tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Actual synthetic PNG bytes + fake DNS/pinned TLS evidence
+        run: |
+          node --check qa/v171g-commerce/pinned-dns-media-gateway.cjs
+          node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: Preserve V17.1F website and media registry
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: Preserve V17.1E corpus and vendor receipt evaluation
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: Preserve V17.1D PNG pixels and source-confirmed cross-channel QA
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: Enforce offline-only injected QA adapter, no HTTP, no credentials
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path=Path('qa/v171g-commerce/pinned-dns-media-gateway.cjs')
+          s=path.read_text()
+          for pattern in (r'\bfetch\s*\(',r'\bprocess\.env\b',
+              r'\bchild_process\b',r'\baxios\b',r'\bservice_role\b',
+              r"\brequire\s*\(\s*['\"]node:(?:https|http)['\"]",
+              r'\bhttps?\.request\s*\(',r'\bcreateOrder\s*\(',
+              r'\bsendProvider\s*\('):
+            assert not re.search(pattern,s,re.I),pattern
+          for x in ('OFFLINE_FIXTURE_TRANSPORT_ONLY',
+             'rightsIndependentlyVerified:false',
+             'actualExternalHttpRequests:0','modelVisionInferencePerformed:false',
+             'providerSends:0','hostedWrites:0','MEDIA_HASH_CHANGED_AFTER_REVIEW',
+             'DNS_PRIVATE_MIXED_IPV6_OR_REBIND_DENIED'):
+            assert x in s,x
+          print('V17.1G OFFLINE_ONLY_PINNED_DNS_MOCK_NO_SEND: PASS')
+          PY
+  hosted-admission-denied:
+    name: V17.1G actual shop domain and real Vision / Messenger Zalo HOSTED NO GO
+    needs: [source-only]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Deny live fetch, model billing and provider UAT without operator evidence
+        run: |
+          echo "::error::V171G_HOSTED_NO_GO_NO_REAL_SHOP_URL_DNS_TLS_LICENSE_VISION_PAGE_OA_JWT_RLS_EVIDENCE"
+          exit 3
