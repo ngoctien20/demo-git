@@ -49,3 +49,25 @@ After GitHub Actions: record actual 52 test outcomes, 158 regression, 2-stage PG
 - **Rollback:** close child Draft PR and revert only V17.1D source/CI/checkpoint + source-only SKU parser improvement; hosted requires no restoration.
 
 **Classification before final CI:** `V171D_SOURCE_IMPLEMENTED_REAL_PNG_SYNTHETIC_PIXEL_QA_PENDING_HOSTED_NO_GO`.
+
+
+### 8. Actual QA acceptance receipt — 2026-11-17 JST
+
+**Tested source+documentation HEAD:** `ae01ef6960686702ef337cf47c1b03bf4d7ffb22`
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44000400868
+
+**TESTED — source contract job SUCCESS:** `png-media-intake.test.cjs` **22/22 PASS**, `two-step-link-readonly.test.cjs` **25/25 PASS**, integrated PNG→Commerce SKU selection→customer confirmation→Messenger/Zalo seeded Order status flow **5/5 PASS**, inherited V17.1C link **20/20 PASS**, vector retrieval **19/19 PASS**, V17 pilot **33/33 PASS**, V14.3 Channel **36/36 PASS**, V14.7 Studio **36/36 PASS**, V15.2 identity **14/14 PASS**. **TOTAL 210/210 Node tests PASS**; static no-hosted/no-provider/no-credential scanner PASS. Existing synthetic vector benchmark still warns **1/4 unknown lookalike false positive**, not accuracy on real product photos.
+
+**TESTED — actual disposable PostgreSQL 17 job SUCCESS:** **13/13 named assertions PASS**: challenge not active on issue; verified target becomes PENDING only; no Order before source approval; wrong source identity and wrong Store denied; originating source approval + token consume + target link committed atomically; active link visible on separate connection; replay denied; Store B cannot use Store A link; pending approval table FORCE RLS and zero untrusted grants; revocation denies active link. *The "verified" identities were synthetic trust fixtures, NOT real Meta/Zalo provider credentials or live JWTs.*
+
+**TESTED — existing n8n Cloud manual QA, no sends:**
+- Execution `4350`, `6IMJj5xdCGC2b5ll`, **10/10 synthetic Order lookup PASS**, `provider_sends=0`, `hosted_order_writes=0`, `real_provider_verified=false`.
+- Execution `4351`, `qmqR3H66QCRXE4Vb`, **24/24 Commerce catalog/price/stock read-only PASS** on QA Google Sheets, `provider_sends=0`; no Product Media rows uploaded.
+- Both n8n executions created only ordinary execution/audit records; no data/Published edit.
+
+**RELEASE GATE:** `V171D_L3_L4_HOSTED_NO_GO_MERCHANT_PHOTOS_REAL_VISION_PROVIDER_PROOF_CUSTOMER_STORE_RLS_AND_ORDER_AUTHORITY_MISSING` intentionally exits 3; overall workflow appears FAILURE **by deliberate release denial**, not an offline QA failure.
+
+**VERIFIED:** public Provider identity, real customer photo license/consent, full Auth/Storage backup restore, Store-level hosted RLS, real pixel-based AI matching with merchant photographs, signed customer access grant and Order persistence are still missing. Do not claim end-to-end Messenger→Zalo success outside synthetic no-send mode. The two-stage Source Confirmation design must gain an independently reviewed real-provider adapter, durable session/consent checks and atomic hosted transaction before UAT.
+
+**Status:** `V171D_REAL_PNG_BYTES_SYNTHETIC_MEDIA_TWO_STEP_PG17_TESTED_HOSTED_L3L4_NO_GO`.
+**Rollback:** close Draft PR #252; no hosted recovery needed.
