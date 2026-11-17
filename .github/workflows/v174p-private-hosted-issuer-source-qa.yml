@@ -30,13 +30,13 @@ jobs:
           node --check qa/v174p-private-hosted/browser-hosted-canary.test.mjs
           node --check qa/v174p-private-hosted/durable-replay-hardening.test.mjs
           node --check qa/v174p-private-hosted/access-deployment-admission.mjs
-          node --check qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs
+          node --check qa/v174p-private-hosted/access-deployment-admission.test.mjs
           node --check qa/v174p-private-hosted/hosted2-inactive-admission.mjs
           node --check qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs
           node --check qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.mjs
           node --check qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs
       - name: Source risk gates and absence of credentials or live API
         run: |
           python3 - <<'PY'
