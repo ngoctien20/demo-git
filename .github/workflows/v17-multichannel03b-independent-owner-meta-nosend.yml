@@ -25,7 +25,7 @@ jobs:
         run: |
           node --version
           for f in qa/v17-multichannel03b/*.mjs; do node --check "$f"; done
-      - name: New Ed25519 independent witnesses and pinned Meta Page/App mock fetch QA
+      - name: New Ed25519 witnesses, real legacy provenance NO-GO and pinned Meta Page/App mock QA
         run: node --test qa/v17-multichannel03b/*.test.mjs
       - name: Inherited private evidence JWT and synthetic handover
         run: node --test qa/v17-multichannel03a/*.test.mjs
@@ -42,7 +42,8 @@ jobs:
           node --input-type=module <<'NODE'
           import {readFileSync} from 'node:fs';
           for (const file of ['independent-owner-proof-review.mjs',
-            'meta-private-page-nosend-admission.mjs']) {
+            'meta-private-page-nosend-admission.mjs',
+            'legacy-provenance-admission.mjs']) {
             const s=readFileSync('qa/v17-multichannel03b/'+file,'utf8');
             if (!s.includes('canDeploy:false') || !s.includes('noSend:true'))
               throw Error('FAIL_CLOSED_RESULT_MISSING:'+file);
