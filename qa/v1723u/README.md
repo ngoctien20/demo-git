@@ -160,3 +160,14 @@ No extra D1 instance is required: use **only** the already-isolated disposable Q
 - An earlier SQLite test incorrectly expected `INSERT OR IGNORE` to raise on disallowed values. CI caught this, and the final test now verifies rejected values are ignored without persistence; plain `INSERT` raises `IntegrityError`.
 - Cloudflare read-only postflight: `workers.dev=false`, preview=false, existing deployed Worker version `75d9a289-64c3-4fe1-bc13-18c0051b529f`. `QA_DIAG_MODE` and `QA_DIAG_RATE_LIMITER` remain absent; hosted D1 has no `qa_auth_rejection_once` table. No hosted deployment or migration.
 - **GO/NO-GO: NO-GO** for real Zalo admission or hosted diagnostic deployment pending explicit approval, WAF/budget/retention review and independent security acceptance.
+
+
+## V17.23U-DIAG3 — Existing Worker Analytics Attribution Audit
+
+**VERIFIED read-only Cloudflare analytics:** During 2026-11-17 19:20–20:05 UTC, QA Worker `tien404-v1723u-qa-inbound-locked-staging` was invoked by sampled requests with HTTP codes 403 (4), 405 (1), and 410 (1); no 200 or 422 sampled in that range. **This is not provider attribution.** See [redacted evidence and limitations](./DIAG3_AGGREGATE_WORKER_INVOCATION_AUDIT.md). Aggregation by five-minute time bin and status only; no raw path, token, IP, chat, message, or user ID retrieved.
+
+**VERIFIED staging safety checkpoint:** Cloudflare `workers.dev` OFF, previews OFF, no DIAG2 mode or rate-limit binding, no diagnostic D1 table, no accepted event receipts at latest read-only check. New QA Bot webhook deletion is OWNER-ATTESTED, not independently checked against Zalo provider API. Original Bot and Commerce unchanged.
+
+**PROPOSED NEXT GATE:** Provider-side private read-only `getWebhookInfo` or Bot Creator status, correlated one-at-a-time QA event with Cloudflare aggregate status if explicit new test approved. No further provider messages, hosted schema mutation, or public Worker exposure until a scoped authorization and rollback preflight. HTTP 405 could be non-POST but is **not evidence** of a Zalo GET. Historical analytics cannot determine whether Zalo delivered an event.
+
+**DIAG3 checkpoint:** `AGGREGATE_INVOCATION_AUDIT_VERIFIED / ZALO_DELIVERY_UNPROVEN / ENDPOINT_OFF / NO_HOSTED_CHANGES / NEXT_UAT_NO_GO`.
