@@ -195,3 +195,15 @@ No extra D1 instance is required: use **only** the already-isolated disposable Q
 Detailed [DIAG5 security audit, root-cause matrix and recovery proposal](./DIAG5_WRONG_BOT_TOKEN_ROOT_CAUSE_AUDIT.md).
 
 **Checkpoint:** `OWNER_WRONG_TOKEN_CONFIRMED / WORKER_NO_BOT_API_BINDING_VERIFIED / HEADER_MISMATCH_SUSPECTED_NOT_PROVEN / HOSTED_NO_CHANGES / NO_GO`.
+
+## V17.23U-DIAG6 — One-event QA retry admission
+
+User consented to **prepare and retry the dedicated new QA Bot** after reporting a Bot API Token / Webhook Secret Token mix-up. This **does not grant unlimited credential rotation, old Bot mutation, Commerce writes or uncontrolled live hosting**.
+
+**READ-ONLY VERIFIED:** Dedicated Cloudflare Worker currently OFF (`workers.dev=false`; previews disabled), deployed version `75d9a289-64c3-4fe1-bc13-18c0051b529f`; no custom domain; D1 accepted receipts 0; prior QA window expired. Need fresh bounded time gate and a new independent webhook shared secret before real test.
+
+**PREPARED:** [DIAG6 owner-only one-event preflight and rollback runbook](./DIAG6_SCOPED_RETRY_OPERATOR_RUNBOOK.md), including local cryptographically random `QA_HEADER_SECRET` / `QA_CALLBACK_PATH` / `QA_CHALLENGE`, no Bot Token in the webhook secret, no raw secret values transmitted, zero hosted mutations until ready.
+
+**PENDING:** Owner locally copies generated secret to the dedicated QA Worker's `QA_HEADER_SECRET`, verifies exact new QA Bot identity and then privately matches it to Bot Creator's Webhook Secret Token. Time-bound public activation and one challenge require separate final admission/rollback readiness; no longer-lived open endpoint.
+
+**STATUS:** `DIAG6_RUNBOOK_IMPLEMENTED / HOSTED_WORKER_OFF_VERIFIED / LIVE_QA_NOT_STARTED / PRODUCTION_NO_GO`.
