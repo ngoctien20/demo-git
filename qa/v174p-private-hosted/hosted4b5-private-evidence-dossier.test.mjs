@@ -60,7 +60,7 @@ function fixture(phase=PHASE_LEDGER){
   production_writes_allowed:false,budget_limits_mutation_allowed:false,
   automated_upload_allowed:false,ledger_receipt_sha256:null
  };
- const registry=Object.fromEntries([...roles,'ledger_postflight'].map(n=>[
+ const registry=Object.fromEntries([...roles,...(phase===PHASE_QA?['ledger_postflight']:[])].map(n=>[
   n,{key_id:'synthetic-'+n+'-key',role:n,registered_out_of_band:true,
      spki_pem:keys[n].publicKey.export({format:'pem',type:'spki'})}
  ]));
