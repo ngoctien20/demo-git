@@ -72,3 +72,20 @@ The connected Cloudflare account was queried using read-only GET on Worker scrip
 **Important limits:** The presence of Durable Object and service bindings is **NOT** proof that `ReplayBucket` exposes the V17.20 `claimAtomic({key,digest,expiresAtMs})` contract, uses durable unique claims, enforces stale/duplicate/conflict exactly once, or accepts the correct Zalo Bot ingress identity. Source/API, authenticated request path, namespace separation, TTL and concurrency/crash tests have NOT yet been independently matched to this candidate. There is no direct connection from the current n8n Bot V1 webhook to this Worker chain, and no such connection was introduced.
 
 **Reuse priority:** Audit the existing `ReplayBucket` contract and published routing under a separate private no-send UAT; build only a narrow adapter if that contract is compatible. Do not create a new DO namespace/service or change the live `setWebhook` callback prematurely.
+
+
+## 8. Read-only source compatibility audit — existing ReplayBucket is NOT a drop-in V17.20 adapter
+
+Performed a second read-only Cloudflare GET of the existing **deployed staging** Worker script contents; inspected only structure/whitelisted code shapes and redacted all string literals, without retrieving or printing any provider credential/secret value. **No Worker invocation, Durable Object key claim, deployment, token or configuration changes.**
+
+**ReplayBucket observed contract:**
+- Durable Object class `ReplayBucket` initializes SQL storage inside `blockConcurrencyWhile`.
+- Internal `claim(nonceDigest,expiresMs)` uses synchronous `ctx.storage.sql.exec` and returns a **boolean** based on insert-row count; it does **not** expose the V17.20 `CLAIMED | DUPLICATE | CONFLICT` three-state API nor an independent payload digest comparison.
+- Internal validity requires `expiresMs > now` and `expiresMs <= now+900000` (max 15 min); HTTP handler currently calls `stub.claim(key,Date.now()+600000)`, i.e. a **10-minute claim horizon**. This is incompatible with the V17.20 candidate's proposed **24-hour** `expiresAtMs`, which MUST NOT be blindly passed.
+- HTTP handler expects **`issuer`, `tenantId`, `storeId`, `installationId`, `eventId`**, uses server-owned scope hashing and returns `{claimed:boolean}` with 200/409 response. V17.20 candidate intentionally accepts only a hashed `key,digest,expiresAtMs` claim object. The shape and status semantics differ.
+
+**Existing A/B Gateway observed limitations:**
+- Gateway uses `INSTALLATION_REGISTRY` and `REPLAY_LEDGER` service bindings to process an order event with existing synthetic actor/page/installation checks. Source does **not** implement the Zalo Bot `X-Bot-Api-Secret-Token` ingress, and its expected installation policy is not a registered merchant Zalo OA.
+- **DO NOT connect** current Zalo Bot `yIJk8LvJoLF40Z62` to this gateway directly. Doing so could confuse synthetic order-event replay with real Zalo message replay and would not establish proper Bot→Store proof.
+
+**Revised reuse plan:** Reuse the *tested storage/coordination substrate* only after designing a **separately versioned Bot replay adapter** inside a private no-send staging boundary. First reconcile namespace, exact event identity, digest conflict semantics, provider `message.date` window, TTL, service-binding trust and Durable Object contention/crash tests. Do not mutate the existing `ReplayBucket` contract or A/B Gateway used by other projects without independent owners' approval and regression/rollback evidence. NO-GO remains unchanged.
