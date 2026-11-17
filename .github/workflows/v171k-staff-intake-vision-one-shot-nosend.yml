@@ -1,0 +1,84 @@
+name: TIEN404 V17.1K Staff Media One-Shot Signed Shadow Offline NO SEND
+on:
+  push:
+    branches:
+      - work/v171k-staff-verified-media-vision-one-shot-no-send-20261117
+  pull_request:
+    paths:
+      - 'qa/v171k-commerce/**'
+      - 'docs/ai-handoff/V17_1K_*'
+      - '.github/workflows/v171k-staff-intake-vision-one-shot-nosend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only:
+    name: V17.1K staff media 45 and inherited V17.1J-I-H-G-F-E-D regression 350
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'Run V17.1K staff manual upload and single-shot security fixtures'
+        run: |
+          node --check qa/v171k-commerce/staff-image-intake.cjs
+          node --check qa/v171k-commerce/vision-one-shot-quote.cjs
+          node --check qa/v171k-commerce/signed-provider-shadow.cjs
+          node --test qa/v171k-commerce/v171k.test.cjs
+      - name: 'Preserve V17.1J photo evidence and Messenger Zalo 76 tests'
+        run: |
+          node --test qa/v171j-commerce/merchant-evidence-pilot.test.cjs
+          node --test qa/v171j-commerce/no-send-channel-uat.test.cjs
+      - name: 'Install disposable Pillow for V17.1I-H raster regression'
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps 'Pillow==12.3.0'
+          python -c "from PIL import features; assert features.check('webp') and features.check('jpg')"
+      - name: 'Preserve V17.1I secure website and budget 82 tests'
+        run: python -m unittest discover -s qa/v171i-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1H genuine encoded PNG JPEG WebP 40 tests'
+        run: python -m unittest discover -s qa/v171h-commerce -p 'test_*.py' -v
+      - name: 'Preserve V17.1G simulated DNS TLS 40 tests'
+        run: node --test qa/v171g-commerce/pinned-dns-media-gateway.test.cjs
+      - name: 'Preserve V17.1F shop image registry 32 tests'
+        run: node --test qa/v171f-commerce/shop-media-source-registry.test.cjs
+      - name: 'Preserve V17.1E vision rights and receipts 28 tests'
+        run: node --test qa/v171e-commerce/v171e-contract.test.cjs
+      - name: 'Preserve V17.1D PNG and cross-channel synthetic 52 tests'
+        run: |
+          node --test qa/v171d-commerce/png-media-intake.test.cjs
+          node --test qa/v171d-commerce/two-step-link-readonly.test.cjs
+          node --test qa/v171d-commerce/cross-channel-image-order-uat.test.cjs
+      - name: 'Enforce no auto-scrape, no network, no model, no send'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          texts=[p.read_text() for p in Path('qa/v171k-commerce').glob('*.cjs') if not p.name.endswith('.test.cjs')]
+          for s in texts:
+            for pattern in [r'\bfetch\s*\(', r'\bhttps?\.request\s*\(',
+              r'\baxios\b',r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bcreateOrder\s*\(',r'\bsendMessage\s*\(']:
+              assert not re.search(pattern,s,re.I),pattern
+          alltext=''.join(texts)
+          for required in ['actualRemoteFetches:0','canUseForRealVision:false',
+            'retryAllowed:false','actualVisionCalls:0',
+            'actualRealProviderSignatureVerified:false',
+            'ZALO_PROVIDER_SIGNATURE_AND_OA_OWNER_NOT_VERIFIED']:
+            assert required in alltext,required
+          print('V17.1K STAFF_INTENT_NO_SCRAPER_NO_MODEL_NO_SEND: PASS')
+          PY
+  hosted-no-go:
+    name: V17.1K actual staff authority Vision and native Provider HOSTED NO GO
+    needs: [source-only]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: 'Reject live model and webhook until independent proof'
+        run: |
+          echo "::error::V171K_HOSTED_NO_GO_REAL_STAFF_AUTH_STORE_MEDIA_STORAGE_RIGHTS_MODEL_SPEND_META_ZALO_OWNERSHIP"
+          exit 3
