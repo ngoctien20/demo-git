@@ -14,6 +14,15 @@ BEGIN
  IF actual_count <> 4 THEN
   RAISE EXCEPTION 'Unexpected table inventory (%). Rollback rejected', actual_count;
  END IF;
+ -- Fail closed if ANY synthetic fixture or membership remains.
+ -- A separate approved private disposal/export must happen before DROP;
+ -- this script is intentionally NOT a data cleanup operation.
+ IF EXISTS (SELECT 1 FROM tien404_v172c10_disposable.qa_catalog LIMIT 1)
+    OR EXISTS (SELECT 1 FROM tien404_v172c10_disposable.qa_store_memberships LIMIT 1)
+    OR EXISTS (SELECT 1 FROM tien404_v172c10_disposable.qa_stores LIMIT 1)
+    OR EXISTS (SELECT 1 FROM tien404_v172c10_disposable.qa_tenants LIMIT 1) THEN
+  RAISE EXCEPTION 'Disposable schema has QA rows; backup/disposal approval required. Rollback rejected';
+ END IF;
  IF EXISTS(
   SELECT 1 FROM pg_depend d
   JOIN pg_class r ON r.oid=d.refobjid
