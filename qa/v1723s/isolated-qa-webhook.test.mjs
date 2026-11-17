@@ -50,8 +50,8 @@ test('non-matching event name denied',async()=>{
  const b=JSON.stringify({...realish,event_name:'user_send_text'});
  assert.equal((await call({body:b})).status,422);
 });
-test('result-wrapper event denied until provider contract reviewed',async()=>{
- assert.equal((await call({body:JSON.stringify({ok:true,result:realish})})).status,422);
+test('official Zalo Bot wrapper accepted with same strict no-send gates',async()=>{
+ assert.equal((await call({body:JSON.stringify({ok:true,result:realish})})).status,200);
 });
 for(const [name,patch] of [
  ['missing message id',{message_id:''}],['wrong chat',{chat:{chat_type:'GROUP'}}],
