@@ -122,3 +122,18 @@ GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44036877710
 Rollback: close child Draft PR #282; new n8n QA workflow remains INACTIVE (archive only upon explicit separate approval); original Messenger, Zalo, existing credentials and Commerce customer data untouched. SQL fixture transaction already rolled back.
 
 Documentation-only commit changes the branch head; recheck final GitHub CI on this exact SHA.
+
+
+## 8. CONCURRENT LIVE DRIFT FOUND — INDEPENDENT READ-ONLY RECHECK
+
+During final acceptance reinspection, Messenger TEST workflow Z7FdV7uDvApfbURQ was ACTIVE with both draft and activeVersionId equal to 1064b1b3-d3f1-4a6b-a367-2414ba691522 (V17.17); initial inspection earlier in this milestone showed Published/activeVersionId 2b869035-fe39-46fb-a253-18fefe4ecbfd (V17.15), and latest draft 1064b1b3... The V17.17 version therefore became Published concurrently while V17.1N was under review. The publisher action was NOT executed by this V17.1N team, and the actor responsible for that publish action was not independently established.
+
+Read-only versions diff previously confirmed V17.17 only modified the V17.15 Strip PII and Normalize Demo Query Code node parameters; all FOUR original V17.15 nodes remain present in latest published graph, total node count still 32.
+
+**Security consequence:** V17.1N shadow adapter and GitHub snapshot are derived from earlier Published V17.15, NOT a validated replica of newly Published V17.17 normalization. The 144/144 and 687/687 tests DO NOT automatically certify latest Messenger V17.17 or its interactions with real Commerce tools. Do not overwrite the active V17.17 or downgrade its normalization. Future approval requires a new change-owner attestation, safe source diff regression of V17.17 semantics, and real signed provider/Store JWT and per-tool gateway integration evidence.
+
+Zalo Bot Lab yIJk8LvJoLF40Z62 remains ACTIVE at 776486b2-092f-49ec-a7c4-f74ec8b60f07 and retains V17.15 Zalo shadow nodes; V17.1N did not modify it.
+
+V17.1N isolated workflow 99eZrseGb4d650at remained INACTIVE, source version 4635bed6-a274-4f8a-902b-0bbd39aa9221, no credential, 7 manual/code nodes, callerPolicy none.
+
+**Final live release decision: NO-GO.** Existing system continues to operate at its own published versions; this checkpoint does not authorize moving V17.1N to active live.
