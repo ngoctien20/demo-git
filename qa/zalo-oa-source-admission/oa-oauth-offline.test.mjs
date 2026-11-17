@@ -73,7 +73,10 @@ test('begin: returns 256-bit unpredictable state, PKCE S256 challenge and no sec
   const rec = f.storedRecords[0];
   assert.equal(rec.stateDigest, createHash('sha256').update(b.state).digest('hex'));
   assert.equal(b.codeChallenge, createHash('sha256').update(rec.pkceVerifier).digest('base64url'));
-  assert.equal(rec.pkceVerifier.length, 64);
+  assert.equal(rec.pkceVerifier.length, 43);
+  assert.match(rec.pkceVerifier, /[A-Z]/);
+  assert.match(rec.pkceVerifier, /[a-z]/);
+  assert.match(rec.pkceVerifier, /[0-9]/);
   assert.equal(b.expiresAt, NOW + 300000);
   assert.equal(b.canActivate, false);
   assert.equal(Object.hasOwn(b, 'codeVerifier'), false);
