@@ -22,8 +22,13 @@ Classification: VERIFIED READ-ONLY OWNER SQL AUDIT; IMPLEMENTED NO-HOST SOURCE G
 - No writes to Supabase, auth, Cloudflare, n8n, Zalo/Messenger or merchant/customer systems. Never change Access Allow/credentials/finance.
 - Existing unrelated RPC10 workflow failures remain separately open.
 
+## Verified CI evidence
+- RPC17.8C Actions run #44097723464 at source SHA `d391ac1391350be54d8146822adc698b479f850c`: SUCCESS, **577/577 Node tests PASS**, 0 failures (40 new RPC17.8C negatives + 537 inherited source regression suites). Tests are synthetic/offline; no real Supabase backup restore, native Zalo signature UAT or genuine JWT sessions were verified.
+- Initial CI detected null-input exception in owner SQL auditor; fixed to fail closed before this accepted run.
+- Unrelated RPC10 six-surface workflow FAILURE continues outside RPC17.8C.
+
 ## Rollback & QA
 - Close or revert Draft PR to undo source-only files. No live rollback needed.
 - Read exact CI run on final SHA before claiming PASS.
 
-CHECKPOINT: RPC178C_SOURCE_ONLY · OWNER_PAIRING_SQL_AUDITED · ZALO_NATIVE_SIGNATURE_NOT_PROVEN · SUPABASE_STAGING_RESTORE_NOT_PROVEN · MIGRATION_NO_GO · REAL_JWT_AB_NO_GO
+CHECKPOINT: RPC178C_PR366 · CI_577_577_PASS · OWNER_PAIRING_SQL_AUDITED · ZALO_NATIVE_SIGNATURE_NOT_PROVEN · SUPABASE_STAGING_RESTORE_NOT_PROVEN · MIGRATION_NO_GO · REAL_JWT_AB_NO_GO
