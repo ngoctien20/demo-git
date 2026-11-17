@@ -41,7 +41,7 @@ jobs:
           node-version: '22'
       - name: Existing 74 cross-channel exact-command, identity and OTP source tests
         run: |
-          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs qa/v1722-cross-channel-order/private-channel-identity-admission.test.mjs qa/v1722-cross-channel-order/native-proof-private-issuer-nosend.test.mjs
+          node --test qa/v1722-cross-channel-order/cross-channel-qa-core.test.mjs qa/v1722-cross-channel-order/qa-command-router.test.mjs qa/v1722-cross-channel-order/private-channel-identity-admission.test.mjs qa/v1722-cross-channel-order/native-proof-private-issuer-nosend.test.mjs qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.test.mjs
       - name: Install PostgreSQL CLI on isolated GitHub runner
         run: |
           sudo apt-get update -qq
@@ -107,6 +107,16 @@ jobs:
           for p in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\b',
                     r'\bhttp\.request\s*\(',r'\bconsole\.log\s*\(']:
             assert not re.search(p,native),p
+          private_gate=Path('qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.mjs').read_text()
+          private_test=Path('qa/v1722-cross-channel-order/private-native-evidence-samestore-gate.test.mjs').read_text()
+          assert 'STRUCTURAL_FOUR_REVIEWER_CANDIDATE_ONLY' in private_gate
+          assert "mayRunHostedNoSendCanary:false" in private_gate
+          assert "sourceProofAccepted!==false" in private_gate
+          assert 'G23 isolated one-event source-only canary' in private_test
+          assert "OPERATOR_PINNED_OFFLINE_KEYS" in private_gate
+          for bad in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',
+                      r'\baxios\b',r'\bconsole\.log\s*\(']:
+            assert not re.search(bad,private_gate),bad
           concurrent=Path('qa/v1722-cross-channel-order/pg17-disposable-concurrent-otp-claim.sh').read_text()
           assert 't404_v1722_ci' in concurrent and 'pg_stat_activity' in concurrent
           assert "PASS_REAL_TWO_PG17_CLIENTS_SINGLE_CONSUME_NO_SEND" in concurrent
