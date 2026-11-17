@@ -1,0 +1,52 @@
+name: V17 Multi Channel 02 - Staff Authority Inbox No-Send QA
+on:
+  pull_request:
+    paths:
+      - "qa/v17-multichannel02/**"
+      - "docs/ai-handoff/V17_MULTI_CHANNEL_02_STAFF_INBOX_CHECKPOINT.md"
+      - ".github/workflows/v17-multichannel02-staff-inbox-offline.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staff-inbox-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node version
+        run: node --version
+      - name: Syntax checks
+        run: |
+          for f in qa/v17-multichannel02/*.mjs; do node --check "$f"; done
+          node --check qa/v17-multichannel02/ui/unified-inbox-qa.js
+      - name: Staff authority, Meta ACK and unified Inbox synthetic QA
+        run: node --test qa/v17-multichannel02/*.test.mjs
+      - name: Actual Chromium browser QA (QA fixtures only, 3 viewports)
+        run: |
+          command -v google-chrome || command -v chromium
+          node qa/v17-multichannel02/ui-chromium-smoke.cjs
+      - name: Inherited Handoff and Outbound Policy QA
+        run: node --test qa/v17-multichannel-intelligence/*.test.mjs
+      - name: Inherited Zalo OA source security QA
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Fail closed on source network, provider send, DB or credential APIs
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const dir='qa/v17-multichannel02/';
+          for(const file of ['staff-authority-offline.mjs','meta-handoff-acceptance-offline.mjs',
+             'unified-inbox-qa-projection.mjs','ui/unified-inbox-qa.js']) {
+            const s=fs.readFileSync(dir+file,'utf8');
+            for (const rule of [/\bfetch\s*\(/,/\bXMLHttpRequest\s*\(/,/\bWebSocket\s*\(/,
+              /\blocalStorage\b/,/\bsessionStorage\b/,/\baxios\s*\(/,
+              /\b(sendMessage|createOrder|updateOrder|passThreadControl|takeThreadControl|executeSql)\s*\(/]){
+              if(rule.test(s))throw Error('Forbidden runtime side-effect in '+file+': '+rule);
+            }
+          }
+          const html=fs.readFileSync(dir+'ui/index.html','utf8');
+          if (!html.includes("connect-src 'none'") ||
+              !html.includes('QA SYNTHETIC') ||
+              !html.includes('Chỉ dành cho kiểm thử giao diện'))
+            throw Error('NO_SEND_QA_UI_GATE_MISSING');
+          NODE
