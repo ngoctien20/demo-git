@@ -69,7 +69,7 @@ test('webhook not configured, no mutation still allowed in mock',async()=>{
  locked(r);
 });
 test('real provider mode must not run network on its own',async()=>deny(
- 'NO_PRIVATE_TRUSTED_TRANSPORT_OR_BOT_ID_PIN',x=>x.intent.mode='REAL_PROVIDER',['']));
+ 'NO_PRIVATE_TRUSTED_TRANSPORT_OR_BOT_ID_PIN',x=>x.intent.mode='REAL_PROVIDER',[]));
 test('real mode missing transport never calls',async()=>deny(
  'NO_PRIVATE_TRUSTED_TRANSPORT_OR_BOT_ID_PIN',x=>x.intent.transportKind='REAL_VAULT'));
 test('unknown channel no call',async()=>deny(
