@@ -35,12 +35,17 @@ jobs:
             'zalo-sqlite-claim-v2.mjs',
             'zalo-bot-replay-bucket-v2.worker.mjs',
             'zalo-bot-replay-binding-v2.mjs',
-            'zalo-sqlite-claim-v2.test.mjs'
+            'zalo-sqlite-claim-v2.test.mjs',
+            'vitest.config.mjs',
+            'zalo-bot-replay-v2.cf.test.mjs'
           }
           files=list(root.glob('*.mjs'))
           assert {p.name for p in files}==expected,'QA executable file inventory drift'
           for p in files:
             s=p.read_text()
+            if p.name.endswith('.cf.test.mjs'):
+              assert "from 'vitest'" in s and "from 'cloudflare:workers'" in s
+              continue
             if p.name.endswith('.test.mjs'):
               assert "import test from 'node:test'" in s
               assert "import {DatabaseSync} from 'node:sqlite'" in s
@@ -60,6 +65,21 @@ jobs:
           assert 'claimReplayV2' in doc
           print('V17.21 SOURCE ONLY: no HTTP fetch, no send, no merchant data, no deploy')
           PY
+  local-workers-runtime-no-send:
+    name: Local Workerd Durable Object RPC / eviction QA (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install local-only Cloudflare Workers Vitest integration
+        working-directory: qa/v1721-zalo-durable
+        run: npm install --no-save --no-package-lock --no-audit --no-fund vitest@^4.1.0 @cloudflare/vitest-plugin wrangler@^4
+      - name: Isolated Cloudflare Workers runtime tests (no deploy)
+        working-directory: qa/v1721-zalo-durable
+        run: npx --no-install vitest run --config vitest.config.mjs
   hosted-private-do-release:
     name: Hosted Cloudflare DO migration, Bot webhook cutover and OA — BLOCKED
     if: false
