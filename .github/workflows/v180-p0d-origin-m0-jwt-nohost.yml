@@ -1,0 +1,64 @@
+name: TIEN404 V18.0-P0D — Store Origin M0 JWT Admission NO HOST
+on:
+  push:
+    branches:
+      - work/v180-p0d-original-store-m0-jwt-readonly-20261118
+  pull_request:
+    paths:
+      - 'qa/v180-p0d/**'
+      - 'docs/ai-handoff/T404_V180_P0D_*'
+      - '.github/workflows/v180-p0d-origin-m0-jwt-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  private-evidence-readiness-no-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      SUPABASE_URL: ''
+      SUPABASE_SERVICE_ROLE_KEY: ''
+      DATABASE_URL: ''
+      PGPASSWORD: ''
+      META_PAGE_ACCESS_TOKEN: ''
+      ZALO_BOT_TOKEN: ''
+      OPENAI_API_KEY: ''
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Fail closed when secrets or hosted database endpoints are configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$SUPABASE_URL"
+          test -z "$SUPABASE_SERVICE_ROLE_KEY"
+          test -z "$DATABASE_URL"
+          test -z "$PGPASSWORD"
+          test -z "$META_PAGE_ACCESS_TOKEN"
+          test -z "$ZALO_BOT_TOKEN"
+          test -z "$OPENAI_API_KEY"
+      - name: Exact source and read-only admission tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0d/origin-m0-auth-readiness.mjs
+          node --test qa/v180-p0d/origin-m0-auth-readiness.test.mjs
+      - name: Inherited RPC12 local-only private evidence and current recovery tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v152-rpc12/current-recovery-scope-decision.test.cjs
+          node --test qa/v152-rpc12/private-operator-intake.test.cjs
+      - name: Inherited RPC17.8B private schema and real JWT NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v152-rpc178b/immutable-preflight.test.mjs
+          node --input-type=module -e "import {noHostedAuthorization} from './qa/v180-p0d/origin-m0-auth-readiness.mjs';const q=noHostedAuthorization();if(q.canApplyMigration||q.canDeploy||q.realSupabaseJwtAandBVerified||q.canSend)process.exit(1)"
+      - name: Explicit release stop
+        run: echo 'SAFE SOURCE QA PASS. M0 original row owner and real signed JWT NOT admitted; hosted NO-GO.'
