@@ -1,0 +1,48 @@
+{
+  "contract": "T404_V174P_HOSTED4B5_PRIVATE_INTAKE_PENDING_V1",
+  "status": "PENDING_OUT_OF_BAND_VERIFIED_IDENTITIES",
+  "expected_sequence": [
+    "LEDGER_FIRST_INACTIVE_UPLOAD",
+    "QA_WORKER_FIRST_INACTIVE_UPLOAD"
+  ],
+  "current_allowed_phase": "NONE",
+  "private_evidence_intake_endpoint": "NOT_PROVISIONED",
+  "private_trust_anchor_registry": "NOT_PROVISIONED",
+  "private_operator_mfa_session": "NOT_VERIFIED",
+  "owner_real_account_authority": "NOT_VERIFIED",
+  "finance_real_budget_authority": "NOT_VERIFIED",
+  "security_reviewer": "NOT_VERIFIED",
+  "rollback_operator": "NOT_VERIFIED",
+  "cloudflare_inventory": "RECOLLECT_AT_APPROVAL_TIME",
+  "signed_owner_permit": null,
+  "signed_finance_packet": null,
+  "approved_qa_worker_budget_usd": null,
+  "approved_ledger_budget_usd": null,
+  "private_ref_ids": {
+    "owner_authority": null,
+    "finance_authority": null,
+    "security_review": null,
+    "operator_mfa": null,
+    "rollback_acceptance": null
+  },
+  "signatures": {
+    "owner": null,
+    "finance": null,
+    "security": null,
+    "operator": null,
+    "rollback": null
+  },
+  "hosted_ledger_postflight_receipt": null,
+  "raw_merchant_documents_allowed_in_git": false,
+  "file_urls_allowed_in_git": false,
+  "real_identity_docs_allowed_in_chat": false,
+  "jwt_or_tokens_allowed_in_git": false,
+  "public_development_url_allowed": false,
+  "automatic_upload_allowed": false,
+  "can_create_private_ledger": false,
+  "can_upload_qa_worker": false,
+  "can_modify_prod": false,
+  "can_modify_existing_v175_rpc16": false,
+  "can_change_cloudflare_billing": false,
+  "rollback": "REVERT_CHILD_DRAFT_PR_ONLY"
+}
