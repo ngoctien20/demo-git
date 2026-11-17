@@ -331,3 +331,13 @@ test('private staging schema source is non-exposed, RLS forced and no endpoint g
  assert.equal(/\bgrant\s+(select|insert|update|delete|usage|execute)\s+on\b/i.test(s),false);
  assert.equal(s.includes('AI_SALES_DEMO'),true);
 });
+
+
+test('pending OTP challenge has no channel link even with matching Tenant and Store keys',()=>{
+ const s=readFileSync(new URL('./PRIVATE_STAGING_SCHEMA_CANDIDATE.DO_NOT_APPLY.sql',import.meta.url),'utf8');
+ assert.match(s,/is_consumed boolean generated always as \(consumed_at is not null\) stored/);
+ assert.match(s,/require_consumed boolean not null default true check \(require_consumed = true\)/);
+ assert.match(s,/v1722_consumed_requires_two_channel_actors/);
+ assert.match(s,/\(verified_challenge_ref,tenant_key,store_key,messenger_actor_hmac,zalo_actor_hmac,require_consumed\)/);
+ assert.match(s,/\(link_ref,tenant_key,store_key,messenger_actor_hmac,zalo_actor_hmac,is_consumed\)/);
+});
