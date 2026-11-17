@@ -95,6 +95,7 @@ export function assessInactiveUploadPlan({
  report('pinned_reviewed_git_commit',
    goodSha(expectedGitCommitSha)&&independentReview?.independently_verified_source_sha===expectedGitCommitSha,
    issues);
+ const sourceAndManifestValidated=issues.length===0;
  const inv=inventoryResult;
  report('complete_authenticated_control_plane_inventory',
    inv?.status==='COMPLETE_READ_ONLY_NEEDS_INDEPENDENT_REVIEW'&&
@@ -138,7 +139,7 @@ export function assessInactiveUploadPlan({
   contract:CONTRACT,
   state:(issues.length||approvals.length)?'BLOCKED_PREDEPLOYMENT_APPROVAL':
     'READ_ONLY_ADMISSION_REVIEWED_REQUIRES_SEPARATE_OPERATOR_ACTION',
-  source_safe:issues.length===0,
+  source_template_safe_for_review:sourceAndManifestValidated,
   issues:[...new Set(issues)],
   missing_private_authorizations:approvals,
   signer_gate_reasons:auth.reasons,
