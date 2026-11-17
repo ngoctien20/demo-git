@@ -92,7 +92,10 @@ function auditCorpus({tenantId,storeId,products=[],media=[],cases=[]}={}){
  if(merchantPhotos===0)errors.push('NO_MERCHANT_PHOTO_WITH_PRIVATE_RIGHTS_PROOF');
  if(positives===0||unknowns===0||hardNegatives===0)
    errors.push('MISSING_POSITIVE_UNKNOWN_OR_HARD_NEGATIVE_LABELS');
+ if(!ref.size)errors.push('NO_REFERENCE_SET');
  if(!hold.size)errors.push('NO_INDEPENDENT_HOLDOUT');
+ if(!cases.some(c=>c?.partition==='HOLDOUT'&&c?.labelType==='positive'))
+   errors.push('NO_POSITIVE_HOLDOUT_FOR_RECALL');
  const unique=[...new Set(errors)];
  return Object.freeze({contract:CONTRACT,mode:'METADATA_ONLY_NO_MEDIA_NO_MODEL',
   status:unique.length?'NOT_ADMISSIBLE':'CLAIMED_CORPUS_PACKET_REQUIRES_INDEPENDENT_SOURCE_AUDIT',
