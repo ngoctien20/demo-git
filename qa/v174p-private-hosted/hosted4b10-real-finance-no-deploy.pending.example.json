@@ -1,0 +1,60 @@
+{
+  "contract": "T404_V174P_HOSTED4B10_REAL_FINANCE_NO_DEPLOY_PENDING_V1",
+  "decision": "HARD_NO_GO_REAL_FINANCE_AUTHORITY_PRIVATE_BROKER_UNVERIFIED",
+  "parent_draft_pr": 336,
+  "parent_exact_sha": "162eb7e2d171f0a7b4f9185efd27877a5ec51e71",
+  "live_cloudflare_get_only": {
+    "at_utc": "2026-11-17T12:39:00.363Z",
+    "workers": "30/30",
+    "scripts": "30/30",
+    "durable_object_namespaces": "3/3",
+    "access_apps": 2,
+    "account_members": 1,
+    "super_admin_role_observed": true,
+    "proposed_private_ledger_exists": false,
+    "proposed_qa_worker_exists": false,
+    "spend_policies_http_code": 403,
+    "usage_http_code": 403,
+    "billing_profile_http_code": 403,
+    "snapshot_is_valid_for_future_release": false
+  },
+  "finance_authority": {
+    "real_independent_finance_delegate_verified": false,
+    "owner_delegation_signer_verified": false,
+    "finance_acceptance_signer_verified": false,
+    "separate_finance_auditor_verified": false,
+    "approved_ledger_budget_usd": null,
+    "approved_qa_worker_budget_usd": null,
+    "privately_collected_attested_finance_evidence_ref": null,
+    "actual_account_wide_cost_exposure_review": null,
+    "finance_billing_api_path_available": false,
+    "approved_private_scanned_finance_alternative_available": false,
+    "legal_finance_mandate_authenticated": false
+  },
+  "private_identity_broker": {
+    "status": "SOURCE_ONLY_NOT_HOSTED",
+    "deployed_private_worker": false,
+    "cloudflare_access_all_traffic_verified": false,
+    "real_owner_and_finance_mfa_verified": false,
+    "out_of_band_signers_registered": false,
+    "revocation_working": false,
+    "one_use_replay_ledger_deployed": false,
+    "scanner_and_private_storage_verified": false,
+    "independent_private_browser_acceptance": false,
+    "public_development_url_enabled": false
+  },
+  "independent_admission": {
+    "source_security_no_deploy_tested": false,
+    "real_live_finance_authority_accepted": false,
+    "real_hosted_private_intake_accepted": false,
+    "security_approval_for_new_cost": null,
+    "rollback_approval": null,
+    "can_create_ledger": false,
+    "can_upload_qa_worker": false,
+    "can_change_access": false,
+    "can_change_billing": false,
+    "can_store_finance_document": false,
+    "can_write_customer_data": false,
+    "can_send_messenger_or_zalo": false
+  }
+}
