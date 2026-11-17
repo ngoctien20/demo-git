@@ -224,7 +224,7 @@ test('57 fake invoice reference in source blocked',()=>block(f=>{
  f.finance.finance_reference='https://attacker.invalid/bill';
 },'REAL_FINANCE_CONSENT_REMAINS_NULL'));
 test('58 client cannot inject real public access status',()=>block(f=>{
- f.accessMath.live_access_verified=true;
+ f.accessMath={...f.accessMath,live_access_verified:true};
 },'OFFLINE_RSA_CAN_NOT_PROVE_HOSTED_ACCESS'));
 test('59 extra bearer token inside observation rejected',()=>block(f=>{
  f.observation.access_token='synthetic-secret';
