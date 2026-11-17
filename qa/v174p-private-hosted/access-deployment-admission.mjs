@@ -31,7 +31,7 @@ export function assessAccessDeployment(snapshot={},review={}){
  const origin=originOf(review.approvedQaOrigin);
  check('approved_dedicated_https_origin',!!origin);
  const worker=safeArray(snapshot.workers).find(w=>w?.name===EXPECTED_QA_WORKER);
- check('dedicated_worker_isolated_and_present',!!worker&&typeof worker.id==='string'&&worker.id.length>8);
+ check('dedicated_worker_isolated_and_present',!!worker&&typeof worker.id==='string'&&/^[a-f0-9]{32}$/i.test(worker.id));
  const apps=safeArray(snapshot.accessApps);
  const matches=apps.filter(a=>a?.type==='self_hosted'&&
   a?.destinations?.some(d=>d?.type==='worker'&&d?.worker_id===worker?.id));
@@ -43,14 +43,22 @@ export function assessAccessDeployment(snapshot={},review={}){
  check('no_legacy_pages_or_host_wildcard_claim',!!origin&&!!app&&
   (app.domain===undefined||app.domain===null||app.domain===new URL(origin).hostname)&&
   !String(app.domain||'').includes('*'));
+ // The live /access/apps response includes 'policies', while
+ // /access/policies lists separately authorized reusable policies.
+ // Both must corroborate an exact policy ID before the decision is trusted.
  const policies=safeArray(snapshot.accessPolicies);
- const refs=safeArray(app?.policy_ids);
- const assigned=policies.filter(p=>refs.includes(p?.id));
+ const embedded=safeArray(app?.policies);
+ const refs=[...new Set([...safeArray(app?.policy_ids),...embedded.map(p=>p?.id).filter(Boolean)])];
+ const assigned=refs.map(id=>{
+  const direct=embedded.find(p=>p?.id===id);
+  const reusable=policies.find(p=>p?.id===id);
+  if(!direct||!reusable||direct.decision!==reusable.decision)return null;
+  return {...reusable,include:direct.include,reusable:reusable.reusable===true&&direct.reusable===true};
+ });
  check('assigned_reusable_allow_policy',refs.length>0&&refs.length===assigned.length&&
-  assigned.some(p=>p.decision==='allow'&&p.reusable===true));
- check('no_bypass_service_auth_or_everyone',assigned.length>0&&
-  assigned.every(p=>p.decision!=='bypass'&&p.decision!=='service_auth'&&
-    safeArray(p.include).length>0&&
+  assigned.every(Boolean)&&assigned.some(p=>p.decision==='allow'&&p.reusable===true));
+ check('no_bypass_service_auth_or_everyone',refs.length>0&&assigned.every(p=>p&&
+    p.decision==='allow'&&safeArray(p.include).length>0&&
     safeArray(p.include).every(isExplicitOperatorRule)));
  check('approved_operators_private_only',review.operatorsIndependentlyReviewed===true);
  check('workers_dev_and_preview_paths_protected',review.workerAndPreviewEdgeProtected===true);

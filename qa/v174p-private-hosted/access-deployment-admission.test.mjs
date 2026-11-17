@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import {assessAccessDeployment,ACCESS_ADMISSION_CONTRACT} from './access-deployment-admission.mjs';
 const host='https://tien404-private-qa.example.com',aud='cfaud-qa-private-issuer-001';
 function fixture(){
- const worker={name:'tien404-v174p-private-qa-issuer',id:'worker-private-qa-012345',
+ const worker={name:'tien404-v174p-private-qa-issuer',id:'b4040801098344b6b223e7ea393a119c',
    secretBindingNames:['V174P_SESSION_HMAC_KEY','V174P_ACCESS_JWKS_JSON'],
    durableObjectBindings:[{name:'V174P_REPLAY_DO',class_name:'V174PReplayGuard',sqlite:true}]};
  const access={name:'tien404-v174p-dedicated-access',type:'self_hosted',
    destinations:[{type:'worker',worker_id:worker.id}],
-   aud,domain:'tien404-private-qa.example.com',policy_ids:['private-qa-operator-policy']};
+   aud,domain:'tien404-private-qa.example.com',policy_ids:['private-qa-operator-policy'],
+   policies:[{id:'private-qa-operator-policy',reusable:true,decision:'allow',
+     include:[{email:{email:'qa-operator@example.com'}}]}]};
  const snapshot={workers:[worker],accessApps:[access],
   accessPolicies:[{id:'private-qa-operator-policy',reusable:true,decision:'allow',
     include:[{email:{email:'qa-operator@example.com'}}]}]};
@@ -48,12 +50,12 @@ test('06 no unknown Access audience',()=>{
 });
 test('07 no Bypass or Service Auth policies',()=>{
  for(const decision of ['bypass','service_auth']){
-  const r=blocked(s=>{s.accessPolicies[0].decision=decision;});
+  const r=blocked(s=>{s.accessPolicies[0].decision=decision;s.accessApps[0].policies[0].decision=decision;});
   assert(r.missing.includes('no_bypass_service_auth_or_everyone'));
  }
 });
 test('08 no Everyone allow policy',()=>{
- const r=blocked(s=>{s.accessPolicies[0].include=[{everyone:{}}];});
+ const r=blocked(s=>{s.accessPolicies[0].include=[{everyone:{}}];s.accessApps[0].policies[0].include=[{everyone:{}}];});
  assert(r.missing.includes('no_bypass_service_auth_or_everyone'));
 });
 test('09 reject legacy app policies without reusable proof',()=>{
@@ -61,7 +63,7 @@ test('09 reject legacy app policies without reusable proof',()=>{
  assert(r.missing.includes('assigned_reusable_allow_policy'));
 });
 test('10 no approved private operator group/email',()=>{
- const r=blocked(s=>{s.accessPolicies[0].include=[{email_domain:{domain:'gmail.com'}}];});
+ const r=blocked(s=>{s.accessPolicies[0].include=[{email_domain:{domain:'gmail.com'}}];s.accessApps[0].policies[0].include=[{email_domain:{domain:'gmail.com'}}];});
  assert(r.missing.includes('no_bypass_service_auth_or_everyone'));
 });
 test('11 preview-only protection is insufficient',()=>{
@@ -112,4 +114,25 @@ test('19 the current read-only Cloudflare evidence is unequivocally NOT admitted
    domain:'*.tien404-ai-git-staging.pages.dev'}],accessPolicies:[]},{});
  assert.equal(r.status,'BLOCKED');
  assert.equal(r.deploy_authorized,false);
+});
+
+test('20 real Cloudflare API exposes app.policies and Worker UUID; matched evidence passes comparator only',()=>{
+ const {snapshot,review}=fixture();
+ delete snapshot.accessApps[0].policy_ids;
+ const r=assessAccessDeployment(snapshot,review);
+ assert.equal(r.missing.length,0);
+ assert.equal(r.deploy_authorized,false);
+});
+test('21 missing reusable policy list cannot be filled by embedded legacy app policies',()=>{
+ const r=blocked(s=>{delete s.accessApps[0].policy_ids;s.accessPolicies=[];});
+ assert(r.missing.includes('assigned_reusable_allow_policy'));
+});
+test('22 mismatched reusable vs embedded policy decision is blocked',()=>{
+ const r=blocked(s=>{s.accessApps[0].policies[0].decision='bypass';});
+ assert(r.missing.includes('assigned_reusable_allow_policy'));
+ assert(r.missing.includes('no_bypass_service_auth_or_everyone'));
+});
+test('23 script list ID/name is not a Worker UUID from /workers/workers',()=>{
+ const r=blocked(s=>{s.workers[0].id='tien404-v174p-private-qa-issuer';});
+ assert(r.missing.includes('dedicated_worker_isolated_and_present'));
 });
