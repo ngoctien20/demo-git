@@ -38,3 +38,21 @@ Track U-C (**Commerce JWT**) remains NO-GO: M0, canonical Store A/B ownership, S
 - Official Zalo Bot webhook (wrapper & header): https://docs.zaloplatforms.com/docs/BOT/webhook
 - Third-party live observed flat Zalo event: https://github.com/dderek0/quest/blob/main/zalo-bot-docs/api-reference.md
 - Cloudflare D1 limits and pricing: https://developers.cloudflare.com/d1/platform/limits/ and https://developers.cloudflare.com/d1/platform/pricing/
+
+
+## Actual hosted checkpoint — 18 Nov 2026 JST (operator read-only verified after writes)
+
+**IMPLEMENTED (Cloudflare staging only):**
+- Created new Worker `tien404-v1723u-qa-inbound-locked-staging`, initially an inert 404. Fixed Cloudflare compatibility-date validation by selecting `2026-11-17` UTC-compatible date.
+- Set `workers.dev=false` and `previews_enabled=false` BEFORE uploading the candidate full receiver.
+- Uploaded exact GitHub `qa/v1723s/isolated-qa-webhook.mjs` source at blob SHA `8a508bac76ad4dde64dd88789b8b8e654ac51a8b`; Cloudflare response script ETag `8e1b26e0e28dcd90543225a4477aa14a9a44b12a2947dff45e85eb2de993e1d4`; verified Cloudflare content/v2 includes identical GitHub source.
+- Created a **new** isolated APAC D1 `tien404-v1723u-qa-bot-once-disposable`, applied the single-slot `qa_canary_once` table schema and bound it as `QA_EVENT_DB` to this NEW Worker only.
+- Read-only postflight: `workers.dev=false`, preview=false, **0 zone routes**, **0 custom domains**, exactly **1 D1 binding**, **0 credential bindings**, D1 **0 event rows**. No configured `QA_CANARY_MODE`, so the deployed receiver is inert 404 and **cannot accept provider traffic**.
+- No change to existing Zalo staging webhook, n8n Published, Supabase Commerce/Auth, Meta/Zalo credential, Order or customer.
+- D1 creation/schema are a scoped isolated QA infrastructure write. D1 pricing is usage/storage based, with Free included quotas; account subscription details were not available. No paid resource upgrade was initiated. **Recheck billing before any public route, message test or sustained D1 use.**
+
+**NOT TESTED:** Cloudflare Worker request runtime through actual ingress, real D1 write via a live Worker invocation, native Bot Secret Token verification, real single Zalo event, independent operator/Owner no-send evidence. Github source CI is not equivalent to these hosted checks.
+
+**BLOCKED:** public/QA-only callback exposure and webhook enrollment until explicit scoped Owner approval, approved private secret handling, time-bounded variables, callback test and rollback. Never use existing staging Bot; avoid exposing the random callback path or shared secrets in public GitHub/ChatGPT.
+
+**Rollback plan:** leave this QA Worker with workers.dev/preview off and no routes; no provider rollback needed because no webhook was changed. Deletion of the isolated D1/Worker is a separate destructive step requiring authorization. Closing Draft PR reverts only source changes, not these new hosted QA resources.
