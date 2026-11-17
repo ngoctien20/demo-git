@@ -23,8 +23,9 @@ const cleanUtc = (value) => {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 };
-export async function inspectBackupInventory({ fetchImpl, token, endpoint = ENDPOINT } = {}) {
+export async function inspectBackupInventory(input = {}) {
   try {
+    const { fetchImpl, token, endpoint = ENDPOINT } = input || {};
     if (typeof fetchImpl !== 'function') return denied('PRIVATE_FETCH_UNAVAILABLE');
     if (typeof token !== 'string' || token.length < 12 || token.length > 4096 ||
         /[\r\n\s]/.test(token)) return denied('PRIVATE_READ_TOKEN_REQUIRED');
