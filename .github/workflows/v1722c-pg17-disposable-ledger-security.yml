@@ -65,6 +65,9 @@ jobs:
       - name: Real PG17 negative cross-Tenant Store Actor and replay constraints
         run: |
           psql -v ON_ERROR_STOP=1 -f qa/v1722-cross-channel-order/pg17-disposable-scope-fk-security.sql
+      - name: Real PG17 consumed OTP deny-before-confirm and conditional single-use QA
+        run: |
+          psql -v ON_ERROR_STOP=1 -f qa/v1722-cross-channel-order/pg17-disposable-otp-consumed-gate.sql
       - name: Fail closed if accidental provider, release or grant action is added
         run: |
           python3 - <<'PY'
@@ -78,6 +81,10 @@ jobs:
           assert 'v1722_challenge_exact_order_scope' in sql
           assert 'v1722_link_exact_challenge_scope' in sql
           assert 'v1722_challenge_verified_link_scope' in sql
+          assert 'v1722_consumed_requires_two_channel_actors' in sql
+          assert 'generated always as (consumed_at is not null) stored' in sql
+          assert 'require_consumed boolean not null default true check (require_consumed = true)' in sql
+          assert 'pg17-disposable-otp-consumed-gate.sql' in Path('.github/workflows/v1722c-pg17-disposable-ledger-security.yml').read_text()
           assert sql.count('force row level security')==4
           assert 'DISPOSABLE_PG17_STAGING_GUARD_DENIED' in qa
           for bad in [r'(?i)create\s+policy\b',r'(?i)grant\s+(?:all|select|insert|update|delete)\s+on\b',
