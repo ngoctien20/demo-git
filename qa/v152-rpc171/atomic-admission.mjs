@@ -3,7 +3,7 @@ import {createPublicKey,verify,timingSafeEqual,createHash} from 'node:crypto';
 import {verifyInvite,checkFileEnvelope} from '../v152-rpc17/private-admission.mjs';
 const DENY=(reason)=>Object.freeze({accepted:false,can_upload:false,can_send:false,can_open_access:false,reason});
 const equal=(a,b)=>typeof a==='string'&&typeof b==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
-const ID=/^[a-zA-Z0-9_-]{3,128}$/;
+const ID=/^[a-zA-Z0-9_-]{2,128}$/;
 export function scannerVerdict(envelope,expected,pins,now){
  try{
   if(!envelope||!ID.test(envelope.kid)||typeof envelope.payload!=='string'||typeof envelope.signature!=='string')return DENY('SCANNER_MALFORMED');
