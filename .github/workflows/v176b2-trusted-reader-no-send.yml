@@ -1,0 +1,47 @@
+name: TIEN404 V17.6-B.2 Trusted Catalog SKU Guard and JWT Admission NO SEND
+on:
+  pull_request:
+    paths:
+      - 'qa/v176b2-queryguard/**'
+      - '.github/workflows/v176b2-trusted-reader-no-send.yml'
+      - 'qa/v176b1-core-admission/**'
+      - 'qa/v171l-bot-security/zero-trust-bot-boundary.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guarded-reader-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      META_PAGE_ACCESS_TOKEN: ""
+      ZALO_BOT_TOKEN: ""
+      NODE_ENV: test
+    steps:
+      - name: Checkout without persistent GitHub credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Syntax check reviewed source-only QA modules
+        run: |
+          set -euo pipefail
+          node --version
+          node --check qa/v176b2-queryguard/trusted-catalog-read-plan.cjs
+          node --check qa/v176b2-queryguard/trusted-catalog-read-plan.test.cjs
+          node --check qa/v176b2-queryguard/no-send-query-canary.cjs
+      - name: Inherited independent B.1 Core policy source regression
+        run: node --test qa/v176b1-core-admission/independent-core-adapter.test.cjs
+      - name: B.2 scoped SKU Query Guard red-team negative regression
+        run: node --test qa/v176b2-queryguard/trusted-catalog-read-plan.test.cjs
+      - name: B.2 fail-closed 12-case source-only no-send canary
+        run: |
+          set -euo pipefail
+          node qa/v176b2-queryguard/no-send-query-canary.cjs | python3 -c 'import json,sys; x=json.load(sys.stdin); assert x["count"]==12 and x["readPlans"]==2 and x["denied"]==10; assert all(i["passed"] and i["actual"]==i["expected"] for i in x["results"]); assert all(v==0 for v in x["effects"].values()); assert x["actualCommerceDatabaseReads"]==0; assert x["productionRelease"]=="NO_GO"; assert x["independentRealJWT"] is False and x["sameTenantRealTwoStoreUAT"] is False; assert x["liveCommerceReaderConnected"] is False; print("V176B2_SKU_ONLY_12_CASE_NO_SEND_CANARY_PASS")'
+      - name: Explicitly retain all production and hosted security gates
+        run: |
+          echo 'V17.6-B.2 IS SOURCE-ONLY: NO real JWT, NO Meta/Zalo signature proof'
+          echo 'NO HTTP, NO DB, NO Orders, NO provider send, NO model API'
+          echo 'HOSTED_STORE_AB_RLS UAT = BLOCKED; PRODUCTION = NO_GO'
