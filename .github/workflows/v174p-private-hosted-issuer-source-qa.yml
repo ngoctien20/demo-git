@@ -14,6 +14,7 @@ on:
       - work/v174p-hosted4b2-atomic-private-nonce-and-postflight-review-20261117
       - work/v174p-hosted4b3-operator-admission-local-sqlite-ledger-20261117
       - work/v174p-hosted4b4-independent-finance-hosted-ledger-no-go-20261117
+      - work/v174p-hosted4b5-private-attested-evidence-intake-phase-separation-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -57,9 +58,11 @@ jobs:
           node --check qa/v174p-private-hosted/hosted4b3-private-operator-admission.test.mjs
           node --check qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.mjs
           node --check qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs
+          node --check qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.mjs
+          node --check qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.test.mjs
           node --check qa/v174p-private-hosted/runtime/permit-ledger.local.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs qa/v174p-private-hosted/hosted4b3-private-operator-admission.test.mjs qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs qa/v174p-private-hosted/hosted4b3-private-operator-admission.test.mjs qa/v174p-private-hosted/hosted4b4-independent-finance-ledger-gate.test.mjs qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.test.mjs
       - name: Verify owner authorization template is unsigned, cannot grant deployment
         run: |
           node - <<'NODE'
@@ -137,6 +140,25 @@ jobs:
             if(gate.includes(literal))process.exit(1);
           }
           console.log('4B.4 independent finance review only, no CI Cloudflare mutation');
+          NODE
+      - name: V17.4P private intake is unsigned and strictly metadata-only
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const t=JSON.parse(fs.readFileSync('qa/v174p-private-hosted/hosted4b5-private-evidence-intake.pending.example.json','utf8'));
+          if(t.status!=='PENDING_OUT_OF_BAND_VERIFIED_IDENTITIES'||
+             t.current_allowed_phase!=='NONE'||t.signed_owner_permit!==null||
+             t.signed_finance_packet!==null||t.can_create_private_ledger!==false||
+             t.can_upload_qa_worker!==false||
+             t.private_evidence_intake_endpoint!=='NOT_PROVISIONED'||
+             t.private_ref_ids.owner_authority!==null ||
+             Object.values(t.signatures).some(s=>s!==null))process.exit(1);
+          const source=fs.readFileSync('qa/v174p-private-hosted/hosted4b5-private-evidence-dossier.mjs','utf8');
+          for(const s of ['cloudflare.request(', 'wrangler deploy',
+           'wrangler versions upload','execSync(', 'spawn(', 'fetch(']) {
+            if(source.includes(s))process.exit(1);
+          }
+          console.log('4B.5 signed metadata only — no endpoint, no identity files, no hosted writes');
           NODE
       - name: Source risk gates and absence of credentials or live API
         run: |
