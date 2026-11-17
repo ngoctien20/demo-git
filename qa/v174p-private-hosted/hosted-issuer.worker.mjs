@@ -54,6 +54,7 @@ async function verifyAccess(req,env,now){
  const parts=token.split('.');
  if(parts.length!==3||parts.some(x=>!x||x.length>5000))return null;
  try{
+  if(parts.some(part=>b64u(unb64(part))!==part))return null;
   const h=parseObject(DECODE.decode(unb64(parts[0])));
   const p=parseObject(DECODE.decode(unb64(parts[1])));
   if(h.alg!=='RS256'||typeof h.kid!=='string'||h.kid.length>128||
