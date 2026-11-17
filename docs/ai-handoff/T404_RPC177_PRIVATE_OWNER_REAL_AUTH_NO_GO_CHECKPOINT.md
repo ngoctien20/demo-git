@@ -1,6 +1,6 @@
 # TIEN404 AI — RPC17.7 Independent Store Ownership Proof × Authorized Disposable Supabase QA Migration × Real JWT A/B No-Send UAT
 
-2026-11-17 JST · SOURCE-ONLY · MIGRATION NOT AUTHORIZED · REAL JWT NOT VERIFIED · HOSTED NO-GO
+2026-11-17 JST · SOURCE-ONLY · CI VERIFIED 454/454 · MIGRATION NOT AUTHORIZED · REAL JWT NOT VERIFIED · HOSTED NO-GO
 
 ## Inherited baseline
 - Exact parent PR #345 (RPC17.6) HEAD `4873d9814ed27b4ea792e3ae4821000191acb2e1` at branch creation.
@@ -15,6 +15,10 @@
 - `T404_RPC177_PRIVATE_STORE_OWNER_UAT_ADMISSION_PLAN.md`: independent approval and eventual additive disposable QA schema/migration plan, no migration applied.
 - GitHub Actions RPC17.7 source-only workflow inherits RPC13–RPC17.6 Node tests, does not run DDL on Supabase or deploy Cloudflare.
 
+## Verified source CI
+- GitHub Actions run #44089769957, commit `78ab66c00584fda8c8b8164fb149bd6358cd51f7`, SUCCESS: **454/454 PASS, 0 FAIL** in 15 source-only Node suites (21 Owner/Security/Finance proof tests + 21 Real Auth A/B evidence tests + 412 inherited). No real Supabase Auth, hosted DDL, PostgreSQL RLS engine or Cloudflare deployed test in this run; inherited RPC17.6 disposable PostgreSQL acceptance remains documented separately.
+- Unrelated RPC10 workflow on this branch remains FAILURE and is not included in the above number.
+
 ## Pending high-trust evidence
 1. Real Merchant Owner P1/P2 documents and Store authority O1/O2 independently verified in private authenticated intake, not this chat.
 2. Verified operator and separate reviewer identities, fresh MFA, expiring scoped consent and durable replay ledger; finance cost consent if any cost.
@@ -28,4 +32,4 @@
 - The existing unrelated RPC10 workflow failure remains outside this task.
 - CI must be verified against exact HEAD commit before declaring PASS.
 
-CHECKPOINT: RPC177_SOURCE_ONLY · OWNER_SECURITY_FINANCE_PROOF_SYNTHETIC_ONLY · SUPABASE_QA_MIGRATION_UNAUTHORIZED · REAL_JWT_AB_NO_GO · HOSTED_NO_GO
+CHECKPOINT: RPC177_PR347 · CI_454_454_PASS · OWNER_SECURITY_FINANCE_PROOF_SYNTHETIC_ONLY · SUPABASE_QA_MIGRATION_UNAUTHORIZED · REAL_JWT_AB_NO_GO · HOSTED_NO_GO
