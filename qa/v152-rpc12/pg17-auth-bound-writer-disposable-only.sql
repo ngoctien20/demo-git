@@ -43,6 +43,12 @@ GRANT USAGE ON SCHEMA qa_rpc12 TO qa_rpc12_authenticated,qa_rpc12_writer;
 GRANT USAGE ON SCHEMA qa_rpc12_api TO qa_rpc12_authenticated;
 GRANT SELECT ON qa_rpc8.stores,qa_rpc8.store_memberships,qa_rpc8.tenant_memberships TO qa_rpc12_writer;
 GRANT SELECT,INSERT,UPDATE ON qa_rpc8.products TO qa_rpc12_writer;
+-- PG17 row-lock FOR SHARE additionally needs a narrowly scoped UPDATE column
+-- privilege. RLS has NO UPDATE policies on these authority tables, so this
+-- NOLOGIN writer still cannot mutate membership/store status. Verify in CI.
+GRANT UPDATE(active) ON qa_rpc8.stores TO qa_rpc12_writer;
+GRANT UPDATE(active) ON qa_rpc8.store_memberships TO qa_rpc12_writer;
+GRANT UPDATE(active) ON qa_rpc8.tenant_memberships TO qa_rpc12_writer;
 
 -- Writer role is distinct from gateway role; only writer may write under RLS.
 CREATE POLICY rpc12_writer_tenant_membership ON qa_rpc8.tenant_memberships
