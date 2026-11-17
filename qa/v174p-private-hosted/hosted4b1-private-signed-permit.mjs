@@ -102,6 +102,14 @@ export function preflightInactivePermit({
    reg.independently_verified_source_hash===p.source_sha256);
  check('manifest_exact_digest_and_qa_safety',
    obj(manifestArtifact)&&digest(manifestArtifact)===p.manifest_sha256&&
+   same(keys(manifestArtifact),['name','main','compatibility_date','workers_dev',
+     'preview_urls','routes','observability','vars','durable_objects','migrations'].sort())&&
+   same(keys(manifestArtifact.observability),['enabled'])&&
+   same(keys(manifestArtifact.durable_objects),['bindings'])&&
+   same(keys(manifestArtifact.durable_objects?.bindings?.[0]),['name','class_name'].sort())&&
+   same(keys(manifestArtifact.migrations?.[0]),['tag','new_sqlite_classes'].sort())&&
+   manifestArtifact.migrations[0].tag==='v1-qa-sqlite-do'&&
+   manifestArtifact.compatibility_date==='2026-11-17'&&
    manifestArtifact.name===WORKER&&manifestArtifact.main==='./hosted-issuer.worker.mjs'&&
    manifestArtifact.workers_dev===false&&manifestArtifact.preview_urls===false&&
    Array.isArray(manifestArtifact.routes)&&manifestArtifact.routes.length===0&&
