@@ -11,6 +11,7 @@ on:
       - work/v174p-hosted4a-complete-inventory-operator-proof-20261117
       - work/v174p-hosted4b-private-approval-inactive-deploy-admission-20261117
       - work/v174p-hosted4b1-private-permit-upload-no-go-20261117
+      - work/v174p-hosted4b2-atomic-private-nonce-and-postflight-review-20261117
   pull_request:
     paths:
       - 'qa/v174p-private-hosted/**'
@@ -48,8 +49,10 @@ jobs:
           node --check qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs
           node --check qa/v174p-private-hosted/hosted4b1-private-signed-permit.mjs
           node --check qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs
+          node --check qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.mjs
+          node --check qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs
           node --check qa/v174p-private-hosted/release-gates.mjs
-          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs
+          node --test qa/v174p-private-hosted/hosted-issuer.test.mjs qa/v174p-private-hosted/release-gates.test.mjs qa/v174p-private-hosted/browser-hosted-canary.test.mjs qa/v174p-private-hosted/durable-replay-hardening.test.mjs qa/v174p-private-hosted/access-deployment-admission.test.mjs qa/v174p-private-hosted/hosted2-inactive-admission.test.mjs qa/v174p-private-hosted/hosted2-real-do-behavioral-probe.test.mjs qa/v174p-private-hosted/hosted4-independent-owner-gate.test.mjs qa/v174p-private-hosted/hosted4a-complete-inventory.test.mjs qa/v174p-private-hosted/hosted4b-inactive-upload-admission.test.mjs qa/v174p-private-hosted/hosted4b1-private-signed-permit.test.mjs qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.test.mjs
       - name: Verify owner authorization template is unsigned, cannot grant deployment
         run: |
           node - <<'NODE'
@@ -85,6 +88,17 @@ jobs:
              no.allow_resource_upload!==false || no.approved_budget_usd!==null)process.exit(1);
           console.log('V17.4P 4B.1 signed permit and template are source-only; hosted remains NO-GO');
           NODE
+      - name: V17.4P one-time permit review has no Cloudflare deploy or data export
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('qa/v174p-private-hosted/hosted4b2-atomic-permit-and-postflight.mjs').read_text()
+          for banned in ['cloudflare.request(', 'fetch(', 'execSync(', 'spawn(', 'wrangler deploy',
+                         'wrangler versions upload', 'graph.facebook.com', 'api.openai.com']:
+              assert banned not in p, banned
+          assert "can_upload:false" in p and "can_deploy:false" in p
+          print('4B.2 one-time claim interface and postflight are source-only / NO DEPLOY')
+          PY
       - name: Source risk gates and absence of credentials or live API
         run: |
           python3 - <<'PY'

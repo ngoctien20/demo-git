@@ -64,7 +64,11 @@ test('04 valid signed Access token admits health',async()=>{
  const r=await call('GET','/healthz');assert.equal(r.data.status,'PRIVATE_QA_READY');
 });
 test('05 rejects forged Access JWT signature',async()=>{
- const t=access();const r=await call('GET','/healthz',undefined,{jwt:t.slice(0,-1)+'A'});
+ const t=access();const parts=t.split('.');
+ // Mutate the FIRST signature base64url character; the final character may
+ // already equal 'A' or contain non-significant padding bits in test fixtures.
+ parts[2]=(parts[2][0]==='A'?'B':'A')+parts[2].slice(1);
+ const r=await call('GET','/healthz',undefined,{jwt:parts.join('.')});
  assert.equal(r.status,401);
 });
 test('06 rejects Access wrong audience',async()=>assert.equal((await call('GET','/healthz',null,{jwt:access({aud:'wrong'})})).status,401));

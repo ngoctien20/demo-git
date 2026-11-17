@@ -1,0 +1,44 @@
+-- V17.4P-HOSTED.4B.2 — DOCUMENTATION / NEVER APPLY THIS SQL AUTOMATICALLY.
+-- PRIVATE DEDICATED TEST DATABASE ONLY after separate owner/security approval.
+-- DO NOT run in the existing Commerce customer Supabase schema.
+-- This DDL intentionally stores only nonce and permit hashes, no tokens, keys or PII.
+--
+-- CREATE SCHEMA and GRANT statements must be reviewed against actual roles;
+-- only a dedicated least-privilege private permit-writer may INSERT/SELECT.
+-- Owner/security approval and independent authentication are OUTSIDE this file.
+--
+-- BEGIN;
+-- CREATE SCHEMA IF NOT EXISTS tien404_qa_permits;
+-- CREATE TABLE tien404_qa_permits.first_upload_claims (
+--   nonce_hash CHAR(64) PRIMARY KEY CHECK (nonce_hash ~ '^[a-f0-9]{64}$'),
+--   permit_hash CHAR(64) NOT NULL CHECK (permit_hash ~ '^[a-f0-9]{64}$'),
+--   account_id CHAR(32) NOT NULL,
+--   worker_name TEXT NOT NULL,
+--   phase TEXT NOT NULL CHECK (phase = 'FIRST_UPLOAD_INACTIVE_ONLY'),
+--   expires_at TIMESTAMPTZ NOT NULL,
+--   claimed_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+--   UNIQUE(account_id, worker_name, phase)
+-- );
+-- REVOKE ALL ON SCHEMA tien404_qa_permits FROM PUBLIC;
+-- REVOKE ALL ON ALL TABLES IN SCHEMA tien404_qa_permits FROM PUBLIC;
+-- COMMIT;
+--
+-- ATOMIC CLAIM TRANSACTION — only trusted private operator service, no retries:
+-- BEGIN;
+-- INSERT INTO tien404_qa_permits.first_upload_claims
+--   (nonce_hash,permit_hash,account_id,worker_name,phase,expires_at)
+-- VALUES ($1,$2,$3,$4,'FIRST_UPLOAD_INACTIVE_ONLY',$5)
+-- ON CONFLICT DO NOTHING
+-- RETURNING nonce_hash;
+-- COMMIT;
+--
+-- 1 row returned AFTER COMMIT => one durable successful claim.
+-- 0 rows => replay or a different permit already claimed this Worker/phase.
+-- On SQL/network/commit uncertainty => BLOCK; NEVER assume success or retry.
+-- A claimed permit is never automatically released even on failure to refresh
+-- Cloudflare inventory. Subsequent approved attempts require a NEW, separately
+-- signed permit with a new nonce, and an independent recovery review.
+--
+-- WARNING: UNIQUE(account_id,worker_name,phase) is specifically for FIRST
+-- UPLOAD ONLY; a later operator upgrade needs a different approved contract,
+-- table or phase, never dropping this constraint casually.
