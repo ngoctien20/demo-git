@@ -280,7 +280,7 @@ jobs:
               'execSync(', 'spawn(', 'fetch('])if(s.includes(banned))process.exit(1);
           console.log('4B.10 source/local only: Cloudflare billing HTTP 403, private hosted NO DEPLOY');
           NODE
-      - name: Solo Founder governance: one real human, QA permission, NO HOSTED RELEASE
+      - name: 'Solo Founder governance: one real human, QA permission, NO HOSTED RELEASE'
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
