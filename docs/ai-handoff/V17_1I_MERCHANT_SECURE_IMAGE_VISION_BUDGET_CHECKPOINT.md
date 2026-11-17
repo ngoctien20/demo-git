@@ -38,3 +38,27 @@
 - Next gate: private shop domain/rights evidence intake; reviewed outbound network proxy and real-photo sample; human-validated labels; explicit exact model budget approval; only then bounded low-cost real model benchmark and signed channel read-only UAT.
 
 **Pre-CI lifecycle:** V171I_SOURCE_DRAFT_LIVE_CORPUS_MODEL_BLOCKED.
+
+## 5. Verified V17.1I offline regression acceptance — 2026-11-17 JST
+
+**Implementation HEAD tested:** `ad505fd9dc0392580b9a6ea8dced2f36a8c75740`.  
+**GitHub Actions:** https://github.com/ngoctien20/demo-git/actions/runs/44009669731
+
+- QA job 133793368576 **SUCCESS**.
+- New V17.1I `secure_merchant_fetch` tests **46/46 PASS**: URL credentials and token rejection, strict hostname allowlist, mock DNS all-IP global filter including IPv6 link-local and CGNAT, authorization callback fail-closed, pinned plan, outbound response limits, redirect & header conflicts, conservative og:image extraction; local JPEG bytes forwarded through the existing V17.1H raster decoder without real network access.
+- New V17.1I `merchant_corpus_budget` tests **36/36 PASS**: store-scoped products and image labels, retention/consent declarations, duplicate SHA, blind evaluation holdout, budget cap calculations in integer micro-USD, model quote NO-CALL, unverified sample receipt metrics and out-of-store SKU counter.
+- Inherited **192/192 PASS**: V17.1H 40 Pillow tests; V17.1G 40 DNS/TLS fixture; V17.1F 32 Store/product media registry; V17.1E 28 receipt/rights; V17.1D 22 PNG +25 identity +5 integration.
+- **Total source-only tests 274/274 PASS**, 0 failing. Static no model/provider send/DB write and explicit authorization-boundary guard PASS.
+- GitHub Actions real-world NO-GO job 133793579453 **FAILURE intentionally**, preserving the hosted deny gate. The overall workflow conclusion is FAILURE by policy, not source test failure.
+- Initial GitHub Actions source run found test-fixture errors: missing underscore in several Python test function names and a stream limit case blocked at Content-Length rather than byte streaming. Both test specifications were corrected before this verified run.
+
+**Important caveat:** The code contains an explicit pinned-IP HTTPS transport candidate, but **NO live HTTPS connection** was made in this milestone. DNS, transport and authorizer inputs in successful tests are local mocks. The contract is not independently penetration-tested or production authorized. A permissive owner_authorizer callback or unreviewed egress environment cannot be regarded as verified shop rights; the callback must be bound to independently verified hosted owner/session, Store RLS, licensed product image and permitted domains in a separately approved integration. Retention, data residency and access permissions need owner-approved policy.
+
+**The word "Real" in the milestone title describes the intended next corpus**, not a tested real merchant dataset. There is **no actual merchant image corpus** and **no actual Vision vendor run or cost**. The existing Google Sheets rows remain DEMO/synthetic.
+
+### Minimal merchant operator intake (no new shop sheet required)
+For a single shop pilot, the merchant can continue using the existing Products sheet columns `sku`, `name`, `image_url`. The operator collects domain verification and licensing consent privately, plus a tiny private QA-only evidence record: `tenant_id`, `store_id`, `sku`, `image_url`, `rights_evidence_ref`, `consent_at`, `retention_until`. This record is not public GitHub data and is not a replacement for hosted security authorization. A product page URL is mapped to a candidate image URL under review before ingestion; no automatic SKU linking from untrusted web text.
+
+**Checkpoint life cycle:** V17.1I SOURCE IMPLEMENTED / OFFLINE TESTED / LIVE OWNER-DOMAIN-PHOTO-VISION NO-GO.  
+**Rollback:** close child Draft PR #261; parent #259 and older PRs unchanged; no hosted data recovery.  
+**Next:** get privately authorized first merchant URL/image or owner-provided samples, independently review domain and image rights, then explicitly authorize **a capped real inference** with verified provider price and balance; finally signed read-only Messenger/Zalo pilot under Store JWT-RLS.
