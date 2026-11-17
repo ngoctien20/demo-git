@@ -1,0 +1,32 @@
+{
+  "contract": "T404_MC03B_LIVE_PROVENANCE_CLASSIFICATION_V1",
+  "observedOn": "2026-11-17",
+  "source": "HOSTED_SUPABASE_READ_ONLY_AGGREGATES",
+  "projectRef": "ifxlvrhyjhbzbrkdsida",
+  "readOnlySqlPath": "qa/v17-multichannel03b/legacy-four-row-provenance-READ_ONLY.sql",
+  "observed": {
+    "tenantCount": 2,
+    "products": 2,
+    "orders": 2,
+    "orderSourceManual": 2,
+    "ordersWithCustomerLink": 0,
+    "tenantsWithTestLikeNameAndSlug": 2,
+    "tenantsWithMatchingTenantProductOrderCreationTimestamp": 2,
+    "sharedCreationTimestampUtc": "2026-11-10T14:04:29.056346Z",
+    "auditEventsTotal": 0,
+    "verifiedOriginalSeedArtifacts": 0
+  },
+  "classification": {
+    "label": "QA_LIKELY_NOT_VERIFIED_SYNTHETIC",
+    "sourceOfTruth": "NOT_ESTABLISHED",
+    "canCertifyDataSynthetic": false,
+    "canGrantMerchantOwnership": false,
+    "canUseAsRealStoreAbAuthProof": false,
+    "merchantOriginalDocumentUploadRequiredNow": false,
+    "shouldDeferSensitiveDocumentRequestPendingClassification": true,
+    "canPurgeOrMigrateRows": false,
+    "canOpenMerchantUploadPortal": false,
+    "canEnableMetaNoSendCanary": false
+  },
+  "note": "Creation patterns are circumstantial; no seed script, signed original import receipt, audited origin or authorized data-owner attestation was verified. 0 audit events is absence of a trail, not proof of seed provenance."
+}
