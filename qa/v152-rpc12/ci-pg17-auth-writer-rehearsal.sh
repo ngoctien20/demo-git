@@ -57,7 +57,7 @@ deny(){ local identity="$1" stmt="$2" name="$3"
 }
 
 check 6 "select count(*) from pg_policies where schemaname='qa_rpc8' and policyname like 'rpc12_writer_%'" 'RLS writer policies installed'
-check 0 "select count(*) from pg_policies where schemaname='qa_rpc8' and tablename in ('stores','store_memberships','tenant_memberships') and cmd='UPDATE' and policyname like 'rpc12_%'" 'writer cannot update authority tables through RLS'
+check 3 "select count(*) from pg_policies where schemaname='qa_rpc8' and tablename in ('stores','store_memberships','tenant_memberships') and cmd='UPDATE' and btrim(with_check,'() ')='false'" 'authority row locks have update USING and deny all mutation with WITH CHECK(false)'
 check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.stores','active','UPDATE')" 'row lock column privilege on Store'
 check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.store_memberships','active','UPDATE')" 'row lock column privilege on Store Membership'
 check t "select has_column_privilege('qa_rpc12_writer','qa_rpc8.tenant_memberships','active','UPDATE')" 'row lock column privilege on Tenant Membership'
@@ -74,6 +74,16 @@ allow "$C" 1 "select case when qa_rpc12_api.create_product('$SC','RPC12-SAME',99
 check 3 "select count(*) from qa_rpc8.products where sku='RPC12-SAME'" 'cross-Store SKU support'
 check 1 "select count(*) from qa_rpc8.products where store_id='$SA' and tenant_id='$T1' and sku='RPC12-SAME'" 'tenant automatically derived from A Store'
 check 1 "select count(*) from qa_rpc8.products where store_id='$SC' and tenant_id='$T2' and sku='RPC12-SAME'" 'tenant automatically derived from C Store'
+# Even internal NOLOGIN DB role cannot change Store/member status under RLS.
+if psql -X -v ON_ERROR_STOP=1 -q >/dev/null 2>&1 <<SQL
+BEGIN;
+SET LOCAL ROLE qa_rpc12_writer;
+SET LOCAL request.jwt.claim.sub='$A';
+UPDATE qa_rpc8.store_memberships SET active=false WHERE store_id='$SA' AND user_id='$A';
+COMMIT;
+SQL
+then echo 'FAIL internal authority mutation bypass'; exit 1; else echo 'PASS internal authority mutation denied by WITH CHECK(false)'; fi
+check t "select active from qa_rpc8.store_memberships where store_id='$SA' and user_id='$A'" 'Store A authority preserved after blocked mutation'
 allow "$A" 1 "select qa_rpc12_api.update_price('$SA','RPC12-SAME',159000,160000);" 'A changes own Store price'
 check 160000 "select price_vnd from qa_rpc8.products where store_id='$SA' and sku='RPC12-SAME'" 'own price committed'
 check 250000 "select price_vnd from qa_rpc8.products where store_id='$SB' and sku='RPC12-SAME'" 'B price unaffected'
