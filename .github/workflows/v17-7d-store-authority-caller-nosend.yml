@@ -68,9 +68,9 @@ jobs:
           const e=JSON.parse(readFileSync(dir+'v17-7d-hosted-caller-store-redacted-evidence.json','utf8'));
           assert.equal(e.release_status,'HOSTED_NO_GO');
           assert.equal(e.pg.core_table_count,6);
-          assert.equal(e.pg.core_rls_force_count,6);
-          assert.equal(e.pg.core_store_column_count,0);
-          assert.equal(e.pg.explicit_store_predicate_count,0);
+          assert.equal(e.pg.rls_force_count,6);
+          assert.equal(e.pg.store_column_count,0);
+          assert.equal(e.pg.store_predicate_count,0);
           assert.equal(e.pg.qa_same_tenant_two_store_count,0);
           assert.equal(e.pg.anon_executable_definer_count,1);
           assert.equal(e.provider_api_calls_made,0);
