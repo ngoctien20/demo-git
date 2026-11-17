@@ -20,6 +20,15 @@ WITH refs AS (
   (SELECT count(*)::integer FROM pg_indexes WHERE schemaname='tien404_v172c10_disposable'
     AND tablename='qa_store_memberships' AND indexname='qa_store_memberships_user_active_idx'
     AND indexdef ILIKE '%(user_id, active, tenant_id, store_id)%') AS membership_user_indexes,
+  (SELECT count(*)::integer FROM pg_policies p
+    WHERE p.schemaname='tien404_v172c10_disposable'
+      AND p.tablename='qa_catalog' AND p.cmd='SELECT'
+      AND p.qual ILIKE '%tenant_id%' AND p.qual ILIKE '%store_id%'
+      AND p.qual ILIKE '%auth.uid%') AS scoped_catalog_policies,
+  (SELECT count(*)::integer FROM pg_policies p
+    WHERE p.schemaname='tien404_v172c10_disposable'
+      AND p.tablename='qa_store_memberships' AND p.cmd='SELECT'
+      AND p.qual ILIKE '%user_id%' AND p.qual ILIKE '%auth.uid%') AS own_membership_policies,
   (SELECT count(*)::integer FROM pg_constraint k
     JOIN pg_class child ON child.oid=k.conrelid JOIN pg_namespace n ON n.oid=child.relnamespace
     WHERE n.nspname='tien404_v172c10_disposable' AND k.contype='f'
@@ -36,6 +45,19 @@ SELECT
   metadata.authenticated_select_policies,
   metadata.membership_user_indexes,
   metadata.composite_store_fk_count,
+  metadata.scoped_catalog_policies,
+  metadata.own_membership_policies,
+  -- Fail closed if ANY anon role reads or writes ANY QA table.
+  (SELECT count(*)::integer FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='tien404_v172c10_disposable'
+      AND c.relkind IN ('r','p')
+      AND (has_table_privilege('anon',c.oid,'SELECT') OR
+           has_table_privilege('anon',c.oid,'INSERT, UPDATE, DELETE'))) AS anon_accessible_tables,
+  -- Fail closed if authenticated can mutate ANY QA table, not just catalog.
+  (SELECT count(*)::integer FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='tien404_v172c10_disposable'
+      AND c.relkind IN ('r','p')
+      AND has_table_privilege('authenticated',c.oid,'INSERT, UPDATE, DELETE')) AS auth_writable_tables,
   -- Only query grants when a relation exists, otherwise fail closed to FALSE.
   CASE WHEN refs.catalog IS NOT NULL
     THEN has_table_privilege('anon', refs.catalog, 'SELECT') ELSE false END AS anon_catalog_select,
@@ -50,6 +72,16 @@ SELECT
      AND metadata.authenticated_select_policies=2
      AND metadata.membership_user_indexes=1
      AND metadata.composite_store_fk_count=2
+     AND metadata.scoped_catalog_policies=1
+     AND metadata.own_membership_policies=1
+     AND NOT EXISTS (
+       SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+       WHERE n.nspname='tien404_v172c10_disposable' AND c.relkind IN ('r','p')
+         AND (has_table_privilege('anon',c.oid,'SELECT, INSERT, UPDATE, DELETE')
+           OR has_table_privilege('authenticated',c.oid,'INSERT, UPDATE, DELETE'))
+     )
+     AND (SELECT has_schema_privilege('authenticated', n.oid, 'USAGE') FROM pg_namespace n WHERE n.nspname='tien404_v172c10_disposable')
+     AND NOT (SELECT has_schema_privilege('anon', n.oid, 'USAGE') FROM pg_namespace n WHERE n.nspname='tien404_v172c10_disposable')
      AND NOT has_table_privilege('anon', refs.catalog, 'SELECT')
      AND has_table_privilege('authenticated', refs.catalog, 'SELECT')
      AND NOT has_table_privilege('authenticated', refs.catalog, 'INSERT, UPDATE, DELETE')
