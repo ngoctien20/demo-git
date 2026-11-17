@@ -1,0 +1,112 @@
+{
+  "contract": "TIEN404_V17_7D_REDACTED_READONLY_EVIDENCE",
+  "observed_at_jst": "2026-11-17",
+  "source": "CONNECTED_SUPABASE_STAGING_AND_N8N_METADATA",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "pg": {
+    "core_table_count": 6,
+    "rls_force_count": 6,
+    "tenant_column_count": 6,
+    "store_column_count": 0,
+    "select_policy_count": 6,
+    "permissive_select_policy_count": 6,
+    "store_predicate_count": 0,
+    "canonical_store_table_count": 0,
+    "privileged_definer_count": 3,
+    "anon_executable_definer_count": 1,
+    "qa_tenant_count": 2,
+    "qa_max_stores_in_tenant": 1,
+    "qa_same_tenant_two_store_count": 0
+  },
+  "n8n": {
+    "source_channel_workflows": [
+      {
+        "name": "ZALO_BOT",
+        "id": "yIJk8LvJoLF40Z62",
+        "published_version": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+        "active": true,
+        "side_effect_note": "QA_MARKER_UPSERT"
+      },
+      {
+        "name": "MESSENGER",
+        "id": "Z7FdV7uDvApfbURQ",
+        "published_version": "1064b1b3-d3f1-4a6b-a367-2414ba691522",
+        "active": true,
+        "side_effect_note": "HTTP_REPLY_SEND_NODE"
+      },
+      {
+        "name": "WEBSITE",
+        "id": "wgkkmT7q4lm4HyuA",
+        "published_version": "c81929d4-ab55-4c24-8659-795842739e24",
+        "active": true,
+        "side_effect_note": "DEMO_ONLY"
+      }
+    ],
+    "commerce_workflows": [
+      {
+        "name": "TENANT_RESOLVER",
+        "id": "5Eeh8hbpsoNhuiVo",
+        "published_version": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+        "active": true
+      },
+      {
+        "name": "CATALOG",
+        "id": "oOOXicKXGkBskKqh",
+        "published_version": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+        "active": true
+      },
+      {
+        "name": "CART",
+        "id": "igPOsSbEgd4NgtRA",
+        "published_version": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+        "active": true
+      },
+      {
+        "name": "V3_BUSINESS",
+        "id": "Y0WLykMtNAldbgL0",
+        "published_version": "3d8b7f89-2058-4a2a-8919-e5ff92c3c484",
+        "active": true
+      }
+    ],
+    "table_columns": {
+      "TIEN404_COMMERCE_CHANNELS": {
+        "hasTenantId": true,
+        "hasStoreId": false
+      },
+      "TIEN404_COMMERCE_PRODUCTS": {
+        "hasTenantId": true,
+        "hasStoreId": false
+      },
+      "TIEN404_COMMERCE_ORDERS": {
+        "hasTenantId": true,
+        "hasStoreId": false
+      },
+      "TIEN404_COMMERCE_TENANTS": {
+        "hasTenantId": true,
+        "hasStoreId": false
+      },
+      "TIEN404_COMMERCE_V3_STORE_RULES_SANDBOX": {
+        "hasTenantId": true,
+        "hasStoreId": false
+      }
+    }
+  },
+  "workstream_owner_prs": {
+    "canonicalStoreMigration": 247,
+    "securityRpcAudit": 246,
+    "recoveryAndProducts": 251,
+    "channelUat": 326
+  },
+  "unchanged_runtime": true,
+  "api_calls_made": 0,
+  "provider_sends": 0,
+  "commerce_writes": 0,
+  "merchant_credential_reads": 0,
+  "release_status": "HOSTED_NO_GO",
+  "disclaimers": [
+    "No real same-Tenant Store A/B JWT RLS proof",
+    "No real Meta/Zalo/native session UAT",
+    "No Store owner attestations or current full recovery",
+    "Source-only typed metadata cannot authorize release"
+  ]
+}
