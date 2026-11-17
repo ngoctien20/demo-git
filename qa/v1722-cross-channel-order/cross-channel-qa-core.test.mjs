@@ -316,7 +316,11 @@ test('no outbound provider or real checkout tools implemented in source',()=>{
 test('private staging schema source is non-exposed, RLS forced and no endpoint grants',()=>{
  const s=readFileSync(new URL('./PRIVATE_STAGING_SCHEMA_CANDIDATE.DO_NOT_APPLY.sql',import.meta.url),'utf8');
  assert.match(s,/DO NOT APPLY TO HOSTED DATABASE YET/);
- assert.match(s,/create schema if not exists tien404_v1722_qa/);
+ assert.match(s,/^create schema tien404_v1722_qa;$/m);
+ assert.doesNotMatch(s,/create schema if not exists tien404_v1722_qa/i);
+ assert.match(s,/constraint v1722_challenge_exact_order_scope foreign key/);
+ assert.match(s,/constraint v1722_link_exact_challenge_scope foreign key/);
+ assert.match(s,/constraint v1722_challenge_verified_link_scope unique/);
  assert.match(s,/revoke all on schema tien404_v1722_qa from public, anon, authenticated, service_role/);
  for(const name of ['orders','link_challenges','channel_links','provider_replay']){
   assert.ok(s.includes('alter table tien404_v1722_qa.'+name+' enable row level security;'));
