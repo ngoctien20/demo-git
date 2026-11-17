@@ -106,5 +106,73 @@
     "new_paid_resources_created": 0,
     "commercial_release_not_authorized": true
   },
-  "decision": "REAL_GETME_AND_ONE_EVENT_EXTERNAL_UAT_NO_GO"
+  "decision": "REAL_GETME_AND_ONE_EVENT_EXTERNAL_UAT_NO_GO",
+  "recovered_historical_native_evidence": {
+    "audit_date_jst": "2026-11-17",
+    "evidence_class": "PRIOR_EXECUTIONS_REINSPECTED_READONLY",
+    "existing_zalo_bot_qa_table": {
+      "id": "iu4YwmjRzW1SDGMg",
+      "project_id": "WW82YsCCaAxGC9dp",
+      "case": "TIEN404_TEST_08",
+      "rows_re_read": 2,
+      "simulated_origin_row": {
+        "origin": "SIMULATED_MANUAL",
+        "accepted": true,
+        "event_type": "message.text.received",
+        "observed_at_utc": "2026-11-13T11:48:50.870Z"
+      },
+      "provider_routed_origin_row": {
+        "origin": "WEBHOOK_PRODUCTION",
+        "accepted": true,
+        "event_type": "message.text.received",
+        "observed_at_utc": "2026-11-13T11:51:22.367Z"
+      },
+      "is_internal_qa_marker_not_external_signed_attestation": true,
+      "no_write_endpoint_verified": false
+    },
+    "existing_bot_getme_gateway": {
+      "workflow_id": "xayBLEyUwd64mcLK",
+      "workflow_name": "TIEN404_V145Z_LIVE01_BOT_READONLY_PREFLIGHT_NO_SEND",
+      "workflow_inactive": true,
+      "inspected_execution_ids": [
+        "3843",
+        "3854",
+        "3869",
+        "3875"
+      ],
+      "inspected_execution_count": 4,
+      "execution_statuses_all_success": true,
+      "sanitized_result": "ZALO_GETME_READONLY_CONFIRMED",
+      "gateway_http_status": 200,
+      "gateway_reports_bot_token_valid": true,
+      "gateway_reports_provider_sends": 0,
+      "gateway_reports_orders_written": 0,
+      "gateway_reports_webhook_changed": false,
+      "gateway_reports_bot_shop_binding_verified": false,
+      "gateway_reports_owner_recipient_binding_verified": false,
+      "gateway_reports_live_uat_ready": false,
+      "gateway_api_is_not_independent_provider_owner_proof": true,
+      "no_bot_id_token_or_url_exposed": true
+    },
+    "prior_reported_getwebhookinfo_execution": {
+      "id": "3823",
+      "verified_against_original_workflow_current_turn": false,
+      "status": "HISTORICALLY_REPORTED_NOT_RELOCATED_DO_NOT_REPEAT_UNSAFELY"
+    },
+    "existing_zalo_bot_webhook_workflow": {
+      "id": "yIJk8LvJoLF40Z62",
+      "published": true,
+      "no_provider_send_ack_node_present": true,
+      "has_data_table_qa_marker_upserts": true,
+      "never_call_it_zero_write_ingress": true
+    },
+    "owner_and_release_after_reconciliation": {
+      "real_bot_creator_owner_session_authenticated": false,
+      "real_bot_to_store_binding_accepted": false,
+      "real_same_tenant_store_ab_jwt_accepted": false,
+      "newly_approved_native_signed_event": false,
+      "live_commerce_read_write_allowed": false,
+      "decision": "REAL_OWNER_STORE_AUTH_AND_NEW_CANARY_NO_GO"
+    }
+  }
 }
