@@ -184,7 +184,7 @@ test('H4-17 private HTTPS transport scrubs thrown error containing token',async(
  assert.match(msg,/REDACTED/);assert.equal(msg.includes(TOKEN),false);
 });
 test('H4-18 CI cannot invoke the private real provider CLI',()=>{
- const entry=fileURLToPath(new URL('../../../scripts/v177h4-private-bot-readback.mjs',import.meta.url));
+ const entry=fileURLToPath(new URL('../../scripts/v177h4-private-bot-readback.mjs',import.meta.url));
  const p=spawnSync(process.execPath,[entry],{encoding:'utf8',env:{
   ...process.env,CI:'true',GITHUB_ACTIONS:'true',T404_H4_OPERATOR_CONSENT:APPROVAL,
   T404_H4_EXPECTED_BOT_ID:ID,T404_H4_BOT_TOKEN:TOKEN
