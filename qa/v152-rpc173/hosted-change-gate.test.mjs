@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {inspectHostedProposal,REQUIREMENTS} from './hosted-change-gate.mjs';
+const config={workers_dev:false,preview_urls:false,routes:[],real_merchant_upload:false,uses_existing_rpc16_worker:false};
+const all=Object.fromEntries(REQUIREMENTS.map(v=>[v,true]));
+const verify=x=>{for(const k of ['can_deploy','can_create_hosted_do','can_change_access','can_upload','can_send'])assert.equal(x[k],false)};
+test('no evidence blocks all hosted actions',()=>{const x=inspectHostedProposal();assert.equal(x.status,'BLOCKED');verify(x)});
+for(const field of REQUIREMENTS)test('missing '+field+' denies',()=>{const e={...all};delete e[field];const x=inspectHostedProposal(e,config);assert.ok(x.missing.includes(field));verify(x)});
+for(const [name,v] of [['public worker',{workers_dev:true}],['preview',{preview_urls:true}],['routes',{routes:['example.com']}],['real upload',{real_merchant_upload:true}],['replacing existing worker',{uses_existing_rpc16_worker:true}]])test('deny '+name,()=>{const x=inspectHostedProposal(all,{...config,...v});assert.equal(x.status,'BLOCKED');verify(x)});
+test('all synthetic checkboxes never authorize deployment',()=>{const x=inspectHostedProposal(all,config);assert.equal(x.reviewed,true);assert.equal(x.status,'REVIEW_ONLY_SEPARATE_APPROVAL_REQUIRED');verify(x)});
+test('string true cannot spoof evidence',()=>{const x=inspectHostedProposal(Object.fromEntries(REQUIREMENTS.map(v=>[v,'true'])),config);assert.equal(x.status,'BLOCKED');verify(x)});
