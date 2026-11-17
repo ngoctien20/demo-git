@@ -14,6 +14,7 @@ const MAX_BODY=4096;
 const CORE_JS=readFileSync(new URL('../v173-website-session/website-client-qa-adapter.mjs',import.meta.url),'utf8');
 const PAGE=readFileSync(new URL('./browser-qa.html',import.meta.url),'utf8');
 const UI=readFileSync(new URL('./browser-qa-ui.mjs',import.meta.url),'utf8');
+const CSS=readFileSync(new URL('./browser-qa.css',import.meta.url),'utf8');
 const SNAPSHOT=JSON.parse(readFileSync(new URL('../v173-website-session/inactive-n8n-website-session-qa-snapshot.json',import.meta.url),'utf8'));
 
 function fixture(){
@@ -70,6 +71,7 @@ export function createPrivateLoopbackQaIssuer({keyPem,certPem}={}){
    if(path==='/healthz')return json(res,200,{status:'V174_QA_LOOPBACK_ONLY',real_owner_verified:false,hosted_store_rls_verified:false,provider_sends:0});
    if(path==='/qa')return staticFile(res,PAGE,'text/html; charset=utf-8');
    if(path==='/qa-ui.mjs')return staticFile(res,UI,'text/javascript; charset=utf-8');
+   if(path==='/qa.css')return staticFile(res,CSS,'text/css; charset=utf-8');
    if(path==='/qa-adapter.mjs')return staticFile(res,CORE_JS,'text/javascript; charset=utf-8');
    return json(res,404,{status:'NOT_FOUND'});
   }
