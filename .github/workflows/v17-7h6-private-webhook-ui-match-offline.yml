@@ -1,0 +1,64 @@
+name: TIEN404 V17.7H.6 Private Zalo/n8n Webhook UI Pairing — NO TOKEN NO NETWORK
+on:
+  push:
+    branches:
+      - work/v177h6-private-ui-webhook-endpoint-match-no-token-20261118
+  pull_request:
+    paths:
+      - 'qa/v17-7a-oa-independent/v17-7h6-*'
+      - 'scripts/v177h6-*'
+      - '.github/workflows/v17-7h6-private-webhook-ui-match-offline.yml'
+permissions:
+  contents: read
+jobs:
+  private-webhook-ui-offline:
+    name: H.4/H.5/H.6 source-only QA (40 tests), zero token, zero network
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CI: 'true'
+      GITHUB_ACTIONS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and inherited local-only source QA
+        run: |
+          node --check qa/v17-7a-oa-independent/v17-7h6-private-webhook-ui-url-compare.mjs
+          node --check scripts/v177h6-private-compare-webhook-ui.mjs
+          node --test qa/v17-7a-oa-independent/v17-7h4-private-real-readback.test.mjs qa/v17-7a-oa-independent/v17-7h5-private-getme-discovery.test.mjs qa/v17-7a-oa-independent/v17-7h6-private-webhook-ui-url-compare.test.mjs
+      - name: Security gate - prevent secrets, URLs, network or hosted authorization
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root=Path('qa/v17-7a-oa-independent')
+          code=(root/'v17-7h6-private-webhook-ui-url-compare.mjs').read_text()
+          cli=Path('scripts/v177h6-private-compare-webhook-ui.mjs').read_text()
+          ps=Path('scripts/v177h6-private-compare-webhook-ui.ps1').read_text()
+          for phrase in ["ngoctien20.app.n8n.cloud",
+                         "verifiedProductionWebhookWorkflowId:WORKFLOW_ID",
+                         "independentlyVerifiedBotOwner:false",
+                         "canonicalStoreVerified:false",
+                         "hostedNoSendCanaryAuthorized:false",
+                         "networkCalls:0","tokenUsed:false"]:
+            assert phrase in code,phrase
+          assert "process.stdin.isTTY" in cli
+          assert "process.env.CI==='true'" in cli
+          assert "-AsSecureString" in ps and "ZeroFreeBSTR" in ps
+          assert "COMPARE" in ps
+          for suspect in [code,cli]:
+            for expr in [r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\baxios\b',
+                         r"from ['\"]node:https?['\"]",r'\bconsole\.log\s*\(']:
+              assert not re.search(expr,suspect),expr
+          print("V177H6_UI_ONLY_ZERO_PROVIDER_ZERO_TOKEN_ZERO_COMMERCE_ZERO_NETWORK")
+          PY
+  real-zalo-or-hosted-canary:
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo 'BLOCKED: real provider and Commerce Store owner/JWT/M0 approvals absent'
