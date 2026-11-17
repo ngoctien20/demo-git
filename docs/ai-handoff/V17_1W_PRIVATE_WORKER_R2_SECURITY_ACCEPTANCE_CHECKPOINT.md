@@ -70,3 +70,19 @@ This is a **design-ready testing adapter**. The actual trusted collector, review
 **Separate operator/owner authorization** for (A) protected external no-send Worker denial test on specified QA route; (B) adding retention/lock and durable replay binding to existing R2/Worker; (C) approved scanner/CDR and cost budget; (D) creating new same-Tenant QA Store owners and test rows; (E) real Meta/Zalo signed owner canary. Do not infer these permissions from naming a milestone.
 
 Documentation: https://developers.cloudflare.com/workers/configuration/cloudflare-access/ · https://developers.cloudflare.com/r2/buckets/public-buckets/ · https://supabase.com/docs/guides/auth/sessions
+
+
+## 6. Independent QA verified — 2026-11-17 JST
+
+**Tested commit:** `6a3ec1d313f4318c9536e87dfbc445199c2c98af`. GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44090788818
+
+- **Job `134065032237` — SUCCESS:** **44/44 new V17.1W** signed FAKE Cloudflare observation, R2 retention/replay and disposable QA identity tests; **1088/1088 inherited** V17.1V (58) + V17.1U (25) + V17.1T (150) + earlier (855) tests; **1132/1132 source tests PASS**. Static fail-closed checks verify no real external API request, database I/O, credential import, Auth mutation, file read or provider send in the source gate.
+- **Job `134065032689` — SUCCESS:** disposable PostgreSQL17 same-Tenant synthetic Store A/B RLS fixture with a ROLLBACK. This is NOT real Supabase Auth JWT or production Commerce RLS.
+- **Job `134065577632` — FAILURE BY DESIGN:** real independent hosted Access deny UAT / R2 actual retention / Worker durable replay / real two-owner JWT store isolation is not yet accepted. Overall GitHub workflow is deliberately RED as a **hosted release guard**, not a regression-suite failure.
+- The CI uses **ephemeral TEST-ONLY Ed25519 reviewer keys, fake Cloudflare observations and fake QA tenant records**. It does not attest that the actual hosted Worker is reachable or blocked from anonymous access. Current real Cloudflare/Supabase reads were separate and read-only.
+- No Worker or R2 configuration was changed, no Access app/policy was altered, no hosted test identities, files, costs, customer data or messages were generated.
+- The remaining security decision is **NO-GO**. To perform the first real external denied/allowed canary or modify retention/replay/identity, obtain independent scoped owner/operator approval for the exact existing QA route and any budget impact. The in-progress Draft PR is not such approval.
+
+**Disposition:** VERIFIED READ-ONLY EXISTING RESOURCES / IMPLEMENTED SOURCE-ONLY AUDIT GATE / TESTED 1132 SOURCE AND DISPOSABLE PG17 / REAL HOSTED SECURITY AND STORE AUTH BLOCKED / PRODUCTION NO-GO.
+
+This checkpoint documentation changes Git HEAD; require exact-final-SHA CI confirmation before claiming final release checkpoint.
