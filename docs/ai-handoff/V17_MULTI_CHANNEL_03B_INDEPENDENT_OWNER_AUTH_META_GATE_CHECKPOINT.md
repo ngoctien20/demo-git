@@ -136,3 +136,24 @@ No customer names, email, phone, IDs, SKU/name values, amounts, Auth JWT or sour
 **Independent reviewer decision still required:** Original QA seed/migration provenance or genuine authorized database seed owner attestation. Only a read-only aggregate was obtained in this change; it is insufficient to attest actual creator, file origin or legal Merchant control.
 
 **Rollback:** revert the source-only SQL, sanitized JSON and this checkpoint appendix. No database customer records or cloud resources changed.
+
+---
+
+## 7. ORIGINAL-SOURCE CROSS-CHECK AND ANTI-ESCALATION CI — 17 NOV 2026 JST
+
+**Real project context is stronger than an anonymous timestamp, but still not a per-row seed receipt:**
+- The original internal project document \`TIEN404_AI_WORK_MASTER_V7.md\` (11 Nov 2026) explicitly characterizes the *staging snapshot* as **two Tenants, two Products and two Orders, not real revenue or genuine customer data**. This is original project-context classification, **not** a signed migration artifact identifying the author/command that inserted P1/P2/O1/O2. No sensitive project document contents are copied into public GitHub.
+- Existing [Data Platform PR #5](https://github.com/ngoctien20/demo-git/pull/5), at inspected HEAD \`ab940a95dae8afdff426bc6ac71693833d5348ce\`, already records the same **2 Tenant / 2 Product / 2 Order** inventory **before** its isolated temporary synthetic QA persistence test in \`ops/data-platform/checkpoints/LIVE_INTEGRATION_QA_20261110.md\`. That synthetic product was explicitly inserted, read across connections, then deleted. The distinct PR #5 \`ops/data-platform/schema.staging.sql\` is schema-focused and does **not** record an original committed INSERT of the four standing rows. Its isolated test helper may create other fixtures in an ephemeral database. Do not conflate any of those with the four earlier standing rows.
+- Another later internal staging evidence record, \`TIEN404_V15_0_10T_HOSTED_STORE_EVIDENCE_20261117.json\`, explicitly scopes **\`tien404_r1_qa\`** as synthetic disposable fixtures. **That is a separate QA schema/data scope; it does not independently attest provenance of standing \`public.products\` or \`public.orders\` rows.**
+
+**New source-only decision guard:**
+- \`qa/v17-multichannel03b/legacy-provenance-admission.mjs\` checks the committed sanitized read-only snapshot for exact contract, project, timestamp, nine count fields, QA-likely label, complete false-valued permissions and absence of injected fields.
+- It returns only \`INDEPENDENT_SOURCE_REVIEW_REQUIRED\` for the matching historical aggregate. Mutated counts, forged \`VERIFIED_SYNTHETIC\`, owner/Store release flags, PII injection or caller-supplied alleged original receipt all return \`BLOCKED\`. No input grants \`canWrite\`, \`canDeploy\`, \`canAdmitRealUat\`, \`canApplyStoreRls\`, \`canSendMessages\`, or \`canCertifyDataSynthetic\`.
+- \`qa/v17-multichannel03b/legacy-provenance-admission.test.mjs\`: **30** new independent security regression cases; new files are included in the exact PR #310 CI \`node --test qa/v17-multichannel03b/*.test.mjs\` and in its module no-network / no-permission static guard.
+- Exact HEAD CI with this code and inherited suites: [GitHub Actions 44082161767](https://github.com/ngoctien20/demo-git/actions/runs/44082161767), **434/434 PASS (67 new branch + 63 + 33 + 96 + 64 + 111 inherited)**. If this documentation update creates a later HEAD, verify its new CI separately.
+
+**Decision unchanged for real security admission:** \`QA_LIKELY_NOT_VERIFIED_SYNTHETIC\` is appropriate given the historical project intent and repeatable hosted aggregate checks. It remains **NOT** \`VERIFIED_SYNTHETIC\` until an independent primary-source creator/import attestation ties the actual row lineage to an authorized QA seed. No private Merchant ID/invoice request for these four ambiguous staging rows is justified now, but this does not waive evidence requirements for actual business data later. **No row deletion, reclassification in the database, public access, Store ACL/RLS cutover, real JWT, active Meta callback or native handover.**
+
+**Practical next release dependency:** Data Steward + Independent DB Reviewer verify the original isolated staging seed/commit or a separately held original controlled import log; if unavailable, preserve the old rows and plan **new, explicitly provenance-stamped disposable same-Tenant Store A/B QA canaries** only after independent PRE-M1 backup/recovery and staging-schema approval. Never manufacture the required Store ownership by interpreting these two existing Tenants as two Stores.
+
+**Rollback:** Revert added guard, tests, workflow change and documentation on this Draft PR only. Hosted Supabase, R2, Access, Worker, n8n and Meta were not changed.
