@@ -93,3 +93,4 @@ test('28 deny absent rollback / no-public-route attestation',()=>{const f=fixtur
 test('29 deny missing approval requested resource',()=>{const f=fixture();f.payload.resources.pop();denies(f,'strict_resource_scope');});
 test('30 deny silently added extra JSON fields',()=>{const f=fixture();f.payload.deploy_now=true;denies(f,'exact_signed_contract_fields');});
 test('31 deny customer-data scope',()=>{const f=fixture();f.payload.allow_real_data=true;denies(f,'no_send_synthetic_scope');});
+test('32 deny alternate signing contract even if JSON field shape is correct',()=>{const f=fixture();f.payload.contract='OTHER_CONTRACT';denies(f,'exact_contract_version');});
