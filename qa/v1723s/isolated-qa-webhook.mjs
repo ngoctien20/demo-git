@@ -97,4 +97,10 @@ export async function handleDedicatedQaWebhook(req,env={},now=Date.now()){
  // Provider gets an indistinguishable empty ACK for first delivery and retries.
  return reply(200);
 }
-export default {fetch:handleDedicatedQaWebhook};
+// Cloudflare module-worker fetch receives (request, env, ExecutionContext). Never treat the
+// third runtime argument as the injected clock accepted by handleDedicatedQaWebhook.
+export default {
+ fetch(request, env) {
+  return handleDedicatedQaWebhook(request, env, Date.now());
+ }
+};
