@@ -1,0 +1,53 @@
+name: TIEN404 RPC15 — Private R2 Binding Source-Only Safety
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc15/**'
+      - 'docs/ai-handoff/T404_RPC15_*'
+      - '.github/workflows/v152-rpc15-private-r2-source-nosend.yml'
+  push:
+    branches:
+      - work/v152-rpc15-private-r2-binding-nosend-20261117
+permissions:
+  contents: read
+jobs:
+  offline-r2-binding:
+    name: R2 private create-only adapter and source-only denial
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Zero-secret, no-hosted, no-deploy validation
+        run: |
+          node --check qa/v152-rpc15/private-r2-quarantine.mjs
+          node --check qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node --test qa/v152-rpc15/private-r2-quarantine.test.mjs
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=fs.readFileSync('qa/v152-rpc15/private-r2-quarantine.mjs','utf8');
+          if(/export\s+default\s*\{|async\s+fetch\s*\(|\b(createSignedUrl|presignedUrl)\s*\(/i.test(p))
+            throw Error('RPC15_PUBLIC_HANDLER_OR_URL');
+          if(!p.includes("'If-None-Match':'*'")||!p.includes('R2_QUARANTINE')||
+             !p.includes('application/octet-stream'))throw Error('RPC15_PRIVATE_BINDING_GUARD');
+          const snap=require('./qa/v152-rpc15/verified-r2-bucket-snapshot.json');
+          const status=require('./qa/v152-rpc15/verify-private-r2-readiness.cjs').inspect(snap);
+          if(status.canDeployUpload||status.canAcceptRealMerchantEvidence||status.canRelease)
+            throw Error('RPC15_UNAUTHORIZED_HOSTED');
+          console.log('PASS RPC15 OFFLINE PRIVATE R2; real Merchant intake still NO-GO');
+          NODE
+  inherited-rpc14-regression:
+    name: Inherited RPC14 quarantine and RPC13 identity regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run inherited no-send tests
+        run: |
+          node --test qa/v152-rpc14/smoke.test.mjs
+          node --test qa/v152-rpc13/secure-identity-and-uat.test.mjs
