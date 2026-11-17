@@ -1,0 +1,60 @@
+name: TIEN404 V18.0-P0F — Store Compatibility and Private Auth Admission NO-HOST
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0f/**'
+      - '.github/workflows/v180-p0f-compat-auth-admission.yml'
+      - 'docs/ai-handoff/T404_V180_P0F_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0f/**'
+      - '.github/workflows/v180-p0f-compat-auth-admission.yml'
+      - 'docs/ai-handoff/T404_V180_P0F_*'
+permissions:
+  contents: read
+jobs:
+  compatibility-and-no-send-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned repository commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Reject external IO and dangerous automation in preflight source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0f/store-auth-compat-preflight.mjs
+          ! grep -Eqi 'child_process|createClient\(|process\.env|fetch\(|https?\.request\(|\.exec\(' qa/v180-p0f/store-auth-compat-preflight.mjs
+      - name: Execute fail-closed unit tests on compatibility, private owner admission, UAT receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v180-p0f/store-auth-compat-preflight.test.mjs
+      - name: Verify current matrix is read-only tenant-scoped and all UAT scenarios are NOT_RUN
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {inspectCompatibility,noSendUatCases,inspectUatReceipts} from './qa/v180-p0f/store-auth-compat-preflight.mjs';
+          const snap=JSON.parse(readFileSync('./qa/v180-p0f/canonical-store-compatibility-metadata.json','utf8'));
+          const a=inspectCompatibility(snap);
+          const p=noSendUatCases();
+          const u=inspectUatReceipts(p);
+          if(a.status!=='TENANT_ONLY_BASELINE_VERIFIED'||!a.sourceOnlyMatrixReady
+            || a.canMigrate || a.canSendProvider
+            ||p.length!==31||u.status!=='PREPARED_NOT_EXECUTED'
+            ||u.canPublish||u.canCallHostedRpc)
+            throw Error('P0F_SOURCE_ONLY_ADMISSION_GATE_REGRESSION');
+          console.log(JSON.stringify({
+            checkpoint:'P0F',status:'SOURCE_ONLY_READY_HOSTED_NO_GO',
+            matrixSurfaces:snap.table_surfaces.length,
+            realJwtTested:false,uatScenariosNotRun:p.length,canMigrate:false
+          }));
+          NODE
+      - name: Explicit no-host no-send gate
+        shell: bash
+        run: |
+          printf '%s\n' 'P0F_NO_HOSTED_WRITES; NO_REAL_JWT; NO_PROVIDER_SEND; NO_CUSTOMER_DATA; M0_DEFERRED_SOURCE_ONLY'
