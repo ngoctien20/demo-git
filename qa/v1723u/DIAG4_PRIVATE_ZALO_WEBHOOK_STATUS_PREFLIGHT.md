@@ -52,3 +52,14 @@ These outputs prove only current provider configuration for the supplied token, 
 - **No mutation** to Zalo, Cloudflare hosted Worker, QA D1, credentials, Messenger, or Commerce; GitHub Draft PR only. No Bot reset, webhook enrollment, request sending, or hosted diagnostic migration.
 - **Next gate**: Private QA Bot identity association; retain locked receiver; separately authorize any further attempt with no-content event diagnostics, bounded spending and rollback.
 - **Classification**: `TOKEN_VALID_OWNER_TEST / GETWEBHOOKINFO_OK_NO_URL_OWNER_TEST / QA_BOT_IDENTITY_MAPPING_PENDING / CLOUDFLARE_OFF_VERIFIED / HISTORICAL_EVENT_UNPROVEN`.
+
+## Owner reported n8n wrong-token input — credential provenance audit
+
+- OWNER-REPORTED after webhook removal: owner had earlier entered an incorrect token **in n8n**. The owner has not identified the precise n8n workflow, credential slot, or whether it was a Bot API Token vs webhook shared-header Secret Token. **Do not speculate that this caused the Cloudflare D1 zero-receipt result.**
+- n8n connector metadata read-only: workflow `yIJk8LvJoLF40Z62` (TIEN404_ZALO_BOT_LAB_V1_STAGING) is ACTIVE with separate credential named `TIEN404_ZALO_WEBHOOK_STAGING_V2` on the protected webhook node. Workflow `RnbsXSriPcythZjq` is an INACTIVE manual HTTP auth probe using that credential. Credential secret values are **not available in metadata** and were neither read nor changed.
+- n8n execution metadata since 2026-11-17T00:00Z: no new executions reported for `yIJk8LvJoLF40Z62`. HTTP auth probe `RnbsXSriPcythZjq` had manual success 4977, error 4985, success 4992 on Nov 17; this does not validate the credential used by a new Zalo QA Bot.
+- The **dedicated Cloudflare QA Worker is a separate ingress** from the n8n webhook. Wrong credentials in n8n do **not automatically** cause the Cloudflare Worker to fail webhook acceptance. A wrong Bot API Token can affect authenticated Zalo Bot API calls or registration if used there; an incorrect inbound Webhook Secret Token at the receiving Worker could produce 403. The exact correlation is UNKNOWN.
+- Prior new QA Bot local owner-only read-only getMe returned valid and getWebhookInfo showed no URL; owner identity mapping (new QA Bot vs old Bot) still needs private confirmation.
+- Never copy the newly verified Bot API Token into existing published n8n credentials without owner identifying the intended workflow and authorizing specific credential rotation. No n8n credentials, workflows or production resources were modified in this audit.
+- Next input needed (metadata only): owner indicates which n8n workflow/credential and which token class they entered incorrectly; do not request the token itself.
+- State: `WRONG_N8N_TOKEN_OWNER_REPORTED / WORKFLOW_METADATA_READ_ONLY / CREDENTIAL_SECRET_NOT_VERIFIED / CLOUDFLARE_CAUSAL_LINK_UNPROVEN / NO_WRITES_TO_N8N`.
