@@ -171,3 +171,13 @@ No extra D1 instance is required: use **only** the already-isolated disposable Q
 **PROPOSED NEXT GATE:** Provider-side private read-only `getWebhookInfo` or Bot Creator status, correlated one-at-a-time QA event with Cloudflare aggregate status if explicit new test approved. No further provider messages, hosted schema mutation, or public Worker exposure until a scoped authorization and rollback preflight. HTTP 405 could be non-POST but is **not evidence** of a Zalo GET. Historical analytics cannot determine whether Zalo delivered an event.
 
 **DIAG3 checkpoint:** `AGGREGATE_INVOCATION_AUDIT_VERIFIED / ZALO_DELIVERY_UNPROVEN / ENDPOINT_OFF / NO_HOSTED_CHANGES / NEXT_UAT_NO_GO`.
+
+## V17.23U-DIAG4 — Private provider webhook status readiness
+
+**VERIFIED public contract:** Official Zalo Bot getMe and getWebhookInfo are POST read-only operations; getWebhookInfo returns current webhook configuration, but does not expose delivery history. See [DIAG4 private operator preflight](./DIAG4_PRIVATE_ZALO_WEBHOOK_STATUS_PREFLIGHT.md).
+
+**BLOCKED:** Current connector permissions do not expose the new QA Bot's API Token to the assistant, and browser context is not connected. Therefore, no Zalo provider API call was made. OWNER must run a locally token-masked read-only query or show an independently verified Bot Creator state, without leaking credentials or callback URL.
+
+**SECURITY:** Do not use the old Zalo Bot token, Zalo OA, n8n published credentials or Commerce, do not send additional challenge, and do not register a new webhook. Continue only after verifying which bot the token belongs to.
+
+**Current stage:** DIAG4_PREFLIGHT_DOCUMENTED / PROVIDER_STATUS_PENDING_OWNER_EVIDENCE / WORKER_LOCKED / PRODUCTION_NO_GO.
