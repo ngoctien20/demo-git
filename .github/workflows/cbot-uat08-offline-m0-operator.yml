@@ -178,3 +178,39 @@ jobs:
             assert not re.search(banned,no_comments,re.I),banned
           print("CBOT-UAT08 current source: PINNED, LOCAL ONLY, NO HOSTED WRITE")
           PY
+
+
+  windows-native-pinned-fake-archive:
+    name: Native Windows 2022 private M0 launcher / fake archive only
+    runs-on: windows-2022
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+      GITHUB_ACTIONS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: '4f7bef71f54ee17b88449026b90803ccf9743e30'
+          path: rpc7
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native Windows pinned RPC7 / clean SHA / fake TOC / non-release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & ./qa/cbot-uat08/windows-native-m0-fake-fixture-qa.ps1
+      - name: Local fake-token-free code and no hosted-write guard
+        shell: pwsh
+        run: |
+          $script=Get-Content -Raw ./qa/cbot-uat08/windows-native-m0-fake-fixture-qa.ps1
+          foreach($bad in @('Invoke-RestMethod','Invoke-WebRequest','pg_dump','pg_restore -d','service_role','supabase.co','Meta API')) {
+            if($script.Contains($bad)) { throw 'WIN_QA_FORBIDDEN_HOSTED_OPERATION' }
+          }
+          if(-not $script.Contains('T404_WIN_NATIVE_QA_COMPLETE_NO_REAL_BACKUP_NO_SEND')) {
+            throw 'WIN_QA_NO_GO_ASSERTION_MISSING'
+          }
