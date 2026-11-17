@@ -65,3 +65,19 @@ Only isolated GitHub code, tests, documents and Draft CI are changed. No n8n wor
 
 Rollback: close V17.1S child Draft PR. Parent V17.1R and Published nodes stay intact.
 Release: **HOSTED NO-GO** until verified owner-issued JWTs, private signed Meta/Zalo events, Store-level RLS and independent QA receipts exist.
+
+
+## 7. Independent acceptance evidence — VERIFIED 2026-11-17 JST
+
+Tested source SHA: `c67f47838bd2c3ff61e4f3c352b206526e6b4600`.
+GitHub Actions: https://github.com/ngoctien20/demo-git/actions/runs/44066189728
+
+- Source job `133980359659`: **SUCCESS** — **107/107** new V17.1S dual-Store JWT/source native signature tests, **855/855** inherited security/Commerce regressions; **962/962 tests PASS**. Static checks confirm no real network, provider credentials, Auth secrets or database I/O, and hosted release explicitly NO-GO.
+- Disposable PostgreSQL 17 job `133980360082`: **SUCCESS** — temporary Store A/B RLS fixture within the same synthetic Tenant, independent database process, ROLLBACK and no retained table; NOT real Supabase Auth JWT/RLS or Commerce read.
+- Real owner JWT + Meta/Zalo OA signed production admission job `133980662183`: **FAILURE by design** (fail-closed HOSTED NO-GO), because the required owner, native provider and Commerce evidence does not yet exist.
+- A successful source cryptographic test of FAKE events/keys never counts as a genuine signed Meta/Zalo callback or a real Supabase Auth owner session. No hosted UAT was performed.
+- Existing Published Messenger V17.17, four V17.15 nodes and Zalo V17.19 remain protected and unmodified. No Supabase writes, Auth grants, customer data, orders, billing or messages.
+
+**Status:** IMPLEMENTED SOURCE, TESTED 962 SOURCE QA, TESTED DISPOSABLE PG17, PRIVATE REAL OWNER/JWT/OA UAT BLOCKED, PRODUCTION NO-GO.
+
+This documentation-only checkpoint commit changes HEAD; independently verify final commit CI before the final sign-off.
