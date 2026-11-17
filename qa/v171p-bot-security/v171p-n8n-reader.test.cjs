@@ -250,5 +250,7 @@ for(const [label,key,value] of forged)test('deny forged otherwise eligible Store
 test('last source QA must not claim real Store JWT proof',()=>{
  assert.equal(snap.release,'HOSTED_NO_GO');
  assert.equal(snap.realCommerceReaderConnected,false);
- assert.equal(snap.actualDatabaseReads,0);
+ assert.equal(snap.realOrdersRead,0);
+ assert.equal(snap.realCustomersRead,0);
+ assert.equal(snap.realOrdersWritten,0);
 });
