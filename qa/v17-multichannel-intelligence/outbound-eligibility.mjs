@@ -28,13 +28,17 @@ function safeInputs({ binding: b, event: e, conversation: c, policy: p,
     Object.hasOwn(CHANNEL_PROVIDER, b.channel) &&
     b.provider === CHANNEL_PROVIDER[b.channel] && e.channel === b.channel &&
     [b.id, b.tenantId, b.storeId, b.accountRef,
-      e.eventId, e.bindingId, e.tenantId, e.storeId,
-      c.tenantId, c.storeId, c.bindingId,
-      p.bindingId, i.replyIntentId, i.bindingId].every(isId) &&
+      e.eventId, e.bindingId, e.tenantId, e.storeId, e.accountRef, e.conversationId,
+      c.tenantId, c.storeId, c.bindingId, c.conversationId,
+      p.bindingId, p.tenantId, p.storeId,
+      i.replyIntentId, i.bindingId, i.tenantId, i.storeId, i.conversationId].every(isId) &&
     b.id === e.bindingId && b.id === c.bindingId && b.id === p.bindingId &&
-    b.id === i.bindingId &&
+    b.id === i.bindingId && e.accountRef === b.accountRef &&
+    e.conversationId === c.conversationId && i.conversationId === c.conversationId &&
     b.tenantId === e.tenantId && b.tenantId === c.tenantId &&
+    b.tenantId === p.tenantId && b.tenantId === i.tenantId &&
     b.storeId === e.storeId && b.storeId === c.storeId &&
+    b.storeId === p.storeId && b.storeId === i.storeId &&
     Number.isSafeInteger(now) && now > 0 &&
     Number.isSafeInteger(e.lastUserInteractionAtMs) &&
     e.lastUserInteractionAtMs > 0 && e.lastUserInteractionAtMs <= now &&
