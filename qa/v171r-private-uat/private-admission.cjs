@@ -45,6 +45,7 @@ function nativeJwtVerify(token,jwks,issuer,audience,nowSeconds){
     (header.typ!==undefined&&header.typ!=='JWT'))return deny('JWT_HEADER');
  const keys=Array.isArray(jwks.keys)?jwks.keys:[];
  const matchingKeys=keys.filter(k=>k&&k.kid===header.kid);
+ if(matchingKeys.length===0)return deny('JWT_KEY');
  if(matchingKeys.length!==1)return deny('JWT_KEY_AMBIGUOUS');
  const key=matchingKeys[0];
  if(!key||key.d!==undefined||key.kty!==(header.alg==='RS256'?'RSA':'EC')||
