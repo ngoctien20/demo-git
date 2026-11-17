@@ -122,7 +122,10 @@ export function assessPrivateEvidenceDossier({
    new Set(pub).size===roles.length&&
    new Set(roles.map(n=>trust[n]?.key_id)).size===roles.length);
  check('five_independently_signed_phase_bound_attestations',
+   eq(k(s),[...roles].sort())&&
    roles.every(n=>checkSignature(p,s[n],trust[n],domain(phase,n))));
+ check('exact_independent_registry_roles',
+   eq(k(trust),[...roles,...(phase===PHASE_QA?['ledger_postflight']:[])].sort()));
  const x=inv.snapshot;
  check('fresh_full_independent_inventory_digest',
    inv.account_id===ACCOUNT&&
@@ -135,7 +138,15 @@ export function assessPrivateEvidenceDossier({
    Number.isSafeInteger(x.collected_at_ms)&&now>=x.collected_at_ms&&
    now-x.collected_at_ms<=60000&&
    x.page_verification?.cross_consistent===true&&
-   x.page_verification?.total_workers===x.worker_names.length);
+   x.page_verification?.total_workers===x.worker_names.length&&
+   x.page_verification?.total_scripts===x.script_names.length&&
+   Array.isArray(x.do_namespace_names)&&
+   [
+    'tien404-v175e2-durable-replay-nosend-staging_ReplayBucket',
+    'tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults'
+   ].every(q=>x.do_namespace_names.includes(q))&&
+   new Set(x.worker_names).size===x.worker_names.length&&
+   new Set(x.do_namespace_names).size===x.do_namespace_names.length);
  check('target_resource_absent',
    !has(x?.worker_names,p.target_worker)&&
    !has(x?.script_names,p.target_worker)&&
@@ -146,7 +157,8 @@ export function assessPrivateEvidenceDossier({
   check('ledger_not_yet_present',!has(x?.worker_names,LEDGER));
  }else if(phase===PHASE_QA){
   check('qa_rejected_until_ledger_in_current_inventory',
-   has(x?.worker_names,LEDGER)&&!has(x?.worker_names,WORKER));
+   has(x?.worker_names,LEDGER)&&!has(x?.worker_names,WORKER)&&
+   has(x?.do_namespace_names,LEDGER+'_V174PPermitLedger'));
   const l=obj(priorLedgerAcceptance)?priorLedgerAcceptance:{};
   const receipt=obj(l.receipt)?l.receipt:{};
   const anchor=trust.ledger_postflight;
@@ -155,6 +167,8 @@ export function assessPrivateEvidenceDossier({
    eq(k(receipt),receiptKeys)&&
    receipt.contract==='T404_V174P_HOSTED_LEDGER_POSTFLIGHT_V1'&&
    receipt.resource===PHASE_LEDGER&&receipt.worker_name===LEDGER&&
+   iso(receipt.created_at)&&Date.parse(receipt.created_at)<=now&&
+   now-Date.parse(receipt.created_at)<=24*60*60*1000&&
    typeof receipt.worker_id==='string'&&/^[0-9a-f]{32}$/.test(receipt.worker_id)&&
    typeof receipt.namespace_id==='string'&&/^[0-9a-f]{32}$/.test(receipt.namespace_id)&&
    receipt.namespace_name===LEDGER+'_V174PPermitLedger'&&
