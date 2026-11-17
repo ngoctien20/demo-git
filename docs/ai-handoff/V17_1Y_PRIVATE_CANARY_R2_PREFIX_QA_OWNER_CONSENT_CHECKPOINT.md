@@ -52,3 +52,19 @@ Only a NEW child Draft GitHub PR with source, tests, read-only inventory evidenc
 Future real changes must each have a separate scoped permission, lifecycle/tenant backup and rollback checkpoint; do not automatically treat a new milestone name as authorization for irreversible work.
 
 References: https://developers.cloudflare.com/r2/buckets/object-lifecycles/ , https://developers.cloudflare.com/workers/configuration/cloudflare-access/ , https://supabase.com/docs/guides/auth/sessions
+
+
+## F. Independent CI evidence — VERIFIED 2026-11-17 JST
+
+**Initial tested HEAD:** `b27f52124aab78f7700d9e00c595dbd5373de524`  
+**GitHub Actions run:** https://github.com/ngoctien20/demo-git/actions/runs/44098186929
+
+- **Job 134090826206 SUCCESS:** **40/40** new V17.1Y synthetic private signer/R2-empty-prefix consent tests + **1,185/1,185** inherited QA security/Commerce source regression cases = **1,225/1,225 PASS**. Live API inventory and source-only fake-key tests must never be confused.
+- **Job 134090825739 SUCCESS:** independent disposable PostgreSQL 17 two Store RLS mechanical test with ROLLBACK. Not a real Supabase Auth JWT or real Store-scoped Commerce acceptance.
+- **Job 134091189794 FAILURE BY DESIGN:** no private external protected Access canary/verified independent enrolled human consent, no authorized R2 lifecycle changes, no two real same-Tenant Store Auth JWT sessions or hosted reader isolation. Overall workflow red intentionally as `HOSTED_NO_GO`, not a source failure.
+- **Actual read-only R2 prefix evidence:** successful List Objects call for `qa-v171x-disposable/`, 0 objects and no continuation. This is a point-in-time check without object/body/PII access; **rerun immediately and fence concurrent writes before any future policy changes**. The source suite is run with fake in-memory records; no real protected collector is connected.
+- No real founder MFA signature or independent human reviewer consent has been enrolled, accessed or verified; both remain FALSE in the acceptance manifest. **This project is currently solo-operated**, so technical two-account QA cannot be represented as independent two-merchant-human acceptance.
+- Published n8n and Cloudflare/Supabase production resources remain unchanged; only GitHub Draft child PR source/test/CI/docs are written. No real customer messages, Auth user creation, credential upload, R2 policy PUT, external Access probes or billable deployment.
+- This checkpoint-only documentation change creates another Git SHA; run **exact final-HEAD CI again** before final sign-off.
+
+**Disposition: VERIFIED READ-ONLY R2 PREFIX EMPTY AT CHECK TIME / SOURCE IMPLEMENTED & TESTED / INDEPENDENT OWNER CONSENT NOT VERIFIED / REAL HOSTED ACCESS & STORE JWT BLOCKED / PRODUCTION NO-GO.**
