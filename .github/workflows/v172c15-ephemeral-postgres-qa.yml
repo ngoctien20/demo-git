@@ -43,3 +43,5 @@ jobs:
           psql -X -tAc "SELECT current_database()" | grep -Fx postgres
       - name: PostgreSQL schema, RLS, revoke and guarded rollback drill (synthetic only)
         run: bash qa/v172c-rpc-closure/v172c15-ephemeral-postgres-drill.sh
+      - name: Private consent registry atomic replay and concurrent consume QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c18-atomic-consent-ci-drill.sh
