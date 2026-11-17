@@ -27,6 +27,14 @@ jobs:
         run: |
           node qa/v171d-meta-authority/page-app-readonly.mjs > /tmp/no-opt-in.txt && exit 1 || true
           grep -q EXPLICIT_LIVE_READONLY_OPT_IN_REQUIRED /tmp/no-opt-in.txt
+      - name: Windows operator PowerShell without opt-in stays offline and denied
+        run: |
+          set +e
+          pwsh -NoProfile -NonInteractive -File qa/v171d-meta-authority/verify_meta_page_readonly.ps1 > /tmp/ps-no-opt-in.txt
+          code=$?
+          set -e
+          test "$code" -eq 2
+          grep -q EXPLICIT_LIVE_READONLY_OPT_IN_REQUIRED /tmp/ps-no-opt-in.txt
       - name: Confirm isolated n8n shadow is locked, credential-free and cannot perform live actions
         run: |
           python3 - <<'PY'
