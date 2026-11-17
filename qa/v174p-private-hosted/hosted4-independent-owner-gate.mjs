@@ -53,6 +53,7 @@ function safeOrigin(raw){
   /^[a-z0-9.-]{6,180}$/.test(u.hostname)&&raw===u.origin+'/';
  }catch{return false;}
 }
+const safeArrayOrEmpty=value=>Array.isArray(value)?value:[];
 function normalizeList(items){
  return Array.isArray(items)?items.map(x=>String(x||'')):[];
 }
@@ -115,6 +116,15 @@ export function assessIndependentAuthorization(payload,signatures,trust,inventor
    v.source==='CLOUDFLARE_CONTROL_PLANE_READ_ONLY'&&
    Number.isSafeInteger(v.collected_at_ms)&&v.collected_at_ms<=now&&
    now-v.collected_at_ms<=600000);
+ // P1: /workers/workers is paginated, default response returned only 10/28.
+ // Never infer resource absence from an incomplete page-1 snapshot.
+ check('complete_paginated_inventory_correlated_to_scripts',
+   v.page_verification?.status==='COMPLETE'&&
+   v.page_verification?.cross_consistent===true&&
+   Number.isSafeInteger(v.page_verification?.total_workers)&&
+   v.page_verification.total_workers===safeArrayOrEmpty(v.worker_names).length&&
+   Number.isSafeInteger(v.page_verification?.total_scripts)&&
+   v.page_verification.total_scripts===safeArrayOrEmpty(v.script_names).length);
  const scripts=normalizeList(v.script_names);
  const workers=normalizeList(v.worker_names);
  const namespaces=normalizeList(v.do_namespace_names);

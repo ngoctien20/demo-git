@@ -34,7 +34,9 @@ function fixture(){
   script_names:[...LOCKED_V175_RESOURCES.scripts,'ngoctien20-bio'],
   worker_names:['tien404-g22-shop-b-map-nosend-staging'],
   do_namespace_names:[...LOCKED_V175_RESOURCES.namespaces],
-  access_app_names:['tien404-ai-git-staging - Cloudflare Pages']
+  access_app_names:['tien404-ai-git-staging - Cloudflare Pages'],
+  page_verification:{status:'COMPLETE',cross_consistent:true,total_workers:1,
+    total_scripts:LOCKED_V175_RESOURCES.scripts.length+1}
  };
  const review={
   independently_verified_source_sha:SHA,
@@ -94,3 +96,14 @@ test('29 deny missing approval requested resource',()=>{const f=fixture();f.payl
 test('30 deny silently added extra JSON fields',()=>{const f=fixture();f.payload.deploy_now=true;denies(f,'exact_signed_contract_fields');});
 test('31 deny customer-data scope',()=>{const f=fixture();f.payload.allow_real_data=true;denies(f,'no_send_synthetic_scope');});
 test('32 deny alternate signing contract even if JSON field shape is correct',()=>{const f=fixture();f.payload.contract='OTHER_CONTRACT';denies(f,'exact_contract_version');});
+test('33 reject previous first-page-only inventory with missing full pagination',()=>{
+ const f=fixture();delete f.inventory.page_verification;denies(f,'complete_paginated_inventory_correlated_to_scripts');
+});
+test('34 reject 10 workers on page1 when total_workers is 28',()=>{
+ const f=fixture();f.inventory.page_verification.total_workers=28;
+ denies(f,'complete_paginated_inventory_correlated_to_scripts');
+});
+test('35 refuse inventory counts that conflict with source scripts',()=>{
+ const f=fixture();f.inventory.page_verification.total_scripts=99;
+ denies(f,'complete_paginated_inventory_correlated_to_scripts');
+});
