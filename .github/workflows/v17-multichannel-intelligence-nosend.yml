@@ -1,0 +1,37 @@
+name: V17 Multi-Channel Source Intelligence - Handoff and Policy NO-SEND
+on:
+  pull_request:
+    paths:
+      - "qa/v17-multichannel-intelligence/**"
+      - "docs/ai-handoff/V17_MULTI_CHANNEL_SOURCE_INTELLIGENCE_CHECKPOINT.md"
+      - ".github/workflows/v17-multichannel-intelligence-nosend.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-handoff-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax checks
+        run: |
+          for f in qa/v17-multichannel-intelligence/*.mjs; do node --check "$f"; done
+      - name: Independent source-only channel tests
+        run: node --test qa/v17-multichannel-intelligence/*.test.mjs
+      - name: Inherited OA source gate QA
+        run: node --test qa/zalo-oa-source-admission/*.test.mjs
+      - name: Reject source calls to provider, hosted DB or LLM
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          for (const name of ['handoff-planner.mjs','outbound-eligibility.mjs']) {
+            const s = readFileSync('qa/v17-multichannel-intelligence/' + name, 'utf8');
+            for (const rule of [/\bfetch\s*\(/, /\baxios\s*\(/, /\bhttps?\.request\s*\(/,
+              /\b(sendMessage|createOrder|updateOrder|passThreadControl|takeThreadControl|executeSql|supabase)\s*\(/]) {
+              if (rule.test(s)) throw Error('FORBIDDEN LIVE OPERATION: '+name);
+            }
+            if (!s.includes('noSend: true') || !s.includes('providerCallExecuted: false'))
+              throw Error('SOURCE_NO_SEND_GUARD_MISSING: '+name);
+          }
+          NODE
