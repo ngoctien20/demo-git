@@ -1,0 +1,87 @@
+name: TIEN404 G0.9 Pinned Meta Isolated Signed No-Send Admission QA
+
+on:
+  push:
+    branches:
+      - work/v152-g09-authorized-provider-isolated-real-signed-nosend-candidate-20261117
+  pull_request:
+    paths:
+      - 'qa/v152-g09/**'
+      - '.github/workflows/v152-g09-authorized-provider-isolated-nosend.yml'
+      - 'docs/ai-handoff/T404_G09_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pinned-v171e-integration:
+    name: G0.9 exact pinned V17.1E handler × private authority candidate (NO SEND)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout independent V17.1E SOURCE at audited exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: d5fbd6958635069d15343be573cdbd4b55cc036c
+          path: .g09_v171
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact-commit provider handler source and test proof
+        run: |
+          git -C .g09_v171 rev-parse HEAD | grep -x d5fbd6958635069d15343be573cdbd4b55cc036c
+          node --test .g09_v171/qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs
+      - name: Run G0.9 new cross-branch adapter/source QA
+        run: |
+          node --check qa/v152-g09/isolated-meta-private-admission.cjs
+          node --check qa/v152-g09/isolated-meta-private-admission.test.cjs
+          node --test qa/v152-g09/isolated-meta-private-admission.test.cjs
+      - name: Inherited G0.4 - G0.8 source safety regression
+        run: |
+          node --test \
+            qa/v152-g08/real-provider-to-core-nosend-gate.test.cjs \
+            qa/v152-g07/private-provider-authority-gate.test.cjs \
+            qa/v152-g07/INACTIVE_PRIVATE_PROVIDER_AUTHORITY_N8N_SDK.test.cjs \
+            qa/v152-g06/INACTIVE_SIGNED_CHANNEL_STORE_COMMERCE_SDK.test.cjs \
+            qa/v152-g05/INACTIVE_N8N_COMMERCE_PILOT_SDK.test.cjs \
+            qa/v152-g04/trusted-store-commerce-adapter.test.cjs
+      - name: No real secrets, network, Orders or provider sends
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          x=Path('qa/v152-g09/isolated-meta-private-admission.cjs').read_text()
+          for term in ('process.env','fetch(','https.request(','child_process',
+                       'newCredential(','createOrder(','sendMessage(',
+                       'sendMessenger(','appSecret:', 'PAGE_ACCESS_TOKEN'):
+              assert term not in x,term
+          for token in (
+              'canPublish:false','canModifyProviderCallback:false',
+              'canReadCustomerOrders:false','canSendMessages:false',
+              'realSignedPilotCompletedHere:false',
+              'realProviderEventIndependentlyCertifiedHere:false',
+              'durableIdempotencyProvenHere:false'
+          ):
+              assert token in x,token
+          print('G09 no-send, no webhook, no real provider credentials, no Commerce I/O')
+          PY
+  isolated-real-pilot-denied:
+    name: Real provider Page/OA event not certified; live callback CUTOVER NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert all real operations denied by source candidate
+        run: |
+          node - <<'NODE'
+          const {createCandidate}=require('./qa/v152-g09/isolated-meta-private-admission.cjs');
+          const app=createCandidate({handler:async()=>({}),loadPrivateAuthority:async()=>({}),
+            loadPrivateMetaConfig:async()=>({})});
+          app.inspectOne({request:{method:'POST',url:'https://qa.invalid',headers:{},
+            rawBody:Buffer.from('{"qa_only":true}')}}).then(r=>{
+            if(r.canPublish||r.canSendMessages||r.canReadCustomerOrders||
+               r.realSignedPilotCompletedHere||r.status!=='G09_REAL_SIGNED_NO_SEND_NOT_ADMITTED')
+              throw Error('G09_LIVE_ADMISSION_WAS_NOT_REFUSED');
+            console.log('G09 REAL SIGNED PILOT BLOCKED: private Page, original Merchant Store, reviewer and callback needed');
+          });
+          NODE
