@@ -120,3 +120,35 @@ No extra D1 instance is required: use **only** the already-isolated disposable Q
 - Independent QA reviewer must verify exact source SHA, D1 migration preview, a bounded/no-content staging read/write test in an offline or disposable environment, negative bearer-header behavior, provider registration state, rate-limiting protection, no-send, no-PII storage, retention and a documented rollback.
 - Deployment sequence after explicit approval: keep Worker OFF; apply only the approved QA-only schema; verify preflight + baseline 0; configure optional QA_DIAG_MODE; run negative synthetic Worker requests **without provider credentials**; open a fresh ≤20-minute QA-only window; verify one real challenge; immediately disable workers.dev + QA mode and remove new Bot webhook; inspect only fixed reason codes and qa_canary_once receipt; purge diagnostics under separately approved retention procedure.
 - **Current GO/NO-GO: NO-GO for any webhook re-enrollment, network exposure, hosted diagnostic mode or production merge.** Owner's prior approval for the earlier one-event receiver does **not** automatically authorize this new diagnostic data processing or schema migration.
+
+
+## V17.23U-DIAG2 — Independent Rate-Limit and Disposable SQLite Admission
+
+**Scope as of this checkpoint:** GitHub Draft PR #394 only. Cloudflare production/staging-hosted Worker remains **OFF**, no QA webhook, and no hosted schema changes. This milestone does not authorize Zalo sends, live webhook registration, paid resources, credential changes, or changes to Commerce.
+
+### VERIFIED independent constraints
+
+- The deployed source currently has **no** D1-backed diagnostic table, no \`QA_DIAG_MODE\` flag, and no \`QA_DIAG_RATE_LIMITER\` binding. The operator reported deleting the new QA Bot webhook (owner-attested, not verified via Zalo provider API).
+- Cloudflare Workers native Rate Limiting binding (\`env.MY_RATE_LIMITER.limit({key})\`) is **approximate/per location** and can exceed the configured threshold; it is **not** an exact global quota. Cloudflare explicitly recommends Durable Objects for strict global limits. Source: https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/ (document updated Nov 12, 2026).
+- D1 Workers Free daily read/write quotas are enforced by errors once exceeded, beginning Sept 1, 2026; that does **not** replace prevention of abusive database queries. Source: https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/.
+- Eight permitted reason rows limit **persistent storage** but not attempted queries or failed authentication traffic. **Do not claim rate-limit acceptance** from row-count tests.
+
+### IMPLEMENTED on PR only (unhosted)
+
+- Optional diagnostics now additionally require \`QA_DIAG_RATE_LIMITER.limit({key:'qa-v1723u-auth-diagnostic'})\` to return \`{success:true}\` **after the Webhook Secret Token header is authenticated** and before issuing any diagnostics D1 query. When limiter is absent, unavailable, or exhausted, the Worker keeps the original denial HTTP status/body and attempts **zero** diagnostics D1 queries.
+- This is **diagnostics-write admission only**. It is not a blanket request throttle; valid events still follow the original single-slot contract, unauthorized requests are rejected without rate limiter calls, and it does not make rate limits globally strict. The key is a fixed QA bucket containing no token/IP/user/customer identity or callback path.
+- \`QA_DIAG_RATE_LIMITER\` is **not attached to Cloudflare** and \`QA_DIAG_MODE\` remains **absent**. No hosted changes are allowed automatically.
+- New disposable-only SQL preview: \`qa/v1723u/sql/qa_auth_rejection_once_preview.sql\`; SQLite \`CHECK\` and \`WITHOUT ROWID\` constrain entries to eight fixed categories. **Do not apply it to live/hosted D1**. The original one-event table is independent and remains unchanged.
+- New independent Python standard-library SQLite tests: \`qa/v1723u/qa_d1_disposable_schema_test.py\` runs only \`sqlite3.connect(':memory:')\` and tests idempotent migration, a strict reason allow-list, NOT NULL, primary-key replay prevention, malicious input, transaction rollback, and preserved one-slot acceptance schema.
+- The diagnostic Node suite now covers missing/error/exhausted limiter, wrong header (no limiter call), one PII-free key, no persistence when limiter is absent, and unchanged failure responses. GitHub Actions runs this alongside earlier receiver and envelope negative QA and offline SQLite tests.
+
+### NO-GO / remaining approval gates
+
+1. Verify exact **latest CI result and independent test logs**. Passing local/synthetic tests does not prove the hosted Cloudflare runtime or a real Zalo delivery.
+2. Select and separately approve a *strict* global request/query budget if guaranteed upper bounds are necessary (e.g., reviewed Durable Object architecture) **or** explicitly accept a more limited test scope with provider-side status evidence and Cloudflare request metrics, without implying native rate limiting is exact. Evaluate availability, cost, extra resources, reset semantics and fallback.
+3. Confirm the actual existing Cloudflare WAF/rate rules and free plan limits; do **not** create billable rules, Durable Objects, a new database or worker routes automatically.
+4. Specify the diagnostic records' expiration/deletion retention and make rollback fail-closed: remove QA Bot webhook, disable Worker \`workers.dev\` + preview + diagnostic mode, verify D1 rows and cost, and only clean up D1 with separately authorized destructive approval.
+5. Obtain explicit scoped approval for **hosted diagnostic schema writes, monitoring, and another one-message Zalo QA test**, then take a snapshot and stage acceptance evidence. The earlier one-message authorization did not imply these new changes.
+6. Maintain **REAL ZALO ACCEPTANCE BLOCKED, Commerce/JWT Store A/B PRODUCTION NO-GO**. No promotion from EXPERIMENTAL to RELEASED.
+
+**Status:** \`DIAG2_SOURCE_IMPLEMENTED / RATE_LIMIT_GUARD_SOURCE_ONLY / SQLITE_MIGRATION_PREVIEW / QA_CI_PENDING_FINAL_CONFIRMATION / HOSTED_OFF / D1_UNMODIFIED / BOT_QA_WEBHOOK_REMOVED_OWNER_ATTESTED\`.
