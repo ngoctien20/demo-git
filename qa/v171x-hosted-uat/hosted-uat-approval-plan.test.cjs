@@ -12,7 +12,8 @@ function fixture(overrides={}){
   r2:{name:'tien404-merchant-evidence-quarantine-staging',exists:true,
     managedPublicEnabled:false,customDomains:0,lockRuleCount:0},
   access:{name:'TIEN404 RPC16 Merchant Evidence Staging — DENY ALL',
-    exists:true,policiesReturned:0,externalDeniedCanaryVerified:false},
+    exists:true,policiesReturned:0,bypassPolicyCount:0,
+    externalDeniedCanaryVerified:false,externalAuthorizedCanaryVerified:false},
   replay:{namespacesExist:3,workerDurableBindingVerified:false,
     crossRestartAtomicCanaryVerified:false},
   lifecycleRules:[copy(originalRule)],
@@ -62,7 +63,8 @@ test('X04 even with signed-off source synthetic flags proposal cannot touch Clou
   prefixZeroObjectsVerified:true,lifecycleBackupRecorded:true,
   ownerDeletionConsentRecorded:true,actualRetentionCanaryVerified:true,
   actualScannerCdrVerified:true,lockConflictIndependentlyReviewed:true});
- Object.assign(f.infra.access,{externalDeniedCanaryVerified:true});
+ Object.assign(f.infra.access,{policiesReturned:1,bypassPolicyCount:0,
+  externalDeniedCanaryVerified:true,externalAuthorizedCanaryVerified:true});
  Object.assign(f.infra.replay,{workerDurableBindingVerified:true,crossRestartAtomicCanaryVerified:true});
  Object.assign(f.identity,{ownerSessionPairVerified:true,actualStoreRlsJwtUatVerified:true,costAndRollbackApproved:true});
  const r=await f.gate.review(f.request);
@@ -242,3 +244,25 @@ for(const [desc,mutate] of forbiddenPlanCases){
   await denial(f.gate.review(f.request),'X_QA_OWNER_SCOPE_UNSAFE');
  });
 }
+
+test('X33 Access Bypass policy blocks even if test-only denied and operator success are both true',async()=>{
+ const f=fixture();
+ Object.assign(f.infra.access,{policiesReturned:2,bypassPolicyCount:1,
+  externalDeniedCanaryVerified:true,externalAuthorizedCanaryVerified:true});
+ const r=await f.gate.review(f.request);
+ assert.equal(r.ok,true);assert.equal(r.review.blockers.includes('ACCESS_APP_UNAUTH_PROBE'),true);
+});
+test('X34 anonymous deny alone cannot substitute valid protected operator acceptance',async()=>{
+ const f=fixture();
+ Object.assign(f.infra.access,{policiesReturned:1,bypassPolicyCount:0,
+  externalDeniedCanaryVerified:true,externalAuthorizedCanaryVerified:false});
+ const r=await f.gate.review(f.request);
+ assert.equal(r.ok,true);assert.equal(r.review.blockers.includes('ACCESS_APP_UNAUTH_PROBE'),true);
+});
+test('X35 an Access app without policies cannot claim authenticated acceptance via forged canary flags',async()=>{
+ const f=fixture();
+ Object.assign(f.infra.access,{policiesReturned:0,bypassPolicyCount:0,
+  externalDeniedCanaryVerified:true,externalAuthorizedCanaryVerified:true});
+ const r=await f.gate.review(f.request);
+ assert.equal(r.ok,true);assert.equal(r.review.blockers.includes('ACCESS_APP_UNAUTH_PROBE'),true);
+});
