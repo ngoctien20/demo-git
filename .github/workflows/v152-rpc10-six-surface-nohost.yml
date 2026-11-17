@@ -1,0 +1,51 @@
+name: TIEN404 RPC10 Six-Surface Store NO-GO (OFFLINE ONLY)
+on:
+  pull_request:
+    paths:
+      - 'qa/v152-rpc10/**'
+      - 'docs/ai-handoff/T404_RPC10_*'
+      - '.github/workflows/v152-rpc10-six-surface-nohost.yml'
+  push:
+    branches:
+      - work/v152-adv6c-rpc10-six-surface-store-gate-nosend-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpc10-offline-gate:
+    name: 47 Node checks + HOSTED NO-GO enforced (no DB)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and 47 negative/unit tests
+        run: |
+          node --check qa/v152-rpc10/store-gate.cjs
+          node --test qa/v152-rpc10/store-gate.test.cjs
+      - name: Assert current baseline is denied, never connected or authorized
+        run: |
+          node - <<'NODE'
+          const base=require('./qa/v152-rpc10/hosted-baseline-sanitized.json');
+          const gate=require('./qa/v152-rpc10/store-gate.cjs');
+          const r=gate.inspect(base);
+          if(r.status!=='HOSTED_NO_GO'||r.canMigrate||r.canBackfill||r.canReplaceRls||r.canRelease)
+            throw Error('RPC10_UNSAFE_RELEASE');
+          if(r.blockers.length<40)throw Error('RPC10_BASELINE_COVERAGE_REGRESSION');
+          console.log(JSON.stringify({status:r.status,blockers:r.blockers.length,canMigrate:r.canMigrate}));
+          NODE
+      - name: Static ban on any hosted I/O or migration executor
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('qa/v152-rpc10/store-gate.cjs').read_text()
+          for pattern in [r'\bfetch\s*\(',r'\bchild_process\b',r'\bprocess\.env\b',
+                          r'\bhttps?\.request\s*\(',r'\bexec\s*\(',r'\bcreateClient\s*\(']:
+            assert not re.search(pattern,p),pattern
+          assert 'canMigrate:false' in p and 'canReplaceRls:false' in p
+          assert "STRUCTURAL_SELF_REPORT_REQUIRES_EXTERNAL_ATTESTATION" in p
+          print('PASS: offline-only and immutable HOSTED NO-GO')
+          PY
