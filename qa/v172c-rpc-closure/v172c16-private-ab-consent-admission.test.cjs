@@ -14,6 +14,8 @@ const trust={
  publicKeys:{QA_A:pub(keyA),QA_B:pub(keyB)},
  expectedIssuerRefs:{QA_A:'synthetic-issuer-a',QA_B:'synthetic-issuer-b'},
  expectedSubjectRefs:{QA_A:'opaque-synthetic-a',QA_B:'opaque-synthetic-b'},
+ expectedStoreRefs:{QA_A:'test-store-a',QA_B:'test-store-b'},
+ expectedReviewerRef:'private-reviewer-ref',revokedReceiptIds:[],usedReceiptIds:[],
  releaseApproved:true,recoveryApproved:true,disposableApproved:true,
  reviewerApproved:true,privateActorSessionBindingVerified:true,
  independentConsentAudited:true
@@ -21,7 +23,7 @@ const trust={
 function mk(slot){
  const isA=slot==='QA_A';
  const r={
-  version:1,slot,project:trust.project,tenant:trust.tenant,
+  version:1,slot,receiptId:isA?'a'.repeat(32):'b'.repeat(32),project:trust.project,tenant:trust.tenant,
   store:isA?'test-store-a':'test-store-b',
   subjectRef:isA?'opaque-synthetic-a':'opaque-synthetic-b',
   issuerRef:isA?'synthetic-issuer-a':'synthetic-issuer-b',
@@ -70,3 +72,13 @@ test('DENY zero trust config',()=>assert.equal(validate(pair(),null,now).status,
 
 test('DENY same pinned issuer key for both slots',()=>assert.equal(check(pair(),{...trust,publicKeys:{QA_A:pub(keyA),QA_B:pub(keyA)}}).status,'DENY'));
 test('DENY different private trusted Auth subject mapping',()=>assert.equal(check(pair(),{...trust,expectedSubjectRefs:{...trust.expectedSubjectRefs,QA_B:'unexpected-subject'}}).status,'DENY'));
+
+test('DENY trusted Store A binding mismatch',()=>assert.equal(check(pair(),{...trust,expectedStoreRefs:{...trust.expectedStoreRefs,QA_A:'other-store'}}).status,'DENY'));
+test('DENY untrusted reviewer',()=>assert.equal(check(pair(),{...trust,expectedReviewerRef:'different-reviewer'}).status,'DENY'));
+test('DENY revoked receipt from private ledger',()=>assert.equal(check(pair(),{...trust,revokedReceiptIds:['a'.repeat(32)]}).status,'DENY'));
+test('DENY reused receipt from private ledger',()=>assert.equal(check(pair(),{...trust,usedReceiptIds:['b'.repeat(32)]}).status,'DENY'));
+test('DENY absent private replay ledger',()=>assert.equal(check(pair(),{...trust,usedReceiptIds:null}).status,'DENY'));
+test('DENY duplicate receipt identifier',()=>{const p=pair();p.receipts[1].receiptId=p.receipts[0].receiptId;assert.equal(check(p).status,'DENY');});
+test('DENY missing signed receipt identifier',()=>{const p=pair();delete p.receipts[1].receiptId;assert.equal(check(p).status,'DENY');});
+test('DENY reused private auth proof reference',()=>{const p=pair();p.receipts[1].authProofRef=p.receipts[0].authProofRef;assert.equal(check(p).status,'DENY');});
+test('DENY reused private consent reference',()=>{const p=pair();p.receipts[1].consentProofRef=p.receipts[0].consentProofRef;assert.equal(check(p).status,'DENY');});
