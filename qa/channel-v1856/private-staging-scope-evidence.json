@@ -2,7 +2,7 @@
   "checkpoint": "V18.5.6",
   "date": "2026-11-18 JST",
   "title": "Private Owner Staging × Server-Bound Installation Scope × Read-Only Widget Preflight",
-  "status": "SOURCE_CANDIDATE_ONLY_QA_PENDING",
+  "status": "PRIVATE_SERVER_BOUND_INSTALLATION_SOURCE_QA_55_OF_55_PASS_NOT_DEPLOYED",
   "basedOn": {
     "v1855DraftPr": 415,
     "v1855Head": "203ad2c7e8e16c91edef46f43b97a2c6c51d63c6",
@@ -78,10 +78,18 @@
     "sourceOnly": true,
     "testPath": "qa/channel-v1856/private-owner-staging-gateway.test.mjs",
     "newTestsPlanned": 14,
-    "result": "PENDING_GITHUB_CI",
+    "result": "PASS_55_OF_55_NODE_REGRESSION",
     "realN8nHttpTest": false,
     "realDurableObjectTest": false,
-    "realWorkerDeployment": false
+    "realWorkerDeployment": false,
+    "githubRunId": 44287791353,
+    "githubRunUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44287791353",
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0,
+    "sourceCommit": "04214c9428694d82cf9ce78c08474b3218deee96",
+    "newTestsPassed": 14,
+    "inheritedTestsPassed": 41
   },
   "noChanges": {
     "cloudflareWorker": true,
