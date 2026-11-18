@@ -19,7 +19,7 @@
     "deploymentVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
     "workersDevEnabled": true,
     "previewUrlsEnabled": false,
-    "bindings": 0,
+    "bindings": 2,
     "dedicatedAccessApp": true,
     "existingAccessApps": 4,
     "teamDenyUnmatchedRequests": false,
@@ -29,7 +29,11 @@
     "previewsEnabled": false,
     "accessAppId": "1a73d50b-0668-4308-8f56-53aa9711d477",
     "accessAppDomain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
-    "accessAppPolicy": "existing reusable founder-only allow policy; biometric MFA enforced at application"
+    "accessAppPolicy": "existing reusable founder-only allow policy; biometric MFA enforced at application",
+    "secretNames": [
+      "T404_QA_OPERATOR_EMAIL"
+    ],
+    "workerAccessAppPolicyVerified": true
   },
   "workerCandidate": {
     "accessAdapter": "Cloudflare native ctx.access",
