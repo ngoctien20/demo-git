@@ -67,6 +67,7 @@ export const SQL=Object.freeze({
   "updated_ms=excluded.updated_ms",
   "WHERE v19_b6_qa_encrypted_inbox.payload_digest=excluded.payload_digest",
   "AND v19_b6_qa_encrypted_inbox.fixture_ref=excluded.fixture_ref",
+  "AND v19_b6_qa_encrypted_inbox.key_version=excluded.key_version",
   "AND v19_b6_qa_encrypted_inbox.expires_at_ms>?8",
   "RETURNING status,observations,key_version"
  ].join(" "),
