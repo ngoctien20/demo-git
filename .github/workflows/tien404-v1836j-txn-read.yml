@@ -1,0 +1,189 @@
+name: TIEN404 V18.3.6J Transaction-Bound Read-Only RPC QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836i-issuer-nonce-race-admission-20261118
+    paths:
+      - "qa/v18.3.6j/**"
+      - ".github/workflows/tien404-v1836j-txn-read.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836j-txn-read
+  cancel-in-progress: true
+jobs:
+  inherited-offline-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout QA only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: G H I offline regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            | tee "$RUNNER_TEMP/v1836j-regression.tap"
+          grep -q '^# tests 164$' "$RUNNER_TEMP/v1836j-regression.tap"
+          grep -q '^# pass 164$' "$RUNNER_TEMP/v1836j-regression.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/v1836j-regression.tap"
+          echo V18_3_6J_GHI_REGRESSION_164_PASS
+      - name: Ensure J is QA-only without secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -E -in 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=' \
+            qa/v18.3.6j/*.sql; then
+            echo SECRET_LITERAL_DETECTED
+            exit 1
+          fi
+          echo V18_3_6J_SOURCE_SCAN_PASS
+  disposable-pg17-transaction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout QA SQL
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build disposable PostgreSQL 17.12 and pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.j" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update \
+           && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap \
+           && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836j-pgtap -f "$RUNNER_TEMP/Dockerfile.j" "$RUNNER_TEMP"
+      - name: Launch network-isolated disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836j-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836j-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836j-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836j-pg17 pg_isready -U postgres
+          docker exec tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836i_disposable;'
+      - name: Apply I predecessor and J private read-only schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable < qa/v18.3.6i/01_PG17_ATOMIC_BINDING.sql
+          docker exec -i tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable < qa/v18.3.6j/01_PG17_TRANSACTION_READ.sql
+      - name: Run pgTAP transaction-bound read and privilege checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable < qa/v18.3.6j/02_PGTAP_READ_RPC.sql \
+            | tee "$RUNNER_TEMP/j-read.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/j-read.tap"; then exit 1; fi
+          grep -q '^1\.\.50$' "$RUNNER_TEMP/j-read.tap"
+          grep -q 'V18_3_6J_PGTAP_READ_FINISHED' "$RUNNER_TEMP/j-read.tap"
+          echo V18_3_6J_PG17_READ_RLS_50_PASS
+      - name: Session revocation wins same-transaction catalog read
+        shell: bash
+        run: |
+          set -euo pipefail
+          FN="qa_i_private.transaction_bound_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000005101',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds','00000000-0000-4000-8000-000000000101')"
+          docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; UPDATE qa_i_private.session_state SET active=false,revoked_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64); SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/j-revoke-first.log" 2>&1 &
+          REV=$!
+          sleep 0.5
+          docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "SET ROLE tien404_j_gateway; SELECT decision FROM $FN;" \
+            > "$RUNNER_TEMP/j-read-after-revoke.log"
+          wait "$REV"
+          grep -q '^DENY_SESSION$' "$RUNNER_TEMP/j-read-after-revoke.log"
+          test "$(docker exec tien404-v1836j-pg17 psql -X -At -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "SELECT count(*) FROM qa_i_private.verified_nonce WHERE jti='00000000-0000-4000-8000-000000005101';")" = 0
+          echo V18_3_6J_SESSION_REVOKE_FIRST_READ_DENIED
+      - name: Membership revocation wins same-transaction catalog read
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.session_state SET active=true,revoked_at=NULL,last_authority_check_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64);"
+          FN="qa_i_private.transaction_bound_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000005102',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds','00000000-0000-4000-8000-000000000101')"
+          docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; UPDATE qa_i_private.store_authority SET active=false,revoked_at=clock_timestamp() WHERE tenant_hash=repeat('d',64) AND store_hash=repeat('e',64); SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/j-revoke-member-first.log" 2>&1 &
+          REV=$!
+          sleep 0.5
+          docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "SET ROLE tien404_j_gateway; SELECT decision FROM $FN;" \
+            > "$RUNNER_TEMP/j-read-after-member-revoke.log"
+          wait "$REV"
+          grep -q '^DENY_MEMBERSHIP$' "$RUNNER_TEMP/j-read-after-member-revoke.log"
+          echo V18_3_6J_MEMBERSHIP_REVOKE_FIRST_READ_DENIED
+      - name: Read-first transaction retains boundary before competing revoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.store_authority SET active=true,revoked_at=NULL WHERE tenant_hash=repeat('d',64) AND store_hash=repeat('e',64);"
+          FN="qa_i_private.transaction_bound_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000005103',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds','00000000-0000-4000-8000-000000000101')"
+          docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; SET ROLE tien404_j_gateway; SELECT decision FROM $FN; SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/j-read-first.log" 2>&1 &
+          FIRST=$!
+          sleep 0.5
+          docker exec tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.session_state SET active=false,revoked_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64);" \
+            > "$RUNNER_TEMP/j-revoke-second.log"
+          wait "$FIRST"
+          grep -q '^ALLOW_CATALOG$' "$RUNNER_TEMP/j-read-first.log"
+          FN2="qa_i_private.transaction_bound_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000005104',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds','00000000-0000-4000-8000-000000000101')"
+          RES=$(docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable -c "SET ROLE tien404_j_gateway; SELECT decision FROM $FN2;" | tail -1)
+          test "$RES" = "DENY_SESSION"
+          echo V18_3_6J_READ_FIRST_REVOKE_SECOND_ORDERED
+      - name: Parallel same-JTI catalog reads admit exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836j-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.session_state SET active=true,revoked_at=NULL,last_authority_check_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64);"
+          FN="qa_i_private.transaction_bound_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000005105',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds','00000000-0000-4000-8000-000000000101')"
+          for n in 1 2; do
+            docker exec tien404-v1836j-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+              -d tien404_v1836i_disposable \
+              -c "SET ROLE tien404_j_gateway; SELECT decision FROM $FN;" \
+              > "$RUNNER_TEMP/j-race-$n.log" 2>&1 &
+            if test "$n" = 1; then P1=$!; else P2=$!; fi
+          done
+          wait "$P1"; wait "$P2"
+          test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^ALLOW_CATALOG$' || true)" = 1
+          test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^REPLAY$' || true)" = 1
+          echo V18_3_6J_CONCURRENT_CATALOG_SINGLE_USE_PASS
+      - name: Cleanup test database
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836j-pg17 >/dev/null 2>&1 || true
