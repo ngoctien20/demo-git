@@ -57,3 +57,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c36-multiline-reservation-release-ci-drill.sh
       - name: Reservation Expiry Worker Preview and No-Send Outbox Atomicity QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c37-expiry-outbox-atomic-ci-drill.sh
+      - name: Protected No-Send Dispatcher Admission, Delivery Idempotency and Bounded Retry QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c38-protected-no-send-dispatcher-ci-drill.sh
