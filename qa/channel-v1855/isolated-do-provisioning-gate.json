@@ -1,0 +1,79 @@
+{
+  "phase": "V18.5.5-B3_PRIVATE_ISOLATED_DO_RESOURCE_PREVIEW_NO_DEPLOY",
+  "date": "2026-11-18 JST",
+  "approvalInterpretation": {
+    "approved": "Create a dedicated SQLite Durable Object staging resource for controlled QA, if feasible without a Worker deployment.",
+    "explicitlyNotApproved": [
+      "Create or deploy a new Worker",
+      "Deploy a new version of existing V14.4 Widget Worker",
+      "Publish n8n Webhook",
+      "Change or copy any credential/secret",
+      "Open production",
+      "Change actual customer/order/stock data"
+    ],
+    "result": "BLOCKED_NO_CLOUD_DEPLOY_ALLOWED",
+    "explanation": "Cloudflare DO class lifecycle creation requires Worker deployment; version upload alone cannot create the class. The approved resource-only operation cannot be performed independently."
+  },
+  "proposedOwnerWorker": {
+    "name": "tien404-v1855-read-quota-isolated-staging",
+    "status": "NOT_CREATED",
+    "script": "qa/channel-v1855/isolated-do-owner-candidate.mjs",
+    "entrypointExport": "T404ReadAdmission",
+    "sqliteNamespaceClass": "T404ReadAdmission",
+    "publicRoute": "NONE",
+    "workersDev": "DISABLED",
+    "previewUrls": "DISABLED",
+    "customerTraffic": "NONE",
+    "accountMutation": "UNAPPROVED",
+    "lifecycleChange": "NOT_APPLIED"
+  },
+  "proposedBindingOnlyAfterSeparateApproval": {
+    "clientWorker": "tien404-widget-gateway-v144-staging",
+    "bindingName": "T404_READ_ADMISSION",
+    "className": "T404ReadAdmission",
+    "scriptName": "tien404-v1855-read-quota-isolated-staging",
+    "clientWorkerDeployment": "NOT_APPROVED",
+    "note": "A cross-worker binding avoids coupling DO lifecycle migrations to the current widget Worker. Its future deployment is a separate approval gate."
+  },
+  "officialSources": [
+    "https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/",
+    "https://developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/with-durable-objects/",
+    "https://developers.cloudflare.com/durable-objects/get-started/",
+    "https://developers.cloudflare.com/durable-objects/platform/pricing/"
+  ],
+  "verifiedAccount": {
+    "namespaceCount": 3,
+    "currentV1855NamespaceCreated": false,
+    "widgetWorkerCurrentVersion": "da022974-1832-425f-bf82-afddc558b893",
+    "widgetWorkerDeployment": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "billingSubscriptionRead": "403_FORBIDDEN",
+    "spendingPolicyRead": "403_FORBIDDEN",
+    "planAndRemainingAllowance": "UNKNOWN",
+    "noCostAssurance": false
+  },
+  "localWorkerdQa": {
+    "initialCiRun": "44313831943",
+    "testsAtThatRun": 3,
+    "result": "PASS",
+    "cloudApiAccess": false,
+    "actualCloudflareAccountResourcesCreated": 0,
+    "newEvictionTest": "PENDING_CI_VERIFICATION",
+    "distinction": "Runs locally in Cloudflare workerd runtime but does not prove hosted Cloudflare operation."
+  },
+  "releaseGates": [
+    "OWNER_APPROVES_NEW_ISOLATED_STAGING_WORKER_DEPLOYMENT",
+    "OWNER_APPROVES_SQLITE_NAMESPACE_LIFECYCLE_MIGRATION",
+    "BILLING_PLAN_AND_SPENDING_CAP_VERIFIED",
+    "HOSTED_DO_RUNNER_UAT_WITHOUT_PUBLIC_ROUTES",
+    "SECOND_ACCESS_IDENTITY_DENIAL",
+    "EXPLICIT_PRIVATE_WORKER_BINDING_APPROVAL",
+    "REAL_N8N_HEADER_AUTH_HTTP_NEGATIVE_AND_POSITIVE_UAT",
+    "STAGING_COMMERCE_STORE_RLS_VERIFIED",
+    "PUBLIC_AND_PRODUCTION_REMAIN_NO_GO"
+  ],
+  "rollback": {
+    "existingWidgetWorker": "No change made, so there is no immediate rollback necessary.",
+    "futureIsolatedWorker": "DO class lifecycle cannot be rolled back to a version before migration; disable its routes/bindings and leave storage intact until separately approved cleanup.",
+    "deletion": "NEVER delete Durable Object data without separate owner consent."
+  }
+}
