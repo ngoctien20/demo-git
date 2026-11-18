@@ -1,0 +1,53 @@
+name: TIEN404 V19 Worker Snapshot - Strict Zalo Offline QA
+
+on:
+  push:
+    branches:
+      - qa/v19-webhook-worker-snapshot-contract-offline-20261118
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-worker-snapshot-zalo-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-worker-snapshot-zalo-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker-source-offline:
+    name: V19 snapshot and Zalo contract — no network test code
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate exact Cloudflare Worker blob against recorded snapshot
+        shell: bash
+        run: |
+          actual="$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)"
+          expected="11affa7658b46ae7c411eed7877d7ccdce61bbad"
+          if [ "$actual" != "$expected" ]; then
+            echo "Snapshot source changed: separate new snapshot/review required"
+            exit 1
+          fi
+          echo "Immutable Worker blob match verified"
+      - name: Syntax check source and candidate
+        run: |
+          node --check qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs
+          node --check qa/v19-webhook/strict-zalo-contract-candidate.mjs
+          node --check qa/v19-webhook/tests/deployed-worker-snapshot.test.mjs
+          node --check qa/v19-webhook/tests/strict-zalo-contract.test.mjs
+      - name: Execute all offline synthetic webhook tests
+        run: node --test qa/v19-webhook/tests/*.test.mjs
+      - name: Fail-closed release assertion
+        shell: bash
+        run: |
+          test ! -e qa/v19-webhook/.env
+          test ! -e qa/v19-webhook/wrangler.toml
+          test ! -e qa/v19-webhook/wrangler.jsonc
+          echo "Source-only; no deploy, setWebhook, provider send, D1 mutation or credential action"
