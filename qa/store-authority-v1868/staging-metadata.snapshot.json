@@ -1,0 +1,51 @@
+{
+  "version": "V18.6.8",
+  "classification": "LIVE_STAGING_READ_ONLY_METADATA_NOT_DEPLOYMENT_EVIDENCE",
+  "observedDateJST": "2026-11-18",
+  "source": "SUPABASE_STAGING_PG_CATALOG_READ_ONLY",
+  "scope": "public",
+  "postgreSQLVersion": "17.11",
+  "expectedCommerceTables": ["products", "customers", "orders", "order_items", "conversations", "messages"],
+  "canonicalTablesFound": 0,
+  "canonicalTablesRequired": 2,
+  "commerceTablesWithStoreId": 0,
+  "commerceTablesRequiredWithStoreId": 6,
+  "publicRestrictivePolicies": 0,
+  "commerceRowsAggregate": {"products": 2, "orders": 2, "customers": 0, "order_items": 0, "conversations": 0, "messages": 0},
+  "productSkuConstraint": "UNIQUE (tenant_id, sku)",
+  "privilegedProductWriter": {
+    "name": "public.save_merchant_product",
+    "securityDefiner": true,
+    "authenticatedCanExecute": true,
+    "performsInsert": true,
+    "performsUpdate": true,
+    "tenantOwnerManagerGuard": true,
+    "storeAware": false,
+    "callerInventoryExhaustive": false,
+    "stagingSchemaWriteExecuted": false
+  },
+  "otherPaths": {
+    "publishedMessengerDemoWriters": 3,
+    "messengerDemoUsesGoogleSheets": true,
+    "demoSeparateFromCommerce": true,
+    "renderWorkspaceUserApproved": false,
+    "renderDeployedSourceVerified": false,
+    "accessProtectedWorkerExists": true,
+    "realSupabaseAuthOnWorkerVerified": false
+  },
+  "approval": {
+    "canonicalDesignPr417Approved": false,
+    "pgTapPr421Released": false,
+    "storeRoleContractApproved": false,
+    "skuScopeD02Approved": false,
+    "backupRestoreVerified": false,
+    "legacyMappingManifestReviewed": false,
+    "ownerABRealSessionsVerified": false,
+    "storeRlsRealABVerified": false,
+    "privilegedRpcReplacementApproved": false,
+    "serviceRoleBypassAudited": false,
+    "migrationExecutionApproved": false
+  },
+  "unverified": ["FULL_RPC_CALLER_GRAPH", "RENDER_DEPLOYED_WRITER", "REAL_SUPABASE_STORE_AUTH", "CLOUDFLARE_OWNER_AUTH_E2E", "BACKUP_RESTORE", "LEGACY_ROW_OWNER_MAPPING"],
+  "links": ["https://github.com/ngoctien20/demo-git/pull/417", "https://github.com/ngoctien20/demo-git/pull/421", "https://github.com/ngoctien20/demo-git/pull/434"]
+}
