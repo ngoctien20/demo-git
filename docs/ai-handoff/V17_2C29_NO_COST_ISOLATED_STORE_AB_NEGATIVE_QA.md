@@ -16,7 +16,7 @@ Date: 2026-11-18 JST. User explicitly chose **Option A: no Supabase upgrade and 
 ## QA evidence at source HEAD 97e152dd04b4ad8a9324a457ebb4228c2c9dfd65
 - Protected Consent + Store A/B synthetic negative suite: GitHub Actions [44233222360](https://github.com/ngoctien20/demo-git/actions/runs/44233222360) SUCCESS (including test step).
 - RPC privilege source contract: GitHub Actions [44233222364](https://github.com/ngoctien20/demo-git/actions/runs/44233222364) SUCCESS.
-- Ephemeral PostgreSQL integration: GitHub Actions [44233222363](https://github.com/ngoctien20/demo-git/actions/runs/44233222363), last observed IN_PROGRESS (update status separately before claiming PASS).
+- Ephemeral PostgreSQL integration: GitHub Actions [44233222363](https://github.com/ngoctien20/demo-git/actions/runs/44233222363), completed SUCCESS.
 
 ## Explicit limits
 - The tests use mock trusted adapters and synthetic actor/Store labels, NOT real Supabase Auth / JWT/GoTrue, real Messenger/Zalo conversations, or an actual multi-tenant database integration.
@@ -26,7 +26,7 @@ Date: 2026-11-18 JST. User explicitly chose **Option A: no Supabase upgrade and 
 
 ## Stage status
 - IMPLEMENTED: synthetic no-send A/B Store scoped read contract.
-- TESTED: protected CI source PASS; PostgreSQL outcome must be checked.
+- TESTED: protected CI source PASS; ephemeral PostgreSQL integration PASS.
 - BLOCKED: hosted private HTTPS, real owner Auth A/B and independent consent/reviewer.
 - NO-GO: real JWT/PostgREST cross-Store UAT, production deployment.
 - NO CHANGE: no Supabase plan upgrade, branch/project creation, cost acceptance, paid resources, production credentials, n8n/Messenger/Zalo deployments, or customer data writes.
