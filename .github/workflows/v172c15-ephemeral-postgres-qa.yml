@@ -67,3 +67,5 @@ jobs:
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40c_private_owner_alias_admission_test.py' -v
       - name: V17.2C.40D Owner Decision S1/S2/S3 and Alias Crosswalk Collision QA (synthetic only)
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40d_owner_decision_crosswalk_contract_test.py' -v
+      - name: V17.2C.40E S3 Locked Decision, Zero-Mapping Crosswalk and Private Transition Guard (synthetic only)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v
