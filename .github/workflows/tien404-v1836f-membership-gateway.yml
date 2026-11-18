@@ -84,7 +84,7 @@ jobs:
           set -euo pipefail
           docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
             < qa/v18.3.6f/03_PGTAP_ADMIN_GATEWAY.sql | tee "$RUNNER_TEMP/f-f-qa.tap"
-          if grep -E '^(not ok|# Looks like you failed)' "$RUNNER_TEMP/f-f-qa.tap"; then exit 1; fi
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/f-f-qa.tap"; then exit 1; fi
           grep -q '^1\.\.87$' "$RUNNER_TEMP/f-f-qa.tap"
           grep -q 'V18_3_6F_ADMIN_GATEWAY_PGTAP_FINISHED' "$RUNNER_TEMP/f-f-qa.tap"
           echo V18_3_6F_ADMIN_GATEWAY_87_PASS
