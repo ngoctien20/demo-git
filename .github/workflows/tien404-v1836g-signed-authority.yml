@@ -1,0 +1,73 @@
+name: TIEN404 V18.3.6G Private Signed Authority and Security QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836f-protected-membership-gateway-20261118
+    paths:
+      - "qa/v18.3.6g/**"
+      - ".github/workflows/tien404-v1836g-signed-authority.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836g-signed-authority
+  cancel-in-progress: true
+jobs:
+  offline-crypto-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout no-persistent-credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Check Node runtime; no package installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node -e "if(Number(process.versions.node.split('.')[0])<20)process.exit(1)"
+      - name: Cryptographically test offline Ed25519 authority and anti-replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6g/test-signed-authority.mjs \
+            | tee "$RUNNER_TEMP/v1836g-signed-authority.tap"
+          grep -Eq '^# tests 60$' "$RUNNER_TEMP/v1836g-signed-authority.tap"
+          grep -Eq '^# pass 60$' "$RUNNER_TEMP/v1836g-signed-authority.tap"
+          grep -Eq '^# fail 0$' "$RUNNER_TEMP/v1836g-signed-authority.tap"
+          echo V18_3_6G_SIGNED_AUTHORITY_60_PASS
+      - name: Test fail-closed real Auth A/B admission preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            | tee "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          grep -Eq '^# tests 15$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          grep -Eq '^# pass 15$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          grep -Eq '^# fail 0$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          echo V18_3_6G_REAL_AUTH_AB_PREFLIGHT_15_PASS
+      - name: Independent deterministic second-pass source review
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6g/test-independent-structural-review.mjs \
+            | tee "$RUNNER_TEMP/v1836g-security-structural.tap"
+          grep -Eq '^# tests 18$' "$RUNNER_TEMP/v1836g-security-structural.tap"
+          grep -Eq '^# pass 18$' "$RUNNER_TEMP/v1836g-security-structural.tap"
+          grep -Eq '^# fail 0$' "$RUNNER_TEMP/v1836g-security-structural.tap"
+          echo V18_3_6G_SECOND_PASS_STRUCTURAL_REVIEW_18_PASS
+      - name: Assert no production connectors, private keys, or credentials in new candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readdirSync,readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const dir='qa/v18.3.6g';
+          const sourceFiles=['signed-authority.mjs','real-auth-ab-preflight.mjs'];
+          const combined=sourceFiles.map(x=>readFileSync(join(dir,x),'utf8')).join('\n');
+          const patterns=[/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,/SUPABASE_SERVICE_ROLE_KEY\s*=/,/Bearer\s+eyJ[A-Za-z0-9_-]+/];
+          for (const p of patterns) if(p.test(combined)) throw new Error('SENSITIVE_SOURCE_DETECTED');
+          if(!sourceFiles.includes('signed-authority.mjs')) throw new Error('MISSING_SIGNED_MODULE');
+          console.log('V18_3_6G_SOURCE_SECRET_SCAN_PASS');
+          NODE
