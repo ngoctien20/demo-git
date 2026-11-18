@@ -6,7 +6,21 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $qaToken = [Environment]::GetEnvironmentVariable('TIEN404_ZALO_QA_BOT_TOKEN', 'Process')
 if ([string]::IsNullOrWhiteSpace($qaToken)) {
-    throw 'QA_BOT_TOKEN_NOT_PRESENT_IN_PROCESS_ENVIRONMENT'
+    # Interactive SecureString prompt avoids echoing the Bot token to the console/history.
+    $secureInput = Read-Host 'Enter Zalo Bot QA token (hidden input)' -AsSecureString
+    $bstr = [IntPtr]::Zero
+    try {
+        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureInput)
+        $qaToken = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    } finally {
+        if ($bstr -ne [IntPtr]::Zero) {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+        $secureInput.Dispose()
+    }
+}
+if ([string]::IsNullOrWhiteSpace($qaToken)) {
+    throw 'QA_BOT_TOKEN_MISSING'
 }
 if ($qaToken.Length -gt 1024 -or $qaToken -match '[\s/?#]') {
     throw 'QA_BOT_TOKEN_FORMAT_NOT_ADMISSIBLE'
