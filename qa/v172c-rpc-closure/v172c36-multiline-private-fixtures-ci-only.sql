@@ -75,6 +75,7 @@ INSERT INTO tien404_v172c36_multiline_qa.private_transitions(
 ('act-cancel-A','SYN36-cancel-A','tenant-1','store-A','actor-A','cancel',true,true,true,true,now()+interval '1 hour'),
 ('act-expire-A','SYN36-expire-A','tenant-1','store-A','actor-A','expire',true,true,true,true,now()+interval '1 hour'),
 ('act-tooearly-A','SYN36-cancel-A','tenant-1','store-A','actor-A','expire',true,true,true,true,now()+interval '1 hour'),
+('act-expired-confirm','SYN36-expire-A','tenant-1','store-A','actor-A','confirm',true,true,true,true,now()+interval '1 hour'),
 ('act-terminal-confirm','SYN36-terminal-A','tenant-1','store-A','actor-A','confirm',true,true,true,true,now()+interval '1 hour'),
 ('act-terminal-cancel','SYN36-terminal-A','tenant-1','store-A','actor-A','cancel',true,true,true,true,now()+interval '1 hour'),
 ('act-cross-B','SYN36-cancel-A','tenant-1','store-B','actor-B','cancel',true,true,true,true,now()+interval '1 hour'),
