@@ -106,7 +106,7 @@ DECLARE
 BEGIN
   IF p_challenge_digest IS NULL OR p_session_ref IS NULL
      OR p_idempotency_key IS NULL OR length(p_idempotency_key)<16
-     OR p_consent_action NOT IN ('ACCEPT','DECLINE')
+     OR p_consent_action IS NULL OR p_consent_action NOT IN ('ACCEPT','DECLINE')
   THEN RAISE EXCEPTION 'DENY_INVALID_CONSENT_REQUEST'; END IF;
 
   -- Serialize duplicate idempotency keys. A retry with identical payload
@@ -173,7 +173,7 @@ BEGIN
     (v_challenge.challenge_digest,p_idempotency_key,v_session.session_ref,
      v_session.actor_ref,v_session.tenant_ref,v_session.store_ref,
      v_challenge.decision_ref,v_challenge.decision_version,p_consent_action)
-  RETURNING owner_consent_events.event_id INTO v_event_id;
+  RETURNING event_id INTO v_event_id;
 
   RETURN QUERY SELECT 'CONSENT_RECORDED_NOT_AUTHORITY_GRANTED'::text,v_event_id;
 END
