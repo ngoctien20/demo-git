@@ -1,0 +1,190 @@
+{
+  "contract": "TIEN404_V17_2C40F_PRIVATE_OWNER_TRANSITION_API",
+  "contract_version": "1.0.0",
+  "status": "NOT_APPROVED",
+  "scope": "DESIGN_ONLY_NO_WRITE",
+  "default_decision": "S3",
+  "decision_ref": "synthetic-decision-s3-v1",
+  "authority_effect": "NONE",
+  "service_deployed": false,
+  "service_base_url": null,
+  "hosted_route_registered": false,
+  "supabase_branch_created": false,
+  "credentials_configured": false,
+  "production_enabled": false,
+  "activation_endpoint_defined": false,
+  "routes": [
+    {
+      "id": "read_current_decision",
+      "method": "GET",
+      "path": "/private/v1/owner-decisions/current",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_CURRENT_OWNER_SESSION",
+      "response": "REDACTED_DECISION_STATE_ONLY",
+      "cache": "NO_STORE"
+    },
+    {
+      "id": "create_transition_intent",
+      "method": "POST",
+      "path": "/private/v1/owner-decisions/transition-intents",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_CURRENT_OWNER_SESSION",
+      "request_allowlist": [
+        "previous_decision_ref",
+        "requested_decision",
+        "idempotency_key"
+      ],
+      "requested_decision_values": [
+        "S1",
+        "S2"
+      ],
+      "server_resolves": [
+        "authenticated_actor",
+        "active_session",
+        "tenant_membership",
+        "candidate_store_boundaries",
+        "owner_role"
+      ],
+      "response_state": "PENDING_PRIVATE_OWNER_EVIDENCE",
+      "must_not_change_current_s3_record": true
+    },
+    {
+      "id": "issue_owner_challenge",
+      "method": "POST",
+      "path": "/private/v1/owner-decisions/owner-challenges",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_CURRENT_OWNER_SESSION",
+      "request_allowlist": [
+        "transition_intent_ref",
+        "idempotency_key"
+      ],
+      "server_binds": [
+        "actor_ref",
+        "session_id_digest",
+        "tenant_ref",
+        "store_ref",
+        "decision_ref",
+        "decision_version",
+        "scope",
+        "operation",
+        "nonce_digest",
+        "expires_at"
+      ],
+      "challenge_use": "SINGLE_USE"
+    },
+    {
+      "id": "submit_owner_consent",
+      "method": "POST",
+      "path": "/private/v1/owner-decisions/owner-consents",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_CURRENT_OWNER_SESSION",
+      "request_allowlist": [
+        "challenge",
+        "consent_action",
+        "idempotency_key"
+      ],
+      "consent_action_values": [
+        "ACCEPT",
+        "DECLINE"
+      ],
+      "server_checks": [
+        "current_session_matches_challenge",
+        "challenge_not_expired",
+        "challenge_not_consumed",
+        "current_owner_store_membership",
+        "tenant_store_consistency",
+        "revocation_state",
+        "explicit_human_intent"
+      ],
+      "atomicity": "CONSUME_CHALLENGE_AND_APPEND_CONSENT_EVENT_IN_ONE_TRANSACTION",
+      "response_state": "CONSENT_RECORDED_NOT_AUTHORITY_GRANTED"
+    },
+    {
+      "id": "independent_review",
+      "method": "POST",
+      "path": "/private/v1/owner-decisions/reviews",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_INDEPENDENT_REVIEWER_SESSION",
+      "request_allowlist": [
+        "transition_intent_ref",
+        "evidence_ref",
+        "review_decision",
+        "idempotency_key"
+      ],
+      "review_decision_values": [
+        "APPROVE_FOR_SEPARATE_RELEASE_REVIEW",
+        "REJECT"
+      ],
+      "reviewer_constraints": [
+        "reviewer_not_any_owner_in_transition",
+        "reviewer_role_server_resolved",
+        "current_reviewer_session",
+        "review_evidence_access_audited"
+      ],
+      "response_state": "REVIEWED_NOT_AUTHORITY_GRANTED"
+    },
+    {
+      "id": "revoke_owner_consent",
+      "method": "POST",
+      "path": "/private/v1/owner-decisions/revocations",
+      "enabled": false,
+      "auth": "SERVER_VERIFIED_OWNER_OR_SECURITY_REVIEWER_SESSION",
+      "request_allowlist": [
+        "consent_event_ref",
+        "reason_code",
+        "idempotency_key"
+      ],
+      "effect": "APPEND_REVOCATION_EVENT_AND_DENY_FUTURE_ADMISSIONS",
+      "retroactive_policy": "REVIEW_EXISTING_SESSIONS_AND_GRANTS"
+    }
+  ],
+  "forbidden_client_fields": [
+    "auth_user_id",
+    "user_id",
+    "tenant_id",
+    "store_id",
+    "role",
+    "owner_verified",
+    "session_id",
+    "provider_account_id",
+    "channel_installation_id",
+    "credential_ref",
+    "jwt",
+    "access_token",
+    "refresh_token",
+    "service_role_key"
+  ],
+  "security_invariants": {
+    "s3_default_deny": true,
+    "new_decision_version_only": true,
+    "preserve_prior_s3_record": true,
+    "no_in_place_unlock": true,
+    "all_routes_disabled": true,
+    "no_client_authority_claims": true,
+    "challenge_single_use": true,
+    "challenge_and_consent_atomic": true,
+    "recheck_session_membership_and_revocation": true,
+    "independent_reviewer_required": true,
+    "unknown_provenance_deny": true,
+    "alias_collision_deny": true,
+    "no_automatic_store_inference": true,
+    "no_activation_or_writer_endpoint": true,
+    "no_provider_dispatch": true
+  },
+  "release_gates": {
+    "private_service_implementation": false,
+    "real_auth_adapter": false,
+    "private_persistent_challenge_store": false,
+    "signed_owner_consent_verification": false,
+    "independent_reviewer_identity": false,
+    "security_review": false,
+    "backup_restore_and_cost_approval": false,
+    "real_auth_ab_uat": false,
+    "canonical_store_migration": false,
+    "commerce_writer": false,
+    "provider_dispatch": false,
+    "production_release": false
+  },
+  "deployment_rule": "SPEC_ONLY_DISABLED_NO_ROUTE_NO_SECRET_NO_DB_WRITE_NO_SEND",
+  "notes": "This contract is a design artifact only. V17.2C.21 and V17.2C.24 are dependency-injected/source candidates, not deployed private endpoints. Do not reuse their QA routes as a production owner authority API. No S1/S2 transition is approved while current S3 remains locked."
+}
