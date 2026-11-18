@@ -1,14 +1,16 @@
-name: V18.6.3 PG17 + V18.6.4 Owner A/B Admission QA (NO LIVE)
+name: V18.6.3–5 PG17 + Protected Owner A/B UAT QA (NO LIVE)
 on:
   push:
     paths:
       - 'qa/store-authority-v1863/**'
       - 'qa/store-authority-v1864/**'
+      - 'qa/store-authority-v1865/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
       - 'qa/store-authority-v1863/**'
       - 'qa/store-authority-v1864/**'
+      - 'qa/store-authority-v1865/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -57,3 +59,8 @@ jobs:
       - name: Verify hard fail-closed safety flag contract
         run: |
           node -e "const f=require('./qa/store-authority-v1864/readonly-admission.cjs').FLAGS; if(f.metaLiveApi!==false||f.providerSend!==false||f.orderWrite!==false||f.allowPrivateOrderRead!==false) process.exit(1)"
+      - name: Execute synthetic protected UAT contract tests (V18.6.5)
+        run: node --test qa/store-authority-v1865/protected-uat-gate.test.cjs qa/store-authority-v1865/dependency-inventory.test.cjs
+      - name: Assert V18.6.5 no-live proof flags
+        run: |
+          node -e "const f=require('./qa/store-authority-v1865/protected-uat-gate.cjs').FLAGS; if(f.qaMode!=='SYNTHETIC_QA'||f.liveAuth!==false||f.liveMeta!==false||f.customerDataRead!==false||f.privateOrderRead!==false||f.orderWrite!==false||f.providerSend!==false||f.databaseWrite!==false) process.exit(1)"
