@@ -1,7 +1,7 @@
 # TIEN404 V18.2 Zalo QA — READ ONLY. Run locally with secured QA Bot token.
 # Never paste tokens into ChatGPT, GitHub, console screenshots, or n8n execution data.
 # Does not call setWebhook, deleteWebhook, getUpdates, or sendMessage.
-# Requires process environment variable TIEN404_ZALO_QA_BOT_TOKEN.
+# Uses process environment variable TIEN404_ZALO_QA_BOT_TOKEN if set, else a hidden SecureString prompt.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $qaToken = [Environment]::GetEnvironmentVariable('TIEN404_ZALO_QA_BOT_TOKEN', 'Process')
