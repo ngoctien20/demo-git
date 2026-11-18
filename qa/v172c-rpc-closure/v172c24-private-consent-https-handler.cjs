@@ -5,6 +5,24 @@
 const {URL}=require('node:url');
 const MAX_BODY=1024;
 const scope='synthetic_catalog_readonly_no_send_no_write';
+// Bounded stream avoids unbounded Request.text() buffering when Content-Length
+// is omitted, invalid or falsely declared by an untrusted client.
+async function readBoundedBody(request){
+ if(!request.body || typeof request.body.getReader!=='function')return null;
+ const reader=request.body.getReader();
+ const pieces=[];let bytes=0;
+ try{
+  while(true){
+   const {done,value}=await reader.read();
+   if(done)break;
+   if(!(value instanceof Uint8Array))return null;
+   bytes+=value.byteLength;
+   if(bytes>MAX_BODY)return null;
+   pieces.push(value);
+  }
+  return new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(pieces,bytes));
+ }finally{reader.releaseLock();}
+}
 const json=(status,body)=>new Response(JSON.stringify(body),{
  status,headers:{'content-type':'application/json; charset=utf-8',
  'cache-control':'no-store, max-age=0','x-content-type-options':'nosniff',
@@ -40,8 +58,8 @@ function createProtectedConsentHttpRoute({backend,allowedOrigin,verifyDeployment
    const auth=request.headers.get('authorization');
    if(typeof auth!=='string'||!/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(auth)||
       auth.length>8192)return deny(401);
-   const raw=await request.text();
-   if(Buffer.byteLength(raw,'utf8')>MAX_BODY)return deny(413);
+   const raw=await readBoundedBody(request);
+   if(raw===null)return deny(413);
    let body;try{body=JSON.parse(raw)}catch{return deny(400)}
    if(!body||typeof body!=='object'||Array.isArray(body))return deny(400);
    if(kind==='intake'){
