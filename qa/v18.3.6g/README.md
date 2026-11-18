@@ -10,12 +10,12 @@
 
 1. `signed-authority.mjs` — actual Node.js Ed25519 sign and verify operations for a **read-only, short-lived private authority JWT**. Only `CATALOG_READ` and `ORDER_READ`. Verifier pins exact `kid`, `typ`, algorithm, issuer/audience, Tenant/Store/session, membership revision, expiry and checks a single-use nonce.
 2. `test-signed-authority.mjs` — 60 tests for crypto integrity, wrong Store, wrong session, stale membership, expired/revoked access, key/algorithm confusion and concurrent replay.
-3. `real-auth-ab-preflight.mjs` and `test-real-auth-ab-preflight.mjs` — 14 tests for fail-closed admission readiness, requiring two independent Owners in the same Tenant, protected verifier, approved schema, backup, independent security review and redacted evidence. **Never claims a real Auth UAT was performed.**
+3. `real-auth-ab-preflight.mjs` and `test-real-auth-ab-preflight.mjs` — 15 tests for fail-closed admission readiness, requiring two independent Owners in the same Tenant, protected verifier, approved schema, backup, independent security review and redacted evidence. **Never claims a real Auth UAT was performed.**
 4. `test-independent-structural-review.mjs` — 18 second-pass static checks against actual F/G code to preserve critical known findings and avoid silent privilege assumptions.
 5. `SECURITY_REVIEW_FINDINGS.md` — 16 specific security findings and remediation gates. It is an automated engineering review; **an independent human reviewer has not approved it**.
 6. `PRIVATE_SIGNED_AUTHORITY_CONTRACT.md` — exact claims, trust boundaries, issuer API, key handling, nonce and session requirements.
 7. `REAL_AUTH_AB_ADMISSION_PREFLIGHT.md` — private real Owner A/B read-only admission requirements and observed staging blockers.
-8. GitHub Actions runs 92 tests using Node built-ins only. CI keypairs and HMAC binding secrets are random in-memory fixtures; no private key files, npm dependencies, HTTP integrations, credentials or real customer data.
+8. GitHub Actions runs 93 tests using Node built-ins only. CI keypairs and HMAC binding secrets are random in-memory fixtures; no private key files, npm dependencies, HTTP integrations, credentials or real customer data.
 
 ## Important distinctions
 
