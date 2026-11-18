@@ -66,7 +66,13 @@ function createOfflineWidgetPreview({mode='DENY',ports,serverSecret,now=Date.now
      privateOrderAccess:false,providerSends:0,orderWrites:0
    });
  }
- async function preview({widgetId,origin:claimedOrigin,session,eventId}={}){
+ async function preview({widgetId,origin:claimedOrigin,session,eventId,message}={}){
+   // New V18.5 transport input. Optional for backward-compatible V14.4 QA.
+   // Never let the browser supply the verified tenant/store binding.
+   if(message!==undefined&&(
+     typeof message!=='string'||!message.trim()||message.length>800||
+     /[\u0000-\u001f\u007f]/.test(message)))
+     reject('WIDGET_MESSAGE_INVALID');
    const install=await assignment(widgetId,claimedOrigin);
    const trusted=verify({install,session,serverSecret,now:now()});
    if(!trusted.verified||!trusted.requiresDurableReplayGuard||
@@ -90,7 +96,8 @@ function createOfflineWidgetPreview({mode='DENY',ports,serverSecret,now=Date.now
      reject('WIDGET_EVENT_REPLAY_OR_LEDGER_UNAVAILABLE');
    const [intent,catalog,config]=await Promise.all([
      ports.readSalesIntent({tenantId:install.tenantId,storeId:install.storeId,
-       widgetId:install.widgetId,publicOnly:true,previewOnly:true}),
+       widgetId:install.widgetId,publicOnly:true,previewOnly:true,
+       ...(message===undefined?{}:{message:message.trim()})}),
      ports.readPublicCatalog({tenantId:install.tenantId,storeId:install.storeId,
        widgetId:install.widgetId,publicOnly:true}),
      ports.readReviewedTheme({tenantId:install.tenantId,storeId:install.storeId,
