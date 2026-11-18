@@ -19,9 +19,10 @@ Define the canonical authority model for multiple Stores under one Tenant, the r
 2. The six Commerce tables (`products`, `orders`, `order_items`, `customers`, `conversations`, `messages`) have no `store_id`.
 3. All 20 public tables have RLS; 31 public policies are permissive and zero are restrictive.
 4. The current eight relevant Commerce/tenant policies are SELECT-only. `products_member_read` allows any active tenant member; the other five business-data read policies allow active tenant owner/manager. There are no current direct Commerce INSERT/UPDATE/DELETE policies for `authenticated`.
-5. `products_tenant_id_sku_key` enforces `UNIQUE (tenant_id, sku)`. This conflicts with a future Store-local SKU namespace and requires an explicit product decision before changing.
-6. R1 QA has two Store/Bot scopes mapped to two different Auth Tenants (one Store scope per Tenant), not two Stores in one Tenant.
-7. V18.3.6B is a successful PostgreSQL 17.12 disposable synthetic replay only. Its final audit expects three synthetic Stores, three memberships, six restrictive SELECT policies, ten composite FKs and a non-writable QA role. It does not prove live compatibility or a role-aware write policy model.
+5. The live conversations table has `id`, `tenant_id`, `channel`, `external_reference` and `created_at`, but no provider installation ID; the new contract adds `channel_installation_id` so conversation provenance is tied to the verified Store installation.
+6. `products_tenant_id_sku_key` enforces `UNIQUE (tenant_id, sku)`. This conflicts with a future Store-local SKU namespace and requires an explicit product decision before changing.
+7. R1 QA has two Store/Bot scopes mapped to two different Auth Tenants (one Store scope per Tenant), not two Stores in one Tenant.
+8. V18.3.6B is a successful PostgreSQL 17.12 disposable synthetic replay only. Its final audit expects three synthetic Stores, three memberships, six restrictive SELECT policies, ten composite FKs and a non-writable QA role. It does not prove live compatibility or a role-aware write policy model.
 
 ## Design decisions proposed
 
