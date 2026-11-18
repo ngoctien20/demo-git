@@ -4,10 +4,12 @@ on:
     branches: [work/v185-widget-shared-commerce-core-qa-20261118]
     paths:
       - 'qa/channel-v1851/**'
+      - 'docs/ai-handoff/T404_V1851_*'
       - '.github/workflows/v1851-protected-widget-gateway-nohost.yml'
   pull_request:
     paths:
       - 'qa/channel-v1851/**'
+      - 'docs/ai-handoff/T404_V1851_*'
       - '.github/workflows/v1851-protected-widget-gateway-nohost.yml'
 permissions:
   contents: read
@@ -58,6 +60,14 @@ jobs:
           assert.match(wrangler,/preview_urls = false/);
           assert.match(wrangler,/V1851_ADMISSION = "DISABLED"/);
           assert(!/\[\[d1_databases\]\]|^\s*route\s*=/m.test(wrangler));
+          const packet=JSON.parse(fs.readFileSync('qa/channel-v1851/protected-staging-approval-packet.json','utf8'));
+          assert.equal(packet.status,'CANDIDATE_SOURCE_ONLY_NO_HOSTED_ADMISSION');
+          assert.equal(packet.liveState.productionChanges,0);
+          assert.equal(packet.liveState.realD1LedgerCreated,false);
+          assert(Object.values(packet.requiredSpecificApprovals).every(v=>v===false));
+          const client=fs.readFileSync('assets/widget-v185-client.js','utf8');
+          assert(client.includes("credentials:sameOriginQaGateway?'same-origin':'omit'"));
+          assert(client.includes('gateway === location.origin'));
           const bridge=fs.readFileSync('qa/channel-v1851/protected-http-gateway.cjs','utf8');
           assert(bridge.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
           assert(bridge.includes('createOfflineSharedCoreWidget'));
