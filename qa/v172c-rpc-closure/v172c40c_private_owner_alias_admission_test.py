@@ -254,5 +254,26 @@ class SecurityGateTests(unittest.TestCase):
         f["private-key"] = "fake-fixture-only"
         self.assert_block(f, "FORBIDDEN_PRIVATE_DATA_FIELD")
 
+
+    def test_missing_revocation_state_is_not_an_approval(self):
+        f = fresh_fixture()
+        del f["owner_consents"][0]["revoked"]
+        self.assert_block(f, "REVOKED_OR_EXPIRED_OWNER_EVIDENCE")
+
+    def test_missing_alias_revocation_state_is_not_an_approval(self):
+        f = fresh_fixture()
+        del f["alias_mappings"][0]["expired"]
+        self.assert_block(f, "REVOKED_OR_EXPIRED_ALIAS")
+
+    def test_authority_requested_must_be_explicitly_false(self):
+        f = fresh_fixture()
+        del f["real_authority_requested"]
+        self.assert_block(f, "REAL_AUTHORITY_PROHIBITED")
+
+    def test_s2_requires_exactly_two_canonical_store_candidates(self):
+        f = fresh_fixture()
+        f["store_refs"].append("synthetic-store-C")
+        self.assert_block(f, "TWO_DISTINCT_STORES_REQUIRED")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
