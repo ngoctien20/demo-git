@@ -32,7 +32,7 @@ function setup() {
     lookupCurrentAuthSession:async id=>state.sessions.find(x=>x.id===id),
     lookupCurrentOwnerMembership:async (t,u)=>state.members.find(x=>x.tenantId===t&&x.userId===u),
     lookupIndependentConsent:async (handle,u,p)=>state.consents[
-      pos(handle,consents)]?.userId===u&&p===pair?state.consents[pos(handle,consents)]:undefined
+      pos(handle,consents)]?.userId===u&&state.consents[pos(handle,consents)]?.pairingHandle===p?state.consents[pos(handle,consents)]:undefined
   };
   const verifier=createCandidateVerifier({ports,issuer,accessIssuer,
     accessAudience:'tien404-private-qa',tenantScope:tenant,nowSeconds:()=>now});
@@ -56,7 +56,7 @@ test('P0R synthetic pair correlation: opaque handles and zero Store/send grants'
   assert.equal(Object.values(result).some(v=>typeof v==='string'&&v.includes(owners[0])),false);
 });
 test('default deny without audited backend ports',()=>expectDenied(
-  ()=>Promise.resolve(createCandidateVerifier({issuer,tenantScope:tenant})),
+  async()=>createCandidateVerifier({issuer,tenantScope:tenant}),
   'VERIFIER_NOT_CONFIGURED'));
 test('reject unprotected or forged Access proof',async()=>{
   const q=setup();q.state.access[0].signatureVerified=false;
