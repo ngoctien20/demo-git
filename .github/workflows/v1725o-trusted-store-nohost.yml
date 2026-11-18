@@ -1,0 +1,44 @@
+name: TIEN404 V17.25O — Trusted Store Router NO-HOST
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725o/**'
+      - '.github/workflows/v1725o-trusted-store-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-store-router:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verify quarantined source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/v1725o/trusted_store_selection.py qa/v1725o/test_trusted_store_selection.py
+          python3 - <<'PY'
+          from pathlib import Path
+          code = Path('qa/v1725o/trusted_store_selection.py').read_text()
+          assert 'STORE_ORDERS_NOT_ADMITTED' in code
+          assert 'LEGACY_ORDERS_STORE_SCOPE_REQUIRED' in code
+          assert 'order_read_authorized: bool = False' in code
+          assert 'provider_send_authorized: bool = False' in code
+          assert 'production_approved: bool = False' in code
+          assert all(x not in code for x in (
+              'service_role', 'import jwt', 'import psycopg',
+              'import requests', 'import socket', 'import subprocess',
+              'get_user(', 'get_remote(', 'SELECT *', 'send_message('))
+          print('V1725O_SOURCE_ONLY_NO_REAL_AUTH_NO_DB_NO_SEND_PASS')
+          PY
+      - name: Install isolated, version-pinned CI dependencies
+        shell: bash
+        run: |
+          python3 -m venv .venv-v1725o
+          .venv-v1725o/bin/python -m pip install --disable-pip-version-check             fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Execute synthetic FastAPI ASGI and Store-bound contracts
+        shell: bash
+        run: |
+          .venv-v1725o/bin/python -m pytest -q qa/v1725o/test_trusted_store_selection.py
+      - name: No-host release boundary
+        run: echo 'V1725O_SOURCE_TEST_ONLY; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_MIGRATION; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
