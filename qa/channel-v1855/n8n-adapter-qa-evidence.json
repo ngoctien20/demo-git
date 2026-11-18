@@ -1,0 +1,229 @@
+{
+  "phase": "V18.5.5",
+  "date": "2026-11-18 JST",
+  "status": "INTERNAL_READONLY_ADAPTER_IMPLEMENTED_AND_N8N_UAT_12_OF_12_PASS_HTTP_INGRESS_BLOCKED_PENDING_DEDICATED_AUTH",
+  "n8n": {
+    "project": "Personal",
+    "adapter": {
+      "workflowId": "rYwrJfJavcaZcjUI",
+      "name": "TIEN404 V18.5.5 Protected Read-Only Commerce Adapter",
+      "folder": "03_TIEN404_COMMERCE - PRODUCT/01_CORE - ENGINE",
+      "active": false,
+      "published": false,
+      "versionId": "7e72477e-ab8e-4176-a6c1-4277e5e2c538",
+      "nodeCount": 10,
+      "callerPolicy": "workflowsFromAList",
+      "allowedCallerIds": [
+        "At2msGSDpmJ1GvnK"
+      ],
+      "webhookTrigger": false,
+      "credentials": 0,
+      "aiAgent": false
+    },
+    "qa": {
+      "workflowId": "At2msGSDpmJ1GvnK",
+      "name": "TIEN404 V18.5.5 Protected Read-Only Adapter QA",
+      "folder": "90_QA - DIAGNOSTICS",
+      "active": false,
+      "published": false,
+      "versionId": "3c4ff5e2-28d2-41ac-a841-ce8f800018d7",
+      "executionId": "5360",
+      "executionMode": "manual",
+      "status": "success",
+      "assertions": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "approvedSandboxInstallations": [
+      {
+        "installationId": "v1855-materials-sandbox",
+        "channelType": "website",
+        "serverMappedAccountId": "demo-materials-website"
+      },
+      {
+        "installationId": "v1855-grocery-sandbox",
+        "channelType": "website",
+        "serverMappedAccountId": "demo-grocery-website"
+      }
+    ],
+    "allowedOperations": [
+      "catalog.search",
+      "cart.preview"
+    ],
+    "deniedOperations": [
+      "order.read",
+      "order.status",
+      "order.create",
+      "order.update",
+      "order.cancel",
+      "payment.capture",
+      "support-ticket-write"
+    ],
+    "publishedChildren": [
+      {
+        "workflowId": "oOOXicKXGkBskKqh",
+        "name": "TIEN404_COMMERCE_CATALOG_QUERY",
+        "publishedVersionId": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+        "executionIds": [
+          "5362",
+          "5372",
+          "5380"
+        ],
+        "status": "success",
+        "storageOperation": "DataTable row.get"
+      },
+      {
+        "workflowId": "igPOsSbEgd4NgtRA",
+        "name": "TIEN404_COMMERCE_CART_PREVIEW",
+        "publishedVersionId": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+        "executionIds": [
+          "5367",
+          "5376"
+        ],
+        "status": "success",
+        "storageOperation": "DataTable row.get"
+      },
+      {
+        "workflowId": "5Eeh8hbpsoNhuiVo",
+        "name": "TIEN404_COMMERCE_TENANT_RESOLVER",
+        "publishedVersionId": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+        "storageOperation": "DataTable row.get"
+      }
+    ],
+    "cases": [
+      {
+        "case": "materials_catalog",
+        "pass": true,
+        "sku": "VL-101"
+      },
+      {
+        "case": "materials_cart",
+        "pass": true,
+        "sku": "VL-101",
+        "quantity": 3,
+        "subtotalVnd": 237000,
+        "previewOnly": true,
+        "canConfirm": false
+      },
+      {
+        "case": "grocery_catalog",
+        "pass": true,
+        "sku": "TG-101"
+      },
+      {
+        "case": "grocery_cart",
+        "pass": true,
+        "sku": "TG-101",
+        "quantity": 2,
+        "subtotalVnd": 9000,
+        "previewOnly": true,
+        "canConfirm": false
+      },
+      {
+        "case": "cross_tenant_sku_hidden",
+        "pass": true,
+        "querySku": "TG-101",
+        "productsReturned": 0
+      },
+      {
+        "case": "forged_authority_rejected",
+        "pass": true,
+        "reason": "caller_authority_fields_forbidden"
+      },
+      {
+        "case": "unknown_installation_rejected",
+        "pass": true,
+        "reason": "unknown_installation"
+      },
+      {
+        "case": "private_order_read_denied",
+        "pass": true,
+        "reason": "operation_not_allowed"
+      },
+      {
+        "case": "order_creation_denied",
+        "pass": true,
+        "reason": "operation_not_allowed"
+      },
+      {
+        "case": "invalid_cart_rejected",
+        "pass": true,
+        "reason": "invalid_cart_json"
+      },
+      {
+        "case": "stale_request_rejected",
+        "pass": true,
+        "reason": "request_timestamp_expired"
+      },
+      {
+        "case": "duplicate_sku_rejected",
+        "pass": true,
+        "reason": "duplicate_sku"
+      }
+    ],
+    "sideEffects": {
+      "orderWrites": 0,
+      "stockWrites": 0,
+      "providerSends": 0,
+      "customerOrderReads": 0,
+      "customerPiiReads": 0,
+      "aiCalls": 0
+    },
+    "authorityLimitations": {
+      "tenantIsolation": "CROSS_TENANT_SANDBOX_VERIFIED",
+      "storeLevelRls": "NOT_VERIFIED",
+      "sameTenantStoreAB": "NOT_TESTED"
+    },
+    "replayProtection": {
+      "timestampWindowMs": 60000,
+      "requestIdGeneratedByWorkerCandidate": true,
+      "durableReplayDeduplication": false,
+      "note": "All currently permitted operations are read-only and idempotent; duplicate reads within the freshness window can still consume resources. Durable rate limiting/replay deduplication is required before public customer exposure."
+    }
+  },
+  "worker": {
+    "candidatePath": "qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs",
+    "testPath": "qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs",
+    "deployed": false,
+    "newBindingsCreated": 0,
+    "n8nWebhookConfigured": false,
+    "secretsSet": false,
+    "routesImplementedInCandidate": [
+      "GET /__v1854/access-canary",
+      "GET /__v144/health",
+      "GET /__v1855/adapter-health",
+      "POST /v1/widget/commerce/read"
+    ],
+    "accessGate": "Cloudflare native ctx.access on every request",
+    "upstreamRestriction": "HTTPS only; exact host ngoctien20.app.n8n.cloud; /webhook/* only; webhook-test and query strings denied",
+    "upstreamHeaderName": "x-t404-adapter-token",
+    "expectedWorkerBindings": [
+      "T404_N8N_READONLY_WEBHOOK_URL",
+      "T404_N8N_READONLY_ADAPTER_TOKEN"
+    ],
+    "installationAuthority": "Worker accepts only fixed installation IDs; n8n internal adapter maps them server-side to fixed website Sandbox accounts; browser accountId/tenantId/storeId/customerId/orderId rejected.",
+    "publicAccess": false
+  },
+  "securityGates": {
+    "ownerAccessRuntime": "VERIFIED",
+    "secondIdentityDenial": "PENDING_FROM_V18.5.4",
+    "dedicatedN8nHeaderAuthCredential": "NOT_CREATED",
+    "webhookIngressWorkflow": "NOT_CREATED",
+    "workerDeployment": "NOT_DEPLOYED",
+    "durableReplayOrRateLimit": "NOT_IMPLEMENTED",
+    "productionRelease": false
+  },
+  "noChangesTo": [
+    "n8n Published Commerce Core",
+    "Published Catalog Query",
+    "Published Cart Preview",
+    "Tenant Resolver",
+    "AI_SALES_DEMO",
+    "existing credentials",
+    "Cloudflare production or current V14.4 deployment",
+    "website gh-pages",
+    "Supabase",
+    "Render",
+    "customer orders or inventory"
+  ]
+}
