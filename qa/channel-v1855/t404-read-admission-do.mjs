@@ -16,6 +16,9 @@ export class T404ReadAdmission extends DurableObject {
 
   // Invoked only through an internal Durable Object binding; no public route.
   async authorizeRead(input) {
+    if (this.ctx.id?.name !== ('t404-v1855:' + input?.installationId)) {
+      return { allowed: false, code: 'ADMISSION_INSTALLATION_MISMATCH', status: 403 };
+    }
     return this.ctx.storage.transactionSync(() => {
       const row = this.sql.exec('SELECT json FROM read_admission_state WHERE id = 1').toArray()[0];
       let state = null;
