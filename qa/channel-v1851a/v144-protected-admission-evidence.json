@@ -2,7 +2,7 @@
   "phase": "V18.5.1A",
   "date": "2026-11-18 JST",
   "mode": "EXISTING_V14_4_GATEWAY_PROTECTED_ADMISSION_READ_ONLY_AUDIT_AND_SOURCE_QA",
-  "status": "CLOUDFLARE_CONFIGURATION_VERIFIED_OWNER_RUNTIME_VERIFIED_ALTERNATE_IDENTITY_DENIAL_BLOCKED",
+  "status": "LIVE_V144_CONFIG_AND_OWNER_AND_ANONYMOUS_EDGE_VERIFIED_ALT_IDENTITY_DENIAL_PENDING",
   "existingGateway": {
     "worker": "tien404-widget-gateway-v144-staging",
     "hostname": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
@@ -82,17 +82,54 @@
     "criteria": "Denied alternate identity event from same Access app plus no successful Canary JSON"
   },
   "externalUnauthenticatedEdgeTest": {
-    "verified": false,
-    "attempted": true,
-    "result": "The tool execution environment could not resolve the workers.dev hostname; no external HTTP status was observed. This is not proof of a user-visible DNS failure or of Access bypass.",
-    "expected": "Unauthenticated requests to all paths are intercepted by Access login or denied before Worker handlers are exposed"
+    "verified": true,
+    "source": "Unauthenticated GETs executed in GitHub Actions runner (no cookies, JWT or secrets)",
+    "runId": 44284152281,
+    "runUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44284152281",
+    "sourceCommit": "ff23442b85d0468443db606244cfa7383759b9a9",
+    "results": [
+      {
+        "path": "/__v1854/access-canary",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      },
+      {
+        "path": "/__v144/health",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      },
+      {
+        "path": "/v1/widget/session",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      }
+    ],
+    "noCredentialsUsed": true,
+    "redirectQueriesLogged": false,
+    "scope": "Real anonymous Cloudflare Access redirect, not logged-in alternate identity authorization denial",
+    "previousToolProbe": {
+      "result": "Local execution environment DNS lookup failed before GitHub Actions probe",
+      "interpretation": "This did not establish a site DNS outage."
+    }
   },
   "sourceOnlyRegression": {
     "testFile": "qa/channel-v1851a/v144-protected-admission.test.mjs",
     "testType": "SYNTHETIC_ACCESS_CTX_AND_LOCKED_ROUTE_MATRIX",
     "realEdgeAccessProof": false,
     "noSecretAccess": true,
-    "expectedCases": 15
+    "expectedCases": 23,
+    "totalWithInheritedV1854": 36,
+    "lastGreenCI": {
+      "id": 44284152281,
+      "sha": "ff23442b85d0468443db606244cfa7383759b9a9",
+      "tests": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0
+    }
   },
   "n8nLiveHttpAuth": {
     "verified": false,
@@ -120,5 +157,5 @@
     "currentCanaryDeployment": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
     "sourceChangesOnly": "Close the new Draft PR without merge; no Cloudflare change to revert"
   },
-  "decision": "SOURCE_QA_PENDING / LIVE_V14_4_ACCESS_CONFIG_VERIFIED / OWNER_CANARY_VERIFIED / ALTERNATE_DENIAL_PENDING / NO_CLOUDFLARE_WRITE / PRODUCTION_NO_GO"
+  "decision": "LIVE_V14_4_CONFIG_VERIFIED / REAL_OWNER_PASS / REAL_ANON_EDGE_302_3_OF_3_PASS / SOURCE_QA_36_OF_36 / REAL_ALTERNATE_DENIAL_PENDING / NO_CLOUDFLARE_MUTATION / PRODUCTION_NO_GO"
 }
