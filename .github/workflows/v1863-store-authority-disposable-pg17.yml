@@ -1,12 +1,14 @@
-name: V18.6.3 Disposable PostgreSQL 17 Store RLS QA
+name: V18.6.3 PG17 + V18.6.4 Owner A/B Admission QA (NO LIVE)
 on:
   push:
     paths:
       - 'qa/store-authority-v1863/**'
+      - 'qa/store-authority-v1864/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
       - 'qa/store-authority-v1863/**'
+      - 'qa/store-authority-v1864/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -48,5 +50,10 @@ jobs:
           test "$PGDATABASE" = 'tien404_v1863_qa'
           test "$V1863_DISPOSABLE_POSTGRES" = 'true'
           ! grep -R -E 'ifxlvrhyjhbzbrkdsida|ngoctien20.app.n8n.cloud|developers.facebook.com' qa/store-authority-v1863/pg17-fixture.sql
-      - name: Execute isolated PostgreSQL RLS tests
+      - name: Execute disposable PostgreSQL RLS tests (V18.6.3)
         run: node --test qa/store-authority-v1863/pg17-rls.test.cjs
+      - name: Execute synthetic read-only Owner A/B admission tests (V18.6.4)
+        run: node --test qa/store-authority-v1864/readonly-admission.test.cjs
+      - name: Verify hard fail-closed safety flag contract
+        run: |
+          node -e "const f=require('./qa/store-authority-v1864/readonly-admission.cjs').FLAGS; if(f.metaLiveApi!==false||f.providerSend!==false||f.orderWrite!==false||f.allowPrivateOrderRead!==false) process.exit(1)"
