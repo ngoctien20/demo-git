@@ -84,3 +84,28 @@ test('DENY wrong method',async()=>{
 test('deny incomplete server config',()=>{
  assert.throws(()=>createProtectedConsentHttpRoute({allowedOrigin:origin}),/PROTECTED_ROUTE_SERVER_CONFIG_MISSING/);
 });
+
+test('DENY oversized chunked UTF-8 body without Content-Length',async()=>{
+ const {route,calls}=fixture();
+ const stream=new ReadableStream({start(controller){
+  controller.enqueue(new TextEncoder().encode('x'.repeat(800)));
+  controller.enqueue(new TextEncoder().encode('y'.repeat(800)));
+  controller.close();
+ }});
+ const request=new Request(endpoint,{method:'POST',duplex:'half',headers:{
+  origin,authorization,'content-type':'application/json'},body:stream});
+ assert.equal(request.headers.get('content-length'),null);
+ assert.equal((await route(request)).status,413);
+ assert.equal(calls.length,0);
+});
+test('DENY malformed UTF-8 stream without backend access',async()=>{
+ const {route,calls}=fixture();
+ const stream=new ReadableStream({start(controller){
+  controller.enqueue(Uint8Array.from([0xc3,0x28]));
+  controller.close();
+ }});
+ const request=new Request(endpoint,{method:'POST',duplex:'half',headers:{
+  origin,authorization,'content-type':'application/json'},body:stream});
+ assert.notEqual((await route(request)).status,202);
+ assert.equal(calls.length,0);
+});
