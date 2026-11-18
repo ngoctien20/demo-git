@@ -14,6 +14,7 @@ const INSTALLATIONS = Object.freeze({
  qa_fb_paused:{channel:"messenger",actor:"qa_owner_a",status:"paused"},
  qa_fb_revoked:{channel:"messenger",actor:"qa_owner_a",status:"revoked"}
 });
+for(const installation of Object.values(INSTALLATIONS)) Object.freeze(installation); // immutable mock-only fixtures
 const RENDER=Object.freeze({messenger:"messenger_text_mock",zalo_oa:"zalo_oa_text_mock",website:"website_card_mock"});
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 const plain=o=>o!==null&&typeof o==="object"&&!Array.isArray(o)&&(Object.getPrototypeOf(o)===Object.prototype||Object.getPrototypeOf(o)===null);

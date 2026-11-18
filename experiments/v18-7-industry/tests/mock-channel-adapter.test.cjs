@@ -64,3 +64,9 @@ test("Distinct non-sendable renderer types",()=>{
  const types=new Set(["messenger","zalo_oa","website"].map(c=>run(request("a",c)).preview.kind));assert.equal(types.size,3);
 });
 test("Prototype injection key DENY",()=>{const x=request();Object.defineProperty(x,"__proto__",{enumerable:true,value:{role:"admin"}});assert.equal(run(x).code,"INPUT_UNTRUSTED")});
+
+test("all installation mappings immutable against QA fixture tampering",()=>{
+ assert.equal(Object.isFrozen(INSTALLATIONS),true);
+ for(const v of Object.values(INSTALLATIONS))assert.equal(Object.isFrozen(v),true);
+ assert.equal(INSTALLATIONS.qa_fb_a.actor,"qa_owner_a");
+});

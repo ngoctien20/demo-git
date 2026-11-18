@@ -86,3 +86,5 @@ Rollback: close Draft PR / revert isolated branch; no DB or credential rollback 
 ## V18.7.5 — Multichannel synthetic QA
 
 Includes separate mock Messenger, Zalo OA, and Website render shapes (always `sendable:false`). Uses synthetic QA Owner A/Store A, Owner B/Store B, Owner C/Store C **within Tenant A**. A and C share SKU `QA-G001` with different price and stock. Wrong store and revoked installations are denied. All test subjects are fake; QA actor names are NOT authentication. No network, Meta/Zalo API, message send, DB or n8n Core calls. Run `node --test experiments/v18-7-industry/tests/*.test.cjs`. Existing Canonical Store RLS work is in **Draft PR #420** and must not be duplicated or treated as live.
+
+Integration with the store-scoped authorization gate is documented in BRIDGE_V187_TO_V1863.md. Existing PR #420 is separate and must not be merged implicitly.
