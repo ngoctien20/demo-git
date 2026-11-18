@@ -98,7 +98,7 @@ Workflow `.github/workflows/v1725r-store-rls-disposable.yml` uses:
 - P0D → V17.25N → V17.25R execution order.
 - No hosted Supabase/Render/n8n credentials, real JWT, customer rows, provider sends or external endpoints.
 
-CI result is recorded in `V17_25R_CHECKPOINT.md` after the run. Until then the suite is PENDING CI.
+The inherited P/Q/R workflow is stored in the Q base branch and includes a conditional PostgreSQL job for `work/v1725r-*` branches. CI result is recorded in `V17_25R_CHECKPOINT.md` after the run. Until then the suite is PENDING CI.
 
 ## 9. Release gates
 
