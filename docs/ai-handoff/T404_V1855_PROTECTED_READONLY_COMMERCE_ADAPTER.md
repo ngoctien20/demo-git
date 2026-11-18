@@ -267,6 +267,7 @@ Added test-only local integration under qa/channel-v1855/runtime-qa/, using @clo
 
 - [CI #44313831943](https://github.com/ngoctien20/demo-git/actions/runs/44313831943): source regression 154/154; **3 workerd SQLite DO tests pass**.
 - [CI #44314497533](https://github.com/ngoctien20/demo-git/actions/runs/44314497533): source regression 154/154; **4 workerd SQLite DO tests pass**, including a new Durable Object eviction/recovery test proving the duplicate request ID is still rejected after eviction.
+- [CI #44315019317](https://github.com/ngoctien20/demo-git/actions/runs/44315019317): **both jobs SUCCESS**, 154/154 existing regression plus 4/4 real local workerd SQLite checks, including eviction, replay, 30-request concurrency, and cross-installation denials. Current code after evidence updates must be checked again at exact HEAD.
 - These tests exercise actual Cloudflare Worker runtime compatibility locally, including real SQLite storage semantics; they do not measure hosted Cloudflare costs, performance, production worker uploads or authenticated HTTP ingress.
 
 Earlier test-only CI runs failed because of a non-existent @cloudflare/vitest-plugin version (0.16.x) and an npm resolver error; these were resolved by pinning published v1.6.0 and using the runner's Yarn installation.
