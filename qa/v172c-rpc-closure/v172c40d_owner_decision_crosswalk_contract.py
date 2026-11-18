@@ -107,8 +107,12 @@ def inspect_owner_decision(proposal: dict[str, Any]) -> dict[str, Any]:
         consents = []
     if any(not _synthetic(s, "synthetic-store-") for s in stores):
         reasons.add("NON_SYNTHETIC_STORE_REF")
-    if len(stores) != len(set(s for s in stores if isinstance(s, str))):
+    string_stores = [s for s in stores if isinstance(s, str)]
+    if len(string_stores) != len(set(string_stores)):
         reasons.add("DUPLICATE_STORE_REF")
+    # Discard malformed objects after recording the failure so adversarial
+    # JSON cannot trigger an unhashable-type exception in later set logic.
+    stores = string_stores
 
     if decision == "S3":
         reasons.add("OWNER_DECISION_UNRESOLVED")
