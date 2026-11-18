@@ -1,4 +1,4 @@
-name: V18.6.3–8 Store RLS and Migration Read-Only Preflight NO LIVE
+name: V18.6.3–9 Store Authority and Active Zalo RPC Caller NO LIVE
 on:
   push:
     paths:
@@ -8,6 +8,7 @@ on:
       - 'qa/store-authority-v1866/**'
       - 'qa/store-authority-v1867/**'
       - 'qa/store-authority-v1868/**'
+      - 'qa/store-authority-v1869/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -17,6 +18,7 @@ on:
       - 'qa/store-authority-v1866/**'
       - 'qa/store-authority-v1867/**'
       - 'qa/store-authority-v1868/**'
+      - 'qa/store-authority-v1869/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -83,3 +85,8 @@ jobs:
         run: |
           node --test qa/store-authority-v1868/preflight-gate.test.cjs
           node -e "const x=require('./qa/store-authority-v1868/preflight-gate.cjs').evaluateBundled();if(x.status!=='BLOCKED'||x.deployApproved||x.databaseMutationApproved||x.privilegedRpcChangeApproved||x.realOwnerABApproved||x.productionReady)process.exit(1)"
+      - name: V18.6.9 Active Zalo RPC caller graph + release NO-GO (NO HOST)
+        run: |
+          node --test qa/store-authority-v1869/revocation-admission.test.cjs
+          node qa/store-authority-v1869/revocation-admission.cjs
+          node -e "const x=require('./qa/store-authority-v1869/revocation-admission.cjs').assessBundled();if(x.status!=='NO_GO'||x.activeRpcRevocationAllowed||x.storeSchemaMigrationAllowed||x.publishN8nAllowed||x.productionReady)process.exit(1)"
