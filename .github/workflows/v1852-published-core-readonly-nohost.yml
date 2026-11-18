@@ -1,0 +1,65 @@
+name: TIEN404 V18.5.2 — Published Read-Only Core Admission NO-HOST
+on:
+  push:
+    branches:
+      - work/v1852-published-core-readonly-admission-nohost-20261118
+    paths:
+      - 'qa/channel-v1852/**'
+      - '.github/workflows/v1852-published-core-readonly-nohost.yml'
+      - 'docs/ai-handoff/T404_V1852_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1852/**'
+      - '.github/workflows/v1852-published-core-readonly-nohost.yml'
+      - 'docs/ai-handoff/T404_V1852_*'
+permissions:
+  contents: read
+jobs:
+  published-core-readonly-synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verify all pinned safe Core sources compile
+        run: |
+          node --check qa/channel-v1852/published-core-readonly-admission.cjs
+          node --check qa/channel-v1852/published-core-readonly-admission.test.cjs
+          node --check qa/channel-v1852/source-admission-manifest.cjs
+      - name: V18.5.2 source tests and inherited safety regressions
+        run: |
+          node --test \
+            qa/channel-v1852/published-core-readonly-admission.test.cjs \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v143/channel-core.test.cjs
+      - name: Explicit no-send/no-credential and published-pin static gate
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const x=fs.readFileSync('qa/channel-v1852/published-core-readonly-admission.cjs','utf8');
+          const m=require('./qa/channel-v1852/source-admission-manifest.cjs');
+          const p=JSON.parse(fs.readFileSync('qa/channel-v1852/read-only-approval-packet.json','utf8'));
+          assert.equal(m.core.id,'iyfGUiEsZlNTBWOR');
+          assert.equal(m.core.published,'456862c9-e5ee-4bfa-9931-47dbc39ab73d');
+          assert.equal(m.core.fullAgentReadOnlyVerified,false);
+          assert(m.core.hasTicketInsertTool===true);
+          assert.deepEqual(m.allowedChildren.sort(),['CATALOG_QUERY','CART_PREVIEW']);
+          assert(x.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
+          for (const needle of ['requireActiveVersionId','DIRECT_CORE_AGENT',
+            'AGENT_HAS_REACHABLE_TICKET_WRITE_TOOL']){
+            if(needle==='DIRECT_CORE_AGENT')continue;
+            assert(x.includes(needle));
+          }
+          for (const phrase of ['fetch(', 'http.request(', 'https.request(',
+            'service_role', 'Authorization: Bearer', 'PAGE_ACCESS_TOKEN']){
+            assert(!x.includes(phrase));
+          }
+          assert(Object.values(p.requiredApprovals).every(v=>v===false));
+          assert.equal(p.sourceOnly,true);
+          assert.equal(p.hostedVerified,false);
+          assert.equal(p.realCoreInvocations,0);
+          console.log('V1852_PINNED_PUBLISHED_READONLY_NOHOST_ALL_APPROVALS_FALSE_PASS');
+          JS
+      - name: Preserve production and actual gateway lock
+        run: echo 'V18.5.2 source-only CI. No n8n execution/publish, no gateway deployment/Access edit, no D1/Supabase or customer data, no Orders, no provider sends, no production.'
