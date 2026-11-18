@@ -59,3 +59,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c37-expiry-outbox-atomic-ci-drill.sh
       - name: Protected No-Send Dispatcher Admission, Delivery Idempotency and Bounded Retry QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c38-protected-no-send-dispatcher-ci-drill.sh
+      - name: Ambiguous Provider ACK Reconciliation, DLQ and No-Send Retry Admission QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c39-ambiguous-ack-dlq-ci-drill.sh
