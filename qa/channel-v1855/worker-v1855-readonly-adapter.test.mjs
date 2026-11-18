@@ -13,10 +13,27 @@ const baseEnv = {
   T404_ACCESS_AUD: AUD,
   T404_QA_OPERATOR_EMAIL: 'qa-owner@example.test'
 };
+function allowedAdmissionNamespace() {
+  return {
+    getByName(name) {
+      assert.match(name, /^t404-v1855:v1855-(materials|grocery)-sandbox$/);
+      return {
+        async authorizeRead(body) {
+          assert.ok(body.requestId);
+          assert.equal(typeof body.issuedAt, 'number');
+          assert.equal(body.operation === 'catalog.search' || body.operation === 'cart.preview', true);
+          assert(!Object.hasOwn(body, 'accountId'));
+          return { allowed: true, code: 'ADMITTED_READ_ONLY', status: 200, remaining: 19 };
+        }
+      };
+    }
+  };
+}
 const upstreamEnv = {
   ...baseEnv,
-  T404_N8N_READONLY_WEBHOOK_URL: 'https://ngoctien20.app.n8n.cloud/webhook/v1855-readonly-test',
-  T404_N8N_READONLY_ADAPTER_TOKEN: 't'.repeat(48)
+  T404_N8N_READONLY_WEBHOOK_URL: 'https://ngoctien20.app.n8n.cloud/webhook/t404-v1855-protected-readonly-commerce-staging',
+  T404_N8N_READONLY_ADAPTER_TOKEN: 't'.repeat(48),
+  T404_READ_ADMISSION: allowedAdmissionNamespace()
 };
 const path = '/v1/widget/commerce/read';
 
@@ -125,7 +142,8 @@ test('rejects non-HTTPS, non-n8n and webhook-test upstream URLs', async () => {
     'http://ngoctien20.app.n8n.cloud/webhook/x',
     'https://evil.example/webhook/x',
     'https://ngoctien20.app.n8n.cloud/webhook-test/x',
-    'https://ngoctien20.app.n8n.cloud/webhook/x?debug=1'
+    'https://ngoctien20.app.n8n.cloud/webhook/x?debug=1',
+    'https://ngoctien20.app.n8n.cloud/webhook/other-workflow'
   ]) {
     const env = { ...upstreamEnv, T404_N8N_READONLY_WEBHOOK_URL: invalidUrl };
     const response = await handleReadOnlyRequest(post({ installationId: 'v1855-materials-sandbox', operation: 'catalog.search', query: 'VL-101' }), env, ownerContext);
@@ -214,4 +232,64 @@ test('rejects CORS preflight instead of bypassing Access', async () => {
   const response = await handleReadOnlyRequest(new Request('https://widget.test/v1/widget/commerce/read', { method: 'OPTIONS' }), baseEnv, ownerContext);
   assert.equal(response.status, 405);
   assert.equal(response.headers.get('access-control-allow-origin'), null);
+});
+
+test('fails closed when durable admission binding is absent before outbound fetch', async () => {
+  const env = { ...upstreamEnv, T404_READ_ADMISSION: undefined };
+  const response = await handleReadOnlyRequest(
+    post({ installationId: 'v1855-materials-sandbox', operation: 'catalog.search', query: 'VL-101' }),
+    env, ownerContext, async () => { throw new Error('must never call n8n'); }
+  );
+  assert.equal(response.status, 423);
+  assert.equal((await response.json()).error, 'READ_ADMISSION_NOT_CONFIGURED');
+});
+
+test('fails closed when durable admission reports rate limit, replay, or RPC failure', async () => {
+  for (const denial of [
+    { allowed: false, status: 429, code: 'ADMISSION_RATE_LIMIT' },
+    { allowed: false, status: 409, code: 'ADMISSION_REPLAY' },
+    { allowed: false, status: 503, code: 'ADMISSION_STATE_CORRUPTED' }
+  ]) {
+    const env = { ...upstreamEnv, T404_READ_ADMISSION: {
+      getByName: () => ({ authorizeRead: async () => denial })
+    } };
+    const response = await handleReadOnlyRequest(
+      post({ installationId: 'v1855-materials-sandbox', operation: 'catalog.search', query: 'VL-101' }),
+      env, ownerContext, async () => { throw new Error('n8n must not be called if admission denied'); }
+    );
+    assert.equal(response.status, denial.status === 503 ? 503 : denial.status);
+    assert.equal((await response.json()).readOnly, true);
+  }
+  const env = { ...upstreamEnv, T404_READ_ADMISSION: {
+    getByName: () => ({ authorizeRead: async () => { throw new Error('durable object unavailable'); } })
+  } };
+  const response = await handleReadOnlyRequest(
+    post({ installationId: 'v1855-materials-sandbox', operation: 'catalog.search', query: 'VL-101' }),
+    env, ownerContext, async () => { throw new Error('n8n must not be called if durable object fails'); }
+  );
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, 'READ_ADMISSION_UNAVAILABLE');
+});
+
+test('does not return nested unsupported attributes from upstream catalog', async () => {
+  const fetchImpl = async (_url, init) => {
+    const payload = JSON.parse(init.body);
+    const result = catalogResult(payload.requestId);
+    result.products[0].attributes = {
+      material: 'M'.repeat(150),
+      weightKg: 50,
+      unknownPrivateField: 'DO_NOT_LEAK',
+      profile: { address: 'DO_NOT_LEAK' }
+    };
+    return new Response(JSON.stringify(result), { status: 200 });
+  };
+  const response = await handleReadOnlyRequest(
+    post({ installationId: 'v1855-materials-sandbox', operation: 'catalog.search', query: 'VL-101' }),
+    upstreamEnv, ownerContext, fetchImpl
+  );
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.products[0].attributes.material.length, 80);
+  assert.equal(body.products[0].attributes.weightKg, 50);
+  assert.equal(JSON.stringify(body).includes('DO_NOT_LEAK'), false);
 });
