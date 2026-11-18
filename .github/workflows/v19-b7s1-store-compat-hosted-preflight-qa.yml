@@ -1,0 +1,64 @@
+name: TIEN404 V19.0-B7-S1 - Six-Table Store Compatibility and Hosted Gate Offline QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b7s1-store-schema-compat-hosted-gates-20261118
+    paths:
+      - qa/v19-webhook/b7-s1/**
+      - .github/workflows/v19-b7s1-store-compat-hosted-preflight-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/b7-s1/**
+      - .github/workflows/v19-b7s1-store-compat-hosted-preflight-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b7s1-disposable-only:
+    name: PG17 synthetic six-table FK/RLS/writer compatibility + deny-only hosted approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGDATABASE: b7s1_disposable
+      PGUSER: postgres
+      PGPASSWORD: synthetic-local-ci-only
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: b7s1_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-local-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d b7s1_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preserve B2 deployed Worker snapshot
+        run: test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: Non-authorizing hosted manifest test
+        run: |
+          node --check qa/v19-webhook/b7-s1/hosted-approval-preflight.mjs
+          node --test qa/v19-webhook/b7-s1/tests/hosted-approval-preflight.test.mjs
+      - name: Disposable PostgreSQL17 six-table Store FK/RLS and writer compatibility rehearsal
+        run: |
+          psql --version
+          psql -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s1/tests/pg17_six_table_store_compat.sql
+      - name: No production or hosted migration artifact
+        run: |
+          test ! -e qa/v19-webhook/b7-s1/wrangler.toml
+          test ! -e qa/v19-webhook/b7-s1/.env
+          test ! -e qa/v19-webhook/b7-s1/real_store_migration.sql
+          echo "Synthetic PostgreSQL17 and pure Node tests only. No Supabase/Cloudflare/n8n external account mutations."
