@@ -1,0 +1,71 @@
+name: TIEN404 V18.5.1A — Existing V14.4 Protected Admission (NO-DEPLOY)
+on:
+  push:
+    branches:
+      - work/v1851a-existing-v144-protected-admission-20261118
+    paths:
+      - 'qa/channel-v1851a/**'
+      - '.github/workflows/v1851a-existing-v144-protected-admission-qa.yml'
+      - 'docs/ai-handoff/T404_V1851A_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1851a/**'
+      - '.github/workflows/v1851a-existing-v144-protected-admission-qa.yml'
+      - 'docs/ai-handoff/T404_V1851A_*'
+permissions:
+  contents: read
+jobs:
+  existing-v144-access-admission:
+    name: Existing V14.4 Owner-Only Admission Matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Syntax check existing canary and V18.5.1A tests
+        run: |
+          node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
+          node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
+          node --check qa/channel-v1851a/v144-protected-admission.test.mjs
+      - name: Run owner-only Access regression and existing V18.5.4 tests
+        run: |
+          node --test \
+            qa/channel-v1851a/v144-protected-admission.test.mjs \
+            qa/channel-v1854/cloudflare-access-context-gate.test.mjs
+      - name: Validate exact-host Cloudflare inventory and explicit runtime limitations
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const v=JSON.parse(fs.readFileSync('qa/channel-v1851a/v144-protected-admission-evidence.json','utf8'));
+          assert.equal(v.phase,'V18.5.1A');
+          assert.equal(v.existingGateway.worker,'tien404-widget-gateway-v144-staging');
+          assert.equal(v.existingGateway.hostname,'tien404-widget-gateway-v144-staging.tienmobi208.workers.dev');
+          assert.equal(v.existingGateway.deploymentId,'b4f501e0-ff37-4ea4-be77-6e3148667b15');
+          assert.equal(v.existingGateway.deployedVersionId,'da022974-1832-425f-bf82-afddc558b893');
+          assert.equal(v.existingGateway.trafficPercentage,100);
+          assert.equal(v.existingGateway.previewsEnabled,false);
+          assert.deepEqual(v.existingGateway.bindings.map(x=>x.name).sort(),['T404_ACCESS_AUD','T404_QA_OPERATOR_EMAIL']);
+          assert.equal(v.existingGateway.runtimeCodeReadBack.outboundFetch,false);
+          assert.equal(v.existingGateway.runtimeCodeReadBack.n8nWebhook,false);
+          assert.equal(v.existingAccessApplication.id,'1a73d50b-0668-4308-8f56-53aa9711d477');
+          assert.equal(v.existingAccessApplication.coverage,'EXACT_HOST_NO_PATH_SUFFIX_NO_WILDCARD');
+          assert.equal(v.existingAccessApplication.optionsPreflightBypass,false);
+          assert.equal(v.existingAccessApplication.mfa.biometrics,true);
+          assert.equal(v.existingAccessApplication.mfa.disabled,false);
+          assert.equal(v.existingAccessApplication.attachedPolicy.decision,'allow');
+          assert.equal(v.realUserOwnerLogin.verified,true);
+          assert.equal(v.realUserOwnerLogin.audit.allowed,true);
+          assert.equal(v.alternateIdentityDenied.verified,false);
+          assert.equal(v.externalUnauthenticatedEdgeTest.verified,false);
+          assert.equal(v.n8nLiveHttpAuth.verified,false);
+          assert.equal(v.commerce.storeLevelRlsVerified,false);
+          assert.equal(v.cloudflareDeployedWorkerChange,false);
+          assert.equal(v.newGatewayCreated,false);
+          assert.equal(v.accessAppCreated,false);
+          assert.equal(v.newSecretsCreated,false);
+          assert.equal(v.newDurableObjects,false);
+          assert.equal(v.productionRelease,false);
+          assert.equal(v.rollback.noHostedRollbackNeeded,true);
+          console.log('V1851A_EXACT_V14_4_ACCESS_CONFIG_VERIFIED_NEGATIVE_RUNTIME_PENDING_NO_HOST_CHANGE');
+          JS
+      - name: Explicit release lock
+        run: echo 'SOURCE-ONLY V18.5.1A. No Cloudflare deployment, no Access policy modification, no n8n credential, no customer data, no order writes, no provider sends, no production.'
