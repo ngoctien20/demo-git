@@ -4,6 +4,8 @@
 // The legacy AI SALES DEMO Google Sheets lane is deliberately never promoted.
 const DENY=Object.freeze({status:'DENY',reason:'ORDER_WRITER_NOT_ADMITTED'});
 const ALLOWED_ACTIONS=new Set(['create_order','change_lines','preview_order_status']);
+const ALLOWED_CHANNELS=new Set(['messenger','zalo']);
+const CANDIDATE_WORKFLOW='commerce_v2_candidate_no_send';
 const LEGACY_WORKFLOW_IDS=new Set([
   'Z7FdV7uDvApfbURQ','KrSn4DNR9ALX5ng4',
   'fDB9dvs1qPPVt9Sp','BkAi6TVUKAjCnI7v','4DFFCk60exrzaIl6'
@@ -32,6 +34,7 @@ function createProtectedOrderWriterPreflight({
    const intent=await loadPrivateIntent(request.intentRef);
    if(!intent||intent.intentRef!==request.intentRef||
       intent.sourceLane!=='commerce_v2_candidate'||
+      intent.originWorkflowId!==CANDIDATE_WORKFLOW||
       LEGACY_WORKFLOW_IDS.has(intent.originWorkflowId)||
       !ALLOWED_ACTIONS.has(intent.action)||
       !validRef(intent.tenantRef)||!validRef(intent.storeRef)||
@@ -44,7 +47,7 @@ function createProtectedOrderWriterPreflight({
       !Number.isFinite(actor.expiresAtMs)||actor.expiresAtMs<=now()||
       !validRef(actor.actorSubjectRef)||!validRef(actor.providerActorRef)||
       !validRef(actor.channel)||!validRef(actor.externalAccountRef)||
-      actor.channel!==intent.channel)return DENY;
+      actor.channel!==intent.channel||!ALLOWED_CHANNELS.has(actor.channel))return DENY;
    const installation=await resolveInstallation(intent.installationRef);
    if(!installation||installation.verified!==true||installation.active!==true||
       installation.installationRef!==intent.installationRef||
