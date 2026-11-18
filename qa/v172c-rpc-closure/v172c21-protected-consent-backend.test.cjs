@@ -18,6 +18,7 @@ function setup(overrides={}){
     return {persisted:true,verifiedProvenance:true,consentEvidenceRef:'opaque-private'};},
   getTrustedAuthority:async()=>null,getPrivateEvidence:async()=>null,
   getSignedReceipts:async()=>null,
+  verifyReviewerSession:async()=>({verified:true,active:true,independent:true,role:'independent_security_reviewer',sessionIdVerified:true,expiresAtMs:Date.now()+60000,subjectRef:'reviewer'}),
   ...overrides
  };
  return {api:createPrivateConsentBackend(services),calls};
@@ -60,11 +61,46 @@ test('untrusted client fields never replace server authority',async()=>{
  const ret=await api.intake({...accepted,subjectRef:'evil',storeRef:'evil',tenantRef:'evil',slot:'QA_B'});
  assert.equal(ret.slot,'QA_A');assert.equal(calls[3][1].storeRef,'A');
 });
-test('reviewPair denies missing private authority',async()=>{
- const {api}=setup();assert.equal((await api.reviewPair()).status,'DENY');
+test('reviewPair denies absent reviewer bearer before reading evidence',async()=>{
+ const {api,calls}=setup();const x=await api.reviewPair();
+ assert.equal(x.status,'DENY');assert.equal(calls.length,0);
+});
+test('reviewPair denies missing private authority after reviewer auth',async()=>{
+ const {api}=setup();assert.equal((await api.reviewPair({reviewerBearer:token})).status,'DENY');
 });
 test('constructor refuses incomplete adapters',()=>{
  assert.throws(()=>createPrivateConsentBackend({verifySession:()=>{}}),/MISSING_TRUSTED_SERVER_ADAPTERS/);
 });
 
 test('invalid challenge stops before session verification',async()=>{const {api,calls}=setup();assert.equal((await api.intake({...accepted,challenge:'short'})).status,'DENY');assert.equal(calls.length,0);});
+
+test('DENY session expiry undefined (NaN bypass regression)',async()=>{
+ const {api}=setup({verifySession:async()=>({verified:true,active:true,sessionIdVerified:true,
+ sessionEvidenceRef:'opaque',subjectRef:'actor-a'})});
+ assert.equal((await api.intake(accepted)).reason,'SESSION_NOT_VERIFIED');
+});
+test('DENY session expiry NaN',async()=>{
+ const {api}=setup({verifySession:async()=>({verified:true,active:true,sessionIdVerified:true,
+ sessionEvidenceRef:'opaque',subjectRef:'actor-a',expiresAtMs:NaN})});
+ assert.equal((await api.intake(accepted)).reason,'SESSION_NOT_VERIFIED');
+});
+test('DENY reviewer without required role',async()=>{
+ const {api}=setup({verifyReviewerSession:async()=>({verified:true,active:true,independent:true,
+ sessionIdVerified:true,role:'merchant_owner',subjectRef:'person',expiresAtMs:Date.now()+10000})});
+ assert.equal((await api.reviewPair({reviewerBearer:token})).reason,'REVIEWER_NOT_AUTHORIZED');
+});
+test('DENY expired reviewer session',async()=>{
+ const {api}=setup({verifyReviewerSession:async()=>({verified:true,active:true,independent:true,
+ sessionIdVerified:true,role:'independent_security_reviewer',subjectRef:'person',expiresAtMs:1})});
+ assert.equal((await api.reviewPair({reviewerBearer:token})).reason,'REVIEWER_NOT_AUTHORIZED');
+});
+test('DENY reviewer who is also Actor A',async()=>{
+ const {api}=setup({
+  getPrivateEvidence:async()=>({QA_A:{subjectRef:'actor-a'},QA_B:{subjectRef:'actor-b'}}),
+  getTrustedAuthority:async()=>({project:'dummy'}),
+  getSignedReceipts:async()=>[{},{},],
+  verifyReviewerSession:async()=>({verified:true,active:true,independent:true,
+   sessionIdVerified:true,role:'independent_security_reviewer',subjectRef:'actor-a',expiresAtMs:Date.now()+10000})
+ });
+ assert.equal((await api.reviewPair({reviewerBearer:token})).reason,'REVIEWER_NOT_INDEPENDENT');
+});
