@@ -1,0 +1,36 @@
+name: TIEN404 V17.25P — Exact Deployed Source Replay NO-HOST
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725p/**'
+      - '.github/workflows/v1725p-exact-source-replay.yml'
+permissions:
+  contents: read
+jobs:
+  exact-source-synthetic-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout source-only QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Prove fixture is byte-exact Render deployed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object qa/v1725p/deployed_fixture/app/main.py)" = "a7a11abeffb378b3f9952005ffdd489c54df1c13"
+          test "$(git hash-object qa/v1725p/deployed_fixture/app/signed_n8n.py)" = "9f74b6b3e617acd20aa1bfd8fd50b4b12938907e"
+          echo 'V1725P_BYTE_EXACT_DEPLOYED_SOURCE_BLOBS_PASS'
+      - name: Install pinned deployed-test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv-v1725p
+          .venv-v1725p/bin/python -m pip install --disable-pip-version-check             fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Compile and run exact-source synthetic HTTPX replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u TIEN404_SUPABASE_URL               -u TIEN404_SUPABASE_PUBLISHABLE_KEY               -u TIEN404_APP_ORIGIN               -u TIEN404_N8N_STAGING_SECRET               .venv-v1725p/bin/python -m py_compile               qa/v1725p/deployed_fixture/app/main.py               qa/v1725p/deployed_fixture/app/signed_n8n.py               qa/v1725p/test_deployed_main.py
+          env -u TIEN404_SUPABASE_URL               -u TIEN404_SUPABASE_PUBLISHABLE_KEY               -u TIEN404_APP_ORIGIN               -u TIEN404_N8N_STAGING_SECRET               .venv-v1725p/bin/python -m pytest -q qa/v1725p/test_deployed_main.py
+      - name: Explicit no-host release boundary
+        run: echo 'V1725P_EXACT_SOURCE_SYNTHETIC_ONLY; ALL_OUTBOUND_HTTP_MOCKED; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_EXPORT_RESTORE_MIGRATION; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
