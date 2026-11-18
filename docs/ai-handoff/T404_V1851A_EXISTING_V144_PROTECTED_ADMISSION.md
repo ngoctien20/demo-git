@@ -51,7 +51,7 @@ This is real owner runtime evidence, not an offline mock.
 
 **Blocking negative test:** no denied login from another non-allowlisted Cloudflare account has been observed in the Access audit log. A second browser showing `dash.cloudflare.com/login?login_challenge=...` is a sign-in challenge, **not** evidence that a signed-in non-allowlisted identity was denied. Do not mark the negative test PASS until a real different account is denied.
 
-An attempted anonymous HTTP probe from this tool environment could not resolve the workers.dev host, so **no real HTTP 302/403/200 status was observed**. This tooling limitation is not proof of DNS outage or Access bypass in the user's browser.
+An initial anonymous HTTP probe from a local tool runtime could not resolve the workers.dev hostname. A subsequent **real HTTP probe from GitHub Actions #44284152281** reached the same Gateway successfully. Three independent, cookie-free and token-free GET requests to `GET /__v1854/access-canary`, `GET /__v144/health`, and `GET /v1/widget/session` each returned **HTTP 302 redirect to a recognized Cloudflare Access login endpoint**. Redirect query strings, identity headers, cookies, and tokens were never logged. This verifies real **unauthenticated Access interception** on those three routes, not the distinct test of a signed-in non-allowlisted account being denied.
 
 ## 4. IMPLEMENTED — offline protected admission security matrix
 
@@ -83,4 +83,23 @@ After negative admission is verified, inspect Cloudflare Access logs again, conf
 
 Since V18.5.1A changes only source QA and documents in a dedicated Draft PR, rollback is **close/revert the Draft PR**. There is no new Cloudflare deployment to roll back. The existing deployed Canary is still `da022974-1832-425f-bf82-afddc558b893`; previous historical V14.4 version remains `98c8aad5-2dae-47c3-9cb0-8473065213e6`.
 
-**Decision:** `V1851A_CONFIG_VERIFIED / OWNER_CANARY_RUNTIME_VERIFIED / OFFLINE_ADMISSION_QA_PENDING_FINAL_CI / SECOND_IDENTITY_DENIAL_PENDING / LIVE_CLOUDFLARE_UNCHANGED / PRODUCTION_NO_GO`.
+**Decision:** `V1851A_CONFIG_VERIFIED / OWNER_CANARY_RUNTIME_VERIFIED / ANON_EDGE_302_3_OF_3 / SOURCE_QA_36_OF_36 / SECOND_IDENTITY_DENIAL_PENDING / LIVE_CLOUDFLARE_UNCHANGED / PRODUCTION_NO_GO`.
+
+
+## 8. Additional real HTTP Access edge check — VERIFIED on CI
+
+The new GitHub Actions probe `qa/channel-v1851a/unauthenticated-edge-probe.mjs` runs **read-only** GET requests without any cookies, JWT, Authorization header, Cloudflare token or other secrets, and does not follow redirects. It prints only the status and safety classification, not potentially sensitive Login Challenge URLs.
+
+**Run #44284152281**, commit `ff23442b85d0468443db606244cfa7383759b9a9`:
+
+| Requested URL path | HTTP | Classification |
+| --- | ---: | --- |
+| `/__v1854/access-canary` | 302 | `UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT` |
+| `/__v144/health` | 302 | `UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT` |
+| `/v1/widget/session` | 302 | `UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT` |
+
+The HTTP evidence confirms these requests were intercepted at the Access login boundary before any successful Canary/health/session JSON was exposed to an unauthenticated caller. It does **not** substitute for proving a separate, fully signed-in but non-allowlisted Cloudflare account receives Access Denied.
+
+The same run passed **36/36 Node tests, 0 failures, 0 skipped**: 15 new V18.5.1A admission tests, 8 edge-probe classification tests, and 13 inherited V18.5.4 gate tests. An earlier CI evidence-schema mismatch was corrected before this green run. No Cloudflare deployment or policy modification occurred.
+
+The user must still complete the **alternate real identity denial** in a second isolated browser profile before the overall private identity authorization gate can be considered accepted. `PRODUCTION_NO_GO` remains unchanged.
