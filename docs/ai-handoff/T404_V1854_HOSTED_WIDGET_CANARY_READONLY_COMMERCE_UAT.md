@@ -133,3 +133,13 @@ Rollback for current work: close/revert the stacked V18.5.4 Draft PR and, if des
 
 **Checkpoint:**  
 `REAL_N8N_READONLY_SANDBOX_UAT_9_OF_9_PASS / CROSS_TENANT_ISOLATION_PASS / STORE_LEVEL_RLS_NOT_VERIFIED / CLOUDFLARE_ACCESS_CONFIG_VERIFIED_NOT_RUNTIME / HOSTED_CANARY_NOT_DEPLOYED / PRODUCTION_NO_GO`.
+
+
+## Final source QA checkpoint — 18/11/2026 JST
+
+- Final source SHA: `5ad94f04b446ca9200535dc8288c45548dc0a171`.
+- GitHub Actions [run #44261575744](https://github.com/ngoctien20/demo-git/actions/runs/44261575744): **SUCCESS — 177/177 tests passed, 0 failed, 0 skipped**. Includes V18.5.4 native `ctx.access` positive/negative gate and Worker route tests, V18.5.3 signed-JWT regressions, V18.5.2 Published child admission, V18.5.1 HTTP gateway, and V18.5/V14.4/V14.3 inherited suites.
+- The first V18.5.4 CI attempt found a test expectation mismatch: the locked `/v1/widget/message` OPTIONS request correctly returned **423** because the locked route gate precedes the generic 405 OPTIONS handler. The test was corrected to assert 423/no CORS headers and the rerun passed. No hosted code was deployed.
+- CI static gate verified the actual n8n read-only evidence, no Store-level claim, all hosted approvals false and no Worker/network/deployment call.
+
+Decision remains: `SOURCE_TESTED_177_OF_177 / REAL_N8N_READONLY_UAT_9_OF_9 / CLOUDFLARE_ACCESS_RUNTIME_0 / HOSTED_CANARY_NOT_DEPLOYED / PRODUCTION_NO_GO`.
