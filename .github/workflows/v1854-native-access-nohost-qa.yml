@@ -5,6 +5,9 @@ on:
       - work/v1854-hosted-widget-canary-ctx-access-readonly-uat-20261118
     paths:
       - 'qa/channel-v1854/**'
+      - 'qa/channel-v1855/**'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
       - 'qa/channel-v1853/**'
       - 'qa/channel-v1852/**'
       - 'qa/channel-v1851/**'
@@ -13,6 +16,9 @@ on:
   pull_request:
     paths:
       - 'qa/channel-v1854/**'
+      - 'qa/channel-v1855/**'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
       - 'qa/channel-v1853/**'
       - 'qa/channel-v1852/**'
       - 'qa/channel-v1851/**'
@@ -31,6 +37,8 @@ jobs:
           node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
           node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
           node --check qa/channel-v1854/cloudflare-access-context-gate.test.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs
           node --check qa/channel-v1853/access-jwt-verifier.cjs
           node --check qa/channel-v1852/published-core-readonly-admission.cjs
           node --check qa/channel-v1851/protected-http-gateway.cjs
@@ -38,6 +46,7 @@ jobs:
         run: |
           node --test \
             qa/channel-v1854/cloudflare-access-context-gate.test.mjs \
+            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs \
             qa/channel-v1853/access-jwt-verifier.test.cjs \
             qa/channel-v1852/published-core-readonly-admission.test.cjs \
             qa/channel-v1851/protected-http-gateway.test.cjs \
@@ -113,3 +122,48 @@ jobs:
           JS
       - name: Production and Commerce rollout remain disabled
         run: echo 'PRIVATE HOSTED ACCESS CANARY. OWNER CLOUDFLARE ACCESS LOGIN AND NATIVE ctx.access CANARY VERIFIED; SECOND NON-ALLOWLISTED IDENTITY DENIAL PENDING. V14.4 workers.dev behind exact-host owner-only Access app; previews remain disabled. NO N8N WEBHOOK OR CREDENTIAL, NO D1/DO, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
+
+      - name: Verify V18.5.5 real n8n adapter evidence and no-go gates
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const e=JSON.parse(fs.readFileSync('qa/channel-v1855/n8n-adapter-qa-evidence.json','utf8'));
+          const w=fs.readFileSync('qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs','utf8');
+          const a=fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-commerce-adapter.workflow.js','utf8');
+          const q=fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-adapter-qa.workflow.js','utf8');
+          assert.equal(e.n8n.adapter.active,false);
+          assert.equal(e.n8n.adapter.published,false);
+          assert.equal(e.n8n.adapter.webhookTrigger,false);
+          assert.equal(e.n8n.adapter.credentials,0);
+          assert.equal(e.n8n.adapter.callerPolicy,'workflowsFromAList');
+          assert.deepEqual(e.n8n.adapter.allowedCallerIds,[e.n8n.qa.workflowId]);
+          assert.equal(e.n8n.qa.executionId,'5360');
+          assert.equal(e.n8n.qa.status,'success');
+          assert.equal(e.n8n.qa.assertions,12);
+          assert.equal(e.n8n.qa.passed,12);
+          assert.equal(e.n8n.qa.failed,0);
+          assert.equal(e.n8n.publishedChildren.length,3);
+          assert(e.n8n.publishedChildren.every(x=>['success','invoked_successfully_by_catalog_and_cart'].includes(x.status)&&x.storageOperation==='DataTable row.get'));
+          assert(e.n8n.cases.length===12&&e.n8n.cases.every(x=>x.pass===true));
+          assert.equal(e.n8n.sideEffects.orderWrites,0);
+          assert.equal(e.n8n.sideEffects.stockWrites,0);
+          assert.equal(e.n8n.sideEffects.providerSends,0);
+          assert.equal(e.n8n.sideEffects.customerOrderReads,0);
+          assert.equal(e.n8n.sideEffects.customerPiiReads,0);
+          assert.equal(e.n8n.sideEffects.aiCalls,0);
+          assert.equal(e.n8n.authorityLimitations.storeLevelRls,'NOT_VERIFIED');
+          assert.equal(e.worker.deployed,false);
+          assert.equal(e.worker.newBindingsCreated,0);
+          assert.equal(e.worker.n8nWebhookConfigured,false);
+          assert.equal(e.worker.secretsSet,false);
+          assert.equal(e.securityGates.productionRelease,false);
+          assert(w.includes('verifyPrivateAccess(ctx, env)'));
+          assert(w.includes("const N8N_HOST = 'ngoctien20.app.n8n.cloud'"));
+          assert(w.includes("'x-t404-adapter-token'"));
+          assert(a.includes('oOOXicKXGkBskKqh'));
+          assert(a.includes('igPOsSbEgd4NgtRA'));
+          assert(a.includes('caller_authority_fields_forbidden'));
+          assert(a.includes('igPOsSbEgd4NgtRA'));
+          assert(q.includes('order.read')&&q.includes('order.create'));
+          console.log('V1855_N8N_READONLY_ADAPTER_UAT_12_OF_12_PASS');
+          JS
