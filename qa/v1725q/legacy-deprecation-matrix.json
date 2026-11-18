@@ -1,0 +1,78 @@
+{
+  "version": "V17.25Q",
+  "classification": "SOURCE_ONLY_NOHOST",
+  "live_source": {
+    "render_commit": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+    "main_py_blob": "a7a11abeffb378b3f9952005ffdd489c54df1c13",
+    "auto_deploy": false
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants",
+      "current_status": "LIVE_VERIFIED",
+      "current_scope": "Active tenant memberships for the authenticated actor",
+      "business_data": false,
+      "decision": "KEEP",
+      "target": "May remain as tenant directory; Store discovery moves to v2 stores route."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants/{tenant_id}/products",
+      "current_status": "LIVE_VERIFIED",
+      "current_scope": "Tenant-only; no store_id filter or store_id response",
+      "business_data": true,
+      "decision": "BLOCK_BEFORE_MULTI_STORE",
+      "pre_cutover_response": 503,
+      "pre_cutover_code": "LEGACY_STORE_SCOPE_NOT_ADMITTED",
+      "post_cutover_response": 410,
+      "post_cutover_code": "LEGACY_ENDPOINT_DEPRECATED",
+      "note": "Current live route still exists. V17.25O synthetic guard does not cover this route."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants/{tenant_id}/orders",
+      "current_status": "LIVE_VERIFIED",
+      "current_scope": "Tenant-only; owner/manager membership, no store_id filter",
+      "business_data": true,
+      "decision": "BLOCK_BEFORE_MULTI_STORE",
+      "pre_cutover_response": 503,
+      "pre_cutover_code": "LEGACY_STORE_SCOPE_NOT_ADMITTED",
+      "post_cutover_response": 410,
+      "post_cutover_code": "LEGACY_ENDPOINT_DEPRECATED",
+      "note": "Exact behavior replayed with byte-identical deployed source in V17.25P; V17.25O guard is synthetic only."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants/{tenant_id}/customers",
+      "current_status": "NO_ROUTE_IN_INSPECTED_RENDER_MAIN",
+      "business_data": true,
+      "decision": "DO_NOT_INTRODUCE_V1",
+      "target": "If exposed later, use only v2 Store path."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants/{tenant_id}/conversations",
+      "current_status": "NO_ROUTE_IN_INSPECTED_RENDER_MAIN",
+      "business_data": true,
+      "decision": "DO_NOT_INTRODUCE_V1",
+      "target": "If exposed later, use only v2 Store path."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tenants/{tenant_id}/messages",
+      "current_status": "NO_ROUTE_IN_INSPECTED_RENDER_MAIN",
+      "business_data": true,
+      "decision": "DO_NOT_INTRODUCE_V1",
+      "target": "If exposed later, use nested v2 conversation/messages Store path."
+    }
+  ],
+  "rollout": [
+    "Current live v1 Products and Orders remain unchanged; no Store mode or real multi-Store customer data is admitted.",
+    "Before any Store feature flag or Store data is enabled, block both v1 Products and v1 Orders with 503. No automatic single-Store fallback.",
+    "Deploy v2 only after M0, schema/RLS, origin protection, independent owner provenance and real Auth A/B UAT are separately approved.",
+    "After v2 cutover and client migration window, change v1 business routes to 410 with a successor link.",
+    "Keep GET /api/v1/tenants only for tenant directory; no business resource may use tenant-only scope."
+  ],
+  "warning": "This matrix is a proposal. It does not change the deployed Render service or PR #409 guard."
+}
