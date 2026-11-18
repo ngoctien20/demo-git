@@ -29,7 +29,7 @@ SENSITIVE_KEYS = frozenset({
 def _sensitive_keys_found(value: Any) -> bool:
     if isinstance(value, dict):
         for key, child in value.items():
-            normalized = re.sub(r"([a-z0-9])([A-Z])", r"\\1_\\2", str(key)).lower().replace("-", "_")
+            normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", str(key)).lower().replace("-", "_")
             if normalized in SENSITIVE_KEYS or _sensitive_keys_found(child):
                 return True
     if isinstance(value, list):
