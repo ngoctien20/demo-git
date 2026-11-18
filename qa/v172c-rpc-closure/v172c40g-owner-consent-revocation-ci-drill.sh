@@ -34,7 +34,7 @@ VALUES
 (repeat('c',64),'session-c','actor-c','tenant-x','store-c','synthetic-transition-s2-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('d',64),'session-d','actor-d','tenant-x','store-d','synthetic-transition-s2-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('e',64),'session-e','actor-e','tenant-x','store-e','synthetic-transition-s2-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
-(repeat('f',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '20 minutes',clock_timestamp()-interval '10 minutes'),
+(repeat('f',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '20 minutes',clock_timestamp()-interval '10 minutes 1 second'),
 (repeat('7',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('8',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('9',64),'session-inactive','actor-inactive','tenant-x','store-inactive','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
