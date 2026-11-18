@@ -1,0 +1,55 @@
+{
+  "version": "V17.25R",
+  "classification": "SOURCE_ONLY_DISPOSABLE_PG17",
+  "base": {
+    "pr": 413,
+    "checkpoint_head": "203789573c0ee9a61d82282999623edac397124e"
+  },
+  "reused_fixtures": {
+    "p0d_path": "qa/v180-p0d/store-scoped-rls-disposable.sql",
+    "p0d_blob": "07ab80bd5f3fc7cdea9a8f17a13c4b0ae29a068c",
+    "v1725n_path": "qa/v1725n/rls-cutover-disposable.sql",
+    "v1725n_blob": "04ba4e7f0ea2a010dff3542b6cc7a4ce18522d77",
+    "modified": false
+  },
+  "ci": {
+    "status": "PENDING",
+    "postgres_image": "postgres:17.11",
+    "database": "t404_v180_p0d_ci",
+    "hosted_secrets": false,
+    "real_jwt": false,
+    "customer_data": false,
+    "provider_send": false
+  },
+  "coverage": {
+    "legacy_policy_default_deny": true,
+    "permissive_or_leak": true,
+    "restrictive_and_fence": true,
+    "policy_replacement": true,
+    "tenant_store_role_intersection": true,
+    "store_status_active_paused_archived": true,
+    "orders_select_insert_update_delete": true,
+    "product_read_insert_update": true,
+    "composite_fk_cross_store_negative": true,
+    "store_scoped_sku_unique": true,
+    "anon_no_grants": true,
+    "temporary_order_dml_grants_revoked": true,
+    "force_rls_ten_tables": true,
+    "service_role_isolation": "NOT_TESTED"
+  },
+  "hosted_state": {
+    "postgres": "17.11",
+    "stores_table": "ABSENT",
+    "store_memberships_table": "ABSENT",
+    "store_id_columns": 0,
+    "public_schema_changed": false
+  },
+  "release_gates": {
+    "m0_recovery": "NO_GO",
+    "store_schema_migration": "NOT_APPROVED",
+    "rls_cutover": "NOT_APPROVED",
+    "real_owner_a_b_jwt_uat": "0/31_NOT_RUN",
+    "production": "NO_GO"
+  },
+  "rollback": "Close or revert source-only Draft PR; disposable CI database is ephemeral."
+}
