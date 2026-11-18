@@ -1,0 +1,93 @@
+{
+  "version": "V18.6.9",
+  "environment": "STAGING_AND_DEMO_READ_ONLY",
+  "observedDate": "2026-11-18",
+  "classification": "PARTIAL_RUNTIME_GRAPH_AND_METADATA_NOT_EXECUTION_PROOF",
+  "sources": {
+    "n8n": "CONNECTED_N8N_READ_ONLY_PUBLISHED_GRAPHS_AND_EXECUTION_METADATA",
+    "supabase": "CONNECTED_SUPABASE_PG_PROC_AND_ACL_READ_ONLY",
+    "github": "GITHUB_DRAFT_PR_SOURCE_ONLY",
+    "render": "NOT_INSPECTED_WORKSPACE_CONFIRMATION_REQUIRED",
+    "backups": "NOT_VERIFIED_NO_BACKUP_ENTITLEMENT_OR_RESTORE_PROOF"
+  },
+  "n8n": {
+    "workflowsListed": 170,
+    "activeWorkflows": 22,
+    "activeWorkflowsGraphInspected": 22,
+    "inactiveWorkflowsNotExhaustivelyInspected": true,
+    "literalRpcReferenceCountInActiveGraphs": 1,
+    "claimCaller": {
+      "parentWorkflowId": "yIJk8LvJoLF40Z62",
+      "parentWorkflowName": "TIEN404_ZALO_BOT_LAB_V1_STAGING",
+      "parentActive": true,
+      "parentPublished": true,
+      "parentWebhookNode": "Zalo Bot Webhook (Protected)",
+      "parentCallerNode": "Zalo V2 Shadow (Owner Gate Only)",
+      "parentCallerEnabled": true,
+      "childWorkflowId": "OgDZNSAvKEvhnAvn",
+      "childWorkflowName": "TIEN404_ZALO_V2_SHADOW_STAGING",
+      "childActive": true,
+      "childPublished": true,
+      "childRpcNode": "Submit pending claim for Shop B",
+      "childRpcNodeEnabled": true,
+      "httpMethod": "POST",
+      "rpcName": "qa_shop_b_zalo_claim",
+      "rpcAuthMode": "N8N_GENERIC_CREDENTIAL_TYPE",
+      "requestSource": "SUPABASE_REST_RPC_ENDPOINT",
+      "possiblePrivateQaWrite": true,
+      "pageOrOwnerSessionVerified": false,
+      "newWebhookExecutionVerified": false,
+      "rpcNodeExecutedInObservedRun": false
+    },
+    "executionMetadata": {
+      "zaloBotExecutionCountReturned": 11,
+      "zaloBotReturnedModes": ["manual"],
+      "zaloShadowExecutionCountReturned": 1,
+      "zaloShadowReturnedModes": ["manual"],
+      "recordedDate": "2026-11-13",
+      "doesNotProveRpcRan": true
+    },
+    "existingGoogleSheetsDemoWritersPreserved": 3,
+    "activeGraphScanDoesNotProveAllCallersFound": true
+  },
+  "supabase": {
+    "publicClaimRpc": "qa_shop_b_zalo_claim",
+    "publicClaimAnonExecutable": true,
+    "publicClaimSecurityDefiner": true,
+    "publicClaimVaultHeaderGuardObserved": true,
+    "ownerPairingRpcAuthenticatedExecutable": true,
+    "privilegedProductWriter": "save_merchant_product",
+    "privilegedProductWriterAuthenticatedExecutable": true,
+    "privilegedProductWriterStoreScoped": false,
+    "canonicalStoreTableCount": 0,
+    "commerceStoreIdColumns": 0,
+    "restrictivePublicPolicies": 0,
+    "approvedMigration": false
+  },
+  "decisions": {
+    "storeDesignCandidatePR": 417,
+    "pgTapReferencePR": 421,
+    "skuScopeD02": "PENDING_OWNER_APPROVAL",
+    "recommendedSkuScope": "STORE_LOCAL",
+    "canonicalStoreRole": "store_owner",
+    "tenantOwnerRole": "owner",
+    "mappingApproved": false,
+    "roleContractApproved": false,
+    "lastActiveStoreOwnerProtectionApproved": false,
+    "backupAndRestoreProven": false,
+    "renderDeployedWriterSourcesReviewed": false,
+    "rpcCallerInventoryComplete": false
+  },
+  "safety": {
+    "supabaseDdlApplied": false,
+    "supabaseDmlApplied": false,
+    "rpcGrantChanged": false,
+    "n8nWorkflowEdited": false,
+    "n8nWorkflowExecuted": false,
+    "cloudflareDeployed": false,
+    "renderDeployed": false,
+    "providerMessagesSent": false,
+    "realOwnerSessionsRead": false,
+    "productionModified": false
+  }
+}
