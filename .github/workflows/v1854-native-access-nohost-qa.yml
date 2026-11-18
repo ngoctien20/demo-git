@@ -1,0 +1,169 @@
+name: TIEN404 V18.5.4 — Private Hosted Canary × Read-Only UAT
+on:
+  push:
+    branches:
+      - work/v1854-hosted-widget-canary-ctx-access-readonly-uat-20261118
+    paths:
+      - 'qa/channel-v1854/**'
+      - 'qa/channel-v1855/**'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
+      - 'qa/channel-v1853/**'
+      - 'qa/channel-v1852/**'
+      - 'qa/channel-v1851/**'
+      - '.github/workflows/v1854-native-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1854_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1854/**'
+      - 'qa/channel-v1855/**'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
+      - 'qa/channel-v1853/**'
+      - 'qa/channel-v1852/**'
+      - 'qa/channel-v1851/**'
+      - '.github/workflows/v1854-native-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1854_*'
+permissions:
+  contents: read
+jobs:
+  native-access-and-real-readonly-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Compile Access context gate and all inherited candidates
+        run: |
+          node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
+          node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
+          node --check qa/channel-v1854/cloudflare-access-context-gate.test.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs
+          node --check qa/channel-v1853/access-jwt-verifier.cjs
+          node --check qa/channel-v1852/published-core-readonly-admission.cjs
+          node --check qa/channel-v1851/protected-http-gateway.cjs
+      - name: Native Access ctx.access negative and positive synthetic runtime tests
+        run: |
+          node --test \
+            qa/channel-v1854/cloudflare-access-context-gate.test.mjs \
+            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs \
+            qa/channel-v1853/access-jwt-verifier.test.cjs \
+            qa/channel-v1852/published-core-readonly-admission.test.cjs \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v143/channel-core.test.cjs
+      - name: Check actual n8n read-only evidence and all hosted approvals remain false
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const e=JSON.parse(fs.readFileSync('qa/channel-v1854/n8n-readonly-uat-evidence.json','utf8'));
+          const p=JSON.parse(fs.readFileSync('qa/channel-v1854/hosted-uat-approval-packet.json','utf8'));
+          const h=JSON.parse(fs.readFileSync('qa/channel-v1854/hosted-canary-runtime-evidence.json','utf8'));
+          const g=fs.readFileSync('qa/channel-v1854/cloudflare-access-context-gate.mjs','utf8');
+          const w=fs.readFileSync('qa/channel-v1854/worker-v144-access-canary-candidate.mjs','utf8');
+          const backup=fs.readFileSync('qa/channel-v1854/backup/v144-worker-original-98c8aad5.mjs','utf8');
+          assert.equal(e.harness.executionId,'5341');
+          assert.equal(e.harness.status,'success');
+          assert.equal(e.harness.subExecutions,9);
+          assert.equal(e.assertions.passed,9);
+          assert.equal(e.assertions.failed,0);
+          assert.equal(e.assertions.orderWrites,0);
+          assert.equal(e.assertions.stockWrites,0);
+          assert.equal(e.assertions.providerSends,0);
+          assert.equal(e.scopeLimitations.storeLevelIsolation,'NOT_VERIFIED');
+          assert.equal(p.status,'OWNER_ACCESS_RUNTIME_VERIFIED_SECOND_IDENTITY_DENIAL_PENDING');
+          assert.equal(p.cloudflareInventory.workersDevEnabled,true);
+          assert.equal(p.cloudflareInventory.previewsEnabled,false);
+          assert.equal(p.cloudflareInventory.bindings,2);
+          assert.equal(p.cloudflareInventory.dedicatedAccessApp,true);
+          assert.equal(p.workerCandidate.deployed,true);
+          assert.equal(p.workerCandidate.versionId,'da022974-1832-425f-bf82-afddc558b893');
+          assert.equal(h.access.applicationId,'1a73d50b-0668-4308-8f56-53aa9711d477');
+          assert.equal(h.worker.workersDevEnabled,true);
+          assert.equal(h.worker.previewsEnabled,false);
+          assert.equal(h.workerVersions[2].trafficPercent,100);
+          assert.equal(h.uat.realCtxAccessRuntime,'PASS_USER_REPORTED_CANARY=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED; audienceVerified=true; operatorAllowlisted=true');
+          assert.equal(h.uat.approvedFounderBrowserLogin,'PASS_USER_REPORTED_CANARY_JSON_AND_CLOUDFLARE_ALLOWED_LOGIN_AUDIT_EVENT');
+          assert.equal(h.uat.secondIdentityDenyTest,'PENDING_NON_ALLOWLISTED_ACCOUNT_SIGN_IN');
+          assert.equal(h.accessLogs.events.length,1);
+          assert.equal(h.accessLogs.events[0].action,'login');
+          assert.equal(h.accessLogs.events[0].allowed,true);
+          assert.equal(h.accessLogs.events[0].identityMatchedExactOwnerAllowlist,true);
+          assert.equal(h.accessLogs.deniedAlternateIdentityEvents,0);
+          assert.equal(p.realAccessRuntimeVerified,true);
+          assert.equal(p.approvedFounderBrowserLoginPending,false);
+          assert.equal(p.secondIdentityDenyTestPending,true);
+          assert.equal(p.scope.realCloudflareAccessContext,true);
+          assert.equal(p.accessAudit.ownerLogin.allowed,true);
+          assert.equal(p.accessAudit.alternateIdentityDenied,false);
+          assert.equal(p.userCanaryResponse.canary,'CLOUDFLARE_ACCESS_CONTEXT_VERIFIED');
+          assert.equal(p.userCanaryResponse.orderWrites,0);
+          assert.equal(p.userCanaryResponse.providerSends,0);
+          assert.equal(p.approvals.enableWorkersDevOnExistingV144,true);
+          assert.equal(p.approvals.createAccessAppForExactV144Host,true);
+          assert.equal(p.approvals.deployV144AccessCanarySource,true);
+          assert.equal(p.approvals.productionRelease,false);
+          assert.equal(p.approvals.bindGatewayToN8n,false);
+          assert(Object.entries(p.approvals).filter(([k])=>!['enableWorkersDevOnExistingV144','createAccessAppForExactV144Host','reuseExistingFounderOnlyAllowPolicy','deployV144AccessCanarySource','setServerVariablesAccessAudAndOperatorAllowlist'].includes(k)).every(([,v])=>v===false));
+          assert(g.includes('ctx&&ctx.access'));
+          assert(g.includes('access.getIdentity()'));
+          assert(g.includes('ACCESS_AUDIENCE_MISMATCH'));
+          assert(!g.includes('node:crypto'));
+          assert(!g.includes('fetch('));
+          assert(w.includes('verifyPrivateAccess(ctx,env)'));
+          assert(w.includes("COMMERCE_READONLY_ADAPTER_NOT_ADMITTED"));
+          assert(w.includes('providerSends:0'));
+          assert(!w.includes('Access-Control-Allow-Origin'));
+          assert(!w.includes('await fetch('));
+          assert(backup.includes('V144_WIDGET_GATE_CLOSED'));
+          assert(backup.includes('return json(423'));
+          console.log('V1854_OWNER_ACCESS_RUNTIME_VERIFIED_ALTERNATE_IDENTITY_DENIAL_PENDING');
+          JS
+      - name: Production and Commerce rollout remain disabled
+        run: echo 'PRIVATE HOSTED ACCESS CANARY. OWNER CLOUDFLARE ACCESS LOGIN AND NATIVE ctx.access CANARY VERIFIED; SECOND NON-ALLOWLISTED IDENTITY DENIAL PENDING. V14.4 workers.dev behind exact-host owner-only Access app; previews remain disabled. NO N8N WEBHOOK OR CREDENTIAL, NO D1/DO, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
+
+      - name: Verify V18.5.5 real n8n adapter evidence and no-go gates
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const e=JSON.parse(fs.readFileSync('qa/channel-v1855/n8n-adapter-qa-evidence.json','utf8'));
+          const w=fs.readFileSync('qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs','utf8');
+          const a=fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-commerce-adapter.workflow.js','utf8');
+          const q=fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-adapter-qa.workflow.js','utf8');
+          assert.equal(e.n8n.adapter.active,false);
+          assert.equal(e.n8n.adapter.published,false);
+          assert.equal(e.n8n.adapter.webhookTrigger,false);
+          assert.equal(e.n8n.adapter.credentials,0);
+          assert.equal(e.n8n.adapter.callerPolicy,'workflowsFromAList');
+          assert.deepEqual(e.n8n.adapter.allowedCallerIds,[e.n8n.qa.workflowId]);
+          assert.equal(e.n8n.qa.executionId,'5360');
+          assert.equal(e.n8n.qa.status,'success');
+          assert.equal(e.n8n.qa.assertions,12);
+          assert.equal(e.n8n.qa.passed,12);
+          assert.equal(e.n8n.qa.failed,0);
+          assert.equal(e.n8n.publishedChildren.length,3);
+          assert(e.n8n.publishedChildren.every(x=>['success','invoked_successfully_by_catalog_and_cart'].includes(x.status)&&x.storageOperation==='DataTable row.get'));
+          assert(e.n8n.cases.length===12&&e.n8n.cases.every(x=>x.pass===true));
+          assert.equal(e.n8n.sideEffects.orderWrites,0);
+          assert.equal(e.n8n.sideEffects.stockWrites,0);
+          assert.equal(e.n8n.sideEffects.providerSends,0);
+          assert.equal(e.n8n.sideEffects.customerOrderReads,0);
+          assert.equal(e.n8n.sideEffects.customerPiiReads,0);
+          assert.equal(e.n8n.sideEffects.aiCalls,0);
+          assert.equal(e.n8n.authorityLimitations.storeLevelRls,'NOT_VERIFIED');
+          assert.equal(e.worker.deployed,false);
+          assert.equal(e.worker.newBindingsCreated,0);
+          assert.equal(e.worker.n8nWebhookConfigured,false);
+          assert.equal(e.worker.secretsSet,false);
+          assert.equal(e.securityGates.productionRelease,false);
+          assert(w.includes('verifyPrivateAccess(ctx, env)'));
+          assert(w.includes("const N8N_HOST = 'ngoctien20.app.n8n.cloud'"));
+          assert(w.includes("'x-t404-adapter-token'"));
+          assert(a.includes('oOOXicKXGkBskKqh'));
+          assert(a.includes('igPOsSbEgd4NgtRA'));
+          assert(a.includes('caller_authority_fields_forbidden'));
+          assert(a.includes('igPOsSbEgd4NgtRA'));
+          assert(q.includes('order.read')&&q.includes('order.create'));
+          console.log('V1855_N8N_READONLY_ADAPTER_UAT_12_OF_12_PASS');
+          JS
