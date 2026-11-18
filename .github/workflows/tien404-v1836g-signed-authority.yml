@@ -42,10 +42,10 @@ jobs:
           set -euo pipefail
           node --test qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
             | tee "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
-          grep -Eq '^# tests 14$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
-          grep -Eq '^# pass 14$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          grep -Eq '^# tests 15$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
+          grep -Eq '^# pass 15$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
           grep -Eq '^# fail 0$' "$RUNNER_TEMP/v1836g-real-auth-preflight.tap"
-          echo V18_3_6G_REAL_AUTH_AB_PREFLIGHT_14_PASS
+          echo V18_3_6G_REAL_AUTH_AB_PREFLIGHT_15_PASS
       - name: Independent deterministic second-pass source review
         shell: bash
         run: |
