@@ -207,3 +207,41 @@ This is source-level validation using simulated Cloudflare DO bindings and polic
 If the source candidate is rejected, revert this Draft PR branch. Do not delete any shared credentials, data, Store mappings or published Commerce workflows. If a DO namespace is created at a later approved stage, resource deletion would be a separate approval gate.
 
 **Checkpoint:** `V1855_INACTIVE_HEADER_AUTH_INGRESS_VERIFIED / INTERNAL_CATALOG_CART_READONLY_TESTED / ATOMIC_ADMISSION_SOURCE_141_OF_141_PASS / NO_DO_BINDING / NO_WORKER_DEPLOY / NO_REAL_HTTP_AUTH / NO_STORE_RLS / PRODUCTION_NO_GO`.
+
+## 11. B2 — Existing Durable Object reuse audit × source-backed transaction QA
+
+**Date:** 18/11/2026 JST. **Scope:** Cloudflare account READ-ONLY, Draft PR #415 source-only. No namespace, binding, secret or Worker deployment created.
+
+### VERIFIED — existing namespaces are specialized
+
+A direct Cloudflare inventory returned three staging Durable Object namespaces: one V17.5 ReplayBucket with an atomic claim(nonceDigest, expiresMs) nonce API, one RunnerResults QA state class, and one ZaloBotReplayBucketV2 for Zalo replay. These are not general-purpose request-quota services. Do **not** silently reuse or modify them: doing so would cross separate security domains and rollback paths. See the exact inventory and deployment snapshot in the source-only resource preview at qa/channel-v1855/do-admission-resource-preview.json.
+
+### Security issue fixed
+
+The earlier pure read-admission policy silently discarded malformed quota ledger records, potentially resetting limits after state corruption. It now **fails closed with 503** for oversized, duplicated, malformed, future-dated, or unexpected persisted state, rather than accepting additional requests.
+
+### Real class body, simulated SQLite: 30 concurrent requests
+
+A new test suite at qa/channel-v1855/t404-read-admission-do.test.mjs executes the *actual T404ReadAdmission class body* with an in-memory SQL storage shim. The tests verify that 30 simultaneous requests result in **20 admitted + 10 rejected**, with only 20 SQL writes; that two Sandbox installations have independent ledgers; and that wrong DO names, duplicate UUIDs and corrupt JSON are rejected without clearing state. No customer, Store, token or PII data is persisted by this source simulation.
+
+**Limitation:** Node.js with a fake storage shim is not a real workerd/Cloudflare SQLite Durable Object runtime; hosted concurrency, cost, and failure behavior remain unverified.
+
+### VERIFIED GitHub CI
+
+[GitHub Actions #44293653962](https://github.com/ngoctien20/demo-git/actions/runs/44293653962) — **154/154 tests PASS, 0 failed, 0 skipped**, at source commit 3af181d3750b14b25eccf6b6b102c61e85506f74. The existing manual n8n read-only UAT 12/12 and pinned ingress QA 5/5 remain their prior evidence, not rerun hosted tests in this stage.
+
+### Cost and deployment preview
+
+The quota proposal accepts at most 20 reads per rolling minute per Sandbox installation. With two installations, continuously saturated accepted traffic could reach **57,600 reads per 24 hours**. Failed/denied DO RPC attempts are not covered by that accepted-read ceiling and may incur billable resource use. The current account subscription and shared remaining allowance have not been verified; do not assume free usage.
+
+Official Cloudflare reference: https://developers.cloudflare.com/durable-objects/platform/pricing/
+
+Suggested future dedicated binding: T404_READ_ADMISSION, class T404ReadAdmission, SQLite migration under the existing Worker. **This is a proposal, not an applied migration.**
+
+### Remaining protected gates
+
+An explicit owner approval is required for a new metered SQLite-backed Durable Object namespace/migration, Worker binding, private deployment, secret setup, and live Header Auth HTTP test. Founder-only Access negative-identity evidence is still missing; same-tenant Store A/B RLS is NOT VERIFIED. The current Sandbox installation identifier must not be treated as public customer Store authority without a trusted server-side Store mapping.
+
+No change to the deployed V18.5.4 Worker version da022974-1832-425f-bf82-afddc558b893, deployment b4f501e0-ff37-4ea4-be77-6e3148667b15. If this source candidate is rejected, revert Draft PR #415; do not delete any existing namespace or shared data.
+
+**Gate:** VERIFIED_EXISTING_DO_SPECIALIZATION / DO_SIM_30_CALLS_20_ADMIT_10_DENY / SOURCE_QA_154_OF_154 / NO_ACCOUNT_WRITES / DO_RUNTIME_NOT_TESTED / COST_APPROVAL_PENDING / PRODUCTION_NO_GO.
