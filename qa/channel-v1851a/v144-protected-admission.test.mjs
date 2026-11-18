@@ -185,12 +185,16 @@ test('source gate has no external HTTP, secret/token read, billing or Write capa
   assert.equal(/T404_READ_ADMISSION/.test(code),false);
 });
 
-test('source-only regression cannot substitute for real alternate-account Cloudflare denial', () => {
+test('real anonymous Edge interception is recorded but not confused with alternate-account login denial', () => {
   // This check prevents accidentally treating this unit fixture as a Cloudflare edge test.
   const report=JSON.parse(fs.readFileSync(new URL('./v144-protected-admission-evidence.json',import.meta.url),'utf8'));
   assert.equal(report.realUserOwnerLogin.verified,true);
   assert.equal(report.alternateIdentityDenied.verified,false);
-  assert.equal(report.externalUnauthenticatedEdgeTest.verified,false);
+  assert.equal(report.externalUnauthenticatedEdgeTest.verified,true);
+  assert.equal(report.externalUnauthenticatedEdgeTest.results.length,3);
+  assert(report.externalUnauthenticatedEdgeTest.results.every(x=>x.httpStatus===302 && x.classification==='UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT'));
+  assert.equal(report.externalUnauthenticatedEdgeTest.noCredentialsUsed,true);
+  assert.equal(report.alternateIdentityDenied.verified,false);
   assert.equal(report.n8nLiveHttpAuth.verified,false);
   assert.equal(report.cloudflareDeployedWorkerChange,false);
   assert.equal(report.productionRelease,false);
