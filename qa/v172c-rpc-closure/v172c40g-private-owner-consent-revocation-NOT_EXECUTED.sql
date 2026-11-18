@@ -116,14 +116,43 @@ BEGIN
   FROM tien404_v172c40g_qa.owner_consent_events
   WHERE idempotency_key=p_idempotency_key;
   IF FOUND THEN
-    IF v_existing.challenge_digest=p_challenge_digest
-       AND v_existing.session_ref=p_session_ref
-       AND v_existing.consent_action=p_consent_action
-    THEN
-      RETURN QUERY SELECT 'IDEMPOTENT_REPLAY_NO_NEW_EVENT'::text,v_existing.event_id;
-      RETURN;
-    END IF;
-    RAISE EXCEPTION 'DENY_IDEMPOTENCY_CONFLICT';
+    IF v_existing.challenge_digest<>p_challenge_digest
+       OR v_existing.session_ref<>p_session_ref
+       OR v_existing.consent_action<>p_consent_action
+    THEN RAISE EXCEPTION 'DENY_IDEMPOTENCY_CONFLICT'; END IF;
+
+    -- An idempotent retry is still a sensitive request: re-check current
+    -- session, membership and revocation before returning the prior result.
+    SELECT * INTO v_session
+    FROM tien404_v172c40g_qa.owner_sessions
+    WHERE session_ref=p_session_ref
+    FOR UPDATE;
+    IF NOT FOUND OR v_session.active IS NOT TRUE
+       OR v_session.revoked_at IS NOT NULL
+       OR v_session.expires_at<=clock_timestamp()
+       OR v_session.actor_ref<>v_existing.actor_ref
+       OR v_session.tenant_ref<>v_existing.tenant_ref
+       OR v_session.store_ref<>v_existing.store_ref
+    THEN RAISE EXCEPTION 'DENY_SESSION_INACTIVE_OR_REVOKED'; END IF;
+
+    SELECT * INTO v_membership
+    FROM tien404_v172c40g_qa.owner_memberships
+    WHERE actor_ref=v_existing.actor_ref
+      AND tenant_ref=v_existing.tenant_ref
+      AND store_ref=v_existing.store_ref
+    FOR UPDATE;
+    IF NOT FOUND OR v_membership.active IS NOT TRUE
+       OR v_membership.revoked_at IS NOT NULL
+       OR v_membership.member_role<>'owner'
+    THEN RAISE EXCEPTION 'DENY_OWNER_MEMBERSHIP_REVOKED_OR_INVALID'; END IF;
+
+    IF EXISTS (
+      SELECT 1 FROM tien404_v172c40g_qa.owner_revocation_events
+      WHERE target_type='CONSENT_EVENT' AND target_ref=v_existing.event_id::text
+    ) THEN RAISE EXCEPTION 'DENY_CONSENT_REVOKED_OR_STALE'; END IF;
+
+    RETURN QUERY SELECT 'IDEMPOTENT_REPLAY_NO_NEW_EVENT'::text,v_existing.event_id;
+    RETURN;
   END IF;
 
   -- Fixed lock order: session -> challenge -> membership.
