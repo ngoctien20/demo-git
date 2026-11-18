@@ -1,0 +1,69 @@
+name: TIEN404 V17.25R — Disposable PostgreSQL 17 Store RLS (NO HOST)
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725r/**'
+      - '.github/workflows/v1725r-store-rls-disposable.yml'
+permissions:
+  contents: read
+jobs:
+  store-schema-rls-replacement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v1725r_synthetic_ci_only
+          POSTGRES_DB: t404_v180_p0d_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0d_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: v1725r_synthetic_ci_only
+      PGDATABASE: t404_v180_p0d_ci
+    steps:
+      - name: Checkout source-only QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Pin and guard inherited disposable fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = "t404_v180_p0d_ci"
+          test "$(git hash-object qa/v180-p0d/store-scoped-rls-disposable.sql)" = "07ab80bd5f3fc7cdea9a8f17a13c4b0ae29a068c"
+          test "$(git hash-object qa/v1725n/rls-cutover-disposable.sql)" = "04ba4e7f0ea2a010dff3542b6cc7a4ce18522d77"
+          grep -q 'V18_P0D_DISPOSABLE_PG17_ONLY' qa/v180-p0d/store-scoped-rls-disposable.sql
+          grep -q 'V1725N_DISPOSABLE_PG17_ONLY' qa/v1725n/rls-cutover-disposable.sql
+          grep -q 'V1725R_DISPOSABLE_PG17_ONLY' qa/v1725r/store-schema-rls-replacement.sql
+          ! grep -Eqi 'supabase.co|onrender.com|app.n8n.cloud|service_role|curl |wget |https?://' qa/v1725r/store-schema-rls-replacement.sql
+          echo 'V1725R_INHERITED_P0D_N_BLOBS_PINNED'
+      - name: Run the unchanged P0D Store schema and 37-case fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v180-p0d/store-scoped-rls-disposable.sql
+      - name: Replay V17.25N permissive OR and restrictive AND baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v1725n/rls-cutover-disposable.sql
+      - name: Run V17.25R Store schema and policy replacement truth table
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v1725r/store-schema-rls-replacement.sql
+      - name: Confirm disposable database only and no hosted admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = "t404_v180_p0d_ci"
+          psql -X --no-psqlrc -Atqc "SELECT CASE WHEN current_database()='t404_v180_p0d_ci' AND current_setting('server_version_num')::int >= 170000 THEN 'V1725R_PG17_DISPOSABLE_DB_CONFIRMED' ELSE 'FAIL' END"
+          echo 'V1725R_SYNTHETIC_AUTH_UID_ONLY; NO_REAL_JWT; NO_SUPABASE_CONNECTION; NO_RENDER_DEPLOY; NO_HOSTED_DDL_DML; NO_CUSTOMER_ROWS; NO_PROVIDER_SEND; NO_PRODUCTION'

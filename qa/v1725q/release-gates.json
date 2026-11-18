@@ -1,0 +1,63 @@
+{
+  "version": "V17.25Q",
+  "classification": "SOURCE_ONLY_NOHOST",
+  "base": {
+    "pr": 411,
+    "checkpoint_commit": "1a624008c8c0da53d9d0d481fe5248fa083b051f",
+    "ci_workflow_extension_commit": "db0f4907b46bfc5a8333d1a0eef4166ccaa649f0"
+  },
+  "pull_request": {
+    "number": 413,
+    "state": "OPEN_DRAFT",
+    "branch": "work/v1725q-store-aware-contract-nohost-20261118",
+    "ci_head": "108d0565b99f36bdbb79ebea2379716c04f27e1a"
+  },
+  "ci": {
+    "run_id": 44266922645,
+    "job_id": 134673642937,
+    "conclusion": "success",
+    "parent_exact_source_tests": 28,
+    "parent_exact_source_duration": "0.28s",
+    "store_contract_tests": 58,
+    "store_contract_duration": "0.42s",
+    "contract_json_valid": true,
+    "legacy_matrix_json_valid": true,
+    "real_socket_connect_blocked": true,
+    "real_jwt": false,
+    "supabase_network": false,
+    "render_network": false,
+    "provider_network": false
+  },
+  "live_baseline": {
+    "render_commit": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+    "render_main_py_blob": "a7a11abeffb378b3f9952005ffdd489c54df1c13",
+    "postgres": "17.11",
+    "stores_exists": false,
+    "store_memberships_exists": false,
+    "store_id_columns": 0,
+    "legacy_products_route": "LIVE_TENANT_ONLY",
+    "legacy_orders_route": "LIVE_TENANT_ONLY",
+    "render_auto_deploy": false
+  },
+  "contract": {
+    "api": "v2_candidate_not_deployed",
+    "explicit_store_membership_required": true,
+    "tenant_owner_implicit_store_access": false,
+    "effective_role": "least_privilege_tenant_and_store",
+    "client_scope_authority": false,
+    "channel_installation_authority": "server_verified_installation_registry_design_only",
+    "cross_channel_customer_merge": false
+  },
+  "release_gates": {
+    "legacy_v1_block": "PROPOSED_NOT_DEPLOYED",
+    "store_schema": "NOT_PRESENT",
+    "store_rls_cutover": "NOT_APPROVED",
+    "legacy_row_backfill": "NOT_APPROVED_NO_GUESSING",
+    "m0_recovery": "NO_GO",
+    "real_owner_a_b_jwt_uat": "0/31_NOT_RUN",
+    "provider_adapter": "DESIGN_ONLY_DISABLED",
+    "hosted_store_read_write": "NO_GO",
+    "production": "NO_GO"
+  },
+  "rollback": "Close or revert source-only Draft PR #413; no runtime rollback required."
+}
