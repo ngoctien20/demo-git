@@ -1,0 +1,80 @@
+{
+  "phase": "V18.5.4",
+  "date": "2026-11-18 JST",
+  "status": "PARTIAL_UAT_PASS_REAL_N8N_READONLY / CLOUDFLARE_ACCESS_RUNTIME_BLOCKED / NO_HOSTED_DEPLOYMENT",
+  "parentPR": 407,
+  "realN8nUat": {
+    "verified": true,
+    "harnessWorkflowId": "715VV39ohwibkoUK",
+    "executionId": "5341",
+    "subExecutions": 9,
+    "allSuccess": true,
+    "orderWrites": 0,
+    "stockWrites": 0,
+    "providerSends": 0,
+    "fullAgentCalled": false
+  },
+  "cloudflareInventory": {
+    "existingV144Worker": "tien404-widget-gateway-v144-staging",
+    "deploymentVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false,
+    "bindings": 0,
+    "dedicatedAccessApp": false,
+    "existingAccessApps": 4,
+    "teamDenyUnmatchedRequests": false,
+    "existingFounderAccessApp": "PATH_SCOPED_TO_DIFFERENT_UAT_WORKER",
+    "existingAccessAppIsV144": false,
+    "changePerformed": false
+  },
+  "workerCandidate": {
+    "accessAdapter": "Cloudflare native ctx.access",
+    "checks": [
+      "Access context present",
+      "exact server-configured AUD",
+      "identity email from ctx.access.getIdentity",
+      "server-side single operator allowlist"
+    ],
+    "noManualJwtParser": true,
+    "noNodeCrypto": true,
+    "noBrowserIdentityHeaders": true,
+    "allRoutesAccessGated": true,
+    "commerceSessionAndMessage": "423 LOCKED",
+    "noCors": true,
+    "n8nCalls": 0
+  },
+  "scope": {
+    "tenantIsolation": "REAL_N8N_SANDBOX_CROSS_TENANT_VERIFIED",
+    "storeLevelIsolation": false,
+    "widgetToGatewayToN8n": false,
+    "realCloudflareAccessJwt": false,
+    "customerOrdersRead": false
+  },
+  "approvals": {
+    "enableWorkersDevOnExistingV144": false,
+    "createAccessAppForExactV144Host": false,
+    "createAccessAllowPolicyFounderOnlyBiometrics": false,
+    "deployV144AccessCanarySource": false,
+    "setServerVariablesAccessAudAndOperatorAllowlist": false,
+    "createDurableReplayQuotaBinding": false,
+    "createN8nReadOnlyWebhookAdapterCredential": false,
+    "publishOrActivateN8nAdapter": false,
+    "bindGatewayToN8n": false,
+    "merchantStoreAStoreBUat": false,
+    "productionRelease": false,
+    "paidUsage": false
+  },
+  "noChangesTo": [
+    "existing V14.4 Worker deployment",
+    "Cloudflare Access applications/policies",
+    "D1/DO",
+    "n8n Published Commerce workflows",
+    "website gh-pages",
+    "Supabase",
+    "Render",
+    "orders",
+    "customer data",
+    "Messenger/Zalo"
+  ],
+  "rollback": "Delete/archive only new inactive manual QA harness if needed; close/revert PR #408. No hosted rollback required because no Worker/Access change was made."
+}
