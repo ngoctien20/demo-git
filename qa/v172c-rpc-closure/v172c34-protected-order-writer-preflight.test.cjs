@@ -276,3 +276,50 @@ test('required protected adapters cannot be omitted',()=>{
  assert.throws(()=>createProtectedOrderWriterPreflight({}),
    /PROTECTED_SERVER_ADAPTERS_REQUIRED/);
 });
+
+test('integrated real-shaped proof contract: independently linked Messenger order to Zalo only passes status preflight',async()=>{
+ const {createCrossChannelIdentityProofGate}=require('./v172c34-cross-channel-identity-proof-gate.cjs');
+ const actualProof={
+  proofRef:'proof-A',orderRef:'order-A',tenantRef:'tenant-1',storeRef:'store-A',
+  originChannel:'messenger',originActorRef:'messenger-person-A',
+  targetChannel:'zalo',targetActorRef:'zalo-person-A',
+  active:true,revoked:false,originConsentVerified:true,targetConsentVerified:true,
+  originAccountOwnershipVerified:true,targetAccountOwnershipVerified:true,
+  oneTimeChallengeConsumed:true,atomicReplayProtectionVerified:true,
+  scope:'read_order_status_only',expiresAtMs:NOW+60000
+ };
+ const linkGate=createCrossChannelIdentityProofGate({
+  getPrivateProof:async()=>actualProof,
+  verifySignedLinkProof:async()=>({
+    signatureVerified:true,issuerTrusted:true,boundToAllClaims:true
+  }),
+  now:()=>NOW
+ });
+ const f=fixture({
+  loadPrivateIntent:async()=>({...intentBase,action:'preview_order_status',
+    orderRef:'order-A',channel:'zalo',installationRef:'install-Z',
+    crossChannelProofRef:'proof-A'}),
+  verifyActorSession:async()=>({...actorBase,channel:'zalo',
+    providerActorRef:'zalo-person-A',externalAccountRef:'bot-Z'}),
+  resolveInstallation:async()=>({...installationBase,installationRef:'install-Z',
+    channel:'zalo',externalAccountRef:'bot-Z'}),
+  verifyCrossChannelProof:linkGate
+ });
+ assert.deepEqual(await f.run(request()),{
+  status:'SECURITY_PREFLIGHT_ONLY_NO_ORDER_WRITE',
+  action:'preview_order_status',canReadOrderData:false,
+  canWriteOrder:false,canSend:false
+ });
+ // Identity cannot be spoofed by switching Zalo actor while retaining proof.
+ const spoofed=fixture({
+  loadPrivateIntent:async()=>({...intentBase,action:'preview_order_status',
+    orderRef:'order-A',channel:'zalo',installationRef:'install-Z',
+    crossChannelProofRef:'proof-A'}),
+  verifyActorSession:async()=>({...actorBase,channel:'zalo',
+    providerActorRef:'zalo-person-B',externalAccountRef:'bot-Z'}),
+  resolveInstallation:async()=>({...installationBase,installationRef:'install-Z',
+    channel:'zalo',externalAccountRef:'bot-Z'}),
+  verifyCrossChannelProof:linkGate
+ });
+ await denied(spoofed);
+});
