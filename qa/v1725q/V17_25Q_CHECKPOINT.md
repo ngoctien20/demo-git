@@ -9,12 +9,12 @@
 - Base: [Draft PR #411 — V17.25P](https://github.com/ngoctien20/demo-git/pull/411), checkpoint `1a624008c8c0da53d9d0d481fe5248fa083b051f`.
 - Parent PR #411 received a CI-only workflow extension at `db0f4907b46bfc5a8333d1a0eef4166ccaa649f0` so the stacked child can run the V17.25Q suite. This is not an app/runtime change.
 - Branch: `work/v1725q-store-aware-contract-nohost-20261118`.
-- Final source revision at CI: `a04867731b255b8157da7755da9142ed0b6f42f1`.
+- Final source revision at CI: `108d0565b99f36bdbb79ebea2379716c04f27e1a`.
 
 ## 2. CI evidence
 
-- Run: [GitHub Actions #44266464089](https://github.com/ngoctien20/demo-git/actions/runs/44266464089).
-- Job: `134672109787`, completed SUCCESS.
+- Run: [GitHub Actions #44266922645](https://github.com/ngoctien20/demo-git/actions/runs/44266922645).
+- Job: `134673642937`, completed SUCCESS.
 - Parent exact deployed-source replay: **28 passed in 0.28s**.
 - V17.25Q Store-aware contract suite: **58 passed in 0.42s**.
 - JSON contract + legacy matrix parsed successfully.
