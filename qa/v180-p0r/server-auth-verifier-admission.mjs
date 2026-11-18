@@ -69,7 +69,7 @@ export function createCandidateVerifier({ports, issuer, accessIssuer, accessAudi
       consentHandle});
     return opaque;
   }
-  function correlatePair(a,b) {
+  async function correlatePair(a,b) {
     const x=internal.get(a),y=internal.get(b),now=nowSeconds();
     if(!x||!y||x===y||!validTime(now)) deny('PAIR_EVIDENCE_UNTRUSTED');
     if(!fresh(x.expiresAt,now)||!fresh(y.expiresAt,now))
@@ -77,6 +77,24 @@ export function createCandidateVerifier({ports, issuer, accessIssuer, accessAudi
     if(x.subject===y.subject||x.session===y.session||x.principal===y.principal||
        x.consentHandle===y.consentHandle) deny('PAIR_NOT_INDEPENDENT');
     if(x.tenant!==y.tenant||x.pairing!==y.pairing) deny('PAIR_SCOPE_MISMATCH');
+    // Re-check revocation and consent immediately at correlation time; fail closed.
+    for(const item of [x,y]) {
+      const current=await ports.lookupCurrentAuthSession(item.session);
+      if(current?.exists!==true||current.revoked===true||
+         current.id!==item.session||current.userId!==item.subject||
+         (current.expiresAt!=null&&!fresh(current.expiresAt,now)))
+         deny('PAIR_SESSION_REVOKED');
+      const permission=await ports.lookupCurrentOwnerMembership(item.tenant,item.subject);
+      if(permission?.active!==true||permission.role!=='owner'||
+         permission.tenantId!==item.tenant||permission.userId!==item.subject)
+         deny('PAIR_OWNER_REVOKED');
+      const consent=await ports.lookupIndependentConsent(item.consentHandle,item.subject,item.pairing);
+      if(consent?.verified!==true||consent.approvedByOwner!==true||
+         consent.used===true||!fresh(consent.expiresAt,now)||
+         consent.scope!=='read_only_identity'||consent.userId!==item.subject||
+         consent.pairingHandle!==item.pairing)
+         deny('PAIR_CONSENT_REVOKED');
+    }
     return Object.freeze({
       status:'IN_MEMORY_PAIR_CORRELATION_CANDIDATE',
       serverPortsLiveVerified:false, // Adapter validation and hosted execution NOT supplied here.
