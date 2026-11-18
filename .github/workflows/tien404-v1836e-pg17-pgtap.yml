@@ -1,0 +1,70 @@
+name: TIEN404 V18.3.6E PG17 pgTAP DML RLS Negative QA
+on:
+  pull_request:
+    branches: [qa/v1836d-canonical-store-design-20261118]
+    paths:
+      - "qa/v18.3.6e/**"
+      - ".github/workflows/tien404-v1836e-pg17-pgtap.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836e-pgtap
+  cancel-in-progress: true
+jobs:
+  disposable-pg17-store-dml-rls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout QA-only commit without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build PostgreSQL 17 plus pgTAP QA image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull --file qa/v18.3.6e/Dockerfile.pgtap --tag tien404-v1836e-pg17-pgtap .
+      - name: Start disposable PostgreSQL 17 without network or published ports
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836e-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_only \
+            tien404-v1836e-pg17-pgtap
+          for i in $(seq 1 60); do
+            if docker exec tien404-v1836e-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836e-pg17 pg_isready -U postgres
+          docker exec tien404-v1836e-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836e_disposable;'
+          docker exec tien404-v1836e-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            -c "SELECT current_setting('server_version') AS pg_version, current_database() AS database_name;"
+      - name: Execute synthetic canonical Store A B schema and RLS bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836e-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836e_disposable < qa/v18.3.6e/00_DISPOSABLE_SCHEMA_AND_FIXTURES.sql \
+            > "$RUNNER_TEMP/tien404-e-bootstrap.log"
+          grep -q 'V18_3_6E_PG17_DISPOSABLE_BOOTSTRAP_PASS' "$RUNNER_TEMP/tien404-e-bootstrap.log"
+          echo "V18_3_6E_DISPOSABLE_BOOTSTRAP_VERIFIED"
+      - name: Run real pgTAP suite for full DML RLS and composite FK negative checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836e-pg17 psql -A -t -q -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836e_disposable < qa/v18.3.6e/01_FULL_DML_RLS_PGTAP.sql \
+            | tee "$RUNNER_TEMP/tien404-e-pgtap.log"
+          grep -qx '1..83' "$RUNNER_TEMP/tien404-e-pgtap.log"
+          count="$(grep -Ec '^ok [0-9]+ - ' "$RUNNER_TEMP/tien404-e-pgtap.log")"
+          test "$count" -eq 83
+          if grep -q '^not ok ' "$RUNNER_TEMP/tien404-e-pgtap.log"; then
+            echo "pgTAP assertion failed"; exit 1
+          fi
+          grep -q 'V18_3_6E_PGTAP_SQL_FINISH_PASS' "$RUNNER_TEMP/tien404-e-pgtap.log"
+          echo "V18_3_6E_PGTAP_83_OF_83_PASS"
+      - name: Remove disposable PG17 container even after failure
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836e-pg17 >/dev/null 2>&1 || true
