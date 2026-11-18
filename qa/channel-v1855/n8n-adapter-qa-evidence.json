@@ -280,7 +280,30 @@
       "T404_N8N_READONLY_ADAPTER_TOKEN"
     ],
     "installationAuthority": "Worker accepts only fixed installation IDs; n8n internal adapter maps them server-side to fixed website Sandbox accounts; browser accountId/tenantId/storeId/customerId/orderId rejected.",
-    "publicAccess": false
+    "publicAccess": false,
+    "exactUpstreamPath": "/webhook/t404-v1855-protected-readonly-commerce-staging",
+    "requiredDurableAdmissionBinding": "T404_READ_ADMISSION",
+    "requestAdmissionClass": "T404ReadAdmission",
+    "admissionCandidateSourceFiles": [
+      "qa/channel-v1855/read-admission-policy.mjs",
+      "qa/channel-v1855/t404-read-admission-do.mjs",
+      "qa/channel-v1855/worker-v1855-hosted-entry.mjs"
+    ],
+    "ratePolicy": {
+      "sourceOnly": true,
+      "namespaceCreated": false,
+      "bindingConfigured": false,
+      "deployed": false,
+      "backend": "SQLite Durable Object",
+      "limitPer60SecondsPerSandboxInstallation": 20,
+      "windowMs": 60000,
+      "serverGeneratedRequestIdReplayDeny": true,
+      "atomicStorageTransaction": true,
+      "neverStoreCustomerPII": true,
+      "untrustedBodyNeverSelectsDoInstance": true,
+      "missingBindingFailsClosed": true,
+      "note": "Source-only proposal. Requires owner authorization for namespace, binding, version upload and any metered usage. Generated request IDs deduplicate internal retries, not repeated independent client requests."
+    }
   },
   "securityGates": {
     "ownerAccessRuntime": "VERIFIED",
@@ -288,12 +311,17 @@
     "dedicatedN8nHeaderAuthCredential": "VERIFIED_CREDENTIAL_METADATA_AND_WEBHOOK_BINDING",
     "webhookIngressWorkflow": "CREATED_INACTIVE_CREDENTIAL_BOUND",
     "workerDeployment": "NOT_DEPLOYED",
-    "durableReplayOrRateLimit": "NOT_IMPLEMENTED",
+    "durableReplayOrRateLimit": "SOURCE_IMPLEMENTED_DO_SQLITE_ADMISSION_NOT_CREATED_NOT_DEPLOYED",
     "productionRelease": false,
     "webhookHeaderValue": "NOT_READ_OR_EXPORTED",
     "realHttpHeaderAuthTest": "NOT_RUN",
     "workerSecretConfigured": false,
-    "workerDeployedV1855": false
+    "workerDeployedV1855": false,
+    "exactUpstreamWebhookPathLockedInSource": true,
+    "doNamespaceCreationApproved": false,
+    "workerBindingApproved": false,
+    "cloudflareDeploymentApproved": false,
+    "costApprovalReceived": false
   },
   "noChangesTo": [
     "n8n Published Commerce Core",
@@ -319,5 +347,10 @@
     "failure": "The post-test evidence step expected the Tenant Resolver to appear as a direct child execution. In reality it is invoked inside Catalog Query and Cart Preview; the adapter execution and all 12 assertions had succeeded.",
     "correction": "Evidence now records the resolver as invoked successfully through Catalog and Cart; CI assertion corrected to accept that nested execution lineage.",
     "rerun": "PENDING_GITHUB_ACTIONS_OBSERVATION"
+  },
+  "sourceSecurityCheckpoint": {
+    "state": "SOURCE_QA_PENDING",
+    "nodePolicyTestsPlanned": 10,
+    "workerNewNegativeTestsPlanned": 3
   }
 }
