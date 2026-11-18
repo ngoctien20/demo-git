@@ -3,7 +3,7 @@
 **Date:** 2026-11-18 JST  
 **Parent:** V17.2C.40E (S3 locked, 22/22 PASS)  
 **Draft PR:** #392  
-**Status:** DESIGN / SOURCE-ONLY / NO HOSTED SERVICE / NO AUTHORITY.
+**Status:** API SPEC IMPLEMENTED / 18-TEST CONTRACT QA PASS / NO HOSTED SERVICE / NO AUTHORITY.
 
 ## 1. Decision and objective
 
@@ -128,11 +128,19 @@ All remain false in the V40F contract:
 
 No development branch or extra compute may be created until the authorized organization owner reviews actual pricing/limits, backup/restore and explicitly approves the cost.
 
-## 8. Status and next checkpoint
+## 8. QA evidence
+
+Tested contract/test commit: `01d1de007e88c91db8dad756cd3555bfe15e5a17`.
+- V40F static API contract suite: **18/18 PASS** (`Ran 18 tests ... OK`) inside PostgreSQL 17 CI job [#44263778414](https://github.com/ngoctien20/demo-git/actions/runs/44263778414).
+- Full ephemeral PostgreSQL/RLS job completed SUCCESS; V40D 41/41 and V40E 22/22 regression suites also passed in the same run.
+- All 3 PR check runs SUCCESS: [no-send source contract](https://github.com/ngoctien20/demo-git/actions/runs/44263777256/job/134663193680), [protected consent source contract](https://github.com/ngoctien20/demo-git/actions/runs/44263777419/job/134663193888), [PostgreSQL 17 + V40D/E/F](https://github.com/ngoctien20/demo-git/actions/runs/44263778414/job/134663197249).
+- These tests validate JSON design constraints only. They do not exercise a deployed API, Supabase Auth, a live session, real consent or Store permissions.
+
+## 9. Status and next checkpoint
 
 - **VERIFIED:** V17.2C.21 and V17.2C.24 source candidates and their documented limitations; V40E S3 lock and 22/22 synthetic tests.
-- **IMPLEMENTED:** V40F machine-readable API contract, all routes disabled, no activation endpoint.
-- **PROPOSED:** private owner authority service threat model, API and data model.
+- **IMPLEMENTED:** V40F machine-readable API contract, static contract validator/tests, CI step; all routes disabled and no activation endpoint.
+- **PROPOSED:** private owner authority service implementation, deployment architecture and data model.
 - **BLOCKED:** deployment, real Auth/session adapters, private challenge persistence, signed owner evidence, reviewer and real A/B.
 - **NO-GO:** Supabase DDL/RLS, Store grants, Orders access, n8n Published changes, provider sends, production.
 
