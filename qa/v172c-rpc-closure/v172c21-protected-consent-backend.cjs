@@ -7,14 +7,16 @@ const fail=(reason)=>({status:'DENY',reason});
 const slots=['QA_A','QA_B'];
 const scope='synthetic_catalog_readonly_no_send_no_write';
 function createPrivateConsentBackend(services){
- const names=['verifySession','resolveStoreAuthority','recordExplicitConsent','getPrivateEvidence',
+ const names=['verifySession','resolveStoreAuthority','verifyConsentChallenge','recordExplicitConsent','getPrivateEvidence',
   'getTrustedAuthority','getSignedReceipts'];
  if(!services || names.some(n=>typeof services[n]!=='function')) throw Error('MISSING_TRUSTED_SERVER_ADAPTERS');
- async function intake({bearer,requestedScope}={}){
+ async function intake({bearer,requestedScope,consentAction,challenge}={}){
   // bearer is an internal server-side input from authorization header;
   // don't log, persist or return it. Never accept subject/store via request.
   if(typeof bearer!=='string'||!bearer.startsWith('Bearer ')||bearer.length>8192||
      bearer.length<20||requestedScope!==scope) return fail('INVALID_AUTH_OR_SCOPE');
+  if(consentAction!=='accept' || typeof challenge!=='string' || challenge.length<16 || challenge.length>256)
+   return fail('EXPLICIT_CONSENT_ACTION_REQUIRED');
   try{
    const session=await services.verifySession(bearer.slice(7));
    if(!session || session.verified!==true || session.active!==true ||
@@ -24,6 +26,12 @@ function createPrivateConsentBackend(services){
    if(!binding || binding.active!==true || binding.ownerVerified!==true ||
       !binding.tenantRef || !binding.storeRef || !slots.includes(binding.slot))
       return fail('STORE_AUTHORITY_DENIED');
+   const proof=await services.verifyConsentChallenge({
+     challenge,subjectRef:session.subjectRef,sessionEvidenceRef:session.sessionEvidenceRef,
+     tenantRef:binding.tenantRef,storeRef:binding.storeRef,scope
+   });
+   if(!proof || proof.verified!==true || proof.singleUseConsumed!==true ||
+      proof.consentIntentVerified!==true) return fail('CONSENT_CHALLENGE_NOT_VERIFIED');
    const receipt=await services.recordExplicitConsent({
      slot:binding.slot,subjectRef:session.subjectRef,tenantRef:binding.tenantRef,
      storeRef:binding.storeRef,sessionEvidenceRef:session.sessionEvidenceRef,scope
