@@ -15,7 +15,7 @@ function createIsolatedStoreReadProbe({verifyActor,resolveStoreOwner,loadCatalog
      scope!==READ_SCOPE||action!=='read_catalog') return DENY;
   try{
    const approved=await gate();
-   if(!approved||approved.isolated===false||approved.noSend!==true||
+   if(!approved||approved.isolated!==true||approved.noSend!==true||
       approved.mode!=='synthetic-only'||approved.allowHosted!==false)return DENY;
    const actor=await verifyActor(opaqueSession);
    if(!actor||actor.verified!==true||actor.active!==true||
