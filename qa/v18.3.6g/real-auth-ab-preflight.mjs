@@ -43,6 +43,9 @@ export function assessPrivateAuthABReadiness(input){
   const review=input.review||{};
   if(review.independentHumanReviewerApproved!==true||
       !redactedDigest(review.reviewEvidenceHash)||
+      !redactedDigest(review.reviewerHash)||
+      !redactedDigest(review.implementerHash)||
+      review.reviewerHash===review.implementerHash||
       !present(review.reviewId))
     blockers.push('INDEPENDENT_SECURITY_REVIEW_MISSING');
   // This is only a readiness checklist. Booleans do NOT authenticate users.
