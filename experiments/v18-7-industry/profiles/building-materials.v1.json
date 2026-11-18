@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "id": "building_materials",
+  "version": "1.0.0",
+  "stage": "EXPERIMENTAL",
+  "name_vi": "Vật liệu xây dựng",
+  "locale": "vi-VN",
+  "fields": {
+    "product": [
+      "sku",
+      "product_name",
+      "specification",
+      "measurement_unit",
+      "base_unit",
+      "unit_conversion",
+      "price_vnd",
+      "stock_base"
+    ],
+    "customer": [
+      "contact_ref",
+      "delivery_area"
+    ]
+  },
+  "skills": [
+    "product_lookup",
+    "specification_clarification",
+    "stock_check",
+    "quote_preview",
+    "human_handoff"
+  ],
+  "business_rules": {
+    "price_source": "canonical_commerce",
+    "stock_source": "canonical_commerce",
+    "unknown_price": "DENY",
+    "unknown_stock": "DENY",
+    "cross_store": "DENY",
+    "order_write": "DENY",
+    "provider_send": "DENY"
+  },
+  "capabilities": {
+    "channels": [
+      "messenger",
+      "zalo_oa",
+      "website"
+    ],
+    "tools": {
+      "allow": [
+        "search_products",
+        "read_price",
+        "check_inventory",
+        "preview_quote"
+      ],
+      "deny": [
+        "create_order",
+        "update_order",
+        "cancel_order",
+        "update_stock",
+        "update_debt",
+        "provider_send",
+        "read_private_order",
+        "admin_action"
+      ]
+    }
+  },
+  "defaults": {
+    "tone": "practical",
+    "greeting": "Xin chào! Anh/chị cho biết vật tư, quy cách và số lượng cần báo giá nhé."
+  }
+}
