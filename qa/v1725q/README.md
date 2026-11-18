@@ -113,12 +113,12 @@ Supabase changelog: as of 30 Oct 2026, new public tables are no longer automatic
 - Store-scoped idempotency key namespace.
 - Paused and archived Store behavior.
 
-All identities, tokens, Stores, products, orders, customers, conversations and messages are synthetic. Test process blocks real socket connects. No real JWT, Supabase credentials, provider webhook or network call is used. Final CI run #44266464089 passed the parent exact-source replay 28/28 and this Store contract suite 58/58; both JSON contract files parsed successfully.
+All identities, tokens, Stores, products, orders, customers, conversations and messages are synthetic. Test process blocks real socket connects. No real JWT, Supabase credentials, provider webhook or network call is used. Final CI run #44266922645 passed the parent exact-source replay 28/28 and this Store contract suite 58/58; both JSON contract files parsed successfully.
 
 ## 8. Release gates
 
 - `STORE_API_CONTRACT_DESIGN`: implemented as a source-only contract and simulator.
-- `DUAL_OWNER_NEGATIVE_QA`: TESTED — 58/58 synthetic tests passed in CI run #44266464089.
+- `DUAL_OWNER_NEGATIVE_QA`: TESTED — 58/58 synthetic tests passed in CI run #44266922645.
 - `LEGACY_LIVE_ROUTES`: VERIFIED tenant-only and still active in deployed Render; not patched by this PR.
 - `HOSTED_STORE_SCHEMA`: absent; no migration.
 - `M0`: NO-GO; owner deferred current backup; no independent current restore receipt.
