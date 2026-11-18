@@ -1,0 +1,13 @@
+{
+  "name": "tien404-v1855-workerd-offline-qa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --config vitest.config.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^0.16.0",
+    "vitest": "^4.1.0"
+  }
+}
