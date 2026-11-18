@@ -200,3 +200,48 @@ The Store A/B RLS and tenant/store authority gates remain unchanged and unverifi
 - The CI run is source/evidence validation and synthetic runtime tests; it does not replace the pending browser login through the real Cloudflare edge.
 
 **Current decision:** `V18.5.4_PRIVATE_HOSTED_CANARY_DEPLOYED / N8N_READONLY_UAT_9_OF_9 / SOURCE_CI_177_OF_177 / REAL_OWNER_ACCESS_LOGIN_PENDING / SECOND_IDENTITY_DENY_PENDING / COMMERCE_LOCKED / PRODUCTION_NO_GO`.
+
+
+## Follow-up UAT — Owner real Cloudflare Access login VERIFIED (18/11/2026 JST)
+
+The user completed the approved owner-browser test and supplied the actual Worker canary JSON:
+
+```json
+{
+  "service": "tien404-widget-gateway",
+  "environment": "private-staging",
+  "canary": "CLOUDFLARE_ACCESS_CONTEXT_VERIFIED",
+  "principalType": "CLOUDFLARE_ACCESS_PRIVATE_QA_OPERATOR",
+  "audienceVerified": true,
+  "operatorAllowlisted": true,
+  "commerce": "LOCKED_PENDING_READONLY_ADAPTER",
+  "privateOrderAccess": false,
+  "orderWrites": 0,
+  "providerSends": 0,
+  "productionReady": false
+}
+```
+
+The actual Cloudflare Access authentication log was queried after that test and returned one matching event for the new application:
+
+- `action=login`, `allowed=true`.
+- Application UID: `1a73d50b-0668-4308-8f56-53aa9711d477`.
+- Application domain: `tien404-widget-gateway-v144-staging.tienmobi208.workers.dev`.
+- Connection: `cloudflare`.
+- Event time: `2026-11-18T08:11:58Z` (17:11:58 JST).
+- Ray ID: `a5c581ec6c0996aa`.
+- The audit query was filtered to the exact approved owner email; the value is intentionally not repeated here.
+
+**Conclusion:** the approved owner has completed a real Cloudflare Access authentication event, and the deployed Worker returned its native `ctx.access` canary success response with the exact audience and server-side operator allowlist checks passing. This moves the owner Access runtime from pending to **VERIFIED**.
+
+### Second browser — authentication challenge observed, denial still pending
+
+The user supplied a screenshot from a separate Incognito browser. The visible address is `dash.cloudflare.com/login?login_challenge=...`, and the page is the Cloudflare sign-in screen. This is consistent with the second browser being redirected to the Cloudflare identity challenge before reaching the Worker. It is **not** an Access Denied result yet: no alternate account has completed sign-in, and no denied alternate-identity audit event has been recorded.
+
+Next, use a different Cloudflare account identity that is not included in the founder-only Allow policy (preferably an existing member of the same Cloudflare account). Complete the login in that separate browser. Expected outcome: Access denies that identity and the audit log records `allowed=false` for the same application. Do not add new Cloudflare account members or change Access policies for this test without separate approval.
+
+### Updated decision
+
+`OWNER_REAL_ACCESS_LOGIN_PASS / NATIVE_CTX_ACCESS_CANARY_PASS / SECOND_IDENTITY_DENIAL_PENDING / N8N_READONLY_UAT_9_OF_9 / SOURCE_CI_177_OF_177_PRIOR_RUN / COMMERCE_LOCKED / STORE_RLS_NOT_VERIFIED / PRODUCTION_NO_GO`.
+
+The user-provided canary response and the matching Cloudflare allowed-login audit event are independent, mutually consistent evidence. Widget session/message/install endpoints remain 423; no order or stock write, customer data access, AI call, n8n adapter, provider send, billing change or production release was enabled.
