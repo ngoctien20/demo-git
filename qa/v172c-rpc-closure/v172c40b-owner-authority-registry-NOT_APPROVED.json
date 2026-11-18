@@ -1,0 +1,50 @@
+{
+  "contract": "TIEN404_V17_2C40B_OWNER_AUTHORITY_REGISTRY_CANDIDATE",
+  "status": "NOT_APPROVED",
+  "scope": "DESIGN_ONLY_NO_WRITE",
+  "authority_effect": "NONE",
+  "immutable_checkpoint": true,
+  "source_of_truth": "APPROVED_PRIVATE_SERVER_AUTHORITY_REQUIRED_NOT_PRESENT",
+  "release_gate": {
+    "canonical_store_admission": false,
+    "cross_channel_identity_admission": false,
+    "real_order_read_admission": false,
+    "real_order_write_admission": false,
+    "migration_admission": false,
+    "production_send_admission": false
+  },
+  "required_private_evidence": [
+    "canonical_tenant_uuid_verified_server_side",
+    "owner_signed_store_boundary_decision",
+    "two_distinct_stores_under_same_tenant_confirmed_if_ab_isolation_intended",
+    "two_current_store_memberships_by_actual_auth_user_id",
+    "owner_challenge_proof_with_complete_lineage_or_independently_approved_alternate_method",
+    "n8n_tenant_alias_to_real_tenant_uuid_crosswalk_verified",
+    "n8n_store_and_bot_aliases_bound_to_signed_provider_installation",
+    "independent_security_review_and_backup_restore_admission",
+    "private_real_auth_session_ab_consent"
+  ],
+  "forbidden_promotion_sources": [
+    "tien404_r1_qa.owner_bindings.status_paired",
+    "tien404_r1_qa.shop_bots.identity_status_synthetic_qa",
+    "n8n_QA_APPROVED",
+    "n8n_enabled_true",
+    "matching_name_phone_or_LLM_inferred_store",
+    "current_tenant_membership_without_store_membership",
+    "provider_sender_id_without_signed_receipt"
+  ],
+  "protected_mapping_records": [],
+  "owner_store_grant_records": [],
+  "channel_installation_records": [],
+  "alias_crosswalk_records": [],
+  "approval_evidence_refs": [],
+  "explicitly_unresolved": [
+    "same_tenant_two_owners_only_one_qa_store",
+    "one_of_two_qa_owner_bindings_has_incomplete_challenge_chain",
+    "n8n_commerce_tenant_ids_not_equal_to_supabase_uuid_without_translation",
+    "n8n_qa_bot_tuples_not_equal_to_supabase_qa_bot_tuples",
+    "no_production_store_tables_or_rls",
+    "real_channel_installation_store_authority_missing"
+  ],
+  "instructions": "DO NOT populate with actual JWT, provider token, PII, customer/order data, or raw owner IDs. Approved mapping must be created separately in a protected system after explicit owner approval; do not modify this immutable no-write checkpoint."
+}
