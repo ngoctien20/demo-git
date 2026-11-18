@@ -39,7 +39,8 @@ jobs:
             qa/channel-v185/shared-core-bridge.test.cjs \
             qa/channel-v144/secure-widget-preview.test.mjs \
             qa/channel-v143/channel-core.test.mjs \
-            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs
+            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs \
+            qa/channel-v1855/n8n/ingress-contract-offline.test.cjs
       - name: Verify actual n8n adapter evidence and release gates
         run: |
           node <<'JS'
@@ -49,14 +50,14 @@ jobs:
           const worker = fs.readFileSync('qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs', 'utf8');
           const adapter = fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-commerce-adapter.workflow.js', 'utf8');
           const qa = fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-adapter-qa.workflow.js', 'utf8');
-          assert.equal(e.status, 'INTERNAL_READONLY_ADAPTER_IMPLEMENTED_AND_N8N_UAT_12_OF_12_PASS_HTTP_INGRESS_BLOCKED_PENDING_DEDICATED_AUTH');
+          assert.equal(e.status, 'INTERNAL_READONLY_ADAPTER_AND_HEADER_AUTH_INGRESS_IMPLEMENTED_PIN_QA_5_OF_5_NO_HOSTED_WEBHOOK');
           assert.equal(e.n8n.adapter.active, false);
           assert.equal(e.n8n.adapter.published, false);
           assert.equal(e.n8n.adapter.webhookTrigger, false);
           assert.equal(e.n8n.adapter.credentials, 0);
           assert.equal(e.n8n.adapter.aiAgent, false);
           assert.equal(e.n8n.adapter.callerPolicy, 'workflowsFromAList');
-          assert.deepEqual(e.n8n.adapter.allowedCallerIds, [e.n8n.qa.workflowId]);
+          assert.deepEqual(e.n8n.adapter.allowedCallerIds, [e.n8n.qa.workflowId, e.n8n.ingress.workflowId]);
           assert.equal(e.n8n.qa.active, false);
           assert.equal(e.n8n.qa.published, false);
           assert.equal(e.n8n.qa.executionId, '5360');
@@ -74,6 +75,16 @@ jobs:
           assert.equal(e.n8n.sideEffects.aiCalls, 0);
           assert(e.n8n.cases.length === 12 && e.n8n.cases.every(x => x.pass === true));
           assert.equal(e.n8n.authorityLimitations.storeLevelRls, 'NOT_VERIFIED');
+          assert.equal(e.n8n.ingress.workflowId, 'JZL4p8tLb65eU3aB');
+          assert.equal(e.n8n.ingress.active, false);
+          assert.equal(e.n8n.ingress.published, false);
+          assert.equal(e.n8n.ingress.webhook.authentication, 'headerAuth');
+          assert.equal(e.n8n.ingress.webhook.credentialId, 'IS2XrqEFUDv7aGsh');
+          assert.equal(e.n8n.ingress.webhook.secretValueInspected, false);
+          assert.equal(e.n8n.ingress.settings.saveDataSuccessExecution, 'none');
+          assert.equal(e.n8n.ingress.settings.saveDataErrorExecution, 'none');
+          assert.equal(e.n8n.ingress.pinTests.passed, 5);
+          assert.equal(e.n8n.ingress.pinTests.httpHeaderAuthRealNetworkTested, false);
           assert.equal(e.worker.deployed, false);
           assert.equal(e.worker.newBindingsCreated, 0);
           assert.equal(e.worker.n8nWebhookConfigured, false);
@@ -93,4 +104,4 @@ jobs:
           console.log('V1855_REAL_N8N_READONLY_UAT_12_OF_12_PASS_WORKER_CANDIDATE_NOT_DEPLOYED');
           JS
       - name: Production and public Widget remain disabled
-        run: echo 'INTERNAL READ-ONLY ADAPTER ONLY. No public webhook, no credential, no Worker binding/deployment, no Store RLS claim, no order/stock writes, no customer order/PII reads, no provider sends, no production.'
+        run: echo 'INACTIVE HEADER-AUTH WEBHOOK DRAFT ONLY. Dedicated credential linked, secret not retrieved. No published webhook, no Worker binding/deployment, no Store RLS claim, no order/stock writes, no customer order/PII reads, no provider sends, no production.'
