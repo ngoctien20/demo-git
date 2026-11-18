@@ -191,3 +191,12 @@ The user explicitly approved the V14.4 hosted canary scope. The following Cloudf
 **PRIVATE HOSTED CANARY DEPLOYED; REAL ACCESS LOGIN/NEGATIVE IDENTITY UAT PENDING; COMMERCE ROUTES LOCKED; NO N8N ADAPTER; NO ORDER/INVENTORY WRITES; NO PROVIDER SENDS; NO PRODUCTION.**
 
 The Store A/B RLS and tenant/store authority gates remain unchanged and unverified.
+
+
+### Latest source CI after hosted deployment
+
+- GitHub Actions [run #44263812363](https://github.com/ngoctien20/demo-git/actions/runs/44263812363): **SUCCESS — 177/177 passed, 0 failed, 0 skipped**.
+- This run validates the actual committed hosted-canary evidence and confirms the approved Worker/Access deployment is present while the remaining production, n8n bridge, Store RLS and replay gates stay closed.
+- The CI run is source/evidence validation and synthetic runtime tests; it does not replace the pending browser login through the real Cloudflare edge.
+
+**Current decision:** `V18.5.4_PRIVATE_HOSTED_CANARY_DEPLOYED / N8N_READONLY_UAT_9_OF_9 / SOURCE_CI_177_OF_177 / REAL_OWNER_ACCESS_LOGIN_PENDING / SECOND_IDENTITY_DENY_PENDING / COMMERCE_LOCKED / PRODUCTION_NO_GO`.
