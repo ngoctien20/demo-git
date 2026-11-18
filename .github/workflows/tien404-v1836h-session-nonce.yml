@@ -1,0 +1,164 @@
+name: TIEN404 V18.3.6H Trusted Session and Durable Nonce PG17 QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836g-private-signed-authority-preflight-20261118
+    paths:
+      - "qa/v18.3.6h/**"
+      - ".github/workflows/tien404-v1836h-session-nonce.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836h-session-nonce
+  cancel-in-progress: true
+jobs:
+  trusted-session-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run G predecessor regression (93 signed authority / review tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            | tee "$RUNNER_TEMP/v1836h-g-regression.tap"
+          grep -q '^# tests 93$' "$RUNNER_TEMP/v1836h-g-regression.tap"
+          grep -q '^# pass 93$' "$RUNNER_TEMP/v1836h-g-regression.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/v1836h-g-regression.tap"
+          echo V18_3_6H_G_REGRESSION_93_PASS
+      - name: Run Trusted Supabase Session Adapter contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            | tee "$RUNNER_TEMP/v1836h-session.tap"
+          grep -q '^# tests 27$' "$RUNNER_TEMP/v1836h-session.tap"
+          grep -q '^# pass 27$' "$RUNNER_TEMP/v1836h-session.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/v1836h-session.tap"
+          echo V18_3_6H_TRUSTED_SESSION_ADAPTER_27_PASS
+      - name: Run separate security reviewer evidence gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6h/test-independent-security-gate.mjs \
+            | tee "$RUNNER_TEMP/v1836h-review.tap"
+          grep -q '^# tests 20$' "$RUNNER_TEMP/v1836h-review.tap"
+          grep -q '^# pass 20$' "$RUNNER_TEMP/v1836h-review.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/v1836h-review.tap"
+          echo V18_3_6H_SIGNED_REVIEW_EVIDENCE_20_PASS
+      - name: Verify no credential or embedded private key in H implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const files=['trusted-session-adapter.mjs','independent-security-gate.mjs'];
+          const source=files.map(x=>readFileSync('qa/v18.3.6h/'+x,'utf8')).join('\n');
+          for(const bad of [/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,/SUPABASE_SERVICE_ROLE_KEY\s*=/,/Bearer\s+eyJ[A-Za-z0-9_-]+/]) {
+            if(bad.test(source)) throw Error('SENSITIVE_CODE_DETECTED');
+          }
+          console.log('V18_3_6H_SOURCE_SECRET_SCAN_PASS');
+          NODE
+  disposable-pg17-nonce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout synthetic SQL
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build isolated PostgreSQL 17.12 and pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.h" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update \
+            && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap \
+            && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836h-pgtap -f "$RUNNER_TEMP/Dockerfile.h" "$RUNNER_TEMP"
+      - name: Start disposable DB without network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836h-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836h-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836h-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836h-pg17 pg_isready -U postgres
+          docker exec tien404-v1836h-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836h_disposable;'
+      - name: Apply durable private nonce schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836h-pg17 psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d tien404_v1836h_disposable \
+            < qa/v18.3.6h/01_NONCE_PG17_DISPOSABLE.sql
+      - name: Run 34 real PostgreSQL pgTAP nonce tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836h-pg17 psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d tien404_v1836h_disposable \
+            < qa/v18.3.6h/02_PGTAP_NONCE.sql | tee "$RUNNER_TEMP/h-nonce.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/h-nonce.tap"; then exit 1; fi
+          grep -q '^1\.\.34$' "$RUNNER_TEMP/h-nonce.tap"
+          grep -q 'V18_3_6H_PGTAP_NONCE_FINISHED' "$RUNNER_TEMP/h-nonce.tap"
+          echo V18_3_6H_PG17_NONCE_34_PASS
+      - name: Independent SQL connections race to consume identical JTI
+        shell: bash
+        run: |
+          set -euo pipefail
+          CALL="qa_h_private.consume_verified_nonce('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001000',repeat('a',64),repeat('b',64),repeat('c',64),clock_timestamp()+interval '45 seconds')"
+          for n in 1 2; do
+            docker exec tien404-v1836h-pg17 psql -X -At -v ON_ERROR_STOP=1 \
+              -U postgres -d tien404_v1836h_disposable \
+              -c "SET ROLE tien404_h_nonce_caller; SELECT $CALL;" \
+              > "$RUNNER_TEMP/h-nonce-race-$n.log" 2>&1 &
+            if test "$n" = "1"; then pid1=$!; else pid2=$!; fi
+          done
+          wait "$pid1"
+          wait "$pid2"
+          count_accepted=$(cat "$RUNNER_TEMP"/h-nonce-race-*.log | grep -c '^ACCEPTED$' || true)
+          count_replay=$(cat "$RUNNER_TEMP"/h-nonce-race-*.log | grep -c '^REPLAY$' || true)
+          test "$count_accepted" = "1"
+          test "$count_replay" = "1"
+          count=$(docker exec tien404-v1836h-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836h_disposable \
+            -c "SELECT count(*) FROM qa_h_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000001000';")
+          test "$count" = "1"
+          echo V18_3_6H_CROSS_CONNECTION_ATOMIC_REPLAY_PASS
+      - name: Restart database and verify nonce survives process restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker restart tien404-v1836h-pg17 >/dev/null
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836h-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          CALL="qa_h_private.consume_verified_nonce('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001000',repeat('a',64),repeat('b',64),repeat('c',64),clock_timestamp()+interval '45 seconds')"
+          result=$(docker exec tien404-v1836h-pg17 psql -X -At -v ON_ERROR_STOP=1 \
+             -U postgres -d tien404_v1836h_disposable \
+             -c "SET ROLE tien404_h_nonce_caller; SELECT $CALL;" | tail -1)
+          test "$result" = "REPLAY"
+          persisted=$(docker exec tien404-v1836h-pg17 psql -X -At -v ON_ERROR_STOP=1 \
+             -U postgres -d tien404_v1836h_disposable \
+             -c "SELECT count(*) FROM qa_h_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000001000';")
+          test "$persisted" = "1"
+          echo V18_3_6H_RESTART_PERSISTENCE_REPLAY_PASS
+      - name: Destroy disposable DB container
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836h-pg17 >/dev/null 2>&1 || true
