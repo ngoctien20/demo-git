@@ -136,7 +136,7 @@ test('I15 Store membership revoked between checks and DB admission denied',async
 });
 test('I16 PostgreSQL outage fails closed and does not return read permission',async()=>{
  const f=fixture(),token=await f.make();f.db.throwError=true;
- await denied(()=>f.redeem(token),'ATOMIC_ADMISSION_UNAVAILABLE');
+ await denied(()=>f.redeem(token),'NONCE_STORE_UNAVAILABLE');
 });
 test('I17 unexpected DB result such as object status accepted is DENY',async()=>{
  const f=fixture(),token=await f.make();
