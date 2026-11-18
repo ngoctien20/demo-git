@@ -1,4 +1,6 @@
 \set ON_ERROR_STOP on
+\pset tuples_only on
+\pset format unaligned
 \echo V18_3_6F_PGTAP_STARTED
 DO $guard$ BEGIN
  IF current_database()<>'tien404_v1836e_disposable' OR current_setting('server_version_num')::int NOT BETWEEN 170000 AND 179999
