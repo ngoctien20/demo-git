@@ -51,11 +51,13 @@ for(const [name,fn] of [
  ['invalid actor slot',()=>({resolveStoreAuthority:async()=>({active:true,ownerVerified:true,slot:'QA_C',
    tenantRef:'t',storeRef:'s'})})],
  ['consent not persisted',()=>({recordExplicitConsent:async()=>({persisted:false})})],
+ ['unverified challenge',()=>({verifyConsentChallenge:async()=>({verified:false})})],
+ ['replayed challenge',()=>({verifyConsentChallenge:async()=>({verified:true,singleUseConsumed:false,consentIntentVerified:true})})],
  ['Auth service throws',()=>({verifySession:async()=>{throw Error('offline')}})]
 ])test('DENY '+name,async()=>{const {api}=setup(fn());assert.equal((await api.intake(accepted)).status,'DENY');});
 test('untrusted client fields never replace server authority',async()=>{
  const {api,calls}=setup();
- const ret=await api.intake({bearer:token,requestedScope:scope,subjectRef:'evil',storeRef:'evil',tenantRef:'evil',slot:'QA_B'});
+ const ret=await api.intake({...accepted,subjectRef:'evil',storeRef:'evil',tenantRef:'evil',slot:'QA_B'});
  assert.equal(ret.slot,'QA_A');assert.equal(calls[3][1].storeRef,'A');
 });
 test('reviewPair denies missing private authority',async()=>{
