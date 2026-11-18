@@ -156,6 +156,16 @@
     "passed": 177,
     "failed": 0,
     "skipped": 0,
-    "exactHeadBeforeEvidenceAppend": "de84d07a52a33d37a346ac1eb82e9f8bc4579eaf"
+    "exactHeadBeforeEvidenceAppend": "de84d07a52a33d37a346ac1eb82e9f8bc4579eaf",
+    "latestRun": {
+      "workflowRunId": 44265516587,
+      "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44265516587",
+      "status": "success",
+      "tests": 177,
+      "passed": 177,
+      "failed": 0,
+      "skipped": 0,
+      "commit": "ce5bbd54a77301ac817a2e18138b01b466a5c05e"
+    }
   }
 }
