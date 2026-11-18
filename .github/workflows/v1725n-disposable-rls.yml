@@ -1,0 +1,60 @@
+name: TIEN404 V17.25N — Disposable PG17 RLS Cutover (NO HOST)
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725n/**'
+      - '.github/workflows/v1725n-disposable-rls.yml'
+permissions:
+  contents: read
+jobs:
+  rls-cutover-synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v1725n_synthetic_ci_only
+          POSTGRES_DB: t404_v180_p0d_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0d_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: v1725n_synthetic_ci_only
+      PGDATABASE: t404_v180_p0d_ci
+    steps:
+      - name: Checkout pinned QA sources
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Guard disposable scope and prohibit hosted endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = "t404_v180_p0d_ci"
+          grep -q 'V18_P0D_DISPOSABLE_PG17_ONLY' qa/v180-p0d/store-scoped-rls-disposable.sql
+          grep -q 'V1725N_DISPOSABLE_PG17_ONLY' qa/v1725n/rls-cutover-disposable.sql
+          ! grep -Eqi 'supabase\.co|onrender\.com|app\.n8n\.cloud|service_role|curl |wget |https?://' qa/v1725n/rls-cutover-disposable.sql
+      - name: Run pre-existing P0D synthetic fixture on disposable PG17
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v180-p0d/store-scoped-rls-disposable.sql
+      - name: Validate PERMISSIVE OR versus RESTRICTIVE AND using PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v1725n/rls-cutover-disposable.sql
+      - name: Run source-only fail-closed legacy Orders regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s qa/v1725n -p 'test_*.py' -v
+      - name: State no hosted admission
+        run: echo 'V1725N_SYNTHETIC_ONLY; NO_HOSTED_MIGRATION; NO_REAL_JWT; NO_PROVIDER_SEND'
