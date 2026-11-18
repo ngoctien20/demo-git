@@ -145,9 +145,9 @@ jobs:
           node-version: '22'
       - name: Install test-only Cloudflare Workers Vitest integration
         working-directory: qa/channel-v1855/runtime-qa
-        run: npm install --no-audit --no-fund --ignore-scripts=false
+        run: yarn install --no-lockfile --non-interactive
       - name: Exercise SQLite Durable Object in actual workerd runtime, offline
         working-directory: qa/channel-v1855/runtime-qa
-        run: npm test
+        run: yarn test
       - name: Confirm no Cloudflare deployment performed
         run: echo 'WORKERD_LOCAL_QA_ONLY. No API token, no namespace, no binding, no deployed Worker, no secrets, no n8n traffic.'
