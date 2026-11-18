@@ -1,0 +1,36 @@
+name: TIEN404 V17.25Q — Store-Aware Contract NO-HOST
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725q/**'
+      - '.github/workflows/v1725q-store-aware-contract-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  store-aware-contract-negative-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout source-only QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate machine-readable contract files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool qa/v1725q/api-contract.json >/dev/null
+          python3 -m json.tool qa/v1725q/legacy-deprecation-matrix.json >/dev/null
+          echo 'V1725Q_CONTRACT_JSON_VALID'
+      - name: Install pinned synthetic QA dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv-v1725q
+          .venv-v1725q/bin/python -m pip install --disable-pip-version-check             fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Compile and run Store-aware dual-owner negative suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          .venv-v1725q/bin/python -m py_compile             qa/v1725q/store_api_contract.py             qa/v1725q/test_store_api_contract.py
+          PYTHONPATH=qa/v1725q .venv-v1725q/bin/python -m pytest -q qa/v1725q/test_store_api_contract.py
+      - name: Explicit no-host release boundary
+        run: echo 'V1725Q_SYNTHETIC_CONTRACT_ONLY; REAL_SOCKET_CONNECT_BLOCKED; NO_REAL_JWT; NO_SUPABASE_CREDENTIAL; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_DDL_DML; NO_RLS_CUTOVER; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
