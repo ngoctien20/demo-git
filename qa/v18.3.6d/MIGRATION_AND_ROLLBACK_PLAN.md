@@ -27,6 +27,8 @@ Do not seed real Store A/B. Use disposable synthetic fixtures first. Keep existi
 
 ## Phase 2 — Additive Commerce schema
 
+Before adding any NOT VALID Store check, inventory every privileged and application writer. The live project currently has the `public.save_merchant_product` SECURITY DEFINER RPC executable by `authenticated`; it is tenant-scoped and not Store-aware. Its callers must be identified and the RPC must be replaced with an approved Store-aware command or isolated/revoked before the check is applied. Do not allow it to keep creating rows with a NULL Store ID. Messenger's legacy Google Sheets order tools are a separate writer and must not be mistaken for Commerce Core.
+
 Add nullable `store_id` to the six Commerce tables. Add:
 - `UNIQUE (tenant_id, store_id, id)` keys on referenced parents;
 - composite Tenant+Store FKs listed in `CANONICAL_STORE_AUTHORITY_DESIGN.md`;
@@ -82,7 +84,7 @@ Messenger, Zalo and Website must call one trusted Store-aware adapter. Every ope
 - idempotency/replay;
 - audit/outbox atomicity.
 
-A service-role key bypasses RLS. Keep it server-side and do not expose general table access to n8n customer-facing workflows. Prefer narrow operations with explicit authorization and no caller-selected Store.
+A service-role key bypasses RLS. Keep it server-side and do not expose general table access to n8n customer-facing workflows. Prefer a dedicated least-privilege runtime role or narrow private operation that verifies the canonical installation and capability internally; if SECURITY DEFINER is unavoidable, it must be non-exposed, pinned to `search_path = ''`, schema-qualified, audited and deny arbitrary Store selection. Never rely on authenticated-user RLS tests to prove the service-role path.
 
 ## Rollback
 
