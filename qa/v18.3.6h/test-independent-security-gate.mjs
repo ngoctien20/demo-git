@@ -47,7 +47,7 @@ test('R03 absent evidence blocked',()=>{
  assert.equal(res.status,'BLOCKED');
 });
 test('R04 reviewer signature tampering blocked',()=>{
- const f=fixture(),r=f.receipt();r.signature=r.signature.slice(0,-2)+'AA';
+ const f=fixture(),r=f.receipt();r.signature=(r.signature[0]==='A'?'B':'A')+r.signature.slice(1);
  const res=f.check({receipt:r});assert.ok(res.blockers.includes('REVIEWER_SIGNATURE_NOT_VERIFIED'));
 });
 test('R05 signed payload modification rejected',()=>{

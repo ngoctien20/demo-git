@@ -202,9 +202,10 @@ test('S31 session revoked after issuance fails redemption',async()=>{
   f.sessions.get('session-A').active=false;
   await denied(()=>f.redeem(token),'SESSION_NOT_VERIFIED');
 });
-test('S32 text appended to signature invalidates token',async()=>{
-  const f=fixture(),token=await f.make();
-  await denied(()=>f.redeem(token.slice(0,-2)+'AA'),'BAD_SIGNATURE');
+test('S32 deterministic signature mutation invalidates token',async()=>{
+  const f=fixture(),token=await f.make(),parts=token.split('.');
+  parts[2]=(parts[2][0]==='A'?'B':'A')+parts[2].slice(1);
+  await denied(()=>f.redeem(parts.join('.')),'BAD_SIGNATURE');
 });
 test('S33 modified Store claim with old signature is rejected',async()=>{
   const f=fixture(),token=await f.make(),parts=token.split('.');
