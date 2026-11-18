@@ -10,11 +10,11 @@
     "number": 413,
     "state": "OPEN_DRAFT",
     "branch": "work/v1725q-store-aware-contract-nohost-20261118",
-    "ci_head": "a04867731b255b8157da7755da9142ed0b6f42f1"
+    "ci_head": "108d0565b99f36bdbb79ebea2379716c04f27e1a"
   },
   "ci": {
-    "run_id": 44266464089,
-    "job_id": 134672109787,
+    "run_id": 44266922645,
+    "job_id": 134673642937,
     "conclusion": "success",
     "parent_exact_source_tests": 28,
     "parent_exact_source_duration": "0.28s",
