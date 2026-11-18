@@ -1,0 +1,68 @@
+name: TIEN404 V18.3.6B Full PostgreSQL 17 Migration Replay
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "qa/v18.3.6b/**"
+      - ".github/workflows/tien404-v1836b-pg17.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836b-pg17-replay
+  cancel-in-progress: true
+jobs:
+  full-disposable-migration-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout QA-only source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Reconstruct and verify exact original V18.3.6 SQL bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tien404-v1836b-sql"
+          base64 --decode "$GITHUB_WORKSPACE/qa/v18.3.6b/source/00_DISPOSABLE_ONLY_PREFLIGHT.sql.gz.b64" | gzip -dc > "$RUNNER_TEMP/tien404-v1836b-sql/00_DISPOSABLE_ONLY_PREFLIGHT.sql"
+          base64 --decode "$GITHUB_WORKSPACE/qa/v18.3.6b/source/01_DISPOSABLE_MIGRATION.sql.gz.b64" | gzip -dc > "$RUNNER_TEMP/tien404-v1836b-sql/01_DISPOSABLE_MIGRATION.sql"
+          base64 --decode "$GITHUB_WORKSPACE/qa/v18.3.6b/source/02_DISPOSABLE_AB_RLS_ACCEPTANCE.sql.gz.b64" | gzip -dc > "$RUNNER_TEMP/tien404-v1836b-sql/02_DISPOSABLE_AB_RLS_ACCEPTANCE.sql"
+          cd "$RUNNER_TEMP/tien404-v1836b-sql"
+          printf '%s  %s\n' \
+            "b08eb8b3d8d18e839a0116cde3945505aa92ef7225c7d38c02f70487c6a6e508" "00_DISPOSABLE_ONLY_PREFLIGHT.sql" \
+            "29ef6c47e632f66c227e574d1968f294ac70bd30f1f19bb71ea95b3d570408dc" "01_DISPOSABLE_MIGRATION.sql" \
+            "b8067f22ccd110afda820902a09c8df16cf752facee936b96b0f163385d7dbaa" "02_DISPOSABLE_AB_RLS_ACCEPTANCE.sql" \
+            | sha256sum --check --strict
+          echo "V18_3_6B_SOURCE_HASH_VERIFICATION_PASS"
+      - name: Start isolated PostgreSQL 17.12 with no ports or external network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17.12
+          docker run -d --name tien404-v1836b-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_test_only postgres:17.12
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836b-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836b-pg17 pg_isready -U postgres
+          docker exec tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836_disposable;'
+          docker exec tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'SELECT version();'
+      - name: Replay original preflight, full migration, A/B RLS acceptance and final mapping audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQLDIR="$RUNNER_TEMP/tien404-v1836b-sql"
+          docker exec -i tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836_disposable < "$SQLDIR/00_DISPOSABLE_ONLY_PREFLIGHT.sql"
+          echo "V18_3_6B_PREFLIGHT_PASS"
+          docker exec -i tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836_disposable < "$SQLDIR/01_DISPOSABLE_MIGRATION.sql"
+          echo "V18_3_6B_FULL_MIGRATION_PASS"
+          docker exec -i tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836_disposable < "$SQLDIR/02_DISPOSABLE_AB_RLS_ACCEPTANCE.sql"
+          echo "V18_3_6B_AB_RLS_ACCEPTANCE_PASS"
+          docker exec -i tien404-v1836b-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836_disposable < "$GITHUB_WORKSPACE/qa/v18.3.6b/03_DISPOSABLE_FINAL_AUDIT.sql"
+      - name: Remove disposable PostgreSQL container even after failure
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836b-pg17 >/dev/null 2>&1 || true
