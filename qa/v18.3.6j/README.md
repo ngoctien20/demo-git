@@ -30,3 +30,11 @@
 `CANONICAL_STORE_SCHEMA_STAGING`: BLOCKED.
 `INDEPENDENT_HUMAN_SECURITY_REVIEW`: BLOCKED.
 `PRODUCTION_GATEWAY/ORDER_WRITE/PROVIDER_SEND/RELEASE`: NO-GO.
+
+## QA stabilization and scope exceptions
+
+- First CI applied the schema but exposed a missing argument in an EXECUTE GRANT. Fixed exact SQL function signature.
+- Second CI passed 49/50 pgTAP assertions; missing session returned stale-session denial rather than the more precise missing-session denial. Fixed distinct fail-closed error handling.
+- A subsequent CI detected a lock-upgrade deadlock risk: J freshness check took FOR SHARE and I took FOR UPDATE on the same session row. J now takes FOR UPDATE immediately. A verified run passed 50/50 pgTAP and all four PostgreSQL concurrent checks.
+- Inherited G/H CI also exposed two random false negatives from test tampering of a signature suffix with a constant that could equal the original suffix. J changes **two inherited QA-only test files** to deterministically flip one signature character. No G/H runtime/production code changed.
+- Therefore, the Draft PR file scope is J QA files + two inherited QA test-only fixes + one dedicated CI workflow. Any final acceptance must rerun the full CI on this exact commit.
