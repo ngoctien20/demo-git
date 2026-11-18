@@ -15,6 +15,7 @@
 - Public RLS baseline: 20/20 public tables RLS-enabled; 31 permissive policies; zero restrictive policies.
 - Current six Commerce table policies are SELECT-only; products allows active tenant members, other five business-data tables allow active tenant owner/manager.
 - Existing `products_tenant_id_sku_key`: `UNIQUE (tenant_id, sku)`.
+- Live `public.conversations` columns are `id`, `tenant_id`, `channel`, `external_reference`, `created_at`; channel CHECK permits `web`, `messenger`, `zalo`, `line`. No `channel_installation_id` exists yet; D adds an installation provenance contract.
 - Existing `public.save_merchant_product` is a SECURITY DEFINER RPC executable by authenticated and is not Store-aware; it is a writer gate before any Store NOT VALID check.
 - R1 synthetic Store/Bot mapping: two scopes to two different Auth Tenants, not same-Tenant Store A/B.
 - n8n Commerce DataTables: 16 total; 14 tenant-scoped; zero Store ID/Store Key columns.
