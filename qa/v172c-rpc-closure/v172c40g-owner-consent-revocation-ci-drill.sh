@@ -87,16 +87,19 @@ wait "$consent_first_pid"
 event_d="$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT event_id FROM tien404_v172c40g_qa.owner_consent_events WHERE challenge_digest=repeat('d',64);")"
 [[ -n "$event_d" ]]
 [[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_d);")" == "DENY" ]] || { echo "FAIL: post-consent membership revocation did not deny"; exit 15; }
+deny "idempotency-after-membership-revocation" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('d',64),'session-d','idempotency-key-d','ACCEPT');" "DENY_OWNER_MEMBERSHIP_REVOKED_OR_INVALID"
 
 # Explicit consent withdrawal is an append-only event and invalidates current review.
 event_e_row="$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT status || '|' || event_id FROM tien404_v172c40g_qa.consume_owner_consent(repeat('e',64),'session-e','idempotency-key-e','ACCEPT');")"
 event_e="${event_e_row##*|}"
 psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.revoke_owner_consent($event_e,'owner-withdrew-consent');" >/dev/null
 [[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_e);")" == "DENY" ]]
+deny "idempotency-after-consent-revocation" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('e',64),'session-e','idempotency-key-e','ACCEPT');" "DENY_CONSENT_REVOKED_OR_STALE"
 
 # Revoked session also invalidates an earlier event, without editing history.
 psql -X -qAt -v ON_ERROR_STOP=1 -c "UPDATE tien404_v172c40g_qa.owner_sessions SET active=false,revoked_at=clock_timestamp() WHERE session_ref='session-a';" >/dev/null
 [[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_a);")" == "DENY" ]]
+deny "idempotency-after-session-revocation" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('a',64),'session-a','idempotency-key-a-0001','ACCEPT');" "DENY_SESSION_INACTIVE_OR_REVOKED"
 
 deny "consent-event-mutation" "UPDATE tien404_v172c40g_qa.owner_consent_events SET consent_action='DECLINE' WHERE event_id=$event_a;" "DENY_APPEND_ONLY_EVENT_MUTATION"
 deny "revocation-event-mutation" "DELETE FROM tien404_v172c40g_qa.owner_revocation_events;" "DENY_APPEND_ONLY_EVENT_MUTATION"
