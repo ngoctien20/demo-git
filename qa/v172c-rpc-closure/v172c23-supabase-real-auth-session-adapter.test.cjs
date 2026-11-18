@@ -44,6 +44,7 @@ for(const [name,adapters] of [
  ['HTTP redirect',{fetchImpl:async()=>({status:302})}],
  ['Auth mismatch',{fetchImpl:async()=>({status:200,json:async()=>({id:sid})})}],
  ['anonymous user',{fetchImpl:async()=>({status:200,json:async()=>({id:uid,is_anonymous:true})})}],
+ ['unknown anonymous status',{fetchImpl:async()=>({status:200,json:async()=>({id:uid})})}],
  ['Auth service offline',{fetchImpl:async()=>{throw Error('offline');}}],
  ['missing active session',{checkActiveSession:async()=>({active:false})}],
  ['revoked session',{checkActiveSession:async()=>({active:true,subjectRef:uid,sessionId:sid,revoked:true})}],
