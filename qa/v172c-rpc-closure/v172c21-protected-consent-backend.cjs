@@ -8,7 +8,7 @@ const slots=['QA_A','QA_B'];
 const scope='synthetic_catalog_readonly_no_send_no_write';
 function createPrivateConsentBackend(services){
  const names=['verifySession','resolveStoreAuthority','verifyConsentChallenge','recordExplicitConsent','getPrivateEvidence',
-  'getTrustedAuthority','getSignedReceipts'];
+  'getTrustedAuthority','getSignedReceipts','verifyReviewerSession'];
  if(!services || names.some(n=>typeof services[n]!=='function')) throw Error('MISSING_TRUSTED_SERVER_ADAPTERS');
  async function intake({bearer,requestedScope,consentAction,challenge}={}){
   // bearer is an internal server-side input from authorization header;
@@ -20,8 +20,9 @@ function createPrivateConsentBackend(services){
   try{
    const session=await services.verifySession(bearer.slice(7));
    if(!session || session.verified!==true || session.active!==true ||
-      session.expiresAtMs<=Date.now() || !session.sessionEvidenceRef ||
-      !session.subjectRef || !session.sessionIdVerified) return fail('SESSION_NOT_VERIFIED');
+      !Number.isFinite(session.expiresAtMs) || session.expiresAtMs<=Date.now() ||
+      !session.sessionEvidenceRef ||
+      !session.subjectRef || session.sessionIdVerified!==true) return fail('SESSION_NOT_VERIFIED');
    const binding=await services.resolveStoreAuthority(session.subjectRef);
    if(!binding || binding.active!==true || binding.ownerVerified!==true ||
       !binding.tenantRef || !binding.storeRef || !slots.includes(binding.slot))
@@ -41,14 +42,25 @@ function createPrivateConsentBackend(services){
    return {status:'PRIVATE_CONSENT_RECORDED_NOT_UAT_GO',slot:binding.slot};
   }catch{return fail('PRIVATE_SERVICE_UNAVAILABLE');}
  }
- async function reviewPair(){
+ async function reviewPair({reviewerBearer}={}){
+  if(typeof reviewerBearer!=='string' || !reviewerBearer.startsWith('Bearer ') ||
+     reviewerBearer.length<20 || reviewerBearer.length>8192)
+   return fail('REVIEWER_AUTH_REQUIRED');
   try{
+   const reviewer=await services.verifyReviewerSession(reviewerBearer.slice(7));
+   if(!reviewer || reviewer.verified!==true || reviewer.active!==true ||
+      reviewer.independent===false || reviewer.role!=='independent_security_reviewer' ||
+      reviewer.sessionIdVerified!==true || !Number.isFinite(reviewer.expiresAtMs) ||
+      reviewer.expiresAtMs<=Date.now() || !reviewer.subjectRef)
+    return fail('REVIEWER_NOT_AUTHORIZED');
    // Must be called only from an independently authenticated operator route.
    // This library is not HTTP middleware or an authorization boundary by itself.
    const [authority,evidence,receipts]=await Promise.all([
     services.getTrustedAuthority(),services.getPrivateEvidence(),services.getSignedReceipts()
    ]);
    if(!authority || !evidence || !receipts) return fail('MISSING_PRIVATE_EVIDENCE');
+   if(reviewer.subjectRef===evidence?.QA_A?.subjectRef || reviewer.subjectRef===evidence?.QA_B?.subjectRef)
+    return fail('REVIEWER_NOT_INDEPENDENT');
    return preflight({authority,evidence,receipts,now:Date.now()});
   }catch{return fail('PRIVATE_REVIEW_UNAVAILABLE');}
  }
