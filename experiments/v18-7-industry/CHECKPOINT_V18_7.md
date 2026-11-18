@@ -51,3 +51,7 @@ Only new isolated PR files. No Supabase schema/table/role/credential writes; no 
 Rollback is closing Draft PR or reverting new files; no runtime rollback necessary.
 
 Next: review this PR, verify CI for final branch commit, design canonical store authority migration preview, then implement approved private read-only industry adapter under a separate gate. Do not merge or publish without explicit owner approval.
+
+## V18.7.5 Continuation
+
+Added same-tenant Store A/C simulated isolation, distinct channel mock previews, disabled connection negative checks; PR #420 carries separate disposable PG17 Store Authority candidate. The QA actors are fixtures not Supabase Auth; production integration and real Owner A/B remain BLOCKED. Review CI on final HEAD for exact test evidence.

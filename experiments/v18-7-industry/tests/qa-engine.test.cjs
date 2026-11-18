@@ -21,7 +21,7 @@ test("grocery unit conversion stays exact", () => { const r=previewQaQuote(previ
 test("building materials quotation from fixture", () => { const r=previewQaQuote(preview("b",materials),{sku:"QA-B001",quantity:3,unit:"bao"}); assert.equal(r.total_vnd,"255000"); assert.equal(r.ok,true); });
 test("Store A cannot quote Store B product", () => assert.equal(previewQaQuote(preview(),{sku:"QA-B001",quantity:1,unit:"bao"}).code,"PRODUCT_NOT_IN_STORE"));
 test("Store B cannot quote Store A product", () => assert.equal(previewQaQuote(preview("b",materials),{sku:"QA-G001",quantity:1,unit:"goi"}).code,"PRODUCT_NOT_IN_STORE"));
-test("unknown store actor denied", () => assert.equal(buildQaPreview({actor_key:"qa_owner_c",channel:"website",profile:grocery,override:override()}).code,"UNKNOWN_QA_ACTOR"));
+test("unknown store actor denied", () => assert.equal(buildQaPreview({actor_key:"qa_owner_unknown",channel:"website",profile:grocery,override:override()}).code,"UNKNOWN_QA_ACTOR"));
 test("Store A profile assigned to B denied", () => assert.equal(buildQaPreview({actor_key:"qa_owner_b",channel:"website",profile:grocery,override:override("b")}).code,"STORE_PROFILE_SCOPE_MISMATCH"));
 test("Store B override attached to A denied", () => assert.equal(buildQaPreview({actor_key:"qa_owner_a",channel:"website",profile:grocery,override:override("b")}).code,"STORE_PROFILE_SCOPE_MISMATCH"));
 test("override cannot enable write tool", () => {const o=override(); o.requested_tools.push("create_order"); assert.equal(validateOverride(o).code,"OVERRIDE_TOOL_ESCALATION");});

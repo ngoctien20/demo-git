@@ -18,4 +18,4 @@ jobs:
         with:
           node-version: '22'
       - name: No-provider / no-network Industry QA
-        run: node --test experiments/v18-7-industry/tests/qa-engine.test.cjs
+        run: node --test experiments/v18-7-industry/tests/*.test.cjs

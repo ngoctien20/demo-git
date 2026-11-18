@@ -10,10 +10,12 @@ const SKILLS = Object.freeze(["product_lookup", "unit_conversion", "stock_check"
 const QA_ACTORS = Object.freeze({
   qa_owner_a: Object.freeze({ tenant_key: "qa_tenant_a", store_key: "qa_store_a", profile_id: "grocery" }),
   qa_owner_b: Object.freeze({ tenant_key: "qa_tenant_b", store_key: "qa_store_b", profile_id: "building_materials" }),
+  qa_owner_c: Object.freeze({ tenant_key: "qa_tenant_a", store_key: "qa_store_c", profile_id: "grocery" }),
 });
 const QA_CATALOG = Object.freeze([
   Object.freeze({ origin: "SYNTHETIC_QA", tenant_key: "qa_tenant_a", store_key: "qa_store_a", sku: "QA-G001", price_vnd: 12500, stock_base: 100, units: Object.freeze({ goi: 1, loc: 6, thung: 24 }) }),
   Object.freeze({ origin: "SYNTHETIC_QA", tenant_key: "qa_tenant_b", store_key: "qa_store_b", sku: "QA-B001", price_vnd: 85000, stock_base: 60, units: Object.freeze({ bao: 1 }) }),
+  Object.freeze({ origin: "SYNTHETIC_QA", tenant_key: "qa_tenant_a", store_key: "qa_store_c", sku: "QA-G001", price_vnd: 13900, stock_base: 7, units: Object.freeze({ goi: 1, loc: 6, thung: 24 }) }),
 ]);
 const ISSUED_PREVIEWS = new WeakSet(); // QA-only issued-object integrity, NOT production auth.
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
