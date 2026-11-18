@@ -55,3 +55,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c35-atomic-order-commit-ci-drill.sh
       - name: Multi-SKU Stock Reservation, Confirm/Cancel/Expiry & Failure Recovery QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c36-multiline-reservation-release-ci-drill.sh
+      - name: Reservation Expiry Worker Preview and No-Send Outbox Atomicity QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c37-expiry-outbox-atomic-ci-drill.sh
