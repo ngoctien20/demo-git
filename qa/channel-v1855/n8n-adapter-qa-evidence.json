@@ -226,5 +226,17 @@
     "Supabase",
     "Render",
     "customer orders or inventory"
-  ]
+  ],
+  "sourceQA": {
+    "workflowRunId": 44271092019,
+    "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44271092019",
+    "status": "PARTIAL_CODE_TESTS_PASS_EVIDENCE_ASSERTION_FAILED_THEN_CORRECTED",
+    "tests": 119,
+    "passed": 119,
+    "failed": 0,
+    "skipped": 0,
+    "failure": "The post-test evidence step expected the Tenant Resolver to appear as a direct child execution. In reality it is invoked inside Catalog Query and Cart Preview; the adapter execution and all 12 assertions had succeeded.",
+    "correction": "Evidence now records the resolver as invoked successfully through Catalog and Cart; CI assertion corrected to accept that nested execution lineage.",
+    "rerun": "PENDING_GITHUB_ACTIONS_OBSERVATION"
+  }
 }
