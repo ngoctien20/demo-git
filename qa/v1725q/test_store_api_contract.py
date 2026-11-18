@@ -108,8 +108,8 @@ def make_registry():
         {"id": "cb-00000000-0000-4000-8000-000000000002", "tenant_id": T1, "store_id": B, "display_name": "Synthetic B"},
     ]
     conversations = [
-        {"id": "da-00000000-0000-4000-8000-000000000001", "tenant_id": T1, "store_id": A, "channel": "messenger"},
-        {"id": "db-00000000-0000-4000-8000-000000000002", "tenant_id": T1, "store_id": B, "channel": "zalo"},
+        {"id": "d1000000-0000-4000-8000-000000000001", "tenant_id": T1, "store_id": A, "channel": "messenger"},
+        {"id": "d2000000-0000-4000-8000-000000000002", "tenant_id": T1, "store_id": B, "channel": "zalo"},
     ]
     messages = [
         {"id": "ma-00000000-0000-4000-8000-000000000001", "tenant_id": T1, "store_id": A,
@@ -369,7 +369,7 @@ def test_conversation_collection_is_store_scoped():
 
 
 def test_messages_require_parent_conversation_in_selected_store():
-    conversation_b = "db-00000000-0000-4000-8000-000000000002"
+    conversation_b = "d2000000-0000-4000-8000-000000000002"
     response = request(make_app(), "GET",
                        f"/api/v2/tenants/{T1}/stores/{A}/conversations/{conversation_b}/messages")
     assert response.status_code == 404
@@ -377,7 +377,7 @@ def test_messages_require_parent_conversation_in_selected_store():
 
 
 def test_messages_return_only_selected_store_conversation():
-    conversation_a = "da-00000000-0000-4000-8000-000000000001"
+    conversation_a = "d1000000-0000-4000-8000-000000000001"
     response = request(make_app(), "GET",
                        f"/api/v2/tenants/{T1}/stores/{A}/conversations/{conversation_a}/messages")
     assert response.status_code == 200
