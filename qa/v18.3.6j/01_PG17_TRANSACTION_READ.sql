@@ -107,7 +107,7 @@ REVOKE ALL ON FUNCTION qa_i_private.transaction_bound_catalog_read(
  text,text,uuid,text,text,text,text,text,text,text,timestamptz,uuid)
  FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION qa_i_private.transaction_bound_catalog_read(
- text,text,uuid,text,text,text,text,text,text,timestamptz,uuid)
+ text,text,uuid,text,text,text,text,text,text,text,timestamptz,uuid)
  TO tien404_j_gateway;
 -- Deliberately NO grant to real/simulated anonymous, normal actor or I caller.
 \echo V18_3_6J_SCHEMA_READY
