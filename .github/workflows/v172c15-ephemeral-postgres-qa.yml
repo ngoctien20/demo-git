@@ -49,3 +49,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c19-pair-consume-ci-drill.sh
       - name: Orders A/B same-tenant and cross-tenant read/write RLS rollback QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c30-ephemeral-orders-rls-drill.sh
+      - name: Tenant-to-Store migration preview and compatibility QA (ephemeral only; NOT hosted)
+        run: bash qa/v172c-rpc-closure/v172c32-no-write-store-migration-preview-drill.sh
