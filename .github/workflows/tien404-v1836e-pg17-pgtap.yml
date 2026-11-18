@@ -1,0 +1,71 @@
+name: TIEN404 V18.3.6E PG17 pgTAP DML RLS
+on:
+  pull_request:
+    branches:
+      - qa/v1836d-canonical-store-design-20261118
+    paths:
+      - "qa/v18.3.6e/**"
+      - ".github/workflows/tien404-v1836e-pg17-pgtap.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836e-pg17-pgtap
+  cancel-in-progress: true
+jobs:
+  isolated-pg17-pgtap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout QA-only synthetic SQL
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build isolated PG17 image with pgTAP extension
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.tien404" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update \
+            && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap \
+            && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836e-pgtap -f "$RUNNER_TEMP/Dockerfile.tien404" "$RUNNER_TEMP"
+      - name: Start disposable no-network PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836e-pgtap --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836e-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836e-pgtap pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836e-pgtap pg_isready -U postgres
+          docker exec tien404-v1836e-pgtap psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 \
+            -c 'CREATE DATABASE tien404_v1836e_disposable;'
+          docker exec tien404-v1836e-pgtap psql -U postgres -d tien404_v1836e_disposable -X -v ON_ERROR_STOP=1 \
+            -c 'SELECT current_setting('"'server_version'"') AS pg_version;'
+      - name: Apply canonical Store fixture with actual RLS and composite FKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836e-pgtap psql -U postgres -d tien404_v1836e_disposable -X -v ON_ERROR_STOP=1 \
+            < qa/v18.3.6e/01_PG17_DISPOSABLE_SCHEMA.sql
+      - name: Run real pgTAP DML and cross-Store negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836e-pgtap psql -U postgres -d tien404_v1836e_disposable -X -v ON_ERROR_STOP=1 \
+            < qa/v18.3.6e/02_PG17_PGTAP_DML_RLS.sql | tee "$RUNNER_TEMP/v1836e-pgtap.tap"
+          if grep -E '^(not ok|# Looks like you failed)' "$RUNNER_TEMP/v1836e-pgtap.tap"; then
+            echo 'V18_3_6E_PGTAP_NEGATIVE_TEST_FAILED'
+            exit 1
+          fi
+          grep -q '^1\.\.[0-9][0-9]*$' "$RUNNER_TEMP/v1836e-pgtap.tap"
+          grep -q 'V18_3_6E_PGTAP_TEST_SCRIPT_FINISHED' "$RUNNER_TEMP/v1836e-pgtap.tap"
+          echo 'V18_3_6E_FULL_DML_RLS_PGTAP_PASS'
+      - name: Delete disposable database container
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836e-pgtap >/dev/null 2>&1 || true
