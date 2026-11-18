@@ -47,12 +47,14 @@ A valid provider webhook signature proves the event came through the provider's 
 |---|---|---|
 | Meta Messenger / Page | Meta Webhooks documents `X-Hub-Signature-256: sha256=...`, SHA-256 HMAC over the raw notification payload using the Meta App Secret. | Verify exact raw bytes before JSON parsing, constant-time compare, separate GET challenge verification, map the verified Page ID to one active Page installation, record provider event/message idempotency. Never log the App Secret or raw token. |
 | Zalo Official Account | Zalo OA event documentation describes `X-ZEvent-Signature` as `mac=sha256(appId + data + timeStamp + OAsecretKey)` for the documented event family. | Preserve the exact documented input representation; verify event-family-specific contract, app_id and oa_id, timestamp/replay and installation binding. Do not assume one formula covers every OA event, ZNS/ZBS product or Zalo Bot. |
-| Zalo Bot | Separate product and credential/event contract from Zalo OA. | **BLOCKED** until the exact Bot webhook/API product and current official signature/auth contract are pinned. Never reuse OA secret or OA adapter by assumption. |
+| Zalo Bot | Official Zalo Platform docs confirm Bot Token, `getUpdates` long polling and `setWebhook` webhook mode. The official pages inspected here do not establish the same OA `X-ZEvent-Signature` formula for Bot. | **BLOCKED** until the Bot-specific webhook authentication contract is confirmed from the exact official Bot API reference / live registration contract. Do not assume OA HMAC applies; do not rely on third-party `X-Bot-Api-Secret-Token` claims as official proof. Keep Bot Token separate from any webhook secret and never log either. |
 | Website widget | No third-party webhook signature. | Server-verified user/session or scoped widget session, exact Origin/Host and CSRF controls, expiry/replay, rate limit, and server-side widget-installation → Store registry. A browser-supplied Store ID is only a selection hint. |
 
 Official references:
 - Meta Webhooks: https://developers.facebook.com/docs/graph-api/webhooks/getting-started/
 - Zalo OA user-message event: https://stc-developers.zdn.vn/docs/v2/official-account/webhook/tin-nhan/su-kien-nguoi-dung-gui-tin-nhan?lang=vi
+- Zalo Bot create/setup and Bot Token + polling/webhook overview: https://docs.zaloplatforms.com/docs/BOT/create_bot
+- Zalo Bot overview: https://docs.zaloplatforms.com/zalo-bot
 
 ### Minimum real-port admission evidence (future, separately approved)
 
