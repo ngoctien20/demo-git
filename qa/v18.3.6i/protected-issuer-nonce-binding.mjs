@@ -42,7 +42,7 @@ export function createProtectedIssuerNonceBinding(o) {
   const {scopeBindingSecret,commitVerifiedNonce,...verifierConfig}=o;
   return Object.freeze({
     async redeemReadOnly({token,sessionHandle,tenantId,storeId,capability}) {
-      if(!str(token) || token.length>4096 ||
+      if(typeof token!=='string' || token.length<50 || token.length>4096 ||
          !str(sessionHandle) || !str(tenantId) || !str(storeId) ||
          !CONTRACT.allowedCapabilities.includes(capability)) deny('REQUEST_REJECTED');
       const jwtHash=tokenHash(token);
