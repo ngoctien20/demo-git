@@ -1,15 +1,17 @@
-name: TIEN404 V17.25P — Exact Deployed Source Replay NO-HOST
+name: TIEN404 V17.25P/Q/R — Exact Source + Store RLS NO-HOST
 on:
   pull_request:
     paths:
       - 'qa/v1725p/**'
+      - 'qa/v1725q/**'
+      - 'qa/v1725r/**'
       - '.github/workflows/v1725p-exact-source-replay.yml'
 permissions:
   contents: read
 jobs:
-  exact-source-synthetic-replay:
+  exact-source-and-store-contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Checkout source-only QA branch
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -20,17 +22,91 @@ jobs:
           test "$(git hash-object qa/v1725p/deployed_fixture/app/main.py)" = "a7a11abeffb378b3f9952005ffdd489c54df1c13"
           test "$(git hash-object qa/v1725p/deployed_fixture/app/signed_n8n.py)" = "9f74b6b3e617acd20aa1bfd8fd50b4b12938907e"
           echo 'V1725P_BYTE_EXACT_DEPLOYED_SOURCE_BLOBS_PASS'
-      - name: Install pinned deployed-test dependencies
+      - name: Install pinned synthetic HTTP test dependencies
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m venv .venv-v1725p
-          .venv-v1725p/bin/python -m pip install --disable-pip-version-check             fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
-      - name: Compile and run exact-source synthetic HTTPX replay
+          python3 -m venv .venv-v1725pqr
+          .venv-v1725pqr/bin/python -m pip install --disable-pip-version-check fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Compile and replay exact deployed source
         shell: bash
         run: |
           set -euo pipefail
-          env -u TIEN404_SUPABASE_URL               -u TIEN404_SUPABASE_PUBLISHABLE_KEY               -u TIEN404_APP_ORIGIN               -u TIEN404_N8N_STAGING_SECRET               .venv-v1725p/bin/python -m py_compile               qa/v1725p/deployed_fixture/app/main.py               qa/v1725p/deployed_fixture/app/signed_n8n.py               qa/v1725p/test_deployed_main.py
-          env -u TIEN404_SUPABASE_URL               -u TIEN404_SUPABASE_PUBLISHABLE_KEY               -u TIEN404_APP_ORIGIN               -u TIEN404_N8N_STAGING_SECRET               .venv-v1725p/bin/python -m pytest -q qa/v1725p/test_deployed_main.py
+          env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET .venv-v1725pqr/bin/python -m py_compile qa/v1725p/deployed_fixture/app/main.py qa/v1725p/deployed_fixture/app/signed_n8n.py qa/v1725p/test_deployed_main.py
+          env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET .venv-v1725pqr/bin/python -m pytest -q qa/v1725p/test_deployed_main.py
+      - name: Run V17.25Q Store-aware contract suite when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d qa/v1725q ]; then
+            .venv-v1725pqr/bin/python -m json.tool qa/v1725q/api-contract.json >/dev/null
+            .venv-v1725pqr/bin/python -m json.tool qa/v1725q/legacy-deprecation-matrix.json >/dev/null
+            env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET PYTHONPATH=qa/v1725q .venv-v1725pqr/bin/python -m py_compile qa/v1725q/store_api_contract.py qa/v1725q/test_store_api_contract.py
+            env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET PYTHONPATH=qa/v1725q .venv-v1725pqr/bin/python -m pytest -q qa/v1725q/test_store_api_contract.py
+          else
+            echo 'V1725Q_NOT_PRESENT_ON_PARENT_ONLY_PR'
+          fi
       - name: Explicit no-host release boundary
-        run: echo 'V1725P_EXACT_SOURCE_SYNTHETIC_ONLY; ALL_OUTBOUND_HTTP_MOCKED; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_EXPORT_RESTORE_MIGRATION; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
+        run: echo 'V1725P_Q_R_SOURCE_ONLY; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_DDL_DML; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
+
+  store-schema-rls-replacement:
+    if: \${{ startsWith(github.event.pull_request.head.ref, 'work/v1725r-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: v1725r_synthetic_ci_only
+          POSTGRES_DB: t404_v180_p0d_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0d_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: v1725r_synthetic_ci_only
+      PGDATABASE: t404_v180_p0d_ci
+    steps:
+      - name: Checkout source-only QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Pin and guard inherited disposable fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = "t404_v180_p0d_ci"
+          test "$(git hash-object qa/v180-p0d/store-scoped-rls-disposable.sql)" = "07ab80bd5f3fc7cdea9a8f17a13c4b0ae29a068c"
+          test "$(git hash-object qa/v1725n/rls-cutover-disposable.sql)" = "04ba4e7f0ea2a010dff3542b6cc7a4ce18522d77"
+          grep -q 'V18_P0D_DISPOSABLE_PG17_ONLY' qa/v180-p0d/store-scoped-rls-disposable.sql
+          grep -q 'V1725N_DISPOSABLE_PG17_ONLY' qa/v1725n/rls-cutover-disposable.sql
+          grep -q 'V1725R_DISPOSABLE_PG17_ONLY' qa/v1725r/store-schema-rls-replacement.sql
+          ! grep -Eqi 'supabase\.co|onrender\.com|app\.n8n\.cloud|service_role|curl |wget |https?://' qa/v1725r/store-schema-rls-replacement.sql
+          echo 'V1725R_INHERITED_P0D_N_BLOBS_PINNED'
+      - name: Run unchanged P0D Store schema fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v180-p0d/store-scoped-rls-disposable.sql
+      - name: Replay V17.25N permissive OR and restrictive AND baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v1725n/rls-cutover-disposable.sql
+      - name: Run V17.25R Store schema and policy replacement truth table
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v1725r/store-schema-rls-replacement.sql
+      - name: Confirm disposable database only and no hosted admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGDATABASE" = "t404_v180_p0d_ci"
+          psql -X --no-psqlrc -Atqc "SELECT CASE WHEN current_database()='t404_v180_p0d_ci' AND current_setting('server_version_num')::int >= 170000 THEN 'V1725R_PG17_DISPOSABLE_DB_CONFIRMED' ELSE 'FAIL' END"
+          echo 'V1725R_SYNTHETIC_AUTH_UID_ONLY; NO_REAL_JWT; NO_SUPABASE_CONNECTION; NO_RENDER_DEPLOY; NO_HOSTED_DDL_DML; NO_CUSTOMER_ROWS; NO_PROVIDER_SEND; NO_PRODUCTION'
