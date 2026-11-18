@@ -34,6 +34,7 @@ jobs:
           node --check qa/channel-v1855/worker-v1855-hosted-entry.mjs
           node --check qa/channel-v1855/read-admission-policy.test.mjs
           node --check qa/channel-v1855/t404-read-admission-do.test.mjs
+          node --check qa/channel-v1855/isolated-do-owner-candidate.mjs
       - name: Run inherited security regression and V18.5.5 Worker tests
         run: |
           node --test \
@@ -108,6 +109,19 @@ jobs:
           assert.equal(e.worker.secretsSet, false);
           assert.equal(e.securityGates.secondIdentityDenial, 'PENDING_FROM_V18.5.4');
           assert.equal(e.securityGates.productionRelease, false);
+          const migration=JSON.parse(fs.readFileSync('qa/channel-v1855/isolated-do-provisioning-gate.json','utf8'));
+          const ownerCode=fs.readFileSync('qa/channel-v1855/isolated-do-owner-candidate.mjs','utf8');
+          assert.equal(migration.approvalInterpretation.result,'BLOCKED_NO_CLOUD_DEPLOY_ALLOWED');
+          assert.equal(migration.proposedOwnerWorker.status,'NOT_CREATED');
+          assert.equal(migration.proposedOwnerWorker.publicRoute,'NONE');
+          assert.equal(migration.proposedOwnerWorker.workersDev,'DISABLED');
+          assert.equal(migration.proposedOwnerWorker.previewUrls,'DISABLED');
+          assert.equal(migration.verifiedAccount.noCostAssurance,false);
+          assert.equal(migration.localWorkerdQa.actualCloudflareAccountResourcesCreated,0);
+          assert(ownerCode.includes("export { T404ReadAdmission }"));
+          assert(ownerCode.includes("status: 404"));
+          assert(!ownerCode.includes('fetch('+'\'https://'));
+
           assert(worker.includes('verifyPrivateAccess(ctx, env)'));
           assert(worker.includes("const N8N_HOST = 'ngoctien20.app.n8n.cloud'"));
           assert(worker.includes("const N8N_READ_PATH = '/webhook/t404-v1855-protected-readonly-commerce-staging'"));
