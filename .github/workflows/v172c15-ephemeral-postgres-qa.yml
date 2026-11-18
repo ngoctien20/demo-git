@@ -53,3 +53,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c32-no-write-store-migration-preview-drill.sh
       - name: Atomic Store-Scoped Order Commit, Price/Stock, Concurrent Replay and Rollback QA (CI-only)
         run: bash qa/v172c-rpc-closure/v172c35-atomic-order-commit-ci-drill.sh
+      - name: Multi-SKU Stock Reservation, Confirm/Cancel/Expiry & Failure Recovery QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c36-multiline-reservation-release-ci-drill.sh
