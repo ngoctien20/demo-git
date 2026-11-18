@@ -1,0 +1,86 @@
+{
+  "phase": "V18.5.2",
+  "date": "2026-11-18 JST",
+  "status": "CANDIDATE_SOURCE_ONLY_NO_HOSTED_CORE_CALL",
+  "sourceOnly": true,
+  "hostedVerified": false,
+  "parentPR": 404,
+  "parentHeadAtCreation": "31d913f2491cd470d8182c575a9e2a5fe9f80fa5",
+  "coreWorkflowId": "iyfGUiEsZlNTBWOR",
+  "corePublishedVersionId": "456862c9-e5ee-4bfa-9931-47dbc39ab73d",
+  "coreDraftVersionId": "c96422e0-170b-46a3-8d75-3a2695e645e7",
+  "criticalFinding": "Published Commerce Sandbox Agent can invoke Create Sandbox Ticket, and published ticket child workflow jirkuVts1AjIhnPJ contains DataTable row.insert. Whole-agent website admission is NOT read-only.",
+  "fullAgentAdmission": false,
+  "readOnlyCandidateChildren": [
+    {
+      "id": "oOOXicKXGkBskKqh",
+      "publishedVersionId": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+      "operation": "CATALOG_QUERY",
+      "underlyingDataTableOperation": "get"
+    },
+    {
+      "id": "igPOsSbEgd4NgtRA",
+      "publishedVersionId": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+      "operation": "CART_PREVIEW",
+      "underlyingDataTableOperation": "get"
+    }
+  ],
+  "resolverWorkflowId": "5Eeh8hbpsoNhuiVo",
+  "resolverPublishedVersionId": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+  "realCoreInvocations": 0,
+  "realHostedCoreReadOnlyUat": 0,
+  "realOrdersRead": 0,
+  "realOrdersWritten": 0,
+  "providerSends": 0,
+  "requiredApprovals": {
+    "existingV144WorkerRouteAndCodeChange": false,
+    "exactProtectedStagingHostAndAccessPolicy": false,
+    "realProviderSignedAccessJwtVerifier": false,
+    "atomicD1ReplayAndQuotaBinding": false,
+    "realServerSideInstallationAuthority": false,
+    "readOnlyN8nServiceCallerCredential": false,
+    "realPublishedToolGraphReadAndPin": false,
+    "approvedPublicSandboxStore": false,
+    "realHostedReadOnlyN8nInvocation": false,
+    "realCustomerIdentityAdmission": false,
+    "canonicalStoreRlsAndOwnerAbUat": false,
+    "turnOnWebsiteStagingWidget": false,
+    "productionRelease": false,
+    "paidUsage": false
+  },
+  "allowedNow": [
+    "GITHUB_STACKED_DRAFT",
+    "READ_ONLY_N8N_CONFIG_AUDIT",
+    "SYNTHETIC_NOHOST_NEGATIVE_QA",
+    "STATIC_PUBLISHED_VERSION_MANIFEST",
+    "DISPOSABLE_LOCAL_QA"
+  ],
+  "securityLimits": {
+    "noSecondCore": true,
+    "noDirectParentAgent": true,
+    "noSupportTicketInsert": true,
+    "noOrderWrites": true,
+    "noPrivateOrderReads": true,
+    "noBrowserSuppliedStoreId": true,
+    "noBrowserSuppliedTenantId": true,
+    "noDynamicWorkflowId": true,
+    "noReusedDemoOrdersProductsCredential": true,
+    "allowedCapabilities": [
+      "CATALOG_QUERY",
+      "CART_PREVIEW"
+    ],
+    "publishedVersionMismatch": "FAIL_CLOSED",
+    "changedNodeOrEdge": "FAIL_CLOSED",
+    "unknownIdentity": "FAIL_CLOSED",
+    "ambiguousRequest": "NO_AUTO_RETRY"
+  },
+  "rollback": "Close/revert V18.5.2 stacked Draft; no hosted changes. For later separately approved hosting: preserve original Access/Worker/credential/route snapshots and validate 403/423 on rollback.",
+  "remaining": [
+    "HOSTED_TRUSTED_PUBLISHED_GRAPH_ATTESTOR",
+    "SCOPE_AUTHORITY_PROVEN",
+    "REAL_N8N_READ_ONLY_SERVICE_PORT",
+    "ACTUAL_UAT_TRACE_ZERO_WRITES",
+    "OWNER_APPROVALS",
+    "HOSTED_GATEWAY_PROTECTION"
+  ]
+}
