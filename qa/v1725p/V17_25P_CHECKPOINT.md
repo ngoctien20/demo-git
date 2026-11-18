@@ -33,10 +33,10 @@ Synthetic fixture has two fake orders in the same tenant, one per Store. Both sy
 
 ## 3. Actual CI evidence
 
-- PR: [Draft #411](https://github.com/ngoctien20/demo-git/pull/411), head `ae3dac141799f9eda70490f5b56e43f7a4e9c9b4`, stacked on Draft PR #409 head `b5f7310b1c1362cf79cb237f11201551a3b1ce81`.
-- Run: [GitHub Actions #44262745160](https://github.com/ngoctien20/demo-git/actions/runs/44262745160).
-- Job: `134659794195`, completed SUCCESS.
-- Log evidence: `V1725P_BYTE_EXACT_DEPLOYED_SOURCE_BLOBS_PASS`; `28 passed in 0.38s`; `V1725P_EXACT_SOURCE_SYNTHETIC_ONLY`.
+- PR: [Draft #411](https://github.com/ngoctien20/demo-git/pull/411), head `e772083d9f4aac0f358137d6156e2badcefcca6d`, stacked on Draft PR #409 head `b5f7310b1c1362cf79cb237f11201551a3b1ce81`.
+- Run: [GitHub Actions #44263019072](https://github.com/ngoctien20/demo-git/actions/runs/44263019072).
+- Job: `134660714217`, completed SUCCESS.
+- Log evidence: `V1725P_BYTE_EXACT_DEPLOYED_SOURCE_BLOBS_PASS`; `28 passed in 0.28s`; `V1725P_EXACT_SOURCE_SYNTHETIC_ONLY`.
 - Test uses `httpx.MockTransport` for all outbound Supabase requests; real socket `connect` and `create_connection` are blocked in the test process. No real JWT, Supabase credential, customer/order row or network endpoint is used.
 - Checks auth absence/format, membership roles and missing membership, provider errors, cross-tenant response fail-closed, bounds, sanitizer, security headers, health semantics, no write route and two synthetic tenant Owners seeing the same two Store fixtures.
 
