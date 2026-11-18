@@ -23,7 +23,7 @@ Parent: Draft [PR #400](https://github.com/ngoctien20/demo-git/pull/400), exact 
 
 - `qa/v182-zalo-native/native-qa-validator.mjs`: strict, static, no-network QA event shape checker with timing-safe header hash comparison, PRIVATE-chat-only, exact `QA_ZALO_NATIVE_182` canary, 2-minute freshness and HMAC digest output (never raw sender IDs, messages, secrets or payload). Returns **REVIEW_ONLY** at most: does NOT claim native Zalo authenticity, atomic replay, durable intake, Store/Commerce authority, reply or webhook publication.
 - `qa/v182-zalo-native/native-qa-validator.test.mjs`: synthetic positive and negative tests.
-- `qa/v182-zalo-native/get-webhook-info-readonly.ps1`: local operator read-only POST `getMe` + `getWebhookInfo` using already-secured QA Bot token in **process** environment. Outputs booleans, never URL or token. Run only after separately opening a secured local PowerShell session; never paste token into ChatGPT or GitHub.
+- `qa/v182-zalo-native/get-webhook-info-readonly.ps1`: local operator read-only POST `getMe` + `getWebhookInfo` using the already-secured QA Bot token from process environment or a hidden PowerShell SecureString prompt. Outputs booleans, never URL or token. Run only after separately opening a secured local PowerShell session; never paste token into ChatGPT or GitHub.
 - `.github/workflows/v182-zalo-native-preflight-no-send.yml`: offline test job. No provider calls or secrets.
 
 ### Verified route checklist
