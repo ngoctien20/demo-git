@@ -50,7 +50,7 @@ jobs:
         run: echo 'V1725P_Q_R_SOURCE_ONLY; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_DDL_DML; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
 
   store-schema-rls-replacement:
-    if: \${{ startsWith(github.event.pull_request.head.ref, 'work/v1725r-') }}
+    if: ${{ startsWith(github.event.pull_request.head.ref, 'work/v1725r-') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
