@@ -84,6 +84,10 @@ jobs:
           CREATE POLICY membership_self ON tenant_memberships FOR SELECT TO v1836a_reader USING (user_id=auth.uid() AND active);
           ALTER TABLE store_memberships ENABLE ROW LEVEL SECURITY;
           CREATE POLICY store_self ON store_memberships FOR SELECT TO v1836a_reader USING (user_id=auth.uid() AND active);
+          ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY tenant_visible ON tenants FOR SELECT TO v1836a_reader USING (EXISTS (SELECT 1 FROM tenant_memberships m WHERE m.tenant_id=tenants.id AND m.user_id=auth.uid() AND m.active));
+          ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY store_visible ON stores FOR SELECT TO v1836a_reader USING (EXISTS (SELECT 1 FROM store_memberships sm WHERE sm.tenant_id=stores.tenant_id AND sm.store_id=stores.id AND sm.user_id=auth.uid() AND sm.active));
           DO $$ DECLARE tbl text; BEGIN
            FOREACH tbl IN ARRAY ARRAY['products','customers','orders','order_items','conversations','messages'] LOOP
            EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',tbl);
@@ -99,19 +103,29 @@ jobs:
            IF n<>1 THEN RAISE EXCEPTION 'A expected one % got %',tbl,n; END IF;
            END LOOP;
            IF EXISTS(SELECT 1 FROM products WHERE sku IN ('QA-B','QA-C','QA-LEGACY')) THEN RAISE EXCEPTION 'A crossed store boundary'; END IF;
+ IF (SELECT count(*) FROM stores)<>1 OR (SELECT count(*) FROM tenants)<>1 THEN RAISE EXCEPTION 'STORE_A_REGISTRY_LEAK'; END IF;
           END $$;
-          SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001002';
+          DO $ DECLARE rejected boolean:=false; BEGIN
+ BEGIN
+ INSERT INTO products VALUES('00000000-0000-0000-0000-000000002999','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','DENIED');
+ EXCEPTION WHEN insufficient_privilege THEN rejected:=true; END;
+ IF NOT rejected THEN RAISE EXCEPTION 'READ_ONLY_ROLE_WROTE_PRODUCT'; END IF;
+END $;
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001002';
           DO $$ DECLARE tbl text; n int; BEGIN
            FOREACH tbl IN ARRAY ARRAY['products','customers','orders','order_items','conversations','messages'] LOOP
            EXECUTE format('SELECT count(*) FROM %I',tbl) INTO n;
            IF n<>1 THEN RAISE EXCEPTION 'B expected one % got %',tbl,n; END IF;
            END LOOP;
            IF EXISTS(SELECT 1 FROM products WHERE sku IN ('QA-A','QA-C','QA-LEGACY')) THEN RAISE EXCEPTION 'B crossed store boundary'; END IF;
+ IF (SELECT count(*) FROM stores)<>1 OR (SELECT count(*) FROM tenants)<>1 THEN RAISE EXCEPTION 'STORE_B_REGISTRY_LEAK'; END IF;
           END $$;
           SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001003';
-          DO $$ BEGIN IF (SELECT COUNT(*) FROM products)<>1 OR (SELECT COUNT(*) FROM orders)<>0 THEN RAISE EXCEPTION 'Cross tenant leak'; END IF; END $$;
+          DO $$ BEGIN IF (SELECT COUNT(*) FROM products)<>1 OR (SELECT COUNT(*) FROM orders)<>0 THEN RAISE EXCEPTION 'Cross tenant leak'; END IF;
+ IF (SELECT count(*) FROM stores)<>1 OR (SELECT count(*) FROM tenants)<>1 THEN RAISE EXCEPTION 'STORE_C_REGISTRY_LEAK'; END IF; END $$;
           RESET request.jwt.claim.sub;
-          DO $$ BEGIN IF EXISTS(SELECT 1 FROM products) THEN RAISE EXCEPTION 'Missing identity leak'; END IF; END $$;
+          DO $$ BEGIN IF EXISTS(SELECT 1 FROM products) THEN RAISE EXCEPTION 'Missing identity leak'; END IF;
+ IF EXISTS(SELECT 1 FROM stores) OR EXISTS(SELECT 1 FROM tenants) THEN RAISE EXCEPTION 'MISSING_IDENTITY_REGISTRY_LEAK'; END IF; END $$;
           RESET ROLE;
           UPDATE store_memberships SET active=false WHERE user_id='00000000-0000-0000-0000-000000001001';
           SET ROLE v1836a_reader; SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001001';
