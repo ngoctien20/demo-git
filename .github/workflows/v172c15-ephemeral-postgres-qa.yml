@@ -65,3 +65,5 @@ jobs:
         run: python3 qa/v172c-rpc-closure/v172c40b-static-deny-default-gate.py
       - name: V17.2C.40C Private Owner Consent and Alias Conflict Preflight QA (synthetic source only)
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40c_private_owner_alias_admission_test.py' -v
+      - name: V17.2C.40D Owner Decision S1/S2/S3 and Alias Crosswalk Collision QA (synthetic only)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40d_owner_decision_crosswalk_contract_test.py' -v
