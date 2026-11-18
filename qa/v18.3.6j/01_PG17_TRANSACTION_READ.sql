@@ -78,7 +78,7 @@ BEGIN
  -- It does NOT prove remote Auth service revocation has propagated.
  SELECT s.last_authority_check_at INTO checked
  FROM qa_i_private.session_state s
- WHERE s.session_binding_hash=p_session_binding_hash FOR SHARE;
+ WHERE s.session_binding_hash=p_session_binding_hash FOR UPDATE;
  IF NOT FOUND THEN
   decision:='DENY_SESSION';RETURN NEXT;RETURN;
  END IF;
