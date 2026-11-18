@@ -109,9 +109,10 @@ State changes:
 - `active → revoked`: immediate access removal.
 - `active → expired`: expiry reached; access denied even if cleanup job has not run.
 - `suspended → active`: authorized reactivation with audit.
-- `revoked` is terminal; create a new membership row only through a reviewed re-invitation flow if the schema later supports history rows.
+- `expired → invited`: a fresh invitation is allowed after the old expiry is recorded.
+- `revoked → invited`: a fresh invitation is allowed only as a new, separately approved invitation; never transition directly from revoked to active.
 
-The current design stores one current row per `tenant_id + store_id + user_id`; append all state transitions to a private, append-only authority audit table. Never delete the membership row to revoke access.
+The current design stores one current row per `tenant_id + store_id + user_id`; append every invitation, acceptance, role change, suspension, expiry and revocation to a private, append-only authority audit table. A re-invitation reopens the current membership row as `invited` after clearing old acceptance/approval fields; the prior lifecycle remains in the audit log. Never create duplicate current membership rows or physically delete a row to revoke access.
 
 ## 5. Who may grant what
 
