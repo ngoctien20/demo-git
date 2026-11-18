@@ -52,8 +52,13 @@ jobs:
           for content in (key,user):
             assert all(term not in content for term in
               ('create_engine(', 'psycopg.connect(', 'import subprocess', 'service_role', 'refresh_token') )
-          ops=Path('ops/data-platform/app/main.py').read_text()
-          assert 'qa.v180-p0w' not in ops and 'pinned_jwks_source' not in ops
+          ops_path=Path('ops/data-platform/app/main.py')
+          if ops_path.is_file():
+            ops=ops_path.read_text()
+            assert 'qa.v180-p0w' not in ops and 'pinned_jwks_source' not in ops
+          else:
+            # The Draft QA branch does not contain the independently deployed Render branch.
+            assert not Path('qa/v180-p0w/app.py').exists()
           print('P0W_STATIC_NO_REAL_OWNER_JWT_NO_HOSTED_ACCESS_MUTATION_PASS')
           PY
       - name: Isolated Python dependencies for all QA suites
