@@ -58,7 +58,11 @@ jobs:
           assert.equal(v.realUserOwnerLogin.verified,true);
           assert.equal(v.realUserOwnerLogin.audit.allowed,true);
           assert.equal(v.alternateIdentityDenied.verified,false);
-          assert.equal(v.externalUnauthenticatedEdgeTest.verified,false);
+          assert.equal(v.externalUnauthenticatedEdgeTest.verified,true);
+          assert.equal(v.externalUnauthenticatedEdgeTest.results.length,3);
+          assert(v.externalUnauthenticatedEdgeTest.results.every(x=>x.httpStatus===302 && x.classification==='UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT'));
+          assert.equal(v.externalUnauthenticatedEdgeTest.noCredentialsUsed,true);
+          assert.equal(v.alternateIdentityDenied.verified,false);
           assert.equal(v.n8nLiveHttpAuth.verified,false);
           assert.equal(v.commerce.storeLevelRlsVerified,false);
           assert.equal(v.cloudflareDeployedWorkerChange,false);
