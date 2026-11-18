@@ -11,7 +11,7 @@
 ## Contents
 
 1. `01_PG17_DISPOSABLE_SCHEMA.sql`: actual PG17 schema with Tenant T1 → Store A + B; Tenant T2 → Store C; explicit memberships for Owner A/B, manager/staff, dual Store Owner, Tenant Owner without Store membership, revoked/expired and cross-tenant actors. Six Commerce tables, composite Store foreign keys, NOT VALID checks, immutable ownership triggers, private SECURITY DEFINER membership helper with narrow grants and restrictive Store RLS.
-2. `02_PG17_PGTAP_DML_RLS.sql`: **60 executable pgTAP assertions**, including SELECT/INSERT/UPDATE/DELETE, legacy NULL, same Tenant A/B leakage, injected permissive SELECT policy, composite FK negative cases, Store reassignment, Staff price/total edits, cross-Tenant, revoked/expired and suspended Store cases.
+2. `02_PG17_PGTAP_DML_RLS.sql`: **61 executable pgTAP assertions**, including SELECT/INSERT/UPDATE/DELETE, legacy NULL, same Tenant A/B leakage, injected permissive SELECT policy, composite FK negative cases, Store reassignment, Staff price/total edits, cross-Tenant, revoked/expired and suspended Store cases.
 3. GitHub Actions workflow: builds disposable postgres:17.12 + pgTAP extension, creates fresh isolated DB, applies schema and executes tests, fails on any `not ok` or unexpected SQL error, deletes container on completion/failure.
 4. `QA_CHECKPOINT_V18_3_6E.md`: final status and evidence after CI verification.
 
@@ -37,3 +37,7 @@
 ## Decision
 
 A green GitHub Actions run proves only the disposable PG17+pgTAP implementation. It does not approve any staging schema change, migration, backfill, real customer data read, provider send or writer cutover.
+
+## QA correction after first execution
+
+Run `44279821461` found one overly specific assertion: the authenticated synthetic actor inserting a NULL Store row received SQLSTATE `42501` (restrictive RLS) rather than `23514` (NOT VALID CHECK), because RLS rejects first. The suite now asserts actor RLS `42501` and independently checks that a privileged fixture writer, who bypasses RLS, receives CHECK `23514`. No production schema or policy was changed.
