@@ -93,8 +93,8 @@ function createOfflineSharedCoreWidget({
         result.privateOrderAccess!==false)
         deny('V185_RELEASE_BOUNDARY_DENIED');
       return Object.freeze({
-        mode,status:'PREVIEW_ONLY',channel:'WEB_WIDGET',
         ...result,
+        mode,status:'PREVIEW_ONLY',channel:'WEB_WIDGET',
         // Only UI-safe presentation, not raw model, PSID, store key or JWT.
         coreReused:CORE_WORKFLOW_ID,
         guestOnly:true,privateOrderAccess:false,providerSends:0,orderWrites:0,
