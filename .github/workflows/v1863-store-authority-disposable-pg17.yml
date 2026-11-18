@@ -1,16 +1,18 @@
-name: V18.6.3–5 PG17 + Protected Owner A/B UAT QA (NO LIVE)
+name: V18.6.3–6 Store RLS and Authority Readiness NO LIVE
 on:
   push:
     paths:
       - 'qa/store-authority-v1863/**'
       - 'qa/store-authority-v1864/**'
       - 'qa/store-authority-v1865/**'
+      - 'qa/store-authority-v1866/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
       - 'qa/store-authority-v1863/**'
       - 'qa/store-authority-v1864/**'
       - 'qa/store-authority-v1865/**'
+      - 'qa/store-authority-v1866/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -64,3 +66,8 @@ jobs:
       - name: Assert V18.6.5 no-live proof flags
         run: |
           node -e "const f=require('./qa/store-authority-v1865/protected-uat-gate.cjs').FLAGS; if(f.qaMode!=='SYNTHETIC_QA'||f.liveAuth!==false||f.liveMeta!==false||f.customerDataRead!==false||f.privateOrderRead!==false||f.orderWrite!==false||f.providerSend!==false||f.databaseWrite!==false) process.exit(1)"
+      - name: Execute V18.6.6 evidence reconciliation and irreversible NO-GO gate
+        run: |
+          node --test qa/store-authority-v1866/readiness-gate.test.cjs
+          node qa/store-authority-v1866/readiness-gate.cjs
+          node -e "const x=require('./qa/store-authority-v1866/readiness-gate.cjs').evaluateBundled(); if(x.productionReady || x.realUatApproved || x.metaOAuthApproved || x.authorizesMigration || x.status!=='BLOCKED') process.exit(1)"

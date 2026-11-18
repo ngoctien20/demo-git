@@ -1,0 +1,59 @@
+{
+  "version": "V18.6.6",
+  "capturedAt": "2026-11-18",
+  "classification": "READ_ONLY_METADATA_SNAPSHOT_NOT_HOSTED_AUTH_PROOF",
+  "environment": "TIEN404_SUPABASE_STAGING",
+  "authorityCandidates": {
+    "canonicalDesign": {"pr": 417, "status": "OPEN_DRAFT", "implementation": "NOT_LIVE"},
+    "pg17Pgtap": {"pr": 421, "status": "OPEN_DRAFT", "syntheticTestsPassed": 61},
+    "additionalPG17Model": {"pr": 420, "status": "OPEN_DRAFT", "roleTerminology": "owner", "canonicalRoleTerminology": "store_owner"},
+    "syntheticOwnerUat": {"pr": 427, "status": "OPEN_DRAFT", "syntheticTestsPassed": 166},
+    "separatePG17Reference": {"pr": 416, "status": "OPEN_DRAFT", "canonical": false}
+  },
+  "supabase": {
+    "expectedCanonicalTables": 2,
+    "canonicalTablesPresent": 0,
+    "expectedCommerceTables": 6,
+    "commerceTablesWithStoreId": 0,
+    "publicRestrictivePolicies": 0,
+    "realSameTenantStoreABTested": false,
+    "verifiedRealOwnerABSessions": false,
+    "privilegedWritersStoreAware": false,
+    "rpcCallerInventoryComplete": false,
+    "approvedBackupRestoreEvidence": false,
+    "approvedLegacyMappingManifest": false
+  },
+  "cloudflare": {
+    "protectedWidgetWorkerPresent": true,
+    "accessSelfHostedAppPresent": true,
+    "accessPolicyCount": 1,
+    "bindingNamesObserved": ["T404_ACCESS_AUD", "T404_QA_OPERATOR_EMAIL"],
+    "supabaseAuthBindingVerified": false,
+    "ownerAuthToWorkerEndToEndVerified": false
+  },
+  "meta": {
+    "realMetaAppReviewApproved": false,
+    "realFanpageOAuthVerified": false
+  },
+  "decisions": {
+    "canonicalContract": "PROPOSE_USE_PR_417_NOT_APPROVED",
+    "canonicalPg17QA": "PROPOSE_REUSE_PR_421_NOT_APPROVED",
+    "skuScope": "UNRESOLVED_D02",
+    "roleCompatibility": "REVIEW_REQUIRED_STORE_OWNER_VS_OWNER",
+    "oneStorePerTenantPilot": "OPTION_ONLY_NOT_APPROVED"
+  },
+  "safety": {
+    "supabaseDDL": 0,
+    "supabaseDML": 0,
+    "providerSends": 0,
+    "orderWrites": 0,
+    "productionDeploys": 0
+  },
+  "sourceRefs": [
+    "https://github.com/ngoctien20/demo-git/pull/417",
+    "https://github.com/ngoctien20/demo-git/pull/421",
+    "https://github.com/ngoctien20/demo-git/pull/427",
+    "https://github.com/ngoctien20/demo-git/actions/runs/44280016933",
+    "https://github.com/ngoctien20/demo-git/actions/runs/44283797211"
+  ]
+}
