@@ -61,3 +61,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c38-protected-no-send-dispatcher-ci-drill.sh
       - name: Ambiguous Provider ACK Reconciliation, DLQ and No-Send Retry Admission QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c39-ambiguous-ack-dlq-ci-drill.sh
+      - name: V17.2C.40B Owner Authority Registry Default DENY Source QA (no database writes)
+        run: python3 qa/v172c-rpc-closure/v172c40b-static-deny-default-gate.py
