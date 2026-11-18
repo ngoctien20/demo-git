@@ -279,9 +279,9 @@ class SignedSyntheticPorts:
         sub = sb_check(self.keys, bearer)["sub"]
         return {"verified": True, "disabled": False, "id": sub}
 
-    async def lookup_current_auth_session(self, session_id):
+    async def lookup_current_auth_session(self, session_id, verified_subject_id):
         sub = {SA: A, SB: B}.get(session_id)
-        if sub is None or (session_id == SB and self.revoked_b):
+        if sub is None or sub != verified_subject_id or (session_id == SB and self.revoked_b):
             return {}
         return check_session(snapshot_rows(uid=sub,sid=session_id),uid=sub,sid=session_id)
 
