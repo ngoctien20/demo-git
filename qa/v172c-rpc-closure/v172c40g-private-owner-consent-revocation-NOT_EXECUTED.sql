@@ -186,8 +186,9 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path=''
 AS $fn$
-DECLARE v_membership tien404_v172c40g_qa.owner_memberships%ROWTYPE;
-DECLARE v_target text;
+DECLARE
+  v_membership tien404_v172c40g_qa.owner_memberships%ROWTYPE;
+  v_target text;
 BEGIN
   SELECT * INTO v_membership
   FROM tien404_v172c40g_qa.owner_memberships
@@ -213,7 +214,8 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path=''
 AS $fn$
-DECLARE v_event tien404_v172c40g_qa.owner_consent_events%ROWTYPE;
+DECLARE
+  v_event tien404_v172c40g_qa.owner_consent_events%ROWTYPE;
 BEGIN
   SELECT * INTO v_event FROM tien404_v172c40g_qa.owner_consent_events
   WHERE event_id=p_event_id;
@@ -232,11 +234,12 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path=''
 AS $fn$
-DECLARE v_event tien404_v172c40g_qa.owner_consent_events%ROWTYPE;
-DECLARE v_session tien404_v172c40g_qa.owner_sessions%ROWTYPE;
-DECLARE v_membership tien404_v172c40g_qa.owner_memberships%ROWTYPE;
-DECLARE v_challenge tien404_v172c40g_qa.owner_challenges%ROWTYPE;
-DECLARE v_membership_target text;
+DECLARE
+  v_event tien404_v172c40g_qa.owner_consent_events%ROWTYPE;
+  v_session tien404_v172c40g_qa.owner_sessions%ROWTYPE;
+  v_membership tien404_v172c40g_qa.owner_memberships%ROWTYPE;
+  v_challenge tien404_v172c40g_qa.owner_challenges%ROWTYPE;
+  v_membership_target text;
 BEGIN
   SELECT * INTO v_event FROM tien404_v172c40g_qa.owner_consent_events
   WHERE event_id=p_event_id;
@@ -254,7 +257,7 @@ BEGIN
      OR v_session.revoked_at IS NOT NULL OR v_session.expires_at<=clock_timestamp()
      OR v_membership.actor_ref IS NULL OR v_membership.active IS NOT TRUE
      OR v_membership.revoked_at IS NOT NULL OR v_membership.member_role<>'owner'
-     OR v_challenge.state<>'consumed'
+     OR v_challenge.challenge_digest IS NULL OR v_challenge.state<>'consumed'
      OR EXISTS (SELECT 1 FROM tien404_v172c40g_qa.owner_revocation_events
                 WHERE target_type='MEMBERSHIP' AND target_ref=v_membership_target)
      OR EXISTS (SELECT 1 FROM tien404_v172c40g_qa.owner_revocation_events
