@@ -1,0 +1,62 @@
+{
+  "version": "V17.25R",
+  "classification": "DISPOSABLE_PG17_SYNTHETIC_ONLY",
+  "policy_replacement_truth_table": {
+    "same_tenant_owner_a_fixture_rows": {
+      "orders": ["store_a", "store_b", "paused_d", "archived_e"],
+      "products": ["store_a", "store_b", "paused_d", "archived_e"]
+    },
+    "states": [
+      {"state":"no_applicable_policy","policy_composition":"none","visible_rows":0,"expected":"DEFAULT_DENY"},
+      {"state":"legacy_tenant_only","policy_composition":"one_permissive_tenant","visible_rows":4,"expected":"UNSAFE_TENANT_WIDE"},
+      {"state":"legacy_plus_store_permissive","policy_composition":"permissive_OR_permissive","visible_rows":4,"expected":"UNSAFE_LEGACY_OR_LEAK"},
+      {"state":"legacy_plus_store_restrictive","policy_composition":"permissive_OR_permissive_AND_restrictive","visible_rows":2,"expected":"RESTRICTIVE_FENCE_A_AND_PAUSED_D"},
+      {"state":"store_policy_only","policy_composition":"one_permissive_store_policy","visible_rows":2,"expected":"REPLACEMENT_PASS_A_AND_PAUSED_D"}
+    ],
+    "note":"The transitional restrictive fence is also proven by V17.25N; final design removes old Tenant-only permissive policy."
+  },
+  "effective_role_matrix": [
+    {"tenant_role":"owner","store_role":"owner","effective_role":"owner"},
+    {"tenant_role":"owner","store_role":"manager","effective_role":"manager"},
+    {"tenant_role":"owner","store_role":"staff","effective_role":"staff"},
+    {"tenant_role":"manager","store_role":"owner","effective_role":"manager"},
+    {"tenant_role":"staff","store_role":"owner","effective_role":"staff"},
+    {"tenant_role":"staff","store_role":"staff","effective_role":"staff"}
+  ],
+  "resource_permissions": {
+    "products": {"select":["owner","manager","staff"],"insert":["owner","manager"],"update":["owner","manager"],"delete":[]},
+    "orders": {"select":["owner","manager"],"insert":["owner","manager","staff"],"update":["owner","manager"],"delete":[]},
+    "customers": {"select":["owner","manager"],"insert":[],"update":[],"delete":[]},
+    "order_items": {"select":["owner","manager"],"insert":[],"update":[],"delete":[]},
+    "conversations": {"select":["owner","manager"],"insert":[],"update":[],"delete":[]},
+    "messages": {"select":["owner","manager"],"insert":[],"update":[],"delete":[]},
+    "stores": {"select":["explicit_active_store_member"],"insert":[],"update":[],"delete":[]},
+    "store_memberships": {"select":["self_active_membership"],"insert":[],"update":[],"delete":[]}
+  },
+  "store_status": {
+    "active":{"read":true,"permitted_writes":true},
+    "paused":{"read":true,"writes":false},
+    "archived":{"read":false,"writes":false}
+  },
+  "composite_fk_negative_cases": [
+    "order_item_cross_store_product",
+    "order_item_cross_store_order",
+    "order_cross_store_customer",
+    "message_cross_store_conversation",
+    "store_membership_tenant_store_mismatch"
+  ],
+  "grants": {
+    "anon":"NONE",
+    "authenticated_orders_dml":"TEMPORARY_IN_TEST_ONLY_THEN_REVOKED",
+    "authenticated_products":"SELECT_INSERT_UPDATE",
+    "authenticated_authority_tables":"SELECT_ONLY",
+    "service_role":"NOT_MODELED_NOT_PROVEN"
+  },
+  "release_gates": {
+    "ci":"PENDING",
+    "supabase_hosted_migration":"NOT_APPROVED",
+    "m0":"NO_GO",
+    "real_owner_a_b_jwt_uat":"0/31_NOT_RUN",
+    "production":"NO_GO"
+  }
+}
