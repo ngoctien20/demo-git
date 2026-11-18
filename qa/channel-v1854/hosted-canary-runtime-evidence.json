@@ -1,7 +1,7 @@
 {
   "phase": "V18.5.4",
   "date": "2026-11-18 JST",
-  "status": "HOSTED_CANARY_DEPLOYED_PRIVATE_ACCESS_RUNTIME_LOGIN_PENDING",
+  "status": "OWNER_ACCESS_RUNTIME_VERIFIED_SECOND_IDENTITY_DENIAL_PENDING",
   "worker": {
     "script": "tien404-widget-gateway-v144-staging",
     "host": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
@@ -99,15 +99,43 @@
   "accessLogs": {
     "queried": true,
     "filterApplicationId": "1a73d50b-0668-4308-8f56-53aa9711d477",
-    "rows": 0,
-    "meaning": "No sign-in attempts recorded yet at query time; does not prove unauthenticated denial or authenticated admission."
+    "events": [
+      {
+        "action": "login",
+        "allowed": true,
+        "appName": "TIEN404 V18.5.4 Private Widget Canary — V14.4",
+        "appDomain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+        "appUid": "1a73d50b-0668-4308-8f56-53aa9711d477",
+        "createdAt": "2026-11-18T08:11:58Z",
+        "connection": "cloudflare",
+        "rayId": "a5c581ec6c0996aa",
+        "identityMatchedExactOwnerAllowlist": true
+      }
+    ],
+    "deniedAlternateIdentityEvents": 0
   },
   "uat": {
-    "unauthenticatedExternalRequest": "NOT_VERIFIED_FROM_TOOLING",
-    "approvedFounderBrowserLogin": "PENDING_USER_INTERACTION",
-    "secondIdentityDenyTest": "PENDING_USER_INTERACTION",
-    "realCtxAccessRuntime": "PENDING_USER_INTERACTION",
-    "storeLevelRls": "NOT_VERIFIED"
+    "unauthenticatedExternalRequest": "USER_BROWSER_REDIRECTED_TO_CLOUDFLARE_LOGIN_CHALLENGE; screenshot shows dash.cloudflare.com/login?login_challenge=...; no Worker JSON exposed in screenshot; this is an auth challenge, not a final denial",
+    "approvedFounderBrowserLogin": "PASS_USER_REPORTED_CANARY_JSON_AND_CLOUDFLARE_ALLOWED_LOGIN_AUDIT_EVENT",
+    "secondIdentityDenyTest": "PENDING_NON_ALLOWLISTED_ACCOUNT_SIGN_IN",
+    "realCtxAccessRuntime": "PASS_USER_REPORTED_CANARY=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED; audienceVerified=true; operatorAllowlisted=true",
+    "storeLevelRls": "NOT_VERIFIED",
+    "userEvidence": {
+      "canaryResponse": {
+        "service": "tien404-widget-gateway",
+        "environment": "private-staging",
+        "canary": "CLOUDFLARE_ACCESS_CONTEXT_VERIFIED",
+        "principalType": "CLOUDFLARE_ACCESS_PRIVATE_QA_OPERATOR",
+        "audienceVerified": true,
+        "operatorAllowlisted": true,
+        "commerce": "LOCKED_PENDING_READONLY_ADAPTER",
+        "privateOrderAccess": false,
+        "orderWrites": 0,
+        "providerSends": 0,
+        "productionReady": false
+      },
+      "alternateBrowserScreenshot": "Cloudflare dashboard login challenge; user says it is the other browser; not an Access Denied result"
+    }
   },
   "safety": {
     "orderWrites": 0,
@@ -119,7 +147,7 @@
     "productionRelease": false,
     "previewsEnabled": false
   },
-  "nextGate": "User must open exact host in a browser, authenticate with the Cloudflare account member and biometric MFA, and return the canary JSON/screenshot. Then query Access logs and test a separate non-allowlisted Cloudflare account in a separate browser profile. If no Access redirect/403 occurs for unauthenticated traffic, disable workers.dev immediately and investigate before continuing.",
+  "nextGate": "In the second browser, sign in using a different Cloudflare account identity not included in the founder-only allow policy (prefer an existing member of the same Cloudflare account). Expected result: Access denied; then verify denied=false event in Access audit logs. Do not add new account members or alter Access policies for this test without separate approval.",
   "sourceQA": {
     "workflowRunId": 44263812363,
     "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44263812363",
