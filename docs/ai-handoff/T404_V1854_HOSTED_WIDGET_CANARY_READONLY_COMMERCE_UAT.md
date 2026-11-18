@@ -245,3 +245,10 @@ Next, use a different Cloudflare account identity that is not included in the fo
 `OWNER_REAL_ACCESS_LOGIN_PASS / NATIVE_CTX_ACCESS_CANARY_PASS / SECOND_IDENTITY_DENIAL_PENDING / N8N_READONLY_UAT_9_OF_9 / SOURCE_CI_177_OF_177_PRIOR_RUN / COMMERCE_LOCKED / STORE_RLS_NOT_VERIFIED / PRODUCTION_NO_GO`.
 
 The user-provided canary response and the matching Cloudflare allowed-login audit event are independent, mutually consistent evidence. Widget session/message/install endpoints remain 423; no order or stock write, customer data access, AI call, n8n adapter, provider send, billing change or production release was enabled.
+
+
+### Latest regression after owner runtime evidence update
+
+- [GitHub Actions #44265516587](https://github.com/ngoctien20/demo-git/actions/runs/44265516587): **SUCCESS — 177/177 passed, 0 failed, 0 skipped**.
+- Access audit logs were re-queried after the user's second-browser screenshot. The application still has one event: the approved owner's `login / allowed=true`. No alternate identity denial event has yet appeared.
+- Thus the owner runtime verification is closed; the second identity denial remains the sole outstanding Access UAT item before this phase can close.
