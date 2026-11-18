@@ -180,7 +180,15 @@ jobs:
             if test "$n" = 1; then P1=$!; else P2=$!; fi
           done
           wait "$P1"; wait "$P2"
-          test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^ALLOW_CATALOG$' || true)" = 1
+          cat "$RUNNER_TEMP"/j-race-*.log
+          test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^ALLOW_CATALOG
+          test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^REPLAY$' || true)" = 1
+          echo V18_3_6J_CONCURRENT_CATALOG_SINGLE_USE_PASS
+      - name: Cleanup test database
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836j-pg17 >/dev/null 2>&1 || true
+ || true)" = 1
           test "$(cat "$RUNNER_TEMP"/j-race-*.log | grep -c '^REPLAY$' || true)" = 1
           echo V18_3_6J_CONCURRENT_CATALOG_SINGLE_USE_PASS
       - name: Cleanup test database
