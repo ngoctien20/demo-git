@@ -136,7 +136,11 @@ jobs:
           assert.equal(e.n8n.adapter.webhookTrigger,false);
           assert.equal(e.n8n.adapter.credentials,0);
           assert.equal(e.n8n.adapter.callerPolicy,'workflowsFromAList');
-          assert.deepEqual(e.n8n.adapter.allowedCallerIds,[e.n8n.qa.workflowId]);
+          assert.deepEqual(e.n8n.adapter.allowedCallerIds,[e.n8n.qa.workflowId,e.n8n.ingress.workflowId]);
+          assert.equal(e.n8n.ingress.active,false);
+          assert.equal(e.n8n.ingress.webhook.authentication,'headerAuth');
+          assert.equal(e.n8n.ingress.webhook.secretValueInspected,false);
+          assert.equal(e.n8n.ingress.pinTests.httpHeaderAuthRealNetworkTested,false);
           assert.equal(e.n8n.qa.executionId,'5360');
           assert.equal(e.n8n.qa.status,'success');
           assert.equal(e.n8n.qa.assertions,12);
