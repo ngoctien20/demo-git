@@ -152,7 +152,7 @@ def require_permission(scope: StoreScope, resource: str, action: str) -> None:
         },
     }
     if (resource, action) not in permissions[scope.effective_role]:
-        raise ScopeDenied(403, "ROLE_DENIED")
+        raise HTTPException(403, detail="ROLE_DENIED")
 
 
 def reject_duplicate_scope(request: Request) -> None:
