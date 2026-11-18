@@ -69,3 +69,28 @@ jobs:
           JS
       - name: Hosted UAT is explicitly NOT run
         run: echo 'V18.5 SOURCE ONLY. NO CONNECTED N8N CORE CALL. NO GATEWAY DEPLOY. NO CUSTOMER DATA. NO ORDERS. NO PROVIDER SEND. NO PRODUCTION.'
+
+  chromium-widget-responsive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA-only Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: QA existing launcher and rich website renderer in synthetic offline host
+        run: |
+          python3 -m http.server 8080 >/tmp/tien404-v185-web.log 2>&1 &
+          sleep 2
+          node qa/channel-v185/browser.test.cjs
+      - name: Upload synthetic-only mobile and desktop screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v185-widget-synthetic-browser-evidence
+          path: qa-artifacts-v185/
+          if-no-files-found: ignore
