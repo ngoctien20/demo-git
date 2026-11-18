@@ -1,0 +1,71 @@
+name: TIEN404 V18.5.6 — Private Installation Authority (NO DEPLOY)
+on:
+  push:
+    branches:
+      - work/v1856-private-installation-scope-nohost-20261118
+    paths:
+      - 'qa/channel-v1856/**'
+      - 'qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.mjs'
+      - '.github/workflows/v1856-private-installation-scope-qa.yml'
+      - 'docs/ai-handoff/T404_V1856_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1856/**'
+      - 'qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.mjs'
+      - '.github/workflows/v1856-private-installation-scope-qa.yml'
+      - 'docs/ai-handoff/T404_V1856_*'
+permissions:
+  contents: read
+jobs:
+  trusted-private-installation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Syntax check only; no Worker deployments
+        run: |
+          node --check qa/channel-v1856/private-owner-staging-gateway.mjs
+          node --check qa/channel-v1856/private-owner-staging-gateway.test.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs
+          node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
+      - name: Private scope authority and inherited read-only Worker regression
+        run: |
+          node --test \
+            qa/channel-v1856/private-owner-staging-gateway.test.mjs \
+            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs \
+            qa/channel-v1855/read-admission-policy.test.mjs \
+            qa/channel-v1854/cloudflare-access-context-gate.test.mjs
+      - name: Evidence and owner deferral gate
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const e=JSON.parse(fs.readFileSync('qa/channel-v1856/private-staging-scope-evidence.json','utf8'));
+          const src=fs.readFileSync('qa/channel-v1856/private-owner-staging-gateway.mjs','utf8');
+          assert.equal(e.checkpoint,'V18.5.6');
+          assert.equal(e.implementation.deployed,false);
+          assert.equal(e.implementation.installationIdFromBrowser,false);
+          assert.equal(e.implementation.access,'Native ctx.access with exact audience and owner-only identity');
+          assert.equal(e.deferredGate.status,'DEFERRED_BY_USER_FOR_FURTHER_STAGING_DEVELOPMENT');
+          assert.equal(e.deferredGate.securityApprovedForProduction,false);
+          assert.equal(e.deferredGate.evidenceObserved,false);
+          assert.equal(e.implementation.privatePath,'POST /__v1856/private-commerce/read');
+          assert.equal(e.implementation.serverSelectedInstallation.startsWith('One fixed Sandbox'),true);
+          assert.equal(e.implementation.trustedServerBindings.length,2);
+          assert(e.implementation.trustedServerBindings.every(b=>b.status==='SOURCE_REQUIREMENT_NOT_CONFIGURED'));
+          assert.equal(e.tests.realN8nHttpTest,false);
+          assert.equal(e.tests.realDurableObjectTest,false);
+          assert.equal(e.tests.realWorkerDeployment,false);
+          assert.equal(e.gates.storeLevelRls,'NOT_VERIFIED');
+          assert.equal(e.gates.production,'NO_GO');
+          assert(Object.values(e.noChanges).every(v=>v===true));
+          assert(src.includes("payload.installationId = installationId"));
+          assert(src.includes("mode !== 'PRIVATE_OWNER_QA_ONLY'"));
+          assert(src.includes("return originalCanary.fetch(request, env, ctx)"));
+          assert(!src.includes('new AccessApp'));
+          console.log('V1856_OWNER_DEFERRED_SECOND_IDENTITY_SOURCE_SCOPE_GATED_PRODUCTION_NO_GO');
+          JS
+      - name: Do not modify hosting or open Commerce
+        run: echo 'SOURCE QA ONLY. Existing V14.4 Cloudflare Access remains unchanged. No new credentials, n8n production, DO, Worker deployment, public Widget, Store RLS claim or orders.'
