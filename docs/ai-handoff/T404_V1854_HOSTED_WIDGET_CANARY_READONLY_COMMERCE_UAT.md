@@ -252,3 +252,16 @@ The user-provided canary response and the matching Cloudflare allowed-login audi
 - [GitHub Actions #44265516587](https://github.com/ngoctien20/demo-git/actions/runs/44265516587): **SUCCESS — 177/177 passed, 0 failed, 0 skipped**.
 - Access audit logs were re-queried after the user's second-browser screenshot. The application still has one event: the approved owner's `login / allowed=true`. No alternate identity denial event has yet appeared.
 - Thus the owner runtime verification is closed; the second identity denial remains the sole outstanding Access UAT item before this phase can close.
+
+
+### Latest continuation checkpoint — 18/11/2026 JST
+
+- Re-read Cloudflare Access application, attached policy, Worker subdomain and deployment after the user's "continue" instruction. Exact-host Access app and founder-only reusable Allow policy remain unchanged; biometric MFA remains required; workers.dev is enabled and previews remain disabled; Worker Version 3 remains at 100%.
+- Fresh Access log query still returns exactly **one** event for this application: the approved owner's `login / allowed=true` at `2026-11-18T08:11:58Z`, Ray ID `a5c581ec6c0996aa`. There is still **no** `allowed=false` event for a second identity.
+- The separate Incognito screenshot is the Cloudflare identity sign-in challenge at `dash.cloudflare.com/login?login_challenge=...`. It is a login challenge, not proof of Access denial or successful alternate identity sign-in.
+- The owner response and audit event are now recorded in `qa/channel-v1854/hosted-canary-runtime-evidence.json`; source CI asserts this evidence and leaves the alternate-identity denial pending.
+- GitHub Actions [run #44267022630](https://github.com/ngoctien20/demo-git/actions/runs/44267022630): **SUCCESS — 177/177 passed, 0 failed, 0 skipped**.
+
+**Current gate:** `OWNER_REAL_ACCESS_LOGIN_PASS / NATIVE_CTX_ACCESS_CANARY_PASS / ALTERNATE_IDENTITY_DENIAL_PENDING / N8N_READONLY_UAT_9_OF_9 / SOURCE_CI_177_OF_177 / COMMERCE_LOCKED / STORE_RLS_NOT_VERIFIED / PRODUCTION_NO_GO`.
+
+Next required action is still user-driven: complete Cloudflare sign-in in the second browser using a different identity already present in the same Cloudflare account but absent from the founder-only allowlist, then reopen the exact canary URL. Expected result is Access denial and a matching `allowed=false` audit event. Do not add members or change Access policy for this test.
