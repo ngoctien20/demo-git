@@ -302,7 +302,14 @@
       "neverStoreCustomerPII": true,
       "untrustedBodyNeverSelectsDoInstance": true,
       "missingBindingFailsClosed": true,
-      "note": "Source-only proposal. Requires owner authorization for namespace, binding, version upload and any metered usage. Generated request IDs deduplicate internal retries, not repeated independent client requests."
+      "note": "Source-only proposal. Requires owner authorization for namespace, binding, version upload and any metered usage. Generated request IDs deduplicate internal retries, not repeated independent client requests.",
+      "validation": {
+        "policyUnitTests": 10,
+        "newWorkerTests": 3,
+        "overallSourceTests": 141,
+        "allPassedAtSourceCommit": true,
+        "doRuntimeTested": false
+      }
     }
   },
   "securityGates": {
@@ -349,8 +356,15 @@
     "rerun": "PENDING_GITHUB_ACTIONS_OBSERVATION"
   },
   "sourceSecurityCheckpoint": {
-    "state": "SOURCE_QA_PENDING",
-    "nodePolicyTestsPlanned": 10,
-    "workerNewNegativeTestsPlanned": 3
+    "state": "VERIFIED_GITHUB_CI_AT_SHA_eb535d491f0981d9d06296e3e6ba3bb489a932a8",
+    "workflowRunId": 44281190151,
+    "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44281190151",
+    "status": "success",
+    "tests": 141,
+    "passed": 141,
+    "failed": 0,
+    "skipped": 0,
+    "sourceCommit": "eb535d491f0981d9d06296e3e6ba3bb489a932a8",
+    "scope": "security regression, Worker code, pure rolling quota/replay policy, offline ingress QA and evidence gates; no live Cloudflare Durable Object runtime verification"
   }
 }
