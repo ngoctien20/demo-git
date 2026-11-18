@@ -71,3 +71,5 @@ jobs:
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v
       - name: V17.2C.40F Private Owner Transition API Contract (design-only, no route/no write)
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40f_owner_transition_api_contract_test.py' -v
+      - name: V17.2C.40G Atomic Owner Consent, Idempotency and Membership Revocation Race QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c40g-owner-consent-revocation-ci-drill.sh
