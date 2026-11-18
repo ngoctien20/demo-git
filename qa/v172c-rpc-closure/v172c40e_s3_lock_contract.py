@@ -115,7 +115,10 @@ def validate_s3_lock(decision: Any, crosswalk: Any) -> dict[str, Any]:
         reasons.add("MISSING_S3_TRANSITION_POLICY")
     else:
         for key, expected in required_transition.items():
-            if transition.get(key) is not expected:
+            actual = transition.get(key)
+            # Compare JSON scalar values, while preserving strict JSON types
+            # so numeric 1 cannot masquerade as boolean true.
+            if type(actual) is not type(expected) or actual != expected:
                 reasons.add("S3_TRANSITION_POLICY_MISMATCH:" + key)
 
     decision_gates = decision.get("release_gates")
