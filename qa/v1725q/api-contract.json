@@ -1,0 +1,114 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TIEN404 Store-aware Commerce API",
+    "version": "2.0.0-candidate",
+    "description": "Proposed contract only. Not deployed. All paths require a verified server-side Supabase Auth session and explicit active Store membership."
+  },
+  "servers": [{"url": "https://api.example.invalid", "description": "Placeholder only; no live API host is approved"}],
+  "security": [{"bearerAuth": []}],
+  "paths": {
+    "/api/v2/tenants/{tenant_id}/stores": {
+      "get": {
+        "operationId": "listAuthorizedStores",
+        "summary": "List only Stores with explicit active membership",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}],
+        "responses": {"200": {"description": "Authorized Store list"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/products": {
+      "get": {
+        "operationId": "listStoreProducts",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/Limit"}],
+        "responses": {"200": {"description": "Products for the selected Store only"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/orders": {
+      "get": {
+        "operationId": "listStoreOrders",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/Limit"}],
+        "responses": {"200": {"description": "Orders for the selected Store only"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      },
+      "post": {
+        "operationId": "createStoreOrder",
+        "description": "Future contract only; not implemented or admitted. Server derives tenant/store/channel/prices/stock/total/status. Requires Idempotency-Key. Body MUST NOT contain tenant_id, store_id, user_id, unit_price_vnd, total_vnd, stock_on_hand, status or order_source.",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateOrderIntent"}}}},
+        "responses": {"201": {"description": "Created pending order; only after a separately approved transactional implementation"}, "400": {"$ref": "#/components/responses/BadRequest"}, "409": {"description": "Idempotency key reused with a different canonical payload or Store not active"}, "422": {"$ref": "#/components/responses/InvalidInput"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/orders/{order_id}": {
+      "get": {
+        "operationId": "getStoreOrder",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/OrderId"}],
+        "responses": {"200": {"description": "One order only if it belongs to the selected Tenant and Store"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/orders/{order_id}/items": {
+      "get": {
+        "operationId": "listStoreOrderItems",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/OrderId"}],
+        "responses": {"200": {"description": "Order items only after parent order is proven in the same Store"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/customers": {
+      "get": {
+        "operationId": "listStoreCustomers",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}],
+        "responses": {"200": {"description": "Store customer directory; Manager/Owner only"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/conversations": {
+      "get": {
+        "operationId": "listStoreConversations",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}],
+        "responses": {"200": {"description": "Store conversations; Manager/Owner only"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    },
+    "/api/v2/tenants/{tenant_id}/stores/{store_id}/conversations/{conversation_id}/messages": {
+      "get": {
+        "operationId": "listStoreConversationMessages",
+        "parameters": [{"$ref": "#/components/parameters/TenantId"}, {"$ref": "#/components/parameters/StoreId"}, {"$ref": "#/components/parameters/ConversationId"}],
+        "responses": {"200": {"description": "Messages only when parent conversation belongs to the selected Store"}, "404": {"$ref": "#/components/responses/NotFound"}}
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}},
+    "parameters": {
+      "TenantId": {"name": "tenant_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "StoreId": {"name": "store_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "OrderId": {"name": "order_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "ConversationId": {"name": "conversation_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "Limit": {"name": "limit", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 50}},
+      "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "minLength": 16, "maxLength": 128}}
+    },
+    "schemas": {
+      "CreateOrderIntent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {"type": "array", "minItems": 1, "maxItems": 100, "items": {"type": "object", "additionalProperties": false, "required": ["sku", "quantity"], "properties": {"sku": {"type": "string", "minLength": 1, "maxLength": 80}, "quantity": {"type": "integer", "minimum": 1, "maximum": 10000}}}},
+          "customer": {"type": "object", "additionalProperties": false, "properties": {"display_name": {"type": "string", "maxLength": 150}, "phone": {"type": "string", "maxLength": 30}, "email": {"type": "string", "maxLength": 254}}},
+          "note": {"type": "string", "maxLength": 1000}
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {"description": "Missing or invalid server-verified session"},
+      "Forbidden": {"description": "Authenticated actor lacks the effective Store role for this action"},
+      "NotFound": {"description": "Store/object absent or not authorized; avoids cross-Store enumeration"},
+      "BadRequest": {"description": "Unsupported duplicate Store/Tenant scope or invalid idempotency header"},
+      "InvalidInput": {"description": "Invalid order intent; server-owned fields rejected"}
+    }
+  },
+  "x-tien404-contract-rules": {
+    "scopeAuthority": "Store path is a selector only. Server verifies Auth, active tenant membership and explicit active Store membership on every request.",
+    "forbiddenScopeInputs": ["X-Tenant-ID", "X-Store-ID", "tenant_id query", "store_id query", "tenant_id body", "store_id body"],
+    "roleResolution": "Least privilege of tenant_memberships.role and store_memberships.role; no implicit tenant-owner access to all Stores.",
+    "channelAuthority": "Signed provider installation mapping or server-owned website widget installation; never a browser/client Store ID.",
+    "customerIdentity": "Channel-scoped by default; no automatic Messenger/Zalo/Website identity merge.",
+    "deploymentStatus": "CANDIDATE_NOT_DEPLOYED"
+  }
+}
