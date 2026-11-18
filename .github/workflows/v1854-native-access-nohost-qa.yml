@@ -16,6 +16,9 @@ on:
   pull_request:
     paths:
       - 'qa/channel-v1854/**'
+      - 'qa/channel-v1855/**'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
       - 'qa/channel-v1853/**'
       - 'qa/channel-v1852/**'
       - 'qa/channel-v1851/**'
@@ -157,8 +160,9 @@ jobs:
           assert(w.includes('verifyPrivateAccess(ctx, env)'));
           assert(w.includes("const N8N_HOST = 'ngoctien20.app.n8n.cloud'"));
           assert(w.includes("'x-t404-adapter-token'"));
-          assert(a.includes('oOOXicKXgKXGkBskKqh')===false || a.includes('oOOXicKXgKXGkBskKqh')===true);
-          assert(a.includes('oOOXicKXgKXGkBskKqh')||a.includes('oOOXicKXgKXGkBskKqh')===false);
+          assert(a.includes('oOOXicKXGkBskKqh'));
+          assert(a.includes('igPOsSbEgd4NgtRA'));
+          assert(a.includes('caller_authority_fields_forbidden'));
           assert(a.includes('igPOsSbEgd4NgtRA'));
           assert(q.includes('order.read')&&q.includes('order.create'));
           console.log('V1855_N8N_READONLY_ADAPTER_UAT_12_OF_12_PASS');
