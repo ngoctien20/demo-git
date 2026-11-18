@@ -87,9 +87,10 @@ q "UPDATE $s.private_proofs SET valid_until=now()-interval '1 minute'
  WHERE proof_ref='stale-proof';" >/dev/null
 proof no-proof "$retry" PROVEN_NONDELIVERY true true true false false reviewer-B
 proof revoked-reviewer "$retry" PROVEN_NONDELIVERY true true true true false reviewer-revoked
-proof forged-store "$retry" PROVEN_NONDELIVERY true true true true false reviewer-C
+proof forged-store "$retry" PROVEN_NONDELIVERY true true true true false reviewer-B
 q "UPDATE $s.private_proofs SET tenant_ref='tenant-2',
- store_ref='store-C',channel='messenger' WHERE proof_ref='forged-store';" >/dev/null
+ store_ref='store-C',channel='messenger',reviewer_ref='reviewer-C'
+ WHERE proof_ref='forged-store';" >/dev/null
 fail 'signature' DENY_PROOF_ATTESTATION "SELECT $s.reconcile_private_proof('bad-signature');"
 fail 'expired proof' DENY_PROOF_ATTESTATION "SELECT $s.reconcile_private_proof('stale-proof');"
 fail 'insufficient proof' DENY_NONDELIVERY_RETRY_GATE "SELECT $s.reconcile_private_proof('no-proof');"
