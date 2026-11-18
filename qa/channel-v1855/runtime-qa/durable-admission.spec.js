@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:workers';
+import { evictDurableObject } from 'cloudflare:test';
 
 const named = suffix => 't404-v1855:v1855-' + suffix + '-sandbox';
 const req = (installationId, requestId) => ({
@@ -18,6 +19,19 @@ describe('V18.5.5 SQLite Durable Object real workerd runtime - offline', () => {
     const repeated = await instance.authorizeRead(request);
     expect(repeated.allowed).toBe(false);
     expect(repeated.code).toBe('ADMISSION_REPLAY');
+  });
+
+  it('preserves the quota and replay ledger after Durable Object eviction', async () => {
+    const name = named('materials');
+    const stub = env.T404_READ_ADMISSION.getByName(name);
+    const request = req('v1855-materials-sandbox', uid());
+    const accepted = await stub.authorizeRead(request);
+    expect(accepted.allowed).toBe(true);
+    await evictDurableObject(stub);
+    const recovered = env.T404_READ_ADMISSION.getByName(name);
+    const duplicate = await recovered.authorizeRead(request);
+    expect(duplicate.allowed).toBe(false);
+    expect(duplicate.code).toBe('ADMISSION_REPLAY');
   });
 
   it('enforces 20 admitted and 10 rate-limited during concurrent RPC calls', async () => {
