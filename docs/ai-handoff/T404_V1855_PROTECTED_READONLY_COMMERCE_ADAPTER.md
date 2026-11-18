@@ -295,3 +295,63 @@ V18.5.4 private Worker version da022974-1832-425f-bf82-afddc558b893 and deployme
 **Local workerd ACCEPTED for source/runtime preflight; hosted DO namespace CREATE is BLOCKED by the no-deploy boundary.** No Cloudflare account mutation, secret read, webhook publication, customer-data change, order write, provider send or production release occurred during B4.
 
 **Checkpoint:** V1855_B4_LOCAL_WORKERD_SQLITE_4_OF_4 / SOURCE_QA_154_OF_154 / ISOLATED_OWNER_PREVIEW_ONLY / NO_DO_NAMESPACE_CREATED / WORKER_DEPLOYMENT_UNAPPROVED / COST_ACCOUNT_UNKNOWN / PRODUCTION_NO_GO.
+
+## 13. V18.5.5-B5 — Isolated SQLite DO class owner deployed and verified (18/11/2026 JST)
+
+**Current status: VERIFIED HOSTED CLASS/NAMESPACE, NO PUBLIC ROUTES, NO WIDGET BINDING, PRODUCTION NO-GO.**
+
+This B5 checkpoint **supersedes the B4 pre-deployment approval preview** in section 12. The owner explicitly approved deploying a new isolated staging Worker solely to register the SQLite Durable Object class and namespace. No permission was given to connect the existing Widget, enable a public host, modify n8n/credentials or enable Commerce writes.
+
+### Implementation and evidence
+
+Before mutation, Cloudflare read-only preflight confirmed that neither the proposed Worker nor its namespace existed, that the account had **three** specialized Durable Object namespaces, and that the V18.5.4 Widget had deployment `b4f501e0-ff37-4ea4-be77-6e3148667b15`.
+
+The implementation created a **separate Worker record with both workers.dev and preview URLs disabled, and no active deployment**, then uploaded exactly three previously QA-tested source modules with a declarative `exports` declaration:
+
+- Worker: `tien404-v1855-read-quota-isolated-staging`
+- Worker ID: `9096a97fe3c74bd7b2625b5617cbeafd`
+- Deployed version: `72e2fe69-4682-4204-a9c9-b0768f86d673`
+- Deployment ID: `172fd5ad-59c0-4083-bf19-85496a55055b`
+- Cloudflare class: `T404ReadAdmission`, storage `sqlite`
+- Namespace name: `tien404-v1855-read-quota-isolated-staging_T404ReadAdmission`
+- Namespace ID: `ca50ad778789491d967cc216fb39d0bd`
+- Class lifecycle reconciliation: one class created; **zero warnings**.
+
+No migration was applied to the existing V18.5.4 Widget Worker. Cloudflare reports the new namespace count is **four** (exactly one more than before).
+
+### Hosted safety verification — VERIFIED
+
+Cloudflare readback of the newly deployed Worker independently confirmed:
+
+- `workers.dev`: **disabled**
+- Preview URLs: **disabled**
+- Custom domains: **none**
+- Cron schedules: **none**
+- Worker bindings: **none**
+- Durable Object instances: **zero** — the class was registered but no hosted instance has been called.
+- Source file contains the unconditional HTTP 404 response `DO_OWNER_HAS_NO_PUBLIC_ENDPOINT`.
+- No n8n token secret, webhook route, external API call or production configuration was attached.
+
+The existing Widget Worker remained on version `da022974-1832-425f-bf82-afddc558b893`, deployment `b4f501e0-ff37-4ea4-be77-6e3148667b15`, with only `T404_ACCESS_AUD` and `T404_QA_OPERATOR_EMAIL` bindings. It has **no binding** to the new Durable Object.
+
+The n8n staging ingress `JZL4p8tLb65eU3aB` and internal Commerce Adapter `rYwrJfJavcaZcjUI` were **not published, activated or changed** during B5.
+
+### QA distinctions and remaining limitations
+
+- **VERIFIED:** Cloudflare accepted the deployed class export and created exactly one SQLite-backed Durable Object namespace.
+- **VERIFIED:** Worker has no public route, scheduled trigger or binding; the existing Widget was unaffected.
+- **PREVIOUSLY TESTED:** GitHub Actions [#44315412508](https://github.com/ngoctien20/demo-git/actions/runs/44315412508): 154/154 source regression plus 4/4 **local workerd SQLite** tests. Those are not equivalent to running the new namespace on the Cloudflare account.
+- **NOT TESTED:** Hosted instance SQL reads/writes, remote class RPC, actual rate-limit concurrency under hosted traffic, Cloudflare Access negative-identity proof, real n8n Header Auth HTTP, Store A/B RLS, public end-to-end Widget flow.
+- **UNKNOWN:** Cloudflare account subscription and spend limit because Billing/Spend-policy API requests returned HTTP 403. Creating the resource may consume quota or generate usage charges; no claim of zero cost.
+
+### Rollback and next protected gate
+
+The new class lifecycle change is **not backward-rollbackable** to a version before class creation. The primary containment is architectural: it lives on a new isolated, unreachable Worker with no client binding. Never delete the namespace or stored data without a separate owner approval. If a future release is rejected, keep the new Worker unreachable and do not attach it to the existing Widget.
+
+Connecting the new Durable Object binding `T404_READ_ADMISSION` to the existing Widget would require a separate owner-approved Worker deployment and is **not part of B5**. Similarly, no n8n webhook publication or secret binding is authorized here.
+
+The exact API IDs, code provenance and readback checks are recorded in:
+
+`qa/channel-v1855/isolated-do-hosted-creation-evidence.json`
+
+**B5 checkpoint:** `HOSTED_SQLITE_DO_NAMESPACE_VERIFIED / ISOLATED_WORKER_DEPLOYED_NO_ROUTES / NEW_DO_INSTANCES_ZERO / EXISTING_WIDGET_UNMODIFIED / N8N_WEBHOOK_INACTIVE / NO_SECRET_CHANGES / PROD_NO_GO`.
