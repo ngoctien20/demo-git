@@ -1,0 +1,75 @@
+name: TIEN404 V17.2C15 Ephemeral PostgreSQL Store A/B RLS and Rollback Drill
+on:
+  pull_request:
+    paths:
+      - 'qa/v172c-rpc-closure/**'
+      - '.github/workflows/v172c15-ephemeral-postgres-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-postgresql-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: tien404-ci-ephemeral-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: tien404-ci-ephemeral-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL command-line client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Verify ephemeral database is only localhost
+        run: |
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "postgres"
+          psql -X -tAc "SELECT current_database()" | grep -Fx postgres
+      - name: PostgreSQL schema, RLS, revoke and guarded rollback drill (synthetic only)
+        run: bash qa/v172c-rpc-closure/v172c15-ephemeral-postgres-drill.sh
+      - name: Private consent registry atomic replay and concurrent consume QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c18-atomic-consent-ci-drill.sh
+      - name: Atomic A/B private consent PAIR all-or-nothing PostgreSQL QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c19-pair-consume-ci-drill.sh
+      - name: Orders A/B same-tenant and cross-tenant read/write RLS rollback QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c30-ephemeral-orders-rls-drill.sh
+      - name: Tenant-to-Store migration preview and compatibility QA (ephemeral only; NOT hosted)
+        run: bash qa/v172c-rpc-closure/v172c32-no-write-store-migration-preview-drill.sh
+      - name: Atomic Store-Scoped Order Commit, Price/Stock, Concurrent Replay and Rollback QA (CI-only)
+        run: bash qa/v172c-rpc-closure/v172c35-atomic-order-commit-ci-drill.sh
+      - name: Multi-SKU Stock Reservation, Confirm/Cancel/Expiry & Failure Recovery QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c36-multiline-reservation-release-ci-drill.sh
+      - name: Reservation Expiry Worker Preview and No-Send Outbox Atomicity QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c37-expiry-outbox-atomic-ci-drill.sh
+      - name: Protected No-Send Dispatcher Admission, Delivery Idempotency and Bounded Retry QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c38-protected-no-send-dispatcher-ci-drill.sh
+      - name: Ambiguous Provider ACK Reconciliation, DLQ and No-Send Retry Admission QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c39-ambiguous-ack-dlq-ci-drill.sh
+      - name: V17.2C.40B Owner Authority Registry Default DENY Source QA (no database writes)
+        run: python3 qa/v172c-rpc-closure/v172c40b-static-deny-default-gate.py
+      - name: V17.2C.40C Private Owner Consent and Alias Conflict Preflight QA (synthetic source only)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40c_private_owner_alias_admission_test.py' -v
+      - name: V17.2C.40D Owner Decision S1/S2/S3 and Alias Crosswalk Collision QA (synthetic only)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40d_owner_decision_crosswalk_contract_test.py' -v
+      - name: V17.2C.40E S3 Locked Decision, Zero-Mapping Crosswalk and Private Transition Guard (synthetic only)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v
+      - name: V17.2C.40F Private Owner Transition API Contract (design-only, no route/no write)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40f_owner_transition_api_contract_test.py' -v
+      - name: V17.2C.40G Atomic Owner Consent, Idempotency and Membership Revocation Race QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c40g-owner-consent-revocation-ci-drill.sh

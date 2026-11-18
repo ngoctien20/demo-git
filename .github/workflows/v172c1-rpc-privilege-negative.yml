@@ -1,0 +1,20 @@
+name: TIEN404 V17.2C1 RPC Privilege Negative Contract (Source Only)
+on:
+  pull_request:
+    paths:
+      - 'qa/v172c-rpc-closure/**'
+      - '.github/workflows/v172c1-rpc-privilege-negative.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-send-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source-only privilege contract QA (NO hosted RPC invocation)
+        run: node --test qa/v172c-rpc-closure/*.test.cjs

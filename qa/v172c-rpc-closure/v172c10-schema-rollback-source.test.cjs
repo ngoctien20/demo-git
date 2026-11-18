@@ -1,0 +1,36 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {test:caseTest}=require('node:test');
+const folder=__dirname;
+const ddl=fs.readFileSync(path.join(folder,'v172c10_disposable_schema_candidate_NOT_EXECUTED.sql'),'utf8');
+const rollback=fs.readFileSync(path.join(folder,'v172c10_disposable_rollback_candidate_NOT_EXECUTED.sql'),'utf8');
+const name='tien404_v172c10_disposable';
+caseTest('candidate flagged NOT EXECUTED',()=>assert.match(ddl,/NOT APPROVED \/ NOT EXECUTED/));
+caseTest('only dedicated disposable schema',()=>assert.match(ddl,/CREATE SCHEMA tien404_v172c10_disposable;/));
+caseTest('explicit tenant and store composite key',()=>assert.match(ddl,/PRIMARY KEY \(tenant_id, store_id\)/));
+caseTest('membership references actual auth.users',()=>assert.match(ddl,/REFERENCES auth\.users\(id\)/));
+caseTest('membership composite FK',()=>assert.match(ddl,/FOREIGN KEY \(tenant_id,store_id\)/));
+caseTest('all 4 tables enable RLS',()=>assert.equal((ddl.match(/ENABLE ROW LEVEL SECURITY/g)||[]).length,4));
+caseTest('catalog policy checks tenant and store',()=>{assert.match(ddl,/m\.tenant_id=qa_catalog\.tenant_id/);assert.match(ddl,/m\.store_id=qa_catalog\.store_id/);});
+caseTest('membership user RLS indexed',()=>assert.match(ddl,/CREATE INDEX qa_store_memberships_user_active_idx[\s\S]*?\(user_id, active, tenant_id, store_id\)/));
+caseTest('auth.uid checked for membership',()=>assert.match(ddl,/m\.user_id=\(SELECT auth\.uid\(\)\)/));
+caseTest('no public Commerce DDL',()=>assert.doesNotMatch(ddl,/\b(?:ALTER|DROP|CREATE)\s+TABLE\s+public\./i));
+caseTest('no service role exposed',()=>assert.doesNotMatch(ddl,/GRANT\s+.*TO\s+service_role/i));
+caseTest('deny anon table grants',()=>assert.match(ddl,/REVOKE ALL ON ALL TABLES/));
+caseTest('read-only authenticated grant',()=>assert.match(ddl,/GRANT SELECT ON/));
+caseTest('no authenticated writes granted',()=>assert.doesNotMatch(ddl,/GRANT\s+(?:INSERT|UPDATE|DELETE)\b/i));
+caseTest('rollback explicitly not executed',()=>assert.match(rollback,/NOT EXECUTED/));
+caseTest('rollback checks table inventory',()=>assert.match(rollback,/actual_count <> 4/));
+caseTest('rollback checks external dependencies',()=>assert.match(rollback,/External dependent relations exist/));
+caseTest('rollback no cascade',()=>assert.doesNotMatch(rollback,/DROP (?:TABLE|SCHEMA)[^;]*CASCADE/i));
+caseTest('rollback restricts schema drop',()=>assert.match(rollback,/DROP SCHEMA tien404_v172c10_disposable RESTRICT/));
+caseTest('no external network or credential code',()=>assert.equal([ddl,rollback].some(x=>/https?:\/\//.test(x)),false));
+
+caseTest('rollback refuses non-empty QA catalog, memberships, stores and tenant tables',()=>{
+ for(const table of ['qa_catalog','qa_store_memberships','qa_stores','qa_tenants']){
+  assert.match(rollback,new RegExp('EXISTS \\(SELECT 1 FROM tien404_v172c10_disposable\\.'+table+' LIMIT 1\\)'));
+ }
+ assert.match(rollback,/Disposable schema has QA rows/);
+});

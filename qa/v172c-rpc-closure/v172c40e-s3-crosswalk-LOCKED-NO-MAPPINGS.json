@@ -1,0 +1,32 @@
+{
+  "contract": "TIEN404_V17_2C40E_S3_CROSSWALK_LOCK",
+  "contract_version": "1.0.0",
+  "status": "CROSSWALK_LOCKED_NO_MAPPINGS",
+  "scope": "SYNTHETIC_ONLY",
+  "authority_effect": "NONE",
+  "real_authority_requested": false,
+  "owner_decision": "S3",
+  "owner_decision_ref": "synthetic-decision-s3-v1",
+  "mappings": [],
+  "release_gates": {
+    "tenant_resolution": false,
+    "store_resolution": false,
+    "channel_installation_resolution": false,
+    "customer_identity_binding": false,
+    "order_ownership_binding": false,
+    "order_read": false,
+    "order_write": false,
+    "migration": false,
+    "provider_dispatch": false,
+    "production_release": false
+  },
+  "collision_policy": {
+    "unknown_namespace": "DENY",
+    "ambiguous_alias": "DENY",
+    "multiple_targets": "DENY",
+    "same_text_different_namespace": "NO_AUTO_JOIN",
+    "tenant_alias_implies_store": false,
+    "provider_installation_multi_store": "DENY",
+    "historical_order_without_store_provenance": "QUARANTINE"
+  }
+}

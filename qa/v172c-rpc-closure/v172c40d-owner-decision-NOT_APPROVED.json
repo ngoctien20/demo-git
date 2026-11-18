@@ -1,0 +1,44 @@
+{
+  "contract": "TIEN404_V17_2C40D_OWNER_DECISION",
+  "contract_version": "1.0.0",
+  "status": "OWNER_DECISION_DRAFT",
+  "scope": "SYNTHETIC_ONLY",
+  "authority_effect": "NONE",
+  "real_authority_requested": false,
+  "decision_ref": "synthetic-decision-pending",
+  "tenant_ref": "synthetic-tenant-placeholder",
+  "decision": "S3",
+  "evaluated_at": "2026-11-18T00:00:00Z",
+  "store_refs": [],
+  "owner_consents": [],
+  "admission": {
+    "store_membership_granted": false,
+    "real_auth_uat_admitted": false,
+    "migration_admitted": false,
+    "production_send_admitted": false
+  },
+  "required_private_evidence": [
+    "authenticated_owner_session_verified_server_side",
+    "explicit_S1_S2_or_S3_business_decision",
+    "separate_signed_consent_for_each_store_boundary",
+    "one_time_challenge_confirmed_and_consumed",
+    "active_tenant_membership_and_current_store_membership_review",
+    "independent_reviewer_attestation",
+    "trusted_signature_verification_and_key_version",
+    "expiry_revocation_and_replay_status",
+    "private_audit_evidence_reference_and_payload_hash"
+  ],
+  "prohibited_fields": [
+    "auth_user_id",
+    "email",
+    "phone",
+    "jwt",
+    "access_token",
+    "refresh_token",
+    "provider_token",
+    "password",
+    "private_key",
+    "customer_data"
+  ],
+  "instructions": "S3 is the safe initial state. A decision is a business boundary statement, not a Store membership grant, migration approval, provider installation approval, or production release. Never replace placeholders with real identifiers in GitHub. Real evidence belongs only in a separately approved private authority service."
+}
