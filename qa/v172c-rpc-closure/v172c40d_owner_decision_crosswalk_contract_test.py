@@ -1,5 +1,6 @@
 """V17.2C.40D synthetic-only contract tests. No identity or DB access."""
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -225,6 +226,28 @@ class OwnerDecisionContractTests(unittest.TestCase):
         f = owner_fixture("S2"); f["real_authority_requested"] = True
         self.assert_blocked(f, "REAL_AUTHORITY_PROHIBITED")
 
+
+
+    def test_malformed_unhashable_store_ref_fails_closed(self):
+        f = owner_fixture("S1")
+        f["store_refs"] = [{"attacker": "object"}]
+        self.assert_blocked(f, "NON_SYNTHETIC_STORE_REF")
+
+    def test_public_decision_template_starts_at_s3_no_approval(self):
+        template = json.loads((HERE / "v172c40d-owner-decision-NOT_APPROVED.json").read_text())
+        self.assertEqual(template["decision"], "S3")
+        self.assertEqual(template["store_refs"], [])
+        self.assertEqual(template["owner_consents"], [])
+        self.assertEqual(template["authority_effect"], "NONE")
+        self.assertFalse(template["admission"]["store_membership_granted"])
+        self.assertFalse(template["admission"]["real_auth_uat_admitted"])
+
+    def test_public_crosswalk_template_has_no_mappings_or_release_gates(self):
+        template = json.loads((HERE / "v172c40d-alias-crosswalk-NOT_APPROVED.json").read_text())
+        self.assertEqual(template["mappings"], [])
+        self.assertEqual(template["owner_decision"], "S3")
+        self.assertEqual(template["authority_effect"], "NONE")
+        self.assertTrue(all(value is False for value in template["release_gates"].values()))
 
 class AliasCrosswalkContractTests(unittest.TestCase):
     def assert_blocked(self, fixture, reason):
