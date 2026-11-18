@@ -35,10 +35,10 @@ VALUES
 (repeat('d',64),'session-d','actor-d','tenant-x','store-d','synthetic-transition-s2-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('e',64),'session-e','actor-e','tenant-x','store-e','synthetic-transition-s2-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
 (repeat('f',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '20 minutes',clock_timestamp()-interval '10 minutes'),
-(repeat('g',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
-(repeat('h',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
-(repeat('i',64),'session-inactive','actor-inactive','tenant-x','store-inactive','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
-(repeat('m',64),'session-f','actor-f','tenant-x','store-f','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes');
+(repeat('7',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
+(repeat('8',64),'session-a','actor-a','tenant-x','store-a','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
+(repeat('9',64),'session-inactive','actor-inactive','tenant-x','store-inactive','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes'),
+(repeat('0',64),'session-f','actor-f','tenant-x','store-f','synthetic-transition-s1-v2',2,'OWNER_DECISION_CONSENT',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '4 minutes');
 SQL
 
 deny() {
@@ -63,9 +63,9 @@ replay="$(psql -X -qAt -v ON_ERROR_STOP=1 -c "$consume_a")"
 deny "challenge-replay" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('a',64),'session-a','idempotency-key-a-0002','ACCEPT');" "DENY_CHALLENGE_INVALID_REPLAY_OR_SCOPE"
 deny "idempotency-conflict" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('b',64),'session-a','idempotency-key-a-0001','ACCEPT');" "DENY_IDEMPOTENCY_CONFLICT"
 deny "expired-challenge" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('f',64),'session-a','idempotency-key-expired','ACCEPT');" "DENY_CHALLENGE_INVALID_REPLAY_OR_SCOPE"
-deny "wrong-session-binding" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('g',64),'session-b','idempotency-key-wrong-session','ACCEPT');" "DENY_CHALLENGE_INVALID_REPLAY_OR_SCOPE"
-deny "inactive-session" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('i',64),'session-inactive','idempotency-key-inactive','ACCEPT');" "DENY_SESSION_INACTIVE_OR_REVOKED"
-deny "non-owner-membership" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('m',64),'session-f','idempotency-key-manager','ACCEPT');" "DENY_OWNER_MEMBERSHIP_REVOKED_OR_INVALID"
+deny "wrong-session-binding" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('7',64),'session-b','idempotency-key-wrong-session','ACCEPT');" "DENY_CHALLENGE_INVALID_REPLAY_OR_SCOPE"
+deny "inactive-session" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('9',64),'session-inactive','idempotency-key-inactive','ACCEPT');" "DENY_SESSION_INACTIVE_OR_REVOKED"
+deny "non-owner-membership" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('0',64),'session-f','idempotency-key-manager','ACCEPT');" "DENY_OWNER_MEMBERSHIP_REVOKED_OR_INVALID"
 
 # Revocation obtains the membership row lock first. Consent must wait, observe
 # the committed revocation, and leave the challenge unconsumed with no event.
