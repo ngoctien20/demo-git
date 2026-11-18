@@ -1,0 +1,68 @@
+name: TIEN404 V18.0-P0V — Trusted Auth Session × Private Origin Approval NO-HOST
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0v/**'
+      - 'qa/v180-p0t/protected_auth_candidate.py'
+      - 'qa/v180-p0t/test_protected_auth_candidate.py'
+      - 'qa/v180-p0u/test_p0u_protected_origin.py'
+      - 'docs/ai-handoff/T404_V180_P0V_*'
+      - '.github/workflows/v180-p0v-session-origin-approval-nohost.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0v/**'
+      - 'qa/v180-p0t/protected_auth_candidate.py'
+      - 'qa/v180-p0t/test_protected_auth_candidate.py'
+      - 'qa/v180-p0u/test_p0u_protected_origin.py'
+      - 'docs/ai-handoff/T404_V180_P0V_*'
+      - '.github/workflows/v180-p0v-session-origin-approval-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  offline-session-and-approval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate nohost boundary, exact parameterized SQL and unapproved gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/v180-p0v/*.py qa/v180-p0t/*.py qa/v180-p0u/*.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          src=Path('qa/v180-p0v/trusted_server_session_adapter.py').read_text()
+          parent=Path('qa/v180-p0t/protected_auth_candidate.py').read_text()
+          pkt=json.loads(Path('qa/v180-p0v/private_origin_approval_packet.json').read_text())
+          assert 'WHERE id = %s::uuid AND user_id = %s::uuid LIMIT 2' in src
+          assert 'SET LOCAL transaction_read_only = on' in src
+          assert "SET LOCAL statement_timeout = '2000ms'" in src
+          assert '"lookup_current_auth_session", sid, sub' in parent
+          assert pkt['live_inventory_read_only']['eligible_owners_with_candidate_session'] == 1
+          assert pkt['live_inventory_read_only']['cloudflare_access_application_protecting_render_origin'] is False
+          assert pkt['approval_state']['founder_approved_specific_protected_origin_change'] is False
+          assert pkt['approval_state']['authenticated_owner_b_consent'] is False
+          assert pkt['approval_state']['authorized_real_owner_uat'] is False
+          assert pkt['approval_state']['production_approved'] is False
+          assert all(x['status'] != 'APPROVED' for x in pkt['proposed_scoped_actions'])
+          assert all(word not in src for word in ('psycopg.connect(', 'create_engine(', 'import httpx', 'import jwt', 'service_role', 'refresh_token'))
+          print('P0V_NO_HOST_NO_REAL_AUTH_NO_ACCESS_EDIT_NO_CREDENTIALS_PASS')
+          PY
+      - name: Install isolated pinned test requirements
+        shell: bash
+        run: |
+          python3 -m venv .venv-p0v
+          .venv-p0v/bin/python -m pip install --disable-pip-version-check \
+            fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2 \
+            PyJWT==2.10.1 cryptography==46.0.4
+      - name: P0V read-only trusted session negative tests + P0T/P0U regression
+        shell: bash
+        run: |
+          .venv-p0v/bin/python -m pytest -q \
+            qa/v180-p0v/test_trusted_server_session_adapter.py \
+            qa/v180-p0t/test_protected_auth_candidate.py \
+            qa/v180-p0u/test_p0u_protected_origin.py
+      - name: No release or credential intake
+        run: echo 'P0V_SYNTHETIC_SOURCE_QA_ONLY; NO_ACCESS_POLICY_WRITE; NO_RENDER_DEPLOY; NO_REAL_OWNER_JWT; NO_SUPABASE_DB_WRITE; NO_ORDER_READ; NO_PROVIDER_SEND; PRODUCTION_NO_GO'
