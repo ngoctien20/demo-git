@@ -1,0 +1,33 @@
+name: TIEN404 V18.1 Cross-Channel E2E Evidence NO SEND
+on:
+  push:
+    branches: [work/v181-crosschannel-e2e-gate-nosend-20261118]
+    paths:
+      - 'qa/v181-crosschannel/**'
+      - 'docs/ai-handoff/T404_V181_CROSSCHANNEL_E2E_GATE_NO_SEND.md'
+      - '.github/workflows/v181-crosschannel-e2e-evidence-no-send.yml'
+  pull_request:
+    paths:
+      - 'qa/v181-crosschannel/**'
+      - 'docs/ai-handoff/T404_V181_CROSSCHANNEL_E2E_GATE_NO_SEND.md'
+      - '.github/workflows/v181-crosschannel-e2e-evidence-no-send.yml'
+permissions:
+  contents: read
+jobs:
+  evidence-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Exercise offline refusal and forged authority tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node --test qa/v181-crosschannel/e2e-evidence-gate.test.mjs
+      - name: Confirm NO SEND and unchanged hosted resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -REn 'import (.*http|.*https|.*supabase)|fetch\(|process\.env|service_role' qa/v181-crosschannel/e2e-evidence-gate.mjs
+          echo 'V181_SOURCE_ONLY_NO_SEND_NO_WRITES_NO_AUTH_PERMISSIONS'
