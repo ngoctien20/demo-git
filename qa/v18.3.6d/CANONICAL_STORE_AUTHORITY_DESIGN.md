@@ -93,6 +93,8 @@ Required attributes:
 
 Rules:
 - A provider installation maps to one canonical Tenant + Store.
+- Require UNIQUE `(tenant_id, store_id, id)` for composite references and a partial unique index on `(provider, external_account_id)` for verified/active installations, so one provider account cannot be attached to two Stores at once.
+- A conversation's provider-originated records retain the exact `channel_installation_id`; a channel label or external reference alone is not authority.
 - An active provider account cannot be silently attached to two Stores.
 - Webhook signature / provider proof is verified before resolution.
 - The server resolves the installation by verified provider + external account + installation state. It does not accept `store_id` from the webhook body, browser, customer message or n8n input as authority.
@@ -142,11 +144,12 @@ Required composite parent keys and foreign keys:
 | order_items | same Store FK |
 | order_items.order_id | `(tenant_id, store_id, order_id) → orders(tenant_id, store_id, id)` |
 | order_items.product_id | `(tenant_id, store_id, product_id) → products(tenant_id, store_id, id)` |
-| conversations | same Store FK |
+| conversations | same Store FK; add nullable `channel_installation_id` referencing the exact Store installation |
+| conversations.external_reference | UNIQUE `(tenant_id, store_id, channel_installation_id, external_reference)` where external_reference IS NOT NULL |
 | messages | same Store FK |
 | messages.conversation_id | `(tenant_id, store_id, conversation_id) → conversations(tenant_id, store_id, id)` |
 
-Add UNIQUE keys `(tenant_id, store_id, id)` on products, customers, orders and conversations as required by the composite references. Keep the existing Tenant-only foreign keys during additive rollout; remove redundant constraints only after the new constraints are validated and query plans are reviewed.
+Add UNIQUE keys `(tenant_id, store_id, id)` on products, customers, orders and conversations as required by the composite references. Add a composite FK from conversations `(tenant_id, store_id, channel_installation_id)` to the private installation registry `(tenant_id, store_id, id)`; this column remains NULL only for legacy or explicitly internal/manual conversations. New provider-originated conversations must carry the verified installation ID. The current live conversations table has only `id`, `tenant_id`, `channel`, `external_reference` and `created_at`; it does not yet retain a provider installation ID. Keep the existing Tenant-only foreign keys during additive rollout; remove redundant constraints only after the new constraints are validated and query plans are reviewed.
 
 Use `ON DELETE RESTRICT` for Store/ownership links. Business records are cancelled/archived, not physically cascade-deleted across a Store boundary.
 
