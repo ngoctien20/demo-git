@@ -13,6 +13,7 @@ CREATE ROLE tien404_h_nonce_untrusted NOLOGIN NOSUPERUSER NOBYPASSRLS;
 CREATE SCHEMA qa_h_private AUTHORIZATION tien404_h_nonce_owner;
 REVOKE ALL ON SCHEMA qa_h_private FROM PUBLIC;
 GRANT USAGE ON SCHEMA qa_h_private TO tien404_h_nonce_caller;
+GRANT USAGE ON SCHEMA public TO tien404_h_nonce_caller; -- pgTAP only; no data table rights
 
 CREATE TABLE qa_h_private.nonce_ledger (
  issuer text NOT NULL,
