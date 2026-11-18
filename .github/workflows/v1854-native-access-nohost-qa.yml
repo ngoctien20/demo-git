@@ -1,4 +1,4 @@
-name: TIEN404 V18.5.4 — Native Access Context × Read-Only UAT (NO-HOST)
+name: TIEN404 V18.5.4 — Private Hosted Canary × Read-Only UAT
 on:
   push:
     branches:
@@ -50,8 +50,10 @@ jobs:
           const fs=require('node:fs'),assert=require('node:assert/strict');
           const e=JSON.parse(fs.readFileSync('qa/channel-v1854/n8n-readonly-uat-evidence.json','utf8'));
           const p=JSON.parse(fs.readFileSync('qa/channel-v1854/hosted-uat-approval-packet.json','utf8'));
+          const h=JSON.parse(fs.readFileSync('qa/channel-v1854/hosted-canary-runtime-evidence.json','utf8'));
           const g=fs.readFileSync('qa/channel-v1854/cloudflare-access-context-gate.mjs','utf8');
           const w=fs.readFileSync('qa/channel-v1854/worker-v144-access-canary-candidate.mjs','utf8');
+          const backup=fs.readFileSync('qa/channel-v1854/backup/v144-worker-original-98c8aad5.mjs','utf8');
           assert.equal(e.harness.executionId,'5341');
           assert.equal(e.harness.status,'success');
           assert.equal(e.harness.subExecutions,9);
@@ -61,10 +63,25 @@ jobs:
           assert.equal(e.assertions.stockWrites,0);
           assert.equal(e.assertions.providerSends,0);
           assert.equal(e.scopeLimitations.storeLevelIsolation,'NOT_VERIFIED');
-          assert(Object.values(p.approvals).every(v=>v===false));
-          assert(p.cloudflareInventory.workersDevEnabled===false);
-          assert(p.cloudflareInventory.bindings===0);
-          assert(p.cloudflareInventory.dedicatedAccessApp===false);
+          assert.equal(p.status,'HOSTED_CANARY_DEPLOYED_PRIVATE_ACCESS_RUNTIME_LOGIN_PENDING');
+          assert.equal(p.cloudflareInventory.workersDevEnabled,true);
+          assert.equal(p.cloudflareInventory.previewsEnabled,false);
+          assert.equal(p.cloudflareInventory.bindings,2);
+          assert.equal(p.cloudflareInventory.dedicatedAccessApp,true);
+          assert.equal(p.workerCandidate.deployed,true);
+          assert.equal(p.workerCandidate.versionId,'da022974-1832-425f-bf82-afddc558b893');
+          assert.equal(h.access.applicationId,'1a73d50b-0668-4308-8f56-53aa9711d477');
+          assert.equal(h.worker.workersDevEnabled,true);
+          assert.equal(h.worker.previewsEnabled,false);
+          assert.equal(h.workerVersions[2].trafficPercent,100);
+          assert.equal(h.uat.realCtxAccessRuntime,'PENDING_USER_INTERACTION');
+          assert.equal(h.accessLogs.rows,0);
+          assert.equal(p.approvals.enableWorkersDevOnExistingV144,true);
+          assert.equal(p.approvals.createAccessAppForExactV144Host,true);
+          assert.equal(p.approvals.deployV144AccessCanarySource,true);
+          assert.equal(p.approvals.productionRelease,false);
+          assert.equal(p.approvals.bindGatewayToN8n,false);
+          assert(Object.entries(p.approvals).filter(([k])=>!['enableWorkersDevOnExistingV144','createAccessAppForExactV144Host','reuseExistingFounderOnlyAllowPolicy','deployV144AccessCanarySource','setServerVariablesAccessAudAndOperatorAllowlist'].includes(k)).every(([,v])=>v===false));
           assert(g.includes('ctx&&ctx.access'));
           assert(g.includes('access.getIdentity()'));
           assert(g.includes('ACCESS_AUDIENCE_MISMATCH'));
@@ -75,7 +92,9 @@ jobs:
           assert(w.includes('providerSends:0'));
           assert(!w.includes('Access-Control-Allow-Origin'));
           assert(!w.includes('await fetch('));
-          console.log('V1854_REAL_N8N_READONLY_EVIDENCE_AND_NOHOST_APPROVALS_PASS');
+          assert(backup.includes('V144_WIDGET_GATE_CLOSED'));
+          assert(backup.includes('return json(423'));
+          console.log('V1854_REAL_N8N_UAT_AND_PRIVATE_HOSTED_CANARY_EVIDENCE_PASS_RUNTIME_LOGIN_PENDING');
           JS
-      - name: Hosted rollout remains disabled
-        run: echo 'NO WORKER UPLOAD, NO WORKERS.DEV ENABLE, NO ACCESS APP/POLICY CHANGE, NO D1/DO, NO N8N WEBHOOK OR CREDENTIAL, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
+      - name: Production and Commerce rollout remain disabled
+        run: echo 'PRIVATE HOSTED ACCESS CANARY ONLY. V14.4 workers.dev enabled behind exact-host owner-only Access app; previews remain disabled; V18.5.4 canary is deployed. Real browser Access login/negative identity UAT is still pending. NO N8N WEBHOOK OR CREDENTIAL, NO D1/DO, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
