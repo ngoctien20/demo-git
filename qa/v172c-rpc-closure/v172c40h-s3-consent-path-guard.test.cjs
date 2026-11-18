@@ -94,6 +94,74 @@ test('guard constructor requires trusted decision source and backend adapters',(
   }),/S3_GUARD_SERVER_ADAPTERS_MISSING/);
 });
 
+
+test('integration: S3 guard blocks existing V21 backend before trusted adapters run',async()=>{
+  const {createPrivateConsentBackend}=require('./v172c21-protected-consent-backend.cjs');
+  const calls=[];
+  const services={};
+  for(const name of ['verifySession','resolveStoreAuthority','verifyConsentChallenge',
+    'recordExplicitConsent','getPrivateEvidence','getTrustedAuthority','getSignedReceipts',
+    'verifyReviewerSession']) {
+    services[name]=async()=>{calls.push(name);return null;};
+  }
+  const v21=createPrivateConsentBackend(services);
+  const {guard}=setup();
+  const guarded=createS3LockedConsentGuard({
+    getCurrentDecision:async()=>({
+      decision_ref:'synthetic-decision-s3-v1',decision_version:1,decision:'S3',
+      status:'OWNER_DECISION_LOCKED',lock_state:'LOCKED',authority_effect:'NONE',
+      owner_authority_verified:false,identity_verified:false,real_authority_requested:false
+    }),
+    backend:v21
+  });
+  const result=await guarded.intake({
+    bearer:'Bearer '+ 'x'.repeat(32),
+    requestedScope:'synthetic_catalog_readonly_no_send_no_write',
+    consentAction:'accept',challenge:'x'.repeat(24)
+  });
+  assert.equal(result.reason,'OWNER_DECISION_S3_LOCKED');
+  assert.deepEqual(calls,[]);
+});
+
+test('integration: V24 QA HTTPS handler cannot bypass S3 guard into V21 consent backend',async()=>{
+  const {createPrivateConsentBackend}=require('./v172c21-protected-consent-backend.cjs');
+  const {createProtectedConsentHttpRoute}=require('./v172c24-private-consent-https-handler.cjs');
+  const calls=[];
+  const services={};
+  for(const name of ['verifySession','resolveStoreAuthority','verifyConsentChallenge',
+    'recordExplicitConsent','getPrivateEvidence','getTrustedAuthority','getSignedReceipts',
+    'verifyReviewerSession']) {
+    services[name]=async()=>{calls.push(name);return null;};
+  }
+  const v21=createPrivateConsentBackend(services);
+  const guard=createS3LockedConsentGuard({
+    getCurrentDecision:async()=>({
+      decision_ref:'synthetic-decision-s3-v1',decision_version:1,decision:'S3',
+      status:'OWNER_DECISION_LOCKED',lock_state:'LOCKED',authority_effect:'NONE',
+      owner_authority_verified:false,identity_verified:false,real_authority_requested:false
+    }),
+    backend:v21
+  });
+  const origin='https://s3-guard.example.test';
+  const route=createProtectedConsentHttpRoute({
+    backend:guard,allowedOrigin:origin,
+    verifyDeploymentGate:async()=>({approved:true,isolatedDisposable:true,noSend:true,
+      recoveryApproved:true,independentReviewerApproved:true}),
+    checkRateLimit:async()=>true
+  });
+  const token='Bearer '+['a'.repeat(30),'b'.repeat(30),'c'.repeat(40)].join('.');
+  const request=new Request(origin+'/private/qa-consent/intake',{
+    method:'POST',
+    headers:{origin,authorization:token,'content-type':'application/json'},
+    body:JSON.stringify({requestedScope:'synthetic_catalog_readonly_no_send_no_write',
+      consentAction:'accept',challenge:'x'.repeat(24)})
+  });
+  const response=await route(request);
+  assert.equal(response.status,403);
+  assert.deepEqual(await response.json(),{status:'DENY'});
+  assert.deepEqual(calls,[]);
+});
+
 test('guard response is redacted and contains no owner or Store identifiers',async()=>{
   const {guard}=setup();
   const result=await guard.intake({jwt:'do-not-return',email:'private@example.invalid',store_id:'private'});
