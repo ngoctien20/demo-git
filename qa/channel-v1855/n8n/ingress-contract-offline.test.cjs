@@ -39,7 +39,7 @@ test('source contains Header Auth and dedicated existing credential name, never 
  assert(src.includes("newCredential('TIEN404_V1855_READONLY_ADAPTER_AUTH_STAGING')"));
  assert(src.includes("responseMode:'responseNode'"));
  assert(src.includes('rYwrJfJavcaZcjUI'));
- assert(src.includes('only safe read'));
+ assert(src.includes('Only Safe Read Operations?'));
  assert(!src.includes('n8n-nodes-base.httpRequest'));
  assert(!src.includes('n8n-nodes-base.dataTable'));
  assert(!src.includes('n8n-nodes-base.telegram'));
