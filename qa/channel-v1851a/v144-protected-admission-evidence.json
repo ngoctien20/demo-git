@@ -1,0 +1,161 @@
+{
+  "phase": "V18.5.1A",
+  "date": "2026-11-18 JST",
+  "mode": "EXISTING_V14_4_GATEWAY_PROTECTED_ADMISSION_READ_ONLY_AUDIT_AND_SOURCE_QA",
+  "status": "LIVE_V144_CONFIG_AND_OWNER_AND_ANONYMOUS_EDGE_VERIFIED_ALT_IDENTITY_DENIAL_PENDING",
+  "existingGateway": {
+    "worker": "tien404-widget-gateway-v144-staging",
+    "hostname": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "workersDevEnabled": true,
+    "previewsEnabled": false,
+    "deploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "deployedVersionId": "da022974-1832-425f-bf82-afddc558b893",
+    "trafficPercentage": 100,
+    "compatibilityDate": "2026-11-18",
+    "runtimeCodeReadBack": {
+      "cloudflareAccessContextPresent": true,
+      "identityLookupPresent": true,
+      "canaryPresent": true,
+      "allWidgetEndpointsLockedWith423": true,
+      "noOutboundFetch": true,
+      "noN8nWebhook": true,
+      "moduleCount": 2
+    },
+    "bindings": [
+      {
+        "name": "T404_ACCESS_AUD",
+        "type": "plain_text"
+      },
+      {
+        "name": "T404_QA_OPERATOR_EMAIL",
+        "type": "secret_text"
+      }
+    ],
+    "noNewBindings": true
+  },
+  "existingAccessApplication": {
+    "id": "1a73d50b-0668-4308-8f56-53aa9711d477",
+    "type": "self_hosted",
+    "domain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "destination": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "coverage": "EXACT_HOST_NO_PATH_SUFFIX_NO_WILDCARD",
+    "sessionDuration": "30m",
+    "mfa": {
+      "biometrics": true,
+      "disabled": false,
+      "mfaSessionDuration": "0m"
+    },
+    "idpCount": 1,
+    "optionsPreflightBypass": false,
+    "attachedPolicy": {
+      "id": "e936ca09-254b-4cc3-8ebd-efca366c7164",
+      "decision": "allow",
+      "reusable": true,
+      "includeSelectorType": "email",
+      "redacted": true
+    },
+    "noAccessAppChange": true,
+    "noPolicyChange": true
+  },
+  "realUserOwnerLogin": {
+    "verified": true,
+    "source": "User-submitted Canary JSON plus Cloudflare Access allowed login event",
+    "canary": "CLOUDFLARE_ACCESS_CONTEXT_VERIFIED",
+    "audienceVerified": true,
+    "operatorAllowlisted": true,
+    "privateOrderAccess": false,
+    "orderWrites": 0,
+    "providerSends": 0,
+    "productionReady": false,
+    "audit": {
+      "action": "login",
+      "allowed": true,
+      "createdAt": "2026-11-18T08:11:58Z",
+      "rayId": "a5c581ec6c0996aa"
+    }
+  },
+  "alternateIdentityDenied": {
+    "verified": false,
+    "reason": "Cloudflare Access logs contain no non-allowlisted identity denied event for this app; user screenshot only showed a Cloudflare login challenge",
+    "identityChangesMade": false,
+    "userAction": "Use a separate already-existing non-allowlisted Cloudflare identity in a second browser profile, complete login, confirm Access Denied; do not share credentials or tokens",
+    "criteria": "Denied alternate identity event from same Access app plus no successful Canary JSON"
+  },
+  "externalUnauthenticatedEdgeTest": {
+    "verified": true,
+    "source": "Unauthenticated GETs executed in GitHub Actions runner (no cookies, JWT or secrets)",
+    "runId": 44284152281,
+    "runUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44284152281",
+    "sourceCommit": "ff23442b85d0468443db606244cfa7383759b9a9",
+    "results": [
+      {
+        "path": "/__v1854/access-canary",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      },
+      {
+        "path": "/__v144/health",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      },
+      {
+        "path": "/v1/widget/session",
+        "httpStatus": 302,
+        "classification": "UNAUTHENTICATED_ACCESS_LOGIN_REDIRECT",
+        "verified": true
+      }
+    ],
+    "noCredentialsUsed": true,
+    "redirectQueriesLogged": false,
+    "scope": "Real anonymous Cloudflare Access redirect, not logged-in alternate identity authorization denial",
+    "previousToolProbe": {
+      "result": "Local execution environment DNS lookup failed before GitHub Actions probe",
+      "interpretation": "This did not establish a site DNS outage."
+    }
+  },
+  "sourceOnlyRegression": {
+    "testFile": "qa/channel-v1851a/v144-protected-admission.test.mjs",
+    "testType": "SYNTHETIC_ACCESS_CTX_AND_LOCKED_ROUTE_MATRIX",
+    "realEdgeAccessProof": false,
+    "noSecretAccess": true,
+    "expectedCases": 23,
+    "totalWithInheritedV1854": 36,
+    "lastGreenCI": {
+      "id": 44284152281,
+      "sha": "ff23442b85d0468443db606244cfa7383759b9a9",
+      "tests": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "n8nLiveHttpAuth": {
+    "verified": false,
+    "note": "V18.5.5 remains inactive; unrelated to the existing protected V14.4 Canary admission"
+  },
+  "commerce": {
+    "storeLevelRlsVerified": false,
+    "ordersRead": false,
+    "ordersWritten": false,
+    "inventoryWritten": false,
+    "providerSends": false,
+    "aiCalls": false
+  },
+  "cloudflareDeployedWorkerChange": false,
+  "newGatewayCreated": false,
+  "accessAppCreated": false,
+  "newSecretsCreated": false,
+  "newDurableObjects": false,
+  "existingWorkerDeploymentUnaffected": true,
+  "productionRelease": false,
+  "rollback": {
+    "noHostedRollbackNeeded": true,
+    "originalPreCanaryVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+    "currentCanaryVersion": "da022974-1832-425f-bf82-afddc558b893",
+    "currentCanaryDeployment": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "sourceChangesOnly": "Close the new Draft PR without merge; no Cloudflare change to revert"
+  },
+  "decision": "LIVE_V14_4_CONFIG_VERIFIED / REAL_OWNER_PASS / REAL_ANON_EDGE_302_3_OF_3_PASS / SOURCE_QA_36_OF_36 / REAL_ALTERNATE_DENIAL_PENDING / NO_CLOUDFLARE_MUTATION / PRODUCTION_NO_GO"
+}
