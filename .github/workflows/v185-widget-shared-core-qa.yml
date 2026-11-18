@@ -49,7 +49,7 @@ jobs:
           assert(legacy.includes("v185?.enabled===true && v185?.staging===true"));
           assert(legacy.includes("}else if(target){"));
           assert(!cfg.includes("enabled:true"));
-          assert(client.includes("credentials:'omit'"));
+          assert(client.includes("credentials:sameOriginQaGateway?'same-origin':'omit'"));
           assert(client.includes("redirect:'error'"));
           assert(client.includes("state = { session: null"));
           assert(client.includes("privateOrderAccess!==false"));
