@@ -1,0 +1,1 @@
+manifest_id,batch_id,source_system,source_schema,source_table,source_record_key_ref,source_row_sha256,tenant_id,proposed_store_id,proof_type,proof_ref,owner_approval_ref,owner_approved_by,owner_approved_at,reviewed_by,reviewed_at,decision,status,migration_version,applied_at,target_record_key_ref,rollback_batch_id,evidence_sha256,notes
