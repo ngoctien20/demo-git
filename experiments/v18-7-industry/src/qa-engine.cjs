@@ -15,6 +15,7 @@ const QA_CATALOG = Object.freeze([
   Object.freeze({ origin: "SYNTHETIC_QA", tenant_key: "qa_tenant_a", store_key: "qa_store_a", sku: "QA-G001", price_vnd: 12500, stock_base: 100, units: Object.freeze({ goi: 1, loc: 6, thung: 24 }) }),
   Object.freeze({ origin: "SYNTHETIC_QA", tenant_key: "qa_tenant_b", store_key: "qa_store_b", sku: "QA-B001", price_vnd: 85000, stock_base: 60, units: Object.freeze({ bao: 1 }) }),
 ]);
+const ISSUED_PREVIEWS = new WeakSet(); // QA-only issued-object integrity, NOT production auth.
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v) && (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null);
 const exactKeys = (o, allowed) => plain(o) && Object.keys(o).every((k) => allowed.includes(k) && k !== "__proto__" && k !== "constructor" && k !== "prototype");
@@ -54,16 +55,19 @@ function buildQaPreview(input) {
   if (authority.profile_id !== input.profile.id || input.override.tenant_key !== authority.tenant_key || input.override.store_key !== authority.store_key || input.override.profile_id !== input.profile.id || input.override.profile_version !== input.profile.version) return fail("STORE_PROFILE_SCOPE_MISMATCH");
   if (!input.profile.capabilities.channels.includes(input.channel)) return fail("CHANNEL_NOT_SUPPORTED");
   const granted = input.override.requested_tools.filter((tool) => input.profile.capabilities.tools.allow.includes(tool) && READ_TOOLS.includes(tool));
-  return {
+  const result = {
     ok: true, status: "PREVIEW_ONLY", origin: "SYNTHETIC_QA", tenant_key: authority.tenant_key,
     store_key: authority.store_key, profile_id: input.profile.id, profile_version: input.profile.version, channel: input.channel,
-    greeting: input.override.greeting, tone: input.override.tone, faq: input.override.faq.map((f) => ({ question: f.question, answer: f.answer })),
-    read_tools: granted, policy: { price_source: "canonical_commerce", stock_source: "canonical_commerce", cross_store: "DENY" },
-    canWrite: false, canSend: false, canReadPrivateOrder: false, forbidden_tools: FORBIDDEN_TOOLS.slice(),
+    greeting: input.override.greeting, tone: input.override.tone, faq: Object.freeze(input.override.faq.map((f) => Object.freeze({ question: f.question, answer: f.answer }))),
+    read_tools: Object.freeze(granted), policy: Object.freeze({ price_source: "canonical_commerce", stock_source: "canonical_commerce", cross_store: "DENY" }),
+    canWrite: false, canSend: false, canReadPrivateOrder: false, forbidden_tools: FORBIDDEN_TOOLS,
   };
+  Object.freeze(result);
+  ISSUED_PREVIEWS.add(result);
+  return result;
 }
 function previewQaQuote(config, request) {
-  if (!plain(config) || config.ok !== true || config.status !== "PREVIEW_ONLY" || config.origin !== "SYNTHETIC_QA" || config.canWrite !== false || config.canSend !== false) return fail("NO_TRUSTED_PREVIEW");
+  if (!ISSUED_PREVIEWS.has(config) || !plain(config) || config.ok !== true || config.status !== "PREVIEW_ONLY" || config.origin !== "SYNTHETIC_QA" || config.canWrite !== false || config.canSend !== false) return fail("NO_TRUSTED_PREVIEW");
   if (!exactKeys(request, ["sku", "quantity", "unit"]) || !text(request.sku, 32) || !text(request.unit, 32) || !Number.isSafeInteger(request.quantity) || request.quantity < 1 || request.quantity > 1000) return fail("INVALID_QUOTE_INPUT");
   if (!Array.isArray(config.read_tools) || !config.read_tools.includes("preview_quote")) return fail("TOOL_NOT_ALLOWED");
   const item = QA_CATALOG.find((r) => r.sku === request.sku && r.tenant_key === config.tenant_key && r.store_key === config.store_key && r.origin === "SYNTHETIC_QA");

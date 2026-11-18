@@ -7,7 +7,7 @@ Base: **gh-pages at ff2daf970e8209399a28b2d0cade8a33b9fa71c6**.
 
 The website currently has static industry marketing pages but no verified canonical store registry. n8n Messenger workflow Z7FdV7uDvApfbURQ is Published; Commerce Core iyfGUiEsZlNTBWOR is active and its draft differs from Published. Do NOT wire this module into either workflow.
 
-This package contains **only synthetic QA**: two version-pinned Industry Profile JSON files, schema, pure offline preview engine, 38 security/commerce unit tests, and optional static UI. No credentials, webhooks, provider calls, Commerce orders, data writes, or production binding.
+This package contains **only synthetic QA**: two version-pinned Industry Profile JSON files, schema, pure offline preview engine, 42 security/commerce unit tests, and optional static UI. No credentials, webhooks, provider calls, Commerce orders, data writes, or production binding.
 
 ## Business architecture
 
@@ -71,7 +71,7 @@ V18.7.7 -> release readiness review; production NO_GO.
 ## Limitations (must not overclaim)
 
 No fractional unit conversions in V1. Decimal kg/m2/m3 requires approved exact decimal/rational precision design; prototype rejects fractions instead of rounding silently.
-QA actor keys are obviously **not authentication**; their lookup is only a fake authority fixture. A production adapter MUST verify a server-validated principal and store ownership, channel installation, customer binding and tool scope; never reuse this QA lookup as auth.
+QA actor keys are obviously **not authentication**; their lookup is only a fake authority fixture. A WeakSet pins preview objects to this QA process so caller-forged preview objects are rejected; it is **not** durable authentication. A production adapter MUST verify a server-validated principal and store ownership, channel installation, customer binding and tool scope; never reuse this QA lookup as auth.
 No provider send, no Meta/Zalo OAuth, no n8n integration, no deployed authenticated Dashboard, no real order read/write.
 
 ## Legacy decision matrix
