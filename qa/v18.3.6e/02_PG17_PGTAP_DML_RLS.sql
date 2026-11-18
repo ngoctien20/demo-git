@@ -35,6 +35,7 @@ SELECT ok((SELECT count(*) FROM public.orders WHERE store_id IS NULL)=1,'G04 leg
 SELECT ok((SELECT count(*) FROM public.products WHERE sku='COMMON')=3,'G05 same SKU across three independent Stores');
 SELECT ok(NOT has_table_privilege('tien404_e_actor','public.store_memberships','SELECT'),'G06 authority tables not exposed to actor');
 SELECT ok((SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%immutable_store_scope')=6,'G07 all six immutable Store triggers exist');
+SELECT is(qa_private.try_write($q$INSERT INTO public.products VALUES('00000000-0000-0000-0000-000000002095','00000000-0000-0000-0000-000000000001',NULL,'INVALID-NULL-PRIVILEGED',1,1)$q$),'23514','G08 NOT VALID CHECK rejects privileged new NULL Store row');
 
 SET ROLE tien404_e_actor;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001001';
@@ -51,7 +52,7 @@ SELECT is(qa_private.try_write($q$INSERT INTO public.products VALUES('00000000-0
 SELECT is(qa_private.try_write($q$INSERT INTO public.orders VALUES('00000000-0000-0000-0000-000000004091','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000003002','pending',10)$q$),'23503','A11 order A cannot reference customer B');
 SELECT is(qa_private.try_write($q$INSERT INTO public.order_items VALUES('00000000-0000-0000-0000-000000005091','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000002002',1,250)$q$),'23503','A12 order item A cannot reference product B');
 SELECT is(qa_private.try_write($q$INSERT INTO public.messages VALUES('00000000-0000-0000-0000-000000007091','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000006002','staff','cross-store')$q$),'23503','A13 message A cannot reference conversation B');
-SELECT is(qa_private.try_write($q$INSERT INTO public.products VALUES('00000000-0000-0000-0000-000000002092','00000000-0000-0000-0000-000000000001',NULL,'INVALID-NULL',1,1)$q$),'23514','A14 new NULL Store row rejected by NOT VALID check');
+SELECT is(qa_private.try_write($q$INSERT INTO public.products VALUES('00000000-0000-0000-0000-000000002092','00000000-0000-0000-0000-000000000001',NULL,'INVALID-NULL',1,1)$q$),'42501','A14 actor NULL Store row rejected by restrictive RLS before CHECK');
 SELECT is(qa_private.try_write($q$INSERT INTO public.products VALUES('00000000-0000-0000-0000-000000002093','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','COMMON',1,1)$q$),'23505','A15 duplicate SKU in same Store rejected');
 SELECT is(qa_private.try_write_count($q$INSERT INTO public.products VALUES('00000000-0000-0000-0000-000000002094','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','A-NEW',110,2)$q$),1,'A16 Owner A can insert scoped product');
 SELECT is(qa_private.try_write_count($q$UPDATE public.products SET price_vnd=111 WHERE id='00000000-0000-0000-0000-000000002094'$q$),1,'A17 Owner A can update scoped product');
