@@ -1,0 +1,64 @@
+name: TIEN404 V18.5.3 — Signed Access JWT & Gateway NO-HOST UAT
+on:
+  push:
+    branches:
+      - work/v1853-access-jwt-cryptographic-uat-nohost-20261118
+    paths:
+      - 'qa/channel-v1853/**'
+      - '.github/workflows/v1853-signed-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1853_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1853/**'
+      - '.github/workflows/v1853-signed-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1853_*'
+permissions:
+  contents: read
+jobs:
+  source-only-jwt-gateway-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Compile exact JWT and existing gateway sources
+        run: |
+          node --version
+          node --check qa/channel-v1853/access-jwt-verifier.cjs
+          node --check qa/channel-v1853/access-jwt-verifier.test.cjs
+          node --check qa/channel-v1852/published-core-readonly-admission.cjs
+          node --check qa/channel-v1851/protected-http-gateway.cjs
+      - name: Synthetic signed RS256 issuer/audience JWT + existing Gateway regressions
+        run: |
+          node --test \
+            qa/channel-v1853/access-jwt-verifier.test.cjs \
+            qa/channel-v1852/published-core-readonly-admission.test.cjs \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v143/channel-core.test.cjs
+      - name: Enforce no-host, no live JWKS fetch or private Store scope
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const s=fs.readFileSync('qa/channel-v1853/access-jwt-verifier.cjs','utf8');
+          const p=JSON.parse(fs.readFileSync('qa/channel-v1853/crypto-uat-approval-packet.json','utf8'));
+          assert(s.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
+          assert(s.includes("cryptoVerify('RSA-SHA256'"));
+          assert(s.includes("Cf-Access")||s.includes("'cf-access-jwt-assertion'"));
+          assert(s.includes("payload.iss!==expectedIssuer"));
+          assert(s.includes("aud.length!==1"));
+          assert(s.includes("!operatorIds.has(payload.sub)"));
+          assert(!s.includes("fetch("));
+          assert(!s.includes("http.request("));
+          assert(!s.includes("https.request("));
+          assert(!s.includes("process.env."));
+          assert(Object.values(p.permissions).every(x=>x===false));
+          assert.equal(p.qa.liveN8nCalls,0);
+          assert.equal(p.qa.hostedGatewayTests,0);
+          assert.equal(p.cloudflareInventory.bindings,0);
+          assert.equal(p.cloudflareInventory.workersDevEnabled,false);
+          console.log('V1853_PINNED_CRYPTOGRAPHIC_ACCESS_NOHOST_ALL_HOSTED_PERMISSIONS_FALSE_PASS');
+          JS
+      - name: Hosted release remains blocked
+        run: echo 'NO CLOUDFLARE ACCESS OR WORKER CHANGES; NO REAL JWT, D1 OR N8N, NO CUSTOMER DATA, NO SEND, NO ORDERS, NO PRODUCTION.'
