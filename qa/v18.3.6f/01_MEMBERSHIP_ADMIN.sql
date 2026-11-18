@@ -82,8 +82,8 @@ BEGIN
  SELECT EXISTS(SELECT 1 FROM public.store_memberships m WHERE m.tenant_id=p_tenant AND m.store_id=p_store
   AND m.user_id=actor AND m.role='store_owner' AND m.status='active' AND m.revoked_at IS NULL
   AND m.expires_at IS NULL AND st='active') INTO store_owner;
- IF NOT (tenant_owner OR (store_owner AND p_role IN ('manager','staff'))) THEN RETURN 'DENY_ACTOR_SCOPE'; END IF;
  IF p_role='store_owner' AND NOT tenant_owner THEN RETURN 'DENY_OWNER_GRANT'; END IF;
+ IF NOT (tenant_owner OR (store_owner AND p_role IN ('manager','staff'))) THEN RETURN 'DENY_ACTOR_SCOPE'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.tenant_memberships m WHERE m.tenant_id=p_tenant AND m.user_id=p_target AND m.active)
  THEN RETURN 'DENY_TARGET_TENANT'; END IF;
  SELECT status INTO existing FROM public.store_memberships
