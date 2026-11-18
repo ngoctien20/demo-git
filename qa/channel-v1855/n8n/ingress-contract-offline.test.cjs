@@ -116,7 +116,7 @@ test('valid Cart Preview cannot confirm or write',()=>{
  assert.equal(r.body.previewOnly,true);
 });
 test('actual n8n workflow remains inactive with correct credential and no execution data retention',()=>{
- const w=e.n8n.ingress;
+ const w=evidence.n8n.ingress;
  assert.equal(w.active,false);assert.equal(w.published,false);
  assert.equal(w.webhook.authentication,'headerAuth');
  assert.equal(w.webhook.credentialName,'TIEN404_V1855_READONLY_ADAPTER_AUTH_STAGING');
@@ -128,5 +128,5 @@ test('actual n8n workflow remains inactive with correct credential and no execut
  assert.equal(w.settings.saveDataErrorExecution,'none');
  assert.equal(w.pinTests.total,5);assert.equal(w.pinTests.passed,5);
  assert.equal(w.pinTests.httpHeaderAuthRealNetworkTested,false);
- assert.equal(e.securityGates.productionRelease,false);
+ assert.equal(evidence.securityGates.productionRelease,false);
 });
