@@ -1,0 +1,55 @@
+{
+  "version": "V17.25P",
+  "classification": "SOURCE_ONLY_NOHOST",
+  "exact_deployed_source": {
+    "render_service": "tien404-data-staging",
+    "deployment_id": "dep-dbqj9plg1s2s73egr30g",
+    "commit": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+    "main_py_blob": "a7a11abeffb378b3f9952005ffdd489c54df1c13",
+    "signed_n8n_blob": "9f74b6b3e617acd20aa1bfd8fd50b4b12938907e",
+    "byte_exact_ci": true
+  },
+  "ci": {
+    "pr": 411,
+    "head": "ae3dac141799f9eda70490f5b56e43f7a4e9c9b4",
+    "run_id": 44262745160,
+    "job_id": 134659794195,
+    "conclusion": "success",
+    "synthetic_tests": 28,
+    "failures": 0,
+    "all_outbound_http_mocked": true,
+    "real_socket_connect_blocked": true
+  },
+  "legacy_orders": {
+    "tenant_scoped": true,
+    "store_scoped": false,
+    "client_store_query_ignored": true,
+    "two_synthetic_tenant_owners_see_both_store_fixtures": true,
+    "live_breach_confirmed": false
+  },
+  "providers": {
+    "meta_messenger": "DESIGN_ONLY",
+    "zalo_oa": "DESIGN_ONLY",
+    "zalo_bot": "BLOCKED_OFFICIAL_WEBHOOK_AUTH_CONTRACT",
+    "website_widget": "DESIGN_ONLY",
+    "real_verifiers_enabled": false,
+    "provider_send_allowed": false
+  },
+  "m0": {
+    "owner_deferred_local_backup": "2026-11-17",
+    "current_backup_restore_independently_verified": false,
+    "scope": "UNDECIDED",
+    "status": "NO_GO"
+  },
+  "hosted": {
+    "supabase_migration": false,
+    "render_deploy": false,
+    "cloudflare_access_change": false,
+    "n8n_publish": false,
+    "real_jwt_uat": "0/31 NOT_RUN",
+    "store_read": false,
+    "store_write": false
+  },
+  "production": "NO_GO",
+  "rollback": "Close/revert Draft PR #411; no runtime rollback required"
+}
