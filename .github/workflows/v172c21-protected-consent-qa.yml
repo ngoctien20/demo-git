@@ -1,0 +1,22 @@
+name: TIEN404 V17.2C21 Protected Consent Backend (Synthetic Source-Only)
+on:
+  pull_request:
+    paths:
+      - 'qa/v172c-rpc-closure/v172c16-private-ab-consent-admission.cjs'
+      - 'qa/v172c-rpc-closure/v172c20-trusted-private-auth-pair-preflight.cjs'
+      - 'qa/v172c-rpc-closure/v172c21-protected-consent-backend*'
+      - '.github/workflows/v172c21-protected-consent-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-private-auth-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check private backend server-only consent intake (NO network/Auth/JWT)
+        run: node --test qa/v172c-rpc-closure/v172c21-protected-consent-backend.test.cjs qa/v172c-rpc-closure/v172c20-trusted-private-auth-pair-preflight.test.cjs qa/v172c-rpc-closure/v172c16-private-ab-consent-admission.test.cjs
