@@ -1,0 +1,58 @@
+name: TIEN404 V19.0-B4 - Installation Registry Security Offline QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b4-installation-authority-disposable-d1-20261118
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-b4-installation-authority-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-b4-installation-authority-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b4-safe-offline:
+    name: B4 Synthetic Registry and B2+B3 Regression - NO LIVE PROVIDER
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Immutable deployed Worker source guard
+        shell: bash
+        run: |
+          actual="$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)"
+          test "$actual" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: B4 gate syntax
+        run: |
+          node --check qa/v19-webhook/b4/trusted-installation-gate.mjs
+          node --check qa/v19-webhook/b4/tests/trusted-installation-gate.test.mjs
+      - name: B4 synthetic authority negative tests
+        run: node --test qa/v19-webhook/b4/tests/trusted-installation-gate.test.mjs
+      - name: B4 native disposable registry SQLite constraints
+        run: python3 qa/v19-webhook/b4/tests/registry_sqlite_contract_test.py
+      - name: B3 bounded body and D1 replay regression
+        run: |
+          node --test qa/v19-webhook/b3/tests/ingress-candidate.test.mjs
+          python3 qa/v19-webhook/b3/tests/sqlite_semantics_test.py
+      - name: B2 strict Zalo and Worker snapshot regression
+        run: node --test qa/v19-webhook/tests/*.test.mjs
+      - name: Hard fail-closed source-only release gate
+        shell: bash
+        run: |
+          test ! -e qa/v19-webhook/b4/.env
+          test ! -e qa/v19-webhook/b4/wrangler.toml
+          test ! -e qa/v19-webhook/b4/wrangler.jsonc
+          grep -q "status:423" qa/v19-webhook/b4/trusted-installation-gate.mjs
+          test -f qa/v19-webhook/b4/sql/001_disposable_registry_only.sql
+          echo "Only unit/SQLite tests ran. No deployment, D1 hosted writes, provider send, webhook registration or Commerce access."
