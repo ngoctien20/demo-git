@@ -1,4 +1,4 @@
-name: V18.6.3–6 Store RLS and Authority Readiness NO LIVE
+name: V18.6.3–7 Store RLS and Writer Cutover Readiness NO LIVE
 on:
   push:
     paths:
@@ -6,6 +6,7 @@ on:
       - 'qa/store-authority-v1864/**'
       - 'qa/store-authority-v1865/**'
       - 'qa/store-authority-v1866/**'
+      - 'qa/store-authority-v1867/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -13,6 +14,7 @@ on:
       - 'qa/store-authority-v1864/**'
       - 'qa/store-authority-v1865/**'
       - 'qa/store-authority-v1866/**'
+      - 'qa/store-authority-v1867/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -71,3 +73,7 @@ jobs:
           node --test qa/store-authority-v1866/readiness-gate.test.cjs
           node qa/store-authority-v1866/readiness-gate.cjs
           node -e "const x=require('./qa/store-authority-v1866/readiness-gate.cjs').evaluateBundled(); if(x.productionReady || x.realUatApproved || x.metaOAuthApproved || x.authorizesMigration || x.status!=='BLOCKED') process.exit(1)"
+      - name: V18.6.7 Legacy Writer evidence integrity (NO HOST)
+        run: |
+          node --test qa/store-authority-v1867/writer-path-inventory.test.cjs
+          node -e "const x=require('./qa/store-authority-v1867/writer-path-inventory.json');if(x.completeness!=='PARTIAL'||x.provesNoOtherWriters!==false||x.design.stagingDbMigration!=='NOT_AUTHORIZED'||Object.values(x.safety).some(v=>v!==false))process.exit(1)"
