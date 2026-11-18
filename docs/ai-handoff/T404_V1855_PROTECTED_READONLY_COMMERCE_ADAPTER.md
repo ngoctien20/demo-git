@@ -114,9 +114,9 @@ The dedicated credential and inactive Webhook ingress have now been created and 
 
 V18.5.4 and V18.5.5 prove cross-tenant Sandbox isolation for two separate tenant records. They do not prove same-tenant Store A/B isolation or database Store-level RLS. Do not claim Store-level isolation.
 
-### NOT IMPLEMENTED — durable replay and rate limiting
+### SOURCE IMPLEMENTED, NOT DEPLOYED — durable replay and rate limiting
 
-The internal adapter enforces a 60-second timestamp freshness window and the Worker generates a request ID. It does not yet persist used request IDs or enforce durable per-installation rate limits. Duplicate reads are idempotent and do not mutate Commerce data, but they can consume resources. Durable replay deduplication/rate limiting is required before public customer exposure.
+The internal adapter still validates timestamp freshness. New source-only code under `qa/channel-v1855/` requires an atomic, SQLite-backed Durable Object admission gate before forwarding to n8n. The proposal limits each of the two Sandbox installations to 20 accepted read requests in a rolling 60-second window and rejects reuse of the same server-generated request ID within that window. The Worker fails closed with HTTP 423 when the binding is absent, and HTTP 503 on admission service/storage errors. This is not a public customer security guarantee: independently generated requests have new IDs, and Store-level authorization remains blocked. No Durable Object namespace, migration, binding or deployment has been created.
 
 ## 6. Safety and release decision
 
@@ -144,9 +144,9 @@ GitHub Actions run [#44271092019](https://github.com/ngoctien20/demo-git/actions
 
 The overall job then failed in the separate evidence assertion step because the assertion expected the Tenant Resolver to appear as a direct child execution. The real execution lineage shows it is invoked inside the Catalog Query and Cart Preview child workflows. This was an evidence-schema/CI assertion mismatch, not a failing adapter or Worker unit test.
 
-The evidence packet and CI assertion have since been corrected to record the resolver as successfully invoked through those read-only children. **A green rerun has not yet been observed**, so overall GitHub CI remains pending and is not reported as PASS.
+The evidence packet and CI assertion were corrected, and subsequent workflows did run successfully. The current source code checkpoint is **GitHub Actions #44281190151: 141/141 PASS, 0 fail, 0 skipped**, at commit `eb535d491f0981d9d06296e3e6ba3bb489a932a8`. Later documentation/checkpoint commits must be re-verified separately before calling the latest HEAD fully green.
 
-Current code/test status: `WORKER_UNIT_TESTS_119_OF_119_PASS / N8N_MANUAL_UAT_12_OF_12_PASS / EVIDENCE_ASSERTION_CORRECTED / GREEN_CI_RERUN_PENDING`.
+Current code/test status: `GITHUB_SOURCE_CI_141_OF_141_PASS_AT_VERIFIED_SHA / N8N_MANUAL_UAT_12_OF_12_PASS / INGRESS_PIN_QA_5_OF_5_PASS / LIVE_HEADER_AUTH_AND_DURABLE_OBJECT_RUNTIME_NOT_TESTED`.
 
 
 ## 9. Inactive Header Auth Webhook ingress — IMPLEMENTED / PIN-TESTED
@@ -168,3 +168,42 @@ Current code/test status: `WORKER_UNIT_TESTS_119_OF_119_PASS / N8N_MANUAL_UAT_12
 **Rollback/checkpoint:** Restore the Adapter's previous caller allowlist (QA only), archive the new inactive ingress, and revert the stacked Draft PR changes if necessary. Do not touch Commerce Published workflows or customer data. Preserve credential only if still independently needed; removal would require separate approval.
 
 **Current NO-GO gates:** real Header Auth HTTP UAT, Cloudflare second identity denial, actual Store A/B RLS, durable replay/rate limiting, staged Worker secret and new deployment approval, and complete Website Widget end-to-end testing.
+
+
+## 10. Rolling quota and replay admission — SOURCE CANDIDATE (NOT DEPLOYED)
+
+### Files and authoritative flow
+
+- `qa/channel-v1855/read-admission-policy.mjs`: pure policy evaluating 20 accepted requests / rolling 60 seconds / approved Sandbox installation, strict v4 request ID format, timestamp freshness and replay denial.
+- `qa/channel-v1855/t404-read-admission-do.mjs`: Cloudflare SQLite Durable Object `T404ReadAdmission`; uses a single private SQLite row and `ctx.storage.transactionSync()` so concurrent check + update are atomic. It verifies the actual named DO instance matches the requested installation; wrong instance is denied.
+- `qa/channel-v1855/worker-v1855-hosted-entry.mjs`: future bundle entrypoint exporting the Worker and Durable Object class; **not configured for deployment**.
+- `qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs`: before any n8n outbound fetch, requires the `T404_READ_ADMISSION` binding and `authorizeRead` response. Missing binding returns 423, unavailable/corrupted admission returns 503, same request ID returns 409, exceeded rate returns 429. Validates exact upstream path `/webhook/t404-v1855-protected-readonly-commerce-staging` on the exact n8n host and accepts only HTTPS. Product attribute values are bounded primitive types; arbitrary nested objects are omitted.
+
+The design follows Cloudflare's SQLite Durable Object transactional storage guidance:
+- https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/
+- https://developers.cloudflare.com/durable-objects/best-practices/rules-of-durable-objects/
+- https://developers.cloudflare.com/durable-objects/platform/pricing/
+
+### VERIFIED source QA
+
+GitHub Actions [#44281190151](https://github.com/ngoctien20/demo-git/actions/runs/44281190151), source commit `eb535d491f0981d9d06296e3e6ba3bb489a932a8`: **141/141 tests passed**.
+
+Coverage includes existing security regression; three new Worker admission fail-closed tests; ten pure admission policy tests for 20/minute rolling quota, replay, stale/future request timestamps, invalid installations/operations, unchanged state on denial, stale records pruning, and no PII persistence.
+
+This is source-level validation using simulated Cloudflare DO bindings and policy state. It does NOT prove real Cloudflare SQLite transaction runtime, Access denial for a second account, actual n8n Header Auth, end-to-end Widget, or Store A/B RLS.
+
+### Required owner approval / rollout gates
+
+1. Independently verify denied alternate identity under the existing exact-host Access app.
+2. Review Durable Objects usage limits and pricing for the existing Cloudflare account. A *new* SQLite-backed DO namespace/migration and `T404_READ_ADMISSION` binding require explicit owner approval before any account mutation.
+3. Approve a tightly scoped staging Header Auth negative/positive HTTP UAT; do not reveal shared secrets or change credential values without owner action.
+4. After HTTP authentication and rate/replay gates are independently tested, the owner can set the matching n8n token secret and verified exact URL on the Worker through a trusted UI; no secret values should appear in chat, GitHub, executions, screenshots or browser-side code.
+5. If deployment is later approved, perform versioned backup, private 1-operator canary, real negative tests, rate/replay concurrency tests, a rollback rehearsal, and only then consider a staging QA session. Keep the public customer widget and production disabled.
+
+### Rollback / zero-change checkpoint
+
+**No Cloudflare Durable Object namespace, binding, Worker secret, Worker upload, or deployment is changed in V18.5.5 source work.** The currently deployed V18.5.4 Worker version `da022974-1832-425f-bf82-afddc558b893` / deployment `b4f501e0-ff37-4ea4-be77-6e3148667b15` remains the untouched rollback target.
+
+If the source candidate is rejected, revert this Draft PR branch. Do not delete any shared credentials, data, Store mappings or published Commerce workflows. If a DO namespace is created at a later approved stage, resource deletion would be a separate approval gate.
+
+**Checkpoint:** `V1855_INACTIVE_HEADER_AUTH_INGRESS_VERIFIED / INTERNAL_CATALOG_CART_READONLY_TESTED / ATOMIC_ADMISSION_SOURCE_141_OF_141_PASS / NO_DO_BINDING / NO_WORKER_DEPLOY / NO_REAL_HTTP_AUTH / NO_STORE_RLS / PRODUCTION_NO_GO`.
