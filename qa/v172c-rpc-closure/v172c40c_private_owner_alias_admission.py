@@ -50,9 +50,9 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
         reasons.add("FORBIDDEN_PRIVATE_DATA_FIELD")
     if proposal.get("scope") != "SYNTHETIC_ONLY":
         reasons.add("NON_SYNTHETIC_SCOPE")
-    if proposal.get("real_authority_requested") is True:
+    if proposal.get("real_authority_requested") is not False:
         reasons.add("REAL_AUTHORITY_PROHIBITED")
-    if proposal.get("authority_granted") is True:
+    if proposal.get("authority_granted", False) is not False:
         reasons.add("INJECTED_AUTHORITY_PROHIBITED")
 
     decision = proposal.get("owner_scenario")
@@ -68,7 +68,7 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
         stores = []
     if decision == "S1" and len(stores) != 1:
         reasons.add("COOWNER_ONE_STORE_REQUIRED")
-    if decision == "S2" and len(stores) < 2:
+    if decision == "S2" and len(stores) != 2:
         reasons.add("TWO_DISTINCT_STORES_REQUIRED")
     tenant = proposal.get("tenant_ref")
     if not isinstance(tenant, str) or not tenant.startswith("synthetic-tenant-"):
@@ -104,7 +104,7 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
             "independent_reviewer_attested",
         )):
             reasons.add("INCOMPLETE_OWNER_PROVENANCE")
-        if row.get("revoked") is True or row.get("expired") is True:
+        if row.get("revoked") is not False or row.get("expired") is not False:
             reasons.add("REVOKED_OR_EXPIRED_OWNER_EVIDENCE")
         if row.get("source") != "SYNTHETIC_ONLY":
             reasons.add("UNTRUSTED_OWNER_EVIDENCE_SOURCE")
@@ -151,7 +151,7 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
             "source_binding_attested", "current_provider_proof_attested",
         )):
             reasons.add("UNVERIFIED_ALIAS_EVIDENCE")
-        if mapping.get("revoked") is True or mapping.get("expired") is True:
+        if mapping.get("revoked") is not False or mapping.get("expired") is not False:
             reasons.add("REVOKED_OR_EXPIRED_ALIAS")
         if not all(isinstance(x, str) for x in (source, namespace, alias, inst)):
             continue
