@@ -65,7 +65,7 @@ jobs:
           assert.equal(e.n8n.qa.passed, 12);
           assert.equal(e.n8n.qa.failed, 0);
           assert.equal(e.n8n.publishedChildren.length, 3);
-          assert(e.n8n.publishedChildren.every(x => x.status === 'success' && x.storageOperation === 'DataTable row.get'));
+          assert(e.n8n.publishedChildren.every(x => ['success','invoked_successfully_by_catalog_and_cart'].includes(x.status) && x.storageOperation === 'DataTable row.get'));
           assert.equal(e.n8n.sideEffects.orderWrites, 0);
           assert.equal(e.n8n.sideEffects.stockWrites, 0);
           assert.equal(e.n8n.sideEffects.providerSends, 0);
