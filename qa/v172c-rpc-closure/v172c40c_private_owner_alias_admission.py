@@ -8,6 +8,7 @@ returns APPROVED or grants access, even when all fixtures are consistent.
 from __future__ import annotations
 
 from collections import defaultdict
+import re
 from typing import Any
 
 SAFE_SOURCES = frozenset({
@@ -20,13 +21,16 @@ SENSITIVE_KEYS = frozenset({
     "secret", "api_key", "provider_token", "credential", "credentials",
     "phone", "email", "customer", "recipient", "private_key",
     "cookie", "authorization", "session_id", "auth_user_id",
+    "secret_ref", "credential_ref", "oauth_code", "client_secret",
+    "provider_secret", "auth_token", "session_token",
 })
 
 
 def _sensitive_keys_found(value: Any) -> bool:
     if isinstance(value, dict):
         for key, child in value.items():
-            if str(key).lower() in SENSITIVE_KEYS or _sensitive_keys_found(child):
+            normalized = re.sub(r"([a-z0-9])([A-Z])", r"\\1_\\2", str(key)).lower().replace("-", "_")
+            if normalized in SENSITIVE_KEYS or _sensitive_keys_found(child):
                 return True
     if isinstance(value, list):
         return any(_sensitive_keys_found(child) for child in value)
@@ -132,7 +136,7 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
         alias = mapping.get("external_alias")
         store = mapping.get("store_ref")
         inst = mapping.get("installation_ref")
-        if source not in SAFE_SOURCES:
+        if not isinstance(source, str) or source not in SAFE_SOURCES:
             reasons.add("UNRECOGNIZED_SOURCE_NAMESPACE")
         if not isinstance(namespace, str) or not namespace.startswith("synthetic:"):
             reasons.add("UNSCOPED_ALIAS_NAMESPACE")
