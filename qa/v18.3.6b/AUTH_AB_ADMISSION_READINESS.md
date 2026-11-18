@@ -26,6 +26,6 @@
 The connected Supabase staging project was last inspected read-only: PostgreSQL 17.11; zero canonical `stores` / `store_memberships` tables; zero `store_id` columns in the six Commerce tables; zero restrictive Store SELECT policies; three active tenant memberships. This does not supply real Store A/B authority. Recheck metadata immediately before any separately approved staging change.
 
 ## Decision
-`PG17_SYNTHETIC_MIGRATION_REPLAY` may become PASS only after GitHub Actions completes and its exact logs are reviewed.
+`PG17_SYNTHETIC_MIGRATION_REPLAY` is **VERIFIED / PASS** on PostgreSQL 17.12; see run `44263318020` and `QA_CHECKPOINT_V18_3_6B.md`.
 `REAL_AUTH_AB_READONLY_UAT` remains **BLOCKED**.
 `STAGING_MIGRATION`, `PRODUCTION_WRITER`, `LIVE_SEND`, and `RELEASE` remain **NO_GO**.
