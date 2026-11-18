@@ -1,0 +1,96 @@
+{
+  "phase": "V18.5.1",
+  "purpose": "Protected Widget Gateway Staging",
+  "date": "2026-11-18 JST",
+  "status": "CANDIDATE_SOURCE_ONLY_NO_HOSTED_ADMISSION",
+  "parentPR": 404,
+  "dependencies": [
+    94,
+    97
+  ],
+  "coreWorkflowId": "iyfGUiEsZlNTBWOR",
+  "liveState": {
+    "widgetPagesVerified": [
+      "index.html",
+      "demo.html"
+    ],
+    "cloudflareAccessAppInventory": 4,
+    "dedicatedWidgetAccessAppVerified": false,
+    "stagingGatewayHostnameApproved": false,
+    "realDomainOwnershipVerified": false,
+    "realAccessJwtVerifierDeployed": false,
+    "realD1LedgerCreated": false,
+    "realWidgetLiveSessionIssued": false,
+    "realWebsiteToN8nConversationTested": false,
+    "actualOrdersRead": 0,
+    "actualOrdersWritten": 0,
+    "actualProviderSends": 0,
+    "renderWorkspaceSelectedThisTurn": false,
+    "productionChanges": 0
+  },
+  "allowedNow": [
+    "GITHUB_DRAFT_CODE",
+    "SYNTHETIC_UNIT_QA",
+    "DISPOSABLE_SQLITE_SCHEMA_QA",
+    "NOHOST_RELEASE_REVIEW"
+  ],
+  "requiredSpecificApprovals": {
+    "exactPrivateStagingHostnameAndAccessPolicies": false,
+    "deployNewCloudflareWorker": false,
+    "createD1DatabaseOrBinding": false,
+    "provisionOrChangeCredential": false,
+    "enableAnyRealJwtIntake": false,
+    "invokePublishedCoreFromHostedGateway": false,
+    "enableMerchantRealStoreData": false,
+    "changeProductionWidgetConfig": false,
+    "sendProviderMessages": false,
+    "modifyOrdersOrInventory": false,
+    "incurPaidUsage": false
+  },
+  "reviewedDesign": {
+    "routes": [
+      "POST /widget/v18.5/session",
+      "POST /widget/v18.5/message"
+    ],
+    "publicOtherRoutes": "DENY",
+    "access": "independent, signed Cloudflare Access JWT, issuer/audience/expiry verified BEFORE any read, not raw header",
+    "browserTransport": "prefer same-origin private staging; cross-origin preflight may fail 403 at Access edge",
+    "cors": "defense in depth only, never identity or Store authority",
+    "auth": "short-lived HMAC scoped anonymous session from server-held reviewed key, revocation and expiry",
+    "registry": "server-owned verified installation + domain proof, no client tenant/store authority",
+    "replay": "shared durable atomic D1 unique digest; fail closed on outage",
+    "quota": "shared durable atomic per-widget/session/window rate limiter; fail closed on outage",
+    "resourceLimits": {
+      "maxPayloadBytes": 4096,
+      "maxMessageCharacters": 800,
+      "timeoutMsMax": 8000
+    },
+    "core": "reuse exact existing Commerce AI Core, public sandbox only after an independent read-only tool allowlist review",
+    "defaultMode": "PLATFORM_CONSULTANT",
+    "merchantSandbox": "private owner authorized, fake public catalog only until Store RLS UAT",
+    "response": "public render-only, no PII, no raw model, no JWT, no customer-order data",
+    "rollback": "close/revert PR #404; for hosted future release restore saved Access policy and prior Worker deployment, revoke sessions and disable routes; M0 before Store RLS/DDL"
+  },
+  "artifacts": [
+    "qa/channel-v1851/protected-http-gateway.cjs",
+    "qa/channel-v1851/protected-http-gateway.test.cjs",
+    "qa/channel-v1851/deny-only-worker.mjs",
+    "qa/channel-v1851/wrangler.example.toml",
+    "qa/channel-v1851/d1-private-schema-preview.sql",
+    "qa/channel-v1851/test_sqlite_schema.py",
+    ".github/workflows/v1851-protected-widget-gateway-nohost.yml"
+  ],
+  "hardBlockers": [
+    "NO_APPROVED_PRIVATE_STAGING_HOST",
+    "NO_DEDICATED_ACCESS_APP_OR_SIGNED_JWT_VERIFIER",
+    "NO_HOSTED_DOMAIN_PROOF",
+    "NO_HOSTED_D1_ATOMIC_REPLAY_OR_QUOTA",
+    "NO_APPROVED_SERVER_KEY_OR_KEY_ROTATION",
+    "NO_HOSTED_READONLY_COMMERCE_CORE_EXECUTION_POLICY",
+    "CLOUDFLARE_ACCESS_CROSS_ORIGIN_PREFLIGHT_AND_COOKIE_STRATEGY_NOT_TESTED",
+    "NO_CANARY_LIVE_JWT_OR_OWNER_PAIR_EVIDENCE",
+    "NO_STORE_AB_CANONICAL_AUTHORITY",
+    "NO_REAL_WIDGET_TO_CORE_UAT"
+  ],
+  "releaseDecision": "NO_HOSTED_ADMISSION_NO_SEND_NO_WRITE_NO_PRODUCTION"
+}
