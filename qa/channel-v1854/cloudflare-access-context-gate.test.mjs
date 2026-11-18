@@ -94,8 +94,11 @@ test('Session and message routes remain locked even for approved QA operator',as
 });
 test('CORS preflight is not bypassed and no CORS headers are emitted',async()=>{
  const response=await worker.fetch(req('/v1/widget/message','OPTIONS'),ENV,goodCtx);
- assert.equal(response.status,405);
+ assert.equal(response.status,423);
  assert.equal(response.headers.get('access-control-allow-origin'),null);
+ const otherOptions=await worker.fetch(req('/__v1854/access-canary','OPTIONS'),ENV,goodCtx);
+ assert.equal(otherOptions.status,405);
+ assert.equal(otherOptions.headers.get('access-control-allow-origin'),null);
  const denied=await worker.fetch(req('/v1/widget/message','OPTIONS'),ENV,{});
  assert.equal(denied.status,403);
 });
