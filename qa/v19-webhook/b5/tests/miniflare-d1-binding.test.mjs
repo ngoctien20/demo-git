@@ -29,8 +29,16 @@ before(async()=>{
   bindings:{B5_LOCAL_MODE:"MINIFLARE_UNDEPLOYABLE_QA"}
  });
  db=await mf.getD1Database("QA_D1");
- await db.exec(schemaRegistry);
- await db.exec(schemaB5);
+ // D1 .exec rejects comment-only lines when passed as its own statement.
+ // Explicitly remove SQL comments and execute each nonempty schema statement.
+ async function applyLocalSchema(schema){
+  const plain=schema.split("\n").filter(line=>!line.trimStart().startsWith("--")).join("\n");
+  for(const stmt of plain.split(";").map(x=>x.trim()).filter(Boolean)){
+   await db.exec(stmt+";");
+  }
+ }
+ await applyLocalSchema(schemaRegistry);
+ await applyLocalSchema(schemaB5);
  await db.prepare(
   "INSERT INTO v19_b4_installation_registry "+
   "(installation_ref,provider,environment,tenant_ref,store_ref,status,proof_kind,"+
