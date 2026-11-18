@@ -127,5 +127,5 @@ GRANT EXECUTE ON FUNCTION qa_private.gateway_execute(uuid,uuid,uuid,text) TO tie
 
 -- No raw table access and no receipt issuance for the gateway role.
 REVOKE ALL ON public.orders,public.stores FROM tien404_f_gateway;
-GRANT EXECUTE ON FUNCTION qa_private.try_write(text) TO tien404_f_gateway;
+-- Test-only try_write helper will be created and granted by 03_PGTAP_ADMIN_GATEWAY.sql.
 \echo V18_3_6F_GATEWAY_SCHEMA_READY
