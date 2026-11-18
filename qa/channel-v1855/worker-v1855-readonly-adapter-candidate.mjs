@@ -383,9 +383,9 @@ export async function handleReadOnlyRequest(request, env, ctx, fetchImpl = fetch
       : { cartJson: JSON.stringify(validated.cart) })
   };
 
-  const admission = await authorizeReadRequest(env, payload);
-  if (!admission.allowed) {
-    return json(admission.status, { error: admission.code, readOnly: true, canWrite: false, productionReady: false });
+  const readAdmission = await authorizeReadRequest(env, payload);
+  if (!readAdmission.allowed) {
+    return json(readAdmission.status, { error: readAdmission.code, readOnly: true, canWrite: false, productionReady: false });
   }
 
   let upstream;
