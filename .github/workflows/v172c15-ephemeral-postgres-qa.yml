@@ -47,3 +47,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c18-atomic-consent-ci-drill.sh
       - name: Atomic A/B private consent PAIR all-or-nothing PostgreSQL QA (ephemeral only)
         run: bash qa/v172c-rpc-closure/v172c19-pair-consume-ci-drill.sh
+      - name: Orders A/B same-tenant and cross-tenant read/write RLS rollback QA (ephemeral only)
+        run: bash qa/v172c-rpc-closure/v172c30-ephemeral-orders-rls-drill.sh
