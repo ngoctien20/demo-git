@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>TIEN404 V18.7 — Industry Builder Offline Mock</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;background:#080f20;color:#f1f5fe}
+*{box-sizing:border-box}body{margin:0;padding:22px}.app{max-width:760px;margin:auto}
+small,.muted{color:#aab9cd}.tag{color:#fecf78;font-size:.78rem;font-weight:700;letter-spacing:.06em}
+.panel{background:#152139;border:1px solid #334461;border-radius:16px;padding:18px;margin:16px 0}
+h1{font-size:1.65rem;line-height:1.3;margin:15px 0}h2{font-size:1.15rem;margin:0 0 12px}
+label{display:block;margin:13px 0 5px;font-weight:650;font-size:.92rem}
+input,select,textarea,button{font:inherit;width:100%;border-radius:9px;padding:12px}
+input,select,textarea{background:#0a1428;color:#f1f5fe;border:1px solid #667896}
+textarea{min-height:90px;resize:vertical}
+button{background:#327aef;border:0;color:white;font-weight:750;cursor:pointer;margin-top:15px}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #ffcc7f}
+.output{white-space:pre-line;line-height:1.6;color:#dce7fc;border-left:3px solid #56bea6;padding-left:12px}
+.warn{color:#ffca8c}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:550px){body{padding:12px}.grid{grid-template-columns:1fr}h1{font-size:1.3rem}}
+</style></head>
+<body><main class="app">
+<div class="tag">SYNTHETIC_QA · OFFLINE ONLY · NO REAL FACEBOOK / ZALO</div>
+<h1>TIEN404 AI — Thử cấu hình AI theo ngành</h1>
+<p class="muted">Bản thử UI không có tài khoản thật, kết nối kênh, lưu dữ liệu, API, đơn hàng hoặc tin nhắn gửi đi.</p>
+<section class="panel"><h2>1. Chọn ngành & cửa hàng thử</h2>
+<div class="grid"><div><label for="sector">Ngành kinh doanh</label>
+<select id="sector"><option value="grocery">Tạp hóa / siêu thị mini</option><option value="building_materials">Vật liệu xây dựng</option></select></div>
+<div><label for="channel">Kênh xem trước</label>
+<select id="channel"><option value="messenger">Messenger (mock)</option><option value="zalo_oa">Zalo OA (mock)</option><option value="website">Website (mock)</option></select></div></div>
+<label for="store">Tên cửa hàng (mô phỏng)</label><input id="store" maxlength="60" value="Cửa hàng QA">
+<label for="tone">Phong cách tư vấn</label><select id="tone"><option value="friendly">Thân thiện</option><option value="practical">Thực tế, ngắn gọn</option><option value="professional">Chuyên nghiệp</option><option value="brief">Rất ngắn gọn</option></select>
+<label for="greeting">Lời chào (có thể sửa)</label><textarea id="greeting" maxlength="240"></textarea>
+<button id="preview" type="button">Xem thử câu trả lời AI</button></section>
+<section class="panel" aria-live="polite"><h2>2. Bản xem trước</h2><p class="output" id="result"></p>
+<p class="warn">Không kích hoạt AI thật. Giá, tồn kho, đơn hàng và thông tin cá nhân không hiển thị trong mô phỏng này.</p></section></main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const welcome = {
+    grocery: "Xin chào! Tôi hỗ trợ tìm hàng, đơn vị đóng gói và kiểm tra giá từ dữ liệu cửa hàng.",
+    building_materials: "Xin chào! Anh/chị cần vật tư loại gì, quy cách và số lượng bao nhiêu?"
+  };
+  function updateGreeting(){ $("greeting").value = welcome[$("sector").value]; }
+  function preview() {
+    const sector=$("sector").value, channel=$("channel").value;
+    const name=$("store").value.trim().slice(0,60) || "Cửa hàng thử nghiệm";
+    const greeting=$("greeting").value.trim().slice(0,240) || welcome[sector];
+    const tone=$("tone").selectedOptions[0].textContent;
+    const script=sector==="grocery"?"Khi khách hỏi về hộp/lốc/thùng, AI sẽ kiểm tra hệ số quy đổi và dữ liệu giá/tồn kho đã xác minh.":"Khi khách hỏi vật tư, AI sẽ hỏi thêm quy cách và đơn vị trước khi lập báo giá dự kiến.";
+    $("result").textContent = name + " · " + channel.toUpperCase() + " (MOCK)\n\n" + greeting + "\n\n" + script + "\n\nPhong cách: " + tone + "\n\nTrạng thái: CHƯA KẾT NỐI · NO SEND · NO ORDER WRITE";
+  }
+  $("sector").addEventListener("change",()=>{updateGreeting();preview();});
+  ["tone","channel"].forEach(id=>$ (id).addEventListener("change",preview));
+  $("preview").addEventListener("click",preview);
+  updateGreeting();preview();
+})();
+</script></body></html>
