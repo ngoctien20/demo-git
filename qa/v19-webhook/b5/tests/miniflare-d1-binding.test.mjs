@@ -34,7 +34,8 @@ before(async()=>{
  async function applyLocalSchema(schema){
   const plain=schema.split("\n").filter(line=>!line.trimStart().startsWith("--")).join("\n");
   for(const stmt of plain.split(";").map(x=>x.trim()).filter(Boolean)){
-   await db.exec(stmt+";");
+   // D1.exec() splits multi-line statements at newlines; use a single prepared DDL statement.
+   await db.prepare(stmt.replace(/\s+/g," ")).run();
   }
  }
  await applyLocalSchema(schemaRegistry);
