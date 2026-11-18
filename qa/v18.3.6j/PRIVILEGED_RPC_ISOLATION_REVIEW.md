@@ -3,7 +3,7 @@
 ## Exact boundary
 `qa_i_private.transaction_bound_catalog_read` is a private `SECURITY DEFINER` SQL function, owned by `tien404_i_owner` (NOLOGIN, NOBYPASSRLS), with `search_path=''` and all objects fully schema-qualified. It is granted only to `tien404_j_gateway` (NOLOGIN), with no direct catalog/session/membership/nonce table privileges. `tien404_j_attacker` has neither USAGE nor EXECUTE.
 
-The catalog fixture is Store-scoped by exact `(tenant_hash,store_hash,resource_id)`. The function first holds `FOR KEY SHARE` on the synthetic resource and checks local-session freshness; it then invokes I's atomic protected nonce routine **in that same SQL statement/transaction**. That routine locks session row followed by Store membership row (`FOR UPDATE`) and consumes JTI on the unique ledger. Only after successful admission does J return the selected, synthetic, non-PII catalog item and price.
+The catalog fixture is Store-scoped by exact `(tenant_hash,store_hash,resource_id)`. The function first holds `FOR KEY SHARE` on the synthetic resource and acquires `FOR UPDATE` on the session row when checking local-session freshness (not `FOR SHARE`, which would risk a concurrent lock-upgrade deadlock). It then invokes I's atomic protected nonce routine **in that same SQL statement/transaction**. That routine locks session row followed by Store membership row (`FOR UPDATE`) and consumes JTI on the unique ledger. Only after successful admission does J return the selected, synthetic, non-PII catalog item and price.
 
 ## Privilege hazards that remain
 
