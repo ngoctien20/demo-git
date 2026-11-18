@@ -1,0 +1,50 @@
+name: TIEN404 V17.25P/Q — Exact Source + Store Contract NO-HOST
+on:
+  pull_request:
+    paths:
+      - 'qa/v1725p/**'
+      - 'qa/v1725q/**'
+      - '.github/workflows/v1725p-exact-source-replay.yml'
+permissions:
+  contents: read
+jobs:
+  exact-source-and-store-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source-only QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Prove fixture is byte-exact Render deployed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object qa/v1725p/deployed_fixture/app/main.py)" = "a7a11abeffb378b3f9952005ffdd489c54df1c13"
+          test "$(git hash-object qa/v1725p/deployed_fixture/app/signed_n8n.py)" = "9f74b6b3e617acd20aa1bfd8fd50b4b12938907e"
+          echo 'V1725P_BYTE_EXACT_DEPLOYED_SOURCE_BLOBS_PASS'
+      - name: Install pinned source replay and contract dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv-v1725
+          .venv-v1725/bin/python -m pip install --disable-pip-version-check fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Compile and replay exact deployed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET .venv-v1725/bin/python -m py_compile qa/v1725p/deployed_fixture/app/main.py qa/v1725p/deployed_fixture/app/signed_n8n.py qa/v1725p/test_deployed_main.py
+          env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET .venv-v1725/bin/python -m pytest -q qa/v1725p/test_deployed_main.py
+      - name: Run Store-aware dual-owner contract QA when stacked child is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d qa/v1725q ]; then
+            .venv-v1725/bin/python -m json.tool qa/v1725q/api-contract.json >/dev/null
+            .venv-v1725/bin/python -m json.tool qa/v1725q/legacy-deprecation-matrix.json >/dev/null
+            env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET PYTHONPATH=qa/v1725q .venv-v1725/bin/python -m py_compile qa/v1725q/store_api_contract.py qa/v1725q/test_store_api_contract.py
+            env -u TIEN404_SUPABASE_URL -u TIEN404_SUPABASE_PUBLISHABLE_KEY -u TIEN404_APP_ORIGIN -u TIEN404_N8N_STAGING_SECRET PYTHONPATH=qa/v1725q .venv-v1725/bin/python -m pytest -q qa/v1725q/test_store_api_contract.py
+            echo 'V1725Q_SYNTHETIC_CONTRACT_ONLY; REAL_SOCKET_CONNECT_BLOCKED; NO_REAL_JWT; NO_SUPABASE_CREDENTIAL; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_DDL_DML; NO_RLS_CUTOVER; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
+          else
+            echo 'V1725Q_NOT_PRESENT_ON_PARENT_ONLY_PR'
+          fi
+      - name: Explicit no-host release boundary
+        run: echo 'V1725P_Q_SOURCE_ONLY; ALL_OUTBOUND_HTTP_MOCKED_OR_LOCAL_ASGI; NO_REAL_JWT; NO_CUSTOMER_ROWS; NO_RENDER_DEPLOY; NO_SUPABASE_EXPORT_RESTORE_MIGRATION; NO_PROVIDER_SEND; M0_NOT_APPROVED; PRODUCTION_NO_GO'
