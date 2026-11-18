@@ -44,7 +44,7 @@ jobs:
           assert.equal(m.core.published,'456862c9-e5ee-4bfa-9931-47dbc39ab73d');
           assert.equal(m.core.fullAgentReadOnlyVerified,false);
           assert(m.core.hasTicketInsertTool===true);
-          assert.deepEqual(m.allowedChildren.sort(),['CATALOG_QUERY','CART_PREVIEW']);
+          assert.deepEqual([...m.allowedChildren].sort(),['CART_PREVIEW','CATALOG_QUERY']);
           assert(x.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
           for (const needle of ['requireActiveVersionId','DIRECT_CORE_AGENT',
             'AGENT_HAS_REACHABLE_TICKET_WRITE_TOOL']){
