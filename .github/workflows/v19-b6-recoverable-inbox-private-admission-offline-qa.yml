@@ -1,0 +1,68 @@
+name: TIEN404 V19.0-B6 - Encrypted Inbox Worker Binding and Store Preflight Offline
+
+on:
+  push:
+    branches:
+      - qa/v19-b6-recoverable-inbox-authority-preflight-20261118
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-b6-recoverable-inbox-private-admission-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/**
+      - .github/workflows/v19-b6-recoverable-inbox-private-admission-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b6-local-qa:
+    name: B6 local workerd encrypted payload and full B2-B5 regression — NO HOSTED DEPLOY
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Immutable deployed Worker snapshot
+        shell: bash
+        run: |
+          test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: Syntax checks B6
+        run: |
+          node --check qa/v19-webhook/b6/recoverable-inbox-candidate.mjs
+          node --check qa/v19-webhook/b6/store-authority-preflight.mjs
+          node --check qa/v19-webhook/b6/tests/local-encrypted-worker.mjs
+          node --check qa/v19-webhook/b6/tests/recoverable-inbox-binding.test.mjs
+      - name: Local Miniflare dependency pin (no Cloudflare credentials)
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix qa/v19-webhook/b6/tests miniflare@3.20250718.3
+          node -p "require('./qa/v19-webhook/b6/tests/node_modules/miniflare/package.json').version"
+      - name: B6 local workerd D1 encrypted recovery + Store preflight tests
+        run: node --test qa/v19-webhook/b6/tests/recoverable-inbox-binding.test.mjs
+      - name: Full B5 Worker Binding and Durable Inbox regression
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix qa/v19-webhook/b5/tests miniflare@3.20250718.3
+          node --test qa/v19-webhook/b5/tests/miniflare-d1-binding.test.mjs
+          python3 qa/v19-webhook/b5/tests/inbox_sqlite_contract_test.py
+      - name: B4 registry negatives
+        run: |
+          node --test qa/v19-webhook/b4/tests/trusted-installation-gate.test.mjs
+          python3 qa/v19-webhook/b4/tests/registry_sqlite_contract_test.py
+      - name: B3 rate/body/replay regressions
+        run: |
+          node --test qa/v19-webhook/b3/tests/ingress-candidate.test.mjs
+          python3 qa/v19-webhook/b3/tests/sqlite_semantics_test.py
+      - name: B2 deployed Worker snapshot regression
+        run: node --test qa/v19-webhook/tests/*.test.mjs
+      - name: Cloud deployment NO-GO
+        run: |
+          test ! -e qa/v19-webhook/b6/wrangler.toml
+          test ! -e qa/v19-webhook/b6/wrangler.jsonc
+          test ! -e qa/v19-webhook/b6/.env
+          grep -q "status:423" qa/v19-webhook/b6/recoverable-inbox-candidate.mjs
+          echo "Only offline local workerd & SQLite tested. No Cloudflare-hosted D1 writes, provider events or Commerce access."
