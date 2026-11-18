@@ -28,16 +28,30 @@ export function evaluateReadAdmission(previous, request, nowMs = Date.now()) {
   }
   if (previous != null &&
       (typeof previous !== 'object' || Array.isArray(previous) ||
-       !Array.isArray(previous.accepted))) {
+       Object.keys(previous).some(key => key !== 'accepted') ||
+       !Array.isArray(previous.accepted) ||
+       previous.accepted.length > READ_MAX_PER_WINDOW)) {
     return { ...deny('ADMISSION_STATE_INVALID', 503), nextState: null };
   }
 
+  // Fail closed on partial corruption instead of silently filtering malformed
+  // records, which could reset quotas and admit more reads than authorized.
+  // A valid ledger never stores more than READ_MAX_PER_WINDOW entries.
+  const seen = new Set();
+  for (const entry of previous?.accepted || []) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry) ||
+        Object.keys(entry).some(key => !['id', 'at'].includes(key)) ||
+        typeof entry.id !== 'string' ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(entry.id) ||
+        !Number.isSafeInteger(entry.at) || entry.at <= 0 ||
+        entry.at > nowMs || seen.has(entry.id)) {
+      return { ...deny('ADMISSION_STATE_INVALID', 503), nextState: null };
+    }
+    seen.add(entry.id);
+  }
+
   const cutoff = nowMs - READ_WINDOW_MS;
-  const accepted = (previous?.accepted || []).filter(entry =>
-    entry && typeof entry === 'object' &&
-    Number.isSafeInteger(entry.at) && entry.at > cutoff && entry.at <= nowMs &&
-    typeof entry.id === 'string' && entry.id.length === 36
-  );
+  const accepted = (previous?.accepted || []).filter(entry => entry.at > cutoff);
   if (accepted.some(entry => entry.id === request.requestId)) {
     return { ...deny('ADMISSION_REPLAY', 409), nextState: null };
   }
