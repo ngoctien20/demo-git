@@ -244,10 +244,9 @@ def create_app(registry: Registry, *, tokens: dict[str, str], legacy_state: str 
             raise HTTPException(exc.status_code, detail=exc.code) from None
 
     @app.get("/api/v2/tenants/{tenant_id}/stores")
-    async def list_stores(tenant_id: UUID, request: Request, user_id: str = None):
-        actor_id = user_id or await actor(request)
-        if "x-tenant-id" in request.headers:
-            raise HTTPException(400, detail="SCOPE_HEADERS_NOT_SUPPORTED")
+    async def list_stores(tenant_id: UUID, request: Request):
+        reject_duplicate_scope(request)
+        actor_id = await actor(request)
         tenant = str(tenant_id)
         tenant_rows = [x for x in registry.tenant_memberships if x.tenant_id == tenant and x.user_id == actor_id and x.active]
         if len(tenant_rows) != 1 or tenant_rows[0].role not in ROLE_RANK:
@@ -259,7 +258,7 @@ def create_app(registry: Registry, *, tokens: dict[str, str], legacy_state: str 
         items = []
         for membership in memberships:
             store = next((s for s in registry.stores if s.tenant_id == tenant and s.store_id == membership.store_id), None)
-            if store and store.status != "archived":
+            if store and store.status != "archived" and membership.role in ROLE_RANK:
                 items.append({"store_id": store.store_id, "name": store.name,
                               "status": store.status,
                               "effective_role": min((tenant_rows[0].role, membership.role),
