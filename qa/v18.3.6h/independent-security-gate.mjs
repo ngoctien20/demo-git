@@ -55,7 +55,7 @@ export function assessIndependentSecurityGate({receipt,reviewerKeys,clock,stagin
       deny(blockers,'REVIEW_EXPIRED');
   }
   if(staging.canonicalStoreTables!==2 || staging.commerceStoreColumns!==6 ||
-    staging.restrictiveStorePolicies<6)
+    !Number.isInteger(staging.restrictiveStorePolicies) || staging.restrictiveStorePolicies<6)
     deny(blockers,'CANONICAL_STORE_STAGING_NOT_READY');
   if(staging.realAuthABAccepted!==true || staging.independentOwnerConsentVerified!==true)
     deny(blockers,'REAL_AUTH_AND_OWNER_PROOF_MISSING');
