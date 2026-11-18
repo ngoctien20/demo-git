@@ -47,10 +47,11 @@ jobs:
           assert 'follow_redirects=False' in user
           assert 'trust_env=False' in user
           assert 'sb_publishable_' in user
+          assert 'sb_secret_' in user  # fail-closed explicit deny for restricted keys
           assert 'get_live_user' in user
           for content in (key,user):
             assert all(term not in content for term in
-              ('create_engine(', 'psycopg.connect(', 'import subprocess', 'service_role', 'refresh_token', 'sb_secret_') )
+              ('create_engine(', 'psycopg.connect(', 'import subprocess', 'service_role', 'refresh_token') )
           ops=Path('ops/data-platform/app/main.py').read_text()
           assert 'qa.v180-p0w' not in ops and 'pinned_jwks_source' not in ops
           print('P0W_STATIC_NO_REAL_OWNER_JWT_NO_HOSTED_ACCESS_MUTATION_PASS')
