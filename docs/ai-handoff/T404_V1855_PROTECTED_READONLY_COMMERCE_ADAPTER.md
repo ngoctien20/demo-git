@@ -131,3 +131,8 @@ The internal adapter enforces a 60-second timestamp freshness window and the Wor
 ## 7. Next approval required
 
 Approve creation of a dedicated **staging-only** Header Auth credential and the corresponding Cloudflare Worker secret binding. The credential must be unique to this adapter, must not reuse any Zalo/Messenger credential, and must never be sent through chat. The public Widget and production remain disabled.
+
+
+### CI regression wiring
+
+The V18.5.5 QA workflow is also present on the stacked V18.5.4 base branch so GitHub can execute it for this draft pull request. It runs the inherited security regression suite plus the new Worker adapter tests and verifies the real n8n evidence packet. This is CI-only; it does not activate or deploy the adapter.
