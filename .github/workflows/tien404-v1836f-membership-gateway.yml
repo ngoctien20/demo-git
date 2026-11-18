@@ -1,0 +1,143 @@
+name: TIEN404 V18.3.6F Protected Store Membership and Gateway QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836e-pg17-dml-pgtap-20261118
+    paths:
+      - "qa/v18.3.6f/**"
+      - ".github/workflows/tien404-v1836f-membership-gateway.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836f-membership-gateway
+  cancel-in-progress: true
+jobs:
+  disposable-membership-gateway:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout QA-only synthetic sources
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build PG17.12 with real pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.tien404f" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update \
+            && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap \
+            && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836f-pgtap -f "$RUNNER_TEMP/Dockerfile.tien404f" "$RUNNER_TEMP"
+      - name: Start isolated disposable PG17 without network or ports
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836f-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836f-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836f-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836f-pg17 pg_isready -U postgres
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836e_disposable;'
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'SELECT version();'
+      - name: Regression E actual 61 pgTAP assertions before F
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6e/01_PG17_DISPOSABLE_SCHEMA.sql
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6e/02_PG17_PGTAP_DML_RLS.sql | tee "$RUNNER_TEMP/f-e-regression.tap"
+          if grep -E '^(not ok|# Looks like you failed)' "$RUNNER_TEMP/f-e-regression.tap"; then exit 1; fi
+          grep -q '^1\.\.61$' "$RUNNER_TEMP/f-e-regression.tap"
+          echo V18_3_6F_E_REGRESSION_61_PASS
+      - name: Reinitialize a clean disposable database for F
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'DROP DATABASE tien404_v1836e_disposable WITH (FORCE);'
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'DROP ROLE IF EXISTS tien404_e_actor;'
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836e_disposable;'
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6e/01_PG17_DISPOSABLE_SCHEMA.sql
+          echo V18_3_6F_FRESH_BASELINE_READY
+      - name: Apply protected membership and gateway synthetic SQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6f/01_MEMBERSHIP_ADMIN.sql
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6f/02_GATEWAY_BYPASS_GUARD.sql
+      - name: Execute membership, last-owner and gateway negative pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
+            < qa/v18.3.6f/03_PGTAP_ADMIN_GATEWAY.sql | tee "$RUNNER_TEMP/f-f-qa.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/f-f-qa.tap"; then exit 1; fi
+          grep -q '^1\.\.87$' "$RUNNER_TEMP/f-f-qa.tap"
+          grep -q 'V18_3_6F_ADMIN_GATEWAY_PGTAP_FINISHED' "$RUNNER_TEMP/f-f-qa.tap"
+          echo V18_3_6F_ADMIN_GATEWAY_87_PASS
+      - name: Concurrent last-owner revocation check
+        shell: bash
+        run: |
+          set -euo pipefail
+          TENANT=00000000-0000-0000-0000-000000000001
+          STORE=00000000-0000-0000-0000-000000000101
+          ADMIN=00000000-0000-0000-0000-000000001005
+          OWNER_A=00000000-0000-0000-0000-000000001001
+          OWNER_BOTH=00000000-0000-0000-0000-000000001006
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -At -U postgres -d tien404_v1836e_disposable \
+            -c "BEGIN; SET ROLE tien404_e_actor; SET request.jwt.claim.sub='$ADMIN'; SELECT qa_private.admin_revoke('$TENANT','$STORE','$OWNER_A'); SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/f-owner-first.log" 2>&1 &
+          A_PID=$!
+          sleep 0.5
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -At -U postgres -d tien404_v1836e_disposable \
+            -c "BEGIN; SET ROLE tien404_e_actor; SET request.jwt.claim.sub='$ADMIN'; SELECT qa_private.admin_revoke('$TENANT','$STORE','$OWNER_BOTH'); COMMIT;" \
+            > "$RUNNER_TEMP/f-owner-second.log" 2>&1 && SECOND_RC=0 || SECOND_RC=$?
+          wait "$A_PID"
+          grep -q 'REVOKED' "$RUNNER_TEMP/f-owner-first.log"
+          test "$SECOND_RC" -ne 0
+          grep -q 'LAST_ACTIVE_STORE_OWNER' "$RUNNER_TEMP/f-owner-second.log"
+          COUNT=$(docker exec tien404-v1836f-pg17 psql -X -At -U postgres -d tien404_v1836e_disposable \
+            -c "SELECT count(*) FROM public.store_memberships WHERE tenant_id='$TENANT' AND store_id='$STORE' AND role='store_owner' AND status='active';")
+          test "$COUNT" = "1"
+          echo V18_3_6F_CONCURRENT_LAST_OWNER_PROTECTION_PASS
+      - name: Concurrent single-use gateway receipt check
+        shell: bash
+        run: |
+          set -euo pipefail
+          RECEIPT=00000000-0000-0000-0000-000000009003
+          ORDER_ID=00000000-0000-0000-0000-000000004001
+          STORE=00000000-0000-0000-0000-000000000101
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -At -U postgres -d tien404_v1836e_disposable \
+            -c "BEGIN; SELECT id FROM qa_private.receipts WHERE id='$RECEIPT' FOR UPDATE; SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/f-proof-lock.log" 2>&1 &
+          LOCK_PID=$!
+          sleep 0.5
+          for i in 1 2; do
+            docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -At -U postgres -d tien404_v1836e_disposable \
+              -c "SET ROLE tien404_f_gateway; SELECT qa_private.gateway_execute('$RECEIPT','$ORDER_ID','$STORE','READ_ORDER');" \
+              > "$RUNNER_TEMP/f-gateway-$i.log" 2>&1 &
+          done
+          wait "$LOCK_PID"
+          wait
+          COUNT_ALLOW=$(cat "$RUNNER_TEMP/f-gateway-1.log" "$RUNNER_TEMP/f-gateway-2.log" | grep -c '^ALLOW_READ_' || true)
+          COUNT_DENY=$(cat "$RUNNER_TEMP/f-gateway-1.log" "$RUNNER_TEMP/f-gateway-2.log" | grep -c '^DENY_REPLAY_OR_EXPIRED$' || true)
+          test "$COUNT_ALLOW" = "1"
+          test "$COUNT_DENY" = "1"
+          echo V18_3_6F_CONCURRENT_RECEIPT_SINGLE_USE_PASS
+      - name: Delete disposable PostgreSQL container
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836f-pg17 >/dev/null 2>&1 || true
