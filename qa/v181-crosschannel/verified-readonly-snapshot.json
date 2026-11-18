@@ -1,0 +1,38 @@
+{
+  "contract": "TIEN404_V181_CROSS_CHANNEL_E2E_EVIDENCE_NO_SEND",
+  "capturedOn": "2026-11-18",
+  "provenance": {
+    "messengerWorkflow": "Z7FdV7uDvApfbURQ",
+    "messengerExecution": "5236",
+    "zaloWorkflow": "yIJk8LvJoLF40Z62",
+    "zaloLatestListedExecution": "2839",
+    "cloudflareWorker": "tien404-v1723u-qa-inbound-locked-staging",
+    "cloudflareWorkerN8nHostFound": false,
+    "commerceCore": "iyfGUiEsZlNTBWOR",
+    "canonicalStoreEvidence": "PR #398 and live read-only Supabase table inventory: public.stores absent",
+    "priorSourcePRs": [
+      137,
+      250,
+      383,
+      385
+    ],
+    "privateCredentialsIncluded": false
+  },
+  "signals": {
+    "messengerWebhookObserved": true,
+    "zaloNativeWebhookObserved": false,
+    "zaloQaWorkerToN8nTraceObserved": false,
+    "serverTrustedBotToStoreBinding": false,
+    "canonicalSameTenantStoreAuthority": false,
+    "customerCrossChannelProofConsumed": false,
+    "commerceStagingOrderPersisted": false,
+    "zaloOrderLookupOwnedAndAuthorized": false,
+    "independentCustomerBDenialObserved": false,
+    "independentStoreBDenialObserved": false,
+    "durableReplayRejectionObserved": false,
+    "independentBackupRestoreVerified": false,
+    "privateOwnerABSessionsVerified": false,
+    "separateHostedChangeApproved": false
+  },
+  "note": "Only independent live receipts can establish a signal. Historical/manual/fixture/source CI does not establish actual customer/store rights. A recorded false means NOT VERIFIED, not proof the external event never happened."
+}
