@@ -41,7 +41,7 @@ jobs:
           node --check qa/v19-webhook/b5/tests/miniflare-d1-binding.test.mjs
       - name: Isolated Miniflare runtime dependency (only this QA job)
         run: |
-          npm install --no-save --no-audit --no-fund --prefix qa/v19-webhook/b5/tests miniflare@3
+          npm install --no-save --no-audit --no-fund --prefix qa/v19-webhook/b5/tests miniflare@3.20250718.3
           node -p "require('./qa/v19-webhook/b5/tests/node_modules/miniflare/package.json').version"
       - name: Test actual local Workers D1 binding through workerd
         run: node --test qa/v19-webhook/b5/tests/miniflare-d1-binding.test.mjs
