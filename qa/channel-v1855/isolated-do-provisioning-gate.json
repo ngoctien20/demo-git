@@ -57,8 +57,13 @@
     "result": "PASS",
     "cloudApiAccess": false,
     "actualCloudflareAccountResourcesCreated": 0,
-    "newEvictionTest": "PENDING_CI_VERIFICATION",
-    "distinction": "Runs locally in Cloudflare workerd runtime but does not prove hosted Cloudflare operation."
+    "newEvictionTest": "PASS_REAL_LOCAL_WORKERD",
+    "distinction": "Runs locally in Cloudflare workerd runtime but does not prove hosted Cloudflare operation.",
+    "latestVerifiedCiRun": "44315019317",
+    "testsAtLatestVerifiedRun": 4,
+    "latestVerifiedRunStatus": "SUCCESS",
+    "sourceRegressionTestsAtLatestVerifiedRun": 154,
+    "fullTestCountAtLatestVerifiedRun": 158
   },
   "releaseGates": [
     "OWNER_APPROVES_NEW_ISOLATED_STAGING_WORKER_DEPLOYMENT",
