@@ -33,4 +33,11 @@ Run \`node --test qa/v180-p0r/server-auth-verifier-admission.test.mjs\` in an is
 
 No Supabase migration/DML, Auth account change, Render deploy, Cloudflare Access policy modification, credential or billing change, PR merge, n8n publish, Zalo/Messenger send or customer data operation was performed for P0R. To undo, revert the P0R source additions on Draft PR #385; no runtime rollback is required.
 
-**Release decision: P0R_SOURCE_CANDIDATE_IMPLEMENTED / SYNTHETIC_UNIT_QA_PENDING / REAL_OWNER_PAIR_BLOCKED / PRIVATE_ENDPOINT_NOT_DEPLOYED / PRODUCTION_NO_GO.**
+**Release decision: P0R_SOURCE_CANDIDATE_IMPLEMENTED / SYNTHETIC_UNIT_QA_TESTED_20_OF_20 / REAL_OWNER_PAIR_BLOCKED / PRIVATE_ENDPOINT_NOT_DEPLOYED / PRODUCTION_NO_GO.**
+
+## Verified source-only QA evidence
+
+- Exact P0R source checkpoint preceding this documentation-only update: `5311fb90a9c38d07e223af2f10dbbe2a56ff1e9c`.
+- [GitHub Actions #44227578839](https://github.com/ngoctien20/demo-git/actions/runs/44227578839): SUCCESS; job `offline-admission-only` SUCCESS, static gate `P0R_OFFLINE_ONLY_NO_HTTP_NO_SECRET_NO_PRODUCTION_PASS`.
+- Independently read job log: **20 tests, 20 passed, 0 failed** using fabricated objects and offline ports. All prior inherited core/source gates must still be interpreted separately; no real Auth users or JWTs were passed to CI.
+- **NOT TESTED**: protected hosted endpoint, independent real Owner A/B signed JWT verification, Auth current-session revocation under live service, any canonical Store A/B RLS access, 31 real signed JWT no-send negative cases.
