@@ -162,6 +162,44 @@ test('integration: V24 QA HTTPS handler cannot bypass S3 guard into V21 consent 
   assert.deepEqual(calls,[]);
 });
 
+test('integration: V24 reviewer route also remains blocked under S3',async()=>{
+  const {createPrivateConsentBackend}=require('./v172c21-protected-consent-backend.cjs');
+  const {createProtectedConsentHttpRoute}=require('./v172c24-private-consent-https-handler.cjs');
+  const calls=[];
+  const services={};
+  for(const name of ['verifySession','resolveStoreAuthority','verifyConsentChallenge',
+    'recordExplicitConsent','getPrivateEvidence','getTrustedAuthority','getSignedReceipts',
+    'verifyReviewerSession']) {
+    services[name]=async()=>{calls.push(name);return null;};
+  }
+  const v21=createPrivateConsentBackend(services);
+  const guard=createS3LockedConsentGuard({
+    getCurrentDecision:async()=>({
+      decision_ref:'synthetic-decision-s3-v1',decision_version:1,decision:'S3',
+      status:'OWNER_DECISION_LOCKED',lock_state:'LOCKED',authority_effect:'NONE',
+      owner_authority_verified:false,identity_verified:false,real_authority_requested:false
+    }),
+    backend:v21
+  });
+  const origin='https://s3-review-guard.example.test';
+  const route=createProtectedConsentHttpRoute({
+    backend:guard,allowedOrigin:origin,
+    verifyDeploymentGate:async()=>({approved:true,isolatedDisposable:true,noSend:true,
+      recoveryApproved:true,independentReviewerApproved:true}),
+    checkRateLimit:async()=>true
+  });
+  const token='Bearer '+['d'.repeat(30),'e'.repeat(30),'f'.repeat(40)].join('.');
+  const request=new Request(origin+'/private/qa-consent/review-pair',{
+    method:'POST',
+    headers:{origin,authorization:token,'content-type':'application/json'},
+    body:'{}'
+  });
+  const response=await route(request);
+  assert.equal(response.status,403);
+  assert.deepEqual(await response.json(),{status:'DENY'});
+  assert.deepEqual(calls,[]);
+});
+
 test('guard response is redacted and contains no owner or Store identifiers',async()=>{
   const {guard}=setup();
   const result=await guard.intake({jwt:'do-not-return',email:'private@example.invalid',store_id:'private'});
