@@ -33,6 +33,7 @@ Add nullable `store_id` to the six Commerce tables and nullable `channel_install
 - `UNIQUE (tenant_id, store_id, id)` keys on referenced parents;
 - composite Tenant+Store FKs listed in `CANONICAL_STORE_AUTHORITY_DESIGN.md`;
 - composite conversation-to-installation FK and a Store/installation-scoped unique key for non-NULL external conversation references;
+- `CHECK (channel_installation_id IS NOT NULL) NOT VALID` on conversations so new/updated provider conversations cannot omit verified installation provenance while legacy NULL rows remain unvalidated and hidden;
 - targeted indexes for Store membership lookup and each composite FK's referencing columns;
 - composite FK constraints as `NOT VALID` initially where the live legacy rows require a staged validation;
 - `CHECK (store_id IS NOT NULL) NOT VALID` on operational tables.
