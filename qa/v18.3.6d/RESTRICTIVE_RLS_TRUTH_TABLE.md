@@ -65,7 +65,7 @@ WITH CHECK (
 );
 ```
 
-Apply the equivalent boundary to products, customers, order_items, conversations and messages. The function/schema grants and Data API exposure must be reviewed before use.
+Apply the equivalent boundary to products, customers, order_items, conversations and messages. The function/schema grants and Data API exposure must be reviewed before use. If the helper is in a private schema that is not exposed by PostgREST, grant only the minimum schema USAGE and EXECUTE required for policy evaluation; do not grant direct table access. Verify the schema is absent from the live Data API exposed-schema allowlist.
 
 The `FOR ALL` boundary narrows SELECT/UPDATE/DELETE through `USING` and INSERT/UPDATE through `WITH CHECK`. It does not grant any operation. Existing legacy rows with NULL Store IDs fail closed.
 
@@ -149,7 +149,7 @@ Use a non-exposed private authorization helper to avoid recursive RLS on members
 
 ## 9. service_role and channel runtime
 
-Supabase `service_role` bypasses RLS. Do not claim Store isolation is proven by an authenticated-role RLS test alone.
+Supabase `service_role` and other BYPASSRLS roles bypass RLS; table owners also normally bypass RLS unless FORCE ROW LEVEL SECURITY applies (superusers/BYPASSRLS remain exempt). Do not claim Store isolation is proven by an authenticated-role RLS test alone.
 
 Required separate controls:
 - never expose a secret/service key to browser or Messenger/Zalo customer;
