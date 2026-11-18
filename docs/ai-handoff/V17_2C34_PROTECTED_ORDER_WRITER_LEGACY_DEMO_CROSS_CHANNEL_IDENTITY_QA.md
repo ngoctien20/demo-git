@@ -33,12 +33,12 @@ User explicitly chose **Option A: isolated source/ephemeral PostgreSQL QA, no Su
 - `v172c34-cross-channel-identity-proof-gate.test.cjs`
 - `v172c34-protected-order-writer-preflight.test.cjs`
 - Existing `.github/workflows/v172c21-protected-consent-qa.yml` extended with both files; includes integration between the actual source-only dual-consent proof gate and writer status preflight for a synthetic Messenger→Zalo identity link.
-- Negative matrix: different Store/tenant/actor, legacy lane tool IDs, price/tax/stock mismatch, invalid VND/quantity, missing confirmation, replay/idempotency uncertainty, forbidden writes, proof revocation and forged caller-provided privileged fields. No external services invoked.
+- Negative matrix: different Store/tenant/actor, legacy lane tool IDs, price/stock mismatch, invalid VND/quantity, missing confirmation, replay/idempotency uncertainty, forbidden writes, proof revocation and forged caller-provided privileged fields. No external services invoked.
 
 ## 3. CI evidence — source commit `172ded54374e02fde4622b39423cc25e4811ab91`
 - Protected source, identity link and order preflight: [run 44239382608](https://github.com/ngoctien20/demo-git/actions/runs/44239382608) — **SUCCESS**.
 - Source privilege contract: [run 44239382707](https://github.com/ngoctien20/demo-git/actions/runs/44239382707) — **SUCCESS**.
-- Ephemeral PostgreSQL RLS and Store migration regression: [run 44239382624](https://github.com/ngoctien20/demo-git/actions/runs/44239382624) — outcome must be reconfirmed if not yet completed at checkpoint time.
+- Ephemeral PostgreSQL RLS and Store migration regression: [run 44239382624](https://github.com/ngoctien20/demo-git/actions/runs/44239382624) — **SUCCESS**.
 
 ## 4. Major remaining P1 blockers / independent review
 1. Actual Store IDs, canonical tenant/store memberships and Store-scoped Orders RLS are **not deployed**. Store resolver and server-side provider verification from Messenger/Zalo are not integrated with Commerce writer.
@@ -56,7 +56,7 @@ User explicitly chose **Option A: isolated source/ephemeral PostgreSQL QA, no Su
 | Protected Store + actor order-preflight contract | IMPLEMENTED / TESTED mock |
 | Cross-channel signed dual-consent identity proof contract | IMPLEMENTED / TESTED mock |
 | Integrated Messenger order→Zalo status preflight (synthetic) | TESTED only |
-| Ephemeral Postgres tenant/Store RLS regression | TESTED in CI |
+| Ephemeral Postgres tenant/Store RLS regression | TESTED CI PASS |
 | Real provider HMAC/JWT verification, signed proof and replay storage | BLOCKED |
 | Real protected order writer, stock/order atomicity, Store-scoped schema | NOT DEPLOYED |
 | Hosted A/B owner consent, independent reviewer, backup/restore | NO-GO |
