@@ -79,7 +79,13 @@ function createOfflineSharedCoreWidget({
   });
   return Object.freeze({
     mode,coreWorkflowId:CORE_WORKFLOW_ID,
-    issueSession:adapter.issueSession,
+    async issueSession(input){
+      const issued=await adapter.issueSession(input);
+      if(!issued||issued.previewOnly!==true||issued.privateOrderAccess!==false||
+        issued.providerSends!==0||issued.orderWrites!==0)
+        deny('V185_SESSION_SOURCE_UNTRUSTED');
+      return Object.freeze({...issued,mode});
+    },
     async previewMessage({widgetId,origin,session,eventId,message,tenantId,storeId}={}){
       // Reject browser-declared scope, even when matching actual installation.
       if(tenantId!==undefined||storeId!==undefined)
