@@ -29,9 +29,10 @@ Do not seed real Store A/B. Use disposable synthetic fixtures first. Keep existi
 
 Before adding any NOT VALID Store check, inventory every privileged and application writer. The live project currently has the `public.save_merchant_product` SECURITY DEFINER RPC executable by `authenticated`; it is tenant-scoped and not Store-aware. Its callers must be identified and the RPC must be replaced with an approved Store-aware command or isolated/revoked before the check is applied. Do not allow it to keep creating rows with a NULL Store ID. Messenger's legacy Google Sheets order tools are a separate writer and must not be mistaken for Commerce Core.
 
-Add nullable `store_id` to the six Commerce tables. Add:
+Add nullable `store_id` to the six Commerce tables and nullable `channel_installation_id` to `public.conversations`. Add:
 - `UNIQUE (tenant_id, store_id, id)` keys on referenced parents;
 - composite Tenant+Store FKs listed in `CANONICAL_STORE_AUTHORITY_DESIGN.md`;
+- composite conversation-to-installation FK and a Store/installation-scoped unique key for non-NULL external conversation references;
 - targeted indexes for Store membership lookup and each composite FK's referencing columns;
 - composite FK constraints as `NOT VALID` initially where the live legacy rows require a staged validation;
 - `CHECK (store_id IS NOT NULL) NOT VALID` on operational tables.
