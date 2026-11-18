@@ -11,14 +11,15 @@
   },
   "ci": {
     "pr": 411,
-    "head": "ae3dac141799f9eda70490f5b56e43f7a4e9c9b4",
-    "run_id": 44262745160,
-    "job_id": 134659794195,
+    "head": "e772083d9f4aac0f358137d6156e2badcefcca6d",
+    "run_id": 44263019072,
+    "job_id": 134660714217,
     "conclusion": "success",
     "synthetic_tests": 28,
     "failures": 0,
     "all_outbound_http_mocked": true,
-    "real_socket_connect_blocked": true
+    "real_socket_connect_blocked": true,
+    "log": "28 passed in 0.28s"
   },
   "legacy_orders": {
     "tenant_scoped": true,
