@@ -12,6 +12,7 @@ on:
       - 'qa/v172c-rpc-closure/v172c33-trusted-channel-store-binding-candidate*'
       - 'qa/v172c-rpc-closure/v172c34-cross-channel-identity-proof-gate*'
       - 'qa/v172c-rpc-closure/v172c34-protected-order-writer-preflight*'
+      - 'qa/v172c-rpc-closure/v172c40h-s3-consent-path-guard*'
       - '.github/workflows/v172c21-protected-consent-qa.yml'
   workflow_dispatch:
 permissions:
@@ -27,3 +28,5 @@ jobs:
           node-version: '22'
       - name: Check private backend server-only consent intake (NO network/Auth/JWT)
         run: node --test qa/v172c-rpc-closure/v172c21-protected-consent-backend.test.cjs qa/v172c-rpc-closure/v172c20-trusted-private-auth-pair-preflight.test.cjs qa/v172c-rpc-closure/v172c16-private-ab-consent-admission.test.cjs qa/v172c-rpc-closure/v172c23-supabase-real-auth-session-adapter.test.cjs qa/v172c-rpc-closure/v172c23-private-active-session-reader.test.cjs qa/v172c-rpc-closure/v172c24-private-consent-https-handler.test.cjs qa/v172c-rpc-closure/v172c29-no-cost-ab-store-isolation-probe.test.cjs qa/v172c-rpc-closure/v172c33-trusted-channel-store-binding-candidate.test.cjs qa/v172c-rpc-closure/v172c34-cross-channel-identity-proof-gate.test.cjs qa/v172c-rpc-closure/v172c34-protected-order-writer-preflight.test.cjs
+      - name: V17.2C.40H S3 lock blocks all owner-consent and reviewer adapter paths (source-only)
+        run: node --test qa/v172c-rpc-closure/v172c40h-s3-consent-path-guard.test.cjs
