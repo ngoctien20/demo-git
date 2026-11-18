@@ -21,7 +21,7 @@ function admittedLooking(){
    signedIssuerApproved:true,atomicNonceStoreApproved:true,
    privilegedGatewayReviewed:true,denyCrossStoreABVerified:true,
   },
-  review:{independentHumanReviewerApproved:true,reviewEvidenceHash:H('f'),reviewId:'synthetic-review'},
+  review:{independentHumanReviewerApproved:true,reviewEvidenceHash:H('f'),reviewId:'synthetic-review',reviewerHash:H('e'),implementerHash:H('d')},
  };
 }
 test('P01 actual observed staging metadata remains BLOCKED',()=>{
@@ -91,4 +91,9 @@ test('P13 revoked session blocks preflight',()=>{
 test('P14 not Store-scoped membership blocks preflight',()=>{
  const x=admittedLooking();x.owners.B.membershipCheckedServerSide=false;
  assert.ok(assessPrivateAuthABReadiness(x).blockers.includes('OWNER_B_STORE_MEMBERSHIP_UNVERIFIED'));
+});
+
+test('P15 independent reviewer must differ from implementer',()=>{
+ const x=admittedLooking();x.review.reviewerHash=x.review.implementerHash;
+ assert.ok(assessPrivateAuthABReadiness(x).blockers.includes('INDEPENDENT_SECURITY_REVIEW_MISSING'));
 });
