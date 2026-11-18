@@ -1,0 +1,39 @@
+name: TIEN404 V18.2 Zalo QA Native Ingress Preflight NO SEND
+on:
+  push:
+    branches: [work/v182-zalo-qa-native-ingress-nohost-20261118]
+    paths:
+      - 'qa/v182-zalo-native/**'
+      - 'docs/ai-handoff/T404_V182_ZALO_QA_NATIVE_INGRESS_PREFLIGHT.md'
+      - '.github/workflows/v182-zalo-native-preflight-no-send.yml'
+  pull_request:
+    paths:
+      - 'qa/v182-zalo-native/**'
+      - 'docs/ai-handoff/T404_V182_ZALO_QA_NATIVE_INGRESS_PREFLIGHT.md'
+      - '.github/workflows/v182-zalo-native-preflight-no-send.yml'
+permissions:
+  contents: read
+jobs:
+  offline-native-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Source-only Zalo Bot QA ingress event negative tests
+        run: node --test qa/v182-zalo-native/native-qa-validator.test.mjs
+      - name: Assert no network, credentials, provider message or Commerce access in validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -REn 'fetch\(|http\.request|https\.request|process\.env|service_role|SUPABASE|sendMessage\(|setWebhook\(|deleteWebhook\(|getUpdates\(' qa/v182-zalo-native/native-qa-validator.mjs
+          grep -q 'authorizedToCallCore: false' qa/v182-zalo-native/native-qa-validator.mjs
+          grep -q 'authorizedToSendMessage: false' qa/v182-zalo-native/native-qa-validator.mjs
+          grep -q 'authorizedToPublishWebhook: false' qa/v182-zalo-native/native-qa-validator.mjs
+      - name: Assert PowerShell operator probe uses only two read-only API methods
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq "'/getMe'" qa/v182-zalo-native/get-webhook-info-readonly.ps1
+          grep -Fq "'/getWebhookInfo'" qa/v182-zalo-native/get-webhook-info-readonly.ps1
+          ! grep -E '^ *\$[^#]*Invoke-RestMethod.*(/setWebhook|/sendMessage|/deleteWebhook|/getUpdates)' qa/v182-zalo-native/get-webhook-info-readonly.ps1
+          echo 'V182_NATIVE_QA_SOURCE_ONLY_NO_SEND_NO_WEBHOOK_MUTATION_NO_COMMERCE'
