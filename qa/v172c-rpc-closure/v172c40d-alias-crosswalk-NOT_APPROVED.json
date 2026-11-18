@@ -1,0 +1,60 @@
+{
+  "contract": "TIEN404_V17_2C40D_ALIAS_CROSSWALK",
+  "contract_version": "1.0.0",
+  "status": "CROSSWALK_DRAFT",
+  "scope": "SYNTHETIC_ONLY",
+  "authority_effect": "NONE",
+  "real_authority_requested": false,
+  "owner_decision": "S3",
+  "owner_decision_ref": "synthetic-decision-pending",
+  "tenant_ref": "synthetic-tenant-placeholder",
+  "evaluated_at": "2026-11-18T00:00:00Z",
+  "mappings": [],
+  "collision_rules": {
+    "alias_identity_key": [
+      "source_system",
+      "namespace",
+      "alias_kind",
+      "alias_ref"
+    ],
+    "same_key_multiple_targets": "DENY",
+    "duplicate_active_same_target": "DENY",
+    "same_text_different_namespace": "DO_NOT_AUTO_JOIN",
+    "one_installation_multiple_stores": "DENY",
+    "tenant_alias_implies_store": false,
+    "unknown_source_or_revision": "DENY",
+    "revocation_or_expiry_unknown": "DENY",
+    "historical_ambiguous_commerce_rows": "QUARANTINE"
+  },
+  "required_mapping_fields": [
+    "mapping_ref",
+    "source_system",
+    "namespace",
+    "alias_kind",
+    "alias_ref",
+    "source_revision_ref",
+    "tenant_ref",
+    "store_ref",
+    "installation_ref",
+    "provider_proof_ref",
+    "owner_decision_ref",
+    "evidence_ref",
+    "signature_ref",
+    "signature_profile_ref",
+    "signed_payload_sha256",
+    "reviewer_ref",
+    "valid_from",
+    "expires_at",
+    "revoked_at",
+    "source_status"
+  ],
+  "release_gates": {
+    "canonical_store_admission": false,
+    "cross_channel_identity_admission": false,
+    "real_order_read_admission": false,
+    "real_order_write_admission": false,
+    "migration_admission": false,
+    "production_send_admission": false
+  },
+  "instructions": "No mapping is approved. This public source template contains no real alias, owner, provider installation, Store UUID, signature, key or private evidence. Do not populate this file with real data or treat string equality as authority."
+}
