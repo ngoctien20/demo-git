@@ -1,10 +1,12 @@
 -- V17.2C.35 ATOMIC ORDER COMMIT CANDIDATE — CI SYNTHETIC ONLY.
 -- DO NOT EXECUTE ON SUPABASE, DO NOT COPY INTO production migrations.
--- Must follow V17.2C.32 ephemeral fixture on PostgreSQL 17 localhost.
+-- Must follow V17.2C.32 ephemeral fixture on PostgreSQL 17.
+-- In GitHub Docker, inet_server_addr() is a container bridge IP, NOT 127.0.0.1.
+-- The caller shell restricts PGHOST=127.0.0.1, database/role and port;
+-- this SQL guard also requires a local CI-only prerequisite schema.
 DO $$
 BEGIN
  IF current_database() <> 'postgres'
-    OR inet_server_addr() <> inet '127.0.0.1'
     OR to_regclass('tien404_v172c32_preview.orders') IS NULL
  THEN RAISE EXCEPTION 'DENY_NON_EPHEMERAL_V172C35';
  END IF;
