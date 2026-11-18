@@ -50,8 +50,8 @@ Before real Store DDL/RLS/grants/data changes, separately prove M0 backup-and-re
 
 - **VERIFIED:** Render live deployed baseline, Cloudflare Access inventory, aggregate Supabase Owner session distribution, auth.sessions column metadata.
 - **IMPLEMENTED:** offline signed JWT verifier candidate, pure server session snapshot assessor, unmounted FastAPI nohost origin probe, offline QA workflow.
-- **TESTED:** ONLY synthetic credentials and signed JWTs. The final CI run ID/test count is recorded after Actions completion. No real Owner JWT or signed private receipt has been tested.
+- **TESTED:** ONLY synthetic credentials and signed JWTs. [GitHub Actions #44232158560](https://github.com/ngoctien20/demo-git/actions/runs/44232158560) SUCCESS on prior source HEAD e94c5c45d6c5a877a37fc460e410a4c325ffea75; logs independently read: **47/47 PASS, 0 FAIL, 1 non-blocking library warning**, static `P0U_SOURCE_SCOPE_NO_DEPLOY_NO_DB_KEYS_NO_SEND_PASS`. No real Owner JWT or signed private receipt has been tested.
 - **HOSTED CHANGES:** NONE. No Render deploy, Cloudflare policy, Supabase DDL/DML/grant/credential change, n8n, Meta/Zalo or customer-data operation. No PR merge or production release.
 - **ROLLBACK:** Git revert P0U source files/commits inside existing Draft PR #385; no runtime rollback required.
 
-**Decision: P0U_OFFLINE_SIGNED_CRYPTO_QA / LIVE_ORIGIN_NO_GO / REAL_OWNER_A_B_NOT_VERIFIED / STORE_NO_GO / PRODUCTION_NO_GO.**
+**Decision: P0U_OFFLINE_SIGNED_CRYPTO_QA_TESTED_47_OF_47 / LIVE_ORIGIN_NO_GO / REAL_OWNER_A_B_NOT_VERIFIED / STORE_NO_GO / PRODUCTION_NO_GO.**
