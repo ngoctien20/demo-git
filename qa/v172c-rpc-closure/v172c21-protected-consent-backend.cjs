@@ -49,7 +49,7 @@ function createPrivateConsentBackend(services){
   try{
    const reviewer=await services.verifyReviewerSession(reviewerBearer.slice(7));
    if(!reviewer || reviewer.verified!==true || reviewer.active!==true ||
-      reviewer.independent===false || reviewer.role!=='independent_security_reviewer' ||
+      reviewer.independent!==true || reviewer.role!=='independent_security_reviewer' ||
       reviewer.sessionIdVerified!==true || !Number.isFinite(reviewer.expiresAtMs) ||
       reviewer.expiresAtMs<=Date.now() || !reviewer.subjectRef)
     return fail('REVIEWER_NOT_AUTHORIZED');
