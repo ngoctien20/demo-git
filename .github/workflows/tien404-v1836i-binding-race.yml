@@ -1,0 +1,229 @@
+name: TIEN404 V18.3.6I Signed Issuer Nonce and Revocation Race QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836h-session-nonce-independent-gate-20261118
+    paths:
+      - "qa/v18.3.6i/**"
+      - ".github/workflows/tien404-v1836i-binding-race.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836i-binding-race
+  cancel-in-progress: true
+jobs:
+  offline-signed-binding:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Regression G 93 crypto and approval checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            | tee "$RUNNER_TEMP/i-g-regression.tap"
+          grep -q '^# tests 93$' "$RUNNER_TEMP/i-g-regression.tap"
+          grep -q '^# pass 93$' "$RUNNER_TEMP/i-g-regression.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/i-g-regression.tap"
+          echo V18_3_6I_G_REGRESSION_93_PASS
+      - name: Regression H 47 trusted session and security gate checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            | tee "$RUNNER_TEMP/i-h-regression.tap"
+          grep -q '^# tests 47$' "$RUNNER_TEMP/i-h-regression.tap"
+          grep -q '^# pass 47$' "$RUNNER_TEMP/i-h-regression.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/i-h-regression.tap"
+          echo V18_3_6I_H_REGRESSION_47_PASS
+      - name: Signed-token to atomic nonce binding negative and replay QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6i/test-protected-binding.mjs \
+            | tee "$RUNNER_TEMP/i-binding.tap"
+          grep -q '^# tests 24$' "$RUNNER_TEMP/i-binding.tap"
+          grep -q '^# pass 24$' "$RUNNER_TEMP/i-binding.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/i-binding.tap"
+          echo V18_3_6I_SIGNED_BINDING_24_PASS
+      - name: Ensure no credentials and no network/production API code in runtime modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const source=readFileSync('qa/v18.3.6i/protected-issuer-nonce-binding.mjs','utf8');
+          const patterns=[
+            /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+            /SUPABASE_SERVICE_ROLE_KEY\s*=/,
+            /Bearer\s+eyJ[A-Za-z0-9_-]+/,
+            /\bfetch\s*\(/,
+            /https\.request\s*\(/,
+          ];
+          for(const pattern of patterns)if(pattern.test(source))throw Error('RUNTIME_SENSITIVE_OR_NETWORK_CODE');
+          console.log('V18_3_6I_SOURCE_SCOPE_SCAN_PASS');
+          NODE
+  disposable-pg17-atomic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout synthetic PG17 SQL only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build isolated PostgreSQL 17.12 with pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.i" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update \
+            && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap \
+            && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836i-pgtap -f "$RUNNER_TEMP/Dockerfile.i" "$RUNNER_TEMP"
+      - name: Start disposable no-network PG17
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836i-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836i-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836i-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836i-pg17 pg_isready -U postgres
+          docker exec tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836i_disposable;'
+      - name: Apply private atomic signed-binding schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d tien404_v1836i_disposable \
+            < qa/v18.3.6i/01_PG17_ATOMIC_BINDING.sql
+      - name: Run actual PG17 42-assertion pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d tien404_v1836i_disposable \
+            < qa/v18.3.6i/02_PGTAP_BINDING.sql | tee "$RUNNER_TEMP/i-binding-pgtap.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/i-binding-pgtap.tap"; then exit 1; fi
+          grep -q '^1\.\.42$' "$RUNNER_TEMP/i-binding-pgtap.tap"
+          grep -q 'V18_3_6I_PGTAP_BINDING_FINISHED' "$RUNNER_TEMP/i-binding-pgtap.tap"
+          echo V18_3_6I_PG17_BINDING_42_PASS
+      - name: Competing transaction revokes session before nonce admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          FN="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001001',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; SELECT session_binding_hash FROM qa_i_private.session_state WHERE session_binding_hash=repeat('a',64) FOR UPDATE; UPDATE qa_i_private.session_state SET active=false,revoked_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64); SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/i-revoke-first.log" 2>&1 &
+          PID=$!
+          sleep 0.5
+          docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable -c "SET ROLE tien404_i_executor; SELECT $FN;" \
+            > "$RUNNER_TEMP/i-redeem-after-revoke.log"
+          wait "$PID"
+          grep -q '^DENY_SESSION$' "$RUNNER_TEMP/i-redeem-after-revoke.log"
+          COUNT=$(docker exec tien404-v1836i-pg17 psql -X -At -U postgres \
+             -d tien404_v1836i_disposable \
+             -c "SELECT count(*) FROM qa_i_private.verified_nonce WHERE jti='00000000-0000-4000-8000-000000001001';")
+          test "$COUNT" = "0"
+          echo V18_3_6I_SESSION_REVOKE_BEFORE_ADMIT_DENIED
+      - name: Competing transaction revokes membership before nonce admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.session_state SET active=true,revoked_at=NULL WHERE session_binding_hash=repeat('a',64);"
+          FN="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001002',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; SELECT store_hash FROM qa_i_private.store_authority WHERE store_hash=repeat('e',64) FOR UPDATE; UPDATE qa_i_private.store_authority SET active=false,revoked_at=clock_timestamp() WHERE store_hash=repeat('e',64); SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/i-membership-revoke.log" 2>&1 &
+          PID=$!
+          sleep 0.5
+          docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable -c "SET ROLE tien404_i_executor; SELECT $FN;" \
+            > "$RUNNER_TEMP/i-redeem-after-member-revoke.log"
+          wait "$PID"
+          grep -q '^DENY_MEMBERSHIP$' "$RUNNER_TEMP/i-redeem-after-member-revoke.log"
+          COUNT=$(docker exec tien404-v1836i-pg17 psql -X -At -U postgres \
+             -d tien404_v1836i_disposable \
+             -c "SELECT count(*) FROM qa_i_private.verified_nonce WHERE jti='00000000-0000-4000-8000-000000001002';")
+          test "$COUNT" = "0"
+          echo V18_3_6I_MEMBERSHIP_REVOKE_BEFORE_ADMIT_DENIED
+      - name: Concurrent same-JTI race serializes exactly one successful admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.store_authority SET active=true,revoked_at=NULL WHERE store_hash=repeat('e',64);"
+          FN="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001003',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          for n in 1 2; do
+            docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+              -d tien404_v1836i_disposable \
+              -c "SET ROLE tien404_i_executor; SELECT $FN;" \
+              > "$RUNNER_TEMP/i-nonce-race-$n.log" 2>&1 &
+            if test "$n" = 1; then P1=$!; else P2=$!; fi
+          done
+          wait "$P1"; wait "$P2"
+          test "$(cat "$RUNNER_TEMP"/i-nonce-race-*.log | grep -c '^ACCEPTED$' || true)" = 1
+          test "$(cat "$RUNNER_TEMP"/i-nonce-race-*.log | grep -c '^REPLAY$' || true)" = 1
+          echo V18_3_6I_CONCURRENT_ONE_SUCCESS_ONE_REPLAY_PASS
+      - name: Admit before revoke linearization then forbid any later admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          FN="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001004',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "BEGIN; SET ROLE tien404_i_executor; SELECT $FN; SELECT pg_sleep(2); COMMIT;" \
+            > "$RUNNER_TEMP/i-admit-first.log" 2>&1 &
+          PID=$!
+          sleep 0.5
+          docker exec tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable \
+            -c "UPDATE qa_i_private.session_state SET active=false,revoked_at=clock_timestamp() WHERE session_binding_hash=repeat('a',64);" \
+            > "$RUNNER_TEMP/i-revoke-second.log"
+          wait "$PID"
+          grep -q '^ACCEPTED$' "$RUNNER_TEMP/i-admit-first.log"
+          FN_NEXT="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001005',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          RESULT=$(docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable -c "SET ROLE tien404_i_executor; SELECT $FN_NEXT;" | tail -1)
+          test "$RESULT" = "DENY_SESSION"
+          echo V18_3_6I_ADMIT_BEFORE_REVOKE_LINEARIZATION_PASS
+      - name: Restart PG17 and retain consumed nonce
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836i-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres \
+             -d tien404_v1836i_disposable \
+             -c "UPDATE qa_i_private.session_state SET active=true,revoked_at=NULL WHERE session_binding_hash=repeat('a',64);"
+          docker restart tien404-v1836i-pg17 >/dev/null
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836i-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          FN="qa_i_private.atomic_admit_verified_authority('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000001003',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',clock_timestamp()+interval '45 seconds')"
+          RESULT=$(docker exec tien404-v1836i-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836i_disposable -c "SET ROLE tien404_i_executor; SELECT $FN;" | tail -1)
+          test "$RESULT" = "REPLAY"
+          echo V18_3_6I_RESTART_PERSISTENCE_PASS
+      - name: Delete disposable PostgreSQL container
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836i-pg17 >/dev/null 2>&1 || true
