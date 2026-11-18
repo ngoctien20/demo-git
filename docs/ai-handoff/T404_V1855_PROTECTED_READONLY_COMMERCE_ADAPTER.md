@@ -136,3 +136,14 @@ Approve creation of a dedicated **staging-only** Header Auth credential and the 
 ### CI regression wiring
 
 The V18.5.5 QA workflow is also present on the stacked V18.5.4 base branch so GitHub can execute it for this draft pull request. It runs the inherited security regression suite plus the new Worker adapter tests and verifies the real n8n evidence packet. This is CI-only; it does not activate or deploy the adapter.
+
+
+## 8. Source CI checkpoint
+
+GitHub Actions run [#44271092019](https://github.com/ngoctien20/demo-git/actions/runs/44271092019) executed **119 tests: 119 passed, 0 failed, 0 skipped**, including the new Worker candidate tests and inherited security regressions.
+
+The overall job then failed in the separate evidence assertion step because the assertion expected the Tenant Resolver to appear as a direct child execution. The real execution lineage shows it is invoked inside the Catalog Query and Cart Preview child workflows. This was an evidence-schema/CI assertion mismatch, not a failing adapter or Worker unit test.
+
+The evidence packet and CI assertion have since been corrected to record the resolver as successfully invoked through those read-only children. **A green rerun has not yet been observed**, so overall GitHub CI remains pending and is not reported as PASS.
+
+Current code/test status: `WORKER_UNIT_TESTS_119_OF_119_PASS / N8N_MANUAL_UAT_12_OF_12_PASS / EVIDENCE_ASSERTION_CORRECTED / GREEN_CI_RERUN_PENDING`.
