@@ -1,4 +1,4 @@
-name: V18.6.3–7 Store RLS and Writer Cutover Readiness NO LIVE
+name: V18.6.3–8 Store RLS and Migration Read-Only Preflight NO LIVE
 on:
   push:
     paths:
@@ -7,6 +7,7 @@ on:
       - 'qa/store-authority-v1865/**'
       - 'qa/store-authority-v1866/**'
       - 'qa/store-authority-v1867/**'
+      - 'qa/store-authority-v1868/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'qa/store-authority-v1865/**'
       - 'qa/store-authority-v1866/**'
       - 'qa/store-authority-v1867/**'
+      - 'qa/store-authority-v1868/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -77,3 +79,7 @@ jobs:
         run: |
           node --test qa/store-authority-v1867/writer-path-inventory.test.cjs
           node -e "const x=require('./qa/store-authority-v1867/writer-path-inventory.json');if(x.completeness!=='PARTIAL'||x.provesNoOtherWriters!==false||x.design.stagingDbMigration!=='NOT_AUTHORIZED'||Object.values(x.safety).some(v=>v!==false))process.exit(1)"
+      - name: V18.6.8 read-only metadata and irreversible migration NO-GO gate
+        run: |
+          node --test qa/store-authority-v1868/preflight-gate.test.cjs
+          node -e "const x=require('./qa/store-authority-v1868/preflight-gate.cjs').evaluateBundled();if(x.status!=='BLOCKED'||x.deployApproved||x.databaseMutationApproved||x.privilegedRpcChangeApproved||x.realOwnerABApproved||x.productionReady)process.exit(1)"
