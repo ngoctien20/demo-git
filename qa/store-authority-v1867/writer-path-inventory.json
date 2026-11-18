@@ -1,0 +1,129 @@
+{
+  "checkpoint": "V18.6.7",
+  "evidenceClass": "READ_ONLY_PARTIAL_WRITER_INVENTORY_NOT_RELEASE_AUTHORITY",
+  "observedDate": "2026-11-18",
+  "environment": "STAGING_AND_DEMO_MIXED_DO_NOT_MERGE",
+  "completeness": "PARTIAL",
+  "provesNoOtherWriters": false,
+  "supabase": {
+    "canonicalStoresPresent": false,
+    "storeMembershipsPresent": false,
+    "commerceTableCount": 6,
+    "commerceStoreIdCount": 0,
+    "publicRestrictiveRlsPolicyCount": 0,
+    "directAuthenticatedCommerceTableWrites": false,
+    "directAnonCommerceTableWrites": false,
+    "privilegedWriteRpc": "public.save_merchant_product",
+    "privilegedWriteRpcAuthExecute": true,
+    "privilegedWriteRpcUsesTenantOwnerManagerGuard": true,
+    "privilegedWriteRpcStoreScoped": false
+  },
+  "n8n": {
+    "inspectedWorkflowCount": 8,
+    "publishedMessengerWorkflowId": "Z7FdV7uDvApfbURQ",
+    "publishedMessengerActive": true,
+    "messengerUsesDemoOrderSubworkflows": true,
+    "publishedCreateWorkflowId": "KrSn4DNR9ALX5ng4",
+    "publishedManageWorkflowId": "fDB9dvs1qPPVt9Sp",
+    "publishedAddressUpdateWorkflowId": "BkAi6TVUKAjCnI7v",
+    "publishedDraftVersionMismatchOnThreeWriters": true,
+    "orderStorageBackend": "GOOGLE_SHEETS_DEMO_NOT_SUPABASE_COMMERCE",
+    "commerceCoreWorkflowId": "iyfGUiEsZlNTBWOR",
+    "commerceCorePublishedDraftDiffer": true,
+    "exhaustiveNodeReferenceScan": false,
+    "messageSendingEnabledOnRealPublishedMessenger": true
+  },
+  "cloudflare": {
+    "existingProtectedWorker": "tien404-widget-gateway-v144-staging",
+    "accessAppObserved": true,
+    "operatorAccessBindingsObserved": true,
+    "liveOwnerSupabaseAuthVerifiedOnThisWorker": false,
+    "deployedStoreWriterAdapterVerified": false
+  },
+  "render": {
+    "workspaceIdentifiedButNotUserSelected": true,
+    "deployedSourceAuditedThisCheckpoint": false,
+    "status": "BLOCKED_WORKSPACE_SELECTION_REQUIRED"
+  },
+  "design": {
+    "canonicalDesignPr": 417,
+    "canonicalDesignStatus": "CANDIDATE_NOT_APPROVED",
+    "fullDmlPgTapReferencePr": 421,
+    "fullDmlPgTapReferenceAssertionsPassed": 61,
+    "additionalLegacySchemaReferencePr": 416,
+    "previousV1866Pr": 433,
+    "skuD02": "UNDECIDED_STORE_LOCAL_VS_TENANT_GLOBAL",
+    "roleCompatibility": "UNDECIDED_STORE_OWNER_VS_SYNTHETIC_OWNER",
+    "legacyStoreMapping": "UNAPPROVED",
+    "backupRestoreTest": "UNVERIFIED",
+    "stagingDbMigration": "NOT_AUTHORIZED"
+  },
+  "writers": [
+    {
+      "id": "SUPABASE_PRODUCTS_RPC",
+      "platform": "Supabase staging",
+      "entry": "public.save_merchant_product",
+      "operations": ["product.insert", "product.update"],
+      "publishedOrCallable": true,
+      "storeScoped": false,
+      "canChangeLiveData": true,
+      "policy": "P1_REVIEW_AND_REPLACE_BEFORE_STORE_NONNULL_OR_RLS_CUTOVER",
+      "observedFrom": "PG_PROC_SOURCE_AND_FUNCTION_ACL_READONLY"
+    },
+    {
+      "id": "MESSENGER_DEMO_CREATE",
+      "platform": "n8n published Google Sheets DEMO",
+      "parentWorkflow": "Z7FdV7uDvApfbURQ",
+      "childWorkflow": "KrSn4DNR9ALX5ng4",
+      "sheetNode": "Append Order",
+      "operations": ["demo_order.append"],
+      "publishedOrCallable": true,
+      "storeScoped": false,
+      "canChangeLiveData": true,
+      "policy": "KEEP_DEMO_ISOLATED_DO_NOT_ROUTE_TO_COMMERCE",
+      "observedFrom": "N8N_PUBLISHED_GRAPH_READONLY"
+    },
+    {
+      "id": "MESSENGER_DEMO_MANAGE",
+      "platform": "n8n published Google Sheets DEMO",
+      "parentWorkflow": "Z7FdV7uDvApfbURQ",
+      "childWorkflow": "fDB9dvs1qPPVt9Sp",
+      "sheetNode": "Update Order Row",
+      "operations": ["demo_order.update"],
+      "publishedOrCallable": true,
+      "storeScoped": false,
+      "canChangeLiveData": true,
+      "policy": "KEEP_DEMO_ISOLATED_DO_NOT_ROUTE_TO_COMMERCE",
+      "observedFrom": "N8N_PUBLISHED_GRAPH_READONLY"
+    },
+    {
+      "id": "MESSENGER_DEMO_ADDRESS",
+      "platform": "n8n published Google Sheets DEMO",
+      "parentWorkflow": "Z7FdV7uDvApfbURQ",
+      "childWorkflow": "BkAi6TVUKAjCnI7v",
+      "sheetNode": "Update row in sheet",
+      "operations": ["demo_order.address.update"],
+      "publishedOrCallable": true,
+      "storeScoped": false,
+      "canChangeLiveData": true,
+      "policy": "KEEP_DEMO_ISOLATED_DO_NOT_ROUTE_TO_COMMERCE",
+      "observedFrom": "N8N_PUBLISHED_GRAPH_READONLY"
+    }
+  ],
+  "requiredApprovals": [
+    "OWNER_DECIDE_D02_SKU_SCOPE",
+    "OWNER_APPROVE_STORE_ROLE_CONTRACT",
+    "OWNER_APPROVE_MIGRATION_AND_BACKUP_GATES",
+    "OWNER_APPROVE_PROTECTED_REAL_AUTH_UAT",
+    "OWNER_APPROVE_PUBLISHED_WRITER_CUTOVER"
+  ],
+  "safety": {
+    "supabaseDdlApplied": false,
+    "supabaseDmlApplied": false,
+    "n8nPublishedModified": false,
+    "cloudflareModified": false,
+    "renderModified": false,
+    "providerSendsTriggered": false,
+    "productionDeployed": false
+  }
+}
