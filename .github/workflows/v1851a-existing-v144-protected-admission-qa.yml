@@ -44,8 +44,8 @@ jobs:
           assert.equal(v.existingGateway.trafficPercentage,100);
           assert.equal(v.existingGateway.previewsEnabled,false);
           assert.deepEqual(v.existingGateway.bindings.map(x=>x.name).sort(),['T404_ACCESS_AUD','T404_QA_OPERATOR_EMAIL']);
-          assert.equal(v.existingGateway.runtimeCodeReadBack.outboundFetch,false);
-          assert.equal(v.existingGateway.runtimeCodeReadBack.n8nWebhook,false);
+          assert.equal(v.existingGateway.runtimeCodeReadBack.noOutboundFetch,true);
+          assert.equal(v.existingGateway.runtimeCodeReadBack.noN8nWebhook,true);
           assert.equal(v.existingAccessApplication.id,'1a73d50b-0668-4308-8f56-53aa9711d477');
           assert.equal(v.existingAccessApplication.coverage,'EXACT_HOST_NO_PATH_SUFFIX_NO_WILDCARD');
           assert.equal(v.existingAccessApplication.optionsPreflightBypass,false);
