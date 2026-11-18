@@ -26,10 +26,13 @@ jobs:
           node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
           node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
           node --check qa/channel-v1851a/v144-protected-admission.test.mjs
+          node --check qa/channel-v1851a/unauthenticated-edge-probe.mjs
+          node --check qa/channel-v1851a/unauthenticated-edge-probe.test.mjs
       - name: Run owner-only Access regression and existing V18.5.4 tests
         run: |
           node --test \
             qa/channel-v1851a/v144-protected-admission.test.mjs \
+            qa/channel-v1851a/unauthenticated-edge-probe.test.mjs \
             qa/channel-v1854/cloudflare-access-context-gate.test.mjs
       - name: Validate exact-host Cloudflare inventory and explicit runtime limitations
         run: |
@@ -67,5 +70,9 @@ jobs:
           assert.equal(v.rollback.noHostedRollbackNeeded,true);
           console.log('V1851A_EXACT_V14_4_ACCESS_CONFIG_VERIFIED_NEGATIVE_RUNTIME_PENDING_NO_HOST_CHANGE');
           JS
+      - name: Real anonymous Edge probe — read-only, no JWT, no cookies
+        env:
+          T404_EDGE_PROBE_RUN: '1'
+        run: node qa/channel-v1851a/unauthenticated-edge-probe.mjs
       - name: Explicit release lock
         run: echo 'SOURCE-ONLY V18.5.1A. No Cloudflare deployment, no Access policy modification, no n8n credential, no customer data, no order writes, no provider sends, no production.'
