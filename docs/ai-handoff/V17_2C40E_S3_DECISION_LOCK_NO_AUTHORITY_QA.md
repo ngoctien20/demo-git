@@ -3,8 +3,8 @@
 **Date:** 2026-11-18 JST  
 **Parent:** V17.2C.40D  
 **Draft PR:** #392  
-**Current implementation commit:** fc2c2dd41ff5f72084c2b92b99f295de73599576  
-**Status:** IMPLEMENTED — CI VERIFICATION IN PROGRESS AT REPORT CREATION / HOSTED AUTHORITY NO-GO.
+**Tested implementation commit:** abb207ec0c07f67f262fac877ba50bb4a6e44181  
+**Status:** IMPLEMENTED / 22-TEST S3 QA PASS / HOSTED AUTHORITY NO-GO.
 
 ## 1. Explicit project decision
 
@@ -73,18 +73,19 @@ No Supabase schema, data, policy, grant, credential or branch was changed by V40
 
 ## 6. QA evidence
 
-At report creation, the PR-triggered PostgreSQL 17 workflow was running for code/test commit `fc2c2dd41ff5f72084c2b92b99f295de73599576`. The V40E step was queued/pending at that moment. **Do not treat pending as PASS.**
-
-Expected test command:
-`python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v`
-
-After CI completes, append the actual job result, test count and any failure investigation here. The previous V40D 41/41 PASS and three PR checks at commit `8b144682771032eef37c593aac34c41638300ec9` remain separate evidence and must not be attributed to V40E.
+- First attempt at commit `fc2c2dd41ff5f72084c2b92b99f295de73599576`: **FAILED 9/22** because the validator compared JSON string scalars with Python object identity (`is not`). No Supabase/hosted write was involved.
+- Corrective commit `abb207ec0c07f67f262fac877ba50bb4a6e44181` changed the comparison to strict type + value equality.
+- Re-run [PostgreSQL 17 workflow #44262649461](https://github.com/ngoctien20/demo-git/actions/runs/44262649461): **22/22 tests PASS** (`Ran 22 tests ... OK`); all earlier disposable PostgreSQL transaction/RLS drills in the same job also completed successfully.
+- All 3 PR check runs at the tested code commit are **SUCCESS**: [synthetic private-auth contract](https://github.com/ngoctien20/demo-git/actions/runs/44262649466/job/134659470811), [no-send source contract](https://github.com/ngoctien20/demo-git/actions/runs/44262649454/job/134659470614), [disposable PostgreSQL + V40E](https://github.com/ngoctien20/demo-git/actions/runs/44262649461/job/134659470507).
+- Expected test command:
+  `python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v`
+- V40D's separate 41/41 PASS at commit `8b144682771032eef37c593aac34c41638300ec9` remains separate evidence.
 
 ## 7. Status, risk and rollback
 
 - **VERIFIED:** User explicitly selected S3 in this conversation; current Supabase aggregate state still has no canonical Store schema or Store-scoped Commerce rows.
 - **IMPLEMENTED:** S3 lock record, zero-mapping crosswalk, no-authority validator and synthetic transition guard.
-- **TESTED:** Pending V40E CI at the time this report was created; update only after logs are inspected.
+- **TESTED:** V40E 22/22 PASS on the corrected code commit; all 3 PR checks SUCCESS. Initial failure was corrected and rerun.
 - **PROPOSED:** Private owner authority service, not implemented.
 - **BLOCKED:** Real owner identity, signed per-Store consent, Store membership, alias crosswalk, Auth A/B and canonical Store RLS.
 - **NO-GO:** Hosted migration, Store grants, Orders read/write, n8n Published changes, provider dispatch and production release.
