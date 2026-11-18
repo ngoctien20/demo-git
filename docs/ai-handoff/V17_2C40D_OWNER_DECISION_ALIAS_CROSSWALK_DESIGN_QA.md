@@ -103,7 +103,8 @@ Maximum positive state is SYNTHETIC_REVIEW_ELIGIBLE_ONLY; every output remains a
 
 At code/test commit 8b144682771032eef37c593aac34c41638300ec9:
 - PostgreSQL 17 + V40B/V40C/V40D source preflight run #44259999210: V40D step SUCCESS, log: Ran 41 tests ... OK.
-- Full PR check suite still needs final independent recheck after the checkpoint report commit; do not treat a pending job as PASS.
+- Independent check-run API recheck at code/test commit 8b144682771032eef37c593aac34c41638300ec9: **3/3 SUCCESS** — no-send source contract [job](https://github.com/ngoctien20/demo-git/actions/runs/44259999234/job/134650739934), disposable PostgreSQL/V40D [job](https://github.com/ngoctien20/demo-git/actions/runs/44259999210/job/134650739802), protected consent [job](https://github.com/ngoctien20/demo-git/actions/runs/44259999221/job/134650739729). The PG17 job log confirms **41 tests ... OK**.
+- Latest PR head after adding this report is 9ee53c09bde0787935b7bdcc5fddcf21121ff222 (docs-only commit); no code/test change after tested code/test commit 8b14468.
 - V40D tests are synthetic and prove contract behavior only, not signature validity, live identity, RLS isolation, or a private backend implementation.
 
 ## 8. Status, rollback and next
