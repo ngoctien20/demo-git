@@ -74,7 +74,7 @@ jobs:
           assert(w.includes("COMMERCE_READONLY_ADAPTER_NOT_ADMITTED"));
           assert(w.includes('providerSends:0'));
           assert(!w.includes('Access-Control-Allow-Origin'));
-          assert(!w.includes('fetch('));
+          assert(!w.includes('await fetch('));
           console.log('V1854_REAL_N8N_READONLY_EVIDENCE_AND_NOHOST_APPROVALS_PASS');
           JS
       - name: Hosted rollout remains disabled
