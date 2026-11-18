@@ -119,5 +119,15 @@
     "productionRelease": false,
     "previewsEnabled": false
   },
-  "nextGate": "User must open exact host in a browser, authenticate with the Cloudflare account member and biometric MFA, and return the canary JSON/screenshot. Then query Access logs and test a separate non-allowlisted Cloudflare account in a separate browser profile. If no Access redirect/403 occurs for unauthenticated traffic, disable workers.dev immediately and investigate before continuing."
+  "nextGate": "User must open exact host in a browser, authenticate with the Cloudflare account member and biometric MFA, and return the canary JSON/screenshot. Then query Access logs and test a separate non-allowlisted Cloudflare account in a separate browser profile. If no Access redirect/403 occurs for unauthenticated traffic, disable workers.dev immediately and investigate before continuing.",
+  "sourceQA": {
+    "workflowRunId": 44263812363,
+    "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44263812363",
+    "status": "success",
+    "tests": 177,
+    "passed": 177,
+    "failed": 0,
+    "skipped": 0,
+    "exactHeadBeforeEvidenceAppend": "de84d07a52a33d37a346ac1eb82e9f8bc4579eaf"
+  }
 }
