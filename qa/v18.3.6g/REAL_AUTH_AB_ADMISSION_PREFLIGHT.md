@@ -24,7 +24,7 @@
 3. Owner permissions must be verified **privately server-side** using Supabase Auth signature, issuer, audience, JWT expiry, subject, live session state and canonical DB Store membership. Use actual authorized client session in its browser; never paste JWT, refresh token, cookies, raw user IDs, session IDs or customer PII into chat, GitHub issues, n8n or screenshots.
 4. Owner A must read only safe synthetic/non-PII Catalog fixture A; Owner B only Catalog fixture B. Perform A→B and B→A negative tests for **same Tenant**; cross-Tenant, no identity, expired, revoked and forged Store/installation paths must be denied.
 5. Run private signed authority issuer and verifier behind trusted backend. Confirm actual crypto keys, kid/audience, short TTL, nonce durability, session fingerprint and membership revocation acceptance; no exposed service-role API.
-6. Independent security reviewer signs scope, code SHA, specific completed negative cases, evidence hash, timestamp/expiry and rollback path. The reviewer must be different from implementer/operator.
+6. Independent security reviewer signs scope, code SHA, specific completed negative cases, evidence hash, timestamp/expiry and rollback path. The reviewer must be different from implementer/operator. The preflight also checks two distinct redacted reviewer/implementer hashes; a matching pair fails closed.
 7. Keep only redacted hashes and case-level PASS/DENY statuses in the QA ledger. Do not store direct customer details or Auth identifiers in PR.
 8. No Orders/Stock/Customer reads or writes, no provider sends, no staging DDL, no credential changes, no production writer unless **separately approved** after this read-only gate.
 
