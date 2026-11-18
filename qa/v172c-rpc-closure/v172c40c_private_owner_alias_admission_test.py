@@ -233,5 +233,26 @@ class SecurityGateTests(unittest.TestCase):
         self.assertEqual(j["owner_store_grant_records"], [])
         self.assertEqual(j["alias_crosswalk_records"], [])
 
+
+    def test_unhashable_alias_source_fails_closed(self):
+        f = fresh_fixture()
+        f["alias_mappings"][0]["source"] = {"malformed": True}
+        self.assert_block(f, "UNRECOGNIZED_SOURCE_NAMESPACE")
+
+    def test_camel_case_credential_ref_rejected(self):
+        f = fresh_fixture()
+        f["alias_mappings"][0]["credentialRef"] = "fake-fixture-only"
+        self.assert_block(f, "FORBIDDEN_PRIVATE_DATA_FIELD")
+
+    def test_camel_case_access_token_rejected(self):
+        f = fresh_fixture()
+        f["accessToken"] = "fake-fixture-only"
+        self.assert_block(f, "FORBIDDEN_PRIVATE_DATA_FIELD")
+
+    def test_hyphenated_private_key_rejected(self):
+        f = fresh_fixture()
+        f["private-key"] = "fake-fixture-only"
+        self.assert_block(f, "FORBIDDEN_PRIVATE_DATA_FIELD")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
