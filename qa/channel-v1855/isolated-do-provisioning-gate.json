@@ -80,5 +80,8 @@
     "existingWidgetWorker": "No change made, so there is no immediate rollback necessary.",
     "futureIsolatedWorker": "DO class lifecycle cannot be rolled back to a version before migration; disable its routes/bindings and leave storage intact until separately approved cleanup.",
     "deletion": "NEVER delete Durable Object data without separate owner consent."
-  }
+  },
+  "recordType": "HISTORICAL_B4_PRE_DEPLOYMENT_APPROVAL_PACKET",
+  "supersededBy": "qa/channel-v1855/isolated-do-hosted-creation-evidence.json",
+  "note": "The NOT_CREATED and blocked statuses in this file document the earlier B4 checkpoint before the B5 isolated Worker owner deployment, NOT current hosted state. Use the B5 evidence file for current status."
 }
