@@ -1,0 +1,79 @@
+name: TIEN404 V18.5.1 — Protected Widget Gateway NO-HOST Preflight
+on:
+  push:
+    branches: [work/v185-widget-shared-commerce-core-qa-20261118]
+    paths:
+      - 'qa/channel-v1851/**'
+      - 'docs/ai-handoff/T404_V1851_*'
+      - '.github/workflows/v1851-protected-widget-gateway-nohost.yml'
+  pull_request:
+    paths:
+      - 'qa/channel-v1851/**'
+      - 'docs/ai-handoff/T404_V1851_*'
+      - '.github/workflows/v1851-protected-widget-gateway-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  protected-http-negative-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Compile syntax (no browser, no external endpoint)
+        run: |
+          node --version
+          node --check qa/channel-v1851/protected-http-gateway.cjs
+          node --check qa/channel-v1851/protected-http-gateway.test.cjs
+          node --check qa/channel-v1851/deny-only-worker.mjs
+          python3 -m py_compile qa/channel-v1851/test_sqlite_schema.py
+      - name: Protected ingress plus V18.5/V14.4/V14.3 regressions
+        run: |
+          node --test \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v143/channel-core.test.cjs
+      - name: Atomic replay/quota disposable local SQLite
+        run: python3 -m unittest discover -s qa/channel-v1851 -p test_sqlite_schema.py -v
+      - name: Staging Worker stays deny-only even if called accidentally
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import worker from './qa/channel-v1851/deny-only-worker.mjs';
+          const host='https://staging-widget.example.invalid';
+          for(const path of ['/widget/v18.5/session','/widget/v18.5/message']){
+            for(const method of ['GET','POST','OPTIONS']){
+              const req=new Request(host+path,{method,
+                headers:{Origin:'https://platform.qa.invalid'},
+                ...(method==='POST'?{body:'{}'}:{})});
+              const response=await worker.fetch(req,{V1851_ADMISSION:'ENABLED_BY_ATTACKER'});
+              assert.equal(response.status,503);
+              assert.equal(response.headers.get('access-control-allow-origin'),null);
+              assert.match(await response.text(),/NOT_ADMITTED/);
+            }
+          }
+          const privateOrders=await worker.fetch(new Request(host+'/admin/orders'));
+          assert.equal(privateOrders.status,404);
+          const wrangler=fs.readFileSync('qa/channel-v1851/wrangler.example.toml','utf8');
+          assert.match(wrangler,/workers_dev = false/);
+          assert.match(wrangler,/preview_urls = false/);
+          assert.match(wrangler,/V1851_ADMISSION = "DISABLED"/);
+          assert(!/\[\[d1_databases\]\]|^\s*route\s*=/m.test(wrangler));
+          const packet=JSON.parse(fs.readFileSync('qa/channel-v1851/protected-staging-approval-packet.json','utf8'));
+          assert.equal(packet.status,'CANDIDATE_SOURCE_ONLY_NO_HOSTED_ADMISSION');
+          assert.equal(packet.liveState.productionChanges,0);
+          assert.equal(packet.liveState.realD1LedgerCreated,false);
+          assert(Object.values(packet.requiredSpecificApprovals).every(v=>v===false));
+          const client=fs.readFileSync('assets/widget-v185-client.js','utf8');
+          assert(client.includes("credentials:sameOriginQaGateway?'same-origin':'omit'"));
+          assert(client.includes('gateway === location.origin'));
+          const bridge=fs.readFileSync('qa/channel-v1851/protected-http-gateway.cjs','utf8');
+          assert(bridge.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
+          assert(bridge.includes('createOfflineSharedCoreWidget'));
+          assert(!/\brequire\s*\(['"](?:axios|http|https|pg|postgres)['"]\)/.test(bridge));
+          assert(!/\blisten\s*\(/.test(bridge));
+          console.log('V1851_NO_HOST_DISABLE_GATE_PASS');
+          JS
+      - name: Honest environment boundary
+        run: echo 'V18.5.1 TESTED MOCK ONLY; 0 DEPLOYS; 0 D1 CREATED; 0 ACCESS APP; 0 JWT; 0 LIVE N8N CALL; 0 ORDERS; 0 SEND; 0 PRODUCTION.'

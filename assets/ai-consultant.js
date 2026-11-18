@@ -1,5 +1,17 @@
+/* V18.5: preserve existing @n8n/chat until explicit scoped STAGING QA.
+ * No automatic fallback from V18.5 to the older direct n8n webhook on error.
+ * The flag is a UI rollout switch, NEVER authentication or Store authority. */
 const target=document.querySelector('#n8n-chat');
-if(target){
+const v185=window.TIEN404_CONFIG?.widgetV185;
+if(target && v185?.enabled===true && v185?.staging===true){
+  import('./widget-v185-client.js')
+    .then(({mountV185Widget})=>mountV185Widget(target,v185))
+    .catch(()=>{
+      const note=document.querySelector('#n8n-chat-fallback');
+      if(note)note.hidden=false;
+      target.setAttribute('aria-label','Widget V18.5 chưa được cấu hình hoặc Gateway QA chưa sẵn sàng.');
+    });
+}else if(target){
   (async () => {
   try{
     const { createChat } = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');

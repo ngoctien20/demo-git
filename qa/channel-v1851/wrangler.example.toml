@@ -1,0 +1,16 @@
+# V18.5.1 REVIEW-ONLY example, never automatically deployed.
+# Worker has NO public workers.dev route, custom domain, preview URL or D1 binding.
+name = "tien404-v1851-widget-gateway-deny-qa"
+main = "./deny-only-worker.mjs"
+compatibility_date = "2026-11-18"
+workers_dev = false
+preview_urls = false
+
+[vars]
+V1851_ADMISSION = "DISABLED"
+COMMERCE_CORE_WRITE_ALLOWED = "false"
+COMMERCE_CORE_SEND_ALLOWED = "false"
+
+# No route, D1, secret, account ID, Access audience or deploy token is present.
+# DO NOT publish based only on this file; explicit host, cost, policy and rollback
+# approvals are mandatory. Any actual hosted endpoint is NO-GO by default.

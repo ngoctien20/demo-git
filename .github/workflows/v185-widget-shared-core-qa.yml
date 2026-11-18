@@ -1,0 +1,96 @@
+name: TIEN404 V18.5 — Website Widget × Shared Core OFFLINE NO SEND
+on:
+  push:
+    branches: [work/v185-widget-shared-commerce-core-qa-20261118]
+    paths:
+      - 'assets/widget-v185*'
+      - 'assets/ai-consultant.js'
+      - 'qa/channel-v144/secure-widget-preview.cjs'
+      - 'qa/channel-v185/**'
+      - '.github/workflows/v185-widget-shared-core-qa.yml'
+  pull_request:
+    paths:
+      - 'assets/widget-v185*'
+      - 'assets/ai-consultant.js'
+      - 'qa/channel-v144/secure-widget-preview.cjs'
+      - 'qa/channel-v185/**'
+      - '.github/workflows/v185-widget-shared-core-qa.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-core-adapter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Node and browser adapter syntax
+        run: |
+          node --version
+          node --check assets/ai-consultant.js
+          node --check assets/widget-v185-client.js
+          node --check qa/channel-v144/secure-widget-preview.cjs
+          node --check qa/channel-v185/shared-core-bridge.cjs
+      - name: Node contract + backwards compatibility regression
+        run: |
+          node --test \
+            qa/channel-v143/channel-core.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs
+      - name: Static no-hosted/no-send, version and role regression gate
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const client=fs.readFileSync('assets/widget-v185-client.js','utf8');
+          const legacy=fs.readFileSync('assets/ai-consultant.js','utf8');
+          const integration=fs.readFileSync('qa/channel-v185/shared-core-bridge.cjs','utf8');
+          const html=fs.readFileSync('qa/channel-v185/host.html','utf8');
+          const cfg=fs.readFileSync('assets/site-config.js','utf8');
+          assert(legacy.includes("v185?.enabled===true && v185?.staging===true"));
+          assert(legacy.includes("}else if(target){"));
+          assert(!cfg.includes("enabled:true"));
+          assert(client.includes("credentials:sameOriginQaGateway?'same-origin':'omit'"));
+          assert(client.includes("redirect:'error'"));
+          assert(client.includes("state = { session: null"));
+          assert(client.includes("privateOrderAccess!==false"));
+          assert(client.includes("orderWrites!==0"));
+          assert(client.includes("providerSends!==0"));
+          assert(client.includes("textContent"));
+          assert(!client.includes('ngoctien20.app.n8n.cloud'));
+          assert(!client.includes('localStorage.setItem'));
+          assert(!client.includes('sessionStorage.setItem'));
+          assert(integration.includes("CORE_WORKFLOW_ID='iyfGUiEsZlNTBWOR'"));
+          assert(integration.includes("createOfflineWidgetPreview"));
+          assert(integration.includes("qaMode!=='OFFLINE_SYNTHETIC_QA'"));
+          assert(html.includes('OFFLINE SYNTHETIC UI QA'));
+          assert(html.includes("window.fetch=async"));
+          assert(html.includes("OFFLINE_QA_FORBIDS_EXTERNAL_FETCH"));
+          console.log('V185_STATIC_OFFLINE_BROWSE_ONLY_DEFAULT_LEGACY_PRESERVED_PASS');
+          JS
+      - name: Hosted UAT is explicitly NOT run
+        run: echo 'V18.5 SOURCE ONLY. NO CONNECTED N8N CORE CALL. NO GATEWAY DEPLOY. NO CUSTOMER DATA. NO ORDERS. NO PROVIDER SEND. NO PRODUCTION.'
+
+  chromium-widget-responsive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA-only Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: QA existing launcher and rich website renderer in synthetic offline host
+        run: |
+          python3 -m http.server 8080 >/tmp/tien404-v185-web.log 2>&1 &
+          sleep 2
+          node qa/channel-v185/browser.test.cjs
+      - name: Upload synthetic-only mobile and desktop screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v185-widget-synthetic-browser-evidence
+          path: qa-artifacts-v185/
+          if-no-files-found: ignore
