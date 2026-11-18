@@ -33,7 +33,7 @@ seen() {
 echo 'Orders read: A/B same-tenant separation; C cross-tenant; viewer; unknown PASS'
 
 affected() {
- local id="$1" order="$2" field="$3"
+ local id="$1" order="$2"
  as_actor "$id" "WITH changed AS (UPDATE $base SET status='confirmed' WHERE order_id='$order' RETURNING order_id) SELECT count(*) FROM changed;" | grep -v '^$'
 }
 [[ "$(affected "$A" 'SYN-ORDER-A')" == '1' ]] || { echo 'A own update failed'; exit 7; }
