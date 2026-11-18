@@ -4,7 +4,7 @@
 
 ## 1. Starting checkpoint and exact current state
 
-Stacked on [Draft PR #411 — V17.25P](https://github.com/ngoctien20/demo-git/pull/411), whose base is Draft PR #409. No parent PR, deployed source, workflow, customer record, Supabase object or provider configuration is modified.
+Stacked on [Draft PR #411 — V17.25P](https://github.com/ngoctien20/demo-git/pull/411), whose base is Draft PR #409. PR #411 received one CI-only workflow extension so this stacked child can run its own synthetic suite; no parent app/runtime code, deployed source, customer record, Supabase object or provider configuration is modified.
 
 Verified read-only state:
 - Render service `tien404-data-staging`, LIVE deployment `dep-dbqj9plg1s2s73egr30g`, source commit `ab940a95dae8afdff426bc6ac71693833d5348ce`, Auto Deploy OFF.
@@ -113,12 +113,12 @@ Supabase changelog: as of 30 Oct 2026, new public tables are no longer automatic
 - Store-scoped idempotency key namespace.
 - Paused and archived Store behavior.
 
-All identities, tokens, Stores, products, orders, customers, conversations and messages are synthetic. Test process blocks real socket connects. No real JWT, Supabase credentials, provider webhook or network call is used.
+All identities, tokens, Stores, products, orders, customers, conversations and messages are synthetic. Test process blocks real socket connects. No real JWT, Supabase credentials, provider webhook or network call is used. Final CI run #44266464089 passed the parent exact-source replay 28/28 and this Store contract suite 58/58; both JSON contract files parsed successfully.
 
 ## 8. Release gates
 
 - `STORE_API_CONTRACT_DESIGN`: implemented as a source-only contract and simulator.
-- `DUAL_OWNER_NEGATIVE_QA`: pending CI; must pass all tests before this PR is considered tested.
+- `DUAL_OWNER_NEGATIVE_QA`: TESTED — 58/58 synthetic tests passed in CI run #44266464089.
 - `LEGACY_LIVE_ROUTES`: VERIFIED tenant-only and still active in deployed Render; not patched by this PR.
 - `HOSTED_STORE_SCHEMA`: absent; no migration.
 - `M0`: NO-GO; owner deferred current backup; no independent current restore receipt.
