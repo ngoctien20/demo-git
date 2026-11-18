@@ -1,0 +1,56 @@
+name: TIEN404 V18.0-P0U — Signed JWT Origin & Session NO-HOST QA
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0u/**'
+      - 'docs/ai-handoff/T404_V180_P0U_*'
+      - '.github/workflows/v180-p0u-signed-jwt-origin-nohost.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0u/**'
+      - 'docs/ai-handoff/T404_V180_P0U_*'
+      - '.github/workflows/v180-p0u-signed-jwt-origin-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  offline-real-crypto-synthetic-actors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Source boundary and no hosted auth intake
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/v180-p0u/*.py
+          python3 - <<'PY'
+          from pathlib import Path
+          files=list(Path('qa/v180-p0u').glob('*.py'))
+          assert len(files)>=4
+          src=Path('qa/v180-p0u/pinned_jwks_verifier.py').read_text()
+          session=Path('qa/v180-p0u/server_session_snapshot.py').read_text()
+          gate=Path('qa/v180-p0u/nohost_origin_gate.py').read_text()
+          assert '("RS256",)' in src
+          assert '("RS256", "ES256")' in src
+          assert 'algorithms=list(algorithms)' in src
+          assert 'get_unverified_header' in src
+          assert 'PINNED_KEYSET_UNAVAILABLE' in src
+          assert 'auth.sessions' in session
+          assert 'PRIVATE_VERIFIER_NOT_DEPLOYED' in gate
+          assert 'status_code=503' in gate
+          for data in (src,session,gate):
+            assert all(word not in data for word in ('service_role', 'refresh_token', 'create_engine(', 'psycopg.connect(', 'subprocess.run(', 'eval(', 'jwt.decode( token, options={"verify_signature": False}'))
+          print('P0U_SOURCE_SCOPE_NO_DEPLOY_NO_DB_KEYS_NO_SEND_PASS')
+          PY
+      - name: Create isolated pinned Python dependencies
+        shell: bash
+        run: |
+          python3 -m venv .venv-p0u
+          .venv-p0u/bin/python -m pip install --disable-pip-version-check \
+            fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2 \
+            PyJWT==2.10.1 cryptography==46.0.4
+      - name: Verify actual synthetic RSA/EC signatures and all nohost denial cases
+        run: .venv-p0u/bin/python -m pytest -q qa/v180-p0u/test_p0u_protected_origin.py
+      - name: Non-authorization declaration
+        run: echo 'P0U_REAL_CRYPTO_ON_SYNTHETIC_KEYS_ONLY; NO_REAL_OWNER_JWT; NO_HOSTED_PRIVATE_ACCESS; NO_RENDER_DEPLOY; NO_CUSTOMER_DATA; NO_STORE_GRANTS; NO_PRODUCTION'
