@@ -89,9 +89,9 @@ class FakeTrustedPorts:
         self._maybe_fail("user")
         return self.user[BEARERS.index(token)] if token in BEARERS else None
 
-    async def lookup_current_auth_session(self, sid):
+    async def lookup_current_auth_session(self, sid, verified_subject_id):
         self._maybe_fail("session")
-        return next((s for s in self.session if s["id"] == sid), None)
+        return next((s for s in self.session if s["id"] == sid and s["user_id"] == verified_subject_id), None)
 
     async def lookup_current_owner_membership(self, tenant, user):
         self._maybe_fail("membership")
