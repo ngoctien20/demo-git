@@ -71,7 +71,11 @@ due="$(delivery_id due-B expired zalo)"
 cancel="$(delivery_id cancel-B cancelled zalo)"
 c_res="$(delivery_id due-C reserved messenger)"
 c_exp="$(delivery_id due-C expired messenger)"
-b_retry="$(delivery_id race-B cancelled zalo)"
+# V37 deliberately races cancel vs expire; either terminal event is valid.
+# Never hardcode a nondeterministic race winner in a downstream contract.
+b_retry="$(q "SELECT delivery_id FROM $s.delivery_queue
+ WHERE order_ref='SYN36-v37-race-B' AND channel='zalo'
+ AND event_type IN ('order.cancelled','order.expired');")"
 [[ -n "$hold" && -n "$due" && -n "$cancel" &&
    -n "$c_res" && -n "$c_exp" && -n "$b_retry" ]] || {
  echo 'FAIL: required synthetic source events missing';exit 12; }
