@@ -69,3 +69,5 @@ jobs:
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40d_owner_decision_crosswalk_contract_test.py' -v
       - name: V17.2C.40E S3 Locked Decision, Zero-Mapping Crosswalk and Private Transition Guard (synthetic only)
         run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40e_s3_lock_contract_test.py' -v
+      - name: V17.2C.40F Private Owner Transition API Contract (design-only, no route/no write)
+        run: python3 -m unittest discover -s qa/v172c-rpc-closure -p 'v172c40f_owner_transition_api_contract_test.py' -v
