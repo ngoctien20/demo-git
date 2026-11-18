@@ -14,6 +14,7 @@ const HEADERS = {
 const MAX_REQUEST_BYTES = 8192;
 const MAX_RESPONSE_BYTES = 32768;
 const N8N_HOST = 'ngoctien20.app.n8n.cloud';
+const N8N_READ_PATH = '/webhook/t404-v1855-protected-readonly-commerce-staging';
 const READ_PATH = '/v1/widget/commerce/read';
 const INSTALLATIONS = new Set([
   'v1855-materials-sandbox',
@@ -71,8 +72,8 @@ function upstreamConfig(env) {
   if (
     url.protocol !== 'https:' ||
     url.hostname !== N8N_HOST ||
-    !url.pathname.startsWith('/webhook/') ||
-    url.pathname.includes('/webhook-test/') ||
+    url.pathname !== N8N_READ_PATH ||
+    url.port !== '' ||
     url.username ||
     url.password ||
     url.search ||
@@ -146,7 +147,12 @@ function safeAttributes(value) {
   const allowed = ['size', 'color', 'material', 'weightKg', 'packSize', 'volumeMl', 'minOrder', 'quoteRequired', 'deliveryQuoteRequired', 'demoOnly'];
   const out = {};
   for (const key of allowed) {
-    if (Object.prototype.hasOwnProperty.call(value, key)) out[key] = value[key];
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      const item = value[key];
+      if (typeof item === 'string') out[key] = item.slice(0, 80);
+      else if (typeof item === 'boolean') out[key] = item;
+      else if (typeof item === 'number' && Number.isFinite(item)) out[key] = item;
+    }
   }
   return out;
 }
@@ -251,6 +257,39 @@ function sanitizeUpstreamResult(raw, operation, requestId) {
   };
 }
 
+/**
+ * A Durable Object admission gate is MANDATORY, not merely an optimization.
+ * One DO instance is chosen per server-approved Sandbox installation.
+ * No binding / RPC error / unexpected result => deny before any n8n fetch.
+ */
+async function authorizeReadRequest(env, payload) {
+  const namespace = env?.T404_READ_ADMISSION;
+  if (!namespace || typeof namespace.getByName !== 'function') {
+    return { allowed: false, code: 'READ_ADMISSION_NOT_CONFIGURED', status: 423 };
+  }
+  try {
+    const stub = namespace.getByName('t404-v1855:' + payload.installationId);
+    if (!stub || typeof stub.authorizeRead !== 'function') {
+      return { allowed: false, code: 'READ_ADMISSION_UNAVAILABLE', status: 503 };
+    }
+    const result = await stub.authorizeRead({
+      installationId: payload.installationId,
+      operation: payload.operation,
+      requestId: payload.requestId,
+      issuedAt: payload.issuedAt
+    });
+    if (result?.allowed === true && result.status === 200 && result.code === 'ADMITTED_READ_ONLY') {
+      return { allowed: true, code: result.code, status: 200 };
+    }
+    if (result?.allowed === false && [403, 409, 429].includes(result.status)) {
+      return { allowed: false, code: String(result.code ?? 'READ_ADMISSION_REJECTED').slice(0, 80), status: result.status };
+    }
+    return { allowed: false, code: 'READ_ADMISSION_UNAVAILABLE', status: 503 };
+  } catch {
+    return { allowed: false, code: 'READ_ADMISSION_UNAVAILABLE', status: 503 };
+  }
+}
+
 export async function handleReadOnlyRequest(request, env, ctx, fetchImpl = fetch) {
   const admission = await verifyPrivateAccess(ctx, env);
   if (!admission.ok) {
@@ -343,6 +382,11 @@ export async function handleReadOnlyRequest(request, env, ctx, fetchImpl = fetch
       ? { query: validated.query, limit: validated.limit }
       : { cartJson: JSON.stringify(validated.cart) })
   };
+
+  const admission = await authorizeReadRequest(env, payload);
+  if (!admission.allowed) {
+    return json(admission.status, { error: admission.code, readOnly: true, canWrite: false, productionReady: false });
+  }
 
   let upstream;
   try {
