@@ -1,0 +1,79 @@
+{
+  "phase": "V18.0-P0V",
+  "type": "PROPOSED_SECURITY_CHANGE_APPROVAL_PACKET",
+  "as_of": "2026-11-18 JST",
+  "project": "TIEN404 AI - staging only",
+  "existing_draft_pr": 385,
+  "parent_checkpoint": "1170754c871f2eaa43321eb8ecb6660abf35c6e3",
+  "live_inventory_read_only": {
+    "render_service": "tien404-data-staging",
+    "render_live_deploy": "dep-dbqj9plg1s2s73egr30g",
+    "render_auto_deploy": false,
+    "direct_render_origin_public": true,
+    "cloudflare_access_application_count": 4,
+    "cloudflare_access_application_protecting_render_origin": false,
+    "eligible_owners_in_same_tenant": 2,
+    "eligible_owners_with_candidate_session": 1,
+    "real_owner_pair_server_verified": false,
+    "owner_a_and_b_independent_consents_received": false,
+    "canonical_store_schema_present": false,
+    "real_signed_jwt_store_uat_executed": 0
+  },
+  "proposed_scoped_actions": [
+    {
+      "id": "access_qa_app",
+      "description": "A separately scoped Cloudflare Access self-hosted application for the exact private QA endpoint only; review allowed user policy, MFA and deny all unapproved principals, reject Bypass rules",
+      "status": "PENDING_EXPLICIT_APPROVAL"
+    },
+    {
+      "id": "origin_bypass",
+      "description": "Make direct Render origin unable to bypass signed Access validation; do not rely on CORS, Host, Referer or proxy header without cryptographic verification",
+      "status": "PENDING_EXPLICIT_APPROVAL"
+    },
+    {
+      "id": "session_read",
+      "description": "Configure a least-privilege server-only READ SELECT access path limited to auth.sessions id,user_id,not_after. Never expose Auth schema via Data API/RPC or client-side keys",
+      "status": "PENDING_EXPLICIT_APPROVAL"
+    },
+    {
+      "id": "trusted_jwks",
+      "description": "Server-owned fixed HTTPS JWKS issuer endpoints and pinned audiences, bounded cache/rotation/timeouts, no legacy insecure HS256 fallback",
+      "status": "PENDING_SECURITY_REVIEW"
+    },
+    {
+      "id": "consent_pair",
+      "description": "Each existing authorized Owner authenticates and grants independent short-lived read-only consent; store one-use replay-safe receipt with redacted audit",
+      "status": "PENDING_OWNER_A_AND_OWNER_B"
+    },
+    {
+      "id": "uat",
+      "description": "Only after previous gates, run isolated no-send and no-customer-write real signed owner A/B session, revoke and unauthorized tenant/store negative tests",
+      "status": "BLOCKED_ON_EVIDENCE"
+    }
+  ],
+  "technical_requirements": {
+    "staging_only": true,
+    "new_service_not_required": true,
+    "no_customer_data": true,
+    "no_order_writes": true,
+    "no_provider_sends": true,
+    "no_prod_deploy": true,
+    "no_creds_in_repo": true,
+    "hold_pr_as_draft": true,
+    "owner_b_session_missing_or_unproven": true,
+    "no_automatic_policy_changes": true,
+    "rollback": "Back out by disabling newly authorized private QA route, reverting scoped staging changes after independent gate; never touch existing production or tenant endpoints without separate approval",
+    "m0_backup_restore_required_before_store_ddl": true
+  },
+  "approval_state": {
+    "founder_approved_specific_protected_origin_change": false,
+    "independent_security_review_approved": false,
+    "authenticated_owner_a_consent": false,
+    "authenticated_owner_b_consent": false,
+    "verified_direct_origin_bypass_negative_test": false,
+    "verified_live_session_revocation": false,
+    "authorized_real_owner_uat": false,
+    "production_approved": false
+  },
+  "decision": "P0V_SOURCE_WORK_ALLOWED_HOSTED_SECURITY_CHANGES_NO_GO_REAL_OWNER_UAT_NO_GO"
+}
