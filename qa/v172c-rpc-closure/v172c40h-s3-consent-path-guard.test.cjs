@@ -9,7 +9,7 @@ function setup(snapshotFn) {
     intake:async x=>{calls.push(['intake',x]);return {status:'SHOULD_NOT_RUN'};},
     reviewPair:async x=>{calls.push(['reviewPair',x]);return {status:'SHOULD_NOT_RUN'};}
   };
-  const getCurrentDecision=snapshotFn||async()=>({
+  const getCurrentDecision=snapshotFn || (async()=>({
     decision_ref:'synthetic-decision-s3-v1',
     decision_version:1,
     decision:'S3',
@@ -19,7 +19,7 @@ function setup(snapshotFn) {
     owner_authority_verified:false,
     identity_verified:false,
     real_authority_requested:false
-  });
+  }));
   return {guard:createS3LockedConsentGuard({getCurrentDecision,backend}),calls};
 }
 
