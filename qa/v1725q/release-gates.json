@@ -1,0 +1,49 @@
+{
+  "version": "V17.25Q",
+  "classification": "SOURCE_ONLY_NOHOST",
+  "base": {
+    "pr": 411,
+    "commit": "1a624008c8c0da53d9d0d481fe5248fa083b051f",
+    "state": "OPEN_DRAFT"
+  },
+  "current_live_baseline": {
+    "render_commit": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+    "main_py_blob": "a7a11abeffb378b3f9952005ffdd489c54df1c13",
+    "postgres_version": "17.11",
+    "stores_table_exists": false,
+    "store_memberships_table_exists": false,
+    "store_id_columns": 0,
+    "relevant_business_rls": "TENANT_SCOPED_ONLY",
+    "legacy_products_route": "LIVE_TENANT_ONLY",
+    "legacy_orders_route": "LIVE_TENANT_ONLY",
+    "render_auto_deploy": false
+  },
+  "contract": {
+    "api_version": "2.0.0-candidate",
+    "store_membership_required": true,
+    "tenant_owner_implicit_store_access": false,
+    "effective_role": "LEAST_PRIVILEGE_TENANT_ROLE_AND_STORE_ROLE",
+    "store_id_from_client_headers_or_body": false,
+    "customer_identity_cross_channel_merge": false,
+    "legacy_single_store_auto_fallback": false
+  },
+  "qa": {
+    "status": "PENDING_CI",
+    "synthetic_only": true,
+    "real_network": false,
+    "real_jwt": false,
+    "supabase_reads": false,
+    "supabase_writes": false,
+    "render_deploy": false,
+    "provider_send": false
+  },
+  "gates": {
+    "m0_recovery": "NO_GO",
+    "store_schema_migration": "NOT_APPROVED",
+    "store_rls_cutover": "NOT_APPROVED",
+    "real_owner_a_b_jwt_uat": "0/31_NOT_RUN",
+    "legacy_v1_cutover": "NOT_DEPLOYED",
+    "production": "NO_GO"
+  },
+  "rollback": "Close or revert source-only Draft PR; no runtime rollback required."
+}
