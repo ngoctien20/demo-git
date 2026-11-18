@@ -88,8 +88,8 @@ test('invalid stored state fails closed rather than resetting the quota',()=>{
   }
 });
 
-test('prunes old records and caps state size regardless of historic input',()=>{
-  const previous={accepted:Array.from({length:45},(_,i)=>({id:reqId(i+1),at:NOW-READ_WINDOW_MS-5}))};
+test('prunes expired valid records without relaxing ledger constraints',()=>{
+  const previous={accepted:Array.from({length:READ_MAX_PER_WINDOW},(_,i)=>({id:reqId(i+1),at:NOW-READ_WINDOW_MS-5}))};
   const result=feed(previous,100,NOW);
   assert.equal(result.allowed,true);
   assert.equal(result.nextState.accepted.length,1);
@@ -104,4 +104,45 @@ test('production and multi-tenant identities are never present in persisted quot
   for(const term of ['tenantId','storeId','customerId','injected','store-B','private']){
     assert.equal(persisted.includes(term),false);
   }
+});
+
+test('oversized persistent ledgers are rejected, never silently cleared',()=>{
+  const previous={accepted:Array.from({length:READ_MAX_PER_WINDOW+1},(_,i)=>({id:reqId(i+1),at:NOW-READ_WINDOW_MS-5}))};
+  const result=feed(previous,100,NOW);
+  assert.equal(result.allowed,false);
+  assert.equal(result.status,503);
+  assert.equal(result.code,'ADMISSION_STATE_INVALID');
+});
+
+test('malformed ledger entry cannot reset quota, even if already expired',()=>{
+  for(const entry of [
+    null,
+    1,
+    {id:'bad',at:NOW},
+    {id:reqId(5),at:NOW+1},
+    {id:reqId(5),at:-1},
+    {id:reqId(5),at:'1900000000000'},
+    {id:reqId(5),at:NOW,extra:'unexpected'},
+    [],
+  ]){
+    const result=feed({accepted:[entry]},2,NOW);
+    assert.equal(result.allowed,false,JSON.stringify(entry));
+    assert.equal(result.status,503);
+  }
+});
+
+test('duplicate request IDs already stored in ledger are corruption',()=>{
+  const previous={accepted:[{id:reqId(1),at:NOW-100},{id:reqId(1),at:NOW-50}]};
+  const result=feed(previous,2,NOW);
+  assert.equal(result.allowed,false);
+  assert.equal(result.code,'ADMISSION_STATE_INVALID');
+});
+
+test('unsupported ledger properties and storage clock rollback are blocked',()=>{
+  const extra=feed({accepted:[],untrusted:'stray'},2,NOW);
+  assert.equal(extra.allowed,false);
+  assert.equal(extra.status,503);
+  const clockRollback=feed({accepted:[{id:reqId(1),at:NOW+1}]},2,NOW);
+  assert.equal(clockRollback.allowed,false);
+  assert.equal(clockRollback.code,'ADMISSION_STATE_INVALID');
 });
