@@ -1,0 +1,50 @@
+name: TIEN404 V18.0-P0T — FastAPI Protected Auth Candidate NO-HOST
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0t/**'
+      - 'docs/ai-handoff/T404_V180_P0T_*'
+      - '.github/workflows/v180-p0t-fastapi-protected-auth-source.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0t/**'
+      - 'docs/ai-handoff/T404_V180_P0T_*'
+      - '.github/workflows/v180-p0t-fastapi-protected-auth-source.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-python-auth-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Pure source and deny-all route static boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/v180-p0t/protected_auth_candidate.py qa/v180-p0t/fastapi_nohost_denial_router.py qa/v180-p0t/test_protected_auth_candidate.py
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('qa/v180-p0t/protected_auth_candidate.py').read_text()
+          router = Path('qa/v180-p0t/fastapi_nohost_denial_router.py').read_text()
+          assert 'trusted_live_auth_confirmed": False' in src
+          assert '"signed_receipt_issued": False' in src
+          assert '"store_read_authorized": False' in src
+          assert '"provider_send_authorized": False' in src
+          assert '"production_approved": False' in src
+          assert 'HTTPException(status_code=404' in router
+          assert "build_nohost_denial_router" in router
+          assert all(term not in src for term in ('import requests', 'import httpx', 'import jwt', 'import jose', 'service_role', 'refresh_token', 'subprocess', 'socket.create_connection'))
+          assert all(term not in router for term in ('include_router(', 'get_user(', 'getClaims(', 'service_role', 'refresh_token'))
+          print('P0T_SOURCE_ONLY_UNMOUNTED_NO_CREDENTIALS_NO_SEND_PASS')
+          PY
+      - name: Create isolated CI test environment
+        shell: bash
+        run: |
+          python3 -m venv .venv-p0t
+          .venv-p0t/bin/python -m pip install --disable-pip-version-check fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2
+      - name: Synthetic FastAPI negative tests only (no hosted Auth)
+        run: .venv-p0t/bin/python -m pytest -q qa/v180-p0t/test_protected_auth_candidate.py
+      - name: Release scope
+        run: echo 'P0T_LOCAL_SOURCE_QA_ONLY; NO_RENDER_DEPLOY; NO_ACCESS_POLICY_CHANGE; NO_OWNER_LOGIN; NO_REAL_JWT; NO_HOSTED_AUTH; NO_STORE_GRANTS; NO_PRODUCTION'
