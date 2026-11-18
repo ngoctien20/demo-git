@@ -87,7 +87,8 @@
         "workflowId": "5Eeh8hbpsoNhuiVo",
         "name": "TIEN404_COMMERCE_TENANT_RESOLVER",
         "publishedVersionId": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
-        "storageOperation": "DataTable row.get"
+        "storageOperation": "DataTable row.get",
+        "status": "invoked_successfully_by_catalog_and_cart"
       }
     ],
     "cases": [
