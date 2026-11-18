@@ -1,0 +1,97 @@
+{
+  "phase": "V18.0-P0W",
+  "timestamp": "2026-11-18 JST",
+  "status": "DRAFT_SOURCE_ONLY_PREDEPLOY",
+  "basePR": 385,
+  "baseRelease": "P0V_SOURCE_ONLY",
+  "stagingOnly": true,
+  "proposedPrivatePath": "/api/v1/internal/private-auth/owner-pair",
+  "current": {
+    "renderLiveDeploy": "dep-dbqj9plg1s2s73egr30g",
+    "renderAutoDeploy": false,
+    "originIsPublic": true,
+    "originAppProtected": false,
+    "cloudflareAccessApps": 4,
+    "tenantOwnerPairEligible": 2,
+    "ownerAccountsWithCandidateSession": 1,
+    "independentOwnerConsents": 0,
+    "realSignedPairVerified": false,
+    "realStoreUATExecuted": 0,
+    "realStoreUATPlanned": 31
+  },
+  "deploymentRequest": {
+    "rolloutMode": "DISABLED_UNTIL_SEPARATE_ACTION_SPECIFIC_APPROVAL",
+    "approvedToChangeCloudflareAccess": false,
+    "approvedToDeployRender": false,
+    "approvedToGrantSupabaseSessionPrivilege": false,
+    "approvedToIntakeRealOwnerTokens": false,
+    "approvedToCreatePrivateReceiptLedger": false,
+    "approvedToEnableProviderSends": false,
+    "approvedToTouchCustomerData": false,
+    "approvedForProduction": false,
+    "expectedNoCostWithoutPreapproval": true,
+    "allowedActionsNow": [
+      "READ_ONLY_INVENTORY",
+      "OFFLINE_SOURCE_QA",
+      "DRAFT_PR_DOCUMENTATION"
+    ],
+    "stagedPlan": [
+      {
+        "step": 1,
+        "action": "Independent security review of exact private staging host/path and direct-origin enforcement; check no Access Bypass or broad service auth",
+        "approval": "SECURITY_REVIEW_REQUIRED"
+      },
+      {
+        "step": 2,
+        "action": "Create/approve dedicated QA Cloudflare Access app with explicit principal allowlist, audience and session policy",
+        "approval": "FOUNDER_EXPLICIT_SCOPE_REQUIRED"
+      },
+      {
+        "step": 3,
+        "action": "Set server-only issuer-pinned JWKS retrieval, safe rotation and fail-closed backend with no real JWT intake before origin negative tests",
+        "approval": "FOUNDER_EXPLICIT_DEPLOY_REQUIRED"
+      },
+      {
+        "step": 4,
+        "action": "Independently review and authorize minimal Supabase auth.sessions SELECT and true revocation check, store secret only in protected backend",
+        "approval": "FOUNDER_EXPLICIT_DATABASE_PRIVILEGE_REQUIRED"
+      },
+      {
+        "step": 5,
+        "action": "Independently authenticated consent by both existing Owners, P0O browser preflight and in-session identity pairing, redacted one-use atomic consent evidence",
+        "approval": "EACH_OWNER_CONSENT_REQUIRED"
+      },
+      {
+        "step": 6,
+        "action": "No-send, no-write, read-only real JWT Owner A/B positive/negative admission; never treat this as Store permission",
+        "approval": "SECURITY_AND_OWNER_EVIDENCE_GATE_REQUIRED"
+      }
+    ]
+  },
+  "blockingGates": [
+    "NO_DEDICATED_ACCESS_APP",
+    "DIRECT_RENDER_ORIGIN_PUBLIC",
+    "NO_HOSTED_SIGNED_ACCESS_CHECK",
+    "NO_LIVE_SERVER_AUTH_SESSIONS_PORT",
+    "OWNER_B_NO_RECORDED_CANDIDATE_SESSION",
+    "INDEPENDENT_OWNER_A_CONSENT_MISSING",
+    "INDEPENDENT_OWNER_B_CONSENT_MISSING",
+    "NO_DURABLE_ATOMIC_CONSENT_RECEIPT",
+    "STORE_AUTHORITY_NOT_ESTABLISHED"
+  ],
+  "failClosedOutput": {
+    "realOwnerPairAuthenticated": false,
+    "realSignedReceiptIssued": false,
+    "storeReadAuthorized": false,
+    "ordersReadAuthorized": false,
+    "providerSendAuthorized": false,
+    "productionApproved": false
+  },
+  "noCredentials": true,
+  "noCustomerData": true,
+  "noAuthChange": true,
+  "noHostedDeployment": true,
+  "noAccessPolicyMutation": true,
+  "noProduction": true,
+  "rollback": "Before any approved hosted change: snapshot exact Access policy and Render deploy, stage disable switch, validate rollback by direct origin + QA-negative tests, revert scoped commit; M0 backup/restore only needed if later Store DDL/RLS is separately approved"
+}

@@ -1,0 +1,46 @@
+name: TIEN404 V18.0-P0R — Protected Auth Source-Only Gate
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0r/**'
+      - 'docs/ai-handoff/T404_V180_P0R_*'
+      - '.github/workflows/v180-p0r-protected-auth-source.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0r/**'
+      - 'docs/ai-handoff/T404_V180_P0R_*'
+      - '.github/workflows/v180-p0r-protected-auth-source.yml'
+permissions:
+  contents: read
+jobs:
+  offline-admission-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Static source-only and no-hosted-writes boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0r/server-auth-verifier-admission.mjs
+          node --check qa/v180-p0r/server-auth-verifier-admission.test.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const f=readFileSync('qa/v180-p0r/server-auth-verifier-admission.mjs','utf8');
+          assert.match(f,/serverPortsLiveVerified:false/);
+          assert.match(f,/storeReadAuthorized:false/);
+          assert.match(f,/providerSendAuthorized:false/);
+          assert.match(f,/productionApproved:false/);
+          assert.match(f,/lookupCurrentAuthSession/);
+          assert.match(f,/verifyProtectedAccess/);
+          assert.match(f,/lookupIndependentConsent/);
+          assert.doesNotMatch(f,/\b(?:fetch|createServer|listen)\s*\(/);
+          assert.doesNotMatch(f,/(?:service_role|refresh_token|process\.env|https?:\/\/[^\s]*\.onrender\.com)/i);
+          console.log('P0R_OFFLINE_ONLY_NO_HTTP_NO_SECRET_NO_PRODUCTION_PASS');
+          NODE
+      - name: Native Node negative admission suite (synthetic, no JWT)
+        run: node --test qa/v180-p0r/server-auth-verifier-admission.test.mjs
+      - name: Declaration of limits
+        run: echo 'P0R_SOURCE_CANDIDATE_ONLY; NO_REAL_AUTH_A_B; NO_PROTECTED_HOST; NO_STORE_GRANTS; NO_SEND; PRODUCTION_NO_GO'

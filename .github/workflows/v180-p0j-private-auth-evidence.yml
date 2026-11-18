@@ -1,0 +1,63 @@
+name: TIEN404 V18.0-P0J — Private Auth Session Evidence NO-HOST
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0j/**'
+      - '.github/workflows/v180-p0j-private-auth-evidence.yml'
+      - 'docs/ai-handoff/T404_V180_P0J_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0j/**'
+      - '.github/workflows/v180-p0j-private-auth-evidence.yml'
+      - 'docs/ai-handoff/T404_V180_P0J_*'
+permissions:
+  contents: read
+jobs:
+  browser-probe-offline-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Parse browser-local script and check no untrusted network/send/write calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0j/private-browser-auth-owner-probe.js
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const src=readFileSync('qa/v180-p0j/private-browser-auth-owner-probe.js','utf8');
+          const p=JSON.parse(readFileSync('qa/v180-p0j/verified-readonly-session-compatibility.json','utf8'));
+          const forbidden=[
+            /\bfetch\s*\(/, /\bXMLHttpRequest\b/, /\bsendBeacon\s*\(/,
+            /\.from\(['"](?:orders|order_items|products|customers|messages|conversations)['"]\)/,
+            /\.auth\.(?:signUp|signInWithPassword|updateUser|signOut|resetPasswordForEmail)\s*\(/,
+            /\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE)\b\s+(?:INTO|TABLE|ON)?/i
+          ];
+          if(forbidden.some(re=>re.test(src)) ||
+            !src.includes("await import('/assets/auth-client.js')") ||
+            !src.includes("location.origin !== ORIGIN") ||
+            !src.includes("tenant_memberships") ||
+            !src.includes("auth.getUser()") ||
+            !src.includes("auth.getClaims()"))
+            throw Error('P0J_OPERATOR_PROBE_SECURITY_CONTRACT_FAILED');
+          if(p.auth_readonly.same_tenant_eligible_owner_accounts!==2 ||
+            p.auth_readonly.same_tenant_owner_accounts_with_any_session_record!==1 ||
+            p.auth_readonly.auth_audit_log_entries_total!==0 ||
+            p.canonical_store_authority.independent_store_a_b_owner_proof!==false ||
+            p.private_auth_proof.authenticated_user_a_getUser_getClaims!=='NOT_RUN' ||
+            p.release.hosted_migration_allowed!==false)
+            throw Error('P0J_SOURCE_EVIDENCE_DRIFT');
+          console.log('P0J_STATIC_NO_HOST_NO_SEND_AND_AGGREGATE_PROOF_PASS');
+          NODE
+      - name: Offline browser probe regression (synthetic actors and tenants only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v180-p0j/private-browser-auth-owner-probe.test.mjs
+      - name: Explicit real Auth and Store A/B UAT remains NOT_RUN
+        shell: bash
+        run: |
+          printf '%s\n' 'P0J_SOURCE_ONLY; NO_LIVE_LOGIN; REAL_JWT_AB_NOT_RUN; NO_NEW_CREDENTIAL; NO_HOSTED_RLS_OR_MIGRATION; NO_PROVIDER_SEND; PRODUCTION_NO_GO'

@@ -1,0 +1,192 @@
+{
+  "id": "TIEN404-V18.0-P0F-SCHEMA-COMPAT-20261118",
+  "source": "CONNECTED_SUPABASE_READ_ONLY_SQL_AND_N8N_WORKFLOW_METADATA",
+  "source_date_jst": "2026-11-18",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "pg_major": 17,
+  "scope": "METADATA_ONLY_NO_SECRET_NO_CUSTOMER_ROWS",
+  "release_authority": "NO_GO",
+  "stores_table_present": false,
+  "store_memberships_table_present": false,
+  "same_tenant_store_authority_independently_verified": false,
+  "real_auth_store_ab_jwt_verified": false,
+  "provider_signed_store_binding_verified": false,
+  "table_surfaces": [
+    {
+      "table": "products",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_MEMBERSHIP",
+      "key_risk": "UNIQUE_TENANT_SKU; STAGING_RPC_TENANT_ONLY",
+      "action": "ADD_NULLABLE_STORE; PROOF_BACKFILL; STAGED_SKU_UNIQUE_SWAP; STORE_RPC"
+    },
+    {
+      "table": "orders",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_OWNER_MANAGER",
+      "key_risk": "CUSTOMER_FK_TENANT_ONLY; ORDER_SOURCE_CHANNEL",
+      "action": "SAME_STORE_CUSTOMER_FK; OWNER_PROOF; ORDER_SOURCE_ROUTING"
+    },
+    {
+      "table": "order_items",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_OWNER_MANAGER",
+      "key_risk": "ORDER_AND_PRODUCT_FKS_TENANT_ONLY",
+      "action": "COMPOSITE_SAME_STORE_ORDER_PRODUCT_FKS; ORDER_LINE_TOTAL_VALIDATION"
+    },
+    {
+      "table": "customers",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_OWNER_MANAGER",
+      "key_risk": "CUSTOMER_PII_AND_CROSS_CHANNEL_LINK",
+      "action": "STORE_BOUND_CUSTOMER_SCOPE; CONSENT_AND_IDENTITY_PROOF"
+    },
+    {
+      "table": "conversations",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_OWNER_MANAGER",
+      "key_risk": "EXTERNAL_REFERENCE_NOT_STORE_SCOPED",
+      "action": "STORE_INSTALLATION_SCOPE_AND_CONVERSATION_FK"
+    },
+    {
+      "table": "messages",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "TENANT_OWNER_MANAGER",
+      "key_risk": "CONVERSATION_FK_TENANT_ONLY",
+      "action": "COMPOSITE_SAME_STORE_CONVERSATION_FK"
+    },
+    {
+      "table": "tenant_memberships",
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls": true,
+      "force_rls": true,
+      "authenticated_select": true,
+      "anon_select": false,
+      "read_scope": "SELF_ACTIVE_ONLY",
+      "key_risk": "ROLE_BELONGS_TO_TENANT_NOT_STORE",
+      "action": "ADDITIVE_STORE_MEMBERSHIP_REQUIRES_INDEPENDENT_OWNER_ATTESTATION"
+    }
+  ],
+  "external_contract_surfaces": [
+    {
+      "surface": "tenant_agent_configs",
+      "type": "PUBLIC_TABLE",
+      "has_store_id": false,
+      "authority": "TENANT_CHANNEL_BOT_ONLY",
+      "risk": "BOT_INSTALLATION_NOT_STORE_SCOPED"
+    },
+    {
+      "surface": "tien404_r1_qa.tenant_identity_map",
+      "type": "PRIVATE_QA",
+      "has_store_id": false,
+      "authority": "TEXT_STORE_KEY_TO_TENANT_UUID_ONLY",
+      "risk": "QA_MAPPING_NOT_CANONICAL_STORE_UUID"
+    },
+    {
+      "surface": "tien404_v175_qa.channel_identity",
+      "type": "PRIVATE_QA",
+      "has_store_id": false,
+      "authority": "TEXT_STORE_KEY_AND_PROVIDER_ID",
+      "risk": "NOT_INDEPENDENT_REAL_AUTH_PROOF"
+    },
+    {
+      "surface": "tien404_v175_qa.order_ownership",
+      "type": "PRIVATE_QA",
+      "has_store_id": false,
+      "authority": "TEXT_STORE_KEY_ORDER_KEY",
+      "risk": "QA_LEDGER_NOT_CANONICAL_ORDER_OWNER"
+    },
+    {
+      "surface": "public.save_merchant_product",
+      "type": "SECURITY_DEFINER_RPC",
+      "has_store_id": false,
+      "authority": "TENANT_OWNER_MANAGER",
+      "risk": "DEFINER_CALL_BYPASSES_STORE_RLS_UNTIL_EXPLICIT_GUARD"
+    },
+    {
+      "surface": "public.qa_owner_pairing",
+      "type": "QA_PRIVILEGED_RPC",
+      "has_store_id": false,
+      "authority": "AUTH_UID_TENANT_OWNER_AND_QA_KEYS",
+      "risk": "QA_PAIRING_NOT_REAL_STORE_OWNER_PROOF"
+    },
+    {
+      "surface": "public.qa_shop_b_zalo_claim",
+      "type": "QA_ANON_PRIVILEGED_RPC",
+      "has_store_id": false,
+      "authority": "VAULT_SHARED_SECRET_HEADER",
+      "risk": "SHARED_HEADER_NOT_NATIVE_ZALO_SIGNATURE"
+    }
+  ],
+  "n8n_boundaries": [
+    {
+      "workflow_id": "Z7FdV7uDvApfbURQ",
+      "active": true,
+      "published_checked": true,
+      "role": "MESSENGER_DEMO_ORDER_TOOLS_AND_SHADOW_CORE",
+      "released_store_scoped": false
+    },
+    {
+      "workflow_id": "yIJk8LvJoLF40Z62",
+      "active": true,
+      "published_checked": true,
+      "role": "ZALO_BOT_STAGING_WITH_SHADOW_AND_PRIVATE_ROUTER",
+      "released_store_scoped": false
+    },
+    {
+      "workflow_id": "sIPs6egzIwOY1GNv",
+      "active": true,
+      "published_checked": true,
+      "role": "PRIVATE_CUSTOMER_ROUTER_STAGING",
+      "released_store_scoped": false
+    },
+    {
+      "workflow_id": "OgDZNSAvKEvhnAvn",
+      "active": true,
+      "published_checked": true,
+      "role": "ZALO_V2_SHADOW_NO_SEND",
+      "released_store_scoped": false
+    }
+  ],
+  "evidence_boundaries": {
+    "real_auth_user_and_session_aggregate_observed": true,
+    "session_current_activity_verification": false,
+    "same_tenant_has_two_active_members_aggregate_observed": true,
+    "same_tenant_has_two_canonical_store_owner_proofs": false,
+    "verified_cross_channel_identity_links": false,
+    "recovery_proof": "DEFERRED_SOURCE_DISPOSABLE_ONLY",
+    "actual_hosted_migration": "NOT_PERFORMED",
+    "real_jwt_ab_test": "NOT_RUN",
+    "native_provider_send": "NOT_PERFORMED"
+  }
+}

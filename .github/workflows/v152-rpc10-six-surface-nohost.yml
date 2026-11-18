@@ -25,6 +25,7 @@ jobs:
         run: |
           node --check qa/v152-rpc10/store-gate.cjs
           node --test qa/v152-rpc10/store-gate.test.cjs
+          node --test qa/v152-rpc10/workflow-shape-integrity.test.mjs
       - name: RPC10 G0.1 alias canonical authority structural preflight
         run: |
           node --check qa/v152-rpc10/alias-bridge-preflight.cjs
@@ -60,108 +61,7 @@ jobs:
           sql=Path('qa/v152-rpc10/g02-provenance-hosted-READ_ONLY.sql').read_text()
           no_comments='\n'.join(line for line in sql.splitlines() if not line.lstrip().startswith('--'))
           assert re.search(r'BEGIN\s+TRANSACTION\s+READ\s+ONLY\s*;',no_comments,re.I)
-          assert re.search(r'COMMIT\s*;\s*
-        run: |
-          node - <<'NODE'
-          const base=require('./qa/v152-rpc10/hosted-baseline-sanitized.json');
-          const gate=require('./qa/v152-rpc10/store-gate.cjs');
-          const r=gate.inspect(base);
-          if(r.status!=='HOSTED_NO_GO'||r.canMigrate||r.canBackfill||r.canReplaceRls||r.canRelease)
-            throw Error('RPC10_UNSAFE_RELEASE');
-          if(r.blockers.length<40)throw Error('RPC10_BASELINE_COVERAGE_REGRESSION');
-          console.log(JSON.stringify({status:r.status,blockers:r.blockers.length,canMigrate:r.canMigrate}));
-          NODE
-      - name: Static ban on any hosted I/O or migration executor
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('qa/v152-rpc10/store-gate.cjs').read_text()
-          for pattern in [r'\bfetch\s*\(',r'\bchild_process\b',r'\bprocess\.env\b',
-                          r'\bhttps?\.request\s*\(',r'\bexec\s*\(',r'\bcreateClient\s*\(']:
-            assert not re.search(pattern,p),pattern
-          assert 'canMigrate:false' in p and 'canReplaceRls:false' in p
-          assert "STRUCTURAL_SELF_REPORT_REQUIRES_EXTERNAL_ATTESTATION" in p
-          print('PASS: offline-only and immutable HOSTED NO-GO')
-          PY
-
-  rpc10-disposable-pg17:
-    name: PG17 disposable six-surface RLS/FK rollback and isolation
-    runs-on: ubuntu-24.04
-    timeout-minutes: 14
-    container:
-      image: postgres:17
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: rpc10_ephemeral_synthetic_only
-          POSTGRES_DB: t404_rpc8_ci
-        options: >-
-          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    env:
-      CI: 'true'
-      T404_RPC8_DISPOSABLE: 'YES'
-      PGHOST: postgres
-      PGPORT: '5432'
-      PGDATABASE: t404_rpc8_ci
-      PGUSER: postgres
-      PGPASSWORD: rpc10_ephemeral_synthetic_only
-      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Refuse any unguarded SQL path in RPC10
-        run: |
-          grep -F -q "RPC10_REFUSES_HOSTED" qa/v152-rpc10/pg17-six-surface-atomic-cutover-disposable-only.sql
-          grep -F -q "RPC10_DISPOSABLE_ONLY" qa/v152-rpc10/pg17-six-surface-fixture.sql
-          grep -F -q "t404_rpc8_ci" qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
-          bash -n qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
-      - name: Actual PostgreSQL 17 six Commerce surfaces, atomic rollback and cross-store denial
-        run: |
-          bash qa/v152-rpc10/ci-pg17-six-surface-rehearsal.sh
-
-  rpc10-concurrent-reader-blackout:
-    name: PG17 concurrent reader lock / COMMIT / ROLLBACK (disposable only)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    container:
-      image: postgres:17
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: rpc10_concurrent_synthetic_only
-          POSTGRES_DB: t404_rpc8_ci
-        options: >-
-          --health-cmd "pg_isready -U postgres -d t404_rpc8_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    env:
-      CI: 'true'
-      T404_RPC8_DISPOSABLE: 'YES'
-      PGHOST: postgres
-      PGPORT: '5432'
-      PGDATABASE: t404_rpc8_ci
-      PGUSER: postgres
-      PGPASSWORD: rpc10_concurrent_synthetic_only
-      PGOPTIONS: '-c tien404.rpc8_ephemeral=RPC8_DISPOSABLE'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Strict no-hosted guard and Bash syntax
-        run: |
-          grep -F -q "RPC10_CONCURRENT_DISPOSABLE_ONLY" qa/v152-rpc10/ci-pg17-concurrent-reader-blackout.sh
-          grep -F -q "t404_rpc8_ci" qa/v152-rpc10/ci-pg17-concurrent-reader-blackout.sh
-          bash -n qa/v152-rpc10/ci-pg17-concurrent-reader-blackout.sh
-      - name: Real concurrent PG17 readers must wait and see only transaction-consistent policy
-        run: |
-          bash qa/v152-rpc10/ci-pg17-concurrent-reader-blackout.sh
-,no_comments,re.I)
+          assert re.search(r'COMMIT\s*;\s*$',no_comments,re.I)
           assert not re.search(r'\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|CALL|COPY|VACUUM)\s',no_comments,re.I)
           assert 'jsonb_build_object' in no_comments
           for forbidden in ['request_sha256','request_key','customer_name','phone','auth.users']:

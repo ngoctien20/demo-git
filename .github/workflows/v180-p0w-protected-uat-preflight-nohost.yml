@@ -1,0 +1,80 @@
+name: TIEN404 V18.0-P0W — Protected UAT Preflight NO-HOST
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0w/**'
+      - 'docs/ai-handoff/T404_V180_P0W_*'
+      - '.github/workflows/v180-p0w-protected-uat-preflight-nohost.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0w/**'
+      - 'docs/ai-handoff/T404_V180_P0W_*'
+      - '.github/workflows/v180-p0w-protected-uat-preflight-nohost.yml'
+permissions:
+  contents: read
+jobs:
+  standalone-safe-admission-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Source-only preflight, no deployment nor unreviewed approval
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/v180-p0w/*.py qa/v180-p0v/*.py qa/v180-p0u/*.py qa/v180-p0t/*.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          packet=json.loads(Path('qa/v180-p0w/protected_deployment_approval_packet.json').read_text())
+          assert packet['status']=='DRAFT_SOURCE_ONLY_PREDEPLOY'
+          assert packet['current']['originIsPublic'] is True
+          assert packet['current']['originAppProtected'] is False
+          assert packet['current']['ownerAccountsWithCandidateSession']==1
+          assert packet['current']['realStoreUATExecuted']==0
+          assert len(packet['blockingGates'])>=8
+          assert all(v is False for v in packet['failClosedOutput'].values())
+          assert all(v is False for k,v in packet['deploymentRequest'].items()
+            if k.startswith('approved'))
+          assert packet['noHostedDeployment'] is True
+          assert packet['noAccessPolicyMutation'] is True
+          assert packet['noCredentials'] is True
+          key=Path('qa/v180-p0w/pinned_jwks_source.py').read_text()
+          user=Path('qa/v180-p0w/pinned_auth_user_source.py').read_text()
+          assert 'follow_redirects=False' in key
+          assert 'trust_env=False' in key
+          assert 'follow_redirects=False' in user
+          assert 'trust_env=False' in user
+          assert 'sb_publishable_' in user
+          assert 'sb_secret_' in user  # fail-closed explicit deny for restricted keys
+          assert 'get_live_user' in user
+          for content in (key,user):
+            assert all(term not in content for term in
+              ('create_engine(', 'psycopg.connect(', 'import subprocess', 'service_role', 'refresh_token') )
+          ops_path=Path('ops/data-platform/app/main.py')
+          if ops_path.is_file():
+            ops=ops_path.read_text()
+            assert 'qa.v180-p0w' not in ops and 'pinned_jwks_source' not in ops
+          else:
+            # The Draft QA branch does not contain the independently deployed Render branch.
+            assert not Path('qa/v180-p0w/app.py').exists()
+          print('P0W_STATIC_NO_REAL_OWNER_JWT_NO_HOSTED_ACCESS_MUTATION_PASS')
+          PY
+      - name: Isolated Python dependencies for all QA suites
+        shell: bash
+        run: |
+          python3 -m venv .venv-p0w
+          .venv-p0w/bin/python -m pip install --disable-pip-version-check \
+            fastapi==0.128.2 httpx==0.28.1 pytest==9.0.2 \
+            PyJWT==2.10.1 cryptography==46.0.4
+      - name: P0W JWKS/Auth source tests and P0V/P0U/P0T regressions (mock only)
+        shell: bash
+        run: |
+          .venv-p0w/bin/python -m pytest -q \
+            qa/v180-p0w/test_pinned_sources.py \
+            qa/v180-p0v/test_trusted_server_session_adapter.py \
+            qa/v180-p0u/test_p0u_protected_origin.py \
+            qa/v180-p0t/test_protected_auth_candidate.py
+      - name: Honest hosted-real-UAT boundary
+        run: echo 'P0W_SOURCE_QA_ONLY; JWT_SIGNED_WITH_SYNTHETIC_KEYS; NO_REAL_OWNER_CONSENT; NO_RENDER_DEPLOY; NO_CF_ACCESS_EDIT; NO_SUPABASE_AUTH_PRIVILEGE; NO_STORE_READ; NO_CHANNEL_SEND; NO_PRODUCTION'

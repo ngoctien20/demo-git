@@ -1,0 +1,47 @@
+name: TIEN404 V18.0-P0S — Private Verifier Integration Review NO-HOST
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0s/**'
+      - 'docs/ai-handoff/T404_V180_P0S_*'
+      - '.github/workflows/v180-p0s-private-verifier-integration-review.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0s/**'
+      - 'docs/ai-handoff/T404_V180_P0S_*'
+      - '.github/workflows/v180-p0s-private-verifier-integration-review.yml'
+permissions:
+  contents: read
+jobs:
+  no-hosted-integrations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Assert pure review-only integration with no secret/HTTP/Store grants
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0s/protected-verifier-integration-review.mjs
+          node --check qa/v180-p0s/protected-verifier-integration-review.test.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const src=readFileSync('qa/v180-p0s/protected-verifier-integration-review.mjs','utf8');
+          const facts=JSON.parse(readFileSync('qa/v180-p0s/verified-readonly-environment.json','utf8'));
+          assert.doesNotMatch(src,/\b(?:fetch|createServer|listen|eval|exec|spawn)\s*\(/);
+          assert.doesNotMatch(src,/(?:process\.env|service_role|refresh_token|CF_Authorization)/i);
+          assert.match(src,/directOriginBlocked/);
+          assert.match(src,/signedJwtVerifiedAtOrigin/);
+          assert.match(src,/providerSendAuthorized:false/);
+          assert.match(src,/productionApproved:false/);
+          assert.equal(facts.gate.source_only,true);
+          assert.equal(facts.render.direct_origin_access_protected,false);
+          assert.equal(facts.supabase.real_signed_pair_verified,false);
+          console.log('P0S_STATIC_NO_SECRETS_NO_NETWORK_NO_STORE_PERMISSION_PASS');
+          NODE
+      - name: Synthetic security integration negative tests
+        run: node --test qa/v180-p0s/protected-verifier-integration-review.test.mjs
+      - name: Explicit production/hosted boundary
+        run: echo 'P0S_SOURCE_QA_ONLY; NO_NEW_ACCESS_APP; NO_RENDER_DEPLOY; NO_REAL_JWT; NO_CONSENT; NO_STORE_AUTH; NO_PRODUCTION'

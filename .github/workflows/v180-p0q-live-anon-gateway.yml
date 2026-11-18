@@ -1,0 +1,39 @@
+name: TIEN404 V18.0-P0Q — Live Gateway Anonymous NO-JWT Check
+on:
+  push:
+    branches: [work/v180-p0c-exact-rpc-disposable-qa-20261118]
+    paths:
+      - 'qa/v180-p0q/**'
+      - 'docs/ai-handoff/T404_V180_P0Q_*'
+      - '.github/workflows/v180-p0q-live-anon-gateway.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0q/**'
+      - 'docs/ai-handoff/T404_V180_P0Q_*'
+      - '.github/workflows/v180-p0q-live-anon-gateway.yml'
+permissions:
+  contents: read
+jobs:
+  hosted-anonymous-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate no credentials/no writes in probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0q/live-anonymous-gateway-qa.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const s=readFileSync('qa/v180-p0q/live-anonymous-gateway-qa.mjs','utf8');
+          if(!s.includes("method:'GET'")||!s.includes("'/health'")||
+             !s.includes('HTTP_401')||
+             /Authorization\s*:|refresh_token|service_role|\.supabase\.co\//i.test(s) ||
+             /method:\s*['"](POST|PUT|PATCH|DELETE)['"]/i.test(s)) throw Error('P0Q_PROBE_UNSAFE');
+          console.log('P0Q_NO_JWT_NO_WRITE_STATIC_PASS');
+          NODE
+      - name: Check live public health and unauthenticated denial
+        run: node qa/v180-p0q/live-anonymous-gateway-qa.mjs
+      - name: Scope declaration
+        run: echo 'P0Q_UNAUTHENTICATED_ONLY; NO_SIGNED_JWT; NO_STORE_A_B_ISOLATION_TEST; PRODUCTION_NO_GO'

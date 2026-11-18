@@ -1,0 +1,50 @@
+{
+  "checkpoint": "V18.0-P0J",
+  "date_jst": "2026-11-18",
+  "supabase_staging_project": "ifxlvrhyjhbzbrkdsida",
+  "source": "CONNECTED_SUPABASE_READ_ONLY_AGGREGATES_AND_USER_ATTESTATION",
+  "privacy": "AGGREGATE_COUNTS_ONLY_NO_USER_OR_SESSION_IDENTIFIERS",
+  "user_attestation": {
+    "two_separate_qa_accounts": "USER_CONFIRMED",
+    "actual_cryptographic_session_pair_proved": false,
+    "same_tenant_owner_binding_verified_independently": false
+  },
+  "auth_readonly": {
+    "same_tenant_eligible_owner_accounts": 2,
+    "same_tenant_email_identities": 2,
+    "same_tenant_password_credentials_configured": 2,
+    "same_tenant_confirmed_owner_accounts": 2,
+    "same_tenant_owner_accounts_with_any_session_record": 1,
+    "same_tenant_owner_accounts_with_eligible_session_record": 1,
+    "same_tenant_owner_accounts_recent_signin_marker": 1,
+    "auth_audit_log_entries_total": 0,
+    "auth_audit_log_entries_recent24h": 0
+  },
+  "current_deploy": {
+    "render_origin": "https://tien404-auth-staging.onrender.com",
+    "rendered_auth_commit": "b14501a0ebf04d991302cb32b5d548a68d6b39bd",
+    "account_page_has_getUser": true,
+    "account_page_has_getClaims": false,
+    "account_page_authority_is_tenant_memberships_only": true,
+    "p0j_draft_probe_deployed": false
+  },
+  "canonical_store_authority": {
+    "stores_table_present": false,
+    "store_memberships_present": false,
+    "core_commerce_store_id_column_count": 0,
+    "independent_store_a_b_owner_proof": false
+  },
+  "private_auth_proof": {
+    "authenticated_user_a_getUser_getClaims": "NOT_RUN",
+    "authenticated_user_b_getUser_getClaims": "NOT_RUN",
+    "local_one_time_matching_fingerprints": "NOT_RUN",
+    "server_independent_session_validation": "NOT_RUN",
+    "no_send_mode": true
+  },
+  "release": {
+    "real_same_tenant_store_ab_uat_cases_not_run": 31,
+    "m0_backup": "DEFERRED_FOR_SOURCE_ONLY_AND_DISPOSABLE_ONLY",
+    "hosted_migration_allowed": false,
+    "production_allowed": false
+  }
+}

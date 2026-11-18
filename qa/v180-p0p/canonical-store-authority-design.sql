@@ -1,0 +1,47 @@
+-- V18.0-P0P STORE AUTHORITY DESIGN CANDIDATE ONLY. DO NOT EXECUTE.
+-- NOT a migration. Every design DDL line is commented intentionally.
+-- REQUIRE independently tested M0 backup/restore and separate hosted approval.
+--
+-- CREATE TABLE public.stores (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE RESTRICT,
+--   store_code text NOT NULL,
+--   status text NOT NULL DEFAULT 'candidate'
+--     CHECK(status IN ('candidate','approved','paused','revoked')),
+--   created_at timestamptz NOT NULL DEFAULT now(),
+--   UNIQUE(tenant_id,id),
+--   UNIQUE(tenant_id,store_code)
+-- );
+--
+-- CREATE TABLE public.store_memberships (
+--   tenant_id uuid NOT NULL,
+--   store_id uuid NOT NULL,
+--   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+--   role text NOT NULL CHECK(role IN ('owner','manager')),
+--   status text NOT NULL DEFAULT 'candidate'
+--     CHECK(status IN ('candidate','verified','suspended','revoked')),
+--   owner_proof_receipt_id uuid NULL,
+--   created_at timestamptz NOT NULL DEFAULT now(),
+--   PRIMARY KEY(tenant_id,store_id,user_id),
+--   FOREIGN KEY(tenant_id,store_id) REFERENCES public.stores(tenant_id,id) ON DELETE RESTRICT,
+--   FOREIGN KEY(tenant_id,user_id)
+--     REFERENCES public.tenant_memberships(tenant_id,user_id) ON DELETE RESTRICT
+-- );
+-- ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.stores FORCE ROW LEVEL SECURITY;
+-- ALTER TABLE public.store_memberships ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.store_memberships FORCE ROW LEVEL SECURITY;
+--
+-- No GRANT or RLS policy is authorized by these comments. Default-deny first.
+-- Tenant owner alone MUST NOT imply Store ownership. Check active verified Store
+-- membership + active tenant membership, real current JWT session and independent
+-- Store-owner consent on the trusted server for every privileged Store request.
+--
+-- Later, separately approved stages: Store registry -> private owner proof
+-- -> channel installation trusted resolver -> add nullable store_id to core tables
+-- -> verified no-collision data backfill -> composite same-Store FKs and RLS/RPC
+-- -> 31 hosted real JWT Store A/B negative tests -> signed Meta/Zalo ingress
+-- -> only after review consider orders/provider sends/production.
+-- Preserve existing UNIQUE(tenant_id,sku) until a verified safe conversion to
+-- UNIQUE(tenant_id,store_id,sku) and application compatibility is proven.
+-- Existing UNIQUE(order_id,product_id) and tenant composite FKs need independent review.

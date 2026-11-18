@@ -1,0 +1,57 @@
+name: TIEN404 V18.0-P0D — Same-Tenant Store A/B Disposable PG17
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0d/**'
+      - '.github/workflows/v180-p0d-same-tenant-rls.yml'
+  pull_request:
+    paths:
+      - 'qa/v180-p0d/**'
+      - '.github/workflows/v180-p0d-same-tenant-rls.yml'
+permissions:
+  contents: read
+jobs:
+  store-ab-isolation-disposable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: p0d_synthetic_ci_only
+          POSTGRES_DB: t404_v180_p0d_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d t404_v180_p0d_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: p0d_synthetic_ci_only
+      PGDATABASE: t404_v180_p0d_ci
+    steps:
+      - name: Checkout pinned commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Ensure fixture is disposable, no hosted actions or customer data
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${PGDATABASE}" = "t404_v180_p0d_ci"
+          grep -q "V18_P0D_DISPOSABLE_PG17_ONLY" qa/v180-p0d/store-scoped-rls-disposable.sql
+          ! grep -Eqi 'supabase\.co|app\.n8n\.cloud|pages\.dev|curl |wget |service_role|fetch\(' qa/v180-p0d/store-scoped-rls-disposable.sql
+      - name: Real ephemeral PostgreSQL 17 Store A/B, RLS and cross-Store FK tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f qa/v180-p0d/store-scoped-rls-disposable.sql
+      - name: Confirm no hosted changes were authorized
+        shell: bash
+        run: |
+          printf '%s\n' 'P0D_DISPOSABLE_ONLY; NO_HOSTED_MIGRATION; NO_REAL_JWT; NO_PROVIDER_SEND; BACKUP_DEFERRED_ONLY_HERE'

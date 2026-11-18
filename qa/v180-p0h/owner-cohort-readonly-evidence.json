@@ -1,0 +1,39 @@
+{
+  "checkpoint": "V18.0-P0H",
+  "capture_date_jst": "2026-11-18",
+  "source": "READ_ONLY_SUPABASE_AGGREGATE_QUERY_AND_GITHUB_DRAFT_PR385",
+  "classification": "AGGREGATES_ONLY_NO_IDENTIFIERS_OR_SECRETS",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "pg_version": "17.11",
+  "eligible_owner_distribution": [
+    {
+      "tenant_count": 1,
+      "eligible_owner_accounts": 2,
+      "owner_accounts_with_unexpired_session_record": 1,
+      "owner_accounts_without_unexpired_session_record": 1
+    },
+    {
+      "tenant_count": 1,
+      "eligible_owner_accounts": 1,
+      "owner_accounts_with_unexpired_session_record": 1,
+      "owner_accounts_without_unexpired_session_record": 0
+    }
+  ],
+  "same_tenant_with_two_owner_session_records": 0,
+  "consent_a_received": false,
+  "consent_b_received": false,
+  "private_authenticated_getUser_a_verified": false,
+  "private_authenticated_getUser_b_verified": false,
+  "private_getClaims_a_verified": false,
+  "private_getClaims_b_verified": false,
+  "real_independent_session_correlation_a_verified": false,
+  "real_independent_session_correlation_b_verified": false,
+  "canonical_store_registry_deployed": false,
+  "same_tenant_store_ab_ownership_verified": false,
+  "readonly_auth_check_implementation": "SOURCE_ONLY_NOT_WIRED_TO_STAGING_UI",
+  "same_tenant_store_ab_jwt_uat": "NOT_RUN",
+  "native_provider_ingress_uat": "NOT_RUN",
+  "m0_recovery_gate": "DEFERRED_FOR_SOURCE_ONLY",
+  "hosted_migration_gate": "NO_GO",
+  "production_gate": "NO_GO"
+}

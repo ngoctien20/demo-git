@@ -1,0 +1,50 @@
+{
+  "phase": "V18.0-P0S",
+  "observed_at_jst": "2026-11-18",
+  "evidence_class": "read_only_aggregate_and_service_inventory",
+  "github": {
+    "pr": 385,
+    "pr_draft": true,
+    "source_parent_checkpoint": "00cb388f182543789bba3484f5de59fb7d0e6301"
+  },
+  "render": {
+    "service": "tien404-data-staging",
+    "live_deploy_id": "dep-dbqj9plg1s2s73egr30g",
+    "live_source": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+    "auto_deploy": false,
+    "ip_allowlist_public": true,
+    "direct_origin_access_protected": false,
+    "server_session_verifier_present": false
+  },
+  "cloudflare_access": {
+    "applications_count": 4,
+    "matching_protected_render_origin": false,
+    "read_only_inventory": true,
+    "existing_apps_unmodified": true
+  },
+  "supabase": {
+    "project": "tien404-staging",
+    "project_active_healthy": true,
+    "one_tenant_with_two_eligible_owners": true,
+    "two_eligible_owner_count": 2,
+    "owners_with_session_record": 1,
+    "owners_with_nonexpired_looking_session_record": 1,
+    "real_signed_pair_verified": false,
+    "canonical_store_tables": 0,
+    "commerce_store_id_columns": 0
+  },
+  "private_proof": {
+    "local_comparison_result_received": false,
+    "independent_consent_pair_received": false,
+    "signed_server_receipt_verified": false,
+    "real_jwt_uat_cases_executed": 0,
+    "real_jwt_uat_cases_planned": 31
+  },
+  "gate": {
+    "production_no_go": true,
+    "source_only": true,
+    "no_live_credentials": true,
+    "no_provider_send": true,
+    "no_store_authority": true
+  }
+}

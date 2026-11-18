@@ -1,0 +1,60 @@
+name: TIEN404 V18.0-P0H — Private Browser Auth Preflight SOURCE-ONLY
+on:
+  push:
+    branches:
+      - work/v180-p0c-exact-rpc-disposable-qa-20261118
+    paths:
+      - 'qa/v180-p0h/**'
+      - '.github/workflows/v180-p0h-private-browser-auth-preflight.yml'
+      - 'docs/ai-handoff/T404_V180_P0H_*'
+  pull_request:
+    paths:
+      - 'qa/v180-p0h/**'
+      - '.github/workflows/v180-p0h-private-browser-auth-preflight.yml'
+      - 'docs/ai-handoff/T404_V180_P0H_*'
+permissions:
+  contents: read
+jobs:
+  source-only-browser-actor-helper:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Static no-host no-token and aggregate privacy checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/v180-p0h/private-browser-auth-readonly.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const src=readFileSync('qa/v180-p0h/private-browser-auth-readonly.mjs','utf8');
+          const executable=src.replace(/^\s*\/\/[^\n]*$/gm,'');
+          const blocked=[/\bcreateClient\s*\(/,/\bfetch\s*\(/,/\bprocess\.env\b/,/\bchild_process\b/,/\bservice_role\b/,/\bexec\s*\(/];
+          if(blocked.some(re=>re.test(executable)))throw Error('P0H_EXPLICIT_STATIC_SAFETY_POLICY_VIOLATION');
+          console.log('P0H_STATIC_SOURCE_SAFETY_PASS');
+          NODE
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const a=JSON.parse(readFileSync('qa/v180-p0h/owner-cohort-readonly-evidence.json','utf8'));
+          if(a.classification!=='AGGREGATES_ONLY_NO_IDENTIFIERS_OR_SECRETS' ||
+             a.eligible_owner_distribution.length!==2 ||
+             a.same_tenant_with_two_owner_session_records!==0 ||
+             a.consent_a_received || a.consent_b_received ||
+             a.canonical_store_registry_deployed || a.same_tenant_store_ab_ownership_verified ||
+             a.private_authenticated_getUser_a_verified || a.private_authenticated_getUser_b_verified ||
+             a.hosted_migration_gate!=='NO_GO' || a.production_gate!=='NO_GO')
+           throw Error('P0H_AGGREGATE_ADMISSION_DRIFT_OR_FALSE_PROOF');
+          if(/"(email|phone|password|access_token|refresh_token|session_id|user_id|jwt)"\s*:/i.test(JSON.stringify(a)))
+           throw Error('P0H_PUBLIC_EVIDENCE_CONTAINS_PRIVATE_IDENTIFIERS');
+          console.log('P0H_STAGING_COHORT_AGGREGATE_VERIFIED_BUT_AUTH_NOT_RUN');
+          NODE
+      - name: Mocked official Auth API local browser preflight regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v180-p0h/private-browser-auth-readonly.test.mjs
+      - name: Gate complete with no hosted release authority
+        shell: bash
+        run: |
+          printf '%s\n' 'P0H_SOURCE_ONLY; NO_AUTH_LOGIN_PERFORMED; NO_RAW_JWT; NO_STORE_GRANTS; NO_REAL_PROVIDER_SEND; M0_DEFERRED_SOURCE_ONLY'
