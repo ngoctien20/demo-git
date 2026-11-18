@@ -26,7 +26,23 @@
     "actualOrdersWritten": 0,
     "actualProviderSends": 0,
     "renderWorkspaceSelectedThisTurn": false,
-    "productionChanges": 0
+    "productionChanges": 0,
+    "existingV144Worker": {
+      "name": "tien404-widget-gateway-v144-staging",
+      "sourceReviewDate": "2026-11-18 JST",
+      "getHealthSourceState": "LOCKED",
+      "sessionMessageSourceStatus": 423,
+      "workersDevEnabled": false,
+      "previewUrlsEnabled": false,
+      "numberOfBindings": 0,
+      "customDomainCount": 0,
+      "workerRouteCountInManagedZone": 0,
+      "deploymentCount": 1,
+      "lastDeploymentAt": "2026-11-15T13:31:44.347611Z",
+      "actualHostedHttpReachabilityVerified": false
+    },
+    "cloudflareExistingD1Count": 6,
+    "widgetSpecificD1Verified": false
   },
   "allowedNow": [
     "GITHUB_DRAFT_CODE",
@@ -45,7 +61,9 @@
     "changeProductionWidgetConfig": false,
     "sendProviderMessages": false,
     "modifyOrdersOrInventory": false,
-    "incurPaidUsage": false
+    "incurPaidUsage": false,
+    "modifyExistingV144WidgetWorker": false,
+    "reviewedV144WorkerRouteExposure": false
   },
   "reviewedDesign": {
     "routes": [
@@ -69,7 +87,9 @@
     "defaultMode": "PLATFORM_CONSULTANT",
     "merchantSandbox": "private owner authorized, fake public catalog only until Store RLS UAT",
     "response": "public render-only, no PII, no raw model, no JWT, no customer-order data",
-    "rollback": "close/revert PR #404; for hosted future release restore saved Access policy and prior Worker deployment, revoke sessions and disable routes; M0 before Store RLS/DDL"
+    "rollback": "close/revert PR #404; for hosted future release restore saved Access policy and prior Worker deployment, revoke sessions and disable routes; M0 before Store RLS/DDL",
+    "deploymentTarget": "Existing Cloudflare Worker tien404-widget-gateway-v144-staging (currently LOCKED and unreachable through inventoried routes)",
+    "disabledWorkerFixture": "qa/channel-v1851/deny-only-worker.mjs is OFFLINE REFERENCE ONLY; never deploy as a new Gateway"
   },
   "artifacts": [
     "qa/channel-v1851/protected-http-gateway.cjs",
@@ -81,7 +101,7 @@
     ".github/workflows/v1851-protected-widget-gateway-nohost.yml"
   ],
   "hardBlockers": [
-    "NO_APPROVED_PRIVATE_STAGING_HOST",
+    "EXISTING_V144_WORKER_HAS_NO_APPROVED_ACCESS_APP_OR_HOSTED_ROUTE",
     "NO_DEDICATED_ACCESS_APP_OR_SIGNED_JWT_VERIFIER",
     "NO_HOSTED_DOMAIN_PROOF",
     "NO_HOSTED_D1_ATOMIC_REPLAY_OR_QUOTA",
@@ -92,5 +112,6 @@
     "NO_STORE_AB_CANONICAL_AUTHORITY",
     "NO_REAL_WIDGET_TO_CORE_UAT"
   ],
-  "releaseDecision": "NO_HOSTED_ADMISSION_NO_SEND_NO_WRITE_NO_PRODUCTION"
+  "releaseDecision": "NO_HOSTED_ADMISSION_NO_SEND_NO_WRITE_NO_PRODUCTION",
+  "reusePolicy": "EXTEND_LOCKED_V144_WORKER_ONLY_AFTER_APPROVAL; DO_NOT_CREATE_NEW_LIVE_WIDGET_GATEWAY"
 }
