@@ -78,7 +78,14 @@ function fixture({mode='MERCHANT_SANDBOX',mutateResult,ledger=new Set()}={}){
  return {g,ports,stats,list};
 }
 const reject=(promise,code)=>assert.rejects(promise,e=>e?.code===code);
-async function session(g,which){return (await g.issueSession(PARAMS[which])).session;}
+async function session(g,which){
+ const issued=await g.issueSession(PARAMS[which]);
+ assert.equal(issued.mode,g.mode);
+ assert.equal(issued.anonymous,true);
+ assert.equal(issued.previewOnly,true);
+ assert.equal(issued.privateOrderAccess,false);
+ return issued.session;
+}
 async function preview(g,which,s,e='event_000001',msg='Shop có những sản phẩm gì?'){
  return g.previewMessage({...PARAMS[which],session:s,eventId:e,message:msg});
 }
