@@ -166,14 +166,14 @@ BEGIN
   WHERE challenge_digest=p_challenge_digest AND state='issued';
   IF NOT FOUND THEN RAISE EXCEPTION 'DENY_CHALLENGE_REPLAY'; END IF;
 
-  INSERT INTO tien404_v172c40g_qa.owner_consent_events
+  INSERT INTO tien404_v172c40g_qa.owner_consent_events AS inserted_event
     (challenge_digest,idempotency_key,session_ref,actor_ref,tenant_ref,store_ref,
      decision_ref,decision_version,consent_action)
   VALUES
     (v_challenge.challenge_digest,p_idempotency_key,v_session.session_ref,
      v_session.actor_ref,v_session.tenant_ref,v_session.store_ref,
      v_challenge.decision_ref,v_challenge.decision_version,p_consent_action)
-  RETURNING event_id INTO v_event_id;
+  RETURNING inserted_event.event_id INTO v_event_id;
 
   RETURN QUERY SELECT 'CONSENT_RECORDED_NOT_AUTHORITY_GRANTED'::text,v_event_id;
 END
