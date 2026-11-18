@@ -1,0 +1,96 @@
+name: TIEN404 V18.5.5 — Protected Read-Only Commerce Adapter QA
+on:
+  push:
+    branches:
+      - work/v1855-protected-readonly-commerce-adapter-20261118
+    paths:
+      - 'qa/channel-v1855/**'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.mjs'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.test.mjs'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1855/**'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.mjs'
+      - 'qa/channel-v1854/cloudflare-access-context-gate.test.mjs'
+      - '.github/workflows/v1855-protected-readonly-adapter-qa.yml'
+      - 'docs/ai-handoff/T404_V1855_*'
+permissions:
+  contents: read
+jobs:
+  protected-readonly-adapter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Syntax check Worker candidate and tests
+        run: |
+          node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs
+          node --check qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs
+      - name: Run inherited security regression and V18.5.5 Worker tests
+        run: |
+          node --test \
+            qa/channel-v1854/cloudflare-access-context-gate.test.mjs \
+            qa/channel-v1853/access-jwt-verifier.test.cjs \
+            qa/channel-v1852/published-core-readonly-admission.test.cjs \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.mjs \
+            qa/channel-v143/channel-core.test.mjs \
+            qa/channel-v1855/worker-v1855-readonly-adapter.test.mjs
+      - name: Verify actual n8n adapter evidence and release gates
+        run: |
+          node <<'JS'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const e = JSON.parse(fs.readFileSync('qa/channel-v1855/n8n-adapter-qa-evidence.json', 'utf8'));
+          const worker = fs.readFileSync('qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs', 'utf8');
+          const adapter = fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-commerce-adapter.workflow.js', 'utf8');
+          const qa = fs.readFileSync('qa/channel-v1855/n8n/protected-readonly-adapter-qa.workflow.js', 'utf8');
+          assert.equal(e.status, 'INTERNAL_READONLY_ADAPTER_IMPLEMENTED_AND_N8N_UAT_12_OF_12_PASS_HTTP_INGRESS_BLOCKED_PENDING_DEDICATED_AUTH');
+          assert.equal(e.n8n.adapter.active, false);
+          assert.equal(e.n8n.adapter.published, false);
+          assert.equal(e.n8n.adapter.webhookTrigger, false);
+          assert.equal(e.n8n.adapter.credentials, 0);
+          assert.equal(e.n8n.adapter.aiAgent, false);
+          assert.equal(e.n8n.adapter.callerPolicy, 'workflowsFromAList');
+          assert.deepEqual(e.n8n.adapter.allowedCallerIds, [e.n8n.qa.workflowId]);
+          assert.equal(e.n8n.qa.active, false);
+          assert.equal(e.n8n.qa.published, false);
+          assert.equal(e.n8n.qa.executionId, '5360');
+          assert.equal(e.n8n.qa.status, 'success');
+          assert.equal(e.n8n.qa.assertions, 12);
+          assert.equal(e.n8n.qa.passed, 12);
+          assert.equal(e.n8n.qa.failed, 0);
+          assert.equal(e.n8n.publishedChildren.length, 3);
+          assert(e.n8n.publishedChildren.every(x => x.status === 'success' && x.storageOperation === 'DataTable row.get'));
+          assert.equal(e.n8n.sideEffects.orderWrites, 0);
+          assert.equal(e.n8n.sideEffects.stockWrites, 0);
+          assert.equal(e.n8n.sideEffects.providerSends, 0);
+          assert.equal(e.n8n.sideEffects.customerOrderReads, 0);
+          assert.equal(e.n8n.sideEffects.customerPiiReads, 0);
+          assert.equal(e.n8n.sideEffects.aiCalls, 0);
+          assert(e.n8n.cases.length === 12 && e.n8n.cases.every(x => x.pass === true));
+          assert.equal(e.n8n.authorityLimitations.storeLevelRls, 'NOT_VERIFIED');
+          assert.equal(e.worker.deployed, false);
+          assert.equal(e.worker.newBindingsCreated, 0);
+          assert.equal(e.worker.n8nWebhookConfigured, false);
+          assert.equal(e.worker.secretsSet, false);
+          assert.equal(e.securityGates.secondIdentityDenial, 'PENDING_FROM_V18.5.4');
+          assert.equal(e.securityGates.productionRelease, false);
+          assert(worker.includes('verifyPrivateAccess(ctx, env)'));
+          assert(worker.includes("const N8N_HOST = 'ngoctien20.app.n8n.cloud'"));
+          assert(worker.includes("'x-t404-adapter-token'"));
+          assert(worker.includes("['catalog.search', 'cart.preview']"));
+          assert(!worker.includes('Access-Control-Allow-Origin'));
+          assert(adapter.includes('oOOXicKXGkBskKqh'));
+          assert(adapter.includes('igPOsSbEgd4NgtRA'));
+          assert(adapter.includes('caller_authority_fields_forbidden'));
+          assert(qa.includes('order.read'));
+          assert(qa.includes('order.create'));
+          console.log('V1855_REAL_N8N_READONLY_UAT_12_OF_12_PASS_WORKER_CANDIDATE_NOT_DEPLOYED');
+          JS
+      - name: Production and public Widget remain disabled
+        run: echo 'INTERNAL READ-ONLY ADAPTER ONLY. No public webhook, no credential, no Worker binding/deployment, no Store RLS claim, no order/stock writes, no customer order/PII reads, no provider sends, no production.'
