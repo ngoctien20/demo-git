@@ -284,9 +284,18 @@ BEGIN
 
   IF v_session.session_ref IS NULL OR v_session.active IS NOT TRUE
      OR v_session.revoked_at IS NOT NULL OR v_session.expires_at<=clock_timestamp()
+     OR v_session.actor_ref<>v_event.actor_ref
+     OR v_session.tenant_ref<>v_event.tenant_ref
+     OR v_session.store_ref<>v_event.store_ref
      OR v_membership.actor_ref IS NULL OR v_membership.active IS NOT TRUE
      OR v_membership.revoked_at IS NOT NULL OR v_membership.member_role<>'owner'
      OR v_challenge.challenge_digest IS NULL OR v_challenge.state<>'consumed'
+     OR v_challenge.session_ref<>v_event.session_ref
+     OR v_challenge.actor_ref<>v_event.actor_ref
+     OR v_challenge.tenant_ref<>v_event.tenant_ref
+     OR v_challenge.store_ref<>v_event.store_ref
+     OR v_challenge.decision_ref<>v_event.decision_ref
+     OR v_challenge.decision_version<>v_event.decision_version
      OR EXISTS (SELECT 1 FROM tien404_v172c40g_qa.owner_revocation_events
                 WHERE target_type='MEMBERSHIP' AND target_ref=v_membership_target)
      OR EXISTS (SELECT 1 FROM tien404_v172c40g_qa.owner_revocation_events
