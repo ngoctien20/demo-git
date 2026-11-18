@@ -1,0 +1,115 @@
+{
+  "checkpoint": "V18.5.6",
+  "date": "2026-11-18 JST",
+  "title": "Private Owner Staging × Server-Bound Installation Scope × Read-Only Widget Preflight",
+  "status": "PRIVATE_SERVER_BOUND_INSTALLATION_SOURCE_QA_55_OF_55_PASS_NOT_DEPLOYED",
+  "basedOn": {
+    "v1855DraftPr": 415,
+    "v1855Head": "203ad2c7e8e16c91edef46f43b97a2c6c51d63c6",
+    "v1851aDraftPr": 426,
+    "v1851aHead": "a5979f44c13f0cb18fd2ed95141910d5196703e5",
+    "existingWorkerScript": "tien404-widget-gateway-v144-staging",
+    "existingDeployedVersion": "da022974-1832-425f-bf82-afddc558b893",
+    "existingDeployment": "b4f501e0-ff37-4ea4-be77-6e3148667b15"
+  },
+  "deferredGate": {
+    "name": "V18.5.1A_SECOND_NON_ALLOWLISTED_IDENTITY_DENIAL",
+    "status": "DEFERRED_BY_USER_FOR_FURTHER_STAGING_DEVELOPMENT",
+    "evidenceObserved": false,
+    "securityApprovedForProduction": false,
+    "note": "Do not claim Access negative test PASS; this deferral should not prevent offline development and existing owner-only QA."
+  },
+  "implementation": {
+    "candidateEntrypoint": "qa/channel-v1856/private-owner-staging-gateway.mjs",
+    "deployed": false,
+    "privatePath": "POST /__v1856/private-commerce/read",
+    "legacyRoutes": "Reused V18.5.4 existing Canary and locked /v1/widget/* handler",
+    "access": "Native ctx.access with exact audience and owner-only identity",
+    "trustedServerBindings": [
+      {
+        "name": "T404_V1856_GATE_MODE",
+        "value": "PRIVATE_OWNER_QA_ONLY",
+        "status": "SOURCE_REQUIREMENT_NOT_CONFIGURED"
+      },
+      {
+        "name": "T404_V1856_QA_INSTALLATION_ID",
+        "acceptedValues": [
+          "v1855-materials-sandbox",
+          "v1855-grocery-sandbox"
+        ],
+        "status": "SOURCE_REQUIREMENT_NOT_CONFIGURED"
+      }
+    ],
+    "installationIdFromBrowser": false,
+    "clientFieldsAllowed": [
+      "operation",
+      "query",
+      "limit",
+      "cart"
+    ],
+    "clientAuthorityFieldsDenied": [
+      "installationId",
+      "tenantId",
+      "storeId",
+      "accountId",
+      "role",
+      "userId",
+      "customerId",
+      "orderId",
+      "channelType",
+      "ownerId",
+      "authorization",
+      "credential",
+      "token",
+      "requestId",
+      "issuedAt"
+    ],
+    "serverSelectedInstallation": "One fixed Sandbox installation per private Worker environment. Does not serve both shops simultaneously from a single hosting environment.",
+    "existingReadOnlyEngine": "qa/channel-v1855/worker-v1855-readonly-adapter-candidate.mjs",
+    "egressRequires": [
+      "T404_N8N_READONLY_WEBHOOK_URL exact n8n HTTPS path",
+      "T404_N8N_READONLY_ADAPTER_TOKEN",
+      "T404_READ_ADMISSION durable allow-before-fetch"
+    ],
+    "browserHeadersToN8n": "NONE; only content-type is reconstructed and existing engine injects server token",
+    "storesAuthorityNotProved": "Same-tenant Store A/B RLS is not verified. This is a PRIVATE OWNER sandbox proof, not merchant customer routing."
+  },
+  "tests": {
+    "sourceOnly": true,
+    "testPath": "qa/channel-v1856/private-owner-staging-gateway.test.mjs",
+    "newTestsPlanned": 14,
+    "result": "PASS_55_OF_55_NODE_REGRESSION",
+    "realN8nHttpTest": false,
+    "realDurableObjectTest": false,
+    "realWorkerDeployment": false,
+    "githubRunId": 44287791353,
+    "githubRunUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44287791353",
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0,
+    "sourceCommit": "04214c9428694d82cf9ce78c08474b3218deee96",
+    "newTestsPassed": 14,
+    "inheritedTestsPassed": 41
+  },
+  "noChanges": {
+    "cloudflareWorker": true,
+    "cloudflareAccessPolicy": true,
+    "n8nActiveWorkflows": true,
+    "n8nCredentials": true,
+    "supabase": true,
+    "websiteProduction": true,
+    "customerOrders": true,
+    "providerSends": true,
+    "billing": true,
+    "newPaidResources": true
+  },
+  "gates": {
+    "secondIdentityDenied": "DEFERRED",
+    "trustedInstallationStagingProof": "SOURCE_ONLY",
+    "realHeaderAuthTest": "PENDING",
+    "rateLimitDurableObjectLive": "PENDING_APPROVAL",
+    "storeLevelRls": "NOT_VERIFIED",
+    "production": "NO_GO"
+  },
+  "rollback": "Close Draft PR and do not deploy; current V18.5.4 Worker remains untouched."
+}
