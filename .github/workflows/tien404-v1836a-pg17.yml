@@ -1,0 +1,131 @@
+name: TIEN404 V18.3.6A independent disposable PostgreSQL 17
+on:
+  push:
+    branches: [qa/v1836a-pg17-disposable-20261118]
+    paths: [.github/workflows/tien404-v1836a-pg17.yml]
+permissions: {}
+concurrency:
+  group: tien404-v1836a-pg17
+  cancel-in-progress: true
+jobs:
+  store-ab-rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Start disposable PG17 with no ports or repo secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17
+          docker run -d --name tien404-v1836a-pg17 --network none -e POSTGRES_PASSWORD=synthetic_test_only postgres:17
+          for i in $(seq 1 30); do if docker exec tien404-v1836a-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi; sleep 1; done
+          docker exec tien404-v1836a-pg17 psql -U postgres -X -v ON_ERROR_STOP=1 -d postgres -c 'CREATE DATABASE tien404_v1836_disposable;'
+      - name: Execute real PostgreSQL 17 same-tenant Store A B proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836a-pg17 psql -U postgres -X -v ON_ERROR_STOP=1 -d tien404_v1836_disposable <<'SQL'
+          DO $$ BEGIN IF current_database() <> 'tien404_v1836_disposable' OR current_setting('server_version_num')::int NOT BETWEEN 170000 AND 179999 THEN RAISE EXCEPTION 'NOT_DISPOSABLE_PG17'; END IF; END $$;
+          CREATE ROLE v1836a_reader NOLOGIN NOBYPASSRLS;
+          CREATE SCHEMA auth;
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+          CREATE TABLE tenants(id uuid PRIMARY KEY);
+          CREATE TABLE tenant_memberships(tenant_id uuid REFERENCES tenants(id),user_id uuid,active boolean NOT NULL,PRIMARY KEY(tenant_id,user_id));
+          CREATE TABLE stores(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),UNIQUE(tenant_id,id));
+          CREATE TABLE store_memberships(tenant_id uuid,store_id uuid,user_id uuid,active boolean NOT NULL,PRIMARY KEY(tenant_id,store_id,user_id),FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id),FOREIGN KEY(tenant_id,user_id) REFERENCES tenant_memberships(tenant_id,user_id));
+          CREATE TABLE products(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,sku text NOT NULL,UNIQUE(tenant_id,store_id,id),FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id));
+          CREATE TABLE customers(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,UNIQUE(tenant_id,store_id,id),FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id));
+          CREATE TABLE orders(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,customer_id uuid,UNIQUE(tenant_id,store_id,id),FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id),FOREIGN KEY(tenant_id,store_id,customer_id) REFERENCES customers(tenant_id,store_id,id));
+          CREATE TABLE order_items(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,order_id uuid NOT NULL,product_id uuid NOT NULL,FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id),FOREIGN KEY(tenant_id,store_id,order_id) REFERENCES orders(tenant_id,store_id,id),FOREIGN KEY(tenant_id,store_id,product_id) REFERENCES products(tenant_id,store_id,id));
+          CREATE TABLE conversations(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,UNIQUE(tenant_id,store_id,id),FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id));
+          CREATE TABLE messages(id uuid PRIMARY KEY,tenant_id uuid NOT NULL REFERENCES tenants(id),store_id uuid,conversation_id uuid NOT NULL,FOREIGN KEY(tenant_id,store_id) REFERENCES stores(tenant_id,id),FOREIGN KEY(tenant_id,store_id,conversation_id) REFERENCES conversations(tenant_id,store_id,id));
+          INSERT INTO tenants VALUES
+          ('00000000-0000-0000-0000-000000000001'),
+          ('00000000-0000-0000-0000-000000000002');
+          INSERT INTO tenant_memberships VALUES
+          ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000001001',true),
+          ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000001002',true),
+          ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000001003',true);
+          INSERT INTO stores VALUES
+          ('00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000000001'),
+          ('00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000000001'),
+          ('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000002');
+          INSERT INTO store_memberships VALUES
+          ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000001001',true),
+          ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000001002',true),
+          ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000001003',true);
+          INSERT INTO products VALUES
+          ('00000000-0000-0000-0000-000000002001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','QA-A'),
+          ('00000000-0000-0000-0000-000000002002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102','QA-B'),
+          ('00000000-0000-0000-0000-000000002003','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000201','QA-C'),
+          ('00000000-0000-0000-0000-000000002004','00000000-0000-0000-0000-000000000001',NULL,'QA-LEGACY');
+          INSERT INTO customers VALUES
+          ('00000000-0000-0000-0000-000000003001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101'),
+          ('00000000-0000-0000-0000-000000003002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102');
+          INSERT INTO orders VALUES
+          ('00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000003001'),
+          ('00000000-0000-0000-0000-000000004002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000003002');
+          INSERT INTO order_items VALUES
+          ('00000000-0000-0000-0000-000000005001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000002001'),
+          ('00000000-0000-0000-0000-000000005002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000004002','00000000-0000-0000-0000-000000002002');
+          INSERT INTO conversations VALUES
+          ('00000000-0000-0000-0000-000000006001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101'),
+          ('00000000-0000-0000-0000-000000006002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102');
+          INSERT INTO messages VALUES
+          ('00000000-0000-0000-0000-000000007001','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000006001'),
+          ('00000000-0000-0000-0000-000000007002','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000102','00000000-0000-0000-0000-000000006002');
+          GRANT USAGE ON SCHEMA public,auth TO v1836a_reader;
+          GRANT EXECUTE ON FUNCTION auth.uid() TO v1836a_reader;
+          GRANT SELECT ON tenants,tenant_memberships,stores,store_memberships,products,customers,orders,order_items,conversations,messages TO v1836a_reader;
+          ALTER TABLE tenant_memberships ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY membership_self ON tenant_memberships FOR SELECT TO v1836a_reader USING (user_id=auth.uid() AND active);
+          ALTER TABLE store_memberships ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY store_self ON store_memberships FOR SELECT TO v1836a_reader USING (user_id=auth.uid() AND active);
+          DO $$ DECLARE tbl text; BEGIN
+           FOREACH tbl IN ARRAY ARRAY['products','customers','orders','order_items','conversations','messages'] LOOP
+           EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',tbl);
+           EXECUTE format('CREATE POLICY %I ON %I FOR SELECT TO v1836a_reader USING (EXISTS (SELECT 1 FROM tenant_memberships m WHERE m.tenant_id=%I.tenant_id AND m.user_id=auth.uid() AND m.active))','tenant_'||tbl,tbl,tbl);
+           EXECUTE format('CREATE POLICY %I ON %I AS RESTRICTIVE FOR SELECT TO v1836a_reader USING (store_id IS NOT NULL AND EXISTS (SELECT 1 FROM store_memberships s WHERE s.tenant_id=%I.tenant_id AND s.store_id=%I.store_id AND s.user_id=auth.uid() AND s.active))','store_'||tbl,tbl,tbl,tbl);
+           END LOOP;
+          END $$;
+          CREATE POLICY overbroad_allow ON products FOR SELECT TO v1836a_reader USING (true);
+          SET ROLE v1836a_reader; SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001001';
+          DO $$ DECLARE tbl text; n int; BEGIN
+           FOREACH tbl IN ARRAY ARRAY['products','customers','orders','order_items','conversations','messages'] LOOP
+           EXECUTE format('SELECT count(*) FROM %I',tbl) INTO n;
+           IF n<>1 THEN RAISE EXCEPTION 'A expected one % got %',tbl,n; END IF;
+           END LOOP;
+           IF EXISTS(SELECT 1 FROM products WHERE sku IN ('QA-B','QA-C','QA-LEGACY')) THEN RAISE EXCEPTION 'A crossed store boundary'; END IF;
+          END $$;
+          SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001002';
+          DO $$ DECLARE tbl text; n int; BEGIN
+           FOREACH tbl IN ARRAY ARRAY['products','customers','orders','order_items','conversations','messages'] LOOP
+           EXECUTE format('SELECT count(*) FROM %I',tbl) INTO n;
+           IF n<>1 THEN RAISE EXCEPTION 'B expected one % got %',tbl,n; END IF;
+           END LOOP;
+           IF EXISTS(SELECT 1 FROM products WHERE sku IN ('QA-A','QA-C','QA-LEGACY')) THEN RAISE EXCEPTION 'B crossed store boundary'; END IF;
+          END $$;
+          SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001003';
+          DO $$ BEGIN IF (SELECT COUNT(*) FROM products)<>1 OR (SELECT COUNT(*) FROM orders)<>0 THEN RAISE EXCEPTION 'Cross tenant leak'; END IF; END $$;
+          RESET request.jwt.claim.sub;
+          DO $$ BEGIN IF EXISTS(SELECT 1 FROM products) THEN RAISE EXCEPTION 'Missing identity leak'; END IF; END $$;
+          RESET ROLE;
+          UPDATE store_memberships SET active=false WHERE user_id='00000000-0000-0000-0000-000000001001';
+          SET ROLE v1836a_reader; SET request.jwt.claim.sub='00000000-0000-0000-0000-000000001001';
+          DO $$ BEGIN IF EXISTS(SELECT 1 FROM products) THEN RAISE EXCEPTION 'Revoked owner can read'; END IF; END $$;
+          RESET ROLE;
+          DO $$ DECLARE denied boolean:=false; BEGIN
+           BEGIN
+           INSERT INTO order_items VALUES('00000000-0000-0000-0000-000000005999','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000101','00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000002002');
+           EXCEPTION WHEN foreign_key_violation THEN denied:=true; END;
+           IF NOT denied THEN RAISE EXCEPTION 'Cross store composite FK failed'; END IF;
+          END $$;
+          DO $$ DECLARE n int; BEGIN
+           SELECT COUNT(*) INTO n FROM pg_policies WHERE schemaname='public' AND permissive='RESTRICTIVE' AND tablename IN ('products','customers','orders','order_items','conversations','messages');
+           IF n<>6 THEN RAISE EXCEPTION 'Expected six restrictive policies, got %',n; END IF;
+          END $$;
+          SELECT current_setting('server_version') AS pg_version, 'PG17_SAME_TENANT_AB_ACCEPTANCE_PASS' AS proof;
+          SQL
+      - name: Delete container even on failed proof
+        if: always()
+        run: docker rm -f tien404-v1836a-pg17 >/dev/null 2>&1 || true
