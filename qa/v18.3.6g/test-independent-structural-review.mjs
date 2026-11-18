@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {dirname,resolve} from 'node:path';
-const root=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const file=(p)=>readFileSync(resolve(root,p),'utf8');
 const fAdmin=file('qa/v18.3.6f/01_MEMBERSHIP_ADMIN.sql');
 const fGateway=file('qa/v18.3.6f/02_GATEWAY_BYPASS_GUARD.sql');
