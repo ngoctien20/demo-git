@@ -1,0 +1,5 @@
+# QA-only image: the container runs with --network none and no published ports.
+FROM postgres:17.12
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-17-pgtap \
+ && rm -rf /var/lib/apt/lists/*
