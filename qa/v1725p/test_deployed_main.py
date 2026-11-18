@@ -3,6 +3,7 @@
 No network, real JWT, Supabase credentials, customer data, writes or provider sends.
 """
 import asyncio
+import socket
 from urllib.parse import parse_qs
 
 import httpx
@@ -82,6 +83,14 @@ async def _request(app, method="GET", path=BASE, headers=None):
 def request(app, method="GET", path=BASE, headers=None):
     return asyncio.run(_request(app, method, path, headers))
 
+
+
+@pytest.fixture(autouse=True)
+def deny_all_real_network(monkeypatch):
+    def blocked(*args, **kwargs):
+        raise AssertionError("REAL_NETWORK_DISABLED_IN_V1725P_TESTS")
+    monkeypatch.setattr(socket.socket, "connect", blocked)
+    monkeypatch.setattr(socket, "create_connection", blocked)
 
 def auth_headers():
     return {"Authorization": f"Bearer {TOKEN}"}
