@@ -1,0 +1,81 @@
+name: TIEN404 V18.5.4 — Native Access Context × Read-Only UAT (NO-HOST)
+on:
+  push:
+    branches:
+      - work/v1854-hosted-widget-canary-ctx-access-readonly-uat-20261118
+    paths:
+      - 'qa/channel-v1854/**'
+      - 'qa/channel-v1853/**'
+      - 'qa/channel-v1852/**'
+      - 'qa/channel-v1851/**'
+      - '.github/workflows/v1854-native-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1854_*'
+  pull_request:
+    paths:
+      - 'qa/channel-v1854/**'
+      - 'qa/channel-v1853/**'
+      - 'qa/channel-v1852/**'
+      - 'qa/channel-v1851/**'
+      - '.github/workflows/v1854-native-access-nohost-qa.yml'
+      - 'docs/ai-handoff/T404_V1854_*'
+permissions:
+  contents: read
+jobs:
+  native-access-and-real-readonly-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Compile Access context gate and all inherited candidates
+        run: |
+          node --check qa/channel-v1854/cloudflare-access-context-gate.mjs
+          node --check qa/channel-v1854/worker-v144-access-canary-candidate.mjs
+          node --check qa/channel-v1854/cloudflare-access-context-gate.test.mjs
+          node --check qa/channel-v1853/access-jwt-verifier.cjs
+          node --check qa/channel-v1852/published-core-readonly-admission.cjs
+          node --check qa/channel-v1851/protected-http-gateway.cjs
+      - name: Native Access ctx.access negative and positive synthetic runtime tests
+        run: |
+          node --test \
+            qa/channel-v1854/cloudflare-access-context-gate.test.mjs \
+            qa/channel-v1853/access-jwt-verifier.test.cjs \
+            qa/channel-v1852/published-core-readonly-admission.test.cjs \
+            qa/channel-v1851/protected-http-gateway.test.cjs \
+            qa/channel-v185/shared-core-bridge.test.cjs \
+            qa/channel-v144/secure-widget-preview.test.cjs \
+            qa/channel-v143/channel-core.test.cjs
+      - name: Check actual n8n read-only evidence and all hosted approvals remain false
+        run: |
+          node <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const e=JSON.parse(fs.readFileSync('qa/channel-v1854/n8n-readonly-uat-evidence.json','utf8'));
+          const p=JSON.parse(fs.readFileSync('qa/channel-v1854/hosted-uat-approval-packet.json','utf8'));
+          const g=fs.readFileSync('qa/channel-v1854/cloudflare-access-context-gate.mjs','utf8');
+          const w=fs.readFileSync('qa/channel-v1854/worker-v144-access-canary-candidate.mjs','utf8');
+          assert.equal(e.harness.executionId,'5341');
+          assert.equal(e.harness.status,'success');
+          assert.equal(e.harness.subExecutions,9);
+          assert.equal(e.assertions.passed,9);
+          assert.equal(e.assertions.failed,0);
+          assert.equal(e.assertions.orderWrites,0);
+          assert.equal(e.assertions.stockWrites,0);
+          assert.equal(e.assertions.providerSends,0);
+          assert.equal(e.scopeLimitations.storeLevelIsolation,'NOT_VERIFIED');
+          assert(Object.values(p.approvals).every(v=>v===false));
+          assert(p.cloudflareInventory.workersDevEnabled===false);
+          assert(p.cloudflareInventory.bindings===0);
+          assert(p.cloudflareInventory.dedicatedAccessApp===false);
+          assert(g.includes('ctx&&ctx.access'));
+          assert(g.includes('access.getIdentity()'));
+          assert(g.includes('ACCESS_AUDIENCE_MISMATCH'));
+          assert(!g.includes('node:crypto'));
+          assert(!g.includes('fetch('));
+          assert(w.includes('verifyPrivateAccess(ctx,env)'));
+          assert(w.includes("COMMERCE_READONLY_ADAPTER_NOT_ADMITTED"));
+          assert(w.includes('providerSends:0'));
+          assert(!w.includes('Access-Control-Allow-Origin'));
+          assert(!w.includes('fetch('));
+          console.log('V1854_REAL_N8N_READONLY_EVIDENCE_AND_NOHOST_APPROVALS_PASS');
+          JS
+      - name: Hosted rollout remains disabled
+        run: echo 'NO WORKER UPLOAD, NO WORKERS.DEV ENABLE, NO ACCESS APP/POLICY CHANGE, NO D1/DO, NO N8N WEBHOOK OR CREDENTIAL, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
