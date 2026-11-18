@@ -92,6 +92,13 @@ deny "idempotency-after-membership-revocation" "SELECT * FROM tien404_v172c40g_q
 # Explicit consent withdrawal is an append-only event and invalidates current review.
 event_e_row="$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT status || '|' || event_id FROM tien404_v172c40g_qa.consume_owner_consent(repeat('e',64),'session-e','idempotency-key-e','ACCEPT');")"
 event_e="${event_e_row##*|}"
+# A stale/mismatched session or challenge lineage cannot pass current preflight.
+psql -X -qAt -v ON_ERROR_STOP=1 -c "UPDATE tien404_v172c40g_qa.owner_sessions SET store_ref='store-other' WHERE session_ref='session-e';" >/dev/null
+[[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_e);")" == "DENY" ]]
+psql -X -qAt -v ON_ERROR_STOP=1 -c "UPDATE tien404_v172c40g_qa.owner_sessions SET store_ref='store-e' WHERE session_ref='session-e'; UPDATE tien404_v172c40g_qa.owner_challenges SET decision_version=3 WHERE challenge_digest=repeat('e',64);" >/dev/null
+[[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_e);")" == "DENY" ]]
+psql -X -qAt -v ON_ERROR_STOP=1 -c "UPDATE tien404_v172c40g_qa.owner_challenges SET decision_version=2 WHERE challenge_digest=repeat('e',64);" >/dev/null
+[[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_e);")" == "REVIEW_REQUIRED_NOT_AUTHORITY_GO" ]]
 psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.revoke_owner_consent($event_e,'owner-withdrew-consent');" >/dev/null
 [[ "$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT tien404_v172c40g_qa.check_current_consent($event_e);")" == "DENY" ]]
 deny "idempotency-after-consent-revocation" "SELECT * FROM tien404_v172c40g_qa.consume_owner_consent(repeat('e',64),'session-e','idempotency-key-e','ACCEPT');" "DENY_CONSENT_REVOKED_OR_STALE"
