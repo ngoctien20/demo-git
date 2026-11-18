@@ -143,3 +143,51 @@ Rollback for current work: close/revert the stacked V18.5.4 Draft PR and, if des
 - CI static gate verified the actual n8n read-only evidence, no Store-level claim, all hosted approvals false and no Worker/network/deployment call.
 
 Decision remains: `SOURCE_TESTED_177_OF_177 / REAL_N8N_READONLY_UAT_9_OF_9 / CLOUDFLARE_ACCESS_RUNTIME_0 / HOSTED_CANARY_NOT_DEPLOYED / PRODUCTION_NO_GO`.
+
+
+## Hosted Canary deployment checkpoint — 18/11/2026 JST
+
+The user explicitly approved the V14.4 hosted canary scope. The following Cloudflare changes were then performed in order.
+
+### VERIFIED — Access app created before enabling the host
+
+- Access application: `1a73d50b-0668-4308-8f56-53aa9711d477`.
+- Exact domain and public destination: `tien404-widget-gateway-v144-staging.tienmobi208.workers.dev` (hostname-wide, no path restriction and no wildcard).
+- Uses the existing reusable founder-only Allow policy `e936ca09-254b-4cc3-8ebd-efca366c7164`; policy was not modified.
+- Allowed identity provider: existing Cloudflare account-member-only provider; only one IdP allowed.
+- MFA: biometrics only, MFA not disabled, MFA session duration `0m`; Access application session duration `30m`.
+- `auto_redirect_to_identity=true`; app launcher hidden; `options_preflight_bypass=false`; no Bypass policy.
+- The app's AUD was bound as exact plain-text Worker variable `T404_ACCESS_AUD` (value intentionally omitted from this report). The approved operator email was set as Worker secret `T404_QA_OPERATOR_EMAIL`; secret value is not stored in GitHub.
+
+### VERIFIED — host enabled and canary deployed
+
+- Existing Worker only: `tien404-widget-gateway-v144-staging`.
+- `workers.dev enabled=true`; Preview URLs remain `false`.
+- Worker Version 3: `da022974-1832-425f-bf82-afddc558b893`.
+- Deployment: `b4f501e0-ff37-4ea4-be77-6e3148667b15`, 100% of the existing staging Worker traffic.
+- The deployed Worker contains exactly two modules: `worker-v144-access-canary-candidate.mjs` and `cloudflare-access-context-gate.mjs`. A read-back of deployed content confirmed native `ctx.access`, `getIdentity()`, the exact AUD gate, the server-side allowlist, and the locked Commerce routes.
+- Current bindings: `T404_ACCESS_AUD` plain-text and `T404_QA_OPERATOR_EMAIL` secret-text. No n8n, D1, DO, service, AI or channel bindings.
+- The original V14.4 version `98c8aad5-2dae-47c3-9cb0-8473065213e6` and original deployment `a9f197fe-68c1-4321-bfb1-bc333d3093c6` remain available as rollback target. Exact original Worker source and pre-change settings are saved under `qa/channel-v1854/backup/`.
+- Adding the Worker secret generated a Cloudflare secret deployment (version 2) using the original locked source. The canary was then uploaded as version 3 and deployed explicitly. No customer-facing route or Commerce capability was opened by the intermediate deployment.
+
+### NOT YET VERIFIED — real browser Access runtime
+
+- Access audit log query filtered to the new app returned **0 events** at the time checked. This means no sign-in attempt had yet been recorded; it does not prove either denial or successful admission.
+- The current execution environment could not reach the Worker hostname for an external unauthenticated HTTP probe. Therefore no 302/403 edge response is claimed.
+- The real Cloudflare edge injecting `ctx.access` and the approved owner's biometric login still require a browser session. The second, non-allowlisted identity denial also remains pending.
+- The Worker canary route, once authenticated, is `GET /__v1854/access-canary`. Expected response: `canary=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED`, `audienceVerified=true`, `operatorAllowlisted=true`, `privateOrderAccess=false`, `orderWrites=0`, `providerSends=0`, `productionReady=false`.
+- `GET /__v144/health` should return a locked staging health response only after Access authentication. Widget session/message/install routes remain 423 for everyone, including the approved operator. No CORS or preflight bypass is enabled.
+
+### Required user-driven UAT
+
+1. Open `https://tien404-widget-gateway-v144-staging.tienmobi208.workers.dev/__v1854/access-canary` in the browser profile signed in to the approved Cloudflare account. Complete the configured biometric MFA.
+2. Confirm the exact canary JSON above. Do not send JWTs, cookies, Access tokens, or screenshots containing them.
+3. Open the same URL in a separate browser profile signed in to a different, non-allowlisted Cloudflare account. It must be denied by Access; do not share credentials between profiles.
+4. After these attempts, query the Access authentication logs for app `1a73d50b-0668-4308-8f56-53aa9711d477` and verify one allowed owner event and one denied alternate identity event.
+5. If unauthenticated requests reach Worker JSON instead of Access login/deny, immediately set `workers.dev enabled=false` and investigate before any further work.
+
+### Current release gate
+
+**PRIVATE HOSTED CANARY DEPLOYED; REAL ACCESS LOGIN/NEGATIVE IDENTITY UAT PENDING; COMMERCE ROUTES LOCKED; NO N8N ADAPTER; NO ORDER/INVENTORY WRITES; NO PROVIDER SENDS; NO PRODUCTION.**
+
+The Store A/B RLS and tenant/store authority gates remain unchanged and unverified.
