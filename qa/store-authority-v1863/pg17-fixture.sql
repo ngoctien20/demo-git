@@ -74,6 +74,7 @@ INSERT INTO v1863_qa.page_connections VALUES
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','messenger','mock-page-a','connected'),
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','messenger','mock-page-b','connected');
 
+ALTER TABLE v1863_qa.tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE v1863_qa.stores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE v1863_qa.store_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE v1863_qa.orders ENABLE ROW LEVEL SECURITY;
@@ -106,3 +107,10 @@ CREATE POLICY page_manager_read ON v1863_qa.page_connections FOR SELECT TO v1863
    AND m.user_id=nullif(current_setting('request.jwt.claim.sub',true),'')::uuid AND m.active
    AND m.role IN ('owner','manager') AND s.status='active'
  ));
+
+-- Tenant listing must not bypass store membership. A revoked user sees no tenants.
+CREATE POLICY tenant_read ON v1863_qa.tenants FOR SELECT TO v1863_authenticated
+ USING (EXISTS (
+  SELECT 1 FROM v1863_qa.store_memberships m WHERE m.tenant_id=tenants.id
+   AND m.user_id=nullif(current_setting('request.jwt.claim.sub',true),'')::uuid AND m.active
+  ));

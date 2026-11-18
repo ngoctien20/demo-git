@@ -36,6 +36,10 @@ function expectedError(query,pattern){
  assert.match(result.stderr,pattern);
 }
 before(()=>{if(process.env.V1863_DISPOSABLE_POSTGRES!=='true')throw new Error('REFUSE: this suite requires V1863_DISPOSABLE_POSTGRES=true'); const r=psql({file:BASE});assert.equal(r.exit,0,r.stderr);});
+test('Owner A sees only its tenant',()=>expectCount('a','tenants',1));
+test('Owner C sees only its tenant',()=>expectCount('c','tenants',1));
+test('revoked actor sees no tenants',()=>expectCount('revoked','tenants',0));
+test('missing JWT subject sees no tenant',()=>expectCount(null,'tenants',0));
 test('Owner A sees only one same-tenant store',()=>expectCount('a','stores',1));
 test('Owner B sees only its same-tenant store',()=>expectCount('b','stores',1));
 test('Owner C sees only another tenant',()=>expectCount('c','stores',1));
@@ -72,6 +76,6 @@ test('same Page cannot be reauthorized in competing store',()=>{
  expectedError(`INSERT INTO v1863_qa.page_connections VALUES ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','messenger','mock-page-a','reauthorization_required')`,/duplicate key value violates unique constraint/);
 });
 test('all RLS tables enabled and test role has no write privileges',()=>{
- const r=psql({sql:"SELECT (SELECT count(*) FROM pg_class WHERE relnamespace='v1863_qa'::regnamespace AND relname IN ('stores','store_memberships','orders','products','page_connections') AND relrowsecurity)=5 AND NOT has_table_privilege('v1863_authenticated','v1863_qa.orders','INSERT,UPDATE,DELETE')"});
+ const r=psql({sql:"SELECT (SELECT count(*) FROM pg_class WHERE relnamespace='v1863_qa'::regnamespace AND relname IN ('tenants','stores','store_memberships','orders','products','page_connections') AND relrowsecurity)=6 AND NOT has_table_privilege('v1863_authenticated','v1863_qa.orders','INSERT,UPDATE,DELETE')"});
  assert.equal(r.exit,0,r.stderr);assert.equal(r.stdout,'t');
 });
