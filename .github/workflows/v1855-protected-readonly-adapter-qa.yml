@@ -141,6 +141,46 @@ jobs:
           assert(adapter.includes('caller_authority_fields_forbidden'));
           assert(qa.includes('order.read'));
           assert(qa.includes('order.create'));
+          // B4 preview is historical. B5 is the current Cloudflare hosted state.
+          const historic=JSON.parse(fs.readFileSync('qa/channel-v1855/isolated-do-provisioning-gate.json','utf8'));
+          const hosted=JSON.parse(fs.readFileSync('qa/channel-v1855/isolated-do-hosted-creation-evidence.json','utf8'));
+          const owner=fs.readFileSync('qa/channel-v1855/isolated-do-owner-candidate.mjs','utf8');
+          assert.equal(historic.recordType,'HISTORICAL_B4_PRE_DEPLOYMENT_APPROVAL_PACKET');
+          assert.equal(historic.supersededBy,'qa/channel-v1855/isolated-do-hosted-creation-evidence.json');
+          assert.equal(hosted.status,'HOSTED_CLASS_NAMESPACE_VERIFIED_PRIVATE_NO_PUBLIC_ROUTE_NOT_CONNECTED_TO_WIDGET');
+          assert.equal(hosted.before.existingDoNamespaces,3);
+          assert.equal(hosted.afterReadOnlyVerification.cloudflareNamespaceCount,4);
+          assert.equal(hosted.applied.createdOnlyOneNewNamespace,true);
+          assert.deepEqual(hosted.applied.classReconciliation.created,['T404ReadAdmission']);
+          assert.deepEqual(hosted.applied.classReconciliation.warnings,[]);
+          assert.equal(hosted.applied.classStorage,'sqlite');
+          assert.equal(hosted.afterReadOnlyVerification.exactNamespacePresent,true);
+          assert.equal(hosted.afterReadOnlyVerification.workersDevEnabled,false);
+          assert.equal(hosted.afterReadOnlyVerification.previewUrlsEnabled,false);
+          assert.equal(hosted.afterReadOnlyVerification.customDomainsAttached,0);
+          assert.equal(hosted.afterReadOnlyVerification.scheduledTriggers,0);
+          assert.equal(hosted.afterReadOnlyVerification.namespaceInstances,0);
+          assert.equal(hosted.afterReadOnlyVerification.workerBindings,0);
+          assert.equal(hosted.afterReadOnlyVerification.moduleSourceHas404Response,true);
+          assert.equal(hosted.afterReadOnlyVerification.moduleSourceHasNoN8nTokenBinding,true);
+          assert.equal(hosted.afterReadOnlyVerification.existingWidgetDeploymentId,
+                       hosted.before.existingWidgetDeploymentId);
+          assert.equal(hosted.afterReadOnlyVerification.existingWidgetVersionId,
+                       hosted.before.existingWidgetVersionId);
+          assert.deepEqual(hosted.afterReadOnlyVerification.existingWidgetBindings,
+                           hosted.before.existingWidgetBindings);
+          assert.equal(hosted.securityAndCost.secretReadOrModified,false);
+          assert.equal(hosted.securityAndCost.newWorkerConfiguredBindings,0);
+          assert.equal(hosted.securityAndCost.existingWidgetUpdated,false);
+          assert.equal(hosted.securityAndCost.n8nWorkflowUpdated,false);
+          assert.equal(hosted.securityAndCost.n8nWorkflowActivated,false);
+          assert.equal(hosted.securityAndCost.productionOrderWrites||0,0);
+          assert.equal(hosted.qa.liveDoObjectInvocation,'NOT_TESTED');
+          assert.equal(hosted.qa.realHttpHeaderAuth,'NOT_TESTED');
+          assert.equal(hosted.qa.production,'NO_GO');
+          assert(owner.includes("DO_OWNER_HAS_NO_PUBLIC_ENDPOINT"));
+          assert(owner.includes("status: 404"));
+          console.log('V1855_B5_HOSTED_DO_OWNER_VERIFIED_NO_PUBLIC_ROUTE_WIDGET_UNCHANGED_PRODUCTION_NO_GO');
           console.log('V1855_REAL_N8N_READONLY_UAT_12_OF_12_PASS_WORKER_CANDIDATE_NOT_DEPLOYED');
           JS
       - name: Production and public Widget remain disabled
