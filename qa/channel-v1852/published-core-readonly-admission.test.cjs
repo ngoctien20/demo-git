@@ -227,12 +227,12 @@ test('Published catalog+cart graph shape matches verified safe query path',()=>{
  assert.equal(graphVerified(graph('CATALOG_QUERY'),'CATALOG_QUERY').readOnlyGraphVerified,true);
  assert.equal(graphVerified(graph('CART_PREVIEW'),'CART_PREVIEW').readOnlyGraphVerified,true);
 });
-test('Unpublished draft or wrong workflow refuses admission',()=>{
+test('Unpublished draft or wrong workflow refuses admission',async()=>{
  const {g,counts}=fixture({editGraph:s=>({...s,activeVersionId:'draft-version'})});
  await reject(g.preview(catalog),'PUBLISHED_GRAPH_VERSION_UNVERIFIED');
  assert.equal(counts.invoke,0);
 });
-test('Cross-child graph forgery cannot admit wrong operation',()=>{
+test('Cross-child graph forgery cannot admit wrong operation',async()=>{
  const {g,counts}=fixture({editGraph:s=>({...s,workflowId:ROUTES.CART_PREVIEW.id})});
  await reject(g.preview(catalog),'PUBLISHED_GRAPH_VERSION_UNVERIFIED');
  assert.equal(counts.invoke,0);
