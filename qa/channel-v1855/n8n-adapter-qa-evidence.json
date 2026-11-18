@@ -1,7 +1,7 @@
 {
   "phase": "V18.5.5",
   "date": "2026-11-18 JST",
-  "status": "INTERNAL_READONLY_ADAPTER_IMPLEMENTED_AND_N8N_UAT_12_OF_12_PASS_HTTP_INGRESS_BLOCKED_PENDING_DEDICATED_AUTH",
+  "status": "INTERNAL_READONLY_ADAPTER_AND_HEADER_AUTH_INGRESS_IMPLEMENTED_PIN_QA_5_OF_5_NO_HOSTED_WEBHOOK",
   "n8n": {
     "project": "Personal",
     "adapter": {
@@ -14,11 +14,14 @@
       "nodeCount": 10,
       "callerPolicy": "workflowsFromAList",
       "allowedCallerIds": [
-        "At2msGSDpmJ1GvnK"
+        "At2msGSDpmJ1GvnK",
+        "JZL4p8tLb65eU3aB"
       ],
       "webhookTrigger": false,
       "credentials": 0,
-      "aiAgent": false
+      "aiAgent": false,
+      "currentSettingsVerified": true,
+      "currentVersionId": "7e72477e-ab8e-4176-a6c1-4277e5e2c538"
     },
     "qa": {
       "workflowId": "At2msGSDpmJ1GvnK",
@@ -180,6 +183,80 @@
       "requestIdGeneratedByWorkerCandidate": true,
       "durableReplayDeduplication": false,
       "note": "All currently permitted operations are read-only and idempotent; duplicate reads within the freshness window can still consume resources. Durable rate limiting/replay deduplication is required before public customer exposure."
+    },
+    "ingress": {
+      "workflowId": "JZL4p8tLb65eU3aB",
+      "name": "TIEN404 V18.5.5 — Header Auth Read-Only Webhook Ingress STAGING",
+      "folder": "04_TIEN404_WEBSITE - MARKETING",
+      "versionId": "5e5b87b2-1dcc-48c9-aa72-98c7866a12f3",
+      "active": false,
+      "published": false,
+      "activeVersionId": null,
+      "nodeCount": 7,
+      "webhook": {
+        "method": "POST",
+        "path": "t404-v1855-protected-readonly-commerce-staging",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth",
+        "credentialName": "TIEN404_V1855_READONLY_ADAPTER_AUTH_STAGING",
+        "credentialId": "IS2XrqEFUDv7aGsh",
+        "credentialType": "httpHeaderAuth",
+        "headerNameExpected": "x-t404-adapter-token",
+        "headerNameInspected": false,
+        "secretValueInspected": false,
+        "initialAutoAssignmentCorrected": true,
+        "initialAutoAssignedCredential": "Header Auth account (wrong; replaced before testing)",
+        "dedicatedCredentialBoundVerified": true
+      },
+      "settings": {
+        "saveExecutionProgress": false,
+        "saveManualExecutions": false,
+        "saveDataSuccessExecution": "none",
+        "saveDataErrorExecution": "none",
+        "executionTimeout": 15,
+        "callerPolicy": "none"
+      },
+      "allowedOperations": [
+        "catalog.search",
+        "cart.preview"
+      ],
+      "denies": [
+        "client_authority_fields",
+        "unknown_installation",
+        "order_write",
+        "private_order_read",
+        "invalid_cart",
+        "stale_request"
+      ],
+      "pinTests": {
+        "status": "success",
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "executionIds": {
+          "denied_order_create": "5383",
+          "allowed_catalog": "5384",
+          "allowed_grocery_cart": "5388",
+          "forged_tenant": "5392",
+          "unknown_installation": "5393"
+        },
+        "actualChildReadExecutions": {
+          "catalog": "5386",
+          "cart": "5390"
+        },
+        "protocol": "PINNED_WEBHOOK_TRIGGER_DOES_NOT_VALIDATE_REAL_HEADER_AUTH",
+        "httpHeaderAuthRealNetworkTested": false,
+        "actualHttpResponseStatusBodyVerified": false,
+        "note": "Webhook trigger pinned. Code nodes and existing read-only Catalog/Cart children executed; because saveDataSuccessExecution/saveManualExecutions are disabled, individual ingress execution data is not available for readback."
+      },
+      "access": {
+        "cloudflareAccessEdgeOwnerVerified": true,
+        "alternateIdentityDenialPending": true
+      },
+      "noWrites": true,
+      "noProviderSends": true,
+      "noPrivateCustomerReads": true,
+      "noAiCalls": true
     }
   },
   "worker": {
@@ -208,11 +285,15 @@
   "securityGates": {
     "ownerAccessRuntime": "VERIFIED",
     "secondIdentityDenial": "PENDING_FROM_V18.5.4",
-    "dedicatedN8nHeaderAuthCredential": "NOT_CREATED",
-    "webhookIngressWorkflow": "NOT_CREATED",
+    "dedicatedN8nHeaderAuthCredential": "VERIFIED_CREDENTIAL_METADATA_AND_WEBHOOK_BINDING",
+    "webhookIngressWorkflow": "CREATED_INACTIVE_CREDENTIAL_BOUND",
     "workerDeployment": "NOT_DEPLOYED",
     "durableReplayOrRateLimit": "NOT_IMPLEMENTED",
-    "productionRelease": false
+    "productionRelease": false,
+    "webhookHeaderValue": "NOT_READ_OR_EXPORTED",
+    "realHttpHeaderAuthTest": "NOT_RUN",
+    "workerSecretConfigured": false,
+    "workerDeployedV1855": false
   },
   "noChangesTo": [
     "n8n Published Commerce Core",
