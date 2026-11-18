@@ -64,6 +64,8 @@ jobs:
           docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
             -c 'DROP DATABASE tien404_v1836e_disposable WITH (FORCE);'
           docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'DROP ROLE IF EXISTS tien404_e_actor;'
+          docker exec tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
             -c 'CREATE DATABASE tien404_v1836e_disposable;'
           docker exec -i tien404-v1836f-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836e_disposable \
             < qa/v18.3.6e/01_PG17_DISPOSABLE_SCHEMA.sql
