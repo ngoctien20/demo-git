@@ -11,7 +11,7 @@ function createActiveSessionReader({query}={}){
    return {active:false};
   try{
    const result=await query(
-    'SELECT id::text AS id, user_id::text AS user_id FROM auth.sessions WHERE id=$1::uuid AND user_id=$2::uuid LIMIT 1',
+    'SELECT id::text AS id, user_id::text AS user_id FROM auth.sessions WHERE id=$1::uuid AND user_id=$2::uuid AND (not_after IS NULL OR not_after > NOW()) LIMIT 1',
     [sessionId,subjectRef]
    );
    if(!result||!Array.isArray(result.rows)||result.rows.length!==1||
