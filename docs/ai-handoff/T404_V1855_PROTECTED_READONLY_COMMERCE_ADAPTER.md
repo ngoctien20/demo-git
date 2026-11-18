@@ -245,3 +245,52 @@ An explicit owner approval is required for a new metered SQLite-backed Durable O
 No change to the deployed V18.5.4 Worker version da022974-1832-425f-bf82-afddc558b893, deployment b4f501e0-ff37-4ea4-be77-6e3148667b15. If this source candidate is rejected, revert Draft PR #415; do not delete any existing namespace or shared data.
 
 **Gate:** VERIFIED_EXISTING_DO_SPECIALIZATION / DO_SIM_30_CALLS_20_ADMIT_10_DENY / SOURCE_QA_154_OF_154 / NO_ACCOUNT_WRITES / DO_RUNTIME_NOT_TESTED / COST_APPROVAL_PENDING / PRODUCTION_NO_GO.
+
+## 12. V18.5.5-B4 — Resource-only approval × isolated Worker lifecycle gate × local workerd QA
+
+**18/11/2026 JST.** User confirmed continuation after the explicit question on creating one SQLite Durable Object staging resource, with the prior scope excluding any Worker deployment, webhook publication, secret change or production release.
+
+### Constraint verified against Cloudflare documentation
+
+Cloudflare's current Durable Object lifecycle documentation requires a **Worker deployment** when a new Durable Object class/namespace is created. Merely uploading a version does not apply lifecycle changes. Rollback cannot cross the class lifecycle migration.
+
+References:
+- https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/
+- https://developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/with-durable-objects/
+- https://developers.cloudflare.com/durable-objects/get-started/
+
+As the user's approval explicitly excluded Worker deployment, **no namespace/class was created**. It would be incorrect to interpret a resource-only approval as authorization for a Worker lifecycle migration.
+
+### Verified alternative: isolated workerd SQLite tests in GitHub Actions
+
+Added test-only local integration under qa/channel-v1855/runtime-qa/, using @cloudflare/vitest-plugin v1.6.0 and Vitest 4 in the actual **workerd** runtime. The local Durable Object binding is entirely inside the GitHub runner; no Cloudflare account credentials or API calls are used.
+
+- [CI #44313831943](https://github.com/ngoctien20/demo-git/actions/runs/44313831943): source regression 154/154; **3 workerd SQLite DO tests pass**.
+- [CI #44314497533](https://github.com/ngoctien20/demo-git/actions/runs/44314497533): source regression 154/154; **4 workerd SQLite DO tests pass**, including a new Durable Object eviction/recovery test proving the duplicate request ID is still rejected after eviction.
+- These tests exercise actual Cloudflare Worker runtime compatibility locally, including real SQLite storage semantics; they do not measure hosted Cloudflare costs, performance, production worker uploads or authenticated HTTP ingress.
+
+Earlier test-only CI runs failed because of a non-existent @cloudflare/vitest-plugin version (0.16.x) and an npm resolver error; these were resolved by pinning published v1.6.0 and using the runner's Yarn installation.
+
+### Isolated owner Worker proposal (not deployed)
+
+To avoid making the already-running V18.5.4 Widget Worker cross an irreversible Durable Object lifecycle change, the safer future architecture separates the DO class lifecycle into a dedicated **non-public Worker**:
+
+- Proposed isolated class owner: tien404-v1855-read-quota-isolated-staging.
+- Source candidate: qa/channel-v1855/isolated-do-owner-candidate.mjs (returns 404 on any public fetch request).
+- Future Widget binding: T404_READ_ADMISSION, class T404ReadAdmission, script_name = tien404-v1855-read-quota-isolated-staging.
+- Public routes: none, workers.dev: disabled, preview URLs: disabled.
+- The proposal and prohibitions are captured in qa/channel-v1855/isolated-do-provisioning-gate.json.
+
+Creating this owner Worker and applying the SQLite class migration **would be a new Worker deployment** and therefore needs a **separate explicit approval**. Later adding the binding to the existing Widget Worker would also require independent deployment approval.
+
+### Budget and Access audit
+
+Cloudflare Billing subscriptions and spend-policy endpoints returned **HTTP 403** under the current read-only connector permission. Therefore the Cloudflare plan, current quota and spending controls are **NOT VERIFIED**, and we cannot claim zero cost for any future hosted deployment. The current three specialized DO namespaces remain unchanged.
+
+V18.5.4 private Worker version da022974-1832-425f-bf82-afddc558b893 and deployment b4f501e0-ff37-4ea4-be77-6e3148667b15 are still the safe rollback checkpoint. Production, public Widget, n8n Published webhook, and private Store A/B RLS remain blocked.
+
+### Decision
+
+**Local workerd ACCEPTED for source/runtime preflight; hosted DO namespace CREATE is BLOCKED by the no-deploy boundary.** No Cloudflare account mutation, secret read, webhook publication, customer-data change, order write, provider send or production release occurred during B4.
+
+**Checkpoint:** V1855_B4_LOCAL_WORKERD_SQLITE_4_OF_4 / SOURCE_QA_154_OF_154 / ISOLATED_OWNER_PREVIEW_ONLY / NO_DO_NAMESPACE_CREATED / WORKER_DEPLOYMENT_UNAPPROVED / COST_ACCOUNT_UNKNOWN / PRODUCTION_NO_GO.
