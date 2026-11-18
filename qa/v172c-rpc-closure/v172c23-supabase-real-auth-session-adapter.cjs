@@ -36,7 +36,7 @@ function createSupabaseAuthSessionVerifier(config){
    });
    if(!response||response.status!==200) return reject();
    const user=await response.json();
-   if(!user||user.id!==payload.sub || user.is_anonymous===true) return reject();
+   if(!user||user.id!==payload.sub || user.is_anonymous!==false) return reject();
    // Trusted privileged lookup must read auth.sessions, match user_id and
    // expiration/revocation state, not simply trust a JWT session_id claim.
    const active=await checkActiveSession({sessionId:payload.session_id,subjectRef:payload.sub});
