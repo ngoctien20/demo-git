@@ -1,0 +1,31 @@
+{
+  "checkpoint": "V18.6.5",
+  "date": "2026-11-18",
+  "environment": "STAGING",
+  "scope": "READ_ONLY_STATIC_AUDIT_PARTIAL",
+  "doesNotProveNoCallers": true,
+  "rpcObservations": [
+    {"name": "qa_shop_b_zalo_claim", "schema": "public", "securityDefiner": true, "anonExecute": true, "authenticatedExecute": false, "sourceGuardObserved": "VAULT_BACKED_HEADER_CHECK", "riskDecision": "P1_REVIEW_NO_AUTO_REVOKE"},
+    {"name": "qa_owner_pairing", "schema": "public", "securityDefiner": true, "anonExecute": false, "authenticatedExecute": true, "sourceGuardObserved": "AUTH_UID_OWNER_QA_ALLOWLIST", "riskDecision": "REVIEW_KEEP_GATED"},
+    {"name": "save_merchant_product", "schema": "public", "securityDefiner": true, "anonExecute": false, "authenticatedExecute": true, "sourceGuardObserved": "AUTH_UID_TENANT_OWNER_MANAGER", "riskDecision": "STAGING_WRITER_P1_STORE_SCOPING"}
+  ],
+  "n8nInspectedWorkflows": [
+    {"id":"Nm2sYvW0cCT2FpWR","directNamedRpcParameterReferences":0},
+    {"id":"p5OsIaB0NkMDFMw7","directNamedRpcParameterReferences":0},
+    {"id":"FIE7nl2vgLXQI7mT","directNamedRpcParameterReferences":0},
+    {"id":"U7nl15gRnhklJqzy","directNamedRpcParameterReferences":0},
+    {"id":"sIPs6egzIwOY1GNv","directNamedRpcParameterReferences":0},
+    {"id":"bD510xyr5jBHQ99K","directNamedRpcParameterReferences":0},
+    {"id":"Z7FdV7uDvApfbURQ","directNamedRpcParameterReferences":0},
+    {"id":"yIJk8LvJoLF40Z62","directNamedRpcParameterReferences":0}
+  ],
+  "githubDefaultBranchExactCodeSearchResults": 0,
+  "pgCatalogDirectFunctionDependencyRows": 0,
+  "remainingSourcesNotAudited": ["all other n8n workflows", "Cloudflare deployed Worker source", "Render backend runtime", "Google GitHub non-default branches beyond reviewed HEAD", "Edge Functions", "website runtime requests", "provider webhook traces"],
+  "liveSessionEvidence": false,
+  "sameTenantStoreRlsVerified": false,
+  "noAccessTokenOrSecretValuesRead": true,
+  "approvedToRevokeGrants": false,
+  "approvedForRealMeta": false,
+  "productionReady": false
+}
