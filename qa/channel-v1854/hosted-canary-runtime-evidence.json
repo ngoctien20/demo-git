@@ -100,23 +100,24 @@
     "queried": true,
     "filterApplicationId": "1a73d50b-0668-4308-8f56-53aa9711d477",
     "rows": 1,
-    "allowed": 1,
-    "denied": 0,
-    "ownerEvent": {
-      "action": "login",
-      "allowed": true,
-      "appDomain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
-      "connection": "cloudflare",
-      "createdAt": "2026-11-18T08:11:58Z",
-      "rayId": "a5c581ec6c0996aa"
-    },
+    "events": [
+      {
+        "action": "login",
+        "allowed": true,
+        "identityMatchedExactOwnerAllowlist": true,
+        "createdAt": "2026-11-18T08:11:58Z",
+        "connection": "cloudflare",
+        "rayId": "a5c581ec6c0996aa"
+      }
+    ],
+    "deniedAlternateIdentityEvents": 0,
     "note": "One real owner login event correlates with the user-provided successful canary JSON. No alternate-identity denial event exists yet."
   },
   "uat": {
     "unauthenticatedExternalRequest": "USER_BROWSER_REDIRECTED_TO_CLOUDFLARE_LOGIN_CHALLENGE; screenshot shows dash.cloudflare.com/login?login_challenge=...; no Worker JSON exposed in screenshot; this is an auth challenge, not a final denial",
-    "approvedFounderBrowserLogin": "VERIFIED",
-    "secondIdentityDenyTest": "PENDING_USER_INTERACTION",
-    "realCtxAccessRuntime": "VERIFIED_OWNER",
+    "approvedFounderBrowserLogin": "PASS_USER_REPORTED_CANARY_JSON_AND_CLOUDFLARE_ALLOWED_LOGIN_AUDIT_EVENT",
+    "secondIdentityDenyTest": "PENDING_NON_ALLOWLISTED_ACCOUNT_SIGN_IN",
+    "realCtxAccessRuntime": "PASS_USER_REPORTED_CANARY=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED; audienceVerified=true; operatorAllowlisted=true",
     "storeLevelRls": "NOT_VERIFIED",
     "userEvidence": {
       "canaryResponse": {
@@ -132,7 +133,7 @@
         "providerSends": 0,
         "productionReady": false
       },
-      "alternateBrowserScreenshot": "Cloudflare dashboard login challenge; user says it is the other browser; not an Access Denied result"
+      "alternateBrowserScreenshot": "Cloudflare dashboard login challenge at dash.cloudflare.com/login?login_challenge=...; not an Access Denied result."
     },
     "secondBrowserObservation": "Screenshot shows dash.cloudflare.com/login?login_challenge in Incognito; it is a Cloudflare sign-in challenge, not an Access-denied result and not yet correlated to this app."
   },
