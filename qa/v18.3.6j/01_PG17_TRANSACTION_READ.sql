@@ -79,7 +79,10 @@ BEGIN
  SELECT s.last_authority_check_at INTO checked
  FROM qa_i_private.session_state s
  WHERE s.session_binding_hash=p_session_binding_hash FOR SHARE;
- IF NOT FOUND OR checked IS NULL OR
+ IF NOT FOUND THEN
+  decision:='DENY_SESSION';RETURN NEXT;RETURN;
+ END IF;
+ IF checked IS NULL OR
     checked < clock_timestamp()-interval '60 seconds' OR
     checked > clock_timestamp() THEN
   decision:='DENY_SESSION_PROOF_STALE';RETURN NEXT;RETURN;
