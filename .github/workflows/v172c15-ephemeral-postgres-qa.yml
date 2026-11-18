@@ -51,3 +51,5 @@ jobs:
         run: bash qa/v172c-rpc-closure/v172c30-ephemeral-orders-rls-drill.sh
       - name: Tenant-to-Store migration preview and compatibility QA (ephemeral only; NOT hosted)
         run: bash qa/v172c-rpc-closure/v172c32-no-write-store-migration-preview-drill.sh
+      - name: Atomic Store-Scoped Order Commit, Price/Stock, Concurrent Replay and Rollback QA (CI-only)
+        run: bash qa/v172c-rpc-closure/v172c35-atomic-order-commit-ci-drill.sh
