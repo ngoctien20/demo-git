@@ -1,0 +1,41 @@
+{
+  "phase": "V18.5.4 pre-change snapshot",
+  "capturedAt": "2026-11-18 JST",
+  "workerScript": "tien404-widget-gateway-v144-staging",
+  "deploymentId": "a9f197fe-68c1-4321-bfb1-bc333d3093c6",
+  "versionId": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+  "deploymentCreatedAt": "2026-11-15T13:31:44.347611Z",
+  "deploymentTraffic": [
+    {
+      "versionId": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+      "percentage": 100
+    }
+  ],
+  "settings": {
+    "compatibilityDate": "",
+    "compatibilityFlags": [],
+    "usageModel": "standard",
+    "bindings": [],
+    "logpush": false
+  },
+  "subdomain": {
+    "enabled": false,
+    "previewsEnabled": false
+  },
+  "customRoutes": [],
+  "accessBefore": {
+    "dedicatedV144AccessApp": false,
+    "existingFounderApp": "9ec1d2e9-98df-47e1-89bf-9a8750b0224a",
+    "founderAppDomain": "tien404-uat01-synthetic-nosend-staging.tienmobi208.workers.dev/__tien404_v174p_founder_mfa_qa_20261118",
+    "founderAppMfaAuthenticators": [
+      "biometrics"
+    ],
+    "founderAppMfaDisabled": false,
+    "founderAppPolicyEmailCount": 1,
+    "founderAppAllowedIdp": "Cloudflare account-members only",
+    "accountDenyUnmatchedRequests": false
+  },
+  "rollbackVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+  "rollbackDeployment": "a9f197fe-68c1-4321-bfb1-bc333d3093c6",
+  "secretsOrIdentityValues": "NOT INCLUDED"
+}
