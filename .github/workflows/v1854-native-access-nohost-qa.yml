@@ -63,7 +63,7 @@ jobs:
           assert.equal(e.assertions.stockWrites,0);
           assert.equal(e.assertions.providerSends,0);
           assert.equal(e.scopeLimitations.storeLevelIsolation,'NOT_VERIFIED');
-          assert.equal(p.status,'HOSTED_CANARY_DEPLOYED_PRIVATE_ACCESS_RUNTIME_LOGIN_PENDING');
+          assert.equal(p.status,'OWNER_ACCESS_RUNTIME_VERIFIED_SECOND_IDENTITY_DENIAL_PENDING');
           assert.equal(p.cloudflareInventory.workersDevEnabled,true);
           assert.equal(p.cloudflareInventory.previewsEnabled,false);
           assert.equal(p.cloudflareInventory.bindings,2);
@@ -74,8 +74,23 @@ jobs:
           assert.equal(h.worker.workersDevEnabled,true);
           assert.equal(h.worker.previewsEnabled,false);
           assert.equal(h.workerVersions[2].trafficPercent,100);
-          assert.equal(h.uat.realCtxAccessRuntime,'PENDING_USER_INTERACTION');
-          assert.equal(h.accessLogs.rows,0);
+          assert.equal(h.uat.realCtxAccessRuntime,'PASS_USER_REPORTED_CANARY=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED; audienceVerified=true; operatorAllowlisted=true');
+          assert.equal(h.uat.approvedFounderBrowserLogin,'PASS_USER_REPORTED_CANARY_JSON_AND_CLOUDFLARE_ALLOWED_LOGIN_AUDIT_EVENT');
+          assert.equal(h.uat.secondIdentityDenyTest,'PENDING_NON_ALLOWLISTED_ACCOUNT_SIGN_IN');
+          assert.equal(h.accessLogs.events.length,1);
+          assert.equal(h.accessLogs.events[0].action,'login');
+          assert.equal(h.accessLogs.events[0].allowed,true);
+          assert.equal(h.accessLogs.events[0].identityMatchedExactOwnerAllowlist,true);
+          assert.equal(h.accessLogs.deniedAlternateIdentityEvents,0);
+          assert.equal(p.realAccessRuntimeVerified,true);
+          assert.equal(p.approvedFounderBrowserLoginPending,false);
+          assert.equal(p.secondIdentityDenyTestPending,true);
+          assert.equal(p.scope.realCloudflareAccessContext,true);
+          assert.equal(p.accessAudit.ownerLogin.allowed,true);
+          assert.equal(p.accessAudit.alternateIdentityDenied,false);
+          assert.equal(p.userCanaryResponse.canary,'CLOUDFLARE_ACCESS_CONTEXT_VERIFIED');
+          assert.equal(p.userCanaryResponse.orderWrites,0);
+          assert.equal(p.userCanaryResponse.providerSends,0);
           assert.equal(p.approvals.enableWorkersDevOnExistingV144,true);
           assert.equal(p.approvals.createAccessAppForExactV144Host,true);
           assert.equal(p.approvals.deployV144AccessCanarySource,true);
@@ -94,7 +109,7 @@ jobs:
           assert(!w.includes('await fetch('));
           assert(backup.includes('V144_WIDGET_GATE_CLOSED'));
           assert(backup.includes('return json(423'));
-          console.log('V1854_REAL_N8N_UAT_AND_PRIVATE_HOSTED_CANARY_EVIDENCE_PASS_RUNTIME_LOGIN_PENDING');
+          console.log('V1854_OWNER_ACCESS_RUNTIME_VERIFIED_ALTERNATE_IDENTITY_DENIAL_PENDING');
           JS
       - name: Production and Commerce rollout remain disabled
-        run: echo 'PRIVATE HOSTED ACCESS CANARY ONLY. V14.4 workers.dev enabled behind exact-host owner-only Access app; previews remain disabled; V18.5.4 canary is deployed. Real browser Access login/negative identity UAT is still pending. NO N8N WEBHOOK OR CREDENTIAL, NO D1/DO, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
+        run: echo 'PRIVATE HOSTED ACCESS CANARY. OWNER CLOUDFLARE ACCESS LOGIN AND NATIVE ctx.access CANARY VERIFIED; SECOND NON-ALLOWLISTED IDENTITY DENIAL PENDING. V14.4 workers.dev behind exact-host owner-only Access app; previews remain disabled. NO N8N WEBHOOK OR CREDENTIAL, NO D1/DO, NO CUSTOMER DATA, NO ORDER WRITE, NO SEND, NO PRODUCTION.'
