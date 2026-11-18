@@ -153,7 +153,7 @@ def inspect_synthetic_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
             reasons.add("UNVERIFIED_ALIAS_EVIDENCE")
         if mapping.get("revoked") is True or mapping.get("expired") is True:
             reasons.add("REVOKED_OR_EXPIRED_ALIAS")
-        if not isinstance(namespace, str) or not isinstance(alias, str) or not isinstance(inst, str):
+        if not all(isinstance(x, str) for x in (source, namespace, alias, inst)):
             continue
         alias_key = (str(source), namespace, alias)
         target = (str(mapping.get("tenant_ref")), str(store))
