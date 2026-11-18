@@ -29,12 +29,13 @@ Date: 2026-11-18 JST. Parent PR #392 Draft. Previous V17.2C.34 checkpoint SHA `4
   - Revokes actor A after commit, then verifies retry denied while Store B remains independent. Rechecks summed VND totals and item/Order tenant+Store lineage.
 - `.github/workflows/v172c15-ephemeral-postgres-qa.yml` extended with a final step invoking this drill on GitHub's ephemeral PostgreSQL 17 container only.
 
-## TESTED evidence
-- First candidate workflow run at code commit `6ff9ce7fd5e13189c1992ce77047e7db9565d5b5`:
-  - PostgreSQL atomic QA [44240696308](https://github.com/ngoctien20/demo-git/actions/runs/44240696308) — verify final conclusion before declaring PASS.
-  - Protected Consent / preflight source regression [44240696305](https://github.com/ngoctien20/demo-git/actions/runs/44240696305) — verify conclusion.
-  - RPC privilege/source regression [44240696304](https://github.com/ngoctien20/demo-git/actions/runs/44240696304) — verify conclusion.
-- No real Supabase JWT, Messenger webhook signature, Zalo OA identity, private consent or true customer price/stock/order data were tested.
+## TESTED evidence — verified on actual GitHub Actions
+- **Final tested source SHA**: `5dcc6cf81e1f8594d12a74b73d4bb59e5c7f7d2e`.
+- [Ephemeral PostgreSQL 17 atomic Order + rollback QA run #44240912362](https://github.com/ngoctien20/demo-git/actions/runs/44240912362) — **SUCCESS**, including `Atomic Store-Scoped Order Commit, Price/Stock, Concurrent Replay and Rollback QA (CI-only)`.
+- [Protected Consent / preflight regression #44240912460](https://github.com/ngoctien20/demo-git/actions/runs/44240912460) — **SUCCESS**.
+- [RPC privilege contract regression #44240912379](https://github.com/ngoctien20/demo-git/actions/runs/44240912379) — **SUCCESS**.
+- The first candidate PostgreSQL run [#44240696308](https://github.com/ngoctien20/demo-git/actions/runs/44240696308) **FAILED before transaction tests**, because the CI Docker PostgreSQL server IP differs from the client localhost address. Fixed the guard by verifying current database and a prerequisite synthetic-only V17.2C.32 schema in SQL, while the shell script separately requires `PGHOST=127.0.0.1`, `PGDATABASE=postgres`, `PGUSER=postgres` and `PGPORT=5432`. Verified the new step and entire CI job passed. Do not treat the initial failure as a successful test or a hosted security issue.
+- No real Supabase JWT, Messenger webhook signature, Zalo OA identity, private consent or customer price/stock/order data were tested.
 
 ## Remaining P0/P1 gates and limits
 - **Not production-ready.** All authorizations are supplied through synthetic trusted fixture flags; actual protected server must verify signed provider event, current Auth session, Store membership, Store installation, explicit confirmation and one-time idempotency inside a real secure transaction.
