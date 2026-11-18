@@ -131,3 +131,23 @@ jobs:
           JS
       - name: Production and public Widget remain disabled
         run: echo 'INACTIVE HEADER-AUTH WEBHOOK DRAFT ONLY. Dedicated credential linked, secret not retrieved. No published webhook, no Worker binding/deployment, no Store RLS claim, no order/stock writes, no customer order/PII reads, no provider sends, no production.'
+
+  offline-workerd-sqlite:
+    name: SQLite Durable Object in isolated workerd (NO CLOUD DEPLOY)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test-only Cloudflare Workers Vitest integration
+        working-directory: qa/channel-v1855/runtime-qa
+        run: npm install --no-audit --no-fund --ignore-scripts=false
+      - name: Exercise SQLite Durable Object in actual workerd runtime, offline
+        working-directory: qa/channel-v1855/runtime-qa
+        run: npm test
+      - name: Confirm no Cloudflare deployment performed
+        run: echo 'WORKERD_LOCAL_QA_ONLY. No API token, no namespace, no binding, no deployed Worker, no secrets, no n8n traffic.'
