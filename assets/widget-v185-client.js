@@ -32,6 +32,10 @@ export function mountV185Widget(target, config) {
       !/^[A-Za-z0-9_-]{2,90}$/.test(config.widgetId))
     deny('V185_WIDGET_ID_NOT_CONFIGURED');
   const gateway = exactGateway(config.gatewayBase);
+  // In a future approved SAME-ORIGIN private QA app, Access may require its
+  // HttpOnly cookie. Never attach cookies to cross-origin third-party gateways.
+  // This is transport only, NOT an Owner/Store authorization claim.
+  const sameOriginQaGateway = gateway === location.origin;
   const allowedModes = new Set(['PLATFORM_CONSULTANT','MERCHANT_SANDBOX']);
   // Client only helps display images; ONLY THE BACKEND authorizes URLs/scope.
   const imageOrigins = new Set(Array.isArray(config.allowedImageOrigins)
@@ -137,7 +141,7 @@ export function mountV185Widget(target, config) {
     const timeout=setTimeout(()=>controller.abort(),9000);
     try {
       const res=await fetch(gateway+route,{
-        method:'POST',mode:'cors',credentials:'omit',redirect:'error',
+        method:'POST',mode:'cors',credentials:sameOriginQaGateway?'same-origin':'omit',redirect:'error',
         headers:{'Content-Type':'application/json','Accept':'application/json'},
         body:JSON.stringify(payload),signal:controller.signal,
         cache:'no-store',referrerPolicy:'no-referrer'
