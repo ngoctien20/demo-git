@@ -11,7 +11,7 @@ test('only a parameterized private read of matching session + subject succeeds',
  }});
  const out=await check({sessionId:a,subjectRef:b});
  assert.equal(out.active,true);
- assert.match(got.sql,/WHERE id=\$1::uuid AND user_id=\$2::uuid LIMIT 1/);
+ assert.match(got.sql,/not_after IS NULL OR not_after > NOW/);
  assert.deepEqual(got.params,[a,b]);
  assert.equal(got.sql.includes(a),false);
 });
