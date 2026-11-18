@@ -1,7 +1,7 @@
 {
   "phase": "V18.5.4",
   "date": "2026-11-18 JST",
-  "status": "PARTIAL_UAT_PASS_REAL_N8N_READONLY / CLOUDFLARE_ACCESS_RUNTIME_BLOCKED / NO_HOSTED_DEPLOYMENT",
+  "status": "HOSTED_CANARY_DEPLOYED_PRIVATE_ACCESS_RUNTIME_LOGIN_PENDING",
   "parentPR": 407,
   "realN8nUat": {
     "verified": true,
@@ -17,15 +17,19 @@
   "cloudflareInventory": {
     "existingV144Worker": "tien404-widget-gateway-v144-staging",
     "deploymentVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
-    "workersDevEnabled": false,
+    "workersDevEnabled": true,
     "previewUrlsEnabled": false,
     "bindings": 0,
-    "dedicatedAccessApp": false,
+    "dedicatedAccessApp": true,
     "existingAccessApps": 4,
     "teamDenyUnmatchedRequests": false,
     "existingFounderAccessApp": "PATH_SCOPED_TO_DIFFERENT_UAT_WORKER",
     "existingAccessAppIsV144": false,
-    "changePerformed": false
+    "changePerformed": false,
+    "previewsEnabled": false,
+    "accessAppId": "1a73d50b-0668-4308-8f56-53aa9711d477",
+    "accessAppDomain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "accessAppPolicy": "existing reusable founder-only allow policy; biometric MFA enforced at application"
   },
   "workerCandidate": {
     "accessAdapter": "Cloudflare native ctx.access",
@@ -41,7 +45,10 @@
     "allRoutesAccessGated": true,
     "commerceSessionAndMessage": "423 LOCKED",
     "noCors": true,
-    "n8nCalls": 0
+    "n8nCalls": 0,
+    "deployed": true,
+    "versionId": "da022974-1832-425f-bf82-afddc558b893",
+    "deploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15"
   },
   "scope": {
     "tenantIsolation": "REAL_N8N_SANDBOX_CROSS_TENANT_VERIFIED",
@@ -51,18 +58,17 @@
     "customerOrdersRead": false
   },
   "approvals": {
-    "enableWorkersDevOnExistingV144": false,
-    "createAccessAppForExactV144Host": false,
-    "createAccessAllowPolicyFounderOnlyBiometrics": false,
-    "deployV144AccessCanarySource": false,
-    "setServerVariablesAccessAudAndOperatorAllowlist": false,
+    "createAccessAppForExactV144Host": true,
+    "reuseExistingFounderOnlyAllowPolicy": true,
+    "enableWorkersDevOnExistingV144": true,
+    "deployV144AccessCanarySource": true,
+    "setServerVariablesAccessAudAndOperatorAllowlist": true,
     "createDurableReplayQuotaBinding": false,
     "createN8nReadOnlyWebhookAdapterCredential": false,
     "publishOrActivateN8nAdapter": false,
     "bindGatewayToN8n": false,
     "merchantStoreAStoreBUat": false,
-    "productionRelease": false,
-    "paidUsage": false
+    "productionRelease": false
   },
   "noChangesTo": [
     "existing V14.4 Worker deployment",
@@ -76,5 +82,9 @@
     "customer data",
     "Messenger/Zalo"
   ],
-  "rollback": "Delete/archive only new inactive manual QA harness if needed; close/revert PR #408. No hosted rollback required because no Worker/Access change was made."
+  "rollback": "Delete/archive only new inactive manual QA harness if needed; close/revert PR #408. No hosted rollback required because no Worker/Access change was made.",
+  "realAccessRuntimeVerified": false,
+  "approvedFounderBrowserLoginPending": true,
+  "secondIdentityDenyTestPending": true,
+  "noProduction": true
 }
