@@ -1,0 +1,52 @@
+name: V18.6.3 Disposable PostgreSQL 17 Store RLS QA
+on:
+  push:
+    paths:
+      - 'qa/store-authority-v1863/**'
+      - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
+  pull_request:
+    paths:
+      - 'qa/store-authority-v1863/**'
+      - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
+permissions:
+  contents: read
+jobs:
+  qa-pg17-isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: v1863-disposable-only
+          POSTGRES_DB: tien404_v1863_qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd 'pg_isready -U postgres -d tien404_v1863_qa'
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      V1863_DISPOSABLE_POSTGRES: 'true'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: tien404_v1863_qa
+      PGPASSWORD: v1863-disposable-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install psql PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Assert strictly synthetic fixture
+        run: |
+          test "$PGDATABASE" = 'tien404_v1863_qa'
+          test "$V1863_DISPOSABLE_POSTGRES" = 'true'
+          ! grep -R -E 'ifxlvrhyjhbzbrkdsida|ngoctien20.app.n8n.cloud|developers.facebook.com' qa/store-authority-v1863/pg17-fixture.sql
+      - name: Execute isolated PostgreSQL RLS tests
+        run: node --test qa/store-authority-v1863/pg17-rls.test.cjs
