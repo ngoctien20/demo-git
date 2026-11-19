@@ -1,0 +1,136 @@
+name: TIEN404 V18.3.6P Private Review GoTrue Attestation QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836o-secdef-manifest-gotrue-crypto-20261119
+    paths:
+      - "qa/v18.3.6p/**"
+      - ".github/workflows/tien404-v1836p-private-review-tx-attestation.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836p-qa
+  cancel-in-progress: true
+jobs:
+  offline-review-and-cryptographic-attestation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without persistent GitHub tokens
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run inherited security suites G-O (417 tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            qa/v18.3.6l/test-security-architecture.mjs \
+            qa/v18.3.6m/test-crypto-grant-compatibility.mjs \
+            qa/v18.3.6n/test-n-security-contracts.mjs \
+            qa/v18.3.6o/test-o-security-contracts.mjs \
+            | tee "$RUNNER_TEMP/p-predecessor.tap"
+          grep -q '^# tests 417$' "$RUNNER_TEMP/p-predecessor.tap"
+          grep -q '^# pass 417$' "$RUNNER_TEMP/p-predecessor.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/p-predecessor.tap"
+          echo V18_3_6P_PREDECESSOR_417_PASS
+      - name: P dual-signed private review gate, local GoTrue plan and synthetic attestation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6p/test-p-security.mjs | tee "$RUNNER_TEMP/p-new.tap"
+          grep -q '^# tests 98$' "$RUNNER_TEMP/p-new.tap"
+          grep -q '^# pass 98$' "$RUNNER_TEMP/p-new.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/p-new.tap"
+          echo V18_3_6P_SECURITY_CONTRACT_98_PASS
+      - name: Enforce offline-only source scope and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/v18.3.6p/';
+          const src=['private-secdef-review-gate.mjs','isolated-gotrue-harness-plan.mjs','auth-store-tx-attestation.mjs']
+            .map(x=>readFileSync(root+x,'utf8')).join('\n');
+          for(const pattern of [
+            /\bfetch\s*\(/,/\bhttps\.request\s*\(/,/\bexecSync\s*\(/,
+            /\bspawnSync\s*\(/,/\bcreateClient\s*\(/,
+            /\bpg_get_functiondef\s*\(/,
+            /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+            /SUPABASE_SERVICE_ROLE_KEY\s*=/,
+            /Bearer\s+eyJ[A-Za-z0-9_-]+/,
+          ]) if(pattern.test(src))throw Error('FORBIDDEN_LIVE_OR_SECRET_OPERATION');
+          const sql=readFileSync(root+'03_DISPOSABLE_PG17_TX_ATTESTATION.sql','utf8')
+            .split('\n').filter(line=>!line.trimStart().startsWith('--')).join('\n');
+          if(!sql.includes("tien404_v1836m_disposable"))throw Error('DISPOSABLE_DB_SCOPE_MISSING');
+          // Word boundary prevents falsely matching qa_m_auth.sessions.
+          // Strip SQL comments before checking for prohibited operations.
+          if(/\bauth\.sessions\b/i.test(sql)||/\b(pg_get_functiondef|prosrc|probin)\b/i.test(sql))
+            throw Error('REAL_AUTH_OR_FUNCTION_SOURCE_ACCESS_FORBIDDEN');
+          if(/^\s*(CREATE|ALTER|DROP|GRANT|REVOKE)\b/mi.test(sql))
+            throw Error('SCHEMA_WRITE_FORBIDDEN_IN_ATTESTATION');
+          console.log('V18_3_6P_OFFLINE_SCOPE_SCAN_PASS');
+          NODE
+  disposable-postgresql17-session-store:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout synthetic fixture only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build PostgreSQL 17.12 with pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.p" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+            postgresql-17-pgtap pgtap && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836p-pgtap -f "$RUNNER_TEMP/Dockerfile.p" "$RUNNER_TEMP"
+      - name: Start isolated disposable database with no network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836p-pg17 --network none \
+            -e POSTGRES_PASSWORD=synthetic_only tien404-v1836p-pgtap
+          for i in $(seq 1 50); do
+            if docker exec tien404-v1836p-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836p-pg17 pg_isready -U postgres
+          docker exec tien404-v1836p-pg17 psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c 'CREATE DATABASE tien404_v1836m_disposable;'
+      - name: Replay original M fixture and 53 pgTAP negative cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836p-pg17 psql -X -U postgres -d tien404_v1836m_disposable -v ON_ERROR_STOP=1 \
+            < qa/v18.3.6m/01_DISPOSABLE_AUTH_DELETE_LOCK.sql
+          docker exec -i tien404-v1836p-pg17 psql -X -U postgres -d tien404_v1836m_disposable -v ON_ERROR_STOP=1 \
+            < qa/v18.3.6m/02_DISPOSABLE_PGTAP_AUTH_RLS.sql | tee "$RUNNER_TEMP/p-m-pgtap.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/p-m-pgtap.tap"; then exit 1; fi
+          grep -q '^1\.\.53$' "$RUNNER_TEMP/p-m-pgtap.tap"
+          echo V18_3_6P_M_PG17_53_PASS
+      - name: Run P 17 post-delete Auth/Store/nonce transaction assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836p-pg17 psql -X -U postgres -d tien404_v1836m_disposable -v ON_ERROR_STOP=1 \
+            < qa/v18.3.6p/03_DISPOSABLE_PG17_TX_ATTESTATION.sql | tee "$RUNNER_TEMP/p-transaction.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/p-transaction.tap"; then exit 1; fi
+          grep -q '^1\.\.17$' "$RUNNER_TEMP/p-transaction.tap"
+          grep -q '^V18_3_6P_PG17_TX_ATTESTATION_DONE$' "$RUNNER_TEMP/p-transaction.tap"
+          echo V18_3_6P_PG17_TX_ATTESTATION_17_PASS
+      - name: Destroy disposable PostgreSQL container
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836p-pg17 >/dev/null 2>&1 || true
