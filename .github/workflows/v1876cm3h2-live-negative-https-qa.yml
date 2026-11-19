@@ -1,0 +1,22 @@
+name: TIEN404 M3-H2 Live HTTPS Negative Smoke (QA Canary Only)
+on:
+  push:
+    branches:
+      - work/v1876cm3h2-secret-binding-https-admission-prep
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/tests/live-negative-https-smoke.sh'
+      - 'experiments/v1876cm2-meta-ingress/tests/https-phase.txt'
+      - '.github/workflows/v1876cm3h2-live-negative-https-qa.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-qa-https-negative-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - name: Assert negative HTTPS responses without secrets
+        run: |
+          set -euo pipefail
+          phase=$(cat experiments/v1876cm2-meta-ingress/tests/https-phase.txt)
+          bash experiments/v1876cm2-meta-ingress/tests/live-negative-https-smoke.sh "$phase"
