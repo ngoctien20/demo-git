@@ -66,7 +66,7 @@ UPDATE qa1984.catalog_snapshots SET verified_at=statement_timestamp()+interval '
 SET ROLE qa_authenticated;
 SELECT qa1983.assert_count('future snapshot denied',
  (SELECT count(*) FROM qa1984.read_catalog('00000000-0000-0000-0000-000000000001',
- 'aaaaaaaa-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','F01')),0);
+ 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','F01')),0);
 
 RESET ROLE;
 UPDATE qa1984.catalog_snapshots SET verified_at=statement_timestamp()-interval '10 seconds',price_vnd=0
