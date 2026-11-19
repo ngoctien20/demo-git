@@ -1,0 +1,33 @@
+name: TIEN404 V18.7.6C-M3-H2 Secret and HTTPS Admission Offline QA
+on:
+  push:
+    branches:
+      - work/v1876cm3h2-secret-binding-https-admission-prep
+  pull_request:
+    branches:
+      - work/v1876cm3-meta-real-change-event-canary-offline
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm3h2-admission-offline-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  h2-no-live-secrets-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Refuse deployment or credential leakage in H2
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.jsonc
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+      - name: Check worker syntax and H2 synthetic tests
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/worker.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
