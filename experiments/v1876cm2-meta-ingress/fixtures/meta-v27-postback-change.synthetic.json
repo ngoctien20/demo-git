@@ -1,0 +1,32 @@
+{
+  "object": "page",
+  "entry": [
+    {
+      "id": "SYNTHETIC_PAGE_ONLY",
+      "changes": [
+        {
+          "field": "messaging_postbacks",
+          "value": {
+            "sender": {
+              "id": "SYNTHETIC_TEST_SENDER"
+            },
+            "recipient": {
+              "id": "SYNTHETIC_TEST_PAGE"
+            },
+            "timestamp": "SYNTHETIC_TIMESTAMP",
+            "postback": {
+              "mid": "SYNTHETIC_MESSAGE_ID",
+              "title": "QA_POSTBACK_ONLY",
+              "payload": "SYNTHETIC_PAYLOAD",
+              "referral": {
+                "ref": "SYNTHETIC_REF",
+                "source": "SHORT_URL",
+                "type": "OPEN_THREAD"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "checkpoint": "V18.7.6C-M3",
+  "observed_at_jst": "2026-11-19T19:52:39+09:00",
+  "source": "n8n real Published workflow read-only inspected execution metadata and minimal structural keys",
+  "workflow_id": "Z7FdV7uDvApfbURQ",
+  "execution_id": "5533",
+  "execution_status": "success",
+  "execution_mode": "webhook",
+  "signature_verification_node": "Verify Signature Timing-Safe",
+  "signature_verification_result": true,
+  "webhook_object": "page",
+  "container": "entry[].changes[]",
+  "observed_field": "messaging_postbacks",
+  "observed_value_keys": [
+    "postback",
+    "recipient",
+    "sender",
+    "timestamp"
+  ],
+  "observed_postback_referral": true,
+  "extract_messenger_text_output_items": 0,
+  "no_send_execution_observed_in_filtered_nodes": true,
+  "meta_test_button_causality_verified": false,
+  "page_level_subscribed_apps_verified": false,
+  "private_test_app_used": false,
+  "isolated_worker_hosted": false,
+  "real_store_authority_verified": false,
+  "source_payload_stored": false,
+  "customer_identifiers_stored": false,
+  "interpretation": "Valid signed Page webhook received by legacy Messenger route; likely Meta dashboard postback sample, not a verified real user chat or isolated canary"
+}

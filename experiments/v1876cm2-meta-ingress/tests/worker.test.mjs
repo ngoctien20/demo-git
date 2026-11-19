@@ -1,4 +1,5 @@
 import test from "node:test";
+import {readFileSync} from "node:fs";
 import assert from "node:assert/strict";
 import {createHmac} from "node:crypto";
 import worker,{WEBHOOK_PATH,MAX_BYTES,eventType,summarizePagePayload} from "../src/worker.mjs";
@@ -126,4 +127,108 @@ test("no AI tools, order writer or forwarding callable",async()=>{
  const out=(await call()).body;
  assert.equal(typeof out.send,"undefined");assert.equal(typeof out.createOrder,"undefined");
  assert.equal(typeof out.queryStore,"undefined");
+});
+
+
+// M3_CHANGE_ENVELOPE_REGRESSION — syntax verified from safe n8n #5533 structural metadata.
+const liveShapeFixture=JSON.parse(readFileSync(new globalThis.URL("../fixtures/meta-v27-postback-change.synthetic.json",import.meta.url),"utf8"));
+const recordedStructure=JSON.parse(readFileSync(new globalThis.URL("../evidence/execution-5533-minimal-observation.json",import.meta.url),"utf8"));
+const changeBody=(field,value)=>({object:"page",entry:[{id:"NEVER_EMIT_PAGE_ID",changes:[{field,value}]}]});
+test("M3 observed signed Page changes[] postback accepted without AI/send",async()=>{
+ const r=await call({object:liveShapeFixture});
+ assert.equal(r.response.status,200);
+ assert.equal(r.body.eventCount,1);
+ assert.deepEqual(r.body.eventTypes,{messaging_postbacks:1});
+ assert.equal(r.body.canSend,false);
+ assert.equal(r.body.canWrite,false);
+ assert.equal(r.body.canReadPrivateOrders,false);
+ assert.equal(r.body.actualMetaDeliveryVerified,false);
+});
+test("M3 real source evidence is structural, with no customer identifiers",()=>{
+ assert.equal(recordedStructure.execution_id,"5533");
+ assert.equal(recordedStructure.signature_verification_result,true);
+ assert.equal(recordedStructure.container,"entry[].changes[]");
+ assert.equal(recordedStructure.observed_field,"messaging_postbacks");
+ assert.equal(recordedStructure.extract_messenger_text_output_items,0);
+ assert.equal(recordedStructure.meta_test_button_causality_verified,false);
+ assert.equal(recordedStructure.private_test_app_used,false);
+ assert.equal(recordedStructure.source_payload_stored,false);
+});
+test("M3 fixture leaks no synthetic page, sender, mid or postback contents in reply",async()=>{
+ const r=await call({object:liveShapeFixture});
+ const output=JSON.stringify(r.body);
+ for(const value of ["SYNTHETIC_TEST_PAGE","SYNTHETIC_TEST_SENDER","SYNTHETIC_MESSAGE_ID","SYNTHETIC_PAYLOAD","SYNTHETIC_REF"])
+   assert.equal(output.includes(value),false);
+});
+for(const field of ["messages","message_reads","message_deliveries","message_echoes","messaging_handovers","messaging_referrals","messaging_optins","messaging_policy_enforcement","message_reactions","message_edits"]){
+ test("M3 signed Page change field "+field+" quarantines without forwarding",async()=>{
+  const r=await call({object:changeBody(field,{source:"SYNTHETIC_SAMPLE_ONLY",payload:"DO_NOT_ECHO"})});
+  assert.equal(r.response.status,200);
+  assert.equal(r.body.eventCount,1);
+  assert.equal(r.body.eventTypes[field],1);
+  assert.equal(r.body.canSend,false);
+  assert.equal(JSON.stringify(r.body).includes("DO_NOT_ECHO"),false);
+ });
+}
+test("M3 unknown Page change field is anonymized as unknown_page_change",async()=>{
+ const r=await call({object:changeBody("CUSTOMER_SENSITIVE_CUSTOM_FIELD",{anything:"DO_NOT_ECHO"})});
+ assert.equal(r.response.status,200);
+ assert.deepEqual(r.body.eventTypes,{unknown_page_change:1});
+ assert.equal(JSON.stringify(r.body).includes("CUSTOMER_SENSITIVE_CUSTOM_FIELD"),false);
+});
+test("M3 invalid postback change shape denied",async()=>{
+ const r=await call({object:changeBody("messaging_postbacks",{message:{text:"untrusted"}})});
+ assert.equal(r.response.status,422);
+});
+test("M3 changes list not an array denied",async()=>{
+ const r=await call({object:{object:"page",entry:[{changes:{field:"messaging_postbacks"}}]}});
+ assert.equal(r.response.status,422);
+});
+test("M3 empty postback change value denied",async()=>{
+ const r=await call({object:changeBody("messaging_postbacks",{})});
+ assert.equal(r.response.status,422);
+});
+test("M3 missing change field denied",async()=>{
+ const r=await call({object:{object:"page",entry:[{changes:[{value:{postback:{}}}]}]}});
+ assert.equal(r.response.status,422);
+});
+test("M3 missing change value denied",async()=>{
+ const r=await call({object:{object:"page",entry:[{changes:[{field:"messages"}]}]}});
+ assert.equal(r.response.status,422);
+});
+test("M3 malformed change item denied",async()=>{
+ const r=await call({object:{object:"page",entry:[{changes:[null]}]}});
+ assert.equal(r.response.status,422);
+});
+test("M3 overlarge changes[] batch denied",async()=>{
+ const r=await call({object:{object:"page",entry:[{changes:Array.from({length:61},()=>({field:"message_reads",value:{read:{}}}))}]}});
+ assert.equal(r.response.status,422);
+});
+test("M3 HMAC check applies to Page changes[] too",async()=>{
+ const original=Buffer.from(JSON.stringify(liveShapeFixture));
+ const sig="sha256="+createHmac("sha256",SECRET).update(original).digest("hex");
+ const changed=Buffer.from(JSON.stringify(changeBody("messaging_postbacks",{postback:{payload:"FAKE"}})));
+ const r=await call({raw:changed,signature:sig});
+ assert.equal(r.response.status,401);
+});
+test("M3 entry can contain messaging[] plus changes[] with safe aggregate counts",async()=>{
+ const r=await call({object:{object:"page",entry:[{
+  messaging:[msg({message:{text:"NO_ECHO"}})],
+  changes:[{field:"message_reads",value:{read:{watermark:123}}}]
+ }]}});
+ assert.equal(r.response.status,200);
+ assert.deepEqual(r.body.eventTypes,{message_reads:1,messages:1});
+ assert.equal(r.body.canSend,false);
+});
+test("M3 repeated sample never causes a send or order writer",async()=>{
+ const a=await call({object:liveShapeFixture}),b=await call({object:liveShapeFixture});
+ assert.equal(a.response.status,200);assert.equal(b.response.status,200);
+ assert.equal(a.body.canSend,false);assert.equal(b.body.canSend,false);
+ assert.equal(a.body.canWrite,false);assert.equal(b.body.canWrite,false);
+});
+test("M3 unknown Page changes do not claim verified Meta event delivery",async()=>{
+ const r=await call({object:changeBody("unknown_field",{any:"unknown"})});
+ assert.equal(r.body.actualMetaDeliveryVerified,false);
+ assert.equal(r.body.pageSubscriptionVerified,false);
+ assert.equal(r.body.storeVerified,false);
 });

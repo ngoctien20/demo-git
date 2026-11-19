@@ -1,0 +1,32 @@
+name: TIEN404 V18.7.6C-M3 Meta Signed Changes Envelope QA
+on:
+  push:
+    branches:
+      - work/v1876cm3-meta-real-change-event-canary-offline
+  pull_request:
+    branches:
+      - work/v1876cm2-isolated-meta-ingress-no-deploy
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm3-meta-changes-envelope-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  meta-change-envelope-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Assert no Worker production deployment config in this candidate
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.jsonc
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+      - name: Validate syntax and no-send event classifier
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/worker.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
