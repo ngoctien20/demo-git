@@ -1,0 +1,192 @@
+name: TIEN404 V18.3.6Q Approval GoTrue RPC Trust Negative QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836p-owner-review-gotrue-attestation-20261119
+    paths:
+      - "qa/v18.3.6q/**"
+      - ".github/workflows/tien404-v1836q-approval-gotrue-rpc.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836q-disposable-only
+  cancel-in-progress: true
+jobs:
+  offline-approval-and-runtime-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Inherited G through P offline regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            qa/v18.3.6l/test-security-architecture.mjs \
+            qa/v18.3.6m/test-crypto-grant-compatibility.mjs \
+            qa/v18.3.6n/test-n-security-contracts.mjs \
+            qa/v18.3.6o/test-o-security-contracts.mjs \
+            qa/v18.3.6p/test-p-security.mjs \
+            | tee "$RUNNER_TEMP/q-prev.tap"
+          grep -q '^# tests 515$' "$RUNNER_TEMP/q-prev.tap"
+          grep -q '^# pass 515$' "$RUNNER_TEMP/q-prev.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/q-prev.tap"
+          echo V18_3_6Q_PREDECESSOR_515_PASS
+      - name: Q review intake runtime gate and public fixture HMAC 84 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6q/test-q-security.mjs | tee "$RUNNER_TEMP/q-new.tap"
+          grep -q '^# tests 84$' "$RUNNER_TEMP/q-new.tap"
+          grep -q '^# pass 84$' "$RUNNER_TEMP/q-new.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/q-new.tap"
+          echo V18_3_6Q_SECURITY_84_PASS
+      - name: Offline/no-production-scope static inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/v18.3.6q/';
+          const modules=['private-approval-intake.mjs','gotrue-runtime-admission.mjs',
+              'rpc-proof-fixture.mjs'].map(x=>readFileSync(root+x,'utf8')).join('\n');
+          const schema=readFileSync(root+'01_DISPOSABLE_PG17_SIGNED_RPC.sql','utf8');
+          const noComment=schema.split('\n').filter(l=>!l.trimStart().startsWith('--')).join('\n');
+          if(!noComment.includes("current_database()<>'tien404_v1836m_disposable'")||
+             !noComment.includes('DISPOSABLE_ONLY'))
+             throw Error('ISOLATED_DISPOSABLE_GUARD_REQUIRED');
+          if(/^\s*(GRANT|REVOKE|ALTER|CREATE)\s+(?:.*\s+)?(?:public\.|auth\.|storage\.)/mi.test(noComment))
+             throw Error('REAL_SCHEMA_MUTATION_FORBIDDEN');
+          if(/\b(auth\.sessions|pg_get_functiondef|prosrc|probin)\b/i.test(noComment))
+             throw Error('REAL_AUTH_OR_SOURCE_READ_FORBIDDEN');
+          if(!modules.includes('productionAdmitted:false')||
+             !modules.includes('publicFixtureSecret:true'))
+             throw Error('PRODUCTION_CUSTODY_DENIAL_MISSING');
+          for(const pattern of [/\bfetch\s*\(/,/\bcreateClient\s*\(/,
+              /\bexecSync\s*\(/,/\bspawnSync\s*\(/,
+              /SUPABASE_SERVICE_ROLE_KEY\s*=/,
+              /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/])
+             if(pattern.test(modules))throw Error('Q_LIVE_API_OR_SECRET_CODE');
+          console.log('V18_3_6Q_SOURCE_SCOPE_AUDIT_PASS');
+          NODE
+  disposable-postgresql17-signed-rpc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout synthetic fixtures only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build disposable PostgreSQL 17.12 with pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.q" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+            postgresql-17-pgtap pgtap && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836q-pg17 -f "$RUNNER_TEMP/Dockerfile.q" "$RUNNER_TEMP"
+      - name: Launch private PostgreSQL with zero network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836q-db --network none \
+            -e POSTGRES_PASSWORD=synthetic_only tien404-v1836q-pg17
+          for i in $(seq 1 50); do
+            if docker exec tien404-v1836q-db pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836q-db pg_isready -U postgres
+          docker exec tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836m_disposable;'
+      - name: Replay M fixture and 53 PG17 pgTAP assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < qa/v18.3.6m/01_DISPOSABLE_AUTH_DELETE_LOCK.sql
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < qa/v18.3.6m/02_DISPOSABLE_PGTAP_AUTH_RLS.sql | tee "$RUNNER_TEMP/q-m.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/q-m.tap"; then exit 1; fi
+          grep -q '^1\.\.53$' "$RUNNER_TEMP/q-m.tap"
+          echo V18_3_6Q_M_PG17_53_PASS
+      - name: Replay P additional 17 PG17 attestation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < qa/v18.3.6p/03_DISPOSABLE_PG17_TX_ATTESTATION.sql | tee "$RUNNER_TEMP/q-p.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/q-p.tap"; then exit 1; fi
+          grep -q '^1\.\.17$' "$RUNNER_TEMP/q-p.tap"
+          echo V18_3_6Q_P_PG17_17_PASS
+      - name: Apply Q synthetic narrow RPC schema and assert 30 ACL checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < qa/v18.3.6q/01_DISPOSABLE_PG17_SIGNED_RPC.sql
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < qa/v18.3.6q/02_DISPOSABLE_PG17_ACL_PGTAP.sql | tee "$RUNNER_TEMP/q-acl.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/q-acl.tap"; then exit 1; fi
+          grep -q '^1\.\.30$' "$RUNNER_TEMP/q-acl.tap"
+          echo V18_3_6Q_PRIVATE_RPC_ACL_30_PASS
+      - name: Node to PostgreSQL 17 canonical HMAC interoperability 22 signed vectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/v18.3.6q/generate-disposable-pg17-vectors.mjs > "$RUNNER_TEMP/q-node-vectors.sql"
+          docker exec -i tien404-v1836q-db psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836m_disposable \
+            < "$RUNNER_TEMP/q-node-vectors.sql" | tee "$RUNNER_TEMP/q-vectors.tap"
+          if grep -E '^[[:space:]]*not ok [0-9]+|# Looks like you failed' "$RUNNER_TEMP/q-vectors.tap"; then exit 1; fi
+          grep -q '^1\.\.22$' "$RUNNER_TEMP/q-vectors.tap"
+          grep -q '^V18_3_6Q_NODE_PG_HMAC_VECTORS_DONE$' "$RUNNER_TEMP/q-vectors.tap"
+          echo V18_3_6Q_NODE_PG17_HMAC_22_PASS
+      - name: Concurrent Node-signed RPC replay across two PostgreSQL sessions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/v18.3.6q/generate-concurrent-signed-call.mjs > "$RUNNER_TEMP/q-concurrent.sql"
+          for n in 1 2; do
+            docker exec -i tien404-v1836q-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+              -d tien404_v1836m_disposable \
+              < "$RUNNER_TEMP/q-concurrent.sql" > "$RUNNER_TEMP/q-concurrent-$n.log" 2>&1 &
+            if test "$n" = 1; then P1=$!; else P2=$!; fi
+          done
+          wait "$P1"
+          wait "$P2"
+          grep -q '^ALLOW_CATALOG        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836q-db >/dev/null 2>&1 || true
+ "$RUNNER_TEMP"/q-concurrent-*.log
+          grep -q '^REPLAY        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836q-db >/dev/null 2>&1 || true
+ "$RUNNER_TEMP"/q-concurrent-*.log
+          test "$(cat "$RUNNER_TEMP"/q-concurrent-*.log | grep -c '^ALLOW_CATALOG        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836q-db >/dev/null 2>&1 || true
+ || true)" = 1
+          test "$(cat "$RUNNER_TEMP"/q-concurrent-*.log | grep -c '^REPLAY        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836q-db >/dev/null 2>&1 || true
+ || true)" = 1
+          COUNT=$(docker exec tien404-v1836q-db psql -X -At -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SELECT count(*) FROM qa_m_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000009720';")
+          test "$COUNT" = 1
+          echo V18_3_6Q_SIGNED_CONCURRENT_RPC_REPLAY_PASS
+      - name: Remove disposable PostgreSQL
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836q-db >/dev/null 2>&1 || true
