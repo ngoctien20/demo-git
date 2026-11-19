@@ -11,7 +11,7 @@ Supabase Auth JWTs are stateless. `getClaims()` verifies a token signature and e
 - https://supabase.com/docs/guides/auth/server-side/advanced-guide
 - https://supabase.com/docs/guides/auth/jwts
 
-**Connected staging evidence:** project `ifxlvrhyjhbzbrkdsida`, PostgreSQL 17.11, 0 canonical `stores`/`store_memberships` tables, 0 `store_id` across six Commerce tables, 0 restrictive Store policies. No actual Auth session, identity or token was accessed.
+**Connected staging evidence (metadata-only verified 2026-11-19 JST):** project `ifxlvrhyjhbzbrkdsida`, PostgreSQL 17.11; the `auth.sessions` PostgreSQL relation **exists (1)**. There are 0 canonical `stores`/`store_memberships` tables, 0 `store_id` across six Commerce tables, 0 restrictive Store policies. **Existence of the relation does not establish safe access grants, permitted locking, Auth deletion timing or user/session validity.** No actual Auth session row, identity or token was accessed.
 
 ## Alternatives and disposition
 
