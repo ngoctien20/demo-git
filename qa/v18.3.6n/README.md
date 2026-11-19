@@ -14,6 +14,7 @@
 - `crypto-trust-boundary.mjs`: **design decision** for private Node-native Ed25519 verification + protected same-PG Auth/Store transaction, while **keeping the DB RPC signer/verifier mechanism undecided** until key custody and SQL privilege review.
 - `test-n-security-contracts.mjs`: 64 offline negative/test-case assertions, including an all-true metadata fixture that can NEVER mark production permitted.
 - `REVIEW_AUTHORIZATION_REQUEST.md`, `REAL_AUTH_DELETE_SEMANTICS_CONTRACT.md`, `CRYPTO_TRUST_BOUNDARY_DECISION.md`, `RISK_REGISTER_V18_3_6N.md` and checkpoint. No secrets or real session IDs.
+- `STAGING_SECURITY_ADVISOR_SNAPSHOT.md`: read-only Supabase linter snapshot (WARN SECDEF anon 1, authenticated 2, leaked password protection 1; INFO RLS-without-policy 23); no change applied.
 - Dedicated GitHub Actions: G/H/I/K/L predecessor Node **245**, M crypto/privilege **29**, N security contract **64** = **338 offline assertions**. This stage does not re-run M PG17 SQL because those disposable lock races were already verified on M final HEAD and N does not alter their SQL.
 
 ## Things NOT done
