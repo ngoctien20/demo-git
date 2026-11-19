@@ -12,6 +12,7 @@ on:
       - 'qa/store-authority-v18610/**'
       - 'qa/store-authority-v18611/**'
       - 'qa/store-authority-v18614/**'
+      - 'qa/store-authority-v18615/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -25,6 +26,7 @@ on:
       - 'qa/store-authority-v18610/**'
       - 'qa/store-authority-v18611/**'
       - 'qa/store-authority-v18614/**'
+      - 'qa/store-authority-v18615/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -124,6 +126,10 @@ jobs:
           node --test qa/store-authority-v18611/hosted-http-gate.test.cjs
           node -e "const c=require('./qa/store-authority-v18611/hosted-http-gate.cjs').CHECKS;if(c.length!==11||c.some(x=>x.base!=='https://tien404-data-staging.onrender.com'&&x.base!=='https://tien404-auth-staging.onrender.com'))process.exit(1)"
 
+      - name: V18.6.15 owner-only linked export offline guard tests (NO LIVE)
+        run: |
+          node --test qa/store-authority-v18615/owner-linked-export.test.cjs
+          node qa/store-authority-v18615/owner-linked-export.cjs --help
       - name: V18.6.14 Disposable logical backup and restore (PG17 NO LIVE)
         env:
           V18614_DISPOSABLE_RESTORE: 'true'
