@@ -55,6 +55,8 @@ GRANT SELECT ON qa1984.catalog_snapshots TO qa_authenticated;
 
 CREATE FUNCTION qa1984.read_catalog(p_tenant uuid,p_store uuid,p_sku text)
 RETURNS TABLE (
+ tenant_id uuid,
+ store_id uuid,
  sku text,
  price_vnd bigint,
  stock_on_hand integer,
@@ -65,7 +67,7 @@ RETURNS TABLE (
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path=pg_catalog
 AS $$
- SELECT s.sku,s.price_vnd,s.stock_on_hand,s.verified_at,'VND'::text,s.source_revision
+ SELECT s.tenant_id,s.store_id,s.sku,s.price_vnd,s.stock_on_hand,s.verified_at,'VND'::text,s.source_revision
  FROM qa1984.catalog_snapshots s
  WHERE s.tenant_id=p_tenant AND s.store_id=p_store AND s.sku=p_sku
  AND p_sku ~ '^[A-Z][A-Z0-9-]{1,20}$'
