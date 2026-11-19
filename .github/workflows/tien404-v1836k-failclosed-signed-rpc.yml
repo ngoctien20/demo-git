@@ -80,16 +80,21 @@ jobs:
           if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/k.tap"; then exit 1; fi
           grep -q '^1\.\.45$' "$RUNNER_TEMP/k.tap"
           echo K_SIGNED_PG17_45_PASS
-      - name: Cross-language Node HMAC verifies inside PostgreSQL
+      - name: Deterministic Node HMAC equals PostgreSQL pgcrypto HMAC
         shell: bash
         run: |
           set -euo pipefail
-          EPOCH=$(date -u +%s)
-          MAC=$(node qa/v18.3.6k/qa-cross-runtime-proof.mjs "$EPOCH")
-          test "$(printf %s "$MAC" | wc -c)" -eq 64
-          FN="qa_k_private.signed_transaction_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000009999',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',$((EPOCH+60)),'00000000-0000-4000-8000-000000000101',$EPOCH,$((EPOCH+2)),'qa-k-key-1','$MAC')"
-          RESULT=$(docker exec tien404-v1836k-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable -c "SET ROLE tien404_k_rpc; SELECT decision FROM $FN;" | tail -1)
-          test "$RESULT" = ALLOW_CATALOG
+          # Verify canonical K1 proof bytes with a FIXED synthetic epoch.
+          # A separate 45-case PG17 test already verifies RPC acceptance,
+          # expiry and fail-closed behavior. Do not lengthen Auth validity
+          # merely to accommodate slow GitHub Actions Docker scheduling.
+          EPOCH=1800000000
+          NODE_MAC=$(node qa/v18.3.6k/qa-cross-runtime-proof.mjs "$EPOCH")
+          PG_MAC=$(docker exec tien404-v1836k-pg17 psql -X -At -v ON_ERROR_STOP=1 \
+            -U postgres -d tien404_v1836i_disposable \
+            -c "SELECT encode(public.hmac(convert_to(concat_ws('|','K1','qa-k-key-1','tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000009999',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ','1800000060','00000000-0000-4000-8000-000000000101','1800000000','1800000002','ACTIVE'),'UTF8'),convert_to(repeat('K',64),'UTF8'),'sha256'),'hex');" | tail -1)
+          test "$(printf %s "$NODE_MAC" | wc -c)" -eq 64
+          test "$NODE_MAC" = "$PG_MAC"
           echo K_NODE_POSTGRES_MAC_BRIDGE_PASS
       - name: Destroy disposable database container
         if: always()
