@@ -1,4 +1,4 @@
-name: V18.6.3–9 Store Authority and Active Zalo RPC Caller NO LIVE
+name: V18.6.3–10 Store Authority and Full n8n Static RPC Scan NO LIVE
 on:
   push:
     paths:
@@ -9,6 +9,7 @@ on:
       - 'qa/store-authority-v1867/**'
       - 'qa/store-authority-v1868/**'
       - 'qa/store-authority-v1869/**'
+      - 'qa/store-authority-v18610/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - 'qa/store-authority-v1867/**'
       - 'qa/store-authority-v1868/**'
       - 'qa/store-authority-v1869/**'
+      - 'qa/store-authority-v18610/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -90,3 +92,8 @@ jobs:
           node --test qa/store-authority-v1869/revocation-admission.test.cjs
           node qa/store-authority-v1869/revocation-admission.cjs
           node -e "const x=require('./qa/store-authority-v1869/revocation-admission.cjs').assessBundled();if(x.status!=='NO_GO'||x.activeRpcRevocationAllowed||x.storeSchemaMigrationAllowed||x.publishN8nAllowed||x.productionReady)process.exit(1)"
+      - name: V18.6.10 Complete current n8n static RPC audit and backup NO-GO
+        run: |
+          node --test qa/store-authority-v18610/decision-gate.test.cjs
+          node qa/store-authority-v18610/decision-gate.cjs
+          node -e "const x=require('./qa/store-authority-v18610/decision-gate.cjs').assessBundled();if(x.status!=='NO_GO'||x.n8nCurrentListStaticCoverage!==171||x.revokeZaloRpcAnonExecuteAllowed||x.applySupabaseMigrationAllowed||x.rewirePublishedMessengerAllowed||x.realOwnerAbUatApproved||x.productionReady)process.exit(1)"
