@@ -161,10 +161,11 @@ test("logs stay disabled if no opt-in even when logger throws",()=>{
  const s=recordQaPostReceipt(QA,{httpStatus:200,decision:"ACCEPTED"},()=>{throw Error("should not run")});
  assert.equal(s,false);
 });
-test("logging exception cannot impact Messenger webhook request",()=>{
+test("logging exception cannot impact Messenger webhook request",async()=>{
  const previous=console.info;console.info=()=>{throw new Error("logger unavailable");};
  try{
-  return worker.fetch(POST(),LOGGED).then(r=>assert.equal(r.status,200));
+  const r=await worker.fetch(POST(),LOGGED);
+  assert.equal(r.status,200);
  }finally{console.info=previous;}
 });
 test("returned decision object contains only documented allowlist properties",()=>{
