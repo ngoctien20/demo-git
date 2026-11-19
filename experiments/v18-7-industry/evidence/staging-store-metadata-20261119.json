@@ -1,0 +1,75 @@
+{
+  "schema_version": "V18.7.6A",
+  "observed_date": "2026-11-19",
+  "scope": "staging read-only catalog metadata; no rows or tokens",
+  "canonical_stores": false,
+  "canonical_store_memberships": false,
+  "tables": {
+    "products": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    },
+    "orders": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    },
+    "order_items": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    },
+    "customers": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    },
+    "conversations": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    },
+    "messages": {
+      "tenant": true,
+      "store": false,
+      "rls": true,
+      "force_rls": true
+    }
+  },
+  "legacy": {
+    "tenant_memberships_key": "tenant_id,user_id",
+    "agent_config_key": "tenant_id,channel",
+    "product_sku_key": "tenant_id,sku",
+    "order_customer_fk": "tenant_id,customer_id",
+    "item_order_fk": "tenant_id,order_id",
+    "item_product_fk": "tenant_id,product_id",
+    "message_conversation_fk": "tenant_id,conversation_id"
+  },
+  "security": {
+    "store_rls_verified": false,
+    "definer_rpc_review_pending": true,
+    "anon_executable_definers": 1,
+    "authenticated_executable_definers": 2
+  },
+  "evidence": {
+    "real_owner_a_jwt": false,
+    "real_owner_b_jwt": false,
+    "same_tenant_store_ac_rls": false,
+    "cross_tenant_store_b_rls": false,
+    "migration_approved": false,
+    "rollback_tested": false,
+    "page_authority_verified": false,
+    "commerce_core_contract_reconciled": false
+  },
+  "dependency_prs": [
+    420,
+    422,
+    443
+  ]
+}
