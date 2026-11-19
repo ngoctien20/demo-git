@@ -13,7 +13,7 @@
 - `test-fail-closed-signed-rpc.mjs` — 30 offline tests for signature, replay, wrong Store, external revocation, dependency outage, stale/forged verdict, HMAC and privilege boundaries.
 - `01_PG17_SIGNED_RPC.sql` — disposable PG17 private HMAC verifier using `pgcrypto`, a private synthetic signer registry, and K-specific NOLOGIN EXECUTE-only role. It closes I and J older synthetic EXECUTE grants to prevent a bypass path. After proof verification, it invokes J's transaction-bound catalog read including membership/session locks and nonce consumption within the **same transaction**.
 - `02_PGTAP_SIGNED_RPC.sql` — 45 actual PG17 assertions including old route revocation, key ACLs, forged proof, expired Auth proof, Store A/B isolation and replay.
-- `qa-cross-runtime-proof.mjs` — CI-only Node-generated HMAC fixture consumed by actual PostgreSQL RPC to verify matching canonical representation.
+- `qa-cross-runtime-proof.mjs` — CI-only Node-generated HMAC fixture. Final CI compares its canonical digest byte-for-byte against PostgreSQL pgcrypto using a fixed synthetic timestamp; the 45 separate pgTAP assertions exercise actual signed RPC acceptance and short-lived Auth proof rejection.
 - Dedicated GitHub Actions: GHI 164 Node assertions, J 50 PG17 assertions, K 30 Node assertions, K 45 PG17 assertions, Node↔PostgreSQL HMAC proof bridge.
 - `AUTH_REVOCATION_PRODUCTION_GATE.md` — explicit remaining P0 risk and independent-review requirements.
 
