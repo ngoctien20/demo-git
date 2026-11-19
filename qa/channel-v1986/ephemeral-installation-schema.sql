@@ -7,6 +7,11 @@ CREATE SCHEMA qa1986;
 CREATE ROLE qa1986_verifier NOLOGIN;
 GRANT USAGE ON SCHEMA qa1983,qa1986 TO qa1986_verifier;
 GRANT SELECT ON qa1983.stores,qa1983.tenant_memberships,qa1983.store_memberships TO qa1986_verifier;
+-- Prior fixture memberships have RLS: explicitly admit ONLY the synthetic internal verifier role.
+CREATE POLICY qa1986_verifier_tenant ON qa1983.tenant_memberships
+ FOR SELECT TO qa1986_verifier USING(true);
+CREATE POLICY qa1986_verifier_store ON qa1983.store_memberships
+ FOR SELECT TO qa1986_verifier USING(true);
 GRANT EXECUTE ON FUNCTION qa1983.assert_count(text,bigint,bigint) TO qa1986_verifier;
 
 CREATE TABLE qa1986.bot_installations (
