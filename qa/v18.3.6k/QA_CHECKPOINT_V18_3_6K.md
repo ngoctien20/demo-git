@@ -17,7 +17,8 @@
 - **J** actual PostgreSQL 17.12 same-transaction catalog read regression **50/50 PASS**.
 - **K** actual PostgreSQL 17.12 signed RPC, key-grant isolation, expiry and revocation tests **45/45 PASS**.
 - **TOTAL 289/289 numbered assertions PASS**.
-- Node-generated synthetic HMAC accepted by the actual PG17 K RPC **1/1 PASS**.
+- Initial CI #44496366238: Node-generated synthetic HMAC accepted by the actual PG17 K RPC **1/1 PASS**.
+- Follow-up run #44496743064: 289/289 PASS, but the cross-language RPC probe was **flaky** because its 2–3-second simulated Auth verdict expired during Docker/psql startup. No security TTL was relaxed. Final CI now compares a **fixed-epoch Node HMAC against PostgreSQL pgcrypto bytes**, while the 45 pgTAP cases separately exercise real RPC verification/expiry. This correction requires final-HEAD CI reacceptance.
 - Verified log markers: `K_GHI_164_PASS`, `K_OFFLINE_30_PASS`, `K_J_PG17_50_PASS`, `K_SIGNED_PG17_45_PASS`, `K_NODE_POSTGRES_MAC_BRIDGE_PASS`.
 - No failed Node assertion, pgTAP `not ok`, pgTAP failure summary or SQL ERROR seen in successful job logs.
 - Disposable PostgreSQL Docker container `tien404-v1836k-pg17` started with `--network none`, no exposed port and removed after CI.
