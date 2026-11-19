@@ -1,0 +1,63 @@
+name: TIEN404 V19.0-B7-S2 - Versioned Store Product Writer QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b7-s2-versioned-store-product-writer-disposable-20261119
+    paths:
+      - qa/v19-webhook/b7-s2/**
+      - .github/workflows/v19-b7-s2-versioned-rpc-store-writer-disposable-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/b7-s2/**
+      - .github/workflows/v19-b7-s2-versioned-rpc-store-writer-disposable-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg17-versioned-rpc-rehearsal:
+    name: B7-S2 synthetic PostgreSQL17 Store-aware versioned RPC, no live database
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGDATABASE: b7s2_disposable
+      PGUSER: postgres
+      PGPASSWORD: b7s2-synthetic-ci-local-only
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: b7s2_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: b7s2-synthetic-ci-local-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d b7s2_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify immutable V19 B2 deployed Worker snapshot
+        run: test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: B7-S2 Store-scoped versioned RPC candidate and negative QA
+        run: |
+          psql --version
+          psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_versioned_store_writer_qa.sql
+      - name: B7-S2 transaction rollback rehearsal
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_rollback_transaction_qa.sql
+      - name: Preserve B7-S1 six-table compatibility regression
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s1/tests/pg17_six_table_store_compat.sql
+      - name: Prohibit hosted deployment or migration artifacts
+        run: |
+          test ! -e qa/v19-webhook/b7-s2/wrangler.toml
+          test ! -e qa/v19-webhook/b7-s2/wrangler.jsonc
+          test ! -e qa/v19-webhook/b7-s2/.env
+          test ! -e qa/v19-webhook/b7-s2/supabase/migrations
+          echo "V19 B7-S2 only disposable PostgreSQL 17 service. No real Supabase, Render, n8n or Cloudflare mutation."
