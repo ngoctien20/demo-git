@@ -1,0 +1,55 @@
+name: "TIEN404 V19.8.3 Ephemeral PostgreSQL Store RLS UAT"
+
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v1983/**"
+      - ".github/workflows/tien404-v1983-ephemeral-postgres-rls.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ephemeral-postgres-store-rls:
+    name: "Postgres 17 / one tenant two stores / no live services"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral_qa_only
+          POSTGRES_DB: tien404_v1983_ephemeral
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tien404_v1983_ephemeral"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ephemeral_qa_only
+      PGDATABASE: tien404_v1983_ephemeral
+    steps:
+      - name: Checkout only PR content
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Guard no Supabase connection or secrets
+        run: |
+          test "$PGHOST" = "localhost"
+          test "$PGDATABASE" = "tien404_v1983_ephemeral"
+          test ! -e qa/channel-v1983/hosted-migration.sql
+      - name: Create disposable same-tenant Store A/B fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/channel-v1983/ephemeral-postgres-schema.sql
+      - name: Real PostgreSQL RLS allow/deny and cross-Store FK QA
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/channel-v1983/ephemeral-postgres-acceptance.sql
