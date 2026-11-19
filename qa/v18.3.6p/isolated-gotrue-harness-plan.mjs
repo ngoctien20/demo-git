@@ -28,7 +28,7 @@ export function checkLocalHarnessBlueprint(x){
    failures.push('OFFLINE_IMAGE_CACHE_PREFLIGHT');
  if(p.privateLocalCredentialStore!==true||p.tokenLogRedaction!==true)
    failures.push('CREDENTIAL_REDACTION');
- if(p.noRealOwners===false||p.syntheticDataOnly!==true||
+ if(p.noRealOwners!==true||p.syntheticDataOnly!==true||
     p.noStagingVolumes!==true)
    failures.push('SYNTHETIC_ISOLATION_ONLY');
  if(p.sameDatabaseForAuthAndStore!==true)
