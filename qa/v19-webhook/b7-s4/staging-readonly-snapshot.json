@@ -1,0 +1,117 @@
+{
+  "snapshot_id": "V19_B7_S4_STAGING_METADATA_READONLY_20261119",
+  "inspection_date_jst": "2026-11-19",
+  "source": "Supabase connector SELECT only; includes metadata and aggregate counts, no raw record or Auth IDs",
+  "project_ref": "ifxlvrhyjhbzbrkdsida",
+  "postgres_major": 17,
+  "canonical_design_pr": 417,
+  "parent_qa_pr": 452,
+  "tables": [
+    {
+      "name": "products",
+      "row_count": 2,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    },
+    {
+      "name": "orders",
+      "row_count": 2,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    },
+    {
+      "name": "customers",
+      "row_count": 0,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    },
+    {
+      "name": "order_items",
+      "row_count": 0,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    },
+    {
+      "name": "conversations",
+      "row_count": 0,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "has_channel_installation_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    },
+    {
+      "name": "messages",
+      "row_count": 0,
+      "has_tenant_id": true,
+      "has_store_id": false,
+      "rls_enabled": true,
+      "force_rls": true,
+      "permissive_policy_count": 1,
+      "restrictive_policy_count": 0
+    }
+  ],
+  "registry": {
+    "public_stores": false,
+    "public_store_memberships": false,
+    "app_private_store_channel_installations": false
+  },
+  "rpc_v1": {
+    "name": "public.save_merchant_product",
+    "exists": true,
+    "security_definer": true,
+    "owner_role": "postgres",
+    "search_path_pinned": true,
+    "actor_via_auth_uid": true,
+    "store_scoped": false,
+    "authenticated_exec": true,
+    "anon_exec": false
+  },
+  "constraints": {
+    "tenant_sku_unique": true,
+    "store_composite_fk_present": false,
+    "store_scope_immutability_verified": false
+  },
+  "caller_inventory": {
+    "github_gh_pages_bounded_scan_files": 37,
+    "github_direct_matches": 0,
+    "n8n_selected_workflows": 17,
+    "n8n_direct_matches": 0,
+    "render_workspace_selected_by_user": false,
+    "render_services_audited": false,
+    "external_callers_closed": false,
+    "runtime_rpc_callers_closed": false
+  },
+  "trusted_owner_ab": {
+    "real_jwt_A_tested": false,
+    "real_jwt_B_tested": false,
+    "same_tenant_distinct_store_mapping_proven": false,
+    "positive_and_negative_store_RLS_tested": false
+  },
+  "approvals": {
+    "staging_schema_write_approved": false,
+    "verified_backup_restore": false,
+    "sku_decision_D02_approved": false,
+    "independent_security_review": false,
+    "real_payload_or_customer_data_approved": false
+  },
+  "interpretation": "NOT_READY_FOR_STAGING_MIGRATION; no actual credential, real Auth JWT or record-level Store mapping examined"
+}
