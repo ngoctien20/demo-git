@@ -1,4 +1,4 @@
-name: V18.6.3–14 Store Authority QA + Disposable Backup Restore + Hosted GET
+name: V18.6.3–16 Store Authority QA + Disposable Restore + Windows Offline Preflight + Hosted GET
 on:
   push:
     paths:
@@ -152,3 +152,20 @@ jobs:
           node-version: '22'
       - name: V18.6.11B real Render staging HTTP GET without login or write
         run: node qa/store-authority-v18611/hosted-http-gate.cjs
+
+  windows-owner-backup-preflight-offline:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V18.6.16 test Windows filesystem guards (NO Supabase credentials)
+        shell: pwsh
+        run: node --test qa/store-authority-v18615/owner-linked-export.test.cjs
+      - name: V18.6.16 Windows offline preflight and CI export refusal
+        shell: pwsh
+        run: node qa/store-authority-v18615/windows-preflight-smoke.cjs

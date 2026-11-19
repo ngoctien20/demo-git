@@ -14,8 +14,30 @@ const { stdin, stdout } = require('node:process');
 const EXPECTED_REF = 'ifxlvrhyjhbzbrkdsida'; // project ID is not a credential
 const ACK = 'TIEN404_APPROVE_PRIVATE_EXPORT_STAGING_ONLY';
 const DUMP_FILES = Object.freeze(['roles.sql', 'schema.sql', 'data.sql']);
-const BLOCKED_PATH = /(^|[\\/])(OneDrive|Dropbox|Google Drive|GoogleDrive|iCloudDrive|AppData|\.git|node_modules)([\\/]|$)/i;
-function isWithin(child,parent) { return child === parent || child.startsWith(parent + path.sep); }
+// Block common cloud-sync, downloads, temporary and OS-managed locations; these names
+// are only a conservative screen, not proof of drive encryption or no sync agents.
+const BLOCKED_SEGMENT = /^(?:onedrive(?:[- _].*)?|dropbox(?:[- _].*)?|google ?drive(?:[- _].*)?|icloud ?drive(?:[- _].*)?|appdata|programdata|downloads|windows|system32|temp|tmp|\.git|node_modules)$/i;
+function isWithin(child,parent,platform=process.platform) {
+  const platformPath=platform==='win32'?path.win32:path;
+  const normalize=x=>{const v=platformPath.normalize(x);return platform==='win32'?v.toLowerCase():v;};
+  const a=normalize(child),b=normalize(parent);
+  return a===b || a.startsWith(b.endsWith(platformPath.sep)?b:b+platformPath.sep);
+}
+function blockedPathSegment(target) {
+  // Split only canonical resolved paths; never assume a clear-looking alias is safe.
+  return target.split(/[\\/]+/).some(part=>BLOCKED_SEGMENT.test(part));
+}
+function isGitCheckoutOrWorktree(target,fsApi=fs) {
+  let current=target;
+  while(true){
+    // Handles a normal checkout (.git folder) and Git worktrees (.git file).
+    if(fsApi.existsSync(path.join(current,'.git')))return true;
+    const parent=path.dirname(current);
+    if(parent===current)return false;
+    current=parent;
+  }
+}
+
 function parseArgs(args) {
   const out = { execute: false, help: false };
   for (let i=0;i<args.length;i++) {
@@ -33,9 +55,13 @@ function parseArgs(args) {
 function preflight(opts,{fsApi=fs, env=process.env}={}) {
   if (!opts || !opts.projectRoot || !opts.outputDir) throw Error('PROJECT_ROOT_AND_OUTPUT_REQUIRED');
   if (!path.isAbsolute(opts.projectRoot)||!path.isAbsolute(opts.outputDir)) throw Error('ABSOLUTE_PATHS_REQUIRED');
+  // Refuse symlink/junction on the selected destination to reduce swap/redirect risk.
+  if(fsApi.lstatSync(opts.outputDir).isSymbolicLink())throw Error('OUTPUT_LINK_NOT_ALLOWED');
   const project=fsApi.realpathSync(opts.projectRoot), output=fsApi.realpathSync(opts.outputDir);
-  if (project===output || isWithin(output,project)||isWithin(project,output)) throw Error('EXPORT_MUST_BE_OUTSIDE_PROJECT');
-  if (BLOCKED_PATH.test(output)) throw Error('SYNC_OR_SYSTEM_FOLDER_FORBIDDEN');
+  if (isWithin(output,project)||isWithin(project,output)) throw Error('EXPORT_MUST_BE_OUTSIDE_PROJECT');
+  if (blockedPathSegment(output)) throw Error('SYNC_OR_SYSTEM_FOLDER_FORBIDDEN');
+  if (output===path.parse(output).root)throw Error('VOLUME_ROOT_EXPORT_FORBIDDEN');
+  if (isGitCheckoutOrWorktree(output,fsApi))throw Error('GIT_CHECKOUT_FORBIDDEN');
   if (!fsApi.statSync(project).isDirectory()||!fsApi.statSync(output).isDirectory())throw Error('NOT_DIRECTORIES');
   const marker=path.join(project,'supabase','.temp','project-ref');
   if (!fsApi.existsSync(path.join(project,'supabase','config.toml')))throw Error('SUPABASE_LOCAL_CONFIG_NOT_FOUND');
@@ -54,7 +80,15 @@ function dumpCommands(output) {
     ['db','dump','--linked','-f',path.join(output,DUMP_FILES[2]),'--use-copy','--data-only','-x','storage.buckets_vectors','-x','storage.vector_indexes']
   ]);
 }
-function sha256(file,fsApi=fs) {return crypto.createHash('sha256').update(fsApi.readFileSync(file)).digest('hex');}
+function sha256(file,fsApi=fs) {
+  // Constant-memory SHA256: avoid fs.readFileSync for GB-scale SQL backups.
+  const hash=crypto.createHash('sha256'),chunk=Buffer.allocUnsafe(1024*1024);
+  const fd=fsApi.openSync(file,fs.constants.O_RDONLY);
+  try{
+    while(true){const n=fsApi.readSync(fd,chunk,0,chunk.length,null);if(n===0)break;hash.update(chunk.subarray(0,n));}
+  } finally {fsApi.closeSync(fd);}
+  return hash.digest('hex');
+}
 function verifyOutputs(output,fsApi=fs) {
   return DUMP_FILES.map(name=>{
     const file=path.join(output,name);
@@ -102,4 +136,4 @@ async function main(argv=process.argv.slice(2),deps={}) {
   return 0;
 }
 if(require.main===module)main().then(c=>{process.exitCode=c}).catch(()=>{console.error('EXPORT_NO_GO:UNEXPECTED_ERROR');process.exitCode=2;});
-module.exports={EXPECTED_REF,ACK,DUMP_FILES,parseArgs,preflight,dumpCommands,verifyOutputs,publicResult,commandSafety,main};
+module.exports={EXPECTED_REF,ACK,DUMP_FILES,parseArgs,preflight,dumpCommands,verifyOutputs,publicResult,commandSafety,main,isWithin,isGitCheckoutOrWorktree,blockedPathSegment};

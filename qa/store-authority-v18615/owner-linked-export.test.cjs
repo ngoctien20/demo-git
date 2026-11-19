@@ -2,7 +2,7 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const m=require('./owner-linked-export.cjs');
 function fixture(){
- const base=fs.mkdtempSync(path.join(os.tmpdir(),'t404-v18615-'));
+ const base=fs.mkdtempSync(path.join(os.homedir(),'t404-v18615-'));
  const root=path.join(base,'project');const output=path.join(base,'private');fs.mkdirSync(path.join(root,'supabase','.temp'),{recursive:true});fs.mkdirSync(output);
  fs.writeFileSync(path.join(root,'supabase','config.toml'),'project_id = "synthetic"\n');fs.writeFileSync(path.join(root,'supabase','.temp','project-ref'),m.EXPECTED_REF+'\n');
  return {base,root,output,cleanup:()=>fs.rmSync(base,{recursive:true,force:true})};
@@ -34,3 +34,34 @@ test('empty or missing dump refused',()=>{const f=fixture();try{assert.throws(()
 test('three synthetic files produce hashes',()=>{const f=fixture();try{for(const name of m.DUMP_FILES)fs.writeFileSync(path.join(f.output,name),'synthetic only '+name);const x=m.verifyOutputs(f.output);assert.equal(x.length,3);assert(x.every(z=>z.sha256.length===64));assert(!JSON.stringify(x).includes('postgresql://'))}finally{f.cleanup()}});
 test('report explicitly does not claim restore',()=>{const x=m.publicResult([]);assert.equal(x.liveBackupVerified,false);assert.equal(x.isolatedRestoreVerified,false);assert.equal(x.productionReady,false)});
 test('source never contains migration calls',()=>{const s=fs.readFileSync(path.join(__dirname,'owner-linked-export.cjs'),'utf8');assert(!/spawnSync\([^)]*db push/i.test(s));assert(!s.includes('service_role'));assert(!s.includes('restore_project'));});
+
+// V18.6.16 — actual Windows semantics and arbitrary checkout/sync controls.
+test('Windows containment comparison is case-insensitive',()=>{
+ assert.equal(m.isWithin('C:\\SHOP\\SAFE\\backup','c:\\shop\\safe','win32'),true);
+ assert.equal(m.isWithin('C:\\SHOP\\SAFE2','c:\\shop\\safe','win32'),false);
+});
+test('reject output inside any other Git checkout, not just projectRoot',()=>{
+ const f=fixture();try{const second=path.join(f.base,'unrelated-app');const d=path.join(second,'private-backup');fs.mkdirSync(path.join(second,'.git'),{recursive:true});fs.mkdirSync(d);assert.throws(()=>check(f,{outputDir:d}),/GIT_CHECKOUT_FORBIDDEN/);}finally{f.cleanup()}
+});
+test('reject output in a Git worktree with .git marker file',()=>{
+ const f=fixture();try{const second=path.join(f.base,'worktree');const d=path.join(second,'private');fs.mkdirSync(d,{recursive:true});fs.writeFileSync(path.join(second,'.git'),'gitdir: ../.git/worktrees/x');assert.throws(()=>check(f,{outputDir:d}),/GIT_CHECKOUT_FORBIDDEN/);}finally{f.cleanup()}
+});
+test('deny Windows OneDrive - company and Downloads directories',()=>{
+ const f=fixture();try{for(const name of ['OneDrive - Acme','Downloads','iCloud Drive','Google Drive','AppData','temp']){
+ const d=path.join(f.base,name);fs.mkdirSync(d);assert.throws(()=>check(f,{outputDir:d}),/SYNC_OR_SYSTEM_FOLDER_FORBIDDEN/,name);
+ }}finally{f.cleanup()}
+});
+test('SHA256 of large synthetic file uses chunked reads, never fs.readFileSync',()=>{
+ const f=fixture();try{for(const name of m.DUMP_FILES){const size=name==='data.sql'?18*1024*1024:128;fs.writeFileSync(path.join(f.output,name),Buffer.alloc(size,name==='data.sql'?0x61:0x62));}
+ const guard={...fs,readFileSync(){throw Error('UNBOUNDED_READ_FORBIDDEN')}};
+ const out=m.verifyOutputs(f.output,guard);
+ assert.equal(out.find(x=>x.name==='data.sql').bytes,18*1024*1024);
+ const expected=require('node:crypto').createHash('sha256').update(Buffer.alloc(18*1024*1024,0x61)).digest('hex');
+ assert.equal(out.find(x=>x.name==='data.sql').sha256,expected);
+ }finally{f.cleanup()}
+});
+test('selected output symlink/junction is rejected',t=>{
+ const f=fixture();try{const alias=path.join(f.base,'backup-link');try{fs.symlinkSync(f.output,alias,process.platform==='win32'?'junction':'dir')}catch(e){if(['EPERM','ENOTSUP','EACCES'].includes(e.code)){t.skip('symlinks unavailable on runner');return;}throw e;}
+ assert.throws(()=>check(f,{outputDir:alias}),/OUTPUT_LINK_NOT_ALLOWED/);
+ }finally{f.cleanup()}
+});
