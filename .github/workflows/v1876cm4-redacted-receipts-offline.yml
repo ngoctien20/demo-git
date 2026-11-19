@@ -1,0 +1,36 @@
+name: TIEN404 M3-H4 Redacted Meta Webhook Receipts Offline QA
+on:
+  push:
+    branches:
+      - work/v1876cm4-redacted-post-receipts-offline
+  pull_request:
+    branches:
+      - work/v1876cm3h2-secret-binding-https-admission-prep
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm4-redacted-receipts-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  redacted-receipts-negative-no-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Guard against raw log deployment and live secrets in CI
+        run: |
+          set -euo pipefail
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.jsonc
+      - name: Check module syntax
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/worker.mjs
+          node --check experiments/v1876cm2-meta-ingress/src/redacted-receipts.mjs
+      - name: Run all inherited + M3-H4 no-PII tests
+        run: node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
