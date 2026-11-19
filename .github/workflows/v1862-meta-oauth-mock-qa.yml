@@ -1,0 +1,26 @@
+name: V18.6.2 Meta OAuth mock offline QA
+on:
+  push:
+    paths:
+      - 'qa/meta-oauth-v1862/**'
+      - '.github/workflows/v1862-meta-oauth-mock-qa.yml'
+  pull_request:
+    paths:
+      - 'qa/meta-oauth-v1862/**'
+      - '.github/workflows/v1862-meta-oauth-mock-qa.yml'
+permissions:
+  contents: read
+jobs:
+  offline-mock-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node security unit tests (no secrets, no Meta/network)
+        run: node --test qa/meta-oauth-v1862/mock-provider.test.cjs
+      - name: Assert safe defaults
+        run: |
+          node -e "const f=require('./qa/meta-oauth-v1862/mock-provider.cjs').FLAGS; if(f.META_OAUTH_MODE!=='mock'||f.META_LIVE_API_ENABLED!==false||f.PROVIDER_SEND_ENABLED!==false||f.ORDER_WRITE_ENABLED!==false) process.exit(1)"
