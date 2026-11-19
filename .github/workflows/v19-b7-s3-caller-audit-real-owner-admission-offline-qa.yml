@@ -1,0 +1,77 @@
+name: TIEN404 V19.0-B7-S3 - Caller Inventory and Real Owner Admission No-Go QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b7-s3-caller-security-owner-ab-admission-20261119
+    paths:
+      - qa/v19-webhook/b7-s3/**
+      - .github/workflows/v19-b7-s3-caller-audit-real-owner-admission-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/b7-s3/**
+      - .github/workflows/v19-b7-s3-caller-audit-real-owner-admission-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  b7-s3-candidate-security:
+    name: B7-S3 source-only caller/real auth guards + disposable PostgreSQL17
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGDATABASE: b7s3_disposable
+      PGUSER: postgres
+      PGPASSWORD: b7s3-synthetic-local-only
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: b7s3_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: b7s3-synthetic-local-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d b7s3_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Protect existing deployed Worker source
+        run: test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: B7-S3 source syntax
+        run: |
+          node --check qa/v19-webhook/b7-s3/owner-ab-admission-gate.mjs
+          node --check qa/v19-webhook/b7-s3/tests/owner-ab-admission-gate.test.mjs
+      - name: B7-S3 caller coverage and real Owner A/B false-proof security tests
+        run: node --test qa/v19-webhook/b7-s3/tests/owner-ab-admission-gate.test.mjs
+      - name: B7-S2 Store V2 RPC fixture and compatibility regression
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_versioned_store_writer_qa.sql
+      - name: B7-S3 adversarial proof synthetic GUC auth can be spoofed; NO REAL AUTH
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s3/tests/pg17_synthetic_claim_spoof_proof.sql
+      - name: B7-S2 reversible isolated transaction
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_rollback_transaction_qa.sql
+      - name: B7-S1 six-table legacy and Store RLS regression
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s1/tests/pg17_six_table_store_compat.sql
+      - name: Hard NO-GO deployment guard
+        run: |
+          test ! -e qa/v19-webhook/b7-s3/wrangler.toml
+          test ! -e qa/v19-webhook/b7-s3/wrangler.jsonc
+          test ! -e qa/v19-webhook/b7-s3/.env
+          grep -q "status:423" qa/v19-webhook/b7-s3/owner-ab-admission-gate.mjs
+          echo "B7-S3 source+synthetic Postgres only. No actual Owner JWT, webhook, Supabase migration, n8n publish or Cloudflare deployment."
