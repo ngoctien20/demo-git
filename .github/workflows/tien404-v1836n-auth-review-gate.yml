@@ -1,0 +1,101 @@
+name: TIEN404 V18.3.6N Review Authorization Auth Semantics Crypto Boundary QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836m-pg17-session-delete-grants-crypto-20261119
+    paths:
+      - "qa/v18.3.6n/**"
+      - ".github/workflows/tien404-v1836n-auth-review-gate.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836n-private-review
+  cancel-in-progress: true
+jobs:
+  offline-contract-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Inherited G to L crypto Auth security regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            qa/v18.3.6l/test-security-architecture.mjs \
+            | tee "$RUNNER_TEMP/n-predecessor.tap"
+          grep -q '^# tests 245$' "$RUNNER_TEMP/n-predecessor.tap"
+          grep -q '^# pass 245$' "$RUNNER_TEMP/n-predecessor.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/n-predecessor.tap"
+          echo V18_3_6N_PREDECESSOR_245_PASS
+      - name: Inherited M crypto and privilege regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6m/test-crypto-grant-compatibility.mjs \
+            | tee "$RUNNER_TEMP/n-m.tap"
+          grep -q '^# tests 29$' "$RUNNER_TEMP/n-m.tap"
+          grep -q '^# pass 29$' "$RUNNER_TEMP/n-m.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/n-m.tap"
+          echo V18_3_6N_M_REGRESSION_29_PASS
+      - name: N review authorization, Auth scopes and crypto trust negative QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6n/test-n-security-contracts.mjs \
+            | tee "$RUNNER_TEMP/n-security.tap"
+          grep -q '^# tests 64$' "$RUNNER_TEMP/n-security.tap"
+          grep -q '^# pass 64$' "$RUNNER_TEMP/n-security.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/n-security.tap"
+          echo V18_3_6N_SECURITY_CONTRACT_64_PASS
+      - name: No sensitive code, real Auth traffic or production approvals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const dir='qa/v18.3.6n/';
+          const sources=[
+            'function-review-authorization.mjs',
+            'auth-service-delete-contract.mjs',
+            'crypto-trust-boundary.mjs',
+          ].map(f=>readFileSync(dir+f,'utf8')).join('\n');
+          const docs=[
+            'REVIEW_AUTHORIZATION_REQUEST.md',
+            'REAL_AUTH_DELETE_SEMANTICS_CONTRACT.md',
+            'CRYPTO_TRUST_BOUNDARY_DECISION.md',
+            'RISK_REGISTER_V18_3_6N.md',
+            'README.md',
+          ].map(f=>readFileSync(dir+f,'utf8')).join('\n');
+          for(const p of [
+             /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+             /SUPABASE_SERVICE_ROLE_KEY\s*=/,
+             /Bearer\s+eyJ[A-Za-z0-9_-]+/,
+             /\bfetch\s*\(/,
+             /\bhttps\.request\s*\(/,
+             /\bexecSync\s*\(/,
+             /\bpg_get_functiondef\s*\(/,
+             /\bcreateClient\s*\(/,
+           ])if(p.test(sources))throw Error('N_RUNTIME_SENSITIVE_OR_LIVE_API_CODE_DETECTED');
+          for(const x of ['SECURITY DEFINER','global','local','others',
+                          'Auth','NO-GO','Ed25519','owner approval'])
+            if(!docs.includes(x))throw Error('N_ADR_MISSING_'+x);
+          const unauthorized=[
+            /productionAdmitted:\s*true/,
+            /functionBodiesRead:\s*true/,
+            /grantAlterationAuthorized:\s*true/,
+          ];
+          for(const pattern of unauthorized)
+            if(pattern.test(sources))throw Error('N_UNAUTHORIZED_ADMISSION_FLAG');
+          console.log('V18_3_6N_NO_LIVE_SCOPE_STATIC_AUDIT_PASS');
+          NODE
