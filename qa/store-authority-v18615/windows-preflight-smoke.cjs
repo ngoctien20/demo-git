@@ -27,7 +27,7 @@ try {
       '--project-root',project,'--output-dir',output,...extra],
       {encoding:'utf8',shell:false,timeout:10000,env:{...process.env,CI:'true',GITHUB_ACTIONS:'true'}});
     assert.equal(run.status,2,'CI invocation must be refused');
-    assert.match(run.stderr,/EXPORT_NO_GO:CI_EXPORT_FORBIDDEN/);
+    assert.match(run.stderr,/EXPORT_NO_GO:\s*CI_EXPORT_FORBIDDEN/);
     assert.equal(fs.readdirSync(output).length,0);
   }
   console.log(JSON.stringify({status:'WINDOWS_OFFLINE_PREFLIGHT_PASS',
