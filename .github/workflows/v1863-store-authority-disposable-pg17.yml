@@ -57,10 +57,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install psql PostgreSQL client
+      - name: PostgreSQL 17 client from already-pulled disposable Docker image (no apt)
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          mkdir -p "$RUNNER_TEMP/t404-pg17-client"
+          cat > "$RUNNER_TEMP/t404-pg17-client/psql" <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          [[ "${V1863_DISPOSABLE_POSTGRES:-}" == "true" &&
+             "${GITHUB_ACTIONS:-}" == "true" &&
+             "${PGHOST:-}" == "127.0.0.1" &&
+             "${PGPORT:-}" == "5432" &&
+             "${PGDATABASE:-}" == "tien404_v1863_qa" &&
+             "${PGUSER:-}" == "postgres" &&
+             "${PGPASSWORD:-}" == "v1863-disposable-only" ]] || { echo "DISPOSABLE_PG_CLIENT_NO_GO" >&2; exit 2; }
+          exec docker run --rm --network host \
+            --env PGHOST=127.0.0.1 --env PGPORT=5432 \
+            --env PGUSER=postgres --env PGDATABASE=tien404_v1863_qa \
+            --env PGPASSWORD=v1863-disposable-only \
+            --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE:ro" \
+            --workdir "$GITHUB_WORKSPACE" postgres:17 psql "$@"
+          BASH
+          chmod 0700 "$RUNNER_TEMP/t404-pg17-client/psql"
+          echo "$RUNNER_TEMP/t404-pg17-client" >> "$GITHUB_PATH"
       - name: Assert strictly synthetic fixture
         run: |
           test "$PGDATABASE" = 'tien404_v1863_qa'
