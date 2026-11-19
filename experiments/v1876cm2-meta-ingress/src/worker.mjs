@@ -3,6 +3,7 @@
  * Only isolated QA App/Page. No provider send, AI, DB, queue, storage, forwarding,
  * customer identity linkage or orders. Not a production Store authority.
  */
+import {recordQaPostReceipt} from "./redacted-receipts.mjs";
 const encoder=new TextEncoder();
 const MAX_BYTES=65536, MAX_ENTRIES=10, MAX_EVENTS=60, WEBHOOK_PATH="/meta-qa/webhook";
 const HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"};
@@ -102,9 +103,14 @@ function summarizePagePayload(root){
 }
 const safeMode=env=>env?.INSPECTOR_MODE==="ISOLATED_QA_ONLY"&&env?.INSPECTOR_ENABLED==="true";
 export default {async fetch(request,env){
- if(!safeMode(env))return denied(503,"INSPECTOR_DISABLED");
+ // No GET verification token or request URL ever enters the telemetry adapter.
+ const finish=(res,decision,hmacVerified=false,eventTypes=null)=>{
+  if(request.method==="POST")recordQaPostReceipt(env,{httpStatus:res.status,decision,hmacVerified,eventTypes});
+  return res;
+ };
+ if(!safeMode(env))return finish(denied(503,"INSPECTOR_DISABLED"),"GATE_DISABLED");
  const url=new URL(request.url);
- if(url.pathname!==WEBHOOK_PATH)return denied(404,"UNKNOWN_PATH");
+ if(url.pathname!==WEBHOOK_PATH)return finish(denied(404,"UNKNOWN_PATH"),"UNKNOWN_PATH");
  if(request.method==="GET"){
   if(url.searchParams.get("hub.mode")!=="subscribe")return denied(403,"VERIFY_MODE_DENIED");
   if(!env?.META_VERIFY_TOKEN||env.META_VERIFY_TOKEN.length<24||
@@ -114,20 +120,20 @@ export default {async fetch(request,env){
   if(!challenge||!/^[A-Za-z0-9_-]{1,128}$/.test(challenge))return denied(400,"CHALLENGE_INVALID");
   return new Response(challenge,{status:200,headers:{"content-type":"text/plain; charset=utf-8","cache-control":"no-store"}});
  }
- if(request.method!=="POST")return denied(405,"METHOD_DENIED");
- if(!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))return denied(415,"CONTENT_TYPE_DENIED");
+ if(request.method!=="POST")return finish(denied(405,"METHOD_DENIED"),"METHOD_DENIED");
+ if(!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))return finish(denied(415,"CONTENT_TYPE_DENIED"),"CONTENT_TYPE_DENIED");
  const raw=await boundedRaw(request);
- if(!raw)return denied(413,"RAW_BODY_INVALID");
+ if(!raw)return finish(denied(413,"RAW_BODY_INVALID"),"RAW_BODY_INVALID");
  if(!await verifiedSignature(request.headers.get("x-hub-signature-256"),raw,env?.META_APP_SECRET))
-  return denied(401,"META_SIGNATURE_INVALID");
+  return finish(denied(401,"META_SIGNATURE_INVALID"),"META_SIGNATURE_INVALID");
  let payload;
  try{payload=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(raw));}
- catch{return denied(400,"JSON_INVALID");}
+ catch{return finish(denied(400,"JSON_INVALID"),"INVALID_JSON",true);}
  const result=summarizePagePayload(payload);
- if(!result)return denied(422,"PAGE_EVENT_FORMAT_INVALID");
- // No PII IDs, no message data, no logs, no external provider calls.
+ if(!result)return finish(denied(422,"PAGE_EVENT_FORMAT_INVALID"),"PAGE_EVENT_INVALID",true);
+ // No raw PII logs or external provider calls; custom sanitized receipts are opt-in only.
  return reply(200,{ok:true,status:"ACK_ONLY_NO_SEND",eventCount:result.count,eventTypes:result.types,
   signatureValidForSuppliedBytes:true,actualMetaDeliveryVerified:false,pageSubscriptionVerified:false,
-  storeVerified:false,canSend:false,canWrite:false,canReadPrivateOrders:false});
+  storeVerified:false,canSend:false,canWrite:false,canReadPrivateOrders:false}),"ACCEPTED",true,result.types);
 }};
 export {MAX_BYTES,MAX_EVENTS,WEBHOOK_PATH,eventType,changeEventType,summarizePagePayload};
