@@ -1,0 +1,65 @@
+name: TIEN404 V18.7.6B Disposable PG17 Store Migration Dry-Run
+on:
+  push:
+    branches:
+      - work/v1876b-rpc-dryrun-owner-ab-staging
+  pull_request:
+    branches:
+      - work/v1876a-store-authority-preflight-no-live
+    paths:
+      - 'qa/store-authority-v1876b/**'
+      - 'experiments/v18-7-industry/V1876B*'
+      - '.github/workflows/v1876b-disposable-store-migration-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-pg17-migration-and-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tien404_v1876b_qa
+          POSTGRES_PASSWORD: v1876b-disposable-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      V1876B_DISPOSABLE_POSTGRES: 'true'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: tien404_v1876b_qa
+      PGPASSWORD: v1876b-disposable-test-only
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y postgresql-client
+      - name: Guard against live endpoints in SQL fixture
+        run: |
+          test "$PGDATABASE" = 'tien404_v1876b_qa'
+          test "$V1876B_DISPOSABLE_POSTGRES" = 'true'
+          ! grep -R -Ei 'ifxlvrhyjhbzbrkdsida|supabase[.]co|ngoctien20[.]app[.]n8n[.]cloud|graph[.]facebook[.]com' qa/store-authority-v1876b/*.sql
+      - name: Run disposable PostgreSQL migration dry-run and RLS tests
+        run: node --test qa/store-authority-v1876b/pg17-migration-dryrun.test.cjs
+  inherited-industry-no-live-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Run all prior industry and admission offline tests
+        run: node --test experiments/v18-7-industry/tests/*.test.cjs
