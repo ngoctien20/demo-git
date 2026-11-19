@@ -1,7 +1,9 @@
 name: TIEN404 V18.7 Industry Offline Contract QA
 on:
+  push:
+    branches: ['work/v1876-protected-admission-offline']
   pull_request:
-    branches: [gh-pages]
+    branches: [gh-pages, 'work/v187-industry-profiles-contract-staging']
     paths:
       - 'experiments/v18-7-industry/**'
       - '.github/workflows/v187-industry-offline-qa.yml'
