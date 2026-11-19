@@ -12,6 +12,7 @@ Date: 2026-11-19 JST. Parent V18.3.6P Draft PR #457 final HEAD `f8404ca771244592
 4. `01_DISPOSABLE_PG17_SIGNED_RPC.sql`: private EXECUTE-only role, signer fixture table, signed scoped catalog read that delegates to M's synthetic session/Store/nonce in one PostgreSQL transaction. **DO NOT RUN ON SUPABASE STAGING/PRODUCTION**.
 5. `02_DISPOSABLE_PG17_ACL_PGTAP.sql`: 30 PostgreSQL 17.12 ACL/function/fixture negative assertions.
 6. `generate-disposable-pg17-vectors.mjs`: dynamically generates 22 Node-to-PG17 test vectors with valid/invalid signatures, wrong Store, wrong session, expiry and nonce replay.
+9. `generate-concurrent-signed-call.mjs`: signs one disposable JTI for two separate simultaneous PostgreSQL connections; CI requires exactly one `ALLOW_CATALOG`, one `REPLAY` and one durable nonce row. This is an extra concurrency integration check, not a pgTAP assertion and not a GoTrue live test.
 7. `test-q-security.mjs`: 84 offline negative tests.
 8. `PRIVATE_SECURITY_APPROVAL_INTAKE.md`, `GOTRUE_LOCAL_RUNTIME_ADMISSION.md`, `TRANSACTION_BOUND_RPC_TRUST_CLOSURE_MATRIX.md` and checkpoint.
 
