@@ -132,7 +132,7 @@ export default {async fetch(request,env){
  const result=summarizePagePayload(payload);
  if(!result)return finish(denied(422,"PAGE_EVENT_FORMAT_INVALID"),"PAGE_EVENT_INVALID",true);
  // No raw PII logs or external provider calls; custom sanitized receipts are opt-in only.
- return reply(200,{ok:true,status:"ACK_ONLY_NO_SEND",eventCount:result.count,eventTypes:result.types,
+ return finish(reply(200,{ok:true,status:"ACK_ONLY_NO_SEND",eventCount:result.count,eventTypes:result.types,
   signatureValidForSuppliedBytes:true,actualMetaDeliveryVerified:false,pageSubscriptionVerified:false,
   storeVerified:false,canSend:false,canWrite:false,canReadPrivateOrders:false}),"ACCEPTED",true,result.types);
 }};
