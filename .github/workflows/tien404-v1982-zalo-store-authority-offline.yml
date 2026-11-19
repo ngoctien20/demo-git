@@ -1,0 +1,37 @@
+name: "TIEN404 V19.8.1–V19.8.2 Zalo Store Authority Offline QA"
+
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v1981/**"
+      - "qa/channel-v1982/**"
+      - ".github/workflows/tien404-v1982-zalo-store-authority-offline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-store-authority:
+    name: "Fail-closed Store Authority / synthetic only"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout without stored credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify V19.8.1 synthetic contract
+        run: node qa/channel-v1981/authority-policy.test.mjs
+      - name: Verify V19.8.2 same-tenant and backfill gate
+        run: node qa/channel-v1982/admission-gate.test.mjs
+      - name: Assert preview remains non-runnable Markdown
+        shell: bash
+        run: |
+          test -f qa/channel-v1982/STORE_SCOPE_MIGRATION_PROPOSAL_DO_NOT_RUN.md
+          test ! -e qa/channel-v1982/STORE_SCOPE_MIGRATION_PROPOSAL_DO_NOT_RUN.sql
+          grep -q 'DO NOT EXECUTE' qa/channel-v1982/STORE_SCOPE_MIGRATION_PROPOSAL_DO_NOT_RUN.md
