@@ -67,9 +67,12 @@ jobs:
             /SUPABASE_SERVICE_ROLE_KEY\s*=/,
             /Bearer\s+eyJ[A-Za-z0-9_-]+/,
           ]) if(pattern.test(src))throw Error('FORBIDDEN_LIVE_OR_SECRET_OPERATION');
-          const sql=readFileSync(root+'03_DISPOSABLE_PG17_TX_ATTESTATION.sql','utf8');
+          const sql=readFileSync(root+'03_DISPOSABLE_PG17_TX_ATTESTATION.sql','utf8')
+            .split('\n').filter(line=>!line.trimStart().startsWith('--')).join('\n');
           if(!sql.includes("tien404_v1836m_disposable"))throw Error('DISPOSABLE_DB_SCOPE_MISSING');
-          if(/auth\.sessions/i.test(sql)||/pg_get_functiondef|prosrc|probin/i.test(sql))
+          // Word boundary prevents falsely matching qa_m_auth.sessions.
+          // Strip SQL comments before checking for prohibited operations.
+          if(/\bauth\.sessions\b/i.test(sql)||/\b(pg_get_functiondef|prosrc|probin)\b/i.test(sql))
             throw Error('REAL_AUTH_OR_FUNCTION_SOURCE_ACCESS_FORBIDDEN');
           if(/^\s*(CREATE|ALTER|DROP|GRANT|REVOKE)\b/mi.test(sql))
             throw Error('SCHEMA_WRITE_FORBIDDEN_IN_ATTESTATION');
