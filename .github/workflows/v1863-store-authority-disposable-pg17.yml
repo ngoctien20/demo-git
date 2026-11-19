@@ -1,4 +1,4 @@
-name: V18.6.3–10 Store Authority and Full n8n Static RPC Scan NO LIVE
+name: V18.6.3–11B Store Authority QA + Hosted Anonymous GET No Writes
 on:
   push:
     paths:
@@ -10,6 +10,7 @@ on:
       - 'qa/store-authority-v1868/**'
       - 'qa/store-authority-v1869/**'
       - 'qa/store-authority-v18610/**'
+      - 'qa/store-authority-v18611/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - 'qa/store-authority-v1868/**'
       - 'qa/store-authority-v1869/**'
       - 'qa/store-authority-v18610/**'
+      - 'qa/store-authority-v18611/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -97,3 +99,23 @@ jobs:
           node --test qa/store-authority-v18610/decision-gate.test.cjs
           node qa/store-authority-v18610/decision-gate.cjs
           node -e "const x=require('./qa/store-authority-v18610/decision-gate.cjs').assessBundled();if(x.status!=='NO_GO'||x.n8nCurrentListStaticCoverage!==171||x.revokeZaloRpcAnonExecuteAllowed||x.applySupabaseMigrationAllowed||x.rewirePublishedMessengerAllowed||x.realOwnerAbUatApproved||x.productionReady)process.exit(1)"
+      - name: V18.6.11B strictly anonymous GET-only local contract QA
+        run: |
+          node --test qa/store-authority-v18611/hosted-http-gate.test.cjs
+          node -e "const c=require('./qa/store-authority-v18611/hosted-http-gate.cjs').CHECKS;if(c.length!==11||c.some(x=>x.base!=='https://tien404-data-staging.onrender.com'&&x.base!=='https://tien404-auth-staging.onrender.com'))process.exit(1)"
+
+  render-hosted-anonymous-get:
+    needs: qa-pg17-isolated
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      T404_V18611B_ALLOW_HOSTED_GET: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V18.6.11B real Render staging HTTP GET without login or write
+        run: node qa/store-authority-v18611/hosted-http-gate.cjs
