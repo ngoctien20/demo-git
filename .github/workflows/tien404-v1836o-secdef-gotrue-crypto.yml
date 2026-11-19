@@ -1,0 +1,92 @@
+name: TIEN404 V18.3.6O SECDEF Manifest GoTrue Plan Crypto QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836n-privileged-body-auth-crypto-contract-20261119
+    paths:
+      - "qa/v18.3.6o/**"
+      - ".github/workflows/tien404-v1836o-secdef-gotrue-crypto.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836o-offline-security-qa
+  cancel-in-progress: true
+jobs:
+  review-matrix-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout with no stored credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Inherited G to L security regression 245
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            qa/v18.3.6l/test-security-architecture.mjs \
+            | tee "$RUNNER_TEMP/o-ghi-k-l.tap"
+          grep -q '^# tests 245$' "$RUNNER_TEMP/o-ghi-k-l.tap"
+          grep -q '^# pass 245$' "$RUNNER_TEMP/o-ghi-k-l.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/o-ghi-k-l.tap"
+          echo V18_3_6O_G_L_245_PASS
+      - name: M and N prior crypto/Auth review regressions 93
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6m/test-crypto-grant-compatibility.mjs \
+            qa/v18.3.6n/test-n-security-contracts.mjs \
+            | tee "$RUNNER_TEMP/o-mn.tap"
+          grep -q '^# tests 93$' "$RUNNER_TEMP/o-mn.tap"
+          grep -q '^# pass 93$' "$RUNNER_TEMP/o-mn.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/o-mn.tap"
+          echo V18_3_6O_M_N_93_PASS
+      - name: O metadata manifest, GoTrue UAT plan and crypto admissibility 79
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6o/test-o-security-contracts.mjs \
+            | tee "$RUNNER_TEMP/o-qa.tap"
+          grep -q '^# tests 79$' "$RUNNER_TEMP/o-qa.tap"
+          grep -q '^# pass 79$' "$RUNNER_TEMP/o-qa.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/o-qa.tap"
+          echo V18_3_6O_SECURITY_QA_79_PASS
+      - name: Detect unauthorized production operations in O sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/v18.3.6o/';
+          const src=['secdef-manifest-review.mjs','gotrue-disposable-plan.mjs','rpc-proof-admissibility.mjs']
+            .map(x=>readFileSync(root+x,'utf8')).join('\n');
+          const manifest=JSON.parse(readFileSync(root+'SECDEF_METADATA_MANIFEST.json','utf8'));
+          const sql=readFileSync(root+'READ_ONLY_SECDEF_METADATA.sql','utf8');
+          const noComments=sql.split('\n').filter(s=>!s.trimStart().startsWith('--')).join('\n');
+          for(const p of [/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+            /SUPABASE_SERVICE_ROLE_KEY\s*=/,/Bearer\s+eyJ[A-Za-z0-9_-]+/,
+            /\bfetch\s*\(/,/\bhttps\.request\s*\(/,
+            /\bexecSync\s*\(/,/\bpg_get_functiondef\s*\(/])
+             if(p.test(src))throw Error('LIVE_OR_SECRET_CODE_DETECTED');
+          if(/\b(CREATE|ALTER|GRANT|REVOKE|INSERT|UPDATE|DELETE|TRUNCATE|CALL|DO)\b/i.test(noComments))
+             throw Error('UNEXPECTED_STAGING_SQL_WRITE');
+          if(/\bFROM\s+auth\.sessions\b/i.test(noComments))
+             throw Error('FORBIDDEN_SESSION_ROW_ACCESS');
+          if(/\b(prosrc|probin|pg_get_functiondef)\b/i.test(noComments))
+             throw Error('FUNCTION_BODY_FETCH_FORBIDDEN');
+          if(manifest.functions.length!==4||
+             manifest.identity_sha_is_body_hash!==false||
+             manifest.actual_function_body_reviewed!==false||
+             manifest.production_approved!==false)
+             throw Error('UNAUTHORIZED_MANIFEST_CLAIM');
+          console.log('V18_3_6O_READ_ONLY_SCOPE_QA_PASS');
+          NODE
