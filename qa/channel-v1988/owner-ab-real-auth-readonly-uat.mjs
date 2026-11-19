@@ -104,7 +104,9 @@ async function listFixture(fetchImpl,base,key,token,table,extra=''){
  const url=base+'/rest/v1/t404_uat1988_'+table+
  '?select='+encodeURIComponent(COLS[table])+
  (extra?'&'+extra:'');
- const r=await call(fetchImpl,url,{apikey:key,Authorization:token?'Bearer '+token:undefined});
+ const headers={apikey:key};
+ if(token)headers.Authorization='Bearer '+token;
+ const r=await call(fetchImpl,url,headers);
  if(r.status===401||r.status===403)return {blocked:true,rows:[]};
  if(!r.ok)throw fail('REST_'+table+'_HTTP_'+r.status);
  const rows=await readJson(r);
