@@ -1,0 +1,119 @@
+{
+  "version": "TIEN404_V19_B7_S4_1",
+  "capturedAtJst": "2026-11-19",
+  "scope": "SOURCE_AND_PUBLISHED_GRAPH_READONLY_NOT_HOSTED_RENDER_VERIFICATION",
+  "canonicalDesignPr": 417,
+  "parentPr": 455,
+  "render": {
+    "selectedWorkspaceConfirmedByUser": false,
+    "namedWorkspaceObserved": "My Workspace",
+    "liveServiceListRead": false,
+    "latestHostedDeployVersionsVerified": false,
+    "runtimeLogsInspected": false,
+    "serviceMutationCount": 0,
+    "sourceSnapshots": [
+      {
+        "serviceLabel": "tien404-auth-staging",
+        "sourceGitCommit": "b14501a0ebf04d991302cb32b5d548a68d6b39bd",
+        "historicalDeployEvidencePr": 72,
+        "files": [
+          {
+            "path": "assets/merchant-product.mjs",
+            "gitBlobSha": "36eba0144d4944c9a7e889c104f31abc181a9a81",
+            "directRpcCall": "save_merchant_product",
+            "productEditorEnabled": false,
+            "storeIdParameter": false,
+            "classification": "POTENTIAL_STATIC_CALLSITE_DISABLED_RUNTIME_UNPROVEN"
+          },
+          {
+            "path": "assets/merchant-portal.js",
+            "gitBlobSha": "48ab82d01b4f78664e6ee7d3a33a8201baddcd4a",
+            "importsProductEditor": false,
+            "classification": "PAGE_ENTRY_NOT_WIRED_TO_PRODUCT_WRITER"
+          },
+          {
+            "path": "scripts/build-auth-preview.mjs",
+            "gitBlobSha": "9389ad6ddaeb9cc32f680b95523c555ffce5b1e0",
+            "allowlistsMerchantProductModule": true,
+            "classification": "BUILD_INCLUDES_DORMANT_RPC_CALLSITE"
+          }
+        ]
+      },
+      {
+        "serviceLabel": "tien404-data-staging",
+        "sourceGitCommit": "ab940a95dae8afdff426bc6ac71693833d5348ce",
+        "historicalDeployEvidencePr": 411,
+        "files": [
+          {
+            "path": "ops/data-platform/app/main.py",
+            "gitBlobSha": "a7a11abeffb378b3f9952005ffdd489c54df1c13",
+            "routes": [
+              "GET /api/v1/tenants/{tenant_id}/products",
+              "GET /api/v1/tenants/{tenant_id}/orders"
+            ],
+            "storeScopeInSource": false,
+            "directSaveMerchantProductRpcCall": false,
+            "classification": "LEGACY_TENANT_ONLY_READ_API_NOT_STORE_AWARE"
+          },
+          {
+            "path": "ops/data-platform/app/signed_n8n.py",
+            "gitBlobSha": "9f74b6b3e617acd20aa1bfd8fd50b4b12938907e",
+            "classification": "SIGNED_HELPER_NOT_PRODUCT_WRITER"
+          }
+        ]
+      }
+    ]
+  },
+  "n8n": {
+    "previousFullLiteralScanEvidencePr": 447,
+    "previousListedWorkflows": 171,
+    "previousGraphDetailsRead": 171,
+    "fullScanDateJst": "2026-11-19",
+    "previousDirectSaveMerchantProductLiteralMatches": 0,
+    "previousDirectQaShopBClaimLiteralMatches": 1,
+    "freshlyVerifiedPublishedParent": {
+      "workflowId": "yIJk8LvJoLF40Z62",
+      "active": true,
+      "activeVersionId": "2d912cb0-007f-452f-9536-b92ba12a03e6",
+      "childCallNode": "Zalo V2 Shadow (Owner Gate Only)",
+      "enabled": true
+    },
+    "freshlyVerifiedPublishedChild": {
+      "workflowId": "OgDZNSAvKEvhnAvn",
+      "active": true,
+      "activeVersionId": "f00ba506-c52a-4340-9a0c-809fd9c6ea9a",
+      "rpcNode": "Submit pending claim for Shop B",
+      "rpcName": "qa_shop_b_zalo_claim",
+      "method": "POST",
+      "nodeEnabled": true,
+      "rpcExecutionObserved": false
+    }
+  },
+  "supabase": {
+    "projectRef": "ifxlvrhyjhbzbrkdsida",
+    "productWriter": "public.save_merchant_product",
+    "productWriterScope": "TENANT_SKU_WITHOUT_STORE",
+    "qaZaloClaimRpc": "public.qa_shop_b_zalo_claim",
+    "currentStoreAuthorityClosed": false,
+    "verifiedSameTenantOwnerAB": false,
+    "migrationAuthorized": false
+  },
+  "unresolvedDependencies": [
+    "CURRENT_RENDER_WORKSPACE_SELECTION_NOT_CONFIRMED",
+    "CURRENT_RENDER_SERVICE_DEPLOYS_NOT_CHECKED",
+    "CURRENT_RENDER_RUNTIME_RPC_INVOCATIONS_NOT_OBSERVED",
+    "RENDER_AUTH_DORMANT_CALLSITE_REQUIRES_COMPATIBILITY_DECISION",
+    "RENDER_DATA_V1_TENANT_ONLY_API_REQUIRES_STORE_SAFE_CUTOVER",
+    "ACTIVE_N8N_PUBLISHED_QA_SHOP_B_ZALO_CLAIM_RPC_MUST_NOT_BREAK",
+    "EXTERNAL_OR_DYNAMIC_RPC_CALLER_CENSUS_INCOMPLETE",
+    "REAL_STORE_AUTHORITY_AND_OWNER_AB_NOT_VERIFIED"
+  ],
+  "safety": {
+    "githubDraftOnly": true,
+    "renderWrites": 0,
+    "supabaseWrites": 0,
+    "n8nEdits": 0,
+    "providerSends": 0,
+    "productionChanges": 0
+  }
+}

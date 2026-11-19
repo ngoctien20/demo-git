@@ -1,0 +1,69 @@
+name: TIEN404 V19.0-B7-S4.1 - Pinned Render RPC Dependency Source QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b7-s4-1-render-rpc-dependency-ledger-20261119
+    paths:
+      - qa/v19-webhook/b7-s4-1/**
+      - .github/workflows/v19-b7-s4-1-render-rpc-dependency-source-only-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/b7-s4-1/**
+      - .github/workflows/v19-b7-s4-1-render-rpc-dependency-source-only-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  s41-pinned-source-only:
+    name: Pinned previous deployed-source dependency proof (NOT hosted Render)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout B7-S4.1 QA branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Checkout previously observed Render Auth source at immutable Git commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ngoctien20/demo-git
+          ref: b14501a0ebf04d991302cb32b5d548a68d6b39bd
+          path: snapshots/render-auth
+          persist-credentials: false
+      - name: Checkout previously observed Render Data FastAPI source at immutable Git commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ngoctien20/demo-git
+          ref: ab940a95dae8afdff426bc6ac71693833d5348ce
+          path: snapshots/render-data
+          persist-credentials: false
+      - name: Strict immutable source blobs — no remote service API
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C snapshots/render-auth rev-parse HEAD)" = "b14501a0ebf04d991302cb32b5d548a68d6b39bd"
+          test "$(git -C snapshots/render-data rev-parse HEAD)" = "ab940a95dae8afdff426bc6ac71693833d5348ce"
+          test "$(git -C snapshots/render-auth hash-object assets/merchant-product.mjs)" = "36eba0144d4944c9a7e889c104f31abc181a9a81"
+          test "$(git -C snapshots/render-auth hash-object assets/merchant-portal.js)" = "48ab82d01b4f78664e6ee7d3a33a8201baddcd4a"
+          test "$(git -C snapshots/render-auth hash-object scripts/build-auth-preview.mjs)" = "9389ad6ddaeb9cc32f680b95523c555ffce5b1e0"
+          test "$(git -C snapshots/render-data hash-object ops/data-platform/app/main.py)" = "a7a11abeffb378b3f9952005ffdd489c54df1c13"
+          test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and self-contained dependency QA
+        run: |
+          node --check qa/v19-webhook/b7-s4-1/render-rpc-dependency-gate.mjs
+          node --check qa/v19-webhook/b7-s4-1/tests/render-rpc-dependency-gate.test.mjs
+          node --test qa/v19-webhook/b7-s4-1/tests/render-rpc-dependency-gate.test.mjs
+      - name: Never deploy or call Render/Supabase/n8n
+        run: |
+          test ! -e qa/v19-webhook/b7-s4-1/wrangler.toml
+          test ! -e qa/v19-webhook/b7-s4-1/.env
+          test ! -e qa/v19-webhook/b7-s4-1/supabase/migrations
+          grep -q "status:423" qa/v19-webhook/b7-s4-1/render-rpc-dependency-gate.mjs
+          echo "HISTORICAL_SOURCE_ONLY: neither current Render deploy nor actual RPC invocation verified; all writes/sends/revokes prohibited."
