@@ -1,0 +1,77 @@
+name: TIEN404 V19.0-B7-S4 - Render Closure and Store Migration NO-GO QA
+
+on:
+  push:
+    branches:
+      - qa/v19-b7-s4-render-auth-migration-readiness-20261119
+    paths:
+      - qa/v19-webhook/b7-s4/**
+      - .github/workflows/v19-b7-s4-render-auth-migration-readiness-offline-qa.yml
+  pull_request:
+    paths:
+      - qa/v19-webhook/b7-s4/**
+      - .github/workflows/v19-b7-s4-render-auth-migration-readiness-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-readiness-dry-run:
+    name: Read-only approval gates plus PG17 disposable NOT VALID and legacy checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGDATABASE: b7s4_disposable
+      PGUSER: postgres
+      PGPASSWORD: b7s4-synthetic-ci-only
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: b7s4_disposable
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: b7s4-synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d b7s4_disposable"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Immutable deployed Worker source guard
+        run: test "$(git hash-object qa/v19-webhook/source-snapshot/v1723u-worker-deployed.mjs)" = "11affa7658b46ae7c411eed7877d7ccdce61bbad"
+      - name: S4 readiness source syntax and redacted fixture
+        run: |
+          node --check qa/v19-webhook/b7-s4/migration-readiness-audit.mjs
+          node --check qa/v19-webhook/b7-s4/tests/migration-readiness-audit.test.mjs
+          node -e "const x=require('./qa/v19-webhook/b7-s4/staging-readonly-snapshot.json');if(x.tables.length!==6||x.tables.some(t=>t.has_store_id))process.exit(1)"
+      - name: S4 15 approval and migration NO-GO tests
+        run: node --test qa/v19-webhook/b7-s4/tests/migration-readiness-audit.test.mjs
+      - name: B7-S3 Owner A/B impersonation and caller inventory regression
+        run: node --test qa/v19-webhook/b7-s3/tests/owner-ab-admission-gate.test.mjs
+      - name: B7-S1 six-table PG17 Store scope and legacy protections
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s1/tests/pg17_six_table_store_compat.sql
+      - name: S4 NOT VALID validation and legacy backfill refusal (disposable only)
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s4/tests/pg17_legacy_migration_validation_gate.sql
+      - name: B7-S2 versioned Store Product RPC regression
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_versioned_store_writer_qa.sql
+      - name: B7-S3 forged custom claim exploit against synthetic shim only
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s3/tests/pg17_synthetic_claim_spoof_proof.sql
+      - name: B7-S2 transaction rollback regression
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/v19-webhook/b7-s2/tests/pg17_rollback_transaction_qa.sql
+      - name: Final NO-GO guard
+        run: |
+          test ! -e qa/v19-webhook/b7-s4/wrangler.toml
+          test ! -e qa/v19-webhook/b7-s4/wrangler.jsonc
+          test ! -e qa/v19-webhook/b7-s4/.env
+          test ! -e qa/v19-webhook/b7-s4/supabase/migrations
+          grep -q "status:423" qa/v19-webhook/b7-s4/migration-readiness-audit.mjs
+          echo "Only CI local PostgreSQL 17 and redacted metadata fixture. No real auth, Render service, Supabase DDL, Cloudflare deployment or provider send."
