@@ -1,0 +1,86 @@
+name: TIEN404 V18.3.6L Auth Revocation Key Custody Threat QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836k-external-auth-signed-rpc-20261119
+    paths:
+      - "qa/v18.3.6l/**"
+      - ".github/workflows/tien404-v1836l-security-architecture.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836l-security-review
+  cancel-in-progress: true
+jobs:
+  offline-architecture-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node runtime, no package installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node -e "if(Number(process.versions.node.split('.')[0])<20)process.exit(1)"
+      - name: V18.3.6G to I inherited crypto + session regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            | tee "$RUNNER_TEMP/l-ghi.tap"
+          grep -q '^# tests 164$' "$RUNNER_TEMP/l-ghi.tap"
+          grep -q '^# pass 164$' "$RUNNER_TEMP/l-ghi.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/l-ghi.tap"
+          echo V18_3_6L_GHI_REGRESSION_164_PASS
+      - name: V18.3.6K offline Auth fail-closed and signer regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            | tee "$RUNNER_TEMP/l-k.tap"
+          grep -q '^# tests 30$' "$RUNNER_TEMP/l-k.tap"
+          grep -q '^# pass 30$' "$RUNNER_TEMP/l-k.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/l-k.tap"
+          echo V18_3_6L_K_REGRESSION_30_PASS
+      - name: V18.3.6L revocation, key custody, gateway threat negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6l/test-security-architecture.mjs \
+            | tee "$RUNNER_TEMP/l-security.tap"
+          grep -q '^# tests 51$' "$RUNNER_TEMP/l-security.tap"
+          grep -q '^# pass 51$' "$RUNNER_TEMP/l-security.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/l-security.tap"
+          echo V18_3_6L_ARCHITECTURE_SECURITY_51_PASS
+      - name: Verify audit register, docs and absence of live secrets/network code
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const dir='qa/v18.3.6l/';
+          const runtime=['revocation-architecture.mjs','key-custody-proposal.mjs','gateway-threat-gate.mjs']
+            .map(x=>readFileSync(dir+x,'utf8')).join('\n');
+          const docs=['AUTH_REVOCATION_ARCHITECTURE_ADR.md','PRODUCTION_KEY_CUSTODY_ADR.md',
+            'GATEWAY_THREAT_MODEL_AND_CLOSURE.md','README.md']
+            .map(x=>readFileSync(dir+x,'utf8')).join('\n');
+          for(const bad of [/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+            /SUPABASE_SERVICE_ROLE_KEY\s*=/,/Bearer\s+eyJ[A-Za-z0-9_-]+/,
+            /\bfetch\s*\(/,/https\.request\s*\(/,/\bexecSync\s*\(/])
+              if(bad.test(runtime))throw Error('SENSITIVE_OR_NETWORK_RUNTIME_CODE');
+          if((docs.match(/\bL-P0-0[1-6]\b/g)||[]).length<6)throw Error('P0_THREAT_REGISTER_MISSING');
+          if((docs.match(/\bL-P1-0[1-3]\b/g)||[]).length<3)throw Error('P1_THREAT_REGISTER_MISSING');
+          if(!docs.includes('auth.sessions') || !docs.includes('NO-GO'))
+            throw Error('REQUIRED_AUTHORITY_OR_RELEASE_GATE_MISSING');
+          console.log('V18_3_6L_STATIC_SCOPE_AUDIT_PASS');
+          NODE
