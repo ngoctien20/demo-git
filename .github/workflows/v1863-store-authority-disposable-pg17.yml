@@ -1,4 +1,4 @@
-name: V18.6.3–11B Store Authority QA + Hosted Anonymous GET No Writes
+name: V18.6.3–14 Store Authority QA + Disposable Backup Restore + Hosted GET
 on:
   push:
     paths:
@@ -11,6 +11,7 @@ on:
       - 'qa/store-authority-v1869/**'
       - 'qa/store-authority-v18610/**'
       - 'qa/store-authority-v18611/**'
+      - 'qa/store-authority-v18614/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -23,13 +24,14 @@ on:
       - 'qa/store-authority-v1869/**'
       - 'qa/store-authority-v18610/**'
       - 'qa/store-authority-v18611/**'
+      - 'qa/store-authority-v18614/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
 jobs:
   qa-pg17-isolated:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 14
     services:
       postgres:
         image: postgres:17
@@ -103,6 +105,13 @@ jobs:
         run: |
           node --test qa/store-authority-v18611/hosted-http-gate.test.cjs
           node -e "const c=require('./qa/store-authority-v18611/hosted-http-gate.cjs').CHECKS;if(c.length!==11||c.some(x=>x.base!=='https://tien404-data-staging.onrender.com'&&x.base!=='https://tien404-auth-staging.onrender.com'))process.exit(1)"
+
+      - name: V18.6.14 Disposable logical backup and restore (PG17 NO LIVE)
+        env:
+          V18614_DISPOSABLE_RESTORE: 'true'
+        run: |
+          node --test qa/store-authority-v18614/pg17-synthetic-backup-restore.test.cjs
+          node qa/store-authority-v18614/pg17-synthetic-backup-restore.cjs
 
   render-hosted-anonymous-get:
     needs: qa-pg17-isolated
