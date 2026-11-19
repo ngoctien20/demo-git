@@ -1,0 +1,261 @@
+name: TIEN404 V18.3.6M PG17 Auth DELETE and SQL Grants Security QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836l-auth-revocation-key-custody-20261119
+    paths:
+      - "qa/v18.3.6m/**"
+      - ".github/workflows/tien404-v1836m-pg17-auth-delete.yml"
+permissions:
+  contents: read
+concurrency:
+  group: tien404-v1836m-auth-delete
+  cancel-in-progress: true
+jobs:
+  offline-crypto-grant:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout pinned action without stored credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: G/H/I/K/L predecessor offline regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test \
+            qa/v18.3.6g/test-signed-authority.mjs \
+            qa/v18.3.6g/test-real-auth-ab-preflight.mjs \
+            qa/v18.3.6g/test-independent-structural-review.mjs \
+            qa/v18.3.6h/test-trusted-session-adapter.mjs \
+            qa/v18.3.6h/test-independent-security-gate.mjs \
+            qa/v18.3.6i/test-protected-binding.mjs \
+            qa/v18.3.6k/test-fail-closed-signed-rpc.mjs \
+            qa/v18.3.6l/test-security-architecture.mjs \
+            | tee "$RUNNER_TEMP/m-predecessor.tap"
+          grep -q '^# tests 245$' "$RUNNER_TEMP/m-predecessor.tap"
+          grep -q '^# pass 245$' "$RUNNER_TEMP/m-predecessor.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/m-predecessor.tap"
+          echo V18_3_6M_PREDECESSOR_245_PASS
+      - name: Ed25519/HMAC compatibility and real-style grant risk assessment
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6m/test-crypto-grant-compatibility.mjs \
+            | tee "$RUNNER_TEMP/m-crypto.tap"
+          grep -q '^# tests 29$' "$RUNNER_TEMP/m-crypto.tap"
+          grep -q '^# pass 29$' "$RUNNER_TEMP/m-crypto.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/m-crypto.tap"
+          echo V18_3_6M_CRYPTO_GRANT_29_PASS
+      - name: Test source and documentation audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const root='qa/v18.3.6m/';
+          const runtime=readFileSync(root+'crypto-privilege-compatibility.mjs','utf8');
+          const docs=[
+            'README.md','LIVE_STAGING_PRIVILEGE_METADATA_AUDIT.md',
+            'AUTH_DELETE_LOCK_RACE_MATRIX.md','CRYPTO_VERIFIER_COMPATIBILITY.md'
+          ].map(x=>readFileSync(root+x,'utf8')).join('\n');
+          for(const bad of [/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+             /SUPABASE_SERVICE_ROLE_KEY\s*=/,/Bearer\s+eyJ[A-Za-z0-9_-]+/,
+             /\bfetch\s*\(/,/https\.request\s*\(/])
+            if(bad.test(runtime))throw Error('SENSITIVE_OR_NETWORK_CODE');
+          for(const term of ['auth.sessions','SECURITY DEFINER','NO-GO',
+             'Ed25519','DELETE','NOBYPASSRLS'])
+            if(!((docs+readFileSync(root+'01_DISPOSABLE_AUTH_DELETE_LOCK.sql','utf8')).includes(term)))
+              throw Error('MISSING_SECURITY_CONTRACT_'+term);
+          console.log('V18_3_6M_SOURCE_SCOPE_AUDIT_PASS');
+          NODE
+  disposable-postgres17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout synthetic SQL only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build isolated PostgreSQL 17.12 with pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.m" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+            postgresql-17-pgtap pgtap \
+            && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836m-pgtap -f "$RUNNER_TEMP/Dockerfile.m" "$RUNNER_TEMP"
+      - name: Start disposable PG17 without exposed port or network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name tien404-v1836m-db --network none \
+            -e POSTGRES_PASSWORD=synthetic_fixture_only tien404-v1836m-pgtap
+          for i in $(seq 1 45); do
+            if docker exec tien404-v1836m-db pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836m-db pg_isready -U postgres
+          docker exec tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            -c 'CREATE DATABASE tien404_v1836m_disposable;'
+      - name: Apply private synthetic auth.sessions and Store READ schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 \
+             -U postgres -d tien404_v1836m_disposable \
+             < qa/v18.3.6m/01_DISPOSABLE_AUTH_DELETE_LOCK.sql
+      - name: Run 53 actual PG17 pgTAP security assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 \
+             -U postgres -d tien404_v1836m_disposable \
+             < qa/v18.3.6m/02_DISPOSABLE_PGTAP_AUTH_RLS.sql \
+             | tee "$RUNNER_TEMP/m-pgtap.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/m-pgtap.tap"; then exit 1; fi
+          grep -q '^1\.\.53$' "$RUNNER_TEMP/m-pgtap.tap"
+          grep -q '^V18_3_6M_PGTAP_DONE$' "$RUNNER_TEMP/m-pgtap.tap"
+          echo V18_3_6M_PGTAP_53_PASS
+      - name: DELETE-first lock causes read to fail closed without burning nonce
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "INSERT INTO qa_m_auth.sessions(id,user_id,not_after) VALUES('00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211',clock_timestamp()+interval '12 hours');"
+          cat > "$RUNNER_TEMP/delete-first.sql" <<'SQL'
+          BEGIN;
+          DELETE FROM qa_m_auth.sessions WHERE id='00000000-0000-4000-8000-000000000111';
+          \echo M_DELETE_LOCK_HELD
+          SELECT pg_sleep(3);
+          COMMIT;
+          SQL
+          docker exec -i tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable < "$RUNNER_TEMP/delete-first.sql" \
+            > "$RUNNER_TEMP/delete-first.log" 2>&1 &
+          HOLDER=$!
+          for n in $(seq 1 40); do
+            if grep -q 'M_DELETE_LOCK_HELD' "$RUNNER_TEMP/delete-first.log"; then break; fi
+            sleep 0.1
+          done
+          grep -q 'M_DELETE_LOCK_HELD' "$RUNNER_TEMP/delete-first.log"
+          FN="qa_m_private.catalog_read_if_session_exists('tien404-synthetic-authority','tien404-synthetic-catalog-read','00000000-0000-4000-8000-000000009101','00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000401',2,'00000000-0000-4000-8000-000000000501','CATALOG_READ',clock_timestamp()+interval '75 seconds')"
+          docker exec tien404-v1836m-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SET ROLE tien404_m_gateway; SELECT decision FROM $FN;" \
+            > "$RUNNER_TEMP/delete-first-result.log"
+          wait "$HOLDER"
+          grep -q '^DENY_SESSION$' "$RUNNER_TEMP/delete-first-result.log"
+          CNT=$(docker exec tien404-v1836m-db psql -X -At -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SELECT count(*) FROM qa_m_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000009101';")
+          test "$CNT" = 0
+          echo V18_3_6M_DELETE_FIRST_DENY_PASS
+      - name: READ-first transaction serializes and later DELETE prevents another read
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "INSERT INTO qa_m_auth.sessions(id,user_id,not_after) VALUES('00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211',clock_timestamp()+interval '12 hours');"
+          FN="qa_m_private.catalog_read_if_session_exists('tien404-synthetic-authority','tien404-synthetic-catalog-read','00000000-0000-4000-8000-000000009102','00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000401',2,'00000000-0000-4000-8000-000000000501','CATALOG_READ',clock_timestamp()+interval '75 seconds')"
+          cat > "$RUNNER_TEMP/read-first.sql" <<SQL
+          BEGIN;
+          SET ROLE tien404_m_gateway;
+          SELECT decision FROM $FN;
+          \\echo M_READ_LOCK_HELD
+          SELECT pg_sleep(3);
+          COMMIT;
+          SQL
+          docker exec -i tien404-v1836m-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable < "$RUNNER_TEMP/read-first.sql" \
+            > "$RUNNER_TEMP/read-first.log" 2>&1 &
+          HOLDER=$!
+          for n in $(seq 1 40); do
+            if grep -q 'M_READ_LOCK_HELD' "$RUNNER_TEMP/read-first.log"; then break; fi
+            sleep 0.1
+          done
+          grep -q 'M_READ_LOCK_HELD' "$RUNNER_TEMP/read-first.log"
+          docker exec tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "DELETE FROM qa_m_auth.sessions WHERE id='00000000-0000-4000-8000-000000000111';" \
+            > "$RUNNER_TEMP/read-first-delete.log"
+          wait "$HOLDER"
+          grep -q '^ALLOW_CATALOG$' "$RUNNER_TEMP/read-first.log"
+          grep -q 'DELETE 1' "$RUNNER_TEMP/read-first-delete.log"
+          FN2="qa_m_private.catalog_read_if_session_exists('tien404-synthetic-authority','tien404-synthetic-catalog-read','00000000-0000-4000-8000-000000009103','00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000401',2,'00000000-0000-4000-8000-000000000501','CATALOG_READ',clock_timestamp()+interval '75 seconds')"
+          RESULT=$(docker exec tien404-v1836m-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SET ROLE tien404_m_gateway; SELECT decision FROM $FN2;" | tail -1)
+          test "$RESULT" = DENY_SESSION
+          echo V18_3_6M_READ_FIRST_DELETE_SECOND_PASS
+      - name: Identical-JTI concurrent read is accepted exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "INSERT INTO qa_m_auth.sessions(id,user_id,not_after) VALUES('00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211',clock_timestamp()+interval '12 hours');"
+          FN="qa_m_private.catalog_read_if_session_exists('tien404-synthetic-authority','tien404-synthetic-catalog-read','00000000-0000-4000-8000-000000009104','00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000401',2,'00000000-0000-4000-8000-000000000501','CATALOG_READ',clock_timestamp()+interval '75 seconds')"
+          for n in 1 2; do
+            docker exec tien404-v1836m-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+              -d tien404_v1836m_disposable \
+              -c "SET ROLE tien404_m_gateway; SELECT decision FROM $FN;" \
+              > "$RUNNER_TEMP/m-replay-$n.log" 2>&1 &
+            if test "$n" = 1; then P1=$!; else P2=$!; fi
+          done
+          wait "$P1"
+          wait "$P2"
+          cat "$RUNNER_TEMP"/m-replay-*.log
+          test "$(cat "$RUNNER_TEMP"/m-replay-*.log | grep -c '^ALLOW_CATALOG$' || true)" = 1
+          test "$(cat "$RUNNER_TEMP"/m-replay-*.log | grep -c '^REPLAY$' || true)" = 1
+          COUNT=$(docker exec tien404-v1836m-db psql -X -At -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SELECT count(*) FROM qa_m_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000009104';")
+          test "$COUNT" = 1
+          echo V18_3_6M_IDENTICAL_JTI_ATOMIC_PASS
+      - name: Lock timeout fails closed without consuming nonce
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/hold-lock.sql" <<'SQL'
+          BEGIN;
+          UPDATE qa_m_auth.sessions SET not_after=not_after
+          WHERE id='00000000-0000-4000-8000-000000000111';
+          \echo M_LOCK_TIMEOUT_HOLDER_READY
+          SELECT pg_sleep(3);
+          COMMIT;
+          SQL
+          docker exec -i tien404-v1836m-db psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable < "$RUNNER_TEMP/hold-lock.sql" \
+            > "$RUNNER_TEMP/m-lock-holder.log" 2>&1 &
+          HOLDER=$!
+          for n in $(seq 1 40); do
+            if grep -q 'M_LOCK_TIMEOUT_HOLDER_READY' "$RUNNER_TEMP/m-lock-holder.log"; then break; fi
+            sleep 0.1
+          done
+          grep -q 'M_LOCK_TIMEOUT_HOLDER_READY' "$RUNNER_TEMP/m-lock-holder.log"
+          FN="qa_m_private.catalog_read_if_session_exists('tien404-synthetic-authority','tien404-synthetic-catalog-read','00000000-0000-4000-8000-000000009105','00000000-0000-4000-8000-000000000111','00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000401',2,'00000000-0000-4000-8000-000000000501','CATALOG_READ',clock_timestamp()+interval '75 seconds')"
+          if docker exec tien404-v1836m-db psql -X -At -v ON_ERROR_STOP=1 -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SET lock_timeout='300ms'; SET ROLE tien404_m_gateway; SELECT decision FROM $FN;" \
+            > "$RUNNER_TEMP/m-timeout.log" 2>&1; then
+            echo "UNEXPECTED_SQL_SUCCESS_DURING_SESSION_LOCK"
+            exit 1
+          fi
+          grep -q 'canceling statement due to lock timeout' "$RUNNER_TEMP/m-timeout.log"
+          wait "$HOLDER"
+          COUNT=$(docker exec tien404-v1836m-db psql -X -At -U postgres \
+            -d tien404_v1836m_disposable \
+            -c "SELECT count(*) FROM qa_m_private.nonce_ledger WHERE jti='00000000-0000-4000-8000-000000009105';")
+          test "$COUNT" = 0
+          echo V18_3_6M_LOCK_TIMEOUT_FAIL_CLOSED_PASS
+      - name: Remove isolated PostgreSQL
+        if: always()
+        shell: bash
+        run: docker rm -f tien404-v1836m-db >/dev/null 2>&1 || true
