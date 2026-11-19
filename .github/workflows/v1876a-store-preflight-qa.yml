@@ -1,0 +1,25 @@
+name: TIEN404 V18.7.6A Store Authority NO-LIVE QA
+on:
+  push:
+    branches:
+      - work/v1876a-store-authority-preflight-no-live
+  pull_request:
+    branches:
+      - work/v1876-protected-admission-offline
+    paths:
+      - 'experiments/v18-7-industry/**'
+      - '.github/workflows/v1876a-store-preflight-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Execute synthetic and metadata-only regression
+        run: node --test experiments/v18-7-industry/tests/*.test.cjs
