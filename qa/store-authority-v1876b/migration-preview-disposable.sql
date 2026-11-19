@@ -100,8 +100,11 @@ CREATE POLICY scoped_orders ON v1876b_qa.orders FOR SELECT TO v1876b_authenticat
  ));
 CREATE POLICY scoped_customers ON v1876b_qa.customers FOR SELECT TO v1876b_authenticated
  USING (EXISTS(
-  SELECT 1 FROM v1876b_qa.orders o WHERE o.tenant_id=customers.tenant_id
-  AND o.store_id=customers.store_id AND o.customer_id=customers.id
+  SELECT 1 FROM v1876b_qa.store_memberships m
+   JOIN v1876b_qa.stores s ON s.tenant_id=m.tenant_id AND s.id=m.store_id
+  WHERE m.tenant_id=customers.tenant_id AND m.store_id=customers.store_id
+   AND m.user_id=NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid
+   AND m.active=true AND m.role IN ('owner','manager') AND s.active=true
  ));
 CREATE POLICY scoped_items ON v1876b_qa.order_items FOR SELECT TO v1876b_authenticated
  USING (EXISTS(
@@ -111,7 +114,10 @@ CREATE POLICY scoped_items ON v1876b_qa.order_items FOR SELECT TO v1876b_authent
  ));
 CREATE POLICY scoped_page_bindings ON v1876b_qa.page_connections FOR SELECT TO v1876b_authenticated
  USING (EXISTS(
-  SELECT 1 FROM v1876b_qa.orders o
-   WHERE o.tenant_id=page_connections.tenant_id AND o.store_id=page_connections.store_id
+  SELECT 1 FROM v1876b_qa.store_memberships m
+   JOIN v1876b_qa.stores s ON s.tenant_id=m.tenant_id AND s.id=m.store_id
+  WHERE m.tenant_id=page_connections.tenant_id AND m.store_id=page_connections.store_id
+   AND m.user_id=NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid
+   AND m.active=true AND m.role IN ('owner','manager') AND s.active=true
  ));
 COMMIT;
