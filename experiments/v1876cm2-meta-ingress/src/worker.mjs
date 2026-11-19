@@ -56,12 +56,37 @@ function eventType(e,standby=false){
  }
  return "unknown";
 }
+const META_CHANGE_FIELDS=new Set([
+ "messages","messaging_postbacks","message_deliveries","message_reads","message_echoes",
+ "message_edits","message_reactions","messaging_handovers","messaging_referrals",
+ "messaging_optins","messaging_policy_enforcement","standby"
+]);
+function changeEventType(change){
+ if(!obj(change)||typeof change.field!=="string"||!obj(change.value))return null;
+ // Meta Dashboard test events can arrive as entry[].changes[] rather than messaging[].
+ // This field name is trusted only AFTER raw-body HMAC verification.
+ // Unknown field names are never echoed to avoid disclosing attacker-controlled values.
+ if(!META_CHANGE_FIELDS.has(change.field))return "unknown_page_change";
+ // Actual staging execution #5533 (19 Nov 2026) confirmed this structure.
+ if(change.field==="messaging_postbacks"&&!obj(change.value.postback))return null;
+ return change.field;
+}
 function summarizePagePayload(root){
  // Modal sample {sample:{field,value}} is NOT a verified wire event.
  if(!obj(root)||root.object!=="page"||!Array.isArray(root.entry)||root.entry.length<1||root.entry.length>MAX_ENTRIES)return null;
  const types=Object.create(null);let total=0;
  for(const entry of root.entry){
   if(!obj(entry))return null;
+  if("changes" in entry){
+   const changes=entry.changes;
+   if(!Array.isArray(changes)||changes.length>MAX_EVENTS)return null;
+   for(const change of changes){
+    const t=changeEventType(change);
+    if(!t)return null;
+    types[t]=(types[t]||0)+1;
+    if(++total>MAX_EVENTS)return null;
+   }
+  }
   for(const container of ["messaging","standby"]){
    if(!(container in entry))continue;
    const events=entry[container];
@@ -105,4 +130,4 @@ export default {async fetch(request,env){
   signatureValidForSuppliedBytes:true,actualMetaDeliveryVerified:false,pageSubscriptionVerified:false,
   storeVerified:false,canSend:false,canWrite:false,canReadPrivateOrders:false});
 }};
-export {MAX_BYTES,MAX_EVENTS,WEBHOOK_PATH,eventType,summarizePagePayload};
+export {MAX_BYTES,MAX_EVENTS,WEBHOOK_PATH,eventType,changeEventType,summarizePagePayload};
