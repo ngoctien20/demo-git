@@ -1,0 +1,96 @@
+name: TIEN404 V18.3.6K Signed Private RPC and Revocation QA
+on:
+  pull_request:
+    branches:
+      - qa/v1836j-transaction-read-rpc-20261118
+    paths:
+      - "qa/v18.3.6k/**"
+      - ".github/workflows/tien404-v1836k-failclosed-signed-rpc.yml"
+permissions:
+  contents: read
+concurrency:
+  group: v1836k-private-rpc-qa
+  cancel-in-progress: true
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: G/H/I offline regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6g/test-signed-authority.mjs qa/v18.3.6g/test-real-auth-ab-preflight.mjs qa/v18.3.6g/test-independent-structural-review.mjs qa/v18.3.6h/test-trusted-session-adapter.mjs qa/v18.3.6h/test-independent-security-gate.mjs qa/v18.3.6i/test-protected-binding.mjs | tee "$RUNNER_TEMP/ghi.tap"
+          grep -q '^# tests 164$' "$RUNNER_TEMP/ghi.tap"
+          grep -q '^# pass 164$' "$RUNNER_TEMP/ghi.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/ghi.tap"
+          echo K_GHI_164_PASS
+      - name: K external Auth and HMAC signed caller
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test qa/v18.3.6k/test-fail-closed-signed-rpc.mjs | tee "$RUNNER_TEMP/k.tap"
+          grep -q '^# tests 30$' "$RUNNER_TEMP/k.tap"
+          grep -q '^# pass 30$' "$RUNNER_TEMP/k.tap"
+          grep -q '^# fail 0$' "$RUNNER_TEMP/k.tap"
+          echo K_OFFLINE_30_PASS
+  pg17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build and start isolated pg17
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/Dockerfile.k" <<'DOCKERFILE'
+          FROM postgres:17.12
+          RUN apt-get update && apt-get install -y --no-install-recommends postgresql-17-pgtap pgtap && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          docker build -t tien404-v1836k-pgtap -f "$RUNNER_TEMP/Dockerfile.k" "$RUNNER_TEMP"
+          docker run -d --name tien404-v1836k-pg17 --network none -e POSTGRES_PASSWORD=fixture-only tien404-v1836k-pgtap
+          for n in $(seq 1 45); do
+            if docker exec tien404-v1836k-pg17 pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec tien404-v1836k-pg17 pg_isready -U postgres
+          docker exec tien404-v1836k-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c 'CREATE DATABASE tien404_v1836i_disposable;'
+      - name: Replay I and J schemas and J pgTAP 50
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in qa/v18.3.6i/01_PG17_ATOMIC_BINDING.sql qa/v18.3.6j/01_PG17_TRANSACTION_READ.sql; do
+            docker exec -i tien404-v1836k-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable < "$f"
+          done
+          docker exec -i tien404-v1836k-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable < qa/v18.3.6j/02_PGTAP_READ_RPC.sql | tee "$RUNNER_TEMP/j.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/j.tap"; then exit 1; fi
+          grep -q '^1\.\.50$' "$RUNNER_TEMP/j.tap"
+          echo K_J_PG17_50_PASS
+      - name: Apply K signed RPC and run 45 pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i tien404-v1836k-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable < qa/v18.3.6k/01_PG17_SIGNED_RPC.sql
+          docker exec -i tien404-v1836k-pg17 psql -X -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable < qa/v18.3.6k/02_PGTAP_SIGNED_RPC.sql | tee "$RUNNER_TEMP/k.tap"
+          if grep -E '^[[:space:]]*(not ok [0-9]+|# Looks like you failed)' "$RUNNER_TEMP/k.tap"; then exit 1; fi
+          grep -q '^1\.\.45$' "$RUNNER_TEMP/k.tap"
+          echo K_SIGNED_PG17_45_PASS
+      - name: Cross-language Node HMAC verifies inside PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          EPOCH=$(date -u +%s)
+          MAC=$(node qa/v18.3.6k/qa-cross-runtime-proof.mjs "$EPOCH")
+          test "$(printf %s "$MAC" | wc -c)" -eq 64
+          FN="qa_k_private.signed_transaction_catalog_read('tien404-private-authority-staging','tien404-private-commerce-readonly','00000000-0000-4000-8000-000000009999',repeat('d',64),repeat('e',64),repeat('c',64),repeat('a',64),repeat('5',64),repeat('9',64),'CATALOG_READ',$((EPOCH+60)),'00000000-0000-4000-8000-000000000101',$EPOCH,$((EPOCH+2)),'qa-k-key-1','$MAC')"
+          RESULT=$(docker exec tien404-v1836k-pg17 psql -X -At -v ON_ERROR_STOP=1 -U postgres -d tien404_v1836i_disposable -c "SET ROLE tien404_k_rpc; SELECT decision FROM $FN;" | tail -1)
+          test "$RESULT" = ALLOW_CATALOG
+          echo K_NODE_POSTGRES_MAC_BRIDGE_PASS
+      - name: Destroy disposable database container
+        if: always()
+        run: docker rm -f tien404-v1836k-pg17 >/dev/null 2>&1 || true
