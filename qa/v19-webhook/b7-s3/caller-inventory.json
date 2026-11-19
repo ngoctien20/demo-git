@@ -1,0 +1,92 @@
+{
+  "schema_version": "TIEN404_V19_B7_S3_CALLER_INVENTORY_V1",
+  "snapshot_date_jst": "2026-11-19",
+  "target_rpc": "public.save_merchant_product",
+  "release_inventory_complete": false,
+  "observed_surfaces": [
+    {
+      "surface": "supabase_public_rpc",
+      "status": "VERIFIED",
+      "detail": "V1 SECURITY DEFINER owned by postgres; authenticated EXECUTE; anon denied; Tenant + SKU, no Store; exact signature metadata checked read-only"
+    },
+    {
+      "surface": "github_gh_pages",
+      "status": "NEGATIVE_BOUNDED_SCAN",
+      "source_ref": "ff2daf970e8209399a28b2d0cade8a33b9fa71c6",
+      "checked_source_files": 37,
+      "direct_rpc_matches": 0,
+      "detail": "All 37 HTML/JS/CJS/MJS/TS-like blobs on one exact gh-pages snapshot; not a scan of other branches or generated bundles"
+    },
+    {
+      "surface": "n8n_main_and_scoped_workflows",
+      "status": "NEGATIVE_BOUNDED_SCAN",
+      "checked_ids": [
+        "iyfGUiEsZlNTBWOR",
+        "Z7FdV7uDvApfbURQ",
+        "KrSn4DNR9ALX5ng4",
+        "oOOXicKXGkBskKqh",
+        "igPOsSbEgd4NgtRA",
+        "Y0WLykMtNAldbgL0",
+        "splyaeQtV719OuAu",
+        "8b6n628JtnoPhfj1",
+        "sIPs6egzIwOY1GNv",
+        "7hwH3kW6GtNwpgDk",
+        "zaz2jcxrYXQeFHLL",
+        "FqEcdmc8PRRMNUEb",
+        "AQ6JEfQzdC4aEglH",
+        "rYwrJfJavcaZcjUI",
+        "p5OsIaB0NkMDFMw7",
+        "momDd2gARJf5nFYI",
+        "JsRXB0B9wGkWByW9"
+      ],
+      "direct_rpc_matches": 0,
+      "detail": "17 named draft/published workflow definitions over two checks; not all workflows, all credentials, indirect HTTP destinations, or child tools"
+    },
+    {
+      "surface": "supabase_edge_functions",
+      "status": "NEGATIVE_BOUNDED_SCAN",
+      "checked_slugs": [
+        "tien404-r1-owner-preflight"
+      ],
+      "direct_rpc_matches": 0,
+      "detail": "Only currently listed Edge Function active v2, verify_jwt=true; tenant-membership preflight, not Store membership admission"
+    },
+    {
+      "surface": "render_services",
+      "status": "BLOCKED_USER_WORKSPACE_SELECTION",
+      "detail": "Render connector explicitly requires user-selected workspaceId even if only one workspace appears. No service reads performed"
+    },
+    {
+      "surface": "other_github_branches",
+      "status": "NOT_EXHAUSTIVELY_SCANNED",
+      "detail": "Stacked QA PRs and alternative product UI builds may differ from gh-pages snapshot"
+    },
+    {
+      "surface": "external_apps_or_manual_sql",
+      "status": "NOT_VERIFIABLE_FROM_AVAILABLE_READONLY_EVIDENCE",
+      "detail": "Cannot prove absence of outside API consumers, scheduled calls, protected services or historical clients"
+    },
+    {
+      "surface": "supabase_rpc_runtime_call_logs",
+      "status": "NOT_VERIFIED",
+      "detail": "No authoritative complete per-actor RPC caller telemetry/trace inspected; aggregate metadata cannot prove zero callers"
+    }
+  ],
+  "real_owner_ab_store_admission": {
+    "status": "BLOCKED",
+    "real_session_A_verified": false,
+    "real_session_B_verified": false,
+    "same_tenant_distinct_store_ownership_verified": false,
+    "positive_and_cross_store_negative_rls_verified": false,
+    "revocation_termination_verified": false,
+    "provider_installation_to_store_verified": false
+  },
+  "security_gates": {
+    "v1_security_definer_owner_review": "REQUIRED",
+    "v2_real_auth_uid_review": "REQUIRED",
+    "v2_no_forgeable_guc": "REQUIRED",
+    "v2_store_membership_rls_migration": "BLOCKED",
+    "sku_uniqueness_decision_D02": "OPEN",
+    "real_rpc_release": "NO_GO"
+  }
+}
