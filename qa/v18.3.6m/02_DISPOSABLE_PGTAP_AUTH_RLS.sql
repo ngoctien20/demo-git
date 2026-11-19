@@ -4,6 +4,7 @@
 \echo V18_3_6M_PGTAP_START
 SELECT * FROM no_plan();
 SELECT ok(current_database()='tien404_v1836m_disposable','G02 isolated fixture database');
+SELECT ok(current_setting('server_version_num')::int BETWEEN 170000 AND 179999,'G01 PostgreSQL 17 version');
 SELECT ok(NOT (SELECT rolcanlogin FROM pg_roles WHERE rolname='tien404_m_owner'),'G03 private owner NOLOGIN');
 SELECT ok(NOT (SELECT rolcanlogin FROM pg_roles WHERE rolname='tien404_m_gateway'),'G04 caller NOLOGIN');
 SELECT ok(NOT (SELECT rolbypassrls FROM pg_roles WHERE rolname='tien404_m_gateway'),'G05 caller no BYPASSRLS');
@@ -18,7 +19,7 @@ SELECT ok(NOT has_table_privilege('tien404_m_gateway','qa_m_private.nonce_ledger
 SELECT ok(NOT has_table_privilege('tien404_m_gateway','qa_m_private.catalog','DELETE'),'G14 gateway cannot DELETE catalog directly');
 SELECT ok(has_function_privilege('tien404_m_gateway','qa_m_private.catalog_read_if_session_exists(text,text,uuid,uuid,uuid,uuid,uuid,integer,uuid,text,timestamptz)','EXECUTE'),'G15 gateway may execute read RPC only');
 SELECT ok((SELECT prosecdef FROM pg_proc WHERE oid='qa_m_private.catalog_read_if_session_exists(text,text,uuid,uuid,uuid,uuid,uuid,integer,uuid,text,timestamptz)'::regprocedure),'G16 SECDEF access only in private schema');
-SELECT ok((SELECT proconfig @> ARRAY['search_path='] FROM pg_proc WHERE oid='qa_m_private.catalog_read_if_session_exists(text,text,uuid,uuid,uuid,uuid,uuid,integer,uuid,text,timestamptz)'::regprocedure),'G17 search_path pinned to empty');
+SELECT ok((SELECT EXISTS(SELECT 1 FROM unnest(proconfig) AS cfg(setting) WHERE replace(cfg.setting,'"','')='search_path=') FROM pg_proc WHERE oid='qa_m_private.catalog_read_if_session_exists(text,text,uuid,uuid,uuid,uuid,uuid,integer,uuid,text,timestamptz)'::regprocedure),'G17 search_path pinned to empty');
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid='qa_m_auth.sessions'::regclass),'G18 auth sessions RLS on');
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid='qa_m_private.catalog'::regclass),'G19 catalog RLS on');
 SELECT ok((SELECT count(*) FROM pg_constraint WHERE conrelid='qa_m_private.nonce_ledger'::regclass AND contype='p')=1,'G20 nonce unique primary key');
