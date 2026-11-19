@@ -6,10 +6,11 @@
  */
 import { createHash } from 'node:crypto';
 const h64 = s => typeof s === 'string' && /^[a-f0-9]{64}$/.test(s);
+const gitCommit = s => typeof s === 'string' && /^[a-f0-9]{40}$/.test(s);
 const actor = x => typeof x === 'string' && /^private-[a-z0-9-]{5,80}$/.test(x);
 const REQUIRED = Object.freeze([
  'request_id','project_ref','scope','manifest_sha256','base_commit_sha',
- 'owner_evidence_hash','reviewer_evidence_hash','reviewer_report_hash',
+ 'owner_evidence_hash','reviewer_evidence_hash','reviewer_scope_agreement_hash',
  'owner_actor','reviewer_actor','implementer_actor','window_start','window_end',
  'read_only','private_storage','no_auth_sessions','no_secrets','no_permission_changes'
 ]);
@@ -30,8 +31,9 @@ export function evaluatePrivateApprovalIntake(candidate,now) {
    findings.push('MISSING_'+k);
  if(x.project_ref!=='ifxlvrhyjhbzbrkdsida')findings.push('STAGING_ONLY');
  if(x.scope!=='REDACTED_SECDEF_SOURCE_INSPECTION_ONLY')findings.push('SCOPE_NOT_READ_ONLY');
- for(const k of ['manifest_sha256','base_commit_sha','owner_evidence_hash',
-                  'reviewer_evidence_hash','reviewer_report_hash'])
+ if(!gitCommit(x.base_commit_sha))findings.push('INVALID_base_commit_sha');
+ for(const k of ['manifest_sha256','owner_evidence_hash',
+                  'reviewer_evidence_hash','reviewer_scope_agreement_hash'])
    if(!h64(x[k]))findings.push('INVALID_'+k);
  if(!actor(x.owner_actor)||!actor(x.reviewer_actor)||!actor(x.implementer_actor)||
     new Set([x.owner_actor,x.reviewer_actor,x.implementer_actor]).size!==3)
