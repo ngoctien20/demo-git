@@ -131,8 +131,8 @@ test("no AI tools, order writer or forwarding callable",async()=>{
 
 
 // M3_CHANGE_ENVELOPE_REGRESSION — syntax verified from safe n8n #5533 structural metadata.
-const liveShapeFixture=JSON.parse(readFileSync(new URL("../fixtures/meta-v27-postback-change.synthetic.json",import.meta.url),"utf8"));
-const recordedStructure=JSON.parse(readFileSync(new URL("../evidence/execution-5533-minimal-observation.json",import.meta.url),"utf8"));
+const liveShapeFixture=JSON.parse(readFileSync(new globalThis.URL("../fixtures/meta-v27-postback-change.synthetic.json",import.meta.url),"utf8"));
+const recordedStructure=JSON.parse(readFileSync(new globalThis.URL("../evidence/execution-5533-minimal-observation.json",import.meta.url),"utf8"));
 const changeBody=(field,value)=>({object:"page",entry:[{id:"NEVER_EMIT_PAGE_ID",changes:[{field,value}]}]});
 test("M3 observed signed Page changes[] postback accepted without AI/send",async()=>{
  const r=await call({object:liveShapeFixture});
