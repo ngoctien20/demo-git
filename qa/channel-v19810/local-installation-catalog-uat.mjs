@@ -23,11 +23,14 @@ const serverSettings={
  QA_ENDPOINT_B:{credentialRef:'QA_CRED_B',epoch:1,key:randomBytes(32),storeCode:'B'}
 };
 function insist(ok,code){if(!ok)throw Error('V19810_QA_'+code);}
+let stage='INITIAL';
 function psql(sql){
  insist(typeof sql==='string'&&sql.length<7000,'SQL_NOT_FIXED');
- return execFileSync('psql',[...PG,'-c',sql],{
-  encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:20000,
-  env:{...process.env,PGPASSWORD:'postgres'}}).trim();
+ try{
+  return execFileSync('psql',[...PG,'-c',sql],{
+   encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:20000,
+   env:{...process.env,PGPASSWORD:'postgres'}}).trim();
+ }catch {throw Error('V19810_QA_LOCAL_SQL_'+stage);}
 }
 function publicAnonKey(){
  const output=execFileSync('supabase',['status','-o','env'],{
@@ -170,9 +173,12 @@ async function run(){
   'NOT_APPROVED_LOCAL_CI');
  insist(!process.env.SUPABASE_ACCESS_TOKEN&&!process.env.SUPABASE_PROJECT_REF&&
   !process.env.T404_UAT_PROJECT_REF,'HOSTED_CREDENTIAL_ENV_BLOCKED');
+ stage='LOCAL_AUTH';
  const key=publicAnonKey(),a=await createOwner(key,'A'),b=await createOwner(key,'B');
+ stage='ASSIGN_OWNER_INSTALLATIONS';
  insist(a.id!==b.id,'OWNER_A_B_NOT_DISTINCT');
  setupOwners(a,b);
+ stage='FIRST_CATALOG_ADMISSION';
  const sessions=new Map([[a.id,a],[b.id,b]]);
  let passed=0;
  const ok=(value,name)=>{insist(value,'TEST_'+name);passed++;
