@@ -1,0 +1,31 @@
+name: TIEN404 M3-H7 Private Page Admission Offline QA
+on:
+  push:
+    branches:
+      - work/v1876cm7-meta-private-page-admission-offline-20261120
+  pull_request:
+    branches:
+      - work/v1876cm6-read-delivery-echo-real-acceptance-20261120
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm7-meta-page-admission-offline-qa.yml'
+permissions:
+  contents: read
+jobs:
+  no-send-admission-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Reject credentials and runtime deploy files
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+      - name: All offline ingress HMAC No-Send tests
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/h7-page-uat-guard.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
