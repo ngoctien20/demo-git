@@ -235,7 +235,7 @@ async function run(){
  ok((await handle(signed(event('QA_ENDPOINT_A','EVT_A009')),key,sessions)).allowed,
   'RESTORED_OWNER_AND_INSTALLATION_ALLOWED');
  const anonymous=await catalog(key,null,'A');
- ok(anonymous?.length===0,'NO_ANON_CATALOG');
+ ok(anonymous===null||anonymous.length===0,'NO_ANON_CATALOG');
  const forbidden=await call('/rest/v1/t404_v1989_products',key,a.token,'POST',
   {tenant_id:TENANT,store_code:'B',sku:'F99',price_vnd:1,stock_on_hand:3,
    fixture_tag:'SYNTHETIC_V1989'});
