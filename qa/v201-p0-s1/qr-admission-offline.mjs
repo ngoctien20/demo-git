@@ -46,7 +46,7 @@ function secureProviderLink(url, allowedOrigin) {
     return u.protocol === 'https:' && allowed.protocol === 'https:' &&
       u.origin === allowed.origin && !u.username && !u.password && !u.hash &&
       !/(token|secret|credential|api[_-]?key|jwt|access[_-]?key)/i.test(u.search) &&
-      !/\\.\\./.test(u.pathname) && u.pathname !== '/';
+      !/\.\./.test(u.pathname) && u.pathname !== '/';
   } catch { return false; }
 }
 
