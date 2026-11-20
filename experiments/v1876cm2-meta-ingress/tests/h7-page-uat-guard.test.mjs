@@ -52,6 +52,15 @@ test("H7 even entirely claimed verified evidence never creates actual installati
  assert.equal(r.providerSendAllowed,false);
  assert.equal(r.productionReady,false);
 });
+test("H7 pending installation claim cannot count as a completed evidence set",()=>{
+ const d=fullEvidence();
+ d.evidenceInventory.page_installation_provider_read="PENDING";
+ const r=assessH7Admission(d);
+ assert.equal(r.claimsComplete,false);
+ assert.equal(r.conversationReadAuthorized,false);
+ assert.equal(r.livePageInstalledVerified,false);
+ assert.ok(r.missing.includes("allEvidenceClaimsVerified"));
+});
 for(const [name,mutate] of [
  ["wrong_app",d=>d.appId="1637989744444198"],
  ["live_environment",d=>d.environment="PRODUCTION"],
