@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "qa/channel-v1989/**"
+      - "qa/channel-v19810/**"
       - ".github/workflows/tien404-v1989-local-supabase-auth-rls.yml"
   workflow_dispatch:
 
