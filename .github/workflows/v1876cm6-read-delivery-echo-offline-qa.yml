@@ -1,0 +1,33 @@
+name: TIEN404 V18.7.6C-M3-H6 Read Delivery Echo Offline QA
+on:
+  push:
+    branches:
+      - work/v1876cm6-read-delivery-echo-real-acceptance-20261120
+  pull_request:
+    branches:
+      - work/v1876cm5-private-redacted-telemetry-canary-20261120
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm6-read-delivery-echo-offline-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-messenger-h6-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Assert no deployment configs or secrets
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+      - name: Full H6 + M5 signed event contract regression
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/worker.mjs
+          node --check experiments/v1876cm2-meta-ingress/src/receipt-worker.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
