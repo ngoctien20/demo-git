@@ -1,7 +1,7 @@
 /**
  * V18.7.6C-M4: OPT-IN redacted, receipt-only wrapper for the isolated Meta QA Worker.
  * No DB/queue/network, provider sends, customer identifiers or raw payload logging.
- * Do NOT enable REDACTED_RECEIPTS_ENABLED on a public Worker until owner approves
+ * Requires an additional time-bounded REDACTED_RECEIPTS_EXPIRES_AT_MS gate.\n * Do NOT enable REDACTED_RECEIPTS_ENABLED on a public Worker until owner approves
  * sanitized logging/retention and a separate deployment. Currently OFF by default.
  */
 import ingress from "./worker.mjs";
@@ -36,7 +36,10 @@ export function createReceiptHandler(inner=ingress, writer=console.info){
  return {async fetch(request,env,ctx){
    const response=await inner.fetch(request,env,ctx);
    // Only a verified POST with a 200 response may produce a receipt.
+   const deadline=Number(env?.REDACTED_RECEIPTS_EXPIRES_AT_MS);
+   const now=Date.now();
    if(env?.REDACTED_RECEIPTS_ENABLED!=="true"||
+      !Number.isSafeInteger(deadline)||deadline<=now||deadline>now+90*60*1000||
       request.method!=="POST"||response.status!==200)return response;
    try{
     const data=await response.clone().json();

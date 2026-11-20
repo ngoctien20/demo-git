@@ -1,0 +1,21 @@
+name: TIEN404 M3-H5 Hosted Negative HTTPS Smoke (QA Canary ONLY)
+on:
+  push:
+    branches:
+      - work/v1876cm5-private-redacted-telemetry-canary-20261120
+    paths:
+      - '.github/workflows/v1876cm5-hosted-negative-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hosted-qa-no-secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test only invalid token / HMAC / method / route on QA Canary
+        run: |
+          set -euo pipefail
+          bash experiments/v1876cm2-meta-ingress/tests/live-negative-https-smoke.sh enabled
+# H5 expiring receipt staged; verify invalid requests remain fail-closed.
