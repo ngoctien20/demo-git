@@ -1,0 +1,75 @@
+{
+  "version": "V18.6.10",
+  "observedDateJst": "2026-11-19",
+  "classification": "COMPLETE_CURRENT_N8N_LIST_STATIC_NODE_PARAMETER_SCAN_ONLY",
+  "method": "CONNECTED_N8N_READ_ONLY_LIST_AND_WORKFLOW_DETAILS_DRAFT_PUBLISHED_WHEN_DIFFERENT",
+  "scope": {
+    "totalListed": 171,
+    "activeListed": 22,
+    "inactiveListed": 149,
+    "totalGraphDetailsRead": 171,
+    "readFailures": 0,
+    "scanCohorts": [
+      {"start": 0, "end": 17, "inspected": 18, "rpcMatches": 0},
+      {"start": 18, "end": 35, "inspected": 18, "rpcMatches": 0},
+      {"start": 36, "end": 53, "inspected": 18, "rpcMatches": 0},
+      {"start": 54, "end": 71, "inspected": 18, "rpcMatches": 0},
+      {"start": 72, "end": 89, "inspected": 18, "rpcMatches": 0},
+      {"start": 90, "end": 107, "inspected": 18, "rpcMatches": 0},
+      {"start": 108, "end": 125, "inspected": 18, "rpcMatches": 0},
+      {"start": 126, "end": 143, "inspected": 18, "rpcMatches": 0},
+      {"start": 144, "end": 161, "inspected": 18, "rpcMatches": 0},
+      {"start": 162, "end": 170, "inspected": 9, "rpcMatches": 1}
+    ]
+  },
+  "patterns": ["save_merchant_product", "qa_shop_b_zalo_claim", "qa_owner_pairing", "/rpc/", "/rest/v1"],
+  "literalRpcReferences": [
+    {"workflowId": "OgDZNSAvKEvhnAvn", "workflowName": "TIEN404_ZALO_V2_SHADOW_STAGING", "active": true, "scope": "published", "nodeName": "Submit pending claim for Shop B", "nodeType": "n8n-nodes-base.httpRequest", "rpc": "qa_shop_b_zalo_claim", "httpMethod": "POST", "parentPublishedWorkflowId": "yIJk8LvJoLF40Z62", "connectionVerifiedInV1869": true, "actualRpcExecutionVerified": false}
+  ],
+  "noDirectLiteralReferencesFoundFor": ["save_merchant_product", "qa_owner_pairing"],
+  "doesNotProve": ["NO_DYNAMIC_RPC_CALLS", "NO_EXTERNAL_RENDER_OR_CLOUDFLARE_CALLERS", "NO_SUPABASE_EDGE_FUNCTION_CALLERS", "NO_BROWSER_CLIENT_CALLERS", "RPC_WAS_EXECUTED", "PROVIDER_SIGNATURE_VERIFIED", "REAL_AUTH_AB_STORE_RLS"],
+  "supabase": {
+    "canonicalStoreTables": 0,
+    "sixCommerceTablesWithStoreId": 0,
+    "publicRestrictivePolicies": 0,
+    "skuConstraint": "UNIQUE (tenant_id, sku)",
+    "claimRpcAnonExecute": true,
+    "ownerPairingAuthenticatedExecute": true,
+    "productWriterAuthenticatedExecute": true,
+    "productWriterStoreScoped": false,
+    "realOwnerAbVerified": false
+  },
+  "backup": {
+    "status": "UNKNOWN_NO_CONNECTED_BACKUP_LIST_ACTION",
+    "planTierVerified": false,
+    "dailyBackupExistenceVerified": false,
+    "pitrEnabledVerified": false,
+    "lastSuccessfulBackupVerified": false,
+    "restoreDrillPassed": false,
+    "backupApprovalRecorded": false,
+    "officialDocs": "https://supabase.com/docs/guides/platform/backups"
+  },
+  "decisions": {
+    "canonicalDesignPr": 417,
+    "disposableFullDmlPgtapPr": 421,
+    "storeLocalSku": "RECOMMENDED_NOT_APPROVED",
+    "skuD02OwnerApproved": false,
+    "tenantOwnerRole": "owner",
+    "canonicalStoreOwnerRole": "store_owner",
+    "roleMappingOwnerApproved": false,
+    "renderWorkspaceConfirmed": false,
+    "renderLiveSourceAudited": false,
+    "rpcOtherAppCallersExhaustive": false,
+    "sameTenantStoreAbAcceptance": false
+  },
+  "safety": {
+    "n8nWorkflowExecutionsTriggered": 0,
+    "n8nPublishedEdits": 0,
+    "supabaseSqlWrites": 0,
+    "supabaseGrantChanges": 0,
+    "supabaseMigrationsApplied": 0,
+    "productionDeployments": 0,
+    "providerMessagesSent": 0,
+    "customerRowsRead": 0
+  }
+}
