@@ -195,7 +195,7 @@ BEGIN
  RAISE EXCEPTION 'PRICE_ISOLATION_FAILED'; END IF;
  IF (SELECT count(*) FROM order_items)<>2 OR (SELECT count(*) FROM messages)<>2
  THEN RAISE EXCEPTION 'LEGACY_ROWS_LOST'; END IF;
- IF (SELECT md5(pg_get_functiondef('t404_v19817_legacy.save_product(uuid,text,bigint)'::regprocedure))
+ IF (SELECT md5(pg_get_functiondef('t404_v19817_legacy.save_product(uuid,text,bigint)'::regprocedure)))
  <> (SELECT checksum FROM t404_v19817_legacy.function_hash) THEN
  RAISE EXCEPTION 'LEGACY_WRITER_FUNCTION_CHANGED'; END IF;
  IF (SELECT price_vnd FROM t404_v19817_legacy.products WHERE sku='F01')<>159000 THEN
