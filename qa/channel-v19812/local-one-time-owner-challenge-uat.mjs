@@ -104,6 +104,24 @@ const granted=(ref,expectState)=>sql("SELECT count(*) FROM public.t404_v19812_gr
  "WHERE installation_ref='"+ref+"' AND state='"+expectState+"';")==='1';
 const counted=(ref,state)=>sql("SELECT count(*) FROM public.t404_v19812_challenges "+
  "WHERE challenge_ref='"+ref+"' AND state='"+state+"';")==='1';
+// Server-owned, read-only synthetic authority check; NEVER trust the grant alone.
+function eligibleInstallation(ref) {
+ demand(/^QA_INSTALL_[EF]$/.test(ref),'BAD_INSTALL_REF');
+ const q="SELECT count(*) FROM public.t404_v19812_grants g "+
+ "JOIN public.t404_v19810_installations i ON i.installation_ref=g.installation_ref "+
+ "JOIN public.t404_v1989_store_memberships sm ON sm.tenant_id=i.tenant_id "+
+ " AND sm.store_code=i.store_code AND sm.user_id=i.owner_user_id "+
+ "JOIN public.t404_v1989_tenant_memberships tm ON tm.tenant_id=i.tenant_id "+
+ " AND tm.user_id=i.owner_user_id "+
+ "WHERE i.installation_ref='"+ref+"' AND i.state='qa_active' "+
+ " AND i.revoked_at IS NULL AND i.verified_at<=now() "+
+ " AND g.owner_user_id=i.owner_user_id AND g.tenant_id=i.tenant_id "+
+ " AND g.store_code=i.store_code AND g.binding_version=i.version "+
+ " AND g.scope='readonly_catalog_qa_only' AND g.state='approved' "+
+ " AND g.consented_at IS NOT NULL AND g.revoked_at IS NULL "+
+ " AND sm.active=true AND sm.role='owner' AND tm.owner_active=true;";
+ return sql(q)==='1';
+}
 async function ownCatalog(key,actor,store) {
  const p='/rest/v1/t404_v1989_products?select=store_code,sku,price_vnd,stock_on_hand'+
   '&store_code=eq.'+store+'&sku=eq.F01';
@@ -125,6 +143,8 @@ async function run(){
  ok(a.id!==b.id&&b.id!==m.id&&a.id!==m.id,'DISTINCT_LOCAL_REAL_AUTH_JWTS');
  ok(granted('QA_INSTALL_E','pending')&&granted('QA_INSTALL_F','pending'),
   'UNAPPROVED_INSTALLATIONS_ARE_PENDING');
+ ok(!eligibleInstallation('QA_INSTALL_E')&&!eligibleInstallation('QA_INSTALL_F'),
+  'PENDING_CONSENT_NEVER_GRANTS_SERVER_ADMISSION');
  const privateRead=await request('/rest/v1/t404_v19812_challenges?select=nonce_sha256',key,a.jwt);
  ok(!privateRead.ok||Array.isArray(privateRead.value)&&privateRead.value.length===0,
   'NONCE_HASH_NOT_EXPOSED_TO_OWNER');
@@ -157,6 +177,8 @@ async function run(){
  ok(approved.ok&&approved.value===true,'REAL_OWNER_A_JWT_CONSUMES_VALID_NONCE');
  ok(granted('QA_INSTALL_E','approved')&&counted('QA_CHALLENGE_E001','consumed'),
   'ATOMIC_CHALLENGE_AND_GRANT_TRANSITION');
+ ok(eligibleInstallation('QA_INSTALL_E'),
+  'APPROVED_CHALLENGE_MATCHES_SERVER_INSTALLATION');
  const replay=await approval(key,a,'QA_INSTALL_E','QA_CHALLENGE_E001',n.E);
  ok(replay.ok&&replay.value===false,'REPLAYED_CHALLENGE_DENIED');
  const simultaneous=await Promise.all([
@@ -168,6 +190,13 @@ async function run(){
    'CONCURRENT_SAME_NONCE_EXACTLY_ONE_APPROVAL');
  ok(granted('QA_INSTALL_F','approved')&&counted('QA_CHALLENGE_F001','consumed'),
    'CONCURRENT_APPROVAL_LEAVES_SINGLE_CONSENT_GRANT');
+ sql("UPDATE public.t404_v19810_installations SET version=3 "+
+   "WHERE installation_ref='QA_INSTALL_F';");
+ ok(!eligibleInstallation('QA_INSTALL_F'),'OLD_CONSENT_DENIED_AFTER_BINDING_VERSION_ROTATION');
+ sql("UPDATE public.t404_v19810_installations SET version=2 "+
+   "WHERE installation_ref='QA_INSTALL_F';");
+ ok(eligibleInstallation('QA_INSTALL_F'),'RESTORED_MATCHING_BINDING_ALLOWED');
+
  const prodA=await ownCatalog(key,a,'A'),crossA=await ownCatalog(key,a,'B');
  ok(prodA.length===1&&prodA[0].price_vnd===159000&&crossA.length===0,
   'A_REAL_JWT_CAN_READ_ONLY_STORE_A_CATALOG');
@@ -180,6 +209,8 @@ async function run(){
  ok(revoked.ok&&revoked.value===true,'A_CAN_REVOKE_OWN_GRANTED_CONSENT');
  ok(granted('QA_INSTALL_E','revoked')&&granted('QA_INSTALL_F','approved'),
   'CONSENT_REVOCATION_IS_STORE_SCOPED');
+ ok(!eligibleInstallation('QA_INSTALL_E')&&eligibleInstallation('QA_INSTALL_F'),
+  'REVOKED_GRANT_NEVER_ADMITS_INSTALLATION');
  const reGrant=await approval(key,a,'QA_INSTALL_E','QA_CHALLENGE_E001',n.E);
  ok(reGrant.ok&&reGrant.value===false,'REVOKED_GRANT_CANNOT_REACTIVATE_VIA_REPLAY');
  sql("UPDATE public.t404_v1989_store_memberships SET active=false "+
@@ -188,6 +219,8 @@ async function run(){
  const catalogAfter=await ownCatalog(key,b,'B');
  ok(auth.ok&&catalogAfter.length===0,
   'STILL_VALID_OWNER_JWT_DENIED_AFTER_STORE_MEMBERSHIP_REVOKE');
+ ok(!eligibleInstallation('QA_INSTALL_F'),
+  'SERVER_DENIES_OLD_APPROVAL_AFTER_OWNER_STORE_REVOKE');
  const blockedRevoke=await revoke(key,b,'QA_INSTALL_F');
  ok(blockedRevoke.ok&&blockedRevoke.value===false,
   'REVOKED_OWNER_CANNOT_REVOKE_OR_MODIFY_GRANT');
