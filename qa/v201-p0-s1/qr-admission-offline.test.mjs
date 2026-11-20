@@ -32,6 +32,7 @@ for (const [title, patch] of [
  ['link userinfo',{linkProof:proof(PROOF_SCOPES.LINK,{url:'https://user:pass@fixture.zalo.invalid/bot-A'})}],
  ['link with URL fragment',{linkProof:proof(PROOF_SCOPES.LINK,{url:'https://fixture.zalo.invalid/bot-A#id'})}],
  ['link absent bot path',{linkProof:proof(PROOF_SCOPES.LINK,{url:'https://fixture.zalo.invalid/'})}],
+ ['path traversal link',{linkProof:proof(PROOF_SCOPES.LINK,{url:'https://fixture.zalo.invalid/a/../bot-A'})}],
  ['tampered signed URL',{linkProof:{...proof(PROOF_SCOPES.LINK,{url:'https://fixture.zalo.invalid/bot-A'}),url:'https://fixture.zalo.invalid/bot-B'}}],
  ['untrusted replacement signer',{fixtureKey:'bad-signer'}],
 ]) test(`fail closed: ${title}`,()=>{const r=candidate(patch);assert.equal(r.status,'DENIED');assert.equal(r.canSend,false);assert.equal(r.canWrite,false);assert.equal(r.qrPayload,null)});
