@@ -18,3 +18,4 @@ jobs:
         run: |
           set -euo pipefail
           bash experiments/v1876cm2-meta-ingress/tests/live-negative-https-smoke.sh enabled
+# H5 expiring receipt staged; verify invalid requests remain fail-closed.
