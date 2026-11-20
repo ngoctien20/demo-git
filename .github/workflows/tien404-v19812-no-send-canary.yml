@@ -1,0 +1,42 @@
+name: "TIEN404 V19.8.12 Provider Read-Only Evidence × No-Send Canary QA"
+
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v19812/**"
+      - ".github/workflows/tien404-v19812-no-send-canary.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-send-contract:
+    name: "Official shape guard / localhost shared-secret receipt only / NO SEND"
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout without persisted token
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: V19.8.12 secret-header no-send receipt unit tests
+        run: node qa/channel-v19812/local-no-send-canary.test.mjs
+      - name: V19.8.12 real localhost HTTP canary (synthetic payloads only)
+        env:
+          T404_V19812_CANARY: "LOCAL_NO_SEND_TEST_ONLY"
+        run: node qa/channel-v19812/local-no-send-canary.mjs --local-canary
+      - name: Verify provider APIs, hosted connections and writes are forbidden
+        run: |
+          test -z "${ZALO_BOT_TOKEN:-}"
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_DB_PASSWORD:-}"
+          test ! -e qa/channel-v19812/.env
+          test ! -e qa/channel-v19812/hosted-migration.sql
+          echo "REAL_PROVIDER_GETME_GETWEBHOOKINFO=NOT_RUN"
+          echo "PROVIDER_SEND=0"
+          echo "HOSTED_COMMERCE_WRITES=0"

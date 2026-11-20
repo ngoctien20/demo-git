@@ -1,0 +1,38 @@
+name: "TIEN404 V19.8.8 Real Owner JWT UAT Runner Safety (NO HOSTED ACCESS)"
+
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v1988/**"
+      - ".github/workflows/tien404-v1988-real-owner-uat-runner-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-runner-safety:
+    name: "Node 22 target guard and Store A B fixture checks only"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run local UAT runner safety tests (NO real JWT or hosted reads)
+        run: node qa/channel-v1988/owner-ab-real-auth-readonly-uat.test.mjs
+      - name: Assert no executable hosted migration or CI credentials
+        shell: bash
+        run: |
+          test -f qa/channel-v1988/ISOLATED_SUPABASE_SETUP_PREVIEW_DO_NOT_APPLY.md
+          test ! -e qa/channel-v1988/hosted-migration.sql
+          test ! -e qa/channel-v1988/.env
+          test -z "${T404_UAT_EXPLICIT:-}"
+          test -z "${T404_UAT_OWNER_A_PASSWORD:-}"
+          test -z "${T404_UAT_OWNER_B_PASSWORD:-}"
+          echo "V19.8.8_REAL_AUTH_EXECUTION=NOT_RUN"
