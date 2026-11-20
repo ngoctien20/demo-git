@@ -45,6 +45,8 @@ export function assessH7Admission(evidence){
   checks.proofInventoryExists=obj(d.evidenceInventory)
    &&evidenceStates.every(k=>d.evidenceInventory[k]==="PENDING"
      ||d.evidenceInventory[k]==="VERIFIED");
+  checks.allEvidenceClaimsVerified=obj(d.evidenceInventory)
+   &&evidenceStates.every(k=>d.evidenceInventory[k]==="VERIFIED");
   // These are claims, not independently validated Meta/Owner attestations.
   const allClaimed=Object.values(checks).every(Boolean);
   const missing=Object.keys(checks).filter(k=>!checks[k]);
