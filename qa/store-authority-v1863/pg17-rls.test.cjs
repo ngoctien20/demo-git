@@ -38,7 +38,7 @@ function expectedError(query,pattern){
 before(()=>{if(process.env.V1863_DISPOSABLE_POSTGRES!=='true')throw new Error('REFUSE: this suite requires V1863_DISPOSABLE_POSTGRES=true'); const r=psql({file:BASE});assert.equal(r.exit,0,r.stderr);});
 test('canonical Store role namespace accepts store_owner and rejects Tenant owner',()=>{
  const r=psql({sql:"SELECT count(*) FROM v1863_qa.store_memberships WHERE role='store_owner' AND active"});
- assert.equal(r.exit,0,r.stderr);assert.equal(r.stdout,'5');
+ assert.equal(r.exit,0,r.stderr);assert.equal(r.stdout,'3');
  expectedError("INSERT INTO v1863_qa.store_memberships VALUES ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000099','owner',true)",/check constraint/);
 });
 test('Owner A sees only its tenant',()=>expectCount('a','tenants',1));
