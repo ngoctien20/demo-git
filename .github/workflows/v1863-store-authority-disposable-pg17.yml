@@ -13,6 +13,7 @@ on:
       - 'qa/store-authority-v18611/**'
       - 'qa/store-authority-v18614/**'
       - 'qa/store-authority-v18615/**'
+      - 'qa/store-authority-v18619/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
   pull_request:
     paths:
@@ -27,6 +28,7 @@ on:
       - 'qa/store-authority-v18611/**'
       - 'qa/store-authority-v18614/**'
       - 'qa/store-authority-v18615/**'
+      - 'qa/store-authority-v18619/**'
       - '.github/workflows/v1863-store-authority-disposable-pg17.yml'
 permissions:
   contents: read
@@ -166,6 +168,11 @@ jobs:
       - name: V18.6.16 test Windows filesystem guards (NO Supabase credentials)
         shell: pwsh
         run: node --test qa/store-authority-v18615/owner-linked-export.test.cjs
+      - name: V18.6.19 guided Windows READINESS ONLY local tests
+        shell: pwsh
+        run: |
+          node --test qa/store-authority-v18619/guided-readiness.test.cjs
+          node qa/store-authority-v18619/guided-readiness.cjs --help
       - name: V18.6.16 Windows offline preflight and CI export refusal
         shell: pwsh
         run: node qa/store-authority-v18615/windows-preflight-smoke.cjs
