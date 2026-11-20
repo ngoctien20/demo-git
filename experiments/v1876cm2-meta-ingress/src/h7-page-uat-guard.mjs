@@ -30,7 +30,6 @@ const noAuthority=Object.freeze({
   productionReady:false
 });
 const obj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
-const isClosedString=x=>typeof x==="string"&&x.length>0&&x.length<=128;
 
 /** No upstream string or boolean creates Page/Store authority on its own. */
 export function assessH7Admission(evidence){
@@ -92,7 +91,9 @@ export function classifyH7ConversationForQA(payload,{hmacAlreadyVerified=false}=
 }
 
 /** Must never turn even complete synthetic evidence into a Send or Write. */
-export function noSendDecision({eventType,metaHmacVerified=false,ownerApproval=false}={}){
+export function noSendDecision(input){
+ const candidate=obj(input)?input:{};
+ const {eventType,metaHmacVerified=false,ownerApproval=false}=candidate;
  return Object.freeze({
   eventClass:RELEVANT_FIELDS.includes(eventType)?eventType:"unknown",
   metaHmacVerified:metaHmacVerified===true,
