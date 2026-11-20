@@ -159,8 +159,15 @@ async function run(){
   'ATOMIC_CHALLENGE_AND_GRANT_TRANSITION');
  const replay=await approval(key,a,'QA_INSTALL_E','QA_CHALLENGE_E001',n.E);
  ok(replay.ok&&replay.value===false,'REPLAYED_CHALLENGE_DENIED');
- const bAccepted=await approval(key,b,'QA_INSTALL_F','QA_CHALLENGE_F001',n.F);
- ok(bAccepted.ok&&bAccepted.value===true,'REAL_OWNER_B_JWT_APPROVES_OWN_STORE');
+ const simultaneous=await Promise.all([
+  approval(key,b,'QA_INSTALL_F','QA_CHALLENGE_F001',n.F),
+  approval(key,b,'QA_INSTALL_F','QA_CHALLENGE_F001',n.F)
+ ]);
+ ok(simultaneous.filter(r=>r.ok&&r.value===true).length===1&&
+    simultaneous.filter(r=>r.ok&&r.value===false).length===1,
+   'CONCURRENT_SAME_NONCE_EXACTLY_ONE_APPROVAL');
+ ok(granted('QA_INSTALL_F','approved')&&counted('QA_CHALLENGE_F001','consumed'),
+   'CONCURRENT_APPROVAL_LEAVES_SINGLE_CONSENT_GRANT');
  const prodA=await ownCatalog(key,a,'A'),crossA=await ownCatalog(key,a,'B');
  ok(prodA.length===1&&prodA[0].price_vnd===159000&&crossA.length===0,
   'A_REAL_JWT_CAN_READ_ONLY_STORE_A_CATALOG');
