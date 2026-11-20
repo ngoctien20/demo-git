@@ -1,0 +1,31 @@
+name: TIEN404 V18.7.6C-M4 Redacted Meta Receipt Offline QA
+on:
+  push:
+    branches:
+      - work/v1876cm4-redacted-receipt-read-delivery-echo-offline
+  pull_request:
+    branches:
+      - work/v1876cm3h2-secret-binding-https-admission-prep
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm4-redacted-receipt-offline-qa.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-no-credentials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Prevent deployment config or local secrets
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+      - name: Validate redacted receipt wrapper and full earlier ingress regression
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/receipt-worker.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
