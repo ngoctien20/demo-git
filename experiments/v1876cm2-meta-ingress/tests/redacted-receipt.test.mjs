@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {createHmac} from "node:crypto";
 import {createReceiptHandler,redactReceipt} from "../src/receipt-worker.mjs";
 const SECRET="SYNTHETIC_META_APP_SECRET_LONG_ENOUGH_123456";
-const ENV=Object.freeze({INSPECTOR_MODE:"ISOLATED_QA_ONLY",INSPECTOR_ENABLED:"true",META_APP_SECRET:SECRET,META_VERIFY_TOKEN:"TEST_VERIFY_TOKEN_QA_1234567890",REDACTED_RECEIPTS_ENABLED:"true"});
+const ENV=Object.freeze({INSPECTOR_MODE:"ISOLATED_QA_ONLY",INSPECTOR_ENABLED:"true",META_APP_SECRET:SECRET,META_VERIFY_TOKEN:"TEST_VERIFY_TOKEN_QA_1234567890",REDACTED_RECEIPTS_ENABLED:"true",REDACTED_RECEIPTS_EXPIRES_AT_MS:String(Date.now()+45*60*1000)});
 const URL="https://offline-qa.invalid/meta-qa/webhook";
 const sample=(payload,via="messaging")=>({object:"page",entry:[{id:"PRIVATE_QA_PAGE_ID",[via]:[{sender:{id:"PRIVATE_QA_PSID"},recipient:{id:"PRIVATE_QA_PAGE_ID"},...payload}]}]});
 const sampleChange=(field,value)=>({object:"page",entry:[{id:"PRIVATE_QA_PAGE_ID",changes:[{field,value}]}]});
@@ -130,4 +130,26 @@ test("M4 failed logger cannot break signed POST acceptance",async()=>{
  const h=createReceiptHandler(undefined,()=>{throw Error("TEST_LOGGING_UNAVAILABLE");});
  const res=await h.fetch(request(sample({read:{watermark:1}})),ENV);
  assert.equal(res.status,200);
+});
+
+test("M5 no expiry configured fails closed with no receipts",async()=>{
+ const {REDACTED_RECEIPTS_EXPIRES_AT_MS,...env}=ENV;
+ const r=await run(sample({read:{watermark:1}}),env);
+ assert.equal(r.response.status,200);assert.deepEqual(r.logs,[]);
+});
+test("M5 expired receipt window does not log",async()=>{
+ const r=await run(sample({read:{watermark:1}}),{...ENV,REDACTED_RECEIPTS_EXPIRES_AT_MS:String(Date.now()-1000)});
+ assert.equal(r.response.status,200);assert.deepEqual(r.logs,[]);
+});
+test("M5 invalid expiry does not log",async()=>{
+ const r=await run(sample({read:{watermark:1}}),{...ENV,REDACTED_RECEIPTS_EXPIRES_AT_MS:"invalid_time"});
+ assert.equal(r.response.status,200);assert.deepEqual(r.logs,[]);
+});
+test("M5 far-future expiry beyond policy fails closed",async()=>{
+ const r=await run(sample({read:{watermark:1}}),{...ENV,REDACTED_RECEIPTS_EXPIRES_AT_MS:String(Date.now()+3*3600*1000)});
+ assert.equal(r.response.status,200);assert.deepEqual(r.logs,[]);
+});
+test("M5 expiry never authorizes bad signature",async()=>{
+ const r=await run(sample({message:{text:"secret"}}),ENV,"sha256="+"0".repeat(64));
+ assert.equal(r.response.status,401);assert.deepEqual(r.logs,[]);
 });
