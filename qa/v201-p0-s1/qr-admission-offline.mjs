@@ -38,7 +38,7 @@ function proofValid(proof, scope, expected, fixtureKey, now) {
 }
 
 function secureProviderLink(url, allowedOrigin) {
-  if (typeof url !== 'string' || url.length > 512 || typeof allowedOrigin !== 'string') return false;
+  if (typeof url !== 'string' || url.length > 512 || typeof allowedOrigin !== 'string' || url.includes('..') || /%2e/i.test(url)) return false;
   try {
     const u = new URL(url);
     const allowed = new URL(allowedOrigin);
