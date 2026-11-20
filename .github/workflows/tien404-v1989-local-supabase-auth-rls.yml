@@ -82,6 +82,15 @@ jobs:
         shell: bash
         working-directory: qa/channel-v1989
         run: node local-supabase-real-jwt-rls.mjs
+      - name: Verify expanded six-table Store fixture safety
+        shell: bash
+        run: node qa/channel-v1989/local-real-auth-uat.test.mjs
+      - name: Exercise six Commerce tables with fresh real GoTrue JWTs
+        shell: bash
+        env:
+          T404_V1989_DOCKER_ONLY: "YES_LOCAL_CI"
+        working-directory: qa/channel-v1989
+        run: node local-real-auth-uat.mjs
       - name: Dispose only this local CI stack
         if: always()
         shell: bash
