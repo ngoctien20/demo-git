@@ -15,7 +15,7 @@ CREATE TABLE v1863_qa.store_memberships (
  tenant_id uuid NOT NULL,
  store_id uuid NOT NULL,
  user_id uuid NOT NULL,
- role text NOT NULL CHECK(role IN ('owner','manager','staff')),
+ role text NOT NULL CHECK(role IN ('store_owner','manager','staff')),
  active boolean NOT NULL,
  PRIMARY KEY (tenant_id,store_id,user_id),
  FOREIGN KEY (tenant_id,store_id) REFERENCES v1863_qa.stores(tenant_id,id)
@@ -56,12 +56,12 @@ INSERT INTO v1863_qa.stores VALUES
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','B','active'),
  ('10000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000003','C','active');
 INSERT INTO v1863_qa.store_memberships VALUES
- ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','owner',true),
- ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','30000000-0000-4000-8000-000000000002','owner',true),
+ ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','store_owner',true),
+ ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','30000000-0000-4000-8000-000000000002','store_owner',true),
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000004','manager',true),
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000005','staff',true),
- ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000006','owner',false),
- ('10000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003','owner',true);
+ ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000006','store_owner',false),
+ ('10000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000003','30000000-0000-4000-8000-000000000003','store_owner',true);
 INSERT INTO v1863_qa.orders VALUES
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000001','order-a'),
  ('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','40000000-0000-4000-8000-000000000002','order-b'),
@@ -98,14 +98,14 @@ CREATE POLICY orders_manager_read ON v1863_qa.orders FOR SELECT TO v1863_authent
   SELECT 1 FROM v1863_qa.store_memberships m JOIN v1863_qa.stores s ON s.tenant_id=m.tenant_id AND s.id=m.store_id
   WHERE m.tenant_id=orders.tenant_id AND m.store_id=orders.store_id
    AND m.user_id=nullif(current_setting('request.jwt.claim.sub',true),'')::uuid AND m.active
-   AND m.role IN ('owner','manager') AND s.status='active'
+   AND m.role IN ('store_owner','manager') AND s.status='active'
  ));
 CREATE POLICY page_manager_read ON v1863_qa.page_connections FOR SELECT TO v1863_authenticated
  USING (EXISTS (
   SELECT 1 FROM v1863_qa.store_memberships m JOIN v1863_qa.stores s ON s.tenant_id=m.tenant_id AND s.id=m.store_id
   WHERE m.tenant_id=page_connections.tenant_id AND m.store_id=page_connections.store_id
    AND m.user_id=nullif(current_setting('request.jwt.claim.sub',true),'')::uuid AND m.active
-   AND m.role IN ('owner','manager') AND s.status='active'
+   AND m.role IN ('store_owner','manager') AND s.status='active'
  ));
 
 -- Tenant listing must not bypass store membership. A revoked user sees no tenants.
