@@ -5,6 +5,7 @@ on:
     paths:
       - "qa/channel-v1989/**"
       - "qa/channel-v19810/**"
+      - "qa/channel-v19811/**"
       - ".github/workflows/tien404-v1989-local-supabase-auth-rls.yml"
   workflow_dispatch:
 
@@ -114,6 +115,25 @@ jobs:
           T404_V19810_LOCAL_ONLY: "DOCKER_SYNTHETIC_NO_SEND"
         working-directory: qa/channel-v1989
         run: node ../channel-v19810/local-installation-catalog-uat.mjs
+      - name: V19.8.11 local Owner JWT consent fixture with no hosted grants
+        shell: bash
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "54322"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          PGDATABASE: "postgres"
+        run: |
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "54322"
+          psql -X -v ON_ERROR_STOP=1 -q -f qa/channel-v19811/local-owner-consent-rls.sql
+          echo "V19811_LOCAL_CONSENT_RLS_FIXTURE_APPLIED"
+      - name: V19.8.11 local Owner signed JWT approves or revokes Bot Store consent
+        shell: bash
+        env:
+          T404_V19811_DOCKER_ONLY: "OWNER_CONSENT_JWT_NO_SEND"
+        working-directory: qa/channel-v1989
+        run: node ../channel-v19811/local-merchant-consent-jwt-uat.mjs
       - name: Dispose only this local CI stack
         if: always()
         shell: bash
