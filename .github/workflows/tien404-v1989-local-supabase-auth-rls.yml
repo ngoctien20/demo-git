@@ -91,6 +91,28 @@ jobs:
           T404_V1989_DOCKER_ONLY: "YES_LOCAL_CI"
         working-directory: qa/channel-v1989
         run: node local-real-auth-uat.mjs
+      - name: V19.8.10 pure mock-provider signature and catalog contract QA
+        shell: bash
+        run: node qa/channel-v19810/mock-ingress-catalog-policy.test.mjs
+      - name: V19.8.10 local private Bot registry consent and idempotent inbox schema
+        shell: bash
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "54322"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          PGDATABASE: "postgres"
+        run: |
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "54322"
+          psql -X -v ON_ERROR_STOP=1 -q -f qa/channel-v19810/local-installation-authority.sql
+          echo "V19810_LOCAL_PRIVATE_INSTALLATION_REGISTRY_APPLIED"
+      - name: V19.8.10 signed synthetic provider -> installation owner -> JWT catalog integration
+        shell: bash
+        env:
+          T404_V19810_LOCAL_ONLY: "DOCKER_SYNTHETIC_NO_SEND"
+        working-directory: qa/channel-v19810
+        run: node local-installation-catalog-uat.mjs
       - name: Dispose only this local CI stack
         if: always()
         shell: bash
