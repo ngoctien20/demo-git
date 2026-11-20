@@ -58,7 +58,7 @@ The customer-facing QR is **not** the merchant-admin QR. Neither may contain bot
 
 Run `node --test qa/v201-p0-s1/qr-admission-offline.test.mjs` on Node 22.
 
-32 test cases: complete synthetic evidence **never** issues a live QR or grants send/write; expired/forged owner/provider/link evidence, revoked installation, wrong store/tenant/bot, URL origin and secret leak, replay and unsigned/expired inbound evidence all fail closed. The test-only HMAC signer is a simulation of a trusted boundary, **not** real Zalo attestation. It does not exercise hosted JWT, production RLS, real webhook or actual QR scan.
+33 test cases: complete synthetic evidence **never** issues a live QR or grants send/write; expired/forged owner/provider/link evidence, revoked installation, wrong store/tenant/bot, URL origin and secret leak, replay and unsigned/expired inbound evidence all fail closed. The test-only HMAC signer is a simulation of a trusted boundary, **not** real Zalo attestation. It does not exercise hosted JWT, production RLS, real webhook or actual QR scan.
 
 Required future acceptance: real Store Owner A/B signed JWT UAT; all privileged RPC/Published callers closed; independent backup and security review; verified Zalo Bot Identity + owner consent + provider link; two-device QR UAT; non-send inbound receipt and cross-store negative tests; explicit owner authorization for any live provider send. Until then: `QR_ISSUANCE_ENABLED=false`, `PROVIDER_SEND_ENABLED=false`, `ORDER_WRITE_ENABLED=false` **as release requirements**, not claims that these flags already exist in live configuration.
 
