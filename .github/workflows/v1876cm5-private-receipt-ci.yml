@@ -1,0 +1,32 @@
+name: TIEN404 M3-H5 Private Redacted Receipt CI (NO DEPLOY)
+on:
+  push:
+    branches:
+      - work/v1876cm5-private-redacted-telemetry-canary-20261120
+  pull_request:
+    branches:
+      - work/v1876cm4-redacted-receipt-read-delivery-echo-offline
+    paths:
+      - 'experiments/v1876cm2-meta-ingress/**'
+      - '.github/workflows/v1876cm5-private-receipt-ci.yml'
+permissions:
+  contents: read
+jobs:
+  offline-negative-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Block secrets/deployment configuration
+        run: |
+          test ! -f experiments/v1876cm2-meta-ingress/.env
+          test ! -f experiments/v1876cm2-meta-ingress/.dev.vars
+          test ! -f experiments/v1876cm2-meta-ingress/wrangler.toml
+      - name: Pure offline regression including receipt privacy
+        run: |
+          node --check experiments/v1876cm2-meta-ingress/src/worker.mjs
+          node --check experiments/v1876cm2-meta-ingress/src/receipt-worker.mjs
+          node --test experiments/v1876cm2-meta-ingress/tests/*.test.mjs
