@@ -1,0 +1,59 @@
+name: "TIEN404 V19.8.17 Disposable PG17 Composite FK and Legacy Compatibility"
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v19817/**"
+      - ".github/workflows/tien404-v19817-pg17-migration-drill.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local_synthetic_test_only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: local_synthetic_test_only
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Ensure no hosted credentials or migration mode
+        run: |
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_PROJECT_REF:-}"
+          test -z "${SUPABASE_DB_URL:-}"
+          test -z "${ZALO_BOT_TOKEN:-}"
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGPORT" = "5432"
+          test ! -e qa/channel-v19817/.env
+      - name: PostgreSQL CLI
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 || sudo apt-get install -y -qq postgresql-client
+          psql -X -Atqc "show server_version;" | grep '^17'
+      - name: Run actual DDL in disposable PostgreSQL ONLY
+        run: psql -X -v ON_ERROR_STOP=1 -f qa/channel-v19817/disposable-pg17-store-migration-drill.sql
+      - name: Check constraints after commit and test writes cannot cross Store
+        run: |
+          test "$(psql -X -Atqc "select count(*) from t404_v19817.products where sku='F01'")" = "2"
+          test "$(psql -X -Atqc "select count(*) from pg_constraint where connamespace='t404_v19817'::regnamespace and conname in ('items_order_same_store_fk','items_product_same_store_fk','orders_customer_same_store_fk','messages_conversation_same_store_fk')")" = "4"
+          test "$(psql -X -Atqc "select count(*) from t404_v19817_legacy.products")" = "2"
+          echo "DISPOSABLE_PG17_SQL_DRILL=PASS HOSTED_MIGRATIONS=0 PROVIDER_SEND=0 ORDER_WRITES=0"
