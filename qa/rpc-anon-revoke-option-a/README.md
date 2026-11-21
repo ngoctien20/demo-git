@@ -20,7 +20,9 @@ Trạng thái: **PROPOSED / TESTED offline**. Chưa áp dụng lên hosted.
 
 1. **Unpublish** `TIEN404_ZALO_V2_SHADOW_STAGING` (`OgDZNSAvKEvhnAvn`). Không sửa nội dung workflow.
    - Ghi lại `activeVersionId` trước khi tắt (hiện là `f00ba506-c52a-4340-9a0c-809fd9c6ea9a`).
-   - Lưu ý: chưa xác minh n8n có chặn sub-workflow đã unpublish khi được gọi từ Bot Lab hay không. Dù không chặn, bước 2 vẫn khiến lời gọi RPC bị từ chối, và Bot Lab tiếp tục chạy nhờ `onError`.
+   - **Bước này chỉ là dọn dẹp, không phải biện pháp bảo mật.** Sub-workflow được gọi qua Execute Workflow thường vẫn chạy dù đã unpublish, nên có thể Bot Lab vẫn gọi được Shadow. Điều này chưa được kiểm chứng.
+   - Lời gọi RPC bị chặn là nhờ **bước 2**, ở tầng PostgreSQL, bất kể n8n làm gì. Sau bước 2, mỗi lần Shadow chạy, node `Submit pending claim for Shop B` sẽ nhận lỗi 401/42501. Bot Lab bỏ qua lỗi đó (`onError: continueRegularOutput`), và lỗi chỉ xảy ra sau khi webhook đã trả lời.
+   - Muốn cắt hẳn lời gọi từ n8n thì cần sửa và publish lại Bot Lab `yIJk8LvJoLF40Z62`: tắt (disable) node `Zalo V2 Shadow (Owner Gate Only)`. Đây là thay đổi trên workflow webhook đang chạy, nên **không nằm trong phương án A**. Chỉ làm nếu chủ dự án yêu cầu riêng.
 2. **Áp dụng migration** `supabase/migrations/20261121120000_revoke_anon_only_qa_shop_b_zalo_claim.sql`. Migration có guard: dừng nếu hàm hoặc ACL đã khác lúc kiểm toán.
 3. **Kiểm tra** (chỉ đọc):
    - `SELECT proacl FROM pg_proc WHERE oid='public.qa_shop_b_zalo_claim(uuid,text,text,text)'::regprocedure` phải ra `{postgres=X/postgres}`.
