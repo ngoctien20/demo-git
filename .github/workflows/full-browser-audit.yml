@@ -1,7 +1,7 @@
 name: TIEN404 independent full-browser QA
+# Legacy audit of the pre-V23 demo pages (register/checkout/lab...). Those pages are now redirects,
+# so this runs only on demand; V23 coverage lives in .github/workflows/v23-web-qa.yml.
 on:
-  push:
-    branches: [qa/tien404-full-audit-20261109, gh-pages]
   workflow_dispatch:
 permissions:
   contents: read

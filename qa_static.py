@@ -18,9 +18,18 @@ class Page(HTMLParser):
             x=a.get('href') or a.get('src')
             if x:self.links.append(x)
 
-issues=[];pages=list(ROOT.glob('*.html'));total_links=0
+import re
+issues=[];pages=list(ROOT.glob('*.html'));total_links=0;stubs=0
 for f in pages:
-    parser=Page();parser.feed(f.read_text(encoding='utf-8'))
+    html=f.read_text(encoding='utf-8')
+    # V23: retired demo pages are tiny noindex redirect stubs; only their target must exist.
+    m=re.search(r'http-equiv="refresh" content="0; url=([^"]+)"',html)
+    if m:
+        stubs+=1
+        if 'noindex' not in html: issues.append(f'{f.name}: redirect stub must be noindex')
+        if not (ROOT/unquote(urlparse(m.group(1)).path)).exists(): issues.append(f'{f.name}: redirect target missing {m.group(1)}')
+        continue
+    parser=Page();parser.feed(html)
     for check,name in ((parser.title,'title'),(parser.lang,'lang=vi'),(parser.description,'meta description'),(parser.viewport,'viewport'),(len(parser.headings)==1,'exactly one h1')):
         if not check: issues.append(f'{f.name}: missing {name}')
     for href in parser.links:
@@ -32,6 +41,6 @@ for f in pages:
         except ValueError:issues.append(f'{f.name}: escaped site root: {href}');continue
         if not target.exists():issues.append(f'{f.name}: missing link {href}')
         total_links+=1
-print(f'Checked {len(pages)} pages and {total_links} local links/resources: {len(issues)} errors')
+print(f'Checked {len(pages)-stubs} pages, {stubs} redirect stubs and {total_links} local links/resources: {len(issues)} errors')
 for error in issues:print('ERROR',error)
 sys.exit(bool(issues))
