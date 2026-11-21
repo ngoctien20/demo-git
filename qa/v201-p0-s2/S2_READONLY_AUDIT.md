@@ -27,7 +27,7 @@ Project `ifxlvrhyjhbzbrkdsida` ACTIVE_HEALTHY PostgreSQL 17.11; read-only SQL ca
 ### C. Cloudflare / Render / GitHub — bounded external callers
 
 - Cloudflare connected account: 40 Worker scripts enumerated and their deployed script content scanned read-only for three exact target RPC names, with no literal matches. Some personal BIO Workers contain a generic `/rest/v1/rpc/` route; this is not proof of a TIEN404 Commerce caller.
-- 2 Pages projects present: `tien404-ai-git-staging` and `tien404-ai-staging`. Current/preview deployment metadata was inspected, but Pages runtime bundle and service-worker/browser code were **not** comprehensively audited. Do not claim external caller closure.
+- 2 Pages projects present: `tien404-ai-git-staging` and `tien404-ai-staging`. Current/preview deployment metadata was inspected, but Pages runtime bundle and service-worker/browser code were **not** comprehensively audited. **Git-connected Pages automatically created preview-only deployment records**, including S2 HEAD `a9c7485b4152c14feb6bb663fc2b244b26fd9507` (`e8d0ddc1-91c1-457b-a5b0-d75cd086a561`) with stage `queued` and status `idle` at inspection. This is not verified runtime serving or production publication. Do not claim external caller closure.
 - Render connector has a workspace list but no confirmed selected workspace. Per connector safety instructions **the owner must select/confirm the Render workspace** before service review; this project did not choose on their behalf. Render caller closure BLOCKED.
 - GitHub default-branch code search for 3 function names returned no indexed hits. This is **not** a full search of all working branches or deployed bundles.
 
