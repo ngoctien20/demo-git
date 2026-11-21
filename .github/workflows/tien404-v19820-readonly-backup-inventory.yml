@@ -1,0 +1,42 @@
+name: "TIEN404 V19.8.20 Backup Inventory GET-Only and Hosted NO-GO"
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v19820/**"
+      - ".github/workflows/tien404-v19820-readonly-backup-inventory.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup-inventory-offline-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify GET-only backup API contract without network access
+        run: node --test qa/channel-v19820/list-supabase-backups-readonly.test.mjs
+      - name: Re-check actual snapshot remains HOSTED NO-GO
+        run: |
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_DB_PASSWORD:-}"
+          test -z "${RENDER_API_KEY:-}"
+          test -z "${CLOUDFLARE_API_TOKEN:-}"
+          test -z "${ZALO_BOT_TOKEN:-}"
+          test ! -e qa/channel-v19820/.env
+          test ! -e qa/channel-v19820/hosted-migration.sql
+          node --input-type=module -e "
+            import {readFileSync} from 'node:fs';
+            const x=JSON.parse(readFileSync('./qa/channel-v19820/READONLY_RUNTIME_EVIDENCE_20261121.json','utf8'));
+            if(x.decision!=='HOSTED_NO_GO' || x.supabase.backup_api_not_called!==true ||
+               x.supabase.isolated_restore_tested!==false ||
+               x.render.explicit_user_workspace_selection!==false ||
+               x.owner_a_b_admission.hosted_owner_a_jwt_validated!==false ||
+               x.owner_a_b_admission.hosted_owner_b_jwt_validated!==false)process.exit(1);
+            console.log('V19.8.20_READONLY_PRECHECK=PASS HOSTED_ADMISSION=NO_GO');
+          "
+          echo "BACKUP_API_CALLS=0 RESTORE_OPS=0 HOSTED_WRITES=0 WORKFLOW_PUBLISH=0 PROVIDER_SEND=0"
