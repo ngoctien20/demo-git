@@ -40,7 +40,9 @@ Mức bằng chứng: **L** = local/mock, **API** = staging/production qua API (
 | Sửa SKU/SL đơn | Logic fDB9 | 137d5689 | S-18 (đã tái hiện ở #483) | Sửa được khi Sheet có nhiều đơn | Từ chối mọi lần sửa khi Orders ≥2 dòng (hiện 6) | `manage-order-s18-fix.test.mjs` 4/4 (L) | FAIL (S-18, chưa publish bản sửa) |
 | Tra cứu đơn: đúng mã + SĐT | Logic 4DFF | 1faaa1ee | 1 ca | found, đúng tổng | Đúng | `published-order-tools.test.mjs` (L) | PASS (L) |
 | Khách B biết mã đơn | Logic 4DFF | 1faaa1ee | sai SĐT; mã không tồn tại | Phản hồi chung, không lộ dữ liệu, không lộ đơn có tồn tại | Đúng; hai thông báo giống hệt | cùng file (L) | PASS (L) |
-| Zalo Bot nhận sự kiện | Zalo Bot staging | yIJk 2d912cb0 | — (lần cuối) | Marker cập nhật | `v1_ingress_any=ACCEPTED` lúc 2026-11-18 02:42Z; không có sự kiện hôm nay | data table TIEN404_QA_SHOP_B_PAIRING_TRACE (API) | PASS cũ / NOT RUN hôm nay |
+| Zalo Bot nhận sự kiện | Zalo Bot chính → webhook `tien404-zalo-bot-lab-v1` | yIJk 2d912cb0 | Chủ dự án nhắn `TIEN404 EXT 03` (14:02Z, 2026-11-21) | Webhook có header-auth nhận, chuẩn hóa, ghi marker | `v1_ingress_any=ACCEPTED` 14:02:17Z, `v123_ext03_ingress=SEEN_AUTHENTICATED_WEBHOOK` | data table TIEN404_QA_SHOP_B_PAIRING_TRACE (API, không PII) | PASS |
+| Zalo phân luồng khách | Zalo Bot → router V12.3 (sIPs6egz) | — | Cùng ca | Tài khoản được xếp luồng khách, 0 gửi, 0 ghi đơn | `v123_ext03_customer/route=CUSTOMER_ROUTE_ELIGIBLE` | cùng bảng (API) | PASS |
+| Zalo cổng chủ shop thử | Zalo → Shadow OgDZ | f00ba506 | Cùng ca | Allowlist hết hạn 2026-11-20 → từ chối | `owner_gate=denied`, `inbound=other_text` | cùng bảng (API) | PASS (đúng chặn); lệnh Shop B BLOCKED tới khi gia hạn |
 | Zalo Bot trả lời khách | Zalo Bot | 2d912cb0 | — | — | Không có node gửi trong workflow | đọc workflow (API) | NOT IMPLEMENTED |
 | Zalo xác minh chủ đơn + xem đơn Messenger | Zalo | — | — | — | Không workflow nào nối Zalo với Orders/Commerce | đọc yIJk, OgDZ (API) | NOT IMPLEMENTED |
 | Zalo OA | — | — | — | — | Không có webhook OA đang hoạt động | search_workflows (API) | NOT IMPLEMENTED |
