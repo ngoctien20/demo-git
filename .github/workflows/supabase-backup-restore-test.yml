@@ -72,12 +72,14 @@ jobs:
             url="${!v}"
             # In user, host, port (không in mật khẩu) để dễ tìm lỗi
             python3 - "$v" "$url" <<'PY'
-          import sys, urllib.parse as u
+          import sys, re
           name, url = sys.argv[1], sys.argv[2]
-          p = u.urlsplit(url)
-          pw = p.password or ''
-          print(f"{name}: scheme={p.scheme} user={p.username} host={p.hostname} port={p.port} db={p.path.lstrip('/')} "
-                f"password_len={len(pw)} has_brackets={'[' in pw or ']' in pw} has_unencoded_special={any(c in u.unquote(pw) and c in pw for c in '@#/?')}")
+          m = re.match(r'^(\w+)://([^:@/]+):(.*)@([^@/:]+):(\d+)/(\w+)', url)
+          if not m:
+              print(f"{name}: KHONG dung dang postgresql://user:password@host:5432/postgres"); sys.exit(0)
+          scheme, user, pw, host, port, db = m.groups()
+          print(f"{name}: user={user} host={host} port={port} db={db} password_len={len(pw)} "
+                f"co_dau_ngoac_vuong={'[' in pw or ']' in pw} co_ky_tu_@#/?={any(c in pw for c in '@#/?')}")
           PY
             if psql "$url" -X -q -t -c 'select 1' > /dev/null 2> login_err.txt; then
               echo "$v: login OK"
