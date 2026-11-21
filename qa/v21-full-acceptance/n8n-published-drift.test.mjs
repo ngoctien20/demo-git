@@ -93,3 +93,32 @@ test('RISK (published order id): birthday bound for 2 orders in the same second 
   const p = 1 / 9000;
   assert.ok(p > 1e-4 && p < 2e-4);
 });
+
+// --- Manage Order fDB9dvs1qPPVt9Sp: Validate Change (published 137d5689 AND draft 2e8786fd share this guard) ---
+// Copied verbatim: `if (rows.length > 1) return reject('multiple_orders', ...)` where `rows` is EVERY order row in the
+// Orders sheet, not the matched rows. With 2+ orders in the sheet, every manage_order call is rejected.
+function manageOrderGuard(rows, orderId, phone) {
+  const normPhone = (p) => { let d = String(p ?? '').replace(/\D/g, ''); if (d.startsWith('84') && d.length >= 11) d = '0' + d.slice(2); if (d.length === 9 && !d.startsWith('0')) d = '0' + d; return d; };
+  const matched = rows.filter((r) => String(r.order_id).trim() === orderId && normPhone(r.phone) === normPhone(phone));
+  if (matched.length === 0) return 'order_not_matched';
+  if (rows.length > 1) return 'multiple_orders';
+  return 'ok';
+}
+test('DEFECT (published + draft manage_order): any sheet with 2+ orders rejects every edit as multiple_orders', () => {
+  const rows = [
+    { order_id: 'ORD-SYN-1', phone: '0900000001' },
+    { order_id: 'ORD-SYN-2', phone: '0900000002' },
+  ];
+  assert.equal(manageOrderGuard(rows, 'ORD-SYN-1', '0900000001'), 'multiple_orders'); // expected 'ok'
+  assert.equal(manageOrderGuard(rows.slice(0, 1), 'ORD-SYN-1', '0900000001'), 'ok');
+});
+
+// Published apply gate: `if (expected && toNumber(expected) !== total) reject` -> missing expected_total is ACCEPTED.
+// Draft: `if (!expected || ... ) reject`.
+const publishedApplyAllowed = (expected, total) => !(expected && publishedToNumber(expected) !== total);
+const draftApplyAllowed = (expected, total) => !(!expected || !Number.isFinite(draftToNumber(expected)) || draftToNumber(expected) !== total);
+test('DEFECT (published manage_order): apply without expected_total is accepted (owner rule requires it)', () => {
+  assert.equal(publishedApplyAllowed('', 658000), true);
+  assert.equal(draftApplyAllowed('', 658000), false);
+  assert.equal(draftApplyAllowed('658.000', 658000), true);
+});

@@ -33,7 +33,8 @@ Chi tiết: `INTEGRATION_TEST_RESULTS.md`, `EVIDENCE_MANIFEST.md`.
 
 ## 5. Lỗi/rủi ro còn lại
 
-P0: backup/restore (S-01); Store Authority hosted (S-02).
+P0: backup/restore (S-01); Store Authority hosted (S-02); **sự cố lộ một phần mật khẩu DB staging trong log Actions công khai (S-17), đang đổi mật khẩu**.
+P1 bổ sung Round 2b: sửa đơn qua chat hỏng khi Sheet có ≥2 đơn (S-18); bản Published cho sửa đơn không cần `expected_total` (S-19).
 P1: bot live "TEST" ngoài Supabase (S-03); PII trong execution n8n (S-04); nhãn/ghi chú sai (S-05); repo public không protection (S-06); anon SECDEF Zalo (S-07); runtime ngoài repo; không trừ kho/không thông báo đơn.
 P2–P3: S-08…S-16. Đầy đủ: `SECURITY_FINDINGS.md`.
 

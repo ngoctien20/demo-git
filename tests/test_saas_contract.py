@@ -6,7 +6,8 @@ BASE=Path(__file__).resolve().parents[1]
 ROOT=BASE/'site' if (BASE/'site').is_dir() else BASE
 class SaaSContract(unittest.TestCase):
  def test_six_pages_and_semantics(self):
-  for page in ['register','login','checkout','dashboard','billing','invoice']:
+  # login.html became a redirect to Supabase Auth on Render in V13.4 (see test_login_redirects_to_real_auth)
+  for page in ['register','checkout','dashboard','billing','invoice']:
    s=BeautifulSoup((ROOT/(page+'.html')).read_text(encoding='utf-8'),'html.parser')
    self.assertEqual(s.body.get('data-saas-page'),page)
    self.assertIsNotNone(s.select_one('main'))
@@ -31,6 +32,13 @@ class SaaSContract(unittest.TestCase):
   self.assertIn("@use 'saas'",((ROOT/'assets/scss/main.scss') if (ROOT/'assets/scss/main.scss').exists() else (ROOT/'src/scss/main.scss')).read_text())
  def test_nav_on_all_pages(self):
   for page in ROOT.glob('*.html'):
+   if page.name=='login.html':continue
    s=BeautifulSoup(page.read_text(encoding='utf-8'),'html.parser')
    self.assertIsNotNone(s.select_one('#main-menu a[href="login.html"]'),page.name)
+ def test_login_redirects_to_real_auth(self):
+  s=BeautifulSoup((ROOT/'login.html').read_text(encoding='utf-8'),'html.parser')
+  refresh=s.select_one('meta[http-equiv="refresh"]')
+  self.assertIsNotNone(refresh)
+  self.assertRegex(refresh.get('content',''),r'^0;url=https://[a-z0-9.-]+/login\.html$')
+  self.assertFalse(s.select('input[type="password"]'))
 if __name__=='__main__':unittest.main()

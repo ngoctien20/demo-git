@@ -19,4 +19,5 @@ Mỗi dòng cần phê duyệt cụ thể của chủ dự án. Không dòng nà
 | G-13 | UAT Page installation Messenger, Zalo deep link/QR, gửi tin thật | Provider send | Tin thật tới người dùng | — |
 | G-14 | Bật leaked password protection, đổi cấu hình Auth | Cấu hình Auth | Thấp | Tắt lại |
 | G-15 | Chọn workspace Render, cấp quyền Cloudflare cho kiểm toán | Credential/IAM | — | Thu hồi |
+| G-17 | Xóa log run GitHub Actions có lỗi `psql` thô (S-17), đổi mật khẩu DB | Credential + quyền admin repo | — | — |
 | G-16 | Thanh toán, billing, đổi gói Supabase/n8n | Chi phí | Chi phí | — |

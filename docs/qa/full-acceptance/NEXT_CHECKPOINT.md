@@ -22,10 +22,11 @@ Không có thao tác ghi nào ngoài nhánh `claude/project-thread-2rqcm1` (tài
 
 | Vòng | Việc | Điều kiện |
 |---|---|---|
-| R2 | Đọc nội dung Published vs Draft của `fDB9`, `BkAi`, `iyfG`; mở rộng test drift | Không cần duyệt |
-| R2 | Review authz Super Admin Python (`ops/super-admin-v4-staging-20261110`) | Không cần duyệt |
-| R2 | Quét secret toàn bộ 502 nhánh (cần fetch blob) | Không cần duyệt; cần quyền chạy git grep |
-| R2 | Sửa 2 contract test lỗi thời | Không cần duyệt |
+| R2b ✓ | Diff Published/Draft `fDB9`, `BkAi`, `iyfG` → S-18, S-19 | Xong 2026-11-21 |
+| R2b ✓ | Super Admin 68/68, Control Hub 14/14 | Xong |
+| R2b ✓ | Quét secret 503 nhánh: sạch | Xong |
+| R2b ✓ | Sửa contract test: 14/14 | Xong |
+| R2c | Kiểm chứng sau khi chủ dự án đổi mật khẩu (S-17): SELECT thử bằng kết nối mới do chủ dự án chạy, rà `auth`/Postgres log | Chủ dự án xác nhận đã đổi |
 | R3 | Restore-test + Store #482 + Owner A/B | G-01, G-02 |
 | R3 | AI eval trên clone | G-12 + bộ case |
 | R4 | Browser E2E trang public (desktop/mobile) bằng trình duyệt trên máy chủ dự án | Không cần duyệt (chỉ đọc trang public) |

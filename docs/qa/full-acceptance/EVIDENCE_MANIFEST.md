@@ -23,6 +23,10 @@ Mọi bằng chứng là đọc-chỉ hoặc offline. Dữ liệu cá nhân, tok
 | E-18 | n8n details | Ghi chú "DISABLED" trên node có `disabled:false`; mô tả inactive/no outbound của yIJk, OgDZ, wgkk, iyfG | JSON workflow |
 | E-19 | n8n exec 4498 runtimeData | `redaction.production=false`; dữ liệu khách lưu nguyên | không trích |
 | E-20 | Container curl | onrender.com, pages.dev, workers.dev, github.io, supabase.co → mã 000 (proxy) | `curl -w '%{http_code}'` |
+| E-22 | `ops/super-admin-v4-staging-20261110` | Super Admin 68/68, Control Hub 14/14; `/health` khai báo `local_sqlite_test_backend`, `live_n8n: DISCONNECTED` | `pytest -q tests` |
+| E-23 | n8n version diff | fDB9 137d5689→2e8786fd; BkAi 93cf227a→3bd7043f; iyfG 456862c9→c96422e0 | `get_workflow_versions_diff` |
+| E-24 | Clone mirror 503 nhánh | Quét secret toàn lịch sử, không có secret thật | `git rev-list --all \| xargs git grep -E <mẫu>` |
+| E-25 | Nhánh `claude/project-thread-geyx0t` | Commit `f0df0903` in lỗi `psql` thô; `91ee3449` sửa | `git show` |
 | E-21 | Reviewer độc lập (subagent read-only) | Xác nhận/phản biện 6 nhận định, thêm S-08, S-09, S-14, S-16 | Báo cáo tóm tắt trong `SECURITY_FINDINGS.md` |
 
 ## E-04 — Kết quả từng file test QA trên `develop`

@@ -8,7 +8,7 @@ Môi trường: container cloud, Node 22.23.5, Python 3.13.18, checkout `develop
 |---|---|---|---|
 | T-A01 | `python qa_static.py` | PASS: 26 trang, 795 link/resource, 0 lỗi | OFFLINE |
 | T-A02 | `node scripts/check-site-navigation.mjs` | PASS: 24 trang dùng chung điều hướng | OFFLINE |
-| T-A03 | `pytest tests/` | 11 PASS, **2 FAIL**: `test_nav_on_all_pages` (login.html không còn menu), `test_six_pages_and_semantics` (login.html không còn `data-saas-page`) | OFFLINE |
+| T-A03 | `pytest tests/` | Round 1: 11 PASS, **2 FAIL**; Round 2b sau khi sửa test: **14/14 PASS**. Lỗi ban đầu: `test_nav_on_all_pages` (login.html không còn menu), `test_six_pages_and_semantics` (login.html không còn `data-saas-page`) | OFFLINE |
 | T-QA | `node --test` trên 39 file `qa/**/*.test.{mjs,cjs}` | **631 PASS / 3 FAIL**; 3 FAIL đều là test trình duyệt cần `python -m http.server 8080` như trong CI | OFFLINE |
 | T-CI | GitHub check runs trên `00aff9b` | 46 check, không failure | OFFLINE (CI) |
 
@@ -22,7 +22,7 @@ Chi tiết theo file: `EVIDENCE_MANIFEST.md` mục E-04.
 
 | Test ID | File | Kết quả | Ý nghĩa |
 |---|---|---|---|
-| T-N01…T-N08 | `qa/v21-full-acceptance/n8n-published-drift.test.mjs` | 8/8 PASS (test khẳng định lỗi tồn tại) | So sánh code Published với Draft của `KrSn4DNR9ALX5ng4` và `U2DJsxzSYPH5hRop` |
+| T-N01…T-N10 | `qa/v21-full-acceptance/n8n-published-drift.test.mjs` | 10/10 PASS (test khẳng định lỗi tồn tại) | Published vs Draft của `KrSn`, `U2DJ`, `fDB9` |
 
 Kết quả chính:
 
@@ -51,6 +51,18 @@ Giới hạn: test tái tạo code đã copy nguyên văn từ n8n, không thự
 | auth-preview-build | 0/3 (cần chạy bước build tạo `auth-preview-dist/` trước) |
 
 Không xác định được đây có đúng commit đang chạy trên Render hay không (BLOCKED: không truy cập Render).
+
+## 3b. Round 2b (bổ sung)
+
+| Test | Kết quả |
+|---|---|
+| T-N09 manage_order với Sheet 2 đơn | Trả `multiple_orders` cho mọi yêu cầu (lỗi ở cả Published và Draft) |
+| T-N10 apply thiếu `expected_total` | Published cho qua, Draft từ chối |
+| Diff `BkAi` Update Order | Draft chỉ siết SĐT (`^0[35789]\d{8}$`) và địa chỉ phải có chữ; Published nhận mọi số 10 chữ số |
+| Diff `iyfG` Commerce Sandbox | Chỉ khác ở serialization (không đổi logic) |
+| Super Admin `ops/super-admin-v4-staging-20261110` | 68/68 PASS (backend SQLite staging) |
+| Control Hub | 14/14 PASS |
+| Quét secret 503 nhánh | Không có secret thật trong git |
 
 ## 4. Chưa chạy (để Round 3)
 
