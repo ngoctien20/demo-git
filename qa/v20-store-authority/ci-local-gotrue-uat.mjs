@@ -61,12 +61,15 @@ async function run(){
  // Pre-migration tenant memberships (as an owner would have before cutover), then migrate.
  psql(`INSERT INTO public.tenant_memberships(tenant_id,user_id,role) VALUES
   ('${TA}','${a.id}','owner'),('${TB}','${b.id}','owner')`);
- const before=await rows(key,a,'products');
- ok(before.ok&&before.data.length===1,'PRE_MIGRATION_OWNER_A_TENANT_READ');
+ // Tables were created after PostgREST started: reload its schema cache and wait for it.
+ psql("NOTIFY pgrst, 'reload schema'");
+ let before;
+ for(let i=0;i<20;i++){before=await rows(key,a,'products');if(before.status!==404)break;await new Promise(r=>setTimeout(r,500));}
+ ok(before.ok&&before.data.length===1,'PRE_MIGRATION_OWNER_A_TENANT_READ_HTTP'+before.status);
  execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-q','-h','127.0.0.1','-p','54322','-U','postgres','-d','postgres',
   '-f',new URL('./10_store_authority_expand.sql',import.meta.url).pathname],{env:{...process.env,PGPASSWORD:'postgres'},stdio:'inherit'});
  psql("NOTIFY pgrst, 'reload schema'");
- await new Promise(r=>setTimeout(r,2500));
+ for(let i=0;i<20;i++){const r=await req(key,'/rest/v1/stores?select=id',a.jwt);if(r.status!==404)break;await new Promise(r=>setTimeout(r,500));}
  ok(true,'MIGRATION_APPLIED_TO_DISPOSABLE_LOCAL_ONLY');
  psql(`INSERT INTO public.tenant_memberships(tenant_id,user_id,role) VALUES ('${TA}','${br.id}','owner'),('${TA}','${tm.id}','manager');
   INSERT INTO public.stores(id,tenant_id,store_key,name) VALUES ('${BRANCH}','${TA}','branch','Chi nhanh');
