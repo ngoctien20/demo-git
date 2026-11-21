@@ -1,0 +1,71 @@
+name: TIEN404 V13.6M.1 Messenger Rich UI Integration Candidate QA
+on:
+  push:
+    branches:
+      - work/v136m1-messenger-rich-integration-candidate-staging-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "docs/ai-handoff/V13_6M1_*"
+      - ".github/workflows/v136m1-messenger-integration-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "docs/ai-handoff/V13_6M1_*"
+      - ".github/workflows/v136m1-messenger-integration-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-source-and-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and 53 inherited + 41 new security tests
+        run: |
+          node --check qa/messenger-rich-v136m/adapter.cjs
+          node --check qa/messenger-rich-v136m1/integration.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs
+      - name: Static no-network and no credential safety
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          a=Path("qa/messenger-rich-v136m/adapter.cjs").read_text()
+          b=Path("qa/messenger-rich-v136m1/integration.cjs").read_text()
+          for path,text in [('adapter',a),('integration',b)]:
+            assert "fetch(" not in text, f"{path} contains network request"
+            assert "axios" not in text and "httpRequest(" not in text
+            assert "PAGE_ACCESS_TOKEN" not in text
+            assert "process.env" not in text
+          assert "checkAndReserveEvent" in b and "ONE_STORE_PER_TENANT_VERIFIED" in b
+          print("PASS: no network transport, no env key, fail-closed synthetic scope guards")
+          PY
+  inherited-rich-ui-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser for synthetic visual regression
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Run inherited 5 viewport x 4 module no-send preview
+        run: |
+          python -m http.server 8080 >/tmp/tien404-messenger-v136m1.log 2>&1 &
+          sleep 2
+          node qa/messenger-rich-v136m/preview.test.cjs
+      - name: Upload synthetic screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tien404-v136m1-messenger-preview-only
+          path: qa-artifacts-messenger-rich/
+          if-no-files-found: ignore

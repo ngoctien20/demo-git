@@ -1,0 +1,34 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'"/>
+<meta name="robots" content="noindex,nofollow"/><title>Trang web khách giả lập · TIEN404 QA</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#edf3f4;font:15px/1.6 system-ui,-apple-system,sans-serif;color:#172e36}
+main{max-width:1050px;margin:auto;padding:20px}header{background:white;padding:16px 20px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+small{color:#59737b}.hero{margin-top:18px;background:linear-gradient(140deg,#dcf2e9,#f9fffb);border-radius:20px;padding:35px}
+h1{font-size:clamp(23px,3vw,36px);line-height:1.2;margin:7px 0}
+p{max-width:620px}.cta{background:#076c5a;color:#fff;border:0;border-radius:9px;padding:11px 18px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:18px}
+.card{background:white;border-radius:15px;padding:17px;border:1px solid #dbe9e7}
+footer{padding:22px;color:#63767b;text-align:center}
+@media(max-width:600px){main{padding:10px}.hero{padding:20px}.cards{grid-template-columns:1fr}}
+</style></head><body>
+<header><strong id="brand">Website thử nghiệm</strong><small>Website giả lập cho kiểm tra nhúng chatbot</small></header>
+<main><div class="hero">
+<small>TRANG DEMO NGOẠI VI · KHÔNG PHẢI DỊCH VỤ XÂY WEBSITE</small>
+<h1>Website của cửa hàng đã có sẵn</h1>
+<p>TIEN404 chỉ bổ sung một khung chat AI có thể thu gọn ở góc trang. Nội dung website này là fixture QA, không được triển khai cho khách hàng thật.</p>
+<button type="button" class="cta" id="siteCta">Liên hệ cửa hàng (mô phỏng)</button>
+</div>
+<div class="cards"><div class="card">Danh mục sản phẩm của website hiện hữu</div><div class="card">Giới thiệu cửa hàng</div><div class="card">Chính sách &amp; thông tin liên hệ</div></div>
+</main><footer>Website mock · Không có thông tin khách, API hoặc đơn thật</footer>
+<script>
+'use strict';
+const shop=new URL(location.href).searchParams.get('shop');
+const allowed=new Set(['qa_shop_a','qa_shop_b','qa_shop_c']);
+const id=allowed.has(shop)?shop:'qa_shop_b';
+document.getElementById('brand').textContent={qa_shop_a:'Tạp hóa An',
+ qa_shop_b:'Thời trang Bình',qa_shop_c:'Vật liệu Cường'}[id];
+document.getElementById('siteCta').addEventListener('click',()=>{document.getElementById('siteCta').textContent='Chỉ là trang QA';});
+const sdk=document.createElement('script');sdk.src='./embed.js';
+sdk.dataset.mode='qa-offline';sdk.dataset.widgetId=id;sdk.async=true;
+document.body.append(sdk);
+</script></body></html>

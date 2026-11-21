@@ -1,0 +1,8 @@
+// Sass authoring helpers for new UI components.
+@mixin focus-visible-ring($color: #62d7ed) {
+  &:focus-visible { outline: 3px solid $color; outline-offset: 3px; }
+}
+@mixin interactive-lift {
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  &:hover { transform: translateY(-3px); }
+}

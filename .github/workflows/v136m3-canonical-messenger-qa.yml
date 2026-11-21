@@ -1,0 +1,61 @@
+name: TIEN404 V13.6M.3 Canonical Messenger Pipeline OFFLINE QA
+on:
+  push:
+    branches:
+      - work/v136m3-canonical-messenger-pipeline-offline-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "docs/ai-handoff/V13_6M3_*"
+      - ".github/workflows/v136m3-canonical-messenger-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "docs/ai-handoff/V13_6M3_*"
+      - ".github/workflows/v136m3-canonical-messenger-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  canonical-security:
+    name: HMAC-first canonical pipeline and inherited Store QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and all offline security contracts
+        run: |
+          node --check qa/messenger-rich-v136m3/canonical-pipeline.cjs
+          node --check qa/messenger-rich-v136m3/canonical-pipeline.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs
+      - name: Static no-network, no-credential and no SQL writes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths=[
+            Path("qa/messenger-rich-v136m3/canonical-pipeline.cjs"),
+            Path("qa/messenger-rich-v136m2/trusted-repository.cjs"),
+          ]
+          for path in paths:
+            content=path.read_text()
+            for banned in ('fetch(', 'axios(', 'process.env', 'PAGE_ACCESS_TOKEN',
+                           'graph.facebook.com', 'INSERT INTO', 'DELETE FROM',
+                           'UPDATE public.', 'httpRequest(', 'sendMessage('):
+              assert banned not in content, (path,banned)
+          s=paths[0].read_text()
+          assert "mode='BLOCKED'" in s
+          assert "verifyMetaRaw({rawBody,signature,appSecret});" in s
+          assert s.index("verifyMetaRaw({rawBody,signature,appSecret});") < s.index("createTrustedPorts({")
+          assert "hostedReady:false" in s and "sendEnabled:false" in s
+          assert "require('../messenger-rich-v136m2/trusted-repository.cjs')" in s
+          assert "trusted-resolver.cjs" not in s
+          print("PASS: HMAC-first, canonical repository, no send, no writes")
+          PY

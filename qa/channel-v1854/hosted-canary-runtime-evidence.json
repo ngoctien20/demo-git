@@ -1,0 +1,171 @@
+{
+  "phase": "V18.5.4",
+  "date": "2026-11-18 JST",
+  "status": "OWNER_ACCESS_RUNTIME_VERIFIED_SECOND_IDENTITY_DENIAL_PENDING",
+  "worker": {
+    "script": "tien404-widget-gateway-v144-staging",
+    "host": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "workersDevEnabled": true,
+    "previewsEnabled": false,
+    "customRoutes": []
+  },
+  "backup": {
+    "originalVersionId": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+    "originalDeploymentId": "a9f197fe-68c1-4321-bfb1-bc333d3093c6",
+    "source": "qa/channel-v1854/backup/v144-worker-original-98c8aad5.mjs",
+    "snapshot": "qa/channel-v1854/backup/cloudflare-v144-before.json"
+  },
+  "access": {
+    "applicationId": "1a73d50b-0668-4308-8f56-53aa9711d477",
+    "type": "self_hosted",
+    "domain": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev",
+    "destination": {
+      "type": "public",
+      "uri": "tien404-widget-gateway-v144-staging.tienmobi208.workers.dev"
+    },
+    "audBound": "EXACT_MATCH_BOUND_AS_PLAIN_TEXT_DO_NOT_REVEAL_VALUE",
+    "allowedIdentityProvider": "Cloudflare account-member-only IdP",
+    "allowedIdpCount": 1,
+    "policy": {
+      "id": "e936ca09-254b-4cc3-8ebd-efca366c7164",
+      "name": "TIEN404-Founder-AppLauncher",
+      "reusable": true,
+      "decision": "allow",
+      "selector": "exact single founder email; value intentionally omitted"
+    },
+    "mfa": {
+      "allowedAuthenticators": [
+        "biometrics"
+      ],
+      "mfaDisabled": false,
+      "mfaSessionDuration": "0m"
+    },
+    "applicationSessionDuration": "30m",
+    "autoRedirectToIdentity": true,
+    "appLauncherVisible": false,
+    "optionsPreflightBypass": false,
+    "noBypassPolicy": true
+  },
+  "workerVersions": [
+    {
+      "id": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+      "number": 1,
+      "role": "pre-change rollback target"
+    },
+    {
+      "id": "e4cd2b26-25e2-4f50-9a74-cc1798b1f19e",
+      "number": 2,
+      "role": "secret binding auto-deployment of original locked source",
+      "deploymentId": "2c16c36f-718f-491a-88c5-45408719153c"
+    },
+    {
+      "id": "da022974-1832-425f-bf82-afddc558b893",
+      "number": 3,
+      "role": "V18.5.4 Access canary",
+      "deploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+      "trafficPercent": 100,
+      "compatibilityDate": "2026-11-18",
+      "handlers": [
+        "fetch"
+      ],
+      "bindings": [
+        {
+          "name": "T404_ACCESS_AUD",
+          "type": "plain_text",
+          "value": "omitted"
+        },
+        {
+          "name": "T404_QA_OPERATOR_EMAIL",
+          "type": "secret_text",
+          "value": "omitted"
+        }
+      ]
+    }
+  ],
+  "runtimeCodeChecks": {
+    "twoModulesPresent": true,
+    "ctxAccessGatePresent": true,
+    "identityReadViaGetIdentity": true,
+    "exactAudComparison": true,
+    "serverSideOperatorAllowlist": true,
+    "allRoutesGated": true,
+    "commerceSessionAndMessage423": true,
+    "canaryEndpointPresent": true,
+    "noOutboundFetch": true,
+    "noN8nCalls": true,
+    "noAIProviderCalls": true,
+    "noD1orDOWrites": true
+  },
+  "accessLogs": {
+    "queried": true,
+    "filterApplicationId": "1a73d50b-0668-4308-8f56-53aa9711d477",
+    "rows": 1,
+    "events": [
+      {
+        "action": "login",
+        "allowed": true,
+        "identityMatchedExactOwnerAllowlist": true,
+        "createdAt": "2026-11-18T08:11:58Z",
+        "connection": "cloudflare",
+        "rayId": "a5c581ec6c0996aa"
+      }
+    ],
+    "deniedAlternateIdentityEvents": 0,
+    "note": "One real owner login event correlates with the user-provided successful canary JSON. No alternate-identity denial event exists yet."
+  },
+  "uat": {
+    "unauthenticatedExternalRequest": "USER_BROWSER_REDIRECTED_TO_CLOUDFLARE_LOGIN_CHALLENGE; screenshot shows dash.cloudflare.com/login?login_challenge=...; no Worker JSON exposed in screenshot; this is an auth challenge, not a final denial",
+    "approvedFounderBrowserLogin": "PASS_USER_REPORTED_CANARY_JSON_AND_CLOUDFLARE_ALLOWED_LOGIN_AUDIT_EVENT",
+    "secondIdentityDenyTest": "PENDING_NON_ALLOWLISTED_ACCOUNT_SIGN_IN",
+    "realCtxAccessRuntime": "PASS_USER_REPORTED_CANARY=CLOUDFLARE_ACCESS_CONTEXT_VERIFIED; audienceVerified=true; operatorAllowlisted=true",
+    "storeLevelRls": "NOT_VERIFIED",
+    "userEvidence": {
+      "canaryResponse": {
+        "service": "tien404-widget-gateway",
+        "environment": "private-staging",
+        "canary": "CLOUDFLARE_ACCESS_CONTEXT_VERIFIED",
+        "principalType": "CLOUDFLARE_ACCESS_PRIVATE_QA_OPERATOR",
+        "audienceVerified": true,
+        "operatorAllowlisted": true,
+        "commerce": "LOCKED_PENDING_READONLY_ADAPTER",
+        "privateOrderAccess": false,
+        "orderWrites": 0,
+        "providerSends": 0,
+        "productionReady": false
+      },
+      "alternateBrowserScreenshot": "Cloudflare dashboard login challenge at dash.cloudflare.com/login?login_challenge=...; not an Access Denied result."
+    },
+    "secondBrowserObservation": "Screenshot shows dash.cloudflare.com/login?login_challenge in Incognito; it is a Cloudflare sign-in challenge, not an Access-denied result and not yet correlated to this app."
+  },
+  "safety": {
+    "orderWrites": 0,
+    "stockWrites": 0,
+    "providerSends": 0,
+    "customerOrderReads": 0,
+    "customerPiiReads": 0,
+    "aiCalls": 0,
+    "productionRelease": false,
+    "previewsEnabled": false
+  },
+  "nextGate": "In the second browser, sign in using a different Cloudflare account identity not included in the founder-only allow policy (prefer an existing member of the same Cloudflare account). Expected result: Access denied; then verify denied=false event in Access audit logs. Do not add new account members or alter Access policies for this test without separate approval.",
+  "sourceQA": {
+    "workflowRunId": 44263812363,
+    "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44263812363",
+    "status": "success",
+    "tests": 177,
+    "passed": 177,
+    "failed": 0,
+    "skipped": 0,
+    "exactHeadBeforeEvidenceAppend": "de84d07a52a33d37a346ac1eb82e9f8bc4579eaf",
+    "latestRun": {
+      "workflowRunId": 44265516587,
+      "workflowUrl": "https://github.com/ngoctien20/demo-git/actions/runs/44265516587",
+      "status": "success",
+      "tests": 177,
+      "passed": 177,
+      "failed": 0,
+      "skipped": 0,
+      "commit": "ce5bbd54a77301ac817a2e18138b01b466a5c05e"
+    }
+  }
+}

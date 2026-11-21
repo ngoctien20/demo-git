@@ -1,0 +1,49 @@
+name: TIEN404 Public Login to Real Auth Staging QA
+on:
+  push:
+    branches:
+      - work/v134-public-login-real-auth-route-staging
+    paths:
+      - "login.html"
+      - "_redirects"
+      - "qa/auth/public-login-*"
+      - ".github/workflows/v134-public-login-redirect-qa.yml"
+  pull_request:
+    paths:
+      - "login.html"
+      - "_redirects"
+      - "qa/auth/public-login-*"
+      - ".github/workflows/v134-public-login-redirect-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-login-static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate redirects and absence of demo login
+        run: |
+          node --check qa/auth/public-login-redirect.test.cjs
+          node --test qa/auth/public-login-redirect.test.cjs
+  public-login-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium in ephemeral QA runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Test fallback without real credentials or external Auth call
+        run: |
+          python -m http.server 8080 > /tmp/tien404-login-http.log 2>&1 &
+          sleep 2
+          node qa/auth/public-login-browser.cjs

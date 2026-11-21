@@ -1,0 +1,75 @@
+{
+  "checkpoint": "TIEN404_V19_8_7_REAL_OWNER_HOSTED_UAT_PREFLIGHT",
+  "verifiedDateJST": "2026-11-19",
+  "evidenceType": "SANITIZED_READONLY_METADATA_SNAPSHOT_NOT_AUTHORIZATION",
+  "liveUserJwtVerified": false,
+  "containsPII": false,
+  "containsSecrets": false,
+  "project": {
+    "name": "tien404-staging",
+    "status": "ACTIVE_HEALTHY",
+    "isolatedDisposableSameTenantStoreProjectAvailable": false
+  },
+  "ownerMetadata": {
+    "qaTenantA": {
+      "activeOwnerMemberships": 1,
+      "ownerAuthAccountsPresent": 1,
+      "ownersSignedInLast30Days": 1,
+      "ownersWithStoredSessionRecords": 1
+    },
+    "qaTenantB": {
+      "activeOwnerMemberships": 2,
+      "ownerAuthAccountsPresent": 2,
+      "ownersSignedInLast30Days": 1,
+      "ownersWithStoredSessionRecords": 1
+    },
+    "sharedActiveOwnerAccountsAcrossQaTenants": 0,
+    "tenantsAreDifferent": true,
+    "realOwnerAPIBearerSessionTested": false,
+    "realOwnerBAPIBearerSessionTested": false
+  },
+  "storeAuthority": {
+    "canonicalStoresTablePresent": false,
+    "canonicalStoreMembershipsTablePresent": false,
+    "protectedCommerceTablesInspected": 6,
+    "protectedCommerceTablesWithStoreId": 0,
+    "sameTenantTwoStoreFixturePresent": false,
+    "storeScopedRlsHostedVerified": false,
+    "ownerApprovedBackfill": false
+  },
+  "botAndCatalog": {
+    "existingZaloWebhookReceiptAcceptedPreviously": true,
+    "actualBotBoundToCanonicalStore": false,
+    "realOwnerConsentVerified": false,
+    "registryContainsOnlySyntheticQaBots": true,
+    "existingPublishedCommerceCatalogIsTenantScoped": true,
+    "hostedProtectedCatalogReaderVerified": false,
+    "providerSendEnabledForThisPath": false
+  },
+  "securityPreflight": {
+    "anonymousSecurityDefinerAdvisorWarning": 1,
+    "authenticatedSecurityDefinerAdvisorWarnings": 2,
+    "passwordLeakProtectionDisabledWarning": 1,
+    "rlsEnabledNoPolicyAdvisoriesInfo": 23,
+    "warningsReviewedAndAccepted": false,
+    "realProductionGrantChangesApproved": false
+  },
+  "isolationAndApprovals": {
+    "backupRestoreVerified": false,
+    "disposableHostedTargetApproved": false,
+    "ownerApprovedMigration": false,
+    "realJWTTestPlanAuthorized": false,
+    "storeWriterCompatibilityAudited": false,
+    "productionTouchAuthorized": false
+  },
+  "readOnlyAuditSources": [
+    "Supabase get_project",
+    "Supabase information_schema.columns/pg_policies",
+    "Supabase aggregated tenant_memberships and auth.users/auth.sessions",
+    "Supabase pg_proc function ACL metadata",
+    "Supabase security advisors",
+    "GitHub PR 459",
+    "n8n V19.7I receipt-only webhook metadata"
+  ],
+  "caveat": "Recent auth sign-in and auth.sessions records DO NOT prove currently valid bearer tokens, merchant rights, same-tenant Store isolation or authorized hosted API access."
+}

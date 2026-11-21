@@ -1,0 +1,81 @@
+{
+  "checkpoint": "V18.5.5-B2_PRIVATE_QUOTA_SOURCE_AND_RESOURCE_ADMISSION",
+  "dateLocal": "2026-11-18 JST",
+  "status": "SOURCE_ONLY_NO_ACCOUNT_RESOURCE_CREATED",
+  "verified": {
+    "existingNamespaces": [
+      {
+        "name": "tien404-v175e2-durable-replay-nosend-staging_ReplayBucket",
+        "className": "ReplayBucket",
+        "method": "claim",
+        "decision": "DO_NOT_REUSE_SPECIALIZED_NONCE"
+      },
+      {
+        "name": "tien404-v175e2a-private-hosted-runner-nosend-staging_RunnerResults",
+        "className": "RunnerResults",
+        "decision": "DO_NOT_REUSE_RUNNER_RESULTS"
+      },
+      {
+        "name": "tien404-v1721h2-zalo-replay-private-nosend-staging_ZaloBotReplayBucketV2",
+        "className": "ZaloBotReplayBucketV2",
+        "decision": "DO_NOT_REUSE_ZALO_REPLAY"
+      }
+    ],
+    "workerScript": "tien404-widget-gateway-v144-staging",
+    "deploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "versionId": "da022974-1832-425f-bf82-afddc558b893",
+    "bindings": [
+      "T404_ACCESS_AUD",
+      "T404_QA_OPERATOR_EMAIL"
+    ],
+    "alternateIdentityDenyLog": false,
+    "ingressWorkflowId": "JZL4p8tLb65eU3aB",
+    "ingressActive": false,
+    "adapterWorkflowId": "rYwrJfJavcaZcjUI",
+    "adapterActive": false
+  },
+  "proposal": {
+    "className": "T404ReadAdmission",
+    "binding": "T404_READ_ADMISSION",
+    "migrationTag": "v1855_readonly_admission_sqlite_approval_pending",
+    "newSqliteClasses": [
+      "T404ReadAdmission"
+    ],
+    "existingWorkerReuse": true,
+    "separateWorkerCreation": false,
+    "dedicatedNamespaceJustification": "Existing namespaces have specialized security/QA contracts and should not be coupled.",
+    "objectName": "t404-v1855:{fixed_allowlisted_sandbox_installation}",
+    "backend": "SQLite",
+    "readQuotaPerInstallationPer60Seconds": 20,
+    "numberOfSandboxInstallations": 2,
+    "persistence": "UUID_AND_TIMESTAMP_ONLY",
+    "failedAdmissionBehavior": "FAIL_CLOSED",
+    "sourceBackedQARun": 44293653962,
+    "testsPassed": 154,
+    "realDoRuntimeTested": false,
+    "realHttpHeaderAuthTested": false,
+    "storeRlsTested": false,
+    "billingPlanVerified": false,
+    "costApproval": false,
+    "namespacesCreated": 0,
+    "workerBindingsChanged": 0,
+    "deployed": false,
+    "totalAcceptedReadsTheoreticalDailyCeiling": 57600,
+    "deniedRequestsCanStillBeBilled": true,
+    "pricingDoc": "https://developers.cloudflare.com/durable-objects/platform/pricing/"
+  },
+  "gates": {
+    "doCreation": "EXPLICIT_COST_APPROVAL_REQUIRED",
+    "workerDeployment": "EXPLICIT_STAGING_APPROVAL_REQUIRED",
+    "secretBinding": "EXPLICIT_CREDENTIAL_APPROVAL_REQUIRED",
+    "n8nWebhookPublish": "EXPLICIT_STAGING_APPROVAL_REQUIRED",
+    "secondIdentityDenial": "PENDING",
+    "storeAuthority": "NOT_VERIFIED",
+    "production": "NO_GO"
+  },
+  "rollback": {
+    "versionId": "da022974-1832-425f-bf82-afddc558b893",
+    "deploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "cleanup": "Do not delete namespace or stored data without separate owner approval"
+  }
+}
