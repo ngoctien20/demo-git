@@ -74,10 +74,12 @@ jobs:
           [ "$(psql "$DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is null" 2>/dev/null)" = t ] || { echo "::error::login failed or not staging"; exit 1; }
           n=$(psql "$DB_URL" -X -At -c "select to_regprocedure('public.create_store(uuid,text,text)') is null" 2>/dev/null)
           [ "$n" = t ] && echo "NEED_BACKUP=1" >> "$GITHUB_ENV"; echo GUARD_OK
-      - uses: supabase/setup-cli@v1
+      - name: Install Supabase CLI from npm (setup-cli 'latest' hit the GitHub API rate limit)
         if: env.NEED_BACKUP == '1'
-        with:
-          version: latest
+        run: |
+          v=$(npm view supabase version 2>/dev/null); [ -n "$v" ] || { echo "::error::cannot resolve CLI version"; exit 1; }
+          npm install -g "supabase@$v" > /dev/null 2>&1 || { echo "::error::CLI install failed"; exit 1; }
+          supabase --version
       - name: Backup staging immediately before apply (encrypted)
         if: env.NEED_BACKUP == '1'
         env:
