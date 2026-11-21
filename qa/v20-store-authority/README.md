@@ -71,3 +71,13 @@ backup artifact (90 days) → read-only member visibility snapshot (`staging/sna
 apply 10 → 20 → fp must equal restore-test post fp `996aac15…` → snapshot must be identical →
 writer smoke (`staging/writer-smoke.sh`, every call rolled back). Any failure after apply runs
 80 → 90 automatically. No auth users are created on staging.
+
+## Step 3 — Store admin RPCs (PROPOSED, offline only)
+`30_store_admin_rpcs.sql` / rollback `70_…`: `create_store` (tenant owner only, caller becomes Store
+owner), `set_store_member` (tenant owner or Store owner; target must be an active tenant member; no
+self-edit; last active Store owner protected), `save_merchant_product_in_store` (explicit Store,
+owner/manager of that Store). Same QA allow-list as the live writer; `authenticated` still has no
+direct INSERT on stores/store_memberships. Offline PG16: `offline-admin-uat.sh` 48/48 PASS; a
+mutation that drops the role check is caught (FAIL_STAFF_WRITE). Not applied anywhere hosted.
+Staging history: V20 steps 10 and 20 were recorded in `supabase_migrations.schema_migrations`
+(versions 20261121131841 / 20261121131843) on 2026-11-21 with pointers to the source files.
