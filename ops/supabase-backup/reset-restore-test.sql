@@ -34,6 +34,7 @@ end $$;
 -- Role tùy chỉnh từ lần khôi phục trước
 do $$ declare r record; begin
   for r in select rolname from pg_roles where rolname like 'tien404\_%' loop
+    execute format('grant %I to current_user', r.rolname);  -- cần là thành viên mới được drop owned
     execute format('drop owned by %I cascade', r.rolname);
     execute format('drop role %I', r.rolname);
   end loop;
