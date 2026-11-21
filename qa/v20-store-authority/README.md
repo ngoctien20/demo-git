@@ -63,3 +63,11 @@ Chạy local: `PGHOST=/path/socket PGPORT=5432 bash qa/v20-store-authority/offli
 4. Chỉ khi 1–3 PASS mới đề xuất áp lên staging, kèm backup ngay trước đó và kiểm workflow n8n ghi Commerce.
 
 Side effects của PR này: `HOSTED_MIGRATIONS=0 HOSTED_WRITES=0 N8N_CHANGES=0 PROVIDER_SENDS=0`.
+
+## Staging apply (owner-approved 2026-11-21 13:13 UTC)
+`.github/workflows/tien404-v20-store-apply-staging.yml`: guard (staging fp must equal the
+restore-test pre-migration fp `5b63ac1c…` and the original writer md5) → encrypted pre-apply
+backup artifact (90 days) → read-only member visibility snapshot (`staging/snapshot.sh`) →
+apply 10 → 20 → fp must equal restore-test post fp `996aac15…` → snapshot must be identical →
+writer smoke (`staging/writer-smoke.sh`, every call rolled back). Any failure after apply runs
+80 → 90 automatically. No auth users are created on staging.
