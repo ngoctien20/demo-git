@@ -65,7 +65,7 @@ Run tests: `node --test qa/v201-p0-s2/evidence-review.test.mjs` (Node 22). Synth
 - **VERIFIED:** 23 active n8n Published graphs; hosted aggregate Auth and tenant ACL / Store catalog; Cloudflare 40 Worker script literal scan; 2 Pages projects; official Zalo docs product distinction.
 - **IMPLEMENTED:** additive S2 source-only evidence reviewer, offline tests, CI and this report on a new branch.
 - **BLOCKED:** Render workspace selection; all external/browser/dynamic callers; real Owner/Store JWT; hosted Store RLS; B-00 backup and restore; provider Bot chat deep link; two-device customer QR UAT.
-- **NO CHANGE:** n8n, Supabase schema/policies/RPC, Cloudflare/Render runtime, Zalo, Meta, payment, customer records, production.
+- **NO DIRECT CHANGE:** n8n, Supabase schema/policies/RPC, Zalo, Meta, payment, customer records, production. No explicit Cloudflare or Render deploy API call. Git-connected Cloudflare Pages automatically recorded **preview-only** deployment attempts after branch commits; runtime activation was not verified.
 - **ROLLBACK:** close/revert this Draft PR, no runtime rollback required.
 - **NEXT:** owner-confirms Render workspace for read-only service caller audit; redacted provider Bot Creator screen showing whether a customer chat share action exists; independent B-00 and Owner A/B UAT approval, then separate reviewed hosted security proposal. No send or write without approval.
 
