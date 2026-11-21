@@ -101,6 +101,9 @@ jobs:
           supabase db dump --db-url "$STAGING_DB_URL" -f backup/roles.sql --role-only
           supabase db dump --db-url "$STAGING_DB_URL" -f backup/schema.sql
           supabase db dump --db-url "$STAGING_DB_URL" -f backup/data.sql --use-copy --data-only
+          # Quyền chính xác (dự án mới tự cấp quyền mặc định cho anon/authenticated, phải đặt lại)
+          psql "$STAGING_DB_URL" -X -At -v ON_ERROR_STOP=1 -f ops/supabase-backup/export-grants.sql > backup/grants.sql
+          echo "grants.sql: $(grep -c '^GRANT' backup/grants.sql) lệnh GRANT"
           ls -l backup
 
       - name: Fingerprint staging
@@ -150,6 +153,10 @@ jobs:
             -c 'SET session_replication_role = replica' \
             -f restore/backup/data_restore.sql > restore.log 2>&1
           rc=$?
+          if [ "$rc" = 0 ]; then
+            psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f restore/backup/grants.sql >> restore.log 2>&1
+            rc=$?
+          fi
           set -e
           # Chỉ in dòng ERROR (cắt ngắn), không in dữ liệu
           grep -E '^(psql:.*)?ERROR' restore.log | cut -c1-200 || true
