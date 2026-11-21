@@ -1,0 +1,119 @@
+{
+  "checkpoint": "V19.8.20_READONLY_HOSTED_BACKUP_AND_CALLER_PREFLIGHT",
+  "observed_at_jst": "2026-11-21T19:29:00+09:00",
+  "evidence_class": "READ_ONLY_CONNECTED_SERVICE_OBSERVATION",
+  "decision": "HOSTED_NO_GO",
+  "supabase": {
+    "project_ref": "ifxlvrhyjhbzbrkdsida",
+    "project_name": "tien404-staging",
+    "database_version": "17.11",
+    "tenant_count": 2,
+    "active_tenant_memberships": 3,
+    "commerce_table_count": 6,
+    "commerce_store_id_column_count": 0,
+    "hosted_real_owner_a_b_store_evidence": "MISSING_CANONICAL_STORE_AUTHORITY",
+    "hosted_backup_inventory": "NOT_READABLE_VIA_AVAILABLE_SUPABASE_CONNECTOR",
+    "backup_api": "GET https://api.supabase.com/v1/projects/{ref}/database/backups",
+    "backup_api_not_called": true,
+    "backup_artifact_verified": false,
+    "isolated_restore_tested": false,
+    "backup_subscription_status": "UNKNOWN",
+    "applied_migrations_count": 21
+  },
+  "render": {
+    "listed_workspaces": 1,
+    "workspace_name": "My Workspace",
+    "explicit_user_workspace_selection": false,
+    "services_read": false,
+    "published_caller_closure": "BLOCKED_CONFIRM_WORKSPACE"
+  },
+  "cloudflare": {
+    "account_worker_scripts_with_tien404_prefix": 26,
+    "worker_deployments_found": 25,
+    "worker_versions_metadata_checked": 25,
+    "script_current_sources_static_scan_count": 26,
+    "worker_d1_binding_count": 10,
+    "worker_service_binding_count": 5,
+    "worker_secret_binding_count": 11,
+    "worker_with_send_enabled_named_binding_count": 1,
+    "worker_direct_supabase_rpc_static_match_count": 0,
+    "worker_source_matches_pinned_deployed_version_proven": false,
+    "worker_external_dynamic_callers_fully_verified": false,
+    "pinned_service_binding_edges": [
+      {
+        "from": "tien404-v175e1-private-issuer-nosend-staging",
+        "to": "tien404-v175e2-installation-registry-nosend-staging",
+        "binding": "INSTALLATION_REGISTRY"
+      },
+      {
+        "from": "tien404-v175e1-private-issuer-nosend-staging",
+        "to": "tien404-v175e2-durable-replay-nosend-staging",
+        "binding": "REPLAY_LEDGER"
+      },
+      {
+        "from": "tien404-v175e2-ab-gateway-nosend-staging",
+        "to": "tien404-v175e2-installation-registry-nosend-staging",
+        "binding": "INSTALLATION_REGISTRY"
+      },
+      {
+        "from": "tien404-v175e2-ab-gateway-nosend-staging",
+        "to": "tien404-v175e2-durable-replay-nosend-staging",
+        "binding": "REPLAY_LEDGER"
+      },
+      {
+        "from": "tien404-v175e2a-private-hosted-runner-nosend-staging",
+        "to": "tien404-v175e2-ab-gateway-nosend-staging",
+        "binding": "QA_GATEWAY"
+      },
+      {
+        "from": "tien404-v18210-negative-caller-locked",
+        "to": "tien404-v18210-independent-signer-locked",
+        "binding": "QA_SIGNER"
+      },
+      {
+        "from": "tien404-v1829-qa-caller-cron-locked",
+        "to": "tien404-v1829-qa-receipt-rpc-locked",
+        "binding": "QA_SIGNER"
+      }
+    ],
+    "pages_project": "tien404-ai-git-staging",
+    "pages_canonical_production": {
+      "branch": "gh-pages",
+      "commit": "ff2daf970e8209399a28b2d0cade8a33b9fa71c6",
+      "deployment_id": "8aace8d2-524a-4643-8add-23c1ef59cea1"
+    },
+    "pages_latest_preview": {
+      "branch": "develop",
+      "commit": "00aff9b77c2312e028466fbaccd31e6ecdeb97d6",
+      "deployment_id": "cda52689-2202-49b4-bdb4-b0cf4f1ac954"
+    }
+  },
+  "n8n": {
+    "carried_forward_from_v19819": true,
+    "visible_workflows": 174,
+    "active_workflows": 23,
+    "published_demo_order_writers_store_aware": false,
+    "all_dynamic_caller_closure": false,
+    "published_workflows_modified": false
+  },
+  "owner_a_b_admission": {
+    "local_v19818_auth_jwt_tests": 56,
+    "local_v19818_test_result": "PASS",
+    "hosted_owner_a_jwt_validated": false,
+    "hosted_owner_b_jwt_validated": false,
+    "same_tenant_distinct_store_membership_hosted": false,
+    "provider_get_me_hosted": false,
+    "provider_get_webhook_info_hosted": false,
+    "signed_installation_owner_consent_hosted": false,
+    "cross_store_hosted_read_only_uat": false
+  },
+  "security_posture": {
+    "no_live_supabase_write": true,
+    "no_live_render_service_call": true,
+    "no_provider_send": true,
+    "no_workflow_publish": true,
+    "no_hosted_restore": true,
+    "no_credential_or_customer_data_collected": true
+  },
+  "caution": "Current Worker source static scans and listed deployment metadata are separate observations; static absence of direct RPC is not proof of zero dynamic calls. Managed backup listing is not restore evidence. Operator must not publish credentials or backup objects to public GitHub."
+}
