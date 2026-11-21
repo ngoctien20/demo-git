@@ -33,7 +33,7 @@ Chi tiết: `INTEGRATION_TEST_RESULTS.md`, `EVIDENCE_MANIFEST.md`.
 
 ## 5. Lỗi/rủi ro còn lại
 
-Cập nhật Round 2c (13:40 UTC): **S-01 đã đóng** (backup/restore VERIFIED); **S-02 đã áp lên staging**, catalog PASS, còn thiếu UAT Owner A/B bằng JWT; bản sửa S-18 PROPOSED (chưa publish); browser E2E trang public PASS (E-29). Kết luận vẫn **NOT READY**.
+Cập nhật Round 2c (13:40 UTC): **S-01 đã đóng** (backup/restore VERIFIED); **S-02 đã áp lên staging**, catalog PASS, còn thiếu UAT Owner A/B bằng JWT; bản sửa S-18 PROPOSED (chưa publish); browser E2E trang public PASS (E-29). Round 3a: **UAT Owner A/B Store PASS trên staging** (E-30). Kết luận vẫn **NOT READY**.
 
 P0 (ban đầu): backup/restore (S-01); Store Authority hosted (S-02); **sự cố lộ một phần mật khẩu DB staging trong log Actions công khai (S-17), đang đổi mật khẩu**.
 P1 bổ sung Round 2b: sửa đơn qua chat hỏng khi Sheet có ≥2 đơn (S-18); bản Published cho sửa đơn không cần `expected_total` (S-19).

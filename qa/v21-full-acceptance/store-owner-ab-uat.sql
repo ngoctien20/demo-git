@@ -1,0 +1,15 @@
+-- V21 Round 3a: Store Authority UAT Owner A/B on Supabase STAGING (read-only in effect).
+-- Runs as one DO block; every fixture row lives only inside the transaction and the final
+-- RAISE EXCEPTION rolls everything back. The result string is carried in the error message.
+-- Auth is simulated the way PostgREST does it: SET LOCAL ROLE authenticated/anon +
+-- request.jwt.claims {sub, role}. GoTrue-issued JWT signatures are NOT exercised here.
+-- Users: A = owner tenant A/store SA; B = owner tenant B/store SB;
+--        M = temp user, tenant A owner but manager of a temp second store S2 only.
+-- Expected and observed (2026-11-21 13:3x UTC):
+--   A: sees only SA rows; direct INSERT/UPDATE denied; RPC create in tenant A ok, tenant B denied;
+--      edit of S2 product denied; revenue A ok, B denied.
+--   B: mirror of A.
+--   M: sees only S2 product (not SA); RPC create via default store SA denied; edit S2 ok.
+--   anon: tables and RPC denied (42501).
+-- After run: stores=2 products=2 users=3 store_memberships=3 tenant_memberships=3, 0 UAT rows.
+-- (Full block as executed is in the PR #483 description / thread log; ids are staging QA tenants.)
