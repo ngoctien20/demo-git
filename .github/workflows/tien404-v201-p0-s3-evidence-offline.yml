@@ -1,0 +1,30 @@
+name: TIEN404 V20.1 P0 S3 Render Backup Zalo Evidence Only
+on:
+  pull_request:
+    paths:
+      - 'qa/v201-p0-s3/**'
+      - '.github/workflows/tien404-v201-p0-s3-evidence-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-s3-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Refuse hosted and provider secrets
+        run: |
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_DB_URL:-}"
+          test -z "${SUPABASE_PROJECT_REF:-}"
+          test -z "${RENDER_API_KEY:-}"
+          test -z "${CLOUDFLARE_API_TOKEN:-}"
+          test -z "${ZALO_BOT_TOKEN:-}"
+      - name: Synthetic no-effect S3 review
+        run: node --test qa/v201-p0-s3/s3-review.test.mjs
