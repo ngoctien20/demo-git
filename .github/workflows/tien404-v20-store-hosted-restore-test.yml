@@ -51,6 +51,19 @@ jobs:
           out=$(psql "$RESTORE_DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is not null" 2>/dev/null) || { echo "::error::login failed"; exit 1; }
           [ "$out" = t ] || { echo "::error::guard marker missing"; exit 1; }
           echo "GUARD_OK"
+      - name: Apply expand migration if not yet applied (restore-test only)
+        run: |
+          fp=$(psql "$RESTORE_DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
+          echo "CURRENT_FP=$fp"
+          if [ "$fp" = "$PRE_MIGRATION_FP" ]; then
+            psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f qa/v20-store-authority/10_store_authority_expand.sql > /dev/null 2>err.txt \
+              || { grep -o 'T404_[A-Z_]*' err.txt | head -1; rm -f err.txt; echo "::error::migration failed (transaction rolled back)"; exit 1; }
+            grep -o 'T404_V20_STORE_AUTHORITY_EXPAND_OK' err.txt || { rm -f err.txt; echo "::error::postcondition marker missing"; exit 1; }
+            rm -f err.txt
+            echo "MIGRATION_APPLIED_TO_RESTORE_TEST"
+          else
+            echo "Migration state already differs from pre-migration baseline; not re-applying"
+          fi
       - name: Fingerprint after migration
         run: |
           fp=$(psql "$RESTORE_DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
