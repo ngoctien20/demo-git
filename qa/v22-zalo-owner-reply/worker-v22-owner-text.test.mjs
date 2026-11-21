@@ -14,13 +14,16 @@ const env = (o = {}) => ({ ZALO_SEND_ENABLED: 'false', ZALO_OWNER_TEXT_ENABLED: 
 const body = (o = {}) => ({ chat_id: 'owner-chat', event_message_id: 'mid0001', kind: 'PRICE_PREVIEW', sku: 'F01', unit_price_vnd: 456000, stock: 5, ...o });
 const req = (b, auth = 'Bearer ' + 'k'.repeat(40)) => new Request('https://w' + OWNER_TEXT_PATH, { method: 'POST', headers: { authorization: auth, 'content-type': 'application/json' }, body: JSON.stringify(b) });
 const sends = []; const provider = async (url, init) => { sends.push({ url, body: JSON.parse(init.body) }); return new Response(JSON.stringify({ ok: true, result: { message_id: 'z1' } }), { status: 200 }); };
-const call = async (e, b, auth) => { const r = await v22OwnerTextRoute(req(b, auth), e, OWNER_TEXT_PATH, NOW, provider); return { status: r.status, body: await r.json() }; };
+const noSleep = async () => {};
+const call = async (e, b, auth) => { const r = await v22OwnerTextRoute(req(b, auth), e, OWNER_TEXT_PATH, NOW, provider, noSleep); return { status: r.status, body: await r.json() }; };
 
 test('owner price preview -> exactly one sendMessage to owner with sandbox text', async () => {
   sends.length = 0; const e = env();
   const r = await call(e, body());
   assert.equal(r.status, 200); assert.equal(r.body.result, 'API_ACCEPTED');
-  assert.equal(sends.length, 1); assert.match(sends[0].url, /sendMessage$/);
+  assert.equal(sends.length, 2); assert.match(sends[0].url, /sendChatAction$/); assert.equal(sends[0].body.action, 'typing');
+  sends.shift(); assert.match(sends[0].url, /sendMessage$/);
+  assert.equal(r.body.typing, 'SHOWN');
   assert.equal(sends[0].body.chat_id, 'owner-chat');
   assert.equal(sends[0].body.text, '★ TIEN404 SANDBOX · Shop B\n✔ F01 – giá 456.000đ\n⌂ Tồn QA: 5\nⓘ Chỉ xem giá, chưa tạo đơn.');
   assert.ok(sends[0].body.text_styles.some((x) => sends[0].body.text.substr(x.start, x.len) === '456.000đ' && x.st.includes('b')));
@@ -28,7 +31,7 @@ test('owner price preview -> exactly one sendMessage to owner with sandbox text'
 test('same inbound message replayed -> 409, no second send', async () => {
   sends.length = 0; const e = env();
   await call(e, body()); const r = await call(e, body());
-  assert.equal(r.status, 409); assert.equal(sends.length, 1);
+  assert.equal(r.status, 409); assert.equal(sends.filter((x) => /sendMessage$/.test(x.url)).length, 1);
 });
 test('another chat id (customer B) -> 403, no send', async () => {
   sends.length = 0; const r = await call(env(), body({ chat_id: 'someone-else' }));
@@ -68,13 +71,21 @@ test('every kind: styles inside text bounds, BMP-only symbols, <= 2000 chars', (
 });
 test('styled send rejected by Zalo -> one plain-text fallback, never more', async () => {
   const calls = []; const e = env();
-  const rejectStyled = async (url, init) => { const b = JSON.parse(init.body); calls.push(b); return new Response(JSON.stringify({ ok: !b.text_styles }), { status: b.text_styles ? 400 : 200 }); };
-  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midfb01' })), e, OWNER_TEXT_PATH, NOW, rejectStyled);
+  const rejectStyled = async (url, init) => { const b = JSON.parse(init.body); if (/sendChatAction$/.test(url)) return new Response('{"ok":true}'); calls.push(b); return new Response(JSON.stringify({ ok: !b.text_styles }), { status: b.text_styles ? 400 : 200 }); };
+  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midfb01' })), e, OWNER_TEXT_PATH, NOW, rejectStyled, noSleep);
   const j = await r.json();
   assert.equal(r.status, 200); assert.equal(j.result, 'API_ACCEPTED_PLAIN_FALLBACK'); assert.equal(calls.length, 2); assert.equal(calls[1].text_styles, undefined);
 });
 test('network error on styled send -> no fallback (unknown outcome)', async () => {
   let n = 0; const boom = async () => { n++; throw new Error('timeout'); };
-  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midnet1' })), env(), OWNER_TEXT_PATH, NOW, boom);
-  assert.equal(r.status, 502); assert.equal(n, 1);
+  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midnet1' })), env(), OWNER_TEXT_PATH, NOW, boom, noSleep);
+  assert.equal(r.status, 502); assert.equal(n, 2); // typing attempt + one send, no fallback
+});
+test('typing indicator fails -> reply still sent once, no wait', async () => {
+  const urls = []; let slept = 0;
+  const p = async (url) => { urls.push(url); if (/sendChatAction$/.test(url)) return new Response('{"ok":false}', { status: 400 }); return new Response('{"ok":true}', { status: 200 }); };
+  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midty01' })), env(), OWNER_TEXT_PATH, NOW, p, async () => { slept++; });
+  const j = await r.json();
+  assert.equal(r.status, 200); assert.equal(j.typing, 'REJECTED'); assert.equal(slept, 0);
+  assert.equal(urls.filter((u) => /sendMessage$/.test(u)).length, 1);
 });

@@ -12,6 +12,8 @@
 export const OWNER_TEXT_PATH = '/v1/qa-v22/owner-text';
 const HARD_EXPIRES = '2026-11-28T00:00:00Z';
 const DAILY_CAP = 30;
+// V22.2: show Zalo 'typing…' before replying. Best-effort (failure never blocks the reply), not a message.
+const TYPING_MS = { PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600 };
 const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT'];
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
@@ -61,7 +63,7 @@ export function composeMessage(b) {
 }
 export function composeText(b) { const m = composeMessage(b); return m ? m.text : null; }
 
-export async function v22OwnerTextRoute(request, env, path, now = Date.now(), providerFetch = fetch) {
+export async function v22OwnerTextRoute(request, env, path, now = Date.now(), providerFetch = fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms))) {
   if (path !== OWNER_TEXT_PATH) return null;
   if (request.method !== 'POST') return json(405, { ok: false, error: 'METHOD_NOT_ALLOWED' });
   if (env.ZALO_SEND_ENABLED !== 'false') return json(423, { ok: false, error: 'GLOBAL_KILL_SWITCH_UNEXPECTED' });
@@ -95,6 +97,12 @@ export async function v22OwnerTextRoute(request, env, path, now = Date.now(), pr
       const r = await providerFetch('https://bot-api.zaloplatforms.com/bot' + env.ZALO_BOT_TOKEN + '/sendMessage', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), redirect: 'manual', signal: AbortSignal.timeout(8000) });
       status = r.status; const x = await r.json().catch(() => ({})); return r.ok && x.ok === true;
     };
+    let typing = 'SKIPPED';
+    try {
+      const t = await providerFetch('https://bot-api.zaloplatforms.com/bot' + env.ZALO_BOT_TOKEN + '/sendChatAction', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: env.ZALO_OWNER_CHAT_ID, action: 'typing' }), redirect: 'manual', signal: AbortSignal.timeout(1500) });
+      const tx = await t.json().catch(() => ({})); typing = t.ok && tx.ok === true ? 'SHOWN' : 'REJECTED';
+      if (typing === 'SHOWN') await sleep(TYPING_MS[b.kind] || 800);
+    } catch { typing = 'ERROR'; }
     try {
       ack = await send({ chat_id: env.ZALO_OWNER_CHAT_ID, text, text_styles: msg.text_styles });
       outcome = ack ? 'API_ACCEPTED' : 'PROVIDER_REJECTED';
@@ -105,6 +113,6 @@ export async function v22OwnerTextRoute(request, env, path, now = Date.now(), pr
       }
     } catch {}
     try { await env.REPLAY_DB.prepare('UPDATE outbound_claims SET state = ?1 WHERE idempotency_key = ?2').bind(outcome, key).run(); } catch {}
-    return json(ack ? 200 : 502, { ok: ack, result: outcome, provider_http_status: status, attempts, orders_written: 0, retry_allowed: false });
+    return json(ack ? 200 : 502, { ok: ack, result: outcome, provider_http_status: status, attempts, typing, orders_written: 0, retry_allowed: false });
   } catch { return json(503, { ok: false, error: 'IDEMPOTENCY_STORE_UNAVAILABLE' }); }
 }
