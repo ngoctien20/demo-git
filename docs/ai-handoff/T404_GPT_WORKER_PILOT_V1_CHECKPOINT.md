@@ -1,6 +1,6 @@
 # TIEN404 — Autonomous Engineering Pilot V1 · GPT Worker checkpoint
 
-**Date:** 2026-11-21. **Status:** TESTED (local + Docker Linux), CI pending on Draft PR. **Base:** `develop` @ `00aff9b7`.
+**Date:** 2026-11-21. **Status:** VERIFIED — local, Docker Linux and GitHub CI (PR #484). **Base:** `develop` @ `00aff9b7`.
 **Branch:** `chore/gpt-worker-develop-tests-20261121`, code commit `ca929666`.
 
 ## Flow exercised (one real pass)
@@ -22,6 +22,7 @@ Re-targeted tooling to `develop`; added 17 offline tests and CI; fixed 5 verifie
 | `codex login status` with scrubbed env | `Logged in using ChatGPT` (no model call) |
 | `qa_static.py` | 26 pages, 795 links, 0 errors |
 | `test_motion_contract`, `test_v4_frontend` | OK |
+| GitHub Actions PR #484 @ `4fc114bd`: `offline-safety-tests (3.10)` / `(3.12)` | success / success (run 44899133516) |
 
 Codex Worker report: `~/.tien404-ai/gpt-worker-reports/gpt_worker_20261121_110009_908166.md` (local only).
 Confirmed 5/8 findings; junction escape and approval-flag claims not reproducible; `C:x.py` stays inside root.
@@ -37,8 +38,8 @@ Confirmed 5/8 findings; junction escape and approval-flag claims not reproducibl
 Close the Draft PR / delete the branch. No hosted, workflow, provider or data state was touched.
 
 ## Next
-1. Owner opens the Draft PR → verify `gpt-worker-tooling-qa` CI (3.10/3.12).
+1. Owner reviews and decides on merging PR #484 into `develop` (opened as a regular PR, not draft).
 2. Owner decides on `test_saas_contract` login expectation (fix test vs. restore nav link).
 3. Close #478.
 
-**Checkpoint:** `PILOT_V1 | GPT_WORKER_ON_DEVELOP | 17_TESTS_OK_WIN_LINUX | CODEX_REVIEW_TRIAGED_5_OF_8 | CI_PENDING_PR | NO_PROD | NO_SEND | NO_WRITE`.
+**Checkpoint:** `PILOT_V1 | GPT_WORKER_ON_DEVELOP | PR_484 | 17_TESTS_OK_WIN_LINUX | CI_GREEN_PY310_PY312 | CODEX_REVIEW_TRIAGED_5_OF_8 | NO_PROD | NO_SEND | NO_WRITE`.
