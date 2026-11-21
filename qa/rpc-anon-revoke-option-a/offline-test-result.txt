@@ -1,0 +1,21 @@
+server: 17.12 (Debian 17.12-1.pgdg13+1)
+== Before migration (live ACL) ==
+PASS  live ACL reproduced
+PASS  anon with valid header can execute (finding reproduced)
+PASS  anon with bad header blocked by in-function gate
+== Apply Option A migration ==
+PASS  migration applies cleanly
+PASS  anon denied even with valid header
+PASS  authenticated denied
+PASS  service_role NOT granted (no RLS-bypass key needed)
+PASS  ACL after migration is owner-only
+PASS  still SECURITY DEFINER, body untouched
+PASS  migration is idempotent (re-run)
+== Drift guards ==
+PASS  guard aborts if service_role has EXECUTE
+PASS  guard aborts if no longer SECURITY DEFINER
+== Rollback ==
+PASS  rollback applies
+PASS  ACL restored to live value
+PASS  anon works again after rollback
+== 15 passed, 0 failed ==
