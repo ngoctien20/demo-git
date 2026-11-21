@@ -71,20 +71,27 @@ jobs:
           for v in STAGING_DB_URL RESTORE_DB_URL; do
             url="${!v}"
             # In user, host, port (không in mật khẩu) để dễ tìm lỗi
-            python3 - "$v" "$url" <<'PY'
+            python3 - "$v" "$url" <<'PY' || { fail=1; continue; }
           import sys, re
           name, url = sys.argv[1], sys.argv[2]
           m = re.match(r'^(\w+)://([^:@/]+):(.*)@([^@/:]+):(\d+)/(\w+)', url)
           if not m:
-              print(f"{name}: KHONG dung dang postgresql://user:password@host:5432/postgres"); sys.exit(0)
+              print(f"::error::{name}: KHONG dung dang postgresql://user:password@host:5432/postgres"); sys.exit(1)
           scheme, user, pw, host, port, db = m.groups()
           print(f"{name}: user={user} host={host} port={port} db={db} password_len={len(pw)} "
                 f"co_dau_ngoac_vuong={'[' in pw or ']' in pw} co_ky_tu_@#/?={any(c in pw for c in '@#/?')}")
+          if any(c in pw for c in '[]@#/?% '):
+              print(f"::error::{name}: mat khau co ky tu dac biet hoac dau ngoac vuong; dat mat khau chi gom chu va so"); sys.exit(1)
           PY
             if psql "$url" -X -q -t -c 'select 1' > /dev/null 2> login_err.txt; then
               echo "$v: login OK"
             else
-              echo "::error::$v: login FAILED: $(head -c 300 login_err.txt)"; fail=1
+              # Không in nguyên văn lỗi (có thể chứa một phần mật khẩu); chỉ phân loại
+              if grep -q 'password authentication failed' login_err.txt; then why='sai mat khau'
+              elif grep -q 'translate host name' login_err.txt; then why='sai dinh dang URL hoac host'
+              elif grep -qi 'timeout\|timed out' login_err.txt; then why='het thoi gian ket noi'
+              else why='loi khac'; fi
+              echo "::error::$v: login FAILED ($why)"; fail=1
             fi
           done
           exit $fail
