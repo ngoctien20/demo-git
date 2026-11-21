@@ -1,6 +1,6 @@
 # V22 — Zalo Bot trả lời chủ shop (owner-only, sandbox)
 
-Trạng thái: **n8n đã publish** (OgDZNSAvKEvhnAvn → `dd64a1cd`, rollback `f00ba506`). **Worker chưa deploy** — tới khi deploy, n8n gọi vào route chưa có (404) và bỏ qua, không ảnh hưởng gì.
+Trạng thái: **n8n đã publish** (OgDZNSAvKEvhnAvn → `dd64a1cd`, rollback `f00ba506`). **Worker đã deploy** 2026-11-21 15:17Z, version `e19bdbdc` (rollback: version `3422864f`). Test live 15:18Z: chủ shop nhận đúng câu trả lời F01 (D1 claim `API_ACCEPTED`).
 
 ## Chủ dự án deploy Worker `tien404-zalo-outbound-v1-staging` (Cloudflare)
 
