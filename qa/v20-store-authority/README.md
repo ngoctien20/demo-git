@@ -23,6 +23,8 @@ Khi đọc schema thật phát hiện:
 |---|---|
 | `00_hosted_baseline_replica.sql` | Bản sao schema hosted (dữ liệu synthetic) — chỉ local |
 | `10_store_authority_expand.sql` | Migration đề xuất: precheck → stores/store_memberships → backfill → trigger → FK → RLS → hậu kiểm |
+| `20_store_aware_writer.sql` | Bước 2: `save_merchant_product` kiểm quyền theo Store (owner/manager của đúng store chứa sản phẩm), ghim `store_id` khi tạo/sửa, ghi `store_id` vào audit |
+| `80_store_aware_writer_rollback.sql` | Khôi phục thân hàm gốc nguyên văn (kiểm md5) |
 | `90_store_authority_rollback.sql` | Rollback; **từ chối** nếu tenant đã có >1 store (tránh mất gán store) |
 | `offline-pg-uat.sh` | 64 kiểm tra trên PostgreSQL local, so fingerprint schema sau rollback = baseline |
 | `ci-local-gotrue-uat.mjs` | Owner A/B + chi nhánh với **JWT thật do GoTrue local** cấp, qua PostgREST |
@@ -41,6 +43,11 @@ Chạy local: `PGHOST=/path/socket PGPORT=5432 bash qa/v20-store-authority/offli
 - Thu hồi membership store / tenant / tắt store có hiệu lực ngay với **cùng JWT**.
 - Rollback: từ chối khi có đa store; sau khi dọn, rollback xong và fingerprint schema khớp baseline.
 - Mutation test: bỏ điều kiện `store_id` khỏi policy → test FAIL đúng chỗ.
+
+## Hosted (restore-test)
+
+- 21/11 12:57 UTC: expand migration 49/49 PASS với JWT GoTrue hosted, rollback/áp lại khớp fingerprint (run 44906328409).
+- Thứ tự rollback đầy đủ: `80` → `90`. Thứ tự áp: `10` → `20`.
 
 ## Chưa chứng minh (BLOCKED / UNVERIFIED)
 

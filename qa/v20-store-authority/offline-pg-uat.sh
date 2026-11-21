@@ -41,6 +41,8 @@ TMO=a0000000-0000-4000-8000-0000000000c3   # tenant A member with NO store right
 "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS $PGDATABASE" -c "CREATE DATABASE $PGDATABASE" >/dev/null
 "${PSQL[@]}" -d "$PGDATABASE" -f "$DIR/00_hosted_baseline_replica.sql" >/dev/null
 BASE_FP=$(fingerprint)
+WRITER_MD5(){ admin "SELECT md5(pg_get_functiondef('public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)'::regprocedure))"; }
+BASE_WRITER=$(WRITER_MD5)
 ok "$(as $OA 'SELECT count(*) FROM public.products')" 1 BASELINE_OWNER_A_SEES_OWN_PRODUCT
 
 runfile(){ local out; out=$("${PSQL[@]}" -d "$PGDATABASE" -f "$1" 2>&1) || { echo "$out"; echo "FAIL_RUN_$2"; exit 1; }
@@ -112,6 +114,27 @@ as $OA "SELECT public.save_merchant_product('$TA','QA-A003','Writer compat 2',13
 ok "$(admin "SELECT price_vnd FROM public.products WHERE sku='QA-A003'")" 130000 LEGACY_WRITER_UPDATE_BY_TENANT_SKU_WORKS
 ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE metadata->>'sku'='QA-A003'")" 2 LEGACY_WRITER_AUDIT_UNCHANGED
 
+# --- Step 2: store-aware writer ----------------------------------------------------------
+runfile "$DIR/20_store_aware_writer.sql" T404_V20_STORE_AWARE_WRITER_OK
+PASS=$((PASS+1)); echo PASS_STORE_AWARE_WRITER_APPLIED
+as $OA "SELECT public.save_merchant_product('$TA','QA-A004','Store-aware create',140000,true,1,NULL)" >/dev/null
+ok "$(admin "SELECT s.is_default FROM public.products p JOIN public.stores s ON s.id=p.store_id WHERE p.sku='QA-A004'")" t WRITER_V2_MAIN_OWNER_CREATE_IN_DEFAULT_STORE
+TS4=$(admin "SELECT updated_at FROM public.products WHERE sku='QA-A004'")
+as $OA "SELECT public.save_merchant_product('$TA','QA-A004','Store-aware edit',150000,true,NULL,'$TS4'::timestamptz)" >/dev/null
+ok "$(admin "SELECT price_vnd FROM public.products WHERE sku='QA-A004'")" 150000 WRITER_V2_MAIN_OWNER_EDIT
+DENY_RE='access_denied'
+DENY_TAG=WRITER_V2_TENANT_MANAGER_WITHOUT_STORE denied as $TMO "SELECT public.save_merchant_product('$TA','QA-A005','x',1,true,0,NULL)"
+DENY_TAG=WRITER_V2_BRANCH_OWNER_INTO_MAIN_STORE denied as $OBR "SELECT public.save_merchant_product('$TA','QA-A005','x',1,true,0,NULL)"
+DENY_TAG=WRITER_V2_STAFF_ROLE denied as $STF "SELECT public.save_merchant_product('$TA','QA-A005','x',1,true,0,NULL)"
+TSB=$(admin "SELECT updated_at FROM public.products WHERE sku='QA-A002'")
+DENY_TAG=WRITER_V2_MAIN_OWNER_EDIT_BRANCH_PRODUCT denied as $OA "SELECT public.save_merchant_product('$TA','QA-A002','hijack',1,true,NULL,'$TSB'::timestamptz)"
+as $OBR "SELECT public.save_merchant_product('$TA','QA-A002','Branch edit',209000,true,NULL,'$TSB'::timestamptz)" >/dev/null
+ok "$(admin "SELECT price_vnd||':'||(store_id='e0000000-0000-4000-8000-0000000000a2') FROM public.products WHERE sku='QA-A002'")" 209000:true WRITER_V2_BRANCH_OWNER_EDITS_OWN_STORE_PRODUCT
+ok "$(admin "SELECT count(*) FROM public.products WHERE sku='QA-A005'")" 0 WRITER_V2_NO_ROW_FROM_DENIED_CALLS
+ok "$(admin "SELECT metadata->>'store_id' IS NOT NULL FROM app_private.audit_events WHERE metadata->>'sku'='QA-A004' ORDER BY id DESC LIMIT 1")" t WRITER_V2_AUDIT_RECORDS_STORE
+DENY_RE='permission denied'
+DENY_TAG=WRITER_V2_ANON_EXECUTE denied as anon "SELECT public.save_merchant_product('$TA','QA-A006','x',1,true,0,NULL)"
+
 # --- New tenant onboarding still works -------------------------------------------------
 admin "INSERT INTO public.tenants(id,slug,name) VALUES ('11111111-0000-4000-8000-000000000001','qa-new-tenant','QA New');
  INSERT INTO public.products(tenant_id,sku,name,price_vnd) VALUES ('11111111-0000-4000-8000-000000000001','N1','n',1)" >/dev/null
@@ -124,10 +147,12 @@ admin "UPDATE public.store_memberships SET active=true WHERE user_id='$OBR'; UPD
 ok "$(as $OBR 'SELECT count(*) FROM public.orders')" 0 REVOKED_TENANT_MEMBERSHIP_OVERRIDES_STORE
 admin "UPDATE public.tenant_memberships SET active=true WHERE user_id='$OBR'; UPDATE public.stores SET active=false WHERE id='e0000000-0000-4000-8000-0000000000a2'" >/dev/null
 ok "$(as $OBR 'SELECT count(*) FROM public.products')" 0 INACTIVE_STORE_DENIED
-ok "$(as $OA 'SELECT count(*) FROM public.products')" 2 OTHER_STORE_UNAFFECTED
+ok "$(as $OA 'SELECT count(*) FROM public.products')" 3 OTHER_STORE_UNAFFECTED
 ok "$(as $OB 'SELECT count(*) FROM public.products')" 1 OTHER_TENANT_UNAFFECTED
 
 # --- Rollback --------------------------------------------------------------------------
+runfile "$DIR/80_store_aware_writer_rollback.sql" T404_V20_STORE_AWARE_WRITER_ROLLBACK_OK
+ok "$(WRITER_MD5)" "$BASE_WRITER" WRITER_ROLLBACK_BODY_EQUALS_ORIGINAL
 DENY_TAG=ROLLBACK_REFUSES_MULTI_STORE DENY_RE='T404_ROLLBACK_REFUSED_MULTI_STORE_DATA_EXISTS' denied "${PSQL[@]}" -d "$PGDATABASE" -f "$DIR/90_store_authority_rollback.sql"
 admin "DELETE FROM public.messages WHERE store_id='e0000000-0000-4000-8000-0000000000a2';
  DELETE FROM public.conversations WHERE store_id='e0000000-0000-4000-8000-0000000000a2';
@@ -140,7 +165,7 @@ admin "DELETE FROM public.messages WHERE store_id='e0000000-0000-4000-8000-00000
 runfile "$DIR/90_store_authority_rollback.sql" T404_V20_STORE_AUTHORITY_ROLLBACK_OK
 PASS=$((PASS+1)); echo PASS_ROLLBACK_APPLIED
 ok "$(fingerprint)" "$BASE_FP" ROLLBACK_SCHEMA_FINGERPRINT_EQUALS_BASELINE
-ok "$(as $OA 'SELECT count(*) FROM public.products')" 2 ROLLBACK_OWNER_A_ACCESS_RESTORED
+ok "$(as $OA 'SELECT count(*) FROM public.products')" 3 ROLLBACK_OWNER_A_ACCESS_RESTORED
 ok "$(as $TMO 'SELECT count(*) FROM public.orders')" 1 ROLLBACK_TENANT_MANAGER_REGAINS_TENANT_LEVEL_READ
 
 echo "{\"checkpoint\":\"V20_STORE_AUTHORITY_EXPAND_OFFLINE_PG\",\"status\":\"PASS\",\"passed\":$PASS,\"failed\":0,\"realGoTrueJwt\":false,\"hostedConnections\":0,\"hostedMigrations\":0,\"productionReady\":false}"

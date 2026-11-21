@@ -13,6 +13,7 @@ const DB=process.env.RESTORE_DB_URL||'';
 const TA='9c8c524c-88db-4771-8ab0-a4316298494c', TB='4b12fc28-4fc3-4b06-bbf1-72a1f62ad5c5';
 const KINDS=['products','customers','orders','order_items','conversations','messages'];
 const RUN=randomBytes(4).toString('hex');
+const WRITER=process.env.T404_V20_WRITER==='v2'?'v2':'v1';
 const BRANCH=randomUUID(), CUST=randomUUID(), ORDER=randomUUID(), CONV=randomUUID();
 let pass=0; const users=[];
 const must=(v,t)=>{if(!v)throw Error('QA20H_'+t)};
@@ -131,7 +132,22 @@ async function run(){
  ok(w2.ok&&sql(`SELECT price_vnd FROM public.products WHERE sku='QA-V20-W-${RUN}'`)==='130000','HOSTED_WRITER_UPDATE_BY_TENANT_SKU');
  const wb=await req('/rest/v1/rpc/save_merchant_product',tm.jwt,'POST',{p_tenant:TA,p_sku:'QA-V20-X-'+RUN,p_name:'x',
   p_price:1,p_active:true,p_initial_stock:0,p_expected_updated_at:null});
- ok(wb.ok,'NOTE_WRITER_STILL_TENANT_SCOPED_MANAGER_WITHOUT_STORE_CAN_CREATE');
+ if(WRITER==='v1'){
+  ok(wb.ok,'V1_NOTE_WRITER_TENANT_SCOPED_MANAGER_WITHOUT_STORE_CAN_CREATE');
+ }else{
+  ok(!wb.ok&&wb.status===403,'V2_WRITER_TENANT_MANAGER_WITHOUT_STORE_DENIED_HTTP'+wb.status);
+  const intoMain=await req('/rest/v1/rpc/save_merchant_product',br.jwt,'POST',{p_tenant:TA,p_sku:'QA-V20-Y-'+RUN,p_name:'y',
+   p_price:1,p_active:true,p_initial_stock:0,p_expected_updated_at:null});
+  ok(!intoMain.ok&&intoMain.status===403,'V2_WRITER_BRANCH_OWNER_INTO_MAIN_STORE_DENIED');
+  const bts=sql(`SELECT to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') FROM public.products WHERE sku='QA-V20-B-${RUN}'`);
+  const hijack=await req('/rest/v1/rpc/save_merchant_product',a.jwt,'POST',{p_tenant:TA,p_sku:'QA-V20-B-'+RUN,p_name:'hijack',
+   p_price:1,p_active:true,p_initial_stock:null,p_expected_updated_at:bts});
+  ok(!hijack.ok&&hijack.status===403,'V2_WRITER_MAIN_OWNER_EDIT_BRANCH_PRODUCT_DENIED');
+  const own=await req('/rest/v1/rpc/save_merchant_product',br.jwt,'POST',{p_tenant:TA,p_sku:'QA-V20-B-'+RUN,p_name:'QA branch 2',
+   p_price:209000,p_active:true,p_initial_stock:null,p_expected_updated_at:bts});
+  ok(own.ok&&sql(`SELECT price_vnd FROM public.products WHERE sku='QA-V20-B-${RUN}'`)==='209000','V2_WRITER_BRANCH_OWNER_EDITS_OWN_PRODUCT');
+  ok(sql(`SELECT count(*) FROM public.products WHERE sku IN ('QA-V20-X-${RUN}','QA-V20-Y-${RUN}')`)==='0','V2_NO_ROWS_FROM_DENIED_CALLS');
+ }
  // Revocation with the same JWT.
  sql(`UPDATE public.store_memberships SET active=false WHERE user_id=${lit(br.id)}`);
  for(const kind of KINDS){const r=await rows(br,kind);ok(r.ok&&r.data.length===0,'REVOKED_SAME_JWT_'+kind+'_DENIED');}
@@ -142,6 +158,6 @@ async function run(){
 let failed=null;
 try{await run()}catch(e){const s=String(e?.message||'');failed=s.startsWith('QA20H_')?s.replace(/[^A-Z0-9_]/g,'').slice(0,120):'INTERNAL_ERROR';console.log('FAIL_'+failed)}
 try{cleanup()}catch{console.log('FAIL_CLEANUP');failed=failed||'CLEANUP'}
-console.log(JSON.stringify({checkpoint:'V20_STORE_AUTHORITY_HOSTED_RESTORE_TEST',target:REF,status:failed?'FAIL':'PASS',
+console.log(JSON.stringify({checkpoint:'V20_STORE_AUTHORITY_HOSTED_RESTORE_TEST',writer:WRITER,target:REF,status:failed?'FAIL':'PASS',
  passed:pass,failed:failed?1:0,realHostedGoTrueJwt:true,stagingTouched:false,providerSends:0,productionReady:false}));
 if(failed)process.exitCode=1;

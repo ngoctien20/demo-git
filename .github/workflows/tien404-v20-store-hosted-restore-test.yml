@@ -17,6 +17,7 @@ env:
   RESTORE_REF: cunxxzxaboazbszsfneo
   STAGING_REF: ifxlvrhyjhbzbrkdsida
   PRE_MIGRATION_FP: 5b63ac1cffbd84acedac327a2bbe73cd
+  ORIGINAL_WRITER_MD5: b8fa7077197e3fdbb05ce0a0806ae6e1
 jobs:
   hosted-uat:
     runs-on: ubuntu-24.04
@@ -51,6 +52,13 @@ jobs:
           out=$(psql "$RESTORE_DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is not null" 2>/dev/null) || { echo "::error::login failed"; exit 1; }
           [ "$out" = t ] || { echo "::error::guard marker missing"; exit 1; }
           echo "GUARD_OK"
+      - name: Reset writer to original if a previous run left the store-aware one
+        run: |
+          w=$(psql "$RESTORE_DB_URL" -X -At -c "select md5(pg_get_functiondef('public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)'::regprocedure))" 2>/dev/null)
+          if [ "$w" != "$ORIGINAL_WRITER_MD5" ]; then
+            psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f qa/v20-store-authority/80_store_aware_writer_rollback.sql >/dev/null 2>&1 || { echo "::error::writer reset failed"; exit 1; }
+            echo "WRITER_RESET_TO_ORIGINAL"
+          fi
       - name: Apply expand migration if not yet applied (restore-test only)
         run: |
           fp=$(psql "$RESTORE_DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
@@ -70,21 +78,38 @@ jobs:
           [ -n "$fp" ] || exit 1
           [ "$fp" != "$PRE_MIGRATION_FP" ] || { echo "::error::migration not applied"; exit 1; }
           echo "POST_MIGRATION_FP=$fp" | tee -a "$GITHUB_ENV"
-      - name: Hosted GoTrue JWT UAT (creates and deletes its own synthetic users/rows)
+      - name: Hosted GoTrue JWT UAT, original writer (creates and deletes its own synthetic users/rows)
         env:
           T404_V20_HOSTED_TARGET: cunxxzxaboazbszsfneo
           T404_RESTORE_PUBLISHABLE_KEY: sb_publishable_PD4GvhqTC9LZeR7Bzwep9A_50gH53AZ
+          T404_V20_WRITER: v1
         run: node qa/v20-store-authority/hosted/hosted-restore-test-uat.mjs
-      - name: Rollback on hosted, verify fingerprint = pre-migration, re-apply
+      - name: Apply store-aware writer (step 2)
+        run: |
+          psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f qa/v20-store-authority/20_store_aware_writer.sql > /dev/null 2>err.txt \
+            || { grep -o 'T404_[A-Z_]*' err.txt | head -1; rm -f err.txt; echo "::error::writer apply failed"; exit 1; }
+          grep -o 'T404_V20_STORE_AWARE_WRITER_OK' err.txt; rm -f err.txt
+      - name: Hosted GoTrue JWT UAT, store-aware writer
+        env:
+          T404_V20_HOSTED_TARGET: cunxxzxaboazbszsfneo
+          T404_RESTORE_PUBLISHABLE_KEY: sb_publishable_PD4GvhqTC9LZeR7Bzwep9A_50gH53AZ
+          T404_V20_WRITER: v2
+        run: node qa/v20-store-authority/hosted/hosted-restore-test-uat.mjs
+      - name: Rollback writer + expand on hosted, verify fingerprints, re-apply both
         run: |
           run(){ psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f "$1" > /dev/null 2>err.txt || { grep -o 'T404_[A-Z_]*' err.txt | head -1; rm -f err.txt; echo "::error::$1 failed"; exit 1; }; rm -f err.txt; }
           fp(){ psql "$RESTORE_DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1; }
+          wmd5(){ psql "$RESTORE_DB_URL" -X -At -c "select md5(pg_get_functiondef('public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)'::regprocedure))" 2>/dev/null; }
+          run qa/v20-store-authority/80_store_aware_writer_rollback.sql
+          [ "$(wmd5)" = "$ORIGINAL_WRITER_MD5" ] && echo PASS_HOSTED_WRITER_ROLLBACK_BODY_EQUALS_ORIGINAL || { echo "::error::writer rollback mismatch"; FAIL=1; }
           run qa/v20-store-authority/90_store_authority_rollback.sql
           after_rb=$(fp); echo "ROLLBACK_FP=$after_rb"
           [ "$after_rb" = "$PRE_MIGRATION_FP" ] && echo PASS_HOSTED_ROLLBACK_FP_EQUALS_PRE_MIGRATION || { echo "::error::rollback fingerprint mismatch"; FAIL=1; }
           run qa/v20-store-authority/10_store_authority_expand.sql
           after_re=$(fp); echo "REAPPLY_FP=$after_re"
           [ "$after_re" = "$POST_MIGRATION_FP" ] && echo PASS_HOSTED_REAPPLY_FP_EQUALS_POST_MIGRATION || { echo "::error::reapply fingerprint mismatch"; FAIL=1; }
+          run qa/v20-store-authority/20_store_aware_writer.sql
+          echo "FINAL_STATE=expand+store-aware-writer"
           exit ${FAIL:-0}
       - name: Side effects
         if: always()
