@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { v22OwnerTextRoute, composeText, OWNER_TEXT_PATH } from './worker-v22-owner-text.mjs';
+import { v22OwnerTextRoute, composeText, composeMessage, OWNER_TEXT_PATH } from './worker-v22-owner-text.mjs';
 
 function fakeDb() {
   const rows = new Map();
@@ -22,7 +22,8 @@ test('owner price preview -> exactly one sendMessage to owner with sandbox text'
   assert.equal(r.status, 200); assert.equal(r.body.result, 'API_ACCEPTED');
   assert.equal(sends.length, 1); assert.match(sends[0].url, /sendMessage$/);
   assert.equal(sends[0].body.chat_id, 'owner-chat');
-  assert.equal(sends[0].body.text, '[TIEN404 SANDBOX - Shop B] F01: 456.000đ, tồn QA 5. Chỉ xem giá, chưa tạo đơn.');
+  assert.equal(sends[0].body.text, '★ TIEN404 SANDBOX · Shop B\n✔ F01 – giá 456.000đ\n⌂ Tồn QA: 5\nⓘ Chỉ xem giá, chưa tạo đơn.');
+  assert.ok(sends[0].body.text_styles.some((x) => sends[0].body.text.substr(x.start, x.len) === '456.000đ' && x.st.includes('b')));
 });
 test('same inbound message replayed -> 409, no second send', async () => {
   sends.length = 0; const e = env();
@@ -50,10 +51,30 @@ test('free text / unknown kind / other SKU / inconsistent total rejected', async
 });
 test('order draft text has correct total', () => {
   assert.equal(composeText({ kind: 'ORDER_DRAFT_PREVIEW', sku: 'F01', unit_price_vnd: 456000, quantity: 2, total_vnd: 912000 }),
-    '[TIEN404 SANDBOX - Shop B] F01: 2 × 456.000đ = 912.000đ. Bản nháp QA: chưa ghi đơn, chưa trừ kho.');
+    '★ TIEN404 SANDBOX · Shop B\n✍ Bản nháp QA\nF01: 2 × 456.000đ\nTổng: 912.000đ\n⚠ Chưa ghi đơn, chưa trừ kho.');
 });
 test('daily cap 30', async () => {
   const e = env();
   for (let i = 0; i < 30; i++) await call(e, body({ event_message_id: 'mid' + String(i).padStart(4, '0') }));
   assert.equal((await call(e, body({ event_message_id: 'mid9999' }))).status, 429);
+});
+test('every kind: styles inside text bounds, BMP-only symbols, <= 2000 chars', () => {
+  for (const b of [{ kind: 'PRICE_PREVIEW', sku: 'F01', unit_price_vnd: 456000, stock: 5 }, { kind: 'QUANTITY_REQUIRED', sku: 'F01', unit_price_vnd: 456000 },
+    { kind: 'ORDER_DRAFT_PREVIEW', sku: 'F01', unit_price_vnd: 456000, quantity: 2, total_vnd: 912000 }, { kind: 'INVALID_QUANTITY', sku: 'F01', stock: 5 }, { kind: 'BLOCKED_STALE_SNAPSHOT', sku: 'F01' }]) {
+    const m = composeMessage(b);
+    assert.ok(m.text.length <= 2000 && !/[\uD800-\uDFFF]/.test(m.text));
+    for (const x of m.text_styles) assert.ok(x.start >= 0 && x.len > 0 && x.start + x.len <= m.text.length);
+  }
+});
+test('styled send rejected by Zalo -> one plain-text fallback, never more', async () => {
+  const calls = []; const e = env();
+  const rejectStyled = async (url, init) => { const b = JSON.parse(init.body); calls.push(b); return new Response(JSON.stringify({ ok: !b.text_styles }), { status: b.text_styles ? 400 : 200 }); };
+  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midfb01' })), e, OWNER_TEXT_PATH, NOW, rejectStyled);
+  const j = await r.json();
+  assert.equal(r.status, 200); assert.equal(j.result, 'API_ACCEPTED_PLAIN_FALLBACK'); assert.equal(calls.length, 2); assert.equal(calls[1].text_styles, undefined);
+});
+test('network error on styled send -> no fallback (unknown outcome)', async () => {
+  let n = 0; const boom = async () => { n++; throw new Error('timeout'); };
+  const r = await v22OwnerTextRoute(req(body({ event_message_id: 'midnet1' })), env(), OWNER_TEXT_PATH, NOW, boom);
+  assert.equal(r.status, 502); assert.equal(n, 1);
 });

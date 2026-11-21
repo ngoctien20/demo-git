@@ -23,26 +23,43 @@ async function secureEqual(a, b) {
 const vnd = (n) => n.toLocaleString('vi-VN') + 'đ';
 const safeInt = (n, min, max) => Number.isSafeInteger(n) && n >= min && n <= max;
 
-export function composeText(b) {
-  const P = '[TIEN404 SANDBOX - Shop B] ';
+// V22.1 rich reply: icons (BMP-only symbols so offsets match in UTF-16 and code points) + Zalo text_styles
+// (bold "b", italic "i", colour "c_<hex>"). If Zalo rejects the styled message, the route sends the same text once
+// without styles. Facts (price/stock/total) are still validated here; n8n cannot send free text.
+const C = { green: 'c_15a85f', red: 'c_db342e', orange: 'c_f27806', blue: 'c_0068ff', gray: 'c_7f8c8d' };
+function build(parts) {
+  let text = ''; const text_styles = [];
+  for (const [str, st] of parts) { if (st && st.length) text_styles.push({ start: text.length, len: str.length, st }); text += str; }
+  return { text, text_styles };
+}
+const HEAD = ['\u2605 TIEN404 SANDBOX \u00b7 Shop B\n', ['b', C.gray]];
+export function composeMessage(b) {
   switch (b.kind) {
     case 'PRICE_PREVIEW':
       if (!safeInt(b.unit_price_vnd, 1, 1e9) || !safeInt(b.stock, 0, 1e6)) return null;
-      return P + b.sku + ': ' + vnd(b.unit_price_vnd) + ', tồn QA ' + b.stock + '. Chỉ xem giá, chưa tạo đơn.';
+      return build([HEAD, ['\u2714 ' + b.sku + ' \u2013 gi\u00e1 ', ['b']], [vnd(b.unit_price_vnd), ['b', C.green]],
+        ['\n\u2302 T\u1ed3n QA: ' + b.stock + '\n'], ['\u24d8 Ch\u1ec9 xem gi\u00e1, ch\u01b0a t\u1ea1o \u0111\u01a1n.', ['i', C.gray]]]);
     case 'QUANTITY_REQUIRED':
       if (!safeInt(b.unit_price_vnd, 1, 1e9)) return null;
-      return P + b.sku + ' giá ' + vnd(b.unit_price_vnd) + '. Bạn muốn thử mua bao nhiêu? Chưa tạo đơn.';
+      return build([HEAD, ['\u2753 ' + b.sku + ' gi\u00e1 '], [vnd(b.unit_price_vnd), ['b', C.green]],
+        ['\nB\u1ea1n mu\u1ed1n th\u1eed mua bao nhi\u00eau?', ['b', C.blue]],
+        ['\n\u270e Nh\u1eafn: TEST SHOP B CHAT MUA ' + b.sku + ' 2\n'], ['\u24d8 Ch\u01b0a t\u1ea1o \u0111\u01a1n.', ['i', C.gray]]]);
     case 'ORDER_DRAFT_PREVIEW':
       if (!safeInt(b.unit_price_vnd, 1, 1e9) || !safeInt(b.quantity, 1, 9999) || b.total_vnd !== b.unit_price_vnd * b.quantity) return null;
-      return P + b.sku + ': ' + b.quantity + ' × ' + vnd(b.unit_price_vnd) + ' = ' + vnd(b.total_vnd) + '. Bản nháp QA: chưa ghi đơn, chưa trừ kho.';
+      return build([HEAD, ['\u270d B\u1ea3n nh\u00e1p QA\n', ['b', C.blue]],
+        [b.sku + ': ' + b.quantity + ' \u00d7 ' + vnd(b.unit_price_vnd) + '\n'], ['T\u1ed5ng: '], [vnd(b.total_vnd), ['b', C.orange]],
+        ['\n\u26a0 Ch\u01b0a ghi \u0111\u01a1n, ch\u01b0a tr\u1eeb kho.', ['i', C.gray]]]);
     case 'INVALID_QUANTITY':
       if (!safeInt(b.stock, 0, 1e6)) return null;
-      return P + 'Số lượng thử hợp lệ từ 1 đến ' + b.stock + '. Chưa tạo đơn.';
+      return build([HEAD, ['\u26a0 S\u1ed1 l\u01b0\u1ee3ng kh\u00f4ng h\u1ee3p l\u1ec7', ['b', C.orange]],
+        ['\nCh\u1ec9 nh\u1eadn t\u1eeb 1 \u0111\u1ebfn ' + b.stock + '.\n'], ['\u24d8 Ch\u01b0a t\u1ea1o \u0111\u01a1n.', ['i', C.gray]]]);
     case 'BLOCKED_STALE_SNAPSHOT':
-      return P + 'Dữ liệu giá thử đã cũ nên shop chưa báo giá. Chưa tạo đơn.';
+      return build([HEAD, ['\u26d4 D\u1eef li\u1ec7u gi\u00e1 th\u1eed \u0111\u00e3 c\u0169', ['b', C.red]],
+        ['\nShop ch\u01b0a b\u00e1o gi\u00e1 l\u00fac n\u00e0y.\n'], ['\u24d8 Ch\u01b0a t\u1ea1o \u0111\u01a1n.', ['i', C.gray]]]);
     default: return null;
   }
 }
+export function composeText(b) { const m = composeMessage(b); return m ? m.text : null; }
 
 export async function v22OwnerTextRoute(request, env, path, now = Date.now(), providerFetch = fetch) {
   if (path !== OWNER_TEXT_PATH) return null;
@@ -62,8 +79,9 @@ export async function v22OwnerTextRoute(request, env, path, now = Date.now(), pr
   if (typeof b.chat_id !== 'string' || !(await secureEqual(b.chat_id, env.ZALO_OWNER_CHAT_ID))) return json(403, { ok: false, error: 'OWNER_ONLY' });
   if (typeof b.event_message_id !== 'string' || !/^[A-Za-z0-9_-]{4,128}$/.test(b.event_message_id)) return json(400, { ok: false, error: 'EVENT_ID_REQUIRED' });
   if (!KINDS.includes(b.kind) || b.sku !== 'F01') return json(422, { ok: false, error: 'KIND_NOT_APPROVED' });
-  const text = composeText(b);
-  if (!text) return json(422, { ok: false, error: 'INVALID_FACTS' });
+  const msg = composeMessage(b);
+  if (!msg) return json(422, { ok: false, error: 'INVALID_FACTS' });
+  const text = msg.text;
   const day = new Date(now).toISOString().slice(0, 10);
   try {
     const cnt = await env.REPLAY_DB.prepare('SELECT COUNT(*) AS n FROM outbound_claims WHERE idempotency_key LIKE ?1').bind('V22_OWNER_TEXT_' + day + '_%').first();
@@ -71,12 +89,22 @@ export async function v22OwnerTextRoute(request, env, path, now = Date.now(), pr
     const key = 'V22_OWNER_TEXT_' + day + '_' + b.event_message_id;
     const c = await env.REPLAY_DB.prepare('INSERT INTO outbound_claims (idempotency_key, created_at, state) VALUES (?1,?2,?3) ON CONFLICT(idempotency_key) DO NOTHING').bind(key, Math.floor(now / 1000), 'CLAIMED_BEFORE_SEND').run();
     if (Number(c?.meta?.changes) !== 1) return json(409, { ok: false, error: 'ALREADY_REPLIED_NEVER_RETRY' });
-    let outcome = 'UNKNOWN_AFTER_SEND_ATTEMPT', ack = false, status = 0;
+    let outcome = 'UNKNOWN_AFTER_SEND_ATTEMPT', ack = false, status = 0, attempts = 0;
+    const send = async (payload) => {
+      attempts++;
+      const r = await providerFetch('https://bot-api.zaloplatforms.com/bot' + env.ZALO_BOT_TOKEN + '/sendMessage', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), redirect: 'manual', signal: AbortSignal.timeout(8000) });
+      status = r.status; const x = await r.json().catch(() => ({})); return r.ok && x.ok === true;
+    };
     try {
-      const r = await providerFetch('https://bot-api.zaloplatforms.com/bot' + env.ZALO_BOT_TOKEN + '/sendMessage', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: env.ZALO_OWNER_CHAT_ID, text }), redirect: 'manual', signal: AbortSignal.timeout(8000) });
-      status = r.status; const x = await r.json().catch(() => ({})); ack = r.ok && x.ok === true; outcome = ack ? 'API_ACCEPTED' : 'PROVIDER_REJECTED';
+      ack = await send({ chat_id: env.ZALO_OWNER_CHAT_ID, text, text_styles: msg.text_styles });
+      outcome = ack ? 'API_ACCEPTED' : 'PROVIDER_REJECTED';
+      // Only an explicit provider rejection (not a timeout/unknown) may fall back to the same text without styles.
+      if (!ack && status >= 200 && status < 500) {
+        ack = await send({ chat_id: env.ZALO_OWNER_CHAT_ID, text });
+        outcome = ack ? 'API_ACCEPTED_PLAIN_FALLBACK' : 'PROVIDER_REJECTED';
+      }
     } catch {}
     try { await env.REPLAY_DB.prepare('UPDATE outbound_claims SET state = ?1 WHERE idempotency_key = ?2').bind(outcome, key).run(); } catch {}
-    return json(ack ? 200 : 502, { ok: ack, result: outcome, provider_http_status: status, attempts: 1, orders_written: 0, retry_allowed: false });
+    return json(ack ? 200 : 502, { ok: ack, result: outcome, provider_http_status: status, attempts, orders_written: 0, retry_allowed: false });
   } catch { return json(503, { ok: false, error: 'IDEMPOTENCY_STORE_UNAVAILABLE' }); }
 }
