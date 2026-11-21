@@ -6,7 +6,7 @@ Nhánh `claude/project-thread-q1rpmb` (xếp trên #483 `bf1853a`). Không có t
 
 | Thành phần | ID | Published | Draft | Nguồn dữ liệu |
 |---|---|---|---|---|
-| Messenger bot `TIEN404_MESSENGER_TEST` | Z7FdV7uDvApfbURQ | `f8c23034` (publish 13:14Z hôm nay, "Nút xem mẫu") | = published | Catalog: Google Sheet **AI_SALES_DEMO/Products**; đơn: **AI_SALES_DEMO/Orders** |
+| Messenger bot `TIEN404_MESSENGER_TEST` | Z7FdV7uDvApfbURQ | `e1f62ebc` (publish 13:45Z, "Nhớ mẫu vừa bấm" = bản sửa F-01); trước đó `f8c23034` (13:14Z) | = published | Catalog: Google Sheet **AI_SALES_DEMO/Products**; đơn: **AI_SALES_DEMO/Orders** |
 | Create order tool | KrSn4DNR9ALX5ng4 | `4740251a` | `af9ee686` (khác) | AI_SALES_DEMO/Orders (append), không trừ kho |
 | Manage order (sửa SKU/SL/tên/SĐT) | fDB9dvs1qPPVt9Sp | `137d5689` (còn lỗi S-18) | `2e8786fd` (khác) | AI_SALES_DEMO/Orders |
 | Update address | BkAi6TVUKAjCnI7v | `93cf227a` (theo checkpoint #483 12:00Z) | khác | AI_SALES_DEMO/Orders |
@@ -28,7 +28,7 @@ Mức bằng chứng: **L** = local/mock, **API** = staging/production qua API (
 | Meta nhận tin gửi đi | Messenger live | f8c23034 | Cùng ca | Graph API trả message_id cho đúng người nhận | `recipient_id` = …4451, có `metaMessageId` | exec 5832 node Verify Messenger Send Result (API) | PASS |
 | Khách nhìn thấy phản hồi | Messenger app | — | — | Chủ dự án thấy tin trên điện thoại | Gián tiếp: 13:39:47 chủ dự án bấm đúng nút "Xem A003" có trong tin trả lời | exec 5836 (postback sinh từ nút) | PASS (gián tiếp) |
 | Nút "Xem A003" / "Xem A002" | Messenger live | f8c23034 | Postback 13:39:47, 13:42:28 | Đọc Sheet theo SKU, không qua AI | A003 159.000đ còn 18; A002 159.000đ còn 25 | exec 5836, 5838 (API) | PASS |
-| Giữ ngữ cảnh khi đổi mẫu | Messenger live | f8c23034 | Bấm "Xem A002" → hỏi "Mẫu mình vừa bấm là mẫu nào…2 cái bao nhiêu?" | Trả lời A002 | **Trả lời A003**, 318.000₫ (sai mẫu; giá tình cờ bằng nhau) | exec 5838 → 5840 (API); test `messenger-postback-context` 3/3 (L) | **FAIL (F-01)** |
+| Giữ ngữ cảnh khi đổi mẫu | Messenger live | f8c23034 | Bấm "Xem A002" → hỏi "Mẫu mình vừa bấm là mẫu nào…2 cái bao nhiêu?" | Trả lời A002 | **Trả lời A003**, 318.000₫ (sai mẫu; giá tình cờ bằng nhau) | exec 5838 → 5840 (API); test `messenger-postback-context` 3/3 (L) | **FAIL (F-01)** trên f8c23034; e1f62ebc chờ ca A002 |
 | Hỏi giá không tạo đơn | Messenger live | f8c23034 | 5 tin hỏi giá 13:08–13:44 | Không gọi create_order | Không execution nào của KrSn; Orders vẫn 6 dòng | Sheet Orders A2:A7 (API) | PASS |
 | Giữ số lượng qua lượt | Messenger live | f8c23034 | "2 cái bao nhiêu?" → "Còn mẫu đen, số lượng như trên" | Dùng lại SL 2 | Đúng 2 cái | exec 5816, 5820 (API) | PASS |
 | Không báo giá hàng hết | Messenger live | f8c23034 | "Còn mẫu đen…" | A011 (tồn 0) phải ghi hết hàng | Liệt kê "A011 … 2 cái = 578.000₫", không nói hết hàng | exec 5820 (API) | **FAIL (F-02)** |
@@ -54,13 +54,14 @@ Tổng test offline vòng này: 17 + 3 = **20/20 PASS** (cộng 14/14 tái chạ
 
 ## 3. Lỗi mới
 
-- **F-01 (P1, sai sản phẩm)**: nút "Xem SKU" trả lời qua nhánh Sheet, không ghi vào bộ nhớ hội thoại; câu hỏi tiếp theo AI vẫn hiểu mẫu cũ. Hậu quả: khách có thể chốt nhầm mẫu. Bản sửa đề xuất `qa/v21-channel-acceptance/F01-postback-memory.patch.json` (thêm Chat Memory Manager ghi "Khách bấm nút Xem SKU" + kết quả vào cùng session). **Chưa áp dụng, chưa publish** (cần duyệt vì sửa bot live).
+- **F-01 (P1, sai sản phẩm)**: nút "Xem SKU" trả lời qua nhánh Sheet, không ghi vào bộ nhớ hội thoại; câu hỏi tiếp theo AI vẫn hiểu mẫu cũ. Hậu quả: khách có thể chốt nhầm mẫu. Bản sửa đề xuất `qa/v21-channel-acceptance/F01-postback-memory.patch.json`.
+  - Cập nhật 13:55Z: chủ dự án duyệt publish. Khi kiểm tra thì Z7Fd đã có bản sửa tương đương `e1f62ebc`, publish 13:45Z từ một phiên MCP khác trong tài khoản chủ dự án (node "Remember selected Messenger product" ghi vào chính `Messenger Memory`, rồi mới gửi). Phiên này KHÔNG publish thêm để tránh ghi đè. Exec 5845 (13:49Z): node ghi bộ nhớ `success:true` (API). Exec 5847 trả lời đúng A003, nhưng A003 cũng là mẫu cũ nên chưa phân biệt được → nghiệm thu lại cần bấm **A002** rồi hỏi. Rollback: `restore_workflow_version` → `f8c23034-df7b-4229-8a55-0418f518fb08` rồi publish.
 - **F-02 (P1, sai tồn)**: AI liệt kê A011 (tồn 0) kèm tổng tiền như còn hàng. Sửa bằng prompt ("chỉ báo giá mẫu còn hàng; mẫu tồn 0 phải ghi hết hàng") — cần publish Z7Fd, chưa làm.
 - **F-03 (P2)**: verify token Meta GET nằm thẳng trong tham số node `If` của Z7Fd (đọc được bởi ai xem workflow). Nên chuyển vào credential khi được duyệt.
 
 ## 4. Cần chủ dự án
 
-1. Duyệt publish F-01 (và F-02) vào Z7Fd. Rollback: `restore_workflow_version` về `f8c23034` rồi publish.
+1. F-01: đã duyệt, bản sửa đang chạy (`e1f62ebc`); cần chạy ca 1 ở mục 5. F-02 vẫn cần duyệt riêng.
 2. Quyết định Sheet AI_SALES_DEMO có được dùng làm kho đơn QA không. Nếu có, chủ dự án tự gửi kịch bản đặt đơn (mục 5) trên Messenger.
 3. S-18 + Draft KrSn/fDB9/BkAi: thẻ duyệt đang chờ ở thread #483.
 
@@ -68,7 +69,7 @@ Tổng test offline vòng này: 17 + 3 = **20/20 PASS** (cộng 14/14 tái chạ
 
 | # | Gửi | Phải thấy |
 |---|---|---|
-| 1 | Bấm nút "Xem A002" rồi gõ `Mẫu này bao nhiêu?` | Hiện tại: nói A003 (F-01). Sau khi sửa: A002, 159.000đ |
+| 1 | Bấm nút "Xem A002" rồi gõ `Mẫu mình vừa bấm là mã gì?` | A002, áo thun trắng size M, 159.000đ, còn 25 (bản `e1f62ebc`) |
 | 2 | `Cho mình đặt 0 cái A003` | Bot hỏi lại số lượng, không ra mã đơn |
 | 3 | `Đặt 19 cái A003` | Báo không đủ hàng (còn 18) |
 | 4 | `Đặt 2 cái A003, tên QA Khach A, SĐT 0900000001, địa chỉ QA 1 Q1 HCM` → khi bot tóm tắt, gõ `Xác nhận` | Mã `ORD-…`, tổng 318.000đ, trạng thái chờ xử lý; Sheet Orders thêm đúng 1 dòng; tồn A003 vẫn 18 |
