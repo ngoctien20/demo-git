@@ -5,8 +5,8 @@ name: Supabase backup + restore test
 # Không bước nào ghi vào staging. Log chỉ in số đếm và mã băm, không in dữ liệu.
 #
 # Secrets cần có (Settings > Secrets and variables > Actions):
-#   STAGING_DB_URL     chuỗi Session pooler của tien404-staging (có mật khẩu)
-#   RESTORE_DB_URL     chuỗi Session pooler của tien404-restore-test (có mật khẩu)
+#   STAGING_DB_PASSWORD  chỉ mật khẩu database của tien404-staging
+#   RESTORE_DB_PASSWORD  chỉ mật khẩu database của tien404-restore-test
 #   BACKUP_PASSPHRASE  cụm mật khẩu dài để mã hóa file backup
 
 on:
@@ -37,21 +37,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check secrets and targets
+      - name: Check secrets and build connection strings
         env:
-          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
-          RESTORE_DB_URL: ${{ secrets.RESTORE_DB_URL }}
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          RESTORE_DB_PASSWORD: ${{ secrets.RESTORE_DB_PASSWORD }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           missing=0
-          for v in STAGING_DB_URL RESTORE_DB_URL BACKUP_PASSPHRASE; do
+          for v in STAGING_DB_PASSWORD RESTORE_DB_PASSWORD BACKUP_PASSPHRASE; do
             if [ -z "${!v}" ]; then echo "::error::Thiếu secret $v"; missing=1; fi
           done
           [ "$missing" = 0 ] || exit 1
-          case "$STAGING_DB_URL" in *"$STAGING_REF"*) ;; *) echo "::error::STAGING_DB_URL không phải tien404-staging"; exit 1;; esac
-          case "$RESTORE_DB_URL" in *"$STAGING_REF"*) echo "::error::DỪNG: RESTORE_DB_URL trỏ vào staging"; exit 1;; esac
-          case "$RESTORE_DB_URL" in *"$RESTORE_REF"*) ;; *) echo "::error::RESTORE_DB_URL không phải tien404-restore-test"; exit 1;; esac
           [ "${#BACKUP_PASSPHRASE}" -ge 20 ] || { echo "::error::BACKUP_PASSPHRASE cần ít nhất 20 ký tự"; exit 1; }
+          # Host và user không phải bí mật, cố định ở đây; mật khẩu được mã hóa URL nên ký tự đặc biệt vẫn dùng được
+          python3 > urls.env <<'PY'
+          import os, urllib.parse as u
+          host = "aws-0-ap-southeast-1.pooler.supabase.com"
+          for name, ref in (("STAGING", os.environ["STAGING_REF"]), ("RESTORE", os.environ["RESTORE_REF"])):
+              pw = u.quote(os.environ[f"{name}_DB_PASSWORD"], safe="")
+              print(f"{name}_DB_URL=postgresql://postgres.{ref}:{pw}@{host}:5432/postgres")
+          PY
+          while IFS= read -r line; do
+            echo "::add-mask::${line#*=}"
+            echo "::add-mask::$(python3 -c 'import sys,urllib.parse as u;print(u.urlsplit(sys.argv[1]).password)' "${line#*=}")"
+          done < urls.env
+          cat urls.env >> "$GITHUB_ENV" && rm urls.env
+          [ "$STAGING_REF" != "$RESTORE_REF" ] || { echo "::error::DỪNG: dự án thử trùng staging"; exit 1; }
           echo "Secrets OK"
 
       - name: Install PostgreSQL 17 client
@@ -63,37 +74,21 @@ jobs:
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Test database logins (no data read)
-        env:
-          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
-          RESTORE_DB_URL: ${{ secrets.RESTORE_DB_URL }}
         run: |
           fail=0
           for v in STAGING_DB_URL RESTORE_DB_URL; do
-            url="${!v}"
-            # In user, host, port (không in mật khẩu) để dễ tìm lỗi
-            python3 - "$v" "$url" <<'PY' || { fail=1; continue; }
-          import sys, re
-          name, url = sys.argv[1], sys.argv[2]
-          m = re.match(r'^(\w+)://([^:@/]+):(.*)@([^@/:]+):(\d+)/(\w+)', url)
-          if not m:
-              print(f"::error::{name}: KHONG dung dang postgresql://user:password@host:5432/postgres"); sys.exit(1)
-          scheme, user, pw, host, port, db = m.groups()
-          print(f"{name}: user={user} host={host} port={port} db={db} password_len={len(pw)} "
-                f"co_dau_ngoac_vuong={'[' in pw or ']' in pw} co_ky_tu_@#/?={any(c in pw for c in '@#/?')}")
-          if any(c in pw for c in '[]@#/?% '):
-              print(f"::error::{name}: mat khau co ky tu dac biet hoac dau ngoac vuong; dat mat khau chi gom chu va so"); sys.exit(1)
-          PY
-            if psql "$url" -X -q -t -c 'select 1' > /dev/null 2> login_err.txt; then
+            if psql "${!v}" -X -q -t -c 'select 1' > /dev/null 2> login_err.txt; then
               echo "$v: login OK"
             else
               # Không in nguyên văn lỗi (có thể chứa một phần mật khẩu); chỉ phân loại
               if grep -q 'password authentication failed' login_err.txt; then why='sai mat khau'
-              elif grep -q 'translate host name' login_err.txt; then why='sai dinh dang URL hoac host'
+              elif grep -q 'translate host name' login_err.txt; then why='sai host'
               elif grep -qi 'timeout\|timed out' login_err.txt; then why='het thoi gian ket noi'
               else why='loi khac'; fi
               echo "::error::$v: login FAILED ($why)"; fail=1
             fi
           done
+          rm -f login_err.txt
           exit $fail
 
       - uses: supabase/setup-cli@v1
@@ -101,8 +96,6 @@ jobs:
           version: latest
 
       - name: Backup staging (read only)
-        env:
-          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
         run: |
           mkdir -p backup
           supabase db dump --db-url "$STAGING_DB_URL" -f backup/roles.sql --role-only
@@ -111,8 +104,6 @@ jobs:
           ls -l backup
 
       - name: Fingerprint staging
-        env:
-          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
         run: psql "$STAGING_DB_URL" -X -v ON_ERROR_STOP=1 -f ops/supabase-backup/fingerprint.sql > fp_staging.txt && wc -l fp_staging.txt
 
       - name: Encrypt backup
@@ -143,13 +134,9 @@ jobs:
           ls -l restore/backup
 
       - name: Clean restore-test project
-        env:
-          RESTORE_DB_URL: ${{ secrets.RESTORE_DB_URL }}
         run: psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f ops/supabase-backup/reset-restore-test.sql
 
       - name: Restore into restore-test project
-        env:
-          RESTORE_DB_URL: ${{ secrets.RESTORE_DB_URL }}
         run: |
           start=$(date +%s)
           set +e
@@ -166,8 +153,6 @@ jobs:
           exit $rc
 
       - name: Fingerprint restore-test and compare
-        env:
-          RESTORE_DB_URL: ${{ secrets.RESTORE_DB_URL }}
         run: |
           psql "$RESTORE_DB_URL" -X -v ON_ERROR_STOP=1 -f ops/supabase-backup/fingerprint.sql > fp_restore.txt
           echo "Staging:  $(md5sum < fp_staging.txt)  ($(wc -l < fp_staging.txt) dòng)"
