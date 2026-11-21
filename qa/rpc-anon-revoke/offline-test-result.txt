@@ -1,0 +1,19 @@
+== Before migration (live ACL) ==
+PASS  anon with valid header can execute (reproduces finding)
+PASS  anon with bad header blocked by in-function gate
+== Apply migration ==
+PASS  migration applies cleanly
+PASS  anon denied even with valid header
+PASS  authenticated denied
+PASS  service_role with valid header succeeds
+PASS  service_role without header still blocked by gate
+PASS  service_role wrong header blocked by gate
+PASS  ACL after migration
+PASS  still SECURITY DEFINER, body untouched
+PASS  migration is idempotent (re-run)
+== Drift guard ==
+PASS  guard aborts if function drifted
+== Rollback ==
+PASS  ACL restored to live value
+PASS  anon works again after rollback
+== 14 passed, 0 failed ==
