@@ -89,3 +89,33 @@ test('typing indicator fails -> reply still sent once, no wait', async () => {
   assert.equal(r.status, 200); assert.equal(j.typing, 'REJECTED'); assert.equal(slept, 0);
   assert.equal(urls.filter((u) => /sendMessage$/.test(u)).length, 1);
 });
+test('voice echo + image match/no-match: owner only, cleaned, no free text injection', async () => {
+  const v = composeMessage({ kind: 'VOICE_HEARD', sku: 'F01', transcript: 'test shop B chat F01 \u{1F600} https://evil.example/x\u202e', understood: true });
+  assert.match(v.text, /Bot nghe được:\n“test shop B chat F01 \[link\]”$/);
+  assert.ok(!/[\uD800-\uDFFF]/.test(v.text));
+  assert.match(composeMessage({ kind: 'VOICE_HEARD', sku: 'F01', transcript: 'xin chào', understood: false }).text, /Chưa hiểu lệnh/);
+  assert.equal(composeMessage({ kind: 'VOICE_HEARD', sku: 'F01', transcript: 'x'.repeat(500), understood: true }).text.split('“')[1].length, 161);
+  assert.match(composeMessage({ kind: 'IMAGE_MATCH', sku: 'F01', confidence: 'high', seen: 'áo thun đen' }).text, /Ảnh giống F01 \(độ tin cậy cao\)\nBot thấy: áo thun đen$/);
+  assert.equal(composeMessage({ kind: 'IMAGE_MATCH', sku: 'F01', confidence: 'low' }), null);
+  assert.match(composeMessage({ kind: 'IMAGE_NO_MATCH', sku: 'F01', seen: 'đôi giày' }).text, /Chưa tìm thấy/);
+  sends.length = 0;
+  const r = await call(env(), body({ kind: 'VOICE_HEARD', transcript: 'hi', understood: true, chat_id: 'someone-else' }));
+  assert.equal(r.status, 403); assert.equal(sends.length, 0);
+});
+test('V22.4 merged lead: understood photo/voice -> ONE message with lead line, styles stay aligned', async () => {
+  const m = composeMessage(body({ lead_kind: 'IMAGE', lead_confidence: 'high', lead_text: 'áo thun đen' }));
+  assert.equal(m.text, '★ TIEN404 SANDBOX · Shop B\n▣ Ảnh giống F01 (độ tin cậy cao)\nBot thấy: áo thun đen\n✔ F01 – giá 456.000đ\n⌂ Tồn QA: 5\nⓘ Chỉ xem giá, chưa tạo đơn.');
+  for (const s of m.text_styles) assert.ok(s.start >= 0 && s.start + s.len <= m.text.length);
+  assert.ok(m.text_styles.some((x) => m.text.substr(x.start, x.len) === '456.000đ'));
+  assert.ok(m.text_styles.some((x) => m.text.substr(x.start, x.len) === '▣ Ảnh giống F01'));
+  const v = composeMessage(body({ lead_kind: 'VOICE', lead_text: 'giá F01 bao nhiêu https://x.y' }));
+  assert.match(v.text, /♪ Bot nghe: “giá F01 bao nhiêu \[link\]”\n✔ F01/);
+  assert.equal(composeMessage(body({ lead_kind: 'IMAGE', lead_confidence: 'low', lead_text: 'x' })).text, composeMessage(body()).text);
+});
+test('V22.4 hard cap: at most 3 replies per inbound message, even with new suffixes', async () => {
+  sends.length = 0; const e = env();
+  for (const id of ['mid0009', 'mid0009-m', 'mid0009-2']) assert.equal((await call(e, body({ event_message_id: id }))).status, 200);
+  const r = await call(e, body({ event_message_id: 'mid0009-3' }));
+  assert.equal(r.status, 429); assert.equal(r.body.error, 'PER_MESSAGE_CAP_REACHED');
+  assert.equal(sends.filter((x) => /sendMessage$/.test(x.url)).length, 3);
+});

@@ -12,9 +12,11 @@
 export const OWNER_TEXT_PATH = '/v1/qa-v22/owner-text';
 const HARD_EXPIRES = '2026-11-28T00:00:00Z';
 const DAILY_CAP = 30;
+// V22.4 owner rule (2026-11-21): 1 reply per customer message preferred, 2 when useful, NEVER more than 3.
+export const PER_MESSAGE_CAP = 3;
 // V22.2: show Zalo 'typing…' before replying. Best-effort (failure never blocks the reply), not a message.
-const TYPING_MS = { PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600 };
-const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT'];
+const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600 };
+const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH'];
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 async function secureEqual(a, b) {
@@ -35,8 +37,54 @@ function build(parts) {
   return { text, text_styles };
 }
 const HEAD = ['\u2605 TIEN404 SANDBOX \u00b7 Shop B\n', ['b', C.gray]];
+// V22.3: owner's own voice transcript / AI image description echoed back to the owner only.
+// Strip control chars, links and non-BMP chars (keeps text_styles offsets exact), cap length.
+export function cleanEcho(v, max) {
+  if (typeof v !== 'string') return '';
+  return v.normalize('NFC').replace(/https?:\/\/\S+|www\.\S+/gi, '[link]').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ')
+    .replace(/[\uD800-\uDFFF]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+const CONF = { high: 'cao', medium: 'trung b\u00ecnh' };
+// V22.4: merge "what the bot saw/heard" into the answer itself, so an understood photo/voice gets ONE message.
+function leadParts(b) {
+  if (b.lead_kind === 'IMAGE' && CONF[b.lead_confidence]) {
+    const seen = cleanEcho(b.lead_text, 80);
+    return [['\u25a3 \u1ea2nh gi\u1ed1ng ' + b.sku, ['b', C.green]], [' (\u0111\u1ed9 tin c\u1eady ' + CONF[b.lead_confidence] + ')', ['i', C.gray]], ['\n' + (seen ? 'Bot th\u1ea5y: ' + seen + '\n' : '')]];
+  }
+  if (b.lead_kind === 'VOICE') {
+    const t = cleanEcho(b.lead_text, 160);
+    if (t) return [['\u266a Bot nghe: ', ['b', C.blue]], ['\u201c' + t + '\u201d\n', ['i']]];
+  }
+  return [];
+}
 export function composeMessage(b) {
+  const m = composeBody(b);
+  if (!m || !b.lead_kind || !['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT'].includes(b.kind)) return m;
+  const lead = build(leadParts(b));
+  if (!lead.text) return m;
+  const h = HEAD[0].length, n = lead.text.length;
+  return { text: m.text.slice(0, h) + lead.text + m.text.slice(h),
+    text_styles: [...m.text_styles.filter((x) => x.start < h), ...lead.text_styles.map((x) => ({ ...x, start: x.start + h })), ...m.text_styles.filter((x) => x.start >= h).map((x) => ({ ...x, start: x.start + n }))] };
+}
+function composeBody(b) {
   switch (b.kind) {
+    case 'VOICE_HEARD': {
+      const t = cleanEcho(b.transcript, 160);
+      const parts = [HEAD, ['\u266a Bot nghe \u0111\u01b0\u1ee3c:', ['b', C.blue]], ['\n\u201c' + (t || '(kh\u00f4ng nghe r\u00f5)') + '\u201d', ['i']]];
+      if (b.understood !== true) parts.push(['\n\u26a0 Ch\u01b0a hi\u1ec3u l\u1ec7nh. Th\u1eed n\u00f3i: \u201ctest shop B chat F01\u201d', ['b', C.orange]]);
+      return build(parts);
+    }
+    case 'IMAGE_MATCH': {
+      if (!CONF[b.confidence]) return null;
+      const seen = cleanEcho(b.seen, 80);
+      return build([HEAD, ['\u25a3 \u1ea2nh gi\u1ed1ng ' + b.sku, ['b', C.green]], [' (\u0111\u1ed9 tin c\u1eady ' + CONF[b.confidence] + ')', ['i', C.gray]],
+        ...(seen ? [['\nBot th\u1ea5y: ' + seen]] : [])]);
+    }
+    case 'IMAGE_NO_MATCH': {
+      const seen = cleanEcho(b.seen, 80);
+      return build([HEAD, ['\u25a3 Ch\u01b0a t\u00ecm th\u1ea5y s\u1ea3n ph\u1ea9m gi\u1ed1ng \u1ea3nh', ['b', C.orange]], ...(seen ? [['\nBot th\u1ea5y: ' + seen]] : []),
+        ['\n\u24d8 Th\u1eed \u1ea3nh r\u00f5 h\u01a1n ho\u1eb7c nh\u1eafn m\u00e3 s\u1ea3n ph\u1ea9m.', ['i', C.gray]]]);
+    }
     case 'PRICE_PREVIEW':
       if (!safeInt(b.unit_price_vnd, 1, 1e9) || !safeInt(b.stock, 0, 1e6)) return null;
       return build([HEAD, ['\u2714 ' + b.sku + ' \u2013 gi\u00e1 ', ['b']], [vnd(b.unit_price_vnd), ['b', C.green]],
@@ -88,6 +136,9 @@ export async function v22OwnerTextRoute(request, env, path, now = Date.now(), pr
   try {
     const cnt = await env.REPLAY_DB.prepare('SELECT COUNT(*) AS n FROM outbound_claims WHERE idempotency_key LIKE ?1').bind('V22_OWNER_TEXT_' + day + '_%').first();
     if (Number(cnt?.n) >= DAILY_CAP) return json(429, { ok: false, error: 'DAILY_CAP_REACHED' });
+    const base = b.event_message_id.split('-')[0];
+    const per = await env.REPLAY_DB.prepare('SELECT COUNT(*) AS n FROM outbound_claims WHERE idempotency_key LIKE ?1').bind('V22_OWNER_TEXT_' + day + '_' + base + '%').first();
+    if (Number(per?.n) >= PER_MESSAGE_CAP) return json(429, { ok: false, error: 'PER_MESSAGE_CAP_REACHED' });
     const key = 'V22_OWNER_TEXT_' + day + '_' + b.event_message_id;
     const c = await env.REPLAY_DB.prepare('INSERT INTO outbound_claims (idempotency_key, created_at, state) VALUES (?1,?2,?3) ON CONFLICT(idempotency_key) DO NOTHING').bind(key, Math.floor(now / 1000), 'CLAIMED_BEFORE_SEND').run();
     if (Number(c?.meta?.changes) !== 1) return json(409, { ok: false, error: 'ALREADY_REPLIED_NEVER_RETRY' });
