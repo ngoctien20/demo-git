@@ -1,0 +1,127 @@
+name: "TIEN404 V20 Store Authority — backup + apply on STAGING"
+# Owner-approved 2026-11-21 13:13 UTC (decision card "Duyệt: backup rồi áp lên staging").
+# Order: guard (staging must be exactly the accepted pre-migration state) -> encrypted backup
+# -> read-only visibility snapshot -> apply 10 -> apply 20 -> snapshot must be identical ->
+# writer smoke (every call rolled back). Any failure after apply => automatic rollback 80 -> 90
+# with fingerprint check. Logs print tags and hashes only (this repository is public).
+on:
+  push:
+    branches: [claude/project-thread-r8380r]
+    paths:
+      - .github/workflows/tien404-v20-store-apply-staging.yml
+permissions:
+  contents: read
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+env:
+  STAGING_REF: ifxlvrhyjhbzbrkdsida
+  PRE_MIGRATION_FP: 5b63ac1cffbd84acedac327a2bbe73cd
+  POST_MIGRATION_FP: 996aac15c13766a23f4def4ed8eefa08
+  ORIGINAL_WRITER_MD5: b8fa7077197e3fdbb05ce0a0806ae6e1
+  WRITER_SIG: public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)
+jobs:
+  apply-staging:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build staging connection (masked)
+        env:
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$STAGING_DB_PASSWORD" ] || { echo "::error::missing STAGING_DB_PASSWORD"; exit 1; }
+          [ "${#BACKUP_PASSPHRASE}" -ge 20 ] || { echo "::error::missing BACKUP_PASSPHRASE"; exit 1; }
+          echo "::add-mask::$STAGING_DB_PASSWORD"
+          url=$(python3 -c 'import os,urllib.parse as u;print("postgresql://postgres.%s:%s@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"%(os.environ["STAGING_REF"],u.quote(os.environ["STAGING_DB_PASSWORD"],safe="")))')
+          echo "::add-mask::$url"
+          echo "DB_URL=$url" >> "$GITHUB_ENV"
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Login + state guard
+        run: |
+          psql "$DB_URL" -X -At -c 'select 1' > /dev/null 2>&1 || { echo "::error::login failed"; exit 1; }
+          [ "$(psql "$DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is null" 2>/dev/null)" = t ] || { echo "::error::this is not staging"; exit 1; }
+          fp=$(psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
+          w=$(psql "$DB_URL" -X -At -c "select md5(pg_get_functiondef('$WRITER_SIG'::regprocedure))" 2>/dev/null)
+          echo "STAGING_FP=$fp"
+          if [ "$fp" = "$PRE_MIGRATION_FP" ] && [ "$w" = "$ORIGINAL_WRITER_MD5" ]; then echo "STATE=PRE"; echo "STATE=PRE" >> "$GITHUB_ENV"
+          elif [ "$fp" = "$POST_MIGRATION_FP" ] && [ "$w" != "$ORIGINAL_WRITER_MD5" ]; then echo "STATE=ALREADY_APPLIED"; echo "STATE=APPLIED" >> "$GITHUB_ENV"
+          else echo "::error::staging differs from the accepted baseline; nothing applied"; exit 1; fi
+      - uses: supabase/setup-cli@v1
+        if: env.STATE == 'PRE'
+        with:
+          version: latest
+      - name: Backup staging immediately before apply (encrypted)
+        if: env.STATE == 'PRE'
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          mkdir -p backup
+          supabase db dump --db-url "$DB_URL" -f backup/roles.sql --role-only > /dev/null 2>&1 || { echo "::error::roles dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/schema.sql > /dev/null 2>&1 || { echo "::error::schema dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/data.sql --use-copy --data-only > /dev/null 2>&1 || { echo "::error::data dump failed"; exit 1; }
+          git fetch -q --depth=1 origin claude/project-thread-geyx0t 2>/dev/null && git show FETCH_HEAD:ops/supabase-backup/export-grants.sql > export-grants.sql 2>/dev/null \
+            && psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -f export-grants.sql > backup/grants.sql 2>/dev/null || echo "grants export skipped (B-00 branch not reachable)"
+          for f in backup/*.sql; do echo "$(basename $f) $(wc -c < $f) bytes"; done
+          [ "$(wc -c < backup/schema.sql)" -gt 10000 ] || { echo "::error::schema dump too small"; exit 1; }
+          stamp=$(date -u +%Y-%m-%dT%H%MZ); echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          tar -czf - backup | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+            -o "tien404-staging-pre-v20-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          gpg --batch --pinentry-mode loopback --passphrase-fd 3 -d "tien404-staging-pre-v20-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE" 2>/dev/null | tar -tzf - > /dev/null || { echo "::error::backup does not decrypt"; exit 1; }
+          sha256sum "tien404-staging-pre-v20-$stamp.tar.gz.gpg" | tee "tien404-staging-pre-v20-$stamp.sha256"
+          rm -rf backup
+          echo "BACKUP_OK"
+      - uses: actions/upload-artifact@v4
+        if: env.STATE == 'PRE'
+        with:
+          name: tien404-staging-pre-v20-${{ env.STAMP }}
+          path: |
+            tien404-staging-pre-v20-*.tar.gz.gpg
+            tien404-staging-pre-v20-*.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Visibility snapshot before (read-only, rolled back)
+        if: env.STATE == 'PRE'
+        run: bash qa/v20-store-authority/staging/snapshot.sh pre.txt
+      - name: Apply 10 (expand) + 20 (store-aware writer)
+        if: env.STATE == 'PRE'
+        run: |
+          run(){ psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f "$1" > /dev/null 2>err.txt || { grep -o 'T404_[A-Z0-9_]*' err.txt | head -1; rm -f err.txt; echo "::error::$1 failed (its transaction rolled back)"; return 1; }; grep -o "$2" err.txt || { rm -f err.txt; echo "::error::$2 missing"; return 1; }; rm -f err.txt; }
+          run qa/v20-store-authority/10_store_authority_expand.sql T404_V20_STORE_AUTHORITY_EXPAND_OK || exit 1
+          echo "APPLIED_10=1" >> "$GITHUB_ENV"
+          run qa/v20-store-authority/20_store_aware_writer.sql T404_V20_STORE_AWARE_WRITER_OK || exit 1
+          echo "APPLIED_20=1" >> "$GITHUB_ENV"
+      - name: Verify fingerprint + writer
+        run: |
+          fp=$(psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
+          w=$(psql "$DB_URL" -X -At -c "select md5(pg_get_functiondef('$WRITER_SIG'::regprocedure))" 2>/dev/null)
+          [ "$fp" = "$POST_MIGRATION_FP" ] && echo PASS_STAGING_FP_EQUALS_RESTORE_TEST_POST || { echo "::error::fp=$fp"; exit 1; }
+          [ "$w" != "$ORIGINAL_WRITER_MD5" ] && echo PASS_STAGING_WRITER_IS_STORE_AWARE || exit 1
+          echo "WRITER_MD5=$w"
+      - name: Visibility snapshot after must equal before
+        if: env.STATE == 'PRE'
+        run: |
+          bash qa/v20-store-authority/staging/snapshot.sh post.txt
+          diff -q pre.txt post.txt > /dev/null && echo PASS_MEMBER_VISIBILITY_UNCHANGED || { echo "::error::visibility changed: $(diff pre.txt post.txt | grep -c '^[<>]') lines"; exit 1; }
+      - name: Store-aware writer smoke (every call rolled back)
+        run: bash qa/v20-store-authority/staging/writer-smoke.sh
+      - name: Automatic rollback on failure (80 -> 90, fingerprint check)
+        if: failure() && env.APPLIED_10 == '1'
+        run: |
+          run(){ psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f "$1" > /dev/null 2>&1 || { echo "::error::$1 failed"; exit 1; }; }
+          [ "${APPLIED_20:-0}" = 1 ] && run qa/v20-store-authority/80_store_aware_writer_rollback.sql
+          run qa/v20-store-authority/90_store_authority_rollback.sql
+          fp=$(psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -f qa/v20-store-authority/hosted/fingerprint.sql 2>/dev/null | tail -1 | cut -d'|' -f1)
+          [ "$fp" = "$PRE_MIGRATION_FP" ] && echo "ROLLED_BACK_TO_PRE_MIGRATION" || echo "::error::rollback fingerprint mismatch, restore from backup artifact"
+      - name: Side effects
+        if: always()
+        run: echo "TARGET=staging STATE=${STATE:-unknown} N8N=0 PROVIDER_SENDS=0 AUTH_USERS_CREATED=0 PRODUCT_ROWS_LEFT=0"

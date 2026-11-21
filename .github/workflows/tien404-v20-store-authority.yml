@@ -1,0 +1,80 @@
+name: "TIEN404 V20 Store Authority (hosted-schema replica, offline)"
+on:
+  pull_request:
+    paths:
+      - "qa/v20-store-authority/**"
+      - ".github/workflows/tien404-v20-store-authority.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plain-postgres-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      pg:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Refuse hosted credentials
+        run: |
+          test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_DB_URL:-}${DATABASE_URL:-}"
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Baseline replica -> expand migration -> 64 assertions -> rollback (PG17)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+        run: bash qa/v20-store-authority/offline-pg-uat.sh
+  local-gotrue-jwt-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: "3.2.0"
+      - name: Refuse hosted credentials and linked project
+        run: |
+          test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_DB_URL:-}${SUPABASE_PROJECT_REF:-}"
+          test ! -e qa/v20-store-authority/.env
+      - name: Start disconnected local Supabase (PG17, Auth, PostgREST)
+        working-directory: qa/v20-store-authority
+        run: |
+          supabase init
+          sed -i -E 's/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml
+          sed -i -E 's/^major_version = [0-9]+/major_version = 17/' supabase/config.toml
+          test ! -f supabase/.temp/project-ref
+          supabase start --exclude studio,realtime,storage,functions,mail,analytics,pooler > /tmp/t404_v20_start.log 2>&1 || { echo 'LOCAL_START_FAILED_NO_HOSTED_FALLBACK'; exit 1; }
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Load hosted-schema replica into LOCAL stack only
+        env:
+          PGPASSWORD: "postgres"
+        run: psql -X -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -f qa/v20-store-authority/00_hosted_baseline_replica.sql
+      - name: Real local GoTrue JWT Owner A/B + branch Store UAT through PostgREST
+        working-directory: qa/v20-store-authority
+        env:
+          T404_V20_LOCAL_ONLY: "DISPOSABLE_SUPABASE_GOTRUE"
+        run: node ci-local-gotrue-uat.mjs
+      - name: Side-effect statement
+        if: always()
+        run: echo 'HOSTED_MIGRATIONS=0 HOSTED_CONNECTIONS=0 PROVIDER_SEND=0 REAL_DATA_WRITES=0'
+      - name: Dispose local stack
+        if: always()
+        working-directory: qa/v20-store-authority
+        run: supabase stop --no-backup >/dev/null 2>&1 || true
