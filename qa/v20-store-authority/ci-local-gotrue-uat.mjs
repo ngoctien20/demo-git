@@ -64,7 +64,8 @@ async function run(){
  // Tables were created after PostgREST started: reload its schema cache and wait for it.
  psql("NOTIFY pgrst, 'reload schema'");
  let before;
- for(let i=0;i<20;i++){before=await rows(key,a,'products');if(before.status!==404)break;await new Promise(r=>setTimeout(r,500));}
+ // store_id does not exist before the migration: select id only.
+ for(let i=0;i<20;i++){before=await req(key,'/rest/v1/products?select=id',a.jwt);if(before.status!==404)break;await new Promise(r=>setTimeout(r,500));}
  ok(before.ok&&before.data.length===1,'PRE_MIGRATION_OWNER_A_TENANT_READ_HTTP'+before.status);
  execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-q','-h','127.0.0.1','-p','54322','-U','postgres','-d','postgres',
   '-f',new URL('./10_store_authority_expand.sql',import.meta.url).pathname],{env:{...process.env,PGPASSWORD:'postgres'},stdio:'inherit'});
