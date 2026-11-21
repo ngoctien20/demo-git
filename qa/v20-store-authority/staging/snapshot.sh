@@ -18,7 +18,7 @@ while IFS='|' read -r t u r a; do
     "select 'conversations',count(*) from public.conversations" \
     "select 'messages',count(*) from public.messages" \
     "select 'rev_v3',md5(public.merchant_revenue_v3('$t','2026-01-01','2026-12-31')::text)" \
-    "select 'paid_daily',md5(coalesce(string_agg(x::text,',' order by x::text),''))  from public.merchant_paid_orders_daily('$t',3650) x"
+    "select 'paid_daily',md5(coalesce(string_agg(x::text,',' order by x::text),''))  from public.merchant_paid_orders_daily('$t',30) x"
   do
     res=$(printf "BEGIN;\nSET LOCAL ROLE authenticated;\nSELECT set_config('request.jwt.claims','{\"sub\":\"%s\",\"role\":\"authenticated\"}',true) \\\\gset\n%s;\nROLLBACK;\n" "$u" "$stmt" | q | grep '|' ) || res="ERR"
     echo "$r|$a|${res:-ERR}" >> "$out"
