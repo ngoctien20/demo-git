@@ -139,12 +139,16 @@ jobs:
       - name: Restore into restore-test project
         run: |
           start=$(date +%s)
+          # Storage của staging trống (không có bucket/file); bỏ các bảng storage nội bộ
+          # mà role postgres không được ghi trên dự án mới (vd. storage.buckets_vectors)
+          awk '/^COPY "?storage"?\./{skip=1} !skip{print} skip && /^\\\.$/{skip=0}' restore/backup/data.sql > restore/backup/data_restore.sql
+          echo "Bỏ qua $(grep -Ec '^COPY "?storage"?\.' restore/backup/data.sql || true) bảng storage; giữ $(grep -c '^COPY ' restore/backup/data_restore.sql) bảng dữ liệu"
           set +e
           psql "$RESTORE_DB_URL" -X -q --single-transaction -v ON_ERROR_STOP=1 \
             -f restore/backup/roles.sql \
             -f restore/backup/schema.sql \
             -c 'SET session_replication_role = replica' \
-            -f restore/backup/data.sql > restore.log 2>&1
+            -f restore/backup/data_restore.sql > restore.log 2>&1
           rc=$?
           set -e
           # Chỉ in dòng ERROR (cắt ngắn), không in dữ liệu
