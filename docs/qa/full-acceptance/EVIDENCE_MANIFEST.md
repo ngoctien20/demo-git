@@ -100,3 +100,12 @@ Mọi bằng chứng là đọc-chỉ hoặc offline. Dữ liệu cá nhân, tok
 | `4DFFCk60exrzaIl6` | TIEN404_MESSENGER_ORDER_STATUS | 0 |
 | `U2DJsxzSYPH5hRop` | AI SALES - Revenue Report | 1 |
 | `BkAi6TVUKAjCnI7v` | AI SALES - Update Order. | 0 |
+
+## Round 2c (2026-11-21 ~13:40 UTC)
+
+| ID | Bằng chứng | Mức |
+|---|---|---|
+| E-26 | B-00: run 44904780877, fingerprint 113/113; PR #485 merged (thread backup) | STAGING |
+| E-27 | SQL read-only trên staging sau Store V20: stores=2, store_memberships=3, 7 cột `store_id`, 0 NULL, RLS+FORCE 8 bảng, FK tổ hợp, 0 grant anon; advisors không đổi (1 anon SECDEF, 2 authenticated SECDEF, leaked-password); 21 migration, max `20261117074559` | STAGING |
+| E-28 | `qa/v21-full-acceptance/manage-order-s18-fix.test.mjs` 4/4 (bản sửa đề xuất S-18, gate S-19) | OFFLINE |
+| E-29 | Browser E2E GitHub Pages (Claude in Chrome): 20 trang 200, đủ viewport/`lang=vi`/1 h1/alt ảnh, 0 ô mật khẩu; mobile 390px: index, pricing, demo, about, contact không tràn ngang (scrollWidth 374 ≤ 390, bảng giá cuộn trong khung); 0 lỗi console ở index, demo; login/dashboard chuyển sang domain Render | PUBLIC (chỉ đọc) |

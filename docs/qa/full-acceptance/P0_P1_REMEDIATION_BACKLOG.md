@@ -5,11 +5,11 @@ Thứ tự theo ưu tiên chủ dự án (P0 bảo mật/Store/backup > P1 bán 
 | # | Mức | Việc | Phụ thuộc | Ai làm | Cần phê duyệt | Tiêu chí đóng |
 |---|---|---|---|---|---|---|
 | 0 | **P0** | Xử lý sự cố S-17: đổi mật khẩu `postgres` staging (đang làm), xóa log run lỗi của workflow backup, kiểm tra mật khẩu restore-test, rà log đăng nhập Postgres; về lâu dài không chạy job dùng secret DB trên repo public | — | Chủ dự án | Có (credential) | Mật khẩu mới; log đã xóa; không có đăng nhập lạ |
-| 1 | P0 | B-00: chạy `backup.ps1` + `restore-test.ps1`, đối chiếu baseline (46 bảng, 37 policy, 19 hàm, 21 migration) | Mật khẩu DB trên máy chủ dự án | Chủ dự án chạy, Claude kiểm chứng SQL | Có (credential) | restore-test khớp baseline |
-| 2 | P0 | Áp #482 Store Authority lên **restore-test** (không phải staging), chạy UAT Owner A/B bằng JWT GoTrue hosted | #1 | Thread #482 | Có (hosted migration) | 64/64 + Owner A/B hosted PASS |
+| 1 | P0 | B-00: chạy `backup.ps1` + `restore-test.ps1`, đối chiếu baseline (46 bảng, 37 policy, 19 hàm, 21 migration) | Mật khẩu DB trên máy chủ dự án | Chủ dự án chạy, Claude kiểm chứng SQL | Có (credential) | **ĐÃ ĐÓNG** 2026-11-21 (113/113) |
+| 2 | P0 | Áp #482 Store Authority lên **restore-test** (không phải staging), chạy UAT Owner A/B bằng JWT GoTrue hosted | #1 | Thread #482 | Có (hosted migration) | Đã áp staging 13:18 UTC, catalog PASS; còn Owner A/B hosted |
 | 3 | P1 | Quyết định số phận bot Messenger live `Z7Fd`: (a) giữ làm DEMO có nhãn rõ, giới hạn người thử; hoặc (b) tạm unpublish tới khi chuyển sang Commerce Supabase | — | Chủ dự án | Có (toggle n8n) | Quyết định ghi lại; nhãn đúng thực tế |
 | 4 | P1 | Publish bản Draft đã sửa của `KrSn`, `fDB9`, `BkAi`, `U2DJ` **sau khi** review diff `fDB9`/`BkAi` (chưa đọc nội dung) và chạy test drift; hoặc ghi rõ lý do giữ bản cũ | #3 | Claude chuẩn bị diff, chủ dự án publish | Có (publish n8n) | versionId = activeVersionId; T-N test cập nhật sang kỳ vọng mới |
-| 4b | P1 | Sửa `manage_order`: thay `rows.length > 1` bằng `matched.length > 1` (lỗi có ở cả Draft) rồi mới publish | #4 | Claude soạn bản sửa (không publish) | Có (publish n8n) | T-N09 đổi sang kỳ vọng `ok` |
+| 4b | P1 | Sửa `manage_order`: thay `rows.length > 1` bằng `matched.length > 1` (lỗi có ở cả Draft) rồi mới publish | #4 | Claude soạn bản sửa (không publish) | Có (publish n8n) | Bản sửa sẵn: `manage-order-s18-fix.test.mjs` 4/4; chờ publish |
 | 5 | P1 | Giảm PII: bật redaction production hoặc tắt lưu dữ liệu execution thành công cho `Z7Fd` + sub-workflow; đặt thời hạn xóa | #3 | Chủ dự án | Có (sửa workflow live) | Execution mới không còn PII |
 | 6 | P1 | Sửa mô tả/ghi chú sai lệch của `Z7Fd`, `yIJk`, `OgDZ`, `wgkk`, `iyfG` | — | Claude soạn, chủ dự án duyệt | Có (sửa workflow live, chỉ metadata) | Mô tả khớp active/caller thật |
 | 7 | P1 | Cutover Zalo #481 (unpublish Shadow rồi REVOKE anon) | Quyết định chủ dự án | Thread #481 | Có | Advisor không còn anon SECDEF |

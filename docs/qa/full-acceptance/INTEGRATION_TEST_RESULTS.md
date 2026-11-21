@@ -72,3 +72,11 @@ Không xác định được đây có đúng commit đang chạy trên Render h
 - Channel → Identity → Protected Tool: chỉ có offline (V19.8.x), hosted BLOCKED.
 - Subscription → Entitlements: NOT_IMPLEMENTED.
 - Gọi thử webhook n8n bằng dữ liệu tổng hợp: KHÔNG làm vì các workflow này là production và có node gửi thật hoặc ghi Sheet; cần môi trường clone.
+
+## Round 2c (2026-11-21 ~13:40 UTC)
+
+| ID | Bộ | Kết quả | Mức |
+|---|---|---|---|
+| T-S18 | Bản sửa đề xuất `manage_order` S-18 + gate S-19 | 4/4 PASS (tổng thư mục `qa/v21-full-acceptance` 14/14) | OFFLINE |
+| T-WEB | Browser E2E GitHub Pages, desktop + mobile 390px | PASS: 20 trang 200, không tràn ngang, 0 lỗi console (E-29) | PUBLIC |
+| T-STORE | Catalog Store V20 trên staging | PASS (E-27); Owner A/B JWT: NOT_TESTED độc lập | STAGING |
