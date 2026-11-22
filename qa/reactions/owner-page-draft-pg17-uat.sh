@@ -39,6 +39,7 @@ runfile "$ROOT/db/config-core/10_config_core.sql" T404_CC_CONFIG_CORE_OK
 runfile "$ROOT/db/reactions/10_page_reaction_drafts_CANDIDATE.sql" T404_V214_REACTION_DRAFT_CANDIDATE_OK
 runfile "$ROOT/db/reactions/20_owner_reaction_page_list_CANDIDATE.sql" T404_V215_OWNER_PAGE_LIST_OK
 runfile "$ROOT/db/reactions/30_meta_page_installation_authority_V216_CANDIDATE.sql" T404_V216_META_INSTALL_AUTHORITY_CANDIDATE_OK
+runfile "$ROOT/db/reactions/40_meta_oauth_nonce_claim_V217_CANDIDATE.sql" T404_V217_META_NONCE_ONE_TIME_CANDIDATE_OK
 SA=$(q "SELECT id FROM public.stores WHERE tenant_id='$TA' AND is_default")
 SB=$(q "SELECT id FROM public.stores WHERE tenant_id='$TB' AND is_default")
 q "INSERT INTO auth.users(id,email) VALUES ('$MA','manager@qa.invalid');INSERT INTO public.tenant_memberships(tenant_id,user_id,role) VALUES ('$TA','$MA','manager');INSERT INTO public.store_memberships(tenant_id,store_id,user_id,role) VALUES ('$TA','$SA','$MA','manager')" >/dev/null
@@ -60,22 +61,53 @@ deny_user ANON_NOT_ALLOWED permission "$OA" "SELECT 1 FROM app_private.reaction_
 APP=900000000000001
 q "INSERT INTO app_private.reaction_meta_apps(app_id,environment,status,approved_by,approved_at,expires_at)
  VALUES ('$APP','demo','approved','$OA',now()-interval '1 hour',now()+interval '30 days')" >/dev/null
+
+# Synthetic issued challenges; only the server will issue these in a future deployment.
+N_A=$(printf '1%.0s' {1..64})
+N_B=$(printf '2%.0s' {1..64})
+N_C=$(printf '3%.0s' {1..64})
+INST_A=d0000000-0000-4000-8000-000000000001
+INST_B=d0000000-0000-4000-8000-000000000002
+INST_C=d0000000-0000-4000-8000-000000000003
+q "INSERT INTO app_private.reaction_meta_nonce_claims
+ (oauth_nonce_sha256,installation_id,connection_id,tenant_id,store_id,owner_user_id,
+ meta_app_id,meta_page_id,expires_at)
+ VALUES
+ ('$N_A','$INST_A','$CA','$TA','$SA','$OA','$APP','123450001234500',now()+interval '6 minutes'),
+ ('$N_B','$INST_B','$CB','$TB','$SB','$OB','$APP','123450001234501',now()+interval '6 minutes'),
+ ('$N_C','$INST_C','$CA2','$TA','$SA','$OA','$APP','123450001234502',now()+interval '6 minutes')" >/dev/null
+deny_user OWNER_CANNOT_READ_NONCE permission "$OA" "SELECT count(*) FROM app_private.reaction_meta_nonce_claims"
+deny_user OWNER_CANNOT_CONSUME_NONCE permission "$OA" "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_A','$INST_A','$CA','$TA','$SA','$OA','$APP','123450001234500',repeat('a',64))"
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_A','$INST_A','$CA','$TA','$SB','$OA','$APP','123450001234500',repeat('a',64))")" f NONCE_WRONG_STORE_DENIED
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_A','$INST_A','$CA','$TA','$SA','$OB','$APP','123450001234500',repeat('a',64))")" f NONCE_WRONG_OWNER_DENIED
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_A','$INST_A','$CA','$TA','$SA','$OA','$APP','123450001234500',repeat('a',64))")" t NONCE_A_FIRST_CLAIM
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_A','$INST_A','$CA','$TA','$SA','$OA','$APP','123450001234500',repeat('a',64))")" f NONCE_A_REPLAY_DENIED
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_B','$INST_B','$CB','$TB','$SB','$OB','$APP','123450001234501',repeat('b',64))")" t NONCE_B_FIRST_CLAIM
+ok "$(q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_C','$INST_C','$CA2','$TA','$SA','$OA','$APP','123450001234502',repeat('c',64))")" t NONCE_C_FIRST_CLAIM
+
 q "INSERT INTO app_private.reaction_page_industries
  (connection_id,industry_id,proof_kind,verified_at,verified_by,
  meta_page_id,meta_app_id,installation_id,authority_issuer,attestation_version,
- receipt_sha256,callback_state_verified,token_app_binding_verified,page_token_validated,
+ receipt_sha256,oauth_nonce_sha256,callback_state_verified,token_app_binding_verified,page_token_validated,
  messaging_task_verified,subscribed_app_verified,validated_permissions,proof_status,expires_at)
  VALUES
  ('$CA','retail_general','meta_page_verified_installation',now(),'$OA',
- '123450001234500','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
- repeat('a',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
+ '123450001234500','$APP','$INST_A','t404_meta_oauth_gateway',1,
+ repeat('a',64),'$N_A',true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
  ('$CB','legal','meta_page_verified_installation',now(),'$OB',
- '123450001234501','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
- repeat('b',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
+ '123450001234501','$APP','$INST_B','t404_meta_oauth_gateway',1,
+ repeat('b',64),'$N_B',true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
  ('$CA2','artist','meta_page_verified_installation',now(),'$OA',
- '123450001234502','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
- repeat('c',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours')" >/dev/null
+ '123450001234502','$APP','$INST_C','t404_meta_oauth_gateway',1,
+ repeat('c',64),'$N_C',true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours')" >/dev/null
 ok "$(q "SELECT count(*) FROM app_private.reaction_page_industries p WHERE app_private.t404_reaction_meta_install_active(p.connection_id)")" 3 META_PAGE_INSTALL_AUTHORITY_VALIDATED
+
+# Receipt must match the unique consumed OAuth nonce, not just have valid-looking flags.
+q "UPDATE app_private.reaction_page_industries SET receipt_sha256=repeat('e',64) WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 NONCE_RECEIPT_MISMATCH_BLOCKS_LIST
+q "UPDATE app_private.reaction_page_industries SET receipt_sha256=repeat('c',64) WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 2 NONCE_RECEIPT_BINDING_RESTORED
+
 
 # V21.6 negative Meta authority checks, no customer data or real Meta API.
 q "UPDATE app_private.reaction_page_industries SET callback_state_verified=false WHERE connection_id='$CA2'" >/dev/null
@@ -153,6 +185,8 @@ runfile "$ROOT/db/reactions/90_page_reaction_drafts_ROLLBACK_CANDIDATE.sql" T404
 ok "$(q "SELECT to_regclass('public.page_reaction_drafts') IS NULL")" t ROLLBACK_DRAFT_TABLE
 ok "$(q "SELECT to_regclass('app_private.reaction_page_industries') IS NULL")" t ROLLBACK_INDUSTRY_REGISTRY
 ok "$(q "SELECT to_regclass('app_private.reaction_meta_apps') IS NULL")" t ROLLBACK_META_APP_ALLOWLIST
+ok "$(q "SELECT to_regclass('app_private.reaction_meta_nonce_claims') IS NULL")" t ROLLBACK_NONCE_LEDGER
+ok "$(q "SELECT to_regprocedure('app_private.t404_reaction_consume_meta_oauth_nonce(text,uuid,uuid,uuid,uuid,uuid,text,text,text)') IS NULL")" t ROLLBACK_NONCE_CLAIM_RPC
 ok "$(q "SELECT to_regprocedure('app_private.t404_reaction_meta_install_active(uuid)') IS NULL")" t ROLLBACK_AUTHORITY_FN
 ok "$(q "SELECT to_regprocedure('public.list_verified_reaction_pages(uuid)') IS NULL")" t ROLLBACK_VERIFIED_PAGE_RPC
 ok "$(q "SELECT to_regclass('public.channel_connections') IS NOT NULL")" t CONFIG_CORE_UNCHANGED
