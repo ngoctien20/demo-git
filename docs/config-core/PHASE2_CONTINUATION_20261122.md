@@ -99,3 +99,41 @@ The earlier draft correlation node `Tìm nút menu` keyed postback/quick-reply p
 - **Boundary:** tests do not execute the Meta Graph API, external services, real order tools or provider standby, and cannot replace mobile/desktop live acceptance. The `Extract Messenger Text` node itself is not copied into the public repo; upstream signature and allow-list remain separate checks.
 - **Rollback only for this second draft edit:** restore n8n draft `abd98c7e-2ed1-42fe-8e76-215e74e285c7` (prior role-aware update) or the original menu draft `1f4069a5-5e74-4c79-935b-40f02b3582d8` if required. Never publish during rollback.
 - **CI:** GitHub Actions runs `45003909606` (Config Core) and `45003909604` (Owner App) passed on the initial test snapshot. Newest run `45004017065` is required to verify the missing-MID addition; confirm its conclusion before marking this round TESTED.
+
+## 8. Third continuation — Shop SKU/price + order status + Messenger mobile tap QA (2026-11-22 09:30 UTC)
+
+**Boundaries:** strictly read-only Google Sheets DEMO inspection, synthetic node-replay tests and n8n Messenger **Draft-only** modification. No customer order, Messenger send, Meta Page menu, Commerce data or production publish was modified.
+
+### Verified source and existing behavior
+
+- Messenger `Read selected demo product` and the AI `Read Products - Messenger Read Only` both refer to the **AI_SALES_DEMO** spreadsheet, tab `Products`. This is distinct from Commerce; keep it distinct.
+- Direct read of `Products` (2026-11-22) verified: `A002` = 159000 VND, 25 in stock; `A003` = 159000 VND, 18 in stock; `A011` = 289000 VND, 0 in stock; `B011` = 469000 VND, 0 in stock. These are DEMO values, **not** promises of future inventory.
+- The Google Sheets product read already had `alwaysOutputData=true`; no change was needed for missing SKU handling. Formatter's existing explicit not-found/invalid-data cases were confirmed by replaying the actual Code-node body with synthetic rows.
+- The published `TIEN404_MESSENGER_ORDER_STATUS` read-only tool `4DFFCk60exrzaIl6`, published `1faaa1ee-a45c-4bf0-8e3f-f197051f33f8`, reads Orders by `order_id` with `alwaysOutputData=true`. It only returns allowed order fields when both the exact order ID and normalized phone match. The test uses **no real Orders rows**.
+- Crucial limitation: order ID + supplied phone is a DEMO verifier, **not** a full trusted cross-channel ownership/OTP gate. Do not reuse for multi-tenant Commerce or cross-channel order status without the separately proposed Trusted Order Ownership Gateway and its negative A/B tests.
+
+### Fixed in Messenger Draft only — SKU clickability on mobile
+
+- Found: `Prepare Messenger Reply` previously attached clickable `TIEN404:VIEW:<SKU>` buttons **only when the answer mentioned 1–3 SKUs**. A reply listing 4+ SKUs was text only, violating the intended mobile "Xem sản phẩm → chạm mẫu → chi tiết" interaction.
+- Change: parse ordinary bullet lists and numbered lines such as `1. A002`, `2) A003`; if 4+ SKUs, attach buttons for the first 3 unique SKUs. Meta 3-button limit, 1–3-message output limit and legacy postback IDs remain unchanged. This **does not** implement full catalog pagination or a guaranteed tap button for every listed SKU; further UX review required.
+- New **Messenger Draft**: `9c08fdd3-7583-49e5-adb4-8b4d9e0c0688`; **Published remains** `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`.
+- Rollback of this change: restore the previous draft `b967d427-62e6-40aa-90f4-60d222bb6e03`, without publishing.
+
+### Expanded isolated QA
+
+- `config-core/test/messenger-phase2-route.test.mjs`: synthetic catalog QA: A002 available, A011 out of stock, Z999 missing, mismatched SKU, duplicate rows, malformed price/stock; 4+ and numbered SKU lists result in tappable choices; output capped to <=3 messages.
+- `config-core/test/demo-order-status.test.mjs` + sanitized `fixtures/demo-order-status.json`: 10 synthetic cases for code from the **published** DEMO status verifier: matching ID/phone, wrong phone, wrong order ID, missing credentials, +84 normalization, no rows, duplicated order ID, unknown status, allowed status without payment-verification assertion. Never stores an actual customer's name, phone or order.
+- `config-core/test/fixtures/messenger-phase2-draft.json`: updated with no-credential product-code and graph excerpts. It is **not** a deployable workflow JSON.
+- **GitHub Actions Config Core CI:** run `45007669075` on commit `290b7c063004eb7e303d94942b212b8be5081a7a`: `# tests 112`, `# pass 112`, `# fail 0`; offline PG17 suite also succeeded. CI `45007669090` for Owner App was still running at initial evidence collection, check separately.
+- The compiled original Menu Bridge remains inactive and unchanged in this continuation. Zalo/Telegram numeric menu selection **FAIL** remains in GitHub issue #492; never claim omnichannel acceptance.
+
+### Remaining blockers before release
+
+1. A real private Fanpage customer on Messenger mobile and web must click `Xem sản phẩm`, select an available and unavailable SKU, and produce a correctly formatted read-only result.
+2. Validate Meta handoff success/failure, Page Inbox standby and "Hoàn tất" resume with real, separately approved QA. Structural tests are not adequate.
+3. Authenticated owners A/B need real GoTrue-signed multi-tenant negative tests; never rely solely on fake roles/JWTs.
+4. The 3-button fallback does not cover full 21-item DEMO catalog browsing; add pagination/category UX based on per-assistant config before marketing "all products selectable".
+5. Trusted order ownership (not phone+order ID alone), payment authority, event logging and Daily Briefing remain separate acceptance gates.
+6. Pre-existing n8n validation warnings for Messenger memory subnode and OpenAI builtInTools configuration were not modified or cleared; re-evaluate before publication.
+
+This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED.
