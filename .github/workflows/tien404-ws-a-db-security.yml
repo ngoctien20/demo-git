@@ -30,7 +30,6 @@ jobs:
       PGPORT: "5432"
       PGUSER: "postgres"
       PGPASSWORD: "postgres"
-      WSA_TMP: ${{ runner.temp }}/wsa
     steps:
       - uses: actions/checkout@v4
         with:
