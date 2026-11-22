@@ -50,7 +50,11 @@ bad('expired token', {tokenDebug:{data:{...evidence().tokenDebug.data,expires_at
 bad('expired data access', {tokenDebug:{data:{...evidence().tokenDebug.data,data_access_expires_at:now-1}}},'meta_user_token_invalid_or_wrong_app');
 bad('missing pages messaging scope', {tokenDebug:{data:{...evidence().tokenDebug.data,scopes:['pages_manage_metadata','pages_show_list']}}},'meta_oauth_scopes_missing');
 bad('invalid scope array', {tokenDebug:{data:{...evidence().tokenDebug.data,scopes:'pages_messaging'}}},'meta_oauth_scopes_missing');
-bad('granular Meta scope excludes this Page', {tokenDebug:{data:{...evidence().tokenDebug.data,granular_scopes:[{scope:'pages_messaging',target_ids:['11111111111']}]}}},'meta_page_not_in_granular_scope');
+bad('granular Meta scope excludes this Page', {tokenDebug:{data:{...evidence().tokenDebug.data,granular_scopes:[
+ {scope:'pages_messaging',target_ids:['11111111111']},
+ {scope:'pages_manage_metadata',target_ids:[expected.metaPageId]},
+ {scope:'pages_show_list',target_ids:[expected.metaPageId]}
+ ]}}},'meta_page_not_in_granular_scope');
 bad('no Page accounts response', {pageAccounts:{not_data:[]}},'meta_page_accounts_missing');
 bad('Page belongs to someone else', {pageAccounts:{data:[{id:'111111111111',tasks:['MESSAGING']}]}},'meta_messaging_task_missing_or_wrong_page');
 bad('Meta actor has no MESSAGING task', {pageAccounts:{data:[{id:expected.metaPageId,tasks:['ANALYZE']}]}},'meta_messaging_task_missing_or_wrong_page');
@@ -70,4 +74,41 @@ test('positive check never uses a fallback from chat or owner profile',()=>{
  const r=result();
  assert.equal(Object.hasOwn(r,'ownerConsent'),false);
  assert.equal(Object.hasOwn(r,'publishAllowed'),false);
+});
+
+test('explicit Meta global granular permissions with no target_ids are accepted only with verified Page task/subscription',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes=[
+   {scope:'pages_messaging'},
+   {scope:'pages_manage_metadata'},
+   {scope:'pages_show_list'}
+ ];
+ const r=check(e,expected,now);
+ assert.equal(r.status,'attestable_candidate');
+ assert.equal(r.sendAllowed,false);
+});
+test('missing required granular entry is not interpreted as a global grant',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes=e.tokenDebug.data.granular_scopes.filter(p=>p.scope!=='pages_messaging');
+ assert.equal(check(e,expected,now).reason,'meta_granular_scope_missing_or_ambiguous');
+});
+test('conflicting duplicate granular permission entries are rejected even if one includes the Page',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes.push({scope:'pages_messaging',target_ids:['11111111111']});
+ assert.equal(check(e,expected,now).reason,'meta_granular_scope_missing_or_ambiguous');
+});
+test('explicit empty granular target list is ambiguous rather than all Pages',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes[0].target_ids=[];
+ assert.equal(check(e,expected,now).reason,'invalid_granular_target_ids');
+});
+test('numeric Page target_ids risk precision loss and cannot attest Page identity',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes[0].target_ids=[Number(expected.metaPageId)];
+ assert.equal(check(e,expected,now).reason,'invalid_granular_target_ids');
+});
+test('malformed granular target_ids object is rejected before permissions are admitted',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes[0].target_ids={0:expected.metaPageId};
+ assert.equal(check(e,expected,now).reason,'invalid_granular_target_ids');
 });
