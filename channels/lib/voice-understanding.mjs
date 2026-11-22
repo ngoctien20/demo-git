@@ -28,7 +28,8 @@ export function buildVoicePrompt(catalog) {
   const letters = [...new Set(rows.map((r) => r.sku[0]))].map((l) => l + ' đọc là ' + (LETTER_SAY[l] || '"' + l.toLowerCase() + '"')).join('; ');
   return [
     'Bạn là bộ nhận giọng nói tiếng Việt cho một shop thời trang. Người nói là KHÁCH HÀNG.',
-    'Danh mục (mã: tên):',
+    'QUAN TRỌNG NHẤT: transcript phải chép ĐÚNG từng từ người nói trong ghi âm. Tuyệt đối không thay lời nói bằng tên sản phẩm trong danh mục, không thêm từ không có trong ghi âm. Nếu không nghe rõ thì chép phần nghe được và đặt confidence là low.',
+    'Danh mục dưới đây CHỈ dùng để nhận ra mã khi khách đọc mã hoặc mô tả đúng sản phẩm (mã: tên):',
     list,
     'Mã gồm 1 chữ cái + 3 số. ' + (letters ? letters + '. ' : '') + 'Khách hay đọc tắt: "a ba" hoặc "a không không ba" đều là A003; "bê năm" là B005.',
     'Câu thường gặp: "giá A003 bao nhiêu", "B002 còn không", "mua A003 hai cái", "lấy cho mình cái áo thun đen size L", "quần jean nam dưới 400 nghìn có không".',
@@ -95,6 +96,13 @@ export function voiceRules(transcript, skus) {
     const sku = letter + digits.padStart(3, '0');
     if (valid.has(sku)) { found.push(sku); for (let k = i; k < j; k++) used.add(k); }
   }
+  // Có cụm giống mã đọc bằng số (vd "đê không không hai") mà luật không khớp mã nào trong danh mục.
+  // Chỉ tính khi đứng trước cụm số là một âm ngắn giống tên chữ cái ("đê", "xê", "ép"), không tính "size ba mươi".
+  let codeLike = false;
+  const isNum = (t) => /^\d{1,3}$/.test(t) || DIGIT_WORDS[t] !== undefined;
+  for (let i = 1; i + 1 < tok.length; i++) {
+    if (isNum(tok[i]) && isNum(tok[i + 1]) && !isNum(tok[i - 1]) && /^[A-Z]{1,3}$/.test(tok[i - 1]) && !['CAI', 'SIZ', 'GIA', 'MUA', 'LAY', 'CON'].includes(tok[i - 1])) codeLike = true;
+  }
   const uniq = [...new Set(found)];
   const rest = tok.filter((_, k) => !used.has(k));
   const restStr = ' ' + rest.join(' ') + ' ';
@@ -104,7 +112,7 @@ export function voiceRules(transcript, skus) {
   const m = /(?:^| )(\d{1,3}|MOT|HAI|BA|BON|TU|NAM|SAU|BAY|TAM|CHIN|MUOI) (?:CAI|CHIEC|BO|SET|DOI|CON|AO|QUAN|SP|SAN PHAM)\b/.exec(restStr.trim());
   if (m) quantity = /^\d+$/.test(m[1]) ? Number(m[1]) : QTY_WORDS[m[1]];
   if (!(quantity >= 1 && quantity <= 999)) quantity = null;
-  return { sku: uniq.length === 1 ? uniq[0] : null, skuCount: uniq.length, intent: buy ? 'buy' : price || uniq.length ? 'price' : 'other', quantity };
+  return { sku: uniq.length === 1 ? uniq[0] : null, skuCount: uniq.length, codeLike, intent: buy ? 'buy' : price || uniq.length ? 'price' : 'other', quantity };
 }
 
 export const ASK_AGAIN = {
@@ -116,16 +124,23 @@ export const ASK_AGAIN = {
 };
 
 // Quyết định cuối: gộp kết quả Gemini + luật, trả dữ liệu gọi lõi chung hoặc câu hỏi lại khách.
-export function decideVoice(ai, skus, failReason) {
+export const foldVi = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+export function decideVoice(ai, skus, failReason, names) {
   const fail = (reason) => ({ ok: false, reason, transcript: ai?.transcript || '', replyText: ASK_AGAIN[reason] });
   if (failReason) return fail(failReason);
   if (!ai || ai.error) return fail('ai_error');
   const transcript = ai.transcript;
   if (!transcript || transcript.length < 2) return fail('unclear');
+  // Chống "bịa": model nghe không rõ hay chép lại nguyên tên sản phẩm trong danh mục thay vì lời khách.
+  const ft = foldVi(transcript);
+  if ((names || []).some((n) => { const fn = foldVi(n); return fn && (ft.includes(fn) || fn.includes(ft)) && Math.abs(ft.length - fn.length) <= 15; })) return fail('unclear');
   const valid = new Set(skus || []);
   const rb = voiceRules(transcript, skus);
   const aiSku = ai.sku && valid.has(ai.sku) && ai.confidence !== 'low' ? ai.sku : null;
   if (aiSku && rb.sku && aiSku !== rb.sku) return fail('sku_conflict');
+  // Khách đọc mã nhưng luật không đọc ra mã nào: không tin mã AI tự suy (exec 6385: "đê không không hai" → AI đoán A002).
+  if (aiSku && !rb.sku && rb.codeLike) return fail('sku_conflict');
   // AI chắc (medium/high) mà không thấy mã: tin AI, không lấy mã từ luật (tránh "cho bé 2 tuổi" thành B002).
   // AI không chắc: chỉ đi tiếp khi luật đọc ra đúng 1 mã trong danh mục, ngược lại hỏi lại.
   if (ai.confidence === 'low' && !rb.sku) return fail('unclear');

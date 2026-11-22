@@ -5,7 +5,7 @@ const blocks = fs.readFileSync(new URL('../lib/voice-understanding.mjs', import.
   .split(/\n(?=export )/).slice(1).map((b) => b.replace(/^\/\/.*\n/gm, '').replace(/^export /, '').trim());
 const pick = (...names) => names.map((n) => { const b = blocks.find((x) => new RegExp('^(?:const|function) ' + n + '\\b').test(x)); if (!b) throw new Error('missing ' + n); return b; }).join('\n');
 const libPrep = pick('MAX_AUDIO_BYTES', 'AUDIO_MIME', 'VOICE_SCHEMA', 'LETTER_SAY', 'buildVoicePrompt', 'buildGeminiBody');
-const libDecide = pick('geminiText', 'parseGemini', 'DIGIT_WORDS', 'LETTER_WORDS', 'QTY_WORDS', 'voiceRules', 'ASK_AGAIN', 'decideVoice');
+const libDecide = pick('geminiText', 'parseGemini', 'DIGIT_WORDS', 'LETTER_WORDS', 'QTY_WORDS', 'voiceRules', 'ASK_AGAIN', 'foldVi', 'decideVoice');
 const J = (v) => JSON.stringify(v, null, 1);
 const TRIGGER = 'Nhận âm thanh từ adapter';
 const prepCode = `// Kiểm tra âm thanh + tạo yêu cầu Gemini (danh mục đọc từ Sheet AI_SALES_DEMO để gợi ý mã).
@@ -18,12 +18,12 @@ if(!b64||b64.length<100||!/^[A-Za-z0-9+/]+={0,2}$/.test(b64))fail='no_audio';
 else if(Math.floor(b64.length*3/4)>MAX_AUDIO_BYTES)fail='too_large';
 let mime=String(req.mimeType||'').toLowerCase().split(';')[0].trim();
 if(!AUDIO_MIME.includes(mime))mime='audio/ogg';
-return [{json:{fail,skus:catalog.map(c=>c.sku),gemini_body:fail?null:buildGeminiBody(b64,mime,catalog)}}];`;
+return [{json:{fail,skus:catalog.map(c=>c.sku),names:catalog.map(c=>c.name),gemini_body:fail?null:buildGeminiBody(b64,mime,catalog)}}];`;
 const decideCode = `// Gộp kết quả Gemini + luật đọc transcript. Không chắc thì trả câu hỏi lại khách (không gọi lõi).
 ${libDecide}
 const prep=$('Chuẩn bị gọi Gemini').first().json;
 const ch=String($('${TRIGGER}').first().json.channel||'');
-const out=prep.fail?decideVoice(null,prep.skus,prep.fail):decideVoice(parseGemini($input.first().json),prep.skus);
+const out=prep.fail?decideVoice(null,prep.skus,prep.fail):decideVoice(parseGemini($input.first().json),prep.skus,null,prep.names);
 return [{json:{...out,channel:ch}}];`;
 
 const code = `import { workflow, node, trigger, ifElse } from '@n8n/workflow-sdk';

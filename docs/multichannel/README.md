@@ -60,12 +60,39 @@ Không gửi tin Telegram/Messenger thật, không ghi đơn, chỉ đọc Sheet
 | TikTok Shop | BLOCKED | Cần đăng ký TikTok Shop Partner Center (ứng dụng đối tác), shop uỷ quyền và được cấp quyền API chăm sóc khách hàng. Chưa có tài khoản/ứng dụng nào. Chưa viết adapter vì chưa xác minh được định dạng webhook thực tế. |
 | Zalo | PROPOSED | Đường Zalo hiện tại (Worker + n8n yIJk/OgDZ) trả lời theo luật cố định, không qua AI. Có thể gọi lõi chung sau khi các kênh trên ổn định. |
 
+## 4b. Tin nhắn thoại dùng chung (V24.1)
+
+Cách làm lấy từ Zalo V22.5 (PR #486), mở rộng cho cả danh mục AI_SALES_DEMO và mọi kênh:
+
+```
+adapter kênh ─ tải file thoại → base64 ─► TIEN404 VOICE (F7EhVGWIALKWg8Y6)
+                                            1. đọc mã + tên SP từ Sheet → gợi ý cho Gemini
+                                            2. Gemini 3.5 Flash Lite (miễn phí): transcript + ý định + mã + số lượng (JSON)
+                                            3. luật đọc transcript đối chiếu mã/số lượng
+                                            ├─ chắc  → lõi chung (hỏi giá có mã → fast path; còn lại → AI kèm "mã nghe được")
+                                            └─ không chắc → 1 tin hỏi lại khách, không gọi AI bán hàng
+```
+
+Chặn sai (từ test thật): Gemini nghe giọng khó thường "bịa" ra đúng tên sản phẩm trong danh mục (exec 6379-6381) → transcript trùng tên SP bị coi là không rõ; khách đọc mã mà luật không khớp mã nào nhưng Gemini vẫn đoán mã (exec 6385: "đê không không hai" → A002) → hỏi lại mã. Trả lời Telegram mở đầu bằng `🎤 Shop nghe: "..."` để khách thấy bot hiểu gì, vẫn 1 tin.
+
+| Test tin thoại | Kết quả | Bằng chứng |
+|---|---|---|
+| Unit test hàm hiểu thoại | 12/12 PASS (tổng 25/25 cả adapter) | `node --test qa/multichannel/*.test.mjs` |
+| s1 "giá a không không ba bao nhiêu" (giọng máy) | PASS: A003, luật + Gemini khớp → fast path | VOICE exec 6395 |
+| s2 "mua bê không không hai, hai cái" (giọng máy, Gemini nghe "mô đen") | PASS an toàn: hỏi lại, không báo sai mẫu | exec 6396 |
+| s3 "quần jean nam dưới bốn trăm nghìn" | PASS: chuyển nguyên câu cho AI | exec 6397 |
+| s4 tiếng ồn | PASS: hỏi lại | exec 6398 |
+| Telegram đầu-cuối (tin thoại giả lập, chặn ở node gửi) | PASS 7,3 s, 1 tin: "🎤 Shop nghe … A003 — Áo thun nam đen basic size L, 159.000đ, còn 18" | exec 6405 (VOICE + lõi 6407) |
+
+Kênh khác: Messenger (Z7Fd, live) và web widget chưa nối; nối Messenger là sửa workflow live nên cần duyệt riêng. Widget cần thêm nút ghi âm.
+
 ## 5. Rủi ro còn lại
 
 - R1: Lõi và Z7Fd là hai bản prompt riêng cho tới khi gộp (lệch nội dung).
 - R2: Web endpoint công khai chưa có chống spam (xem trên).
 - R3: AI đôi khi mời đặt hàng sớm dù prompt cấm (thấy ở exec 6327); vấn đề của prompt chung, Messenger cũng có.
 - R4: Bộ nhớ hội thoại là bộ nhớ tạm của n8n (Window Buffer), mất khi n8n khởi động lại, giống Messenger hiện tại.
+- R6: Giọng thật dễ nghe hơn giọng máy dùng để test, nhưng Gemini Flash Lite vẫn có thể nghe sai; bot luôn nhắc lại câu nghe được và hỏi lại khi không chắc. Gói miễn phí Gemini có giới hạn số lần gọi/phút.
 - R5: Lõi đang ghi đơn/phiếu hỗ trợ vào cùng Sheet demo với Messenger. Phiếu hỗ trợ có `sender_id` dạng `telegram:<id>` / `web:<phiên>` để phân biệt kênh.
 
 ## 6. Rollback

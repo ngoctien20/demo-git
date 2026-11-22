@@ -14,7 +14,7 @@ test('rules: đọc mã kiểu nói', () => {
   assert.equal(voiceRules('Z999 giá sao', SKUS).sku, null, 'mã ngoài danh mục');
 });
 test('rules: ý định + số lượng', () => {
-  assert.deepEqual(voiceRules('mua A003 hai cái', SKUS), { sku: 'A003', skuCount: 1, intent: 'buy', quantity: 2 });
+  assert.deepEqual(voiceRules('mua A003 hai cái', SKUS), { sku: 'A003', skuCount: 1, codeLike: true, intent: 'buy', quantity: 2 });
   assert.equal(voiceRules('mo A003', SKUS).intent, 'buy');
   assert.equal(voiceRules('giá B002', SKUS).intent, 'price');
   assert.equal(voiceRules('đơn của mình giao chưa', SKUS).intent, 'other');
@@ -60,4 +60,20 @@ test('prompt + body: có danh mục, schema, không lộ chỉ dẫn lạ', () =
   const b = buildGeminiBody('QUJD', 'audio/ogg', []);
   assert.equal(b.contents[0].parts[0].inline_data.mime_type, 'audio/ogg');
   assert.deepEqual(b.generationConfig.responseSchema, VOICE_SCHEMA);
+});
+test('decide: model chép lại tên sản phẩm thay vì lời khách → hỏi lại (exec 6379-6381)', () => {
+  const names = ['Áo thun nam đen basic size L', 'Áo sơ mi nam trắng slimfit size L', 'Áo hoodie xám size XL'];
+  const ask = (t, sku) => decideVoice(parseGemini(gem({ transcript: t, intent: 'price', sku, confidence: 'high' })), SKUS, null, names);
+  assert.equal(ask('Áo thun nam đen basic size L', 'A003').reason, 'unclear');
+  assert.equal(ask('Sơ mi nam trắng slimfit size L', 'A005').reason, 'unclear');
+  assert.equal(ask('Cho mình xem áo hoodie xám size XL', 'A007').reason, 'unclear');
+  assert.equal(ask('áo thun nam đen size L còn không shop, giá bao nhiêu vậy ạ', 'A003').ok, true, 'câu thật của khách dài hơn tên');
+});
+test('decide: mã đọc nghe sai chữ cái → không tin mã AI tự đoán (exec 6385)', () => {
+  const d = decideVoice(parseGemini(gem({ transcript: 'Cho mình mô đê không không hai hai cái nhé', intent: 'other', sku: 'A002', quantity: 2, confidence: 'high' })), SKUS);
+  assert.equal(d.reason, 'sku_conflict');
+  const ok = decideVoice(parseGemini(gem({ transcript: 'lấy cho mình cái áo thun đen size L hai cái', intent: 'buy', sku: 'A003', quantity: 2, confidence: 'high' })), SKUS);
+  assert.equal(ok.ok, true, 'mô tả sản phẩm, không đọc mã → vẫn tin AI');
+  const size = decideVoice(parseGemini(gem({ transcript: 'lấy quần jean đen size ba mươi', intent: 'buy', sku: 'B002', confidence: 'high' })), SKUS);
+  assert.equal(size.ok, true, 'size ba mươi không phải mã');
 });
