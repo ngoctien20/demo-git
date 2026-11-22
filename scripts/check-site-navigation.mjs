@@ -4,7 +4,7 @@ import path from 'node:path';
 import { REDIRECTS } from './build-site.mjs';
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const pages = fs.readdirSync(path.join(root, 'site-src', 'pages')).filter(f => f.endsWith('.html'));
-const expected = ['Trang chủ', 'Giải pháp', 'Bảng giá', 'Dùng thử AI', 'Liên hệ', 'Đăng nhập', 'Dùng thử'];
+const expected = ['Trang chủ', 'Ngành nghề', 'Kênh kết nối', 'Bảng giá', 'Dùng thử AI', 'Liên hệ', 'Đăng nhập', 'Dùng thử'];
 const errors = [];
 for (const p of pages) {
   const html = fs.readFileSync(path.join(root, p), 'utf8');

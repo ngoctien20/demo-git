@@ -20,12 +20,12 @@ export const REDIRECTS = {
   'invoice.html': ['app/#/goi-dich-vu', 'Gói dịch vụ trong App'],
   'lab.html': ['demo.html', 'Dùng thử AI'],
   'impact.html': ['pricing.html', 'Bảng giá'],
-  'industries.html': ['solutions.html#nganh', 'Giải pháp theo ngành'],
-  'industry-fashion.html': ['solutions.html#thoi-trang', 'Giải pháp cho shop thời trang'],
-  'industry-beauty.html': ['solutions.html#my-pham', 'Giải pháp cho mỹ phẩm'],
-  'industry-accessories.html': ['solutions.html#phu-kien', 'Giải pháp cho phụ kiện'],
-  'industry-ecommerce.html': ['solutions.html#online', 'Giải pháp cho cửa hàng online'],
-  'industry-services.html': ['solutions.html#dich-vu', 'Giải pháp cho dịch vụ'],
+  'solutions.html': ['industries.html', 'Ngành nghề'],
+  'industry-fashion.html': ['industries.html#cua-hang', 'Trợ lý AI cho cửa hàng'],
+  'industry-beauty.html': ['industries.html#cua-hang', 'Trợ lý AI cho cửa hàng'],
+  'industry-accessories.html': ['industries.html#cua-hang', 'Trợ lý AI cho cửa hàng'],
+  'industry-ecommerce.html': ['industries.html#cua-hang', 'Trợ lý AI cho cửa hàng'],
+  'industry-services.html': ['industries.html#dich-vu', 'Trợ lý AI cho dịch vụ'],
 };
 
 export function build() {

@@ -1,4 +1,4 @@
-/* TIEN404 AI public site — V23. Menu, AI chat (n8n chat webhook) and real lead form. */
+/* TIEN404 AI public site — V23/V25. Menu, illustration tabs, AI chat (n8n chat webhook) and real lead form. */
 (() => {
   'use strict';
   const conf = window.TIEN404_CONFIG || {};
@@ -14,6 +14,25 @@
     });
     menu.addEventListener('click', e => { if (e.target.closest('a')) { menu.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); } });
   }
+
+  // ---------- Tabs (illustrations only, no data) ----------
+  document.querySelectorAll('[data-tabs]').forEach(box => {
+    const tabs = [...box.querySelectorAll('[role="tab"]')];
+    const select = t => tabs.forEach(x => {
+      const on = x === t;
+      x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+      const pane = document.getElementById(x.getAttribute('aria-controls'));
+      if (pane) pane.hidden = !on;
+    });
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', e => {
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault(); const n = tabs[(i + d + tabs.length) % tabs.length]; select(n); n.focus();
+      });
+    });
+  });
 
   // ---------- AI chat ----------
   const SESSION_KEY = 'tien404_chat_session';

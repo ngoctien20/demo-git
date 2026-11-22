@@ -1,11 +1,12 @@
-// TIEN404 public site layout (V23). Shared header/footer for every generated page.
+// TIEN404 public site layout (V23, V25 multi-industry navigation). Shared header/footer for every generated page.
 // Edit pages in site-src/pages/*.html, then run: node scripts/build-site.mjs
 export const SITE_URL = 'https://ngoctien20.github.io/demo-git/';
 export const APP_URL = 'app/';
 
 const NAV = [
   ['index', 'index.html', 'Trang chủ'],
-  ['solutions', 'solutions.html', 'Giải pháp'],
+  ['industries', 'industries.html', 'Ngành nghề'],
+  ['channels', 'channels.html', 'Kênh kết nối'],
   ['pricing', 'pricing.html', 'Bảng giá'],
   ['demo', 'demo.html', 'Dùng thử AI'],
   ['contact', 'contact.html', 'Liên hệ'],
@@ -30,9 +31,9 @@ ${robots ? `<meta name="robots" content="${robots}">\n` : ''}<link rel="canonica
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#4f5cf6">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/site.css?v=23">
-<script defer src="assets/site-config.js?v=23"></script>
-<script defer src="assets/site.js?v=23"></script>
+<link rel="stylesheet" href="assets/site.css?v=25">
+<script defer src="assets/site-config.js?v=25"></script>
+<script defer src="assets/site.js?v=25"></script>
 </head>
 <body data-page="${slug}">
 <a class="skip" href="#main">Đi tới nội dung</a>
@@ -51,8 +52,8 @@ ${body.trim()}
 <footer class="footer">
  <div class="wrap footer-grid">
   <div><a class="brand" href="index.html">${LOGO}<span>TIEN404<b>AI</b></span></a>
-   <p class="muted">Trợ lý AI bán hàng cho shop nhỏ Việt Nam trên Messenger, Zalo và website.</p></div>
-  <div><h2>Sản phẩm</h2><a href="solutions.html">Giải pháp</a><a href="pricing.html">Bảng giá</a><a href="demo.html">Dùng thử AI</a><a href="${APP_URL}">App chủ shop</a></div>
+   <p class="muted">Nền tảng trợ lý AI cho cá nhân, nhà sáng tạo và doanh nghiệp: một lõi AI, nhiều ngành nghề, nhiều kênh kết nối.</p></div>
+  <div><h2>Nền tảng</h2><a href="industries.html">Ngành nghề</a><a href="channels.html">Kênh kết nối</a><a href="pricing.html">Bảng giá</a><a href="demo.html">Dùng thử AI</a><a href="${APP_URL}">TIEN404 AI Workspace</a></div>
   <div><h2>Công ty</h2><a href="about.html">Giới thiệu</a><a href="faq.html">Câu hỏi thường gặp</a><a href="contact.html">Liên hệ</a></div>
   <div><h2>Pháp lý</h2><a href="terms.html">Điều khoản</a><a href="privacy.html">Quyền riêng tư</a><a href="refund.html">Hoàn phí</a></div>
  </div>
