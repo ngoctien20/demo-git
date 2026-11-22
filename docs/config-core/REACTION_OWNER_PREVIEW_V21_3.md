@@ -28,7 +28,9 @@ Chủ Fanpage có thể hiểu trước các phong cách reaction phù hợp ng�
   5. Artist có thể gợi ý 👍 với lời khen xã hội, không react câu hỏi giá.
   6. Wholesale chỉ gợi ý ❤️, không khen 👍.
   7. Không có HTTP write/RPC/publish và không tràn màn hình điện thoại.
-- Cần ghi rõ kết quả job trước khi đánh dấu TESTED; chỉ build TypeScript PASS không chứng minh UI browser PASS.
+- **TESTED:** GitHub Actions [run #45012456765](https://github.com/ngoctien20/demo-git/actions/runs/45012456765) **SUCCESS**: TypeScript + Vite build PASS và browser Chromium **33/33 assertions PASS** trên 1280px + 390px. Mock kiểm tra ngành legal không reaction, artist 👍, wholesale ❤️, tắt sau reload, không tràn ngang, 0 mutation / 0 reaction RPC / 0 console errors.
+- Browser screenshots artifact: `v21-reaction-owner-preview-screens` (artifact #14749864928; trong run #45012456765), gồm `reaction_owner_1280.png` và `reaction_owner_390.png`. Ảnh chỉ có **dữ liệu giả lập Shop QA**, không chứa khách hàng thật.
+- QA đã mở và đối chiếu cả 2 ảnh: bố cục rõ, không có tràn ngang, trường điều khiển theo ngành hiển thị đầy đủ. Chưa kiểm chứng trình duyệt Safari/iOS hoặc người dùng thật.
 - V23 aggregate CI hiện kiểm tra **file build trong `app/` đã commit khớp nguồn**. Vì đây là PR Draft không publish, source thay đổi nhưng `app/` vẫn giữ bản release cũ, nên kiểm tra đồng bộ assets của V23 sẽ FAIL cho đến khi đồng bộ bản build ở bước tích hợp được duyệt. Không hạ chuẩn check này và không tự đưa assets mới lên Pages trong giai đoạn preview.
 
 ## Khoảng trống và điều kiện phát hành
