@@ -38,10 +38,11 @@ export function assessMetaPageGraphReadOnlyEvidence(evidence,expected,nowSeconds
       REQUIRED_PERMISSIONS.some(required=>!scopes.includes(required)))
     return block('meta_oauth_scopes_missing');
 
-  // If Meta supplies target-level scopes, check the Page is included.
-  if(t.granular_scopes!==undefined){
-    const granular=arr(t.granular_scopes);
-    if(!granular) return block('invalid_granular_scope_evidence');
+  // A complete debug_token granular-scopes response is mandatory.
+  // Scope names alone do not independently attest Page-targeted consent.
+  const granular=arr(t.granular_scopes);
+  if(!granular) return block('meta_granular_scopes_not_attested');
+  {
     for(const permission of REQUIRED_PERMISSIONS){
       const matches=granular.filter(g=>g?.scope===permission);
       // Missing or contradictory per-permission entries are not evidence.
