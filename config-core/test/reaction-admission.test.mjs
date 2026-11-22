@@ -145,10 +145,11 @@ test('fake or duplicate claim, wrong MID, rate limits not enforced, expired rece
 });
 test('reaction-only only on confirmed provider accept for same exact Page/MID',()=>{
   const pre=preflight(),c=verifyAtomicReactionClaim(pre,receipt(pre),now);
-  const ok={action:'react',messageId:c.messageId,pageId:c.pageId,transportConfirmed:true,providerAccepted:true,providerError:false};
+  const ok={source:'trusted_meta_send_result',requestCorrelationVerified:true,claimId:c.claimId,recipientId:c.senderId,action:'react',messageId:c.messageId,pageId:c.pageId,transportConfirmed:true,providerAccepted:true,providerError:false};
   assert.equal(planSocialResponseAfterProvider(c,ok).mode,'reaction_only');
   for(const patch of [
-    {transportConfirmed:false},{providerAccepted:false},{providerError:true},
+    {source:'untrusted_webhook'},{requestCorrelationVerified:false},{claimId:'other-claim'},
+    {recipientId:'wrong-sender'},{transportConfirmed:false},{providerAccepted:false},{providerError:true},
     {pageId:otherPage},{messageId:'m_another'},{action:'unreact'},
   ]) {
     const decision=planSocialResponseAfterProvider(c,{...ok,...patch});
