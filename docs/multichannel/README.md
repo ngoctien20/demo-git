@@ -1,0 +1,73 @@
+# V24 — Nối bot AI chính sang nhiều kênh
+
+Ngày: 2026-11-22 · Nhánh: `claude/project-thread-srmvl4` · Trạng thái: **bản nháp, chưa publish kênh nào mới**
+
+## 1. Kiến trúc
+
+```
+ Messenger (live, Z7Fd) ─┐
+ Instagram   (chưa có) ──┤   adapter kênh: xác thực nguồn, chuẩn hoá,      ┌──────────────────────────────┐
+ Telegram    (nháp)   ───┼─► chặn tin lạ, gõ "đang trả lời" ─────────────► │ TIEN404 BOT CORE (nháp)       │
+ Web widget  (nháp)   ───┤                                                 │ • fast path "Xem A003" (Sheet)│
+ Zalo        (Worker) ───┤   ◄─ hiển thị theo kênh, tối đa 3 tin ───────── │ • AI agent + 5 tool đơn hàng  │
+ TikTok Shop (bị chặn) ──┘                                                 │ • bộ nhớ theo kênh:tk:người   │
+                                                                           └──────────────────────────────┘
+```
+
+Hợp đồng chung (giống nhau cho mọi kênh):
+
+| Bước | Dữ liệu |
+|---|---|
+| Adapter → lõi | `channel, accountId, senderId, messageId, text, mediaType, selectedSku?, memoryUserText?` |
+| Lõi → adapter | `replyText, skus[], source (fast_path / ai / timeout), channel, accountId, senderId, messageId` |
+| Adapter → khách | 1 tin mặc định, 2 khi thật cần, **tối đa 3** (quy tắc số tin của chủ dự án) |
+
+Phiên hội thoại = `kênh:tài khoản:người gửi`, nên khách Telegram và khách web không bao giờ thấy lịch sử của nhau.
+Lõi gắn thêm dòng `[Kênh: Telegram]` vào đầu tin để AI biết kênh, prompt cấm nhắc lại dòng này cho khách.
+
+## 2. Cái gì ở đâu
+
+| Thành phần | Vị trí |
+|---|---|
+| Hàm adapter thuần (Telegram, web, Instagram, chia tin, HTML Telegram, định dạng mẫu) | `channels/lib/channel-adapters.mjs` |
+| Unit test (13) | `qa/multichannel/channel-adapters.test.mjs` |
+| Widget nhúng website (không thư viện ngoài, sáng/tối, màn hình điện thoại) | `channels/widget/tien404-chat-widget.js`, `channels/widget/demo.html` |
+| Kiểm tra widget trên trình duyệt (endpoint giả) | `qa/multichannel/widget-browser.cjs` |
+| Workflow n8n (ID + code SDK) | `channels/n8n/` |
+
+## 3. Kết quả kiểm thử (2026-11-22, giờ UTC)
+
+| Test | Kết quả | Bằng chứng |
+|---|---|---|
+| Unit test adapter | 13/13 PASS | `node --test qa/multichannel/channel-adapters.test.mjs` |
+| Web: "Xem A003" → fast path đọc Sheet thật | PASS, 3,9 s, trả đúng giá/tồn | n8n exec 6320 (lõi 6321) |
+| Web: hỏi tiếp "mẫu này 2 cái bao nhiêu" cùng phiên | PASS, AI nhớ A003, tính 318.000đ | exec 6322 |
+| Web: origin lạ | PASS, bị chặn 400, không gọi lõi | exec 6324 |
+| Web: phiên khác hỏi "mẫu này" | PASS, không lộ ngữ cảnh phiên khác | exec 6325 |
+| Telegram: tin riêng (gửi giả, chặn ở node gửi) | PASS, 8,8 s, 1 tin | exec 6327 (lõi 6328) |
+| Widget trên Chromium 390px | PASS: cùng phiên 2 lượt, nút "Xem A002", chặn chèn HTML, không tràn ngang | `qa/multichannel/widget-browser.cjs` |
+
+Không gửi tin Telegram/Messenger thật, không ghi đơn, chỉ đọc Sheet AI_SALES_DEMO. AI chạy qua n8n AI Gateway như bot Messenger hiện tại.
+
+## 4. Tình trạng từng kênh
+
+| Kênh | Nhãn | Ghi chú |
+|---|---|---|
+| Web widget | IMPLEMENTED + TESTED (nháp) | Cần chủ dự án duyệt publish. Trước khi mở công khai nên thêm chống spam (Cloudflare Turnstile hoặc giới hạn tần suất), vì endpoint công khai có thể bị gọi liên tục làm tốn credit AI và tạo đơn rác vào Sheet demo. |
+| Telegram | IMPLEMENTED + TESTED (nháp) | Dùng credential n8n "Telegram account" có sẵn, chưa xác minh đó là bot nào. Publish = đăng ký webhook Telegram. Bản đầu gửi chữ thường, chưa có nút "Xem A002" (node Telegram của n8n không tạo nút động; cần node HTTP với token bot). |
+| Messenger | PROPOSED | Z7Fd vẫn chạy bản riêng. Đề xuất: thay khối AI trong Z7Fd bằng lời gọi lõi chung để chỉ còn một nơi sửa prompt. Đây là thay đổi live, cần duyệt riêng. Hiện lõi là **bản sao** prompt + tool của Z7Fd 4b0fe018, nên sửa prompt Messenger phải sửa cả lõi cho tới khi gộp. |
+| Instagram | PROPOSED / BLOCKED | Adapter `normalizeInstagram` + `composeInstagram` đã có và có test. Cần: tài khoản Instagram chuyên nghiệp nối với Page, quyền nhắn tin Instagram trên Meta app và App Review (Advanced Access) mới trả lời được khách ngoài nhóm thử. |
+| TikTok Shop | BLOCKED | Cần đăng ký TikTok Shop Partner Center (ứng dụng đối tác), shop uỷ quyền và được cấp quyền API chăm sóc khách hàng. Chưa có tài khoản/ứng dụng nào. Chưa viết adapter vì chưa xác minh được định dạng webhook thực tế. |
+| Zalo | PROPOSED | Đường Zalo hiện tại (Worker + n8n yIJk/OgDZ) trả lời theo luật cố định, không qua AI. Có thể gọi lõi chung sau khi các kênh trên ổn định. |
+
+## 5. Rủi ro còn lại
+
+- R1: Lõi và Z7Fd là hai bản prompt riêng cho tới khi gộp (lệch nội dung).
+- R2: Web endpoint công khai chưa có chống spam (xem trên).
+- R3: AI đôi khi mời đặt hàng sớm dù prompt cấm (thấy ở exec 6327); vấn đề của prompt chung, Messenger cũng có.
+- R4: Bộ nhớ hội thoại là bộ nhớ tạm của n8n (Window Buffer), mất khi n8n khởi động lại, giống Messenger hiện tại.
+- R5: Lõi đang ghi đơn/phiếu hỗ trợ vào cùng Sheet demo với Messenger. Phiếu hỗ trợ có `sender_id` dạng `telegram:<id>` / `web:<phiên>` để phân biệt kênh.
+
+## 6. Rollback
+
+Chưa publish gì nên không có gì cần rollback trên kênh thật. Muốn dọn: archive 3 workflow `A7XYwSqZwr9T7841`, `jkMNMEFz7ZezCqJA`, `fffBRIDD7wWIQnXr` trong n8n. Z7Fd không bị sửa (vẫn bản 4b0fe018).
