@@ -57,7 +57,7 @@ export function decideSocialReaction(event, gate = {}) {
 /**
  * DRY RUN ONLY: request-shape candidate from Meta sender-action examples.
  * Does not hold credentials, issue HTTP requests, or authorize a live send.
- * Exact Meta reaction payload/app rollout remains subject to real isolated UAT.
+ * The stringified payload envelope was accepted by Meta v27.0 during a one-off tester UAT (HTTP 200, execution #6711). Actual mobile UI display remains to be confirmed.
  */
 export function buildMetaReactionDryRun(decision) {
   if (!decision || decision.mode !== 'reaction_candidate' ||
@@ -71,7 +71,7 @@ export function buildMetaReactionDryRun(decision) {
     body: {
       recipient: { id: decision.recipientId },
       sender_action: 'react',
-      payload: { message_id: decision.messageId, reaction: decision.emoji },
+      payload: JSON.stringify({ message_id: decision.messageId, reaction: decision.emoji }),
     },
     dedupeKey: decision.dedupeKey,
   };
