@@ -6,6 +6,7 @@ on:
       - "config-core/lib/reaction-admission.mjs"
       - "config-core/lib/reaction-profiles.mjs"
       - "qa/reactions/**"
+      - "db/reactions/**"
       - "config-core/n8n/build-messenger-reactions-shadow.mjs"
       - "config-core/n8n/build-reactions-code.mjs"
       - "config-core/test/social-reactions.test.mjs"
@@ -84,3 +85,37 @@ jobs:
           sudo apt-get install -y -qq postgresql-client
       - name: Run disposable PG17 atomic claim + concurrency acceptance
         run: bash qa/reactions/atomic-claim-offline.sh
+
+  pg17_page_draft_owner_ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-disposable-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TIEN404_DISPOSABLE_PG17_QA: "YES"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGUSER: "postgres"
+      PGPASSWORD: "ci-disposable-only"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Refuse hosted tokens
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_SERVICE_ROLE_KEY:-}${META_PAGE_ACCESS_TOKEN:-}${N8N_API_KEY:-}${DATABASE_URL:-}"
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Assert ONLY offline synthetic Page owner/store/industry/cas admission
+        run: bash qa/reactions/owner-page-draft-pg17-uat.sh
