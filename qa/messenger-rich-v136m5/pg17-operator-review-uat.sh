@@ -72,7 +72,8 @@ sql "CREATE SCHEMA app_private;
   UNIQUE(id,tenant_id,store_id,page_id));
  CREATE TABLE app_private.messenger_send_parts(
   plan_id uuid NOT NULL,tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,
-  part_no int NOT NULL,body_digest char(64) NOT NULL,status text NOT NULL,
+  part_no int NOT NULL,body_digest char(64) NOT NULL,
+  status text NOT NULL CHECK(status IN ('PLANNED','MAY_HAVE_SENT_HOLD','UNCERTAIN_HOLD','API_ACCEPTED_MOCK')),
   attempted_at timestamptz,PRIMARY KEY(plan_id,part_no),
   FOREIGN KEY(plan_id,tenant_id,store_id,page_id)
    REFERENCES app_private.messenger_send_plans(id,tenant_id,store_id,page_id));
@@ -152,11 +153,11 @@ sql "CREATE SCHEMA app_private;
  ('$I3','$TB','$SC','$PC','$H',3,'$E','$D',1,'PREPARED');
  INSERT INTO app_private.messenger_send_parts
  (plan_id,tenant_id,store_id,page_id,part_no,body_digest,status) VALUES
- ('$I1','$TA','$SA','$PA',1,'API_ACCEPTED_MOCK','$BODY'),
- ('$I1','$TA','$SA','$PA',2,'API_ACCEPTED_MOCK','$BODY'),
- ('$I1','$TA','$SA','$PA',3,'UNCERTAIN_HOLD','$BODY'),
- ('$I2','$TA','$SB','$PB',1,'PLANNED','$BODY'),
- ('$I3','$TB','$SC','$PC',1,'MAY_HAVE_SENT_HOLD','$BODY');" >/dev/null
+ ('$I1','$TA','$SA','$PA',1,'$BODY','API_ACCEPTED_MOCK'),
+ ('$I1','$TA','$SA','$PA',2,'$BODY','API_ACCEPTED_MOCK'),
+ ('$I1','$TA','$SA','$PA',3,'$BODY','UNCERTAIN_HOLD'),
+ ('$I2','$TA','$SB','$PB',1,'$BODY','PLANNED'),
+ ('$I3','$TB','$SC','$PC',1,'$BODY','MAY_HAVE_SENT_HOLD');" >/dev/null
 
 view(){
  local who="$1" tenant="$2" store="$3" page="$4"
