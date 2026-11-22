@@ -16,6 +16,10 @@ const fixtures={
   store_memberships:[{store_id:storeId,tenant_id:tenantId,role:'owner',active:true}],
   stores:[{id:storeId,tenant_id:tenantId,name:'Shop QA',is_default:true}],
   tenants:[{id:tenantId,name:'Shop QA'}],
+  channel_connections:[
+    {id:'conn-owner-qa',tenant_id:tenantId,store_id:storeId,channel:'messenger',status:'active',environment:'demo',display_name:'Fanpage QA A'},
+    {id:'conn-shop-b',tenant_id:'tenant-other',store_id:'store-other',channel:'messenger',status:'active',environment:'demo',display_name:'Fanpage Shop B'},
+  ],
 };
 const errors=[];
 const requests=[];
@@ -41,7 +45,7 @@ const server=http.createServer((req,res)=>{
       ['sb-ifxlvrhyjhbzbrkdsida-auth-token',JSON.stringify(session)]);
     await context.route(/supabase\.co\//,route=>{
       const u=new URL(route.request().url());
-      requests.push({url:u.pathname,method:route.request().method()});
+      requests.push({url:u.pathname,method:route.request().method(),query:u.search});
       if(u.pathname.startsWith('/auth/v1/'))
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:session.user})});
       const match=u.pathname.match(/\/rest\/v1\/(\w+)/);
@@ -59,6 +63,11 @@ const server=http.createServer((req,res)=>{
     await page.goto(base);
     await page.getByRole('heading',{name:'Biểu cảm Fanpage'}).waitFor();
     const prefix='width'+width+' ';
+    const picker=page.getByRole('combobox',{name:'Chọn kết nối Messenger (chỉ xem)'});
+    await picker.waitFor();
+    check((await picker.locator('option').allTextContents()).length===1,prefix+'only current store connection visible');
+    check((await picker.locator('option').first().innerText())==='Fanpage QA A',prefix+'owned Page label from scoped registry');
+    check(await page.getByText(/Chưa có bằng chứng Meta Page Installation/).count()===1,prefix+'connected does not mean Meta-verified');
     check((await page.getByText('Bản xem trước — chưa phát hành.').count())===1,prefix+'explicit preview-only badge');
     const toggle=page.getByRole('switch',{name:'Bật reaction trong mô phỏng'});
     check(await toggle.getAttribute('aria-checked')==='false',prefix+'default OFF');
@@ -93,6 +102,11 @@ const server=http.createServer((req,res)=>{
     }
     await context.close();
   }
+  const channelReads=requests.filter(r=>r.url.endsWith('/channel_connections'));
+  check(channelReads.length===2 && channelReads.every(r => {
+    const p=new URLSearchParams(r.query);
+    return p.get('store_id')==='eq.'+storeId && p.get('tenant_id')==='eq.'+tenantId && p.get('channel')==='eq.messenger';
+  }), 'read-only channel connections always tenant/store/channel scoped');
   check(requests.every(r=>['GET','HEAD'].includes(r.method)), 'no backend mutation');
   check(requests.every(r=>!r.url.includes('reaction')&&!r.url.includes('rpc/')), 'no policy send or publish endpoint');
   check(errors.length===0,'no browser console/page errors');
