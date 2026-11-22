@@ -152,3 +152,42 @@ Nguồn Meta: https://developers.facebook.com/docs/graph-api/reference/page/mess
 - **Chưa nghiệm thu:** Messenger web, multi-Page A/B real, AI reaction tự động/feature flags, inbound reaction, rollback sau phản ứng tự động, phản hồi khi Meta lỗi/rate limited, human handoff/đặt hàng chạy song song. Không đồng nhất single-request UAT với production release.
 
 **Release gate còn giữ nguyên:** PR #493 là DRAFT. Trước khi ghép vào workflow Messenger cần tái kiểm toán draft mới, kiểm thử regression không-send với đầy đủ luồng shop/menu/order/handoff/voice, fail-safe/idempotency, Page-scoped feature flag mặc định OFF và phê duyệt publish riêng. Không thử gửi thêm reaction nếu chưa được giao UAT mới.
+
+
+## 11. V21 Messenger SHADOW per-Page gate — isolated QA (2026-11-22)
+
+Status: **IMPLEMENTED in GitHub candidate + n8n isolated QA, NOT WIRED to shared Messenger DRAFT.**
+
+### Code and QA artifacts
+
+- Added public generator: config-core/n8n/build-messenger-reactions-shadow.mjs, which uses the existing pure classifier and emits a Code node for insertion between Classify explicit human request and Human handoff request?.
+- Per-Page policy map in generated code: **Object.freeze({}) = all Pages OFF by default**. No actual Page ID, credential, webhook secret or user PSID appears in public code.
+- Only **trusted** policy inputs may eventually unlock a candidate: HMAC/timing-safe verification, correct Page/Sender/MID/text from webhook, tenant binding, Page authority, fresh thread ownership, atomic dedupe claim, within-hour timestamp, no human handoff, no business/privileged action.
+- A candidate is **shadow metadata only** (outgoingSendEnabled:false), always passed on to the original menu/handoff/voice/AI graph. It does **not** send Meta reactions, skip replies or create orders, even in the candidate case. This is deliberately NOT the production routing/sending path.
+- New offline VM test: config-core/test/messenger-reaction-shadow.test.mjs (default OFF JSON parity, synthetic Page ON, HMAC/ownership/dedupe/business guards, Page mismatch, menu/SKU/voice/handoff).
+- New dedicated GitHub CI: .github/workflows/tien404-social-reactions-qa.yml (Node 22, only 3 reaction-focused tests, no hosted access, no secrets).
+- Isolated n8n workflow **9ckigv7nLJ7E7ydj** in Personal / 90_QA - DIAGNOSTICS, **inactive**, 2 nodes only: Manual Trigger + Code. Contains synthetic mock Page/trust policy solely for QA; not an authorized live policy.
+- Manual synthetic execution **6722**: **13/13 expected decisions PASS**, 2 candidate emojis (❤️, 👍), 11 guarded/pass-through or unchanged cases, all outgoingSendEnabled=false/no Meta call.
+- Dedicated reaction CI at commit d7c4a18: run **45008880586 SUCCESS**.
+- Old aggregate Config Core CI during parallel catalog development failed on unrelated menu tests (syntax in messenger-catalog-page.test.mjs, and a previous ai-to-catalog expectation in messenger-phase2-route.test.mjs); do not mask as a reaction failure, and do not alter other team's catalog tests here.
+
+### Why not writing shared Messenger DRAFT yet
+
+Messenger workflow Z7FdV7uDvApfbURQ is being edited by another QA workstream. During this work its draft advanced from 9c08fdd3 to **18125761-5898-4950-bcd8-3c8d15539063**, adding paginated DEMO catalog support. The latest graph contains 67 nodes, published is still **47b48f6d-bc3d-40ae-afe6-96c5fd5452ac**.
+
+Avoid concurrent edits / lost work. The validated integration point currently exists:
+Classify explicit human request -> Human handoff request?.
+
+When the shared Messenger draft is frozen and ownership coordinated:
+1. Re-read current draft and full graph; record current versionId as rollback checkpoint.
+2. Generate Code from config-core/n8n/build-messenger-reactions-shadow.mjs and verify literal PAGE_POLICIES map is empty.
+3. Atomically add Code node "V21 Social Reactions Shadow (ALL OFF)" at an unused canvas position; replace ONLY one edge to form Classify explicit human request -> shadow -> Human handoff request?.
+4. Assert all pre-existing nodes/connections/credentials/groups unchanged except this one edge and new node; published version unchanged.
+5. Replay mocked Messenger menu, product SKU, voice, handoff and customer text through the affected path. Verify exact pass-through on default OFF and no external send. Keep draft unpublished.
+6. To enable real reactions requires additional approved owner controls, trusted current thread ownership, atomic persistent idempotency + per-Page policy, Meta error fallback and live mobile/desktop regression. Never switch feature ON merely by changing a boolean inside a Code node.
+
+### Rollback / gates
+
+- GitHub: revert only the V21 reaction generator/tests/CI in Draft PR #493, no merge.
+- n8n: isolated QA workflow remains inactive; shared Messenger draft/Published were NOT modified by Social Reactions work in this section.
+- Real Meta reaction UAT #6711 and mobile owner confirmation remain valid as a **one-message tester result**, not an automatic bot release.
