@@ -91,3 +91,29 @@ CI của Config Core đang chạy node --test config-core/test/*.test.mjs trên 
 - Nếu Meta không hỗ trợ, giữ tính năng OFF; đường trả lời văn bản hiện tại không đổi.
 
 Nguồn Meta: https://developers.facebook.com/docs/graph-api/reference/page/messages
+
+
+## 8. Continuation UAT gate / n8n synthetic acceptance (2026-11-22)
+
+**Status: TESTED ISOLATED, LIVE META UAT = BLOCKED (no verified tester message target).**
+
+- Created separate **unpublished** n8n workflow YkVVBQcSsqYdPC9U (TIEN404_V21_SOCIAL_REACTIONS_ISOLATED_QA — NO SEND) in Personal / 90_QA - DIAGNOSTICS.
+- Workflow has exactly 2 nodes: Manual Trigger (pinned synthetic inputs) -> Code (pure module from this branch). **No HTTP, webhook, external credentials, database writer, agent, or Send API node.**
+- Builder validation: valid=true, nodeCount=2, no warnings.
+- n8n test execution **6706**, mode manual, status **success**, 9 synthetic cases:
+  - thanks -> ❤️ candidate; praise -> 👍 candidate
+  - price question -> pass_through
+  - migration approval -> pass_through
+  - active human handoff -> pass_through
+  - feature disabled -> pass_through
+  - cross-Page -> pass_through
+  - echo -> skip
+  - commerce pending -> pass_through
+- Inspected output of Classify reactions - DRY RUN ONLY: 9/9 expected decisions, **every case metaCallExecuted=false** and positive candidates had sendAllowed=false.
+- CI previously confirmed: Config Core run 45004416858 PASS (unit, offline PG17), V23 Owner App run 45004416878 PASS. These do not test real Meta reaction delivery.
+- Messenger verified at this continuation: Published 47b48f6d-bc3d-40ae-afe6-96c5fd5452ac, Draft b967d427-62e6-40aa-90f4-60d222bb6e03; **unchanged**.
+- Live ingress reviewed read-only: recent executions exist but last two were **voice**. They are not a suitable fresh, approved text reaction sample; sender Page scope, tester consent, MID and 24h window must be verified together before a one-off send. No live reaction was attempted.
+
+**Important Meta contract uncertainty:** Graph API v27.0 lists REACT/UNREACT for Page Messages, but its documented top-level payload type is a string while an existing community example passes an object and receives error #100/2018311. The current buildMetaReactionDryRun is therefore an *unvalidated request candidate*, not a production-ready serialization contract. Do not connect it to an HTTP Request node until the exact request shape, permission and result are accepted on an isolated tester account.
+
+**Next acceptance gate:** authorized tester sends a new harmless Messenger text (e.g. "Cảm ơn shop nhé!") to the QA Page while the bot controls the thread; preflight confirms correct Page/MID/PSID and active Meta credential without exporting tokens; send at most 1 controlled reaction with redacted provider outcome, inspect Messenger mobile/web, then revert/flag OFF. If Page or tester cannot be verified, stop with BLOCKED, not a synthetic PASS. A separate owner approval is required before wiring into the live bot.
