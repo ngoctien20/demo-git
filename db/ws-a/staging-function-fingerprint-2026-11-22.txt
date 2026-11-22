@@ -19,7 +19,7 @@ public.merchant_paid_orders_daily(p_tenant uuid, p_days integer)|false|false|tru
 public.merchant_revenue_v3(p_shop uuid, p_start date, p_end date)|false|false|true|true|true|5a50cbcdc8e503afef62a73dc5f294c7
 public.publish_assistant_config(p_assistant uuid, p_expected_sha text)|true|false|true|true|true|9340c6a65e4b2568bc0a38c0714c486e
 public.qa_owner_pairing(p_shop uuid, p_action text, p_challenge uuid)|true|false|true|false|true|599b62f852b948f8846348185769a8d6
-public.qa_shop_b_zalo_claim(p_challenge uuid, p_code text, p_sender text, p_event text)|true|true|false|false|true|37f127c1475378b2810197961398d945
+public.qa_shop_b_zalo_claim(p_challenge uuid, p_code text, p_sender text, p_event text)|true|false|false|false|true|37f127c1475378b2810197961398d945
 public.register_shop(p_name text, p_industry text)|true|false|true|true|true|09331dbcba400da971da445f51d1df31
 public.resolve_channel_assistant(p_channel text, p_external_account_id text)|true|false|false|true|true|172b370a7ba269f20eee6f0d786e4152
 public.rollback_assistant_config(p_assistant uuid, p_version_no integer)|true|false|true|true|true|d2e169281cae85b445a59179e2d92e83

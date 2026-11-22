@@ -9,7 +9,7 @@ Phạm vi độc quyền: `db/**`, `supabase/**`. Mọi script ở đây **chỉ
 | B-P0-06 negative test RPC SECURITY DEFINER | `secdef-negative-suite.sh`, `mutation-selftest.sh` | 137 ca PASS; 3/3 lỗi cố ý bị bắt; 0 thay đổi dữ liệu và 0 audit sau toàn bộ ca bị từ chối | TESTED (offline) |
 | B-P0-07 backup/restore | `restore-drill.sh` | dump → restore một transaction → fingerprint 77 dòng giống hệt, kiểm lại cô lập trên bản khôi phục | TESTED (offline); hosted: chờ lịch Chủ nhật 19:00 UTC |
 | B-P1-05 Order Ownership Gateway | `../order-ownership/offline-uat.sh` | 56 ca PASS, rollback + áp lại | IMPLEMENTED (DRAFT, chưa áp) |
-| B-P0-02 / #481 | `PR481_APPLY_PLAN.md` | điều kiện tiên quyết kiểm lại trên hosted | PROPOSED (chờ duyệt) |
+| B-P0-02 / #481 | `PR481_APPLY_PLAN.md` | đã áp trên staging 2026-11-22 21:06Z, hậu kiểm 22:38Z | VERIFIED |
 
 Chạy cục bộ:
 
@@ -31,7 +31,7 @@ SQL của V23 web và Config Core hiện ở PR #489/#496 (chưa vào `develop`)
 `save_store_bot_settings`, `save_store_faq`, `delete_store_faq`, `set_customer_stage`, `set_product_stock`,
 `create_assistant`, `save_assistant_draft`, `publish_assistant_config`, `rollback_assistant_config`,
 `get_channel_menu`*, `submit_lead`*, `qa_owner_pairing`. (*cũng mở cho `anon`, có chủ đích.)
-Ngoài ra `anon` gọi được `qa_shop_b_zalo_claim` (P0, #481).
+`qa_shop_b_zalo_claim` đã bị đóng cho anon (#481, áp 2026-11-22).
 
 16/17 được tấn công offline. `qa_owner_pairing` chỉ rà tĩnh (định nghĩa hosted yêu cầu `auth.uid()` là owner
 đang hoạt động của `p_shop` và `requester_user_id = auth.uid()`); test offline **BLOCKED** cho tới khi migration của nó vào repo (B-P0-08).

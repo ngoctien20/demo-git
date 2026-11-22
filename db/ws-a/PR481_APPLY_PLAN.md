@@ -1,6 +1,6 @@
 # Phương án áp PR #481 — đóng `anon` EXECUTE trên `qa_shop_b_zalo_claim` (B-P0-02)
 
-**Trạng thái: PROPOSED — CHƯA ÁP. Cần chủ dự án duyệt rõ ràng (qua coordinator) trước mọi bước có tác động.**
+**Trạng thái: ĐÃ ÁP (VERIFIED 2026-11-22 22:38 UTC).** Migration `20261122210608 revoke_anon_only_qa_shop_b_zalo_claim` có trong `supabase_migrations`; ACL hiện `{postgres=X/postgres}` (anon/authenticated/service_role đều không EXECUTE); md5 định nghĩa vẫn `37f127c1…`; workflow Shadow `OgDZNSAvKEvhnAvn` `active=false`; security advisor không còn finding anon cho hàm này. Phần dưới giữ lại làm hồ sơ.
 Nguồn: Draft PR #481 (nhánh `claude/project-thread-8f5ck4`, head `a7f6261`), migration
 `supabase/migrations/20261121120000_revoke_anon_only_qa_shop_b_zalo_claim.sql`, rollback
 `qa/rpc-anon-revoke-option-a/rollback.sql`. Không lặp lại nội dung PR #481, chỉ ghi điều kiện áp đã kiểm lại.
