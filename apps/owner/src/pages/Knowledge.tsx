@@ -3,30 +3,37 @@ import { friendlyError, supabase } from '../supabase';
 import { useStore } from '../store';
 import { Faq, isMissingFeature, must, useLoad } from '../data';
 import { Empty, Modal, Notice, PageHead, Spinner } from '../ui';
+import { Industry, useWorkspace } from '../workspace';
 
-const SAMPLES = ['Shop có đổi trả không?', 'Phí ship bao nhiêu?', 'Bảng size thế nào?', 'Có giao trong ngày không?'];
+const SAMPLES_BY: Record<Industry, string[]> = {
+  shop: ['Shop có đổi trả không?', 'Phí ship bao nhiêu?', 'Bảng size thế nào?', 'Có giao trong ngày không?'],
+  artist: ['Liên hệ booking thế nào?', 'Bài hát mới nhất là gì?', 'Có bán vé sự kiện không?'],
+  service: ['Giờ làm việc thế nào?', 'Có cần đặt hẹn trước không?', 'Thanh toán bằng cách nào?'],
+  education: ['Khi nào khai giảng?', 'Học phí đóng thế nào?', 'Có học thử không?'],
+};
 
 export function Knowledge() {
   const { store, canManage } = useStore();
+  const SAMPLES = SAMPLES_BY[useWorkspace().primary];
   const [edit, setEdit] = useState<Faq | 'new' | null>(null);
   const [preset, setPreset] = useState('');
   const { data, error, loading, reload } = useLoad(async () =>
     must(await supabase.from('store_faqs').select('id, question, answer, active, updated_at').eq('store_id', store.id).order('created_at')) as Faq[], [store.id]);
 
-  if (error && isMissingFeature(error)) return <><PageHead title="Hỏi đáp & chính sách" /><Notice kind="warn">Phần hỏi đáp chưa được bật trên máy chủ.</Notice></>;
+  if (error && isMissingFeature(error)) return <><PageHead title="Kho kiến thức" /><Notice kind="warn">Phần hỏi đáp chưa được bật trên máy chủ.</Notice></>;
   return (
     <>
-      <PageHead title="Hỏi đáp & chính sách" sub="Câu trả lời mẫu cho những câu khách hay hỏi. Bot ưu tiên dùng đúng nội dung này."
+      <PageHead title="Kho kiến thức" sub="Câu hỏi thường gặp, chính sách và hướng dẫn. Trợ lý ưu tiên dùng đúng nội dung này; thiếu thông tin thì nói chưa có."
         actions={canManage && <button className="btn btn-primary" onClick={() => { setPreset(''); setEdit('new'); }}>+ Thêm câu hỏi</button>} />
       {loading ? <Spinner /> : error ? <Notice kind="err">{friendlyError(error)}</Notice> : !data?.length ? (
         <Empty title="Chưa có câu hỏi nào">
-          {canManage ? <>Gợi ý bắt đầu: {SAMPLES.map(s => <button key={s} className="chip-btn" onClick={() => { setPreset(s); setEdit('new'); }}>{s}</button>)}</> : 'Chủ shop chưa thêm câu hỏi nào.'}
+          {canManage ? <>Gợi ý bắt đầu: {SAMPLES.map(s => <button key={s} className="chip-btn" onClick={() => { setPreset(s); setEdit('new'); }}>{s}</button>)}</> : 'Chủ sở hữu chưa thêm câu hỏi nào.'}
         </Empty>
       ) : (
         <div className="faq-list">
           {data.map(f => (
             <article key={f.id} className={`panel faq${f.active ? '' : ' off'}`}>
-              <div><h3>{f.question}</h3><p>{f.answer}</p>{!f.active && <span className="pill">Đang ẩn với bot</span>}</div>
+              <div><h3>{f.question}</h3><p>{f.answer}</p>{!f.active && <span className="pill">Đang ẩn với trợ lý</span>}</div>
               {canManage && <button className="btn btn-sm btn-ghost" onClick={() => setEdit(f)}>Sửa</button>}
             </article>
           ))}
@@ -66,8 +73,8 @@ function FaqForm({ storeId, f, preset, onClose, onDone }: { storeId: string; f: 
     <Modal title={f ? 'Sửa câu hỏi' : 'Thêm câu hỏi'} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <label>Khách hỏi<input value={q} onChange={e => setQ(e.target.value)} maxLength={300} autoFocus /></label>
-        <label>Bot trả lời<textarea rows={5} value={a} onChange={e => setA(e.target.value)} maxLength={3000} /></label>
-        <label className="check"><input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} /><span>Cho bot dùng câu trả lời này</span></label>
+        <label>Trợ lý trả lời<textarea rows={5} value={a} onChange={e => setA(e.target.value)} maxLength={3000} /></label>
+        <label className="check"><input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} /><span>Cho trợ lý dùng câu trả lời này</span></label>
         {err && <Notice kind="err">{err}</Notice>}
         <div className="modal-actions">
           {f && (confirmDel

@@ -34,6 +34,45 @@
     });
   });
 
+  // ---------- Motion (kế thừa motion V2): progressive enhancement, tắt khi prefers-reduced-motion ----------
+  const motionOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (motionOK) {
+    const bar = document.createElement('div');
+    bar.className = 'reading-progress'; bar.setAttribute('aria-hidden', 'true');
+    document.body.append(bar);
+    let ticking = false;
+    const paint = () => { const max = document.documentElement.scrollHeight - innerHeight; bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, scrollY / max) : 0) + ')'; ticking = false; };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }, { passive: true });
+    paint();
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('is-revealed'); e.target.classList.remove('motion-pending'); io.unobserve(e.target); }
+      }), { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+      document.querySelectorAll('main .section h2, main .section .lead, .cards > *, .steps > li, .industry-list > *, .channel-cards > *, .plans > *, .split > *, .tabs-demo, .scope').forEach(el => {
+        if (el.getBoundingClientRect().top < innerHeight) return; // already on screen: never hide it
+        const sib = el.parentElement ? [...el.parentElement.children].indexOf(el) : 0;
+        el.style.setProperty('--reveal-delay', Math.min(sib, 5) * 85 + 'ms');
+        el.setAttribute('data-reveal', ''); el.classList.add('motion-pending'); io.observe(el);
+      });
+    }
+    if (finePointer) {
+      document.querySelectorAll('.card, .core-diagram').forEach(c => {
+        c.classList.add('spotlight');
+        c.addEventListener('pointermove', e => { const r = c.getBoundingClientRect(); c.style.setProperty('--px', (e.clientX - r.left) + 'px'); c.style.setProperty('--py', (e.clientY - r.top) + 'px'); });
+      });
+      const scene = document.querySelector('[data-tilt]');
+      if (scene) {
+        scene.addEventListener('pointermove', e => {
+          const r = scene.getBoundingClientRect();
+          scene.style.setProperty('--tilt-x', (((e.clientY - r.top) / r.height - .5) * -5).toFixed(2) + 'deg');
+          scene.style.setProperty('--tilt-y', (((e.clientX - r.left) / r.width - .5) * 6).toFixed(2) + 'deg');
+        });
+        scene.addEventListener('pointerleave', () => { scene.style.removeProperty('--tilt-x'); scene.style.removeProperty('--tilt-y'); });
+      }
+    }
+  }
+
   // ---------- AI chat ----------
   const SESSION_KEY = 'tien404_chat_session';
   function sessionId() {

@@ -17,7 +17,7 @@ export function Account() {
     if (error) return setMsg({ kind: 'err', text: friendlyError(error) });
     setPw(''); setMsg({ kind: 'ok', text: 'Đã đổi mật khẩu.' });
   }
-  const ROLE = { owner: 'Chủ shop', manager: 'Quản lý', staff: 'Nhân viên' } as const;
+  const ROLE = { owner: 'Chủ sở hữu', manager: 'Quản lý', staff: 'Nhân viên' } as const;
   return (
     <>
       <PageHead title="Tài khoản" />
@@ -31,7 +31,7 @@ export function Account() {
         </form>
       </section>
       <section className="panel">
-        <h2>Cửa hàng bạn có quyền</h2>
+        <h2>Workspace bạn có quyền</h2>
         <ul className="plain">{stores.map(s => <li key={s.id}>{s.name} <span className="muted">· {s.tenant_name} · {ROLE[s.role]}</span></li>)}</ul>
       </section>
       <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Đăng xuất</button>
