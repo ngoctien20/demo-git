@@ -51,7 +51,8 @@ function simulatedPath({ pageId = pageA, senderId = senderA, payload, config, po
     chatInput: postback ? 'Khách nhấn nút' : 'Chọn mục', receivedAt: 'synthetic' });
   const tagged = fakeNode('Tìm nút menu', [extracted], { webhook: body });
   const mode = tagged[0].json.menuPayload ? decide(config, { payload: tagged[0].json.menuPayload }) : { mode: 'legacy' };
-  const applied = fakeNode('Áp quyết định menu', [item(mode)], { original: tagged });
+  const decision = config && mode.mode === 'catalog' ? { ...mode, configVersion: config.version_no } : mode;
+  const applied = fakeNode('Áp quyết định menu', [item(decision)], { original: tagged });
   const classified = fakeNode('Classify explicit human request', applied);
   return { tagged: tagged[0].json, mode, applied: applied[0].json, classified: classified[0].json };
 }
@@ -73,12 +74,14 @@ test('snapshot corresponds to the reviewed draft, not a published workflow', () 
   assert.match(source['Tìm nút menu'].code, /JSON\.stringify\(\[page,sid,id\]\)/);
 });
 
-test('postback: shop catalog is translated into the existing AI path, not a direct send', () => {
+test('postback: shop configured catalog routes to read-only catalog page, not AI', () => {
   const s = simulatedPath({ payload: 'T404:M:catalog', config: published(templateConfig('shop')) });
   assert.equal(s.tagged.menuPayload, 'T404:M:catalog');
-  assert.equal(s.mode.mode, 'ai');
-  assert.equal(s.applied.mediaType, 'text');
-  assert.match(s.classified.chatInput, /sản phẩm/);
+  assert.equal(s.mode.mode, 'catalog');
+  assert.equal(s.applied.mediaType, 'catalog_page');
+  assert.equal(s.applied.catalogPage, 1);
+  assert.equal(s.applied.catalogItemId, 'catalog');
+  assert.equal(s.applied.catalogVersion, 7);
   assert.equal(s.classified.pauseAction, '');
 });
 
@@ -304,4 +307,53 @@ test('normal non-menu text remains on legacy text route', () => {
   const tags = fakeNode('Tìm nút menu', [item({ pageId: pageA, senderId: senderA, messageId: ID,
     mediaType: 'text', chatInput: 'Cho xem áo' })], { webhook: body });
   assert.equal(tags[0].json.menuPayload, undefined);
+});
+
+test('Next-page quick reply resolves through the same published-config bridge route',()=>{
+  const cfg=published(templateConfig('shop'));
+  const s=simulatedPath({payload:'T404:C:catalog:7:2',config:cfg,postback:false});
+  assert.equal(s.tagged.menuPayload,'T404:C:catalog:7:2');
+  assert.equal(s.mode.mode,'catalog');
+  assert.equal(s.classified.mediaType,'catalog_page');
+  assert.equal(s.classified.catalogPage,2);
+  assert.equal(s.classified.catalogVersion,7);
+});
+
+test('stale/forged catalog cursors cannot reach catalog data or product tools',()=>{
+  const cfg=published(templateConfig('shop'));
+  for(const payload of ['T404:C:catalog:6:2','T404:C:catalog:7:100',
+    'T404:C:order_lookup:7:2','T404:C:catalog:7:-1']){
+    const s=simulatedPath({payload,config:cfg});
+    assert.equal(s.mode.mode,'rejected',payload);
+    assert.equal(s.classified.mediaType,'menu_reply');
+    assert.notEqual(s.classified.mediaType,'catalog_page');
+    assert.ok(messagePreview(s.classified)[0].text);
+  }
+});
+
+test('catalog route is read-only and bypasses the AI/transaction tools',()=>{
+  const e=snapshot.connections;
+  assert.ok(e['Trả lời menu cố định?'].main[1].some(x=>x.node==='Danh mục Messenger cần phân trang?'));
+  assert.ok(e['Danh mục Messenger cần phân trang?'].main[0].some(x=>x.node==='Đọc danh mục Products DEMO'));
+  assert.ok(e['Danh mục Messenger cần phân trang?'].main[1].some(x=>x.node==='Product detail postback?'));
+  assert.ok(e['Đọc danh mục Products DEMO'].main[0].some(x=>x.node==='Trình bày trang danh mục Messenger'));
+  assert.ok(e['Trình bày trang danh mục Messenger'].main[0].some(x=>x.node==='Prepare Messenger Reply'));
+  assert.equal(source['Đọc danh mục Products DEMO'].settings.operation,'read');
+  assert.equal(source['Đọc danh mục Products DEMO'].settings.sourceTag,'AI_SALES_DEMO_READ_ONLY');
+  assert.equal(source['Đọc danh mục Products DEMO'].settings.alwaysOutputData,true);
+  assert.equal(source['Đọc danh mục Products DEMO'].settings.hasFilter,false);
+  assert.match(source['Extract Messenger Text'].code,/action\.startsWith\('T404:C:'\)/);
+});
+
+test('catalog message from validated renderer is sent as one Meta template with next-page quick reply',()=>{
+  const current={pageId:pageA,senderId:senderA,messageId:ID,receivedAt:'synthetic',mediaType:'catalog_page'};
+  const msg={attachment:{type:'template',payload:{template_type:'button',
+    text:'Danh mục trang 1/2',
+    buttons:[{type:'postback',title:'Xem A002',payload:'TIEN404:VIEW:A002'}]}},
+    quick_replies:[{content_type:'text',title:'Trang tiếp',payload:'T404:C:catalog:7:2'}]};
+  const prepared=fakeNode('Prepare Messenger Reply',[item({catalogMessage:msg})],{current});
+  assert.equal(prepared.length,1);
+  assert.equal(prepared[0].json.messageCount,1);
+  assert.equal(prepared[0].json.messengerMessage.attachment.payload.buttons[0].payload,'TIEN404:VIEW:A002');
+  assert.equal(prepared[0].json.messengerMessage.quick_replies[0].payload,'T404:C:catalog:7:2');
 });
