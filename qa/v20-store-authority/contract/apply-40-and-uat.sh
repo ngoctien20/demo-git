@@ -2,10 +2,11 @@
 # Apply 40_store_sku_contract.sql (if absent) to the target in DB_URL, run the rolled-back hosted
 # UAT, prove zero residue, and roll back 40 (file 60) on any failure. With ROLLBACK_CYCLE=1
 # (restore-test only) it also proves 60 restores the step-3 fingerprint and writer, then re-applies.
-# With EXPECT_FP40 set (staging) the post-40 fingerprint must equal restore-test's. Tags/hashes only.
+# The pre-40 fingerprint is taken from the target itself (other approved migrations such as v23
+# move it); with T404_EXPECT_FP set (staging) it must equal restore-test's pre-40 fingerprint, and
+# with EXPECT_FP40 set the post-40 fingerprint must equal restore-test's. Tags/hashes only.
 set -uo pipefail
 D=qa/v20-store-authority
-PRE_FP=${T404_EXPECT_FP:-996aac15c13766a23f4def4ed8eefa08}
 W20=${T404_EXPECT_W20:-a88a1d4841cee94d4f0b258285119c00}
 SIG='public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)'
 q(){ psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 "$@" 2>/dev/null; }
@@ -18,7 +19,12 @@ runf(){ psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f "$1" > /dev/null 2>err.txt \
 has_key=$(q -c "select count(*) from pg_constraint where conrelid='public.products'::regclass and conname='products_tenant_id_sku_key'")
 applied=0
 if [ "$has_key" = 1 ]; then
-  [ "$(fp)" = "$PRE_FP" ] || { echo "::error::target is not in the accepted step-3 state; nothing applied"; exit 1; }
+  PRE_FP=$(fp); echo "FP_PRE40=$PRE_FP"
+  [ -n "${GITHUB_OUTPUT:-}" ] && echo "fp_pre=$PRE_FP" >> "$GITHUB_OUTPUT"
+  if [ -n "${T404_EXPECT_FP:-}" ]; then
+    [ "$PRE_FP" = "$T404_EXPECT_FP" ] && echo PASS_PRE_FP_EQUALS_RESTORE_TEST || { echo "::error::pre-40 schema differs from restore-test; nothing applied"; exit 1; }
+  fi
+  [ "$(q -c "select count(*) from pg_constraint where conrelid='public.products'::regclass and conname='products_tenant_store_sku_key'")" = 1 ] || { echo "::error::store SKU key missing; nothing applied"; exit 1; }
   [ "$(wmd5)" = "$W20" ] || { echo "::error::writer is not the accepted step-2 body; nothing applied"; exit 1; }
   echo PASS_PRE_STATE_IS_STEP3
   runf $D/40_store_sku_contract.sql T404_V20_STORE_SKU_CONTRACT_OK || exit 1

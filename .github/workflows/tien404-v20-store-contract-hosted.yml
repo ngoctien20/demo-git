@@ -1,8 +1,8 @@
 name: "TIEN404 V20 step 4 — SKU contract on restore-test then staging"
 # Owner-approved 2026-11-22 00:29 UTC (decision card "Duyệt: restore-test rồi staging").
 # Job 1: restore-test — apply 40, hosted UAT (rolled back), rollback 60 + re-apply proof.
-# Job 2 only if job 1 is green: staging — encrypted backup, apply 40, fingerprint must equal
-# restore-test, same UAT. Any failure rolls back 40 (60).
+# Job 2 only if job 1 is green: staging — encrypted backup, apply 40, pre- and post-40
+# fingerprints must equal restore-test's, same UAT. (v23 web migrations are on both targets.) Any failure rolls back 40 (60).
 # Logs print tags and hashes only (this repository is public).
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       fp40: ${{ steps.apply.outputs.fp40 }}
+      fp_pre: ${{ steps.apply.outputs.fp_pre }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -114,8 +115,9 @@ jobs:
       - name: Apply 40 + hosted UAT (rolled back) on staging
         env:
           EXPECT_FP40: ${{ needs.restore-test.outputs.fp40 }}
+          T404_EXPECT_FP: ${{ needs.restore-test.outputs.fp_pre }}
         run: |
-          [ -n "$EXPECT_FP40" ] || { echo "::error::no restore-test fingerprint"; exit 1; }
+          [ -n "$EXPECT_FP40" ] && [ -n "$T404_EXPECT_FP" ] || { echo "::error::no restore-test fingerprint"; exit 1; }
           bash qa/v20-store-authority/contract/apply-40-and-uat.sh
       - name: Side effects
         if: always()
