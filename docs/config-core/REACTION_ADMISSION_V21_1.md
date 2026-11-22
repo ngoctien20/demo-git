@@ -1,6 +1,6 @@
 # TIEN404 V21.1 — Reaction Admission / Owner Page Policy (CANDIDATE)
 
-**Trạng thái 22/11/2026:** IMPLEMENTED (pure JS contracts), TESTED (unit + n8n offline QA), **NOT RELEASED**. Không có API gửi Meta hay schema production được thay đổi.
+**Trạng thái 22/11/2026:** IMPLEMENTED (pure JS contracts), TESTED (unit + n8n offline QA + disposable PG17), **NOT RELEASED**. Policy schema v1 của V21.1 đã được **superseded** bởi per-Page ngành/profile **schema v2** trong V21.2. Không có API gửi Meta hay schema production được thay đổi.
 
 ## 1. Mục đích
 
@@ -30,7 +30,7 @@ Các hàm thuần trong `config-core/lib/reaction-admission.mjs`:
 | `verifyAtomicReactionClaim` | `dispatch_candidate` hoặc `blocked` | Không chứng minh tính nguyên tử thay DB; **sendAllowed:false** |
 | `planSocialResponseAfterProvider` | `reaction_only` hoặc `normal_text` | Không thực hiện việc gửi |
 
-**Bắt buộc** `tenantId`, `pageId`, `installationId`, `ownerId`, đúng policy revision và sự đồng ý owner còn hạn. Bản policy chỉ có hiệu lực khi đã publish, `enabled=true`, phiên bản schema=1, hết hạn tối đa một năm, có chủ trang đồng ý cùng revision, giới hạn cooldown 60–3600 giây, giới hạn giờ 1–6.
+**Bắt buộc** `tenantId`, `pageId`, `installationId`, `ownerId`, đúng policy revision và sự đồng ý owner còn hạn. Bản policy chỉ có hiệu lực khi đã publish, `enabled=true`, phiên bản schema=2, hết hạn tối đa một năm, có chủ trang đồng ý cùng revision, giới hạn cooldown 60–3600 giây, giới hạn giờ 1–6.
 
 `authority.source=trusted_server`, `thread.source=trusted_meta_thread_lookup`, `business.source=trusted_business_state` và `receipt.source=trusted_durable_atomic_store` **là tên hợp đồng**, KHÔNG phải chữ ký mật mã. Nếu cho request của khách tự đặt các giá trị này thì bảo mật thất bại. Chỉ adapter backend với identity và scope đã kiểm tra mới được tạo các đối tượng đó. Code n8n không được lấy các cờ nguồn quyền này trực tiếp từ `$json` do khách gửi hoặc LLM.
 
@@ -45,7 +45,7 @@ Các hàm thuần trong `config-core/lib/reaction-admission.mjs`:
 7. Sau khi có bằng chứng claim hợp lệ, adapter gửi tối đa một `sender_action=react` qua Meta. Chỉ kết quả từ **trusted Meta sender**, khớp claimId / Page / PSID / MID và `transportConfirmed + providerAccepted` mới cho phép chọn `reaction_only`. Lỗi hoặc kết quả không chắc chắn → `normal_text`, **không retry reaction**.
 8. Dù `dispatch_candidate` được trả về, mã thư viện vẫn `sendAllowed:false` và `requiresExplicitReleaseApproval:true`. Phát hành yêu cầu cổng duyệt triển khai riêng; không chỉ đổi một boolean.
 
-### Cơ sở dữ liệu chống trùng (PROPOSED, CHƯA THỰC HIỆN)
+### Cơ sở dữ liệu chống trùng (OFFLINE PG17 TESTED, HOSTED PROPOSED)
 
 Không dùng `TIEN404_MESSENGER_EVENT_KEYS` (dedupe inbound) cho action ledger: `rowNotExists` rồi `insert` không đảm bảo tính nguyên tử giữa hai executions. Yêu cầu storage/transaction service với ràng buộc unique trên (tenant, Page, sender, MID, action), kiểm tra cooldown và hourly quota trong **cùng transaction**, lưu `claimed / provider_accepted / provider_unknown / skipped`, anti-replay và TTL/retention tối thiểu. Bắt đầu bằng PostgreSQL **disposable PG17** để thử cạnh tranh đồng thời và cross-tenant negative; sau đó mới đề xuất migration Staging.
 
@@ -53,14 +53,14 @@ Nếu dùng Supabase, giữ bảng/thuật toán ở schema **private**, không 
 
 ## 4. Bằng chứng hiện có
 
-- Local Node.js tests V21.1: **15/15 PASS** cho policy, ownership, state, claim và fallback.
+- Unit tests cho admission và industry profiles chạy trong CI riêng, bao phủ policy v2, owner consent, danh mục ngành bị khóa, profile limits, thread authority và fallback.
 - GitHub CI: dedicated Social Reactions job chạy `config-core/test/reaction-admission.test.mjs` cùng các suite v21 khác; kiểm tra kết quả ở PR #493.
 - n8n QA **inactive** `hc7AF0Dol8u9BG1o`, thư mục `90_QA - DIAGNOSTICS`: execution #6730 **20/20 PASS**; sau khi bổ sung chống giả mạo provider outcome, execution **#6731 21/21 PASS** (bao gồm spoofed Meta result), tất cả `metaCallExecuted:false` và `sendAllowed:false`.
 - Không dùng credential trong QA, không gọi Meta hoặc Supabase, không ghi order.
 
 ## 5. Chưa đạt / điều kiện go-live
 
-**BLOCKED**: chưa có owner settings UI hoặc trusted published policy registry; chưa có read-only current-thread-ownership adapter; chưa có backend atomically claim + rate limit; chưa có Meta sender release gate; chưa thử concurrency DB thật, multi-Page A/B, Messenger web và end-to-end Commerce/handoff ở luồng auto reaction.
+**BLOCKED**: chưa có owner settings UI hoặc trusted published policy registry; chưa có read-only current-thread-ownership adapter; chưa có **hosted** backend atomic claim + rate limit; chưa có Meta sender release gate; chưa thử concurrency trên Supabase hosted, multi-Page A/B real, Messenger web và end-to-end Commerce/handoff ở luồng auto reaction.
 
 **Cần phê duyệt riêng**: migration database staging/hosted, thay đổi quyền/RPC, bật per-Page feature và Publish Messenger. Không tự triển khai từ checkpoint này.
 
@@ -69,3 +69,12 @@ Nếu dùng Supabase, giữ bảng/thuật toán ở schema **private**, không 
 - Code: Draft PR #493. Có thể revert riêng `reaction-admission.mjs`, `reaction-admission.test.mjs`, CI + tài liệu; không động tới các nhánh menu.
 - Messenger Draft: đang có Shadow ALL OFF. Nếu cần quay lại, xóa đúng node shadow và nối lại `Classify explicit human request -> Human handoff request?`; chỉ restore nguyên phiên bản cũ khi chắc chắn không có thay đổi đồng thời.
 - n8n QA: `hc7AF0Dol8u9BG1o` inactive, có thể archive nếu không dùng. Mọi Page vẫn OFF.
+
+
+## 7. V21.2 — Kết quả kiểm toán bổ sung (2026-11-22)
+
+- Profile theo Fanpage đã được thiết kế trong `config-core/lib/reaction-profiles.mjs`; tài liệu đầy đủ tại `docs/config-core/REACTION_PROFILES_V21_2.md`.
+- Schema owner policy `REACTION_POLICY_SCHEMA_VERSION=2` bắt buộc `industryId` trusted khớp record, và `settings.profileId` phải thuộc các profile ngành được phép. Schema v1 không thể bypass.
+- n8n **#6732**: 30/30 synthetic Page policy/admission cases PASS, gồm nhánh trang pháp lý `silent`, nghệ sĩ `expressive`, bán sỉ `restrained`, khóa ngành giả và gửi kết quả Meta giả mạo. No external send.
+- CI GitHub `45010560317` đã PASS PostgreSQL 17 disposable: 15/15 kiểm tra, gồm 2 nhóm 10 giao dịch đồng thời. Chưa có migration Supabase hosted; source tại `qa/reactions/atomic-claim-offline.sql` và `.sh`.
+- Không cấp phép tự động Publish: Messenger Shadow Gate vẫn ALL OFF.
