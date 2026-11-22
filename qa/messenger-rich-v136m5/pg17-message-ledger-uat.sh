@@ -87,16 +87,20 @@ sql "CREATE SCHEMA app_private;
   expected_count int NOT NULL CHECK(expected_count BETWEEN 1 AND 3),
   status text NOT NULL CHECK(status IN ('PREPARED','MOCK_PARTS_ACCEPTED')),
   completed_at timestamptz,
-  UNIQUE(tenant_id,store_id,page_id,sender_hash,binding_version,event_hash)
+  UNIQUE(tenant_id,store_id,page_id,sender_hash,binding_version,event_hash),
+  UNIQUE(id,tenant_id,store_id,page_id)
  );
  CREATE TABLE app_private.messenger_send_parts (
-  plan_id uuid NOT NULL REFERENCES app_private.messenger_send_plans(id),
+  plan_id uuid NOT NULL,
+  tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,
   part_no int NOT NULL CHECK(part_no BETWEEN 1 AND 3),
   body_digest char(64) NOT NULL,
   status text NOT NULL CHECK(status IN ('PLANNED','MAY_HAVE_SENT_HOLD','UNCERTAIN_HOLD','API_ACCEPTED_MOCK')),
   attempt_id uuid,attempted_at timestamptz,held_at timestamptz,
   provider_mid_digest char(64),confirmed_at timestamptz,
-  PRIMARY KEY(plan_id,part_no)
+  PRIMARY KEY(plan_id,part_no),
+  FOREIGN KEY(plan_id,tenant_id,store_id,page_id)
+    REFERENCES app_private.messenger_send_plans(id,tenant_id,store_id,page_id)
  );
  CREATE UNIQUE INDEX uq_send_mid_per_plan
  ON app_private.messenger_send_parts(plan_id,provider_mid_digest)
