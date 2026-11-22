@@ -38,14 +38,15 @@ runfile "$V20/30_store_admin_rpcs.sql" T404_V20_STORE_ADMIN_RPCS_OK
 runfile "$ROOT/db/config-core/10_config_core.sql" T404_CC_CONFIG_CORE_OK
 runfile "$ROOT/db/reactions/10_page_reaction_drafts_CANDIDATE.sql" T404_V214_REACTION_DRAFT_CANDIDATE_OK
 runfile "$ROOT/db/reactions/20_owner_reaction_page_list_CANDIDATE.sql" T404_V215_OWNER_PAGE_LIST_OK
+runfile "$ROOT/db/reactions/30_meta_page_installation_authority_V216_CANDIDATE.sql" T404_V216_META_INSTALL_AUTHORITY_CANDIDATE_OK
 SA=$(q "SELECT id FROM public.stores WHERE tenant_id='$TA' AND is_default")
 SB=$(q "SELECT id FROM public.stores WHERE tenant_id='$TB' AND is_default")
 q "INSERT INTO auth.users(id,email) VALUES ('$MA','manager@qa.invalid');INSERT INTO public.tenant_memberships(tenant_id,user_id,role) VALUES ('$TA','$MA','manager');INSERT INTO public.store_memberships(tenant_id,store_id,user_id,role) VALUES ('$TA','$SA','$MA','manager')" >/dev/null
 AA=$(q "INSERT INTO public.assistants(tenant_id,store_id,name) VALUES ('$TA','$SA','QA A') RETURNING id")
 AB=$(q "INSERT INTO public.assistants(tenant_id,store_id,name) VALUES ('$TB','$SB','QA B') RETURNING id")
-CA=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TA','$SA','$AA','messenger','PAGE_A_QA','demo','active') RETURNING id")
-CB=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TB','$SB','$AB','messenger','PAGE_B_QA','demo','active') RETURNING id")
-CA2=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TA','$SA','$AA','messenger','PAGE_A_ARTIST','demo','active') RETURNING id")
+CA=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TA','$SA','$AA','messenger','123450001234500','demo','active') RETURNING id")
+CB=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TB','$SB','$AB','messenger','123450001234501','demo','active') RETURNING id")
+CA2=$(q "INSERT INTO public.channel_connections(tenant_id,store_id,assistant_id,channel,external_account_id,environment,status) VALUES ('$TA','$SA','$AA','messenger','123450001234502','demo','active') RETURNING id")
 F='{"schemaVersion":2,"profileId":"friendly","intents":{"thanks":true,"praise":true},"cooldownSeconds":300,"maxPerHour":2}'
 R='{"schemaVersion":2,"profileId":"restrained","intents":{"thanks":true,"praise":false},"cooldownSeconds":600,"maxPerHour":1}'
 X='{"schemaVersion":2,"profileId":"expressive","intents":{"thanks":true,"praise":true},"cooldownSeconds":90,"maxPerHour":5}'
@@ -53,7 +54,28 @@ Z='{"schemaVersion":2,"profileId":"silent","intents":{"thanks":false,"praise":fa
 deny_user UNVERIFIED_PAGE unverified_page_industry "$OA" "SELECT public.save_page_reaction_draft('$CA','$F'::jsonb,NULL)"
 ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 0 ZERO_VERIFIED_BEFORE_ATTESTATION
 deny_user ANON_NOT_ALLOWED permission "$OA" "SELECT 1 FROM app_private.reaction_page_industries LIMIT 1"
-q "INSERT INTO app_private.reaction_page_industries(connection_id,industry_id,proof_kind,verified_at,verified_by) VALUES ('$CA','retail_general','meta_page_verified_installation',now(),'$OA'),('$CB','legal','meta_page_verified_installation',now(),'$OB'),('$CA2','artist','meta_page_verified_installation',now(),'$OA')" >/dev/null
+# APPROVED APP + proof rows are synthetic fixtures in disposable QA database ONLY.
+# Real gateway must verify OAuth nonce, matching Page tasks, token/app/permission
+# and Page subscription before signing a receipt and writing private proof metadata.
+APP=900000000000001
+q "INSERT INTO app_private.reaction_meta_apps(app_id,environment,status,approved_by,approved_at,expires_at)
+ VALUES ('$APP','demo','approved','$OA',now()-interval '1 hour',now()+interval '30 days')" >/dev/null
+q "INSERT INTO app_private.reaction_page_industries
+ (connection_id,industry_id,proof_kind,verified_at,verified_by,
+ meta_page_id,meta_app_id,installation_id,authority_issuer,attestation_version,
+ receipt_sha256,callback_state_verified,token_app_binding_verified,page_token_validated,
+ messaging_task_verified,subscribed_app_verified,validated_permissions,proof_status,expires_at)
+ VALUES
+ ('$CA','retail_general','meta_page_verified_installation',now(),'$OA',
+ '123450001234500','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
+ repeat('a',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
+ ('$CB','legal','meta_page_verified_installation',now(),'$OB',
+ '123450001234501','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
+ repeat('b',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours'),
+ ('$CA2','artist','meta_page_verified_installation',now(),'$OA',
+ '123450001234502','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
+ repeat('c',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours')" >/dev/null
+ok "$(q "SELECT count(*) FROM app_private.reaction_page_industries p WHERE app_private.t404_reaction_meta_install_active(p.connection_id)")" 3 META_PAGE_INSTALL_AUTHORITY_VALIDATED
 ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 2 OWNER_A_TWO_VERIFIED_PAGES
 ok "$(as "$OB" "SELECT count(*) FROM public.list_verified_reaction_pages('$SB')")" 1 OWNER_B_ONE_VERIFIED_PAGE
 ok "$(as "$OB" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 0 OWNER_B_NO_A_PAGE_LIST
@@ -79,7 +101,7 @@ SHB=$(as "$OB" "SELECT public.save_page_reaction_draft('$CB','$Z'::jsonb,NULL)")
 ok "${#SHB}" 64 LEGAL_SILENT_ONLY
 SHA3=$(as "$OA" "SELECT public.save_page_reaction_draft('$CA2','$X'::jsonb,NULL)")
 ok "${#SHA3}" 64 ARTIST_SEPARATE_PAGE
-q "UPDATE app_private.reaction_page_industries SET verified_at=now()-interval '181 days' WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET verified_at=now()-interval '181 days', expires_at=now()-interval '180 days' WHERE connection_id='$CA2'" >/dev/null
 deny_user STALE_PROOF unverified_page_industry "$OA" "SELECT public.save_page_reaction_draft('$CA2','$X'::jsonb,'$SHA3')"
 ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 OWNER_A_LIST_EXCLUDES_STALE_PROOF
 ok "$(q "SELECT count(*) FROM public.page_reaction_drafts")" 3 TOTAL_DRAFTS
@@ -102,6 +124,8 @@ ok "$(q "SELECT count(*) FROM public.page_reaction_drafts WHERE connection_id='$
 runfile "$ROOT/db/reactions/90_page_reaction_drafts_ROLLBACK_CANDIDATE.sql" T404_V214_REACTION_DRAFT_ROLLBACK_OK
 ok "$(q "SELECT to_regclass('public.page_reaction_drafts') IS NULL")" t ROLLBACK_DRAFT_TABLE
 ok "$(q "SELECT to_regclass('app_private.reaction_page_industries') IS NULL")" t ROLLBACK_INDUSTRY_REGISTRY
+ok "$(q "SELECT to_regclass('app_private.reaction_meta_apps') IS NULL")" t ROLLBACK_META_APP_ALLOWLIST
+ok "$(q "SELECT to_regprocedure('app_private.t404_reaction_meta_install_active(uuid)') IS NULL")" t ROLLBACK_AUTHORITY_FN
 ok "$(q "SELECT to_regprocedure('public.list_verified_reaction_pages(uuid)') IS NULL")" t ROLLBACK_VERIFIED_PAGE_RPC
 ok "$(q "SELECT to_regclass('public.channel_connections') IS NOT NULL")" t CONFIG_CORE_UNCHANGED
 echo "T404_V214_PAGE_DRAFT_PG17_PASS $PASS"
