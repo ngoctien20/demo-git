@@ -110,3 +110,10 @@ Mọi bằng chứng là đọc-chỉ hoặc offline. Dữ liệu cá nhân, tok
 | E-28 | `qa/v21-full-acceptance/manage-order-s18-fix.test.mjs` 4/4 (bản sửa đề xuất S-18, gate S-19) | OFFLINE |
 | E-29 | Browser E2E GitHub Pages (Claude in Chrome): 20 trang 200, đủ viewport/`lang=vi`/1 h1/alt ảnh, 0 ô mật khẩu; mobile 390px: index, pricing, demo, about, contact không tràn ngang (scrollWidth 374 ≤ 390, bảng giá cuộn trong khung); 0 lỗi console ở index, demo; login/dashboard chuyển sang domain Render | PUBLIC (chỉ đọc) |
 | E-30 | UAT Owner A/B Store trên staging (`qa/v21-full-acceptance/store-owner-ab-uat.sql`): A thấy 1/0 sản phẩm+đơn A/B, B ngược lại, manager Store 2 chỉ thấy Store 2; INSERT/UPDATE trực tiếp 42501; RPC chéo tenant/Store 42501; anon 42501. Toàn bộ trong transaction đã rollback, kiểm lại 0 dòng còn sót | STAGING |
+
+## Round 3b (2026-11-22 ~07:30 UTC)
+
+| ID | Bằng chứng | Mức |
+|---|---|---|
+| E-31 | `query_logs` Supavisor/Postgres 2026-11-21T08:00Z→2026-11-22T07:25Z: mọi IP ngoài đều `user=postgres`, app `psql`/`pg_dump`/`pg_dumpall`; đối chiếu `actions_list` các workflow `supabase-backup-restore-test`, `tien404-v20-store-*`, `v23-web-hosted-*`, `tien404-config-core-hosted`: khớp thời gian từng run | STAGING (log) |
+| E-32 | Dấu vân tay catalog staging: 6 schema ứng dụng, 59 bảng/view (RLS bật trên tất cả trừ view `tien404_v175_qa.verified_customer_order_scope`), 47 hàm, 46 policy, 25 migration ghi nhận. Advisor: anon SECDEF 2 (`qa_shop_b_zalo_claim`, `submit_lead`), authenticated SECDEF 16, leaked-password tắt. Danh sách chi tiết (md5 từng định nghĩa) lưu ở thư mục dự án riêng tư, không đưa lên repo public | STAGING |
