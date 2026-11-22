@@ -256,3 +256,40 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 5. Zalo/Telegram numeric menu #492; unrelated to this Messenger Send guard.
 
 **Disposition:** IMPLEMENTED in Messenger Draft and TESTED offline; **NOT RELEASED**, not asserted as Meta-delivered or customer-facing.
+
+## 12. Seventh continuation — P1 atomic Messenger claim: real disposable PostgreSQL 17 concurrency (2026-11-22 ~10:16 UTC)
+
+**Goal:** Continue [Issue #495](https://github.com/ngoctien20/demo-git/issues/495) without touching any production customer, published n8n workflow, hosted Supabase schema or credentials. **Do not rebuild** the earlier V13.6M.5 private event-store design.
+
+### Reused existing contract; what is new
+
+- Reused `qa/messenger-rich-v136m5/private-event-store.cjs`: private table name `app_private.messenger_event_claims`, HMAC-scoped synthetic identity, immutable `SQL.claim` and `SQL.finalize`, `INSERT ... ON CONFLICT (...) DO NOTHING RETURNING` and lease-bound status transitions. Existing V13.6M.5 `PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql` remains guarded and **was never applied**.
+- Existing source/test status before this task: **source-only synthetic private PG model**, intentionally `hostedReady:false`, `providerSendEnabled:false`, **not evidence** of PostgreSQL transaction behavior.
+- Added `qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh`. It imports the **existing** claim/finalize SQL strings from that module (not a rewritten algorithm), creates a random PostgreSQL database and non-login role under a LOCAL GitHub Actions PG17 service, creates only a representative private claim table with UNIQUE scope, RLS FORCE and no public grants, then runs real concurrent `psql` clients. It drops **only its own disposable DB/role** at exit.
+- Hard safety gates: `T404_DISPOSABLE_PG_QA=YES`, `CI=true`, `GITHUB_ACTIONS=true`, `PGHOST=127.0.0.1|localhost`, `PGPORT=5432`, empty hosted `DATABASE_URL`, `SUPABASE_DB_URL`, `SUPABASE_ACCESS_TOKEN`, `PGHOSTADDR`. No pg/service network connection outside local CI. No Meta Send, no order, no customer PII.
+- Config Core GitHub workflow `.github/workflows/tien404-config-core.yml` now runs this separate disposable PG17 UAT after the existing **independent** Config Core PG17 suite and also triggers on this specific test file. Existing CI and release checks remain intact. The V13.6M.5 independent offline workflow is also triggered and must remain PASS.
+
+### Exact evidence (VERIFIED / TESTED)
+
+- [CI Config Core run 45011514119](https://github.com/ngoctien20/demo-git/actions/runs/45011514119): **PASS**. `138/138` existing Config Core Node tests, `0` failures; existing disposable Config Core PostgreSQL17 tests PASS; NEW `PG17_REAL_UNIQUE_CLAIM_TESTS=21` PASS.
+- PG17 real concurrency: two overlapping separate transaction connections yield **1 winner**, 1 row; **16 separate client processes** concurrently claiming the same six-field event scope yield **1 winner / 1 row**, and 15 losers.
+- Lease wrong/duplicate finalization rejected, correct issued lease finalized exactly once to `PREVIEW_READY` (**not** `SENT` or provider delivery); consumed event remains deduplicated.
+- Cross-tenant, cross-store, cross-Page, cross-sender and binding-version independence PASS; one transaction rolled back can be claimed again, no phantom row; expired/stalled event remains reserved and cannot be reclaimed without explicit reconciliation.
+- PostgreSQL no-login unprivileged role lacks both read and insert privileges to the private schema/table. This is **local negative ACL evidence**, not hosted RLS/Owner A-B acceptance.
+- [V13.6M.5 workflow run 45011514129](https://github.com/ngoctien20/demo-git/actions/runs/45011514129): **PASS** (both preexisting offline contract/security jobs).
+- [V23 web + Owner App QA run 45011514173](https://github.com/ngoctien20/demo-git/actions/runs/45011514173): **PASS** (independent mocked-browser / offline DB checks, not Messenger live UI).
+- Change checkpoint before this doc: commit `638cdc51487625ab5cee289e9f6a4affa0a6e942`; no n8n node changed in this continuation. Direct read confirms Messenger Draft **`41bcea84-703d-40bc-be2a-71f84ca4e2d8`**, Published remains **`47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`**; Config Menu Bridge inactive Draft **`0d04c978-fa95-4b25-9dc0-df4cdbb2db04`**. PR #491 OPEN/DRAFT.
+
+### Honest release gates / known gaps
+
+1. **Real database test is not the production installed feature.** It proves a PostgreSQL UNIQUE claim can suppress parallel writers. It does **not** replace `Skip Duplicate Message ID` in n8n or execute against hosted Supabase. The Published and Draft Messenger send paths still use the existing Data Table check-then-send-then-record; the concurrency race remains open.
+2. No real Page→Store binding and trusted tenant authority was supplied to the local SQL test. It uses synthetic UUIDs, synthetic HMAC hashes, a superuser to issue claims to a disposable database and a negative no-login-role test. Hosted Shop A/B, same-tenant Store A/B, non-BYPASSRLS claims and privileged RPC P0 gates remain necessary.
+3. No durable **OUTBOX/uncertain-send reconciliation** or provider-level exactly-once delivery has been implemented. An atomic inbound claim is necessary, **not sufficient**, to prevent all duplicates across an external Meta Send API timeout. Never blindly auto-retry when Meta outcome is uncertain; no automatic stalled-claim takeover.
+4. Hash/lease secret rotation, lease ownership across workers, retention/pruning, Meta policy window, handoff/Finish and mobile/web button-template acceptance remain untested for release.
+5. The existing V13.6M.5 proposal-only SQL must **not** be enabled or applied hosted without approved migration, authenticated owner mapping, backup/restore rehearsal, restricted role policy and explicit cost/security approval.
+
+### Rollback / checkpoint
+
+- Only GitHub Draft files were added/updated: `qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh` and `.github/workflows/tien404-config-core.yml`. Revert the introducing commits `6e7c294c07bed4eea799be49565a0bd7368c9fe2` and `638cdc51487625ab5cee289e9f6a4affa0a6e942` (or restore earlier file contents) to remove the new CI test; **do not** revert concurrent Messenger Social Reactions Draft updates.
+- No hosted schema/API rollout and no n8n published/draft mutation in this continuation; no runtime rollback needed.
+- **Status: TESTED (real disposable PG17 contract), PROPOSED/BLOCKED (hosted atomic claim + Meta Send integration), NOT RELEASED.**
