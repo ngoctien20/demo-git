@@ -26,3 +26,19 @@ test('bundle: RPC null -> safe rejected; HTTP error -> legacy fallback', () => {
 test('bundle: get started -> greeting quick replies', () => {
   assert.equal(run({ channel: 'messenger', payload: 'TIEN404:START' }, menu()).message.quick_replies.length, 3);
 });
+
+test('bundle: catalog cursor is authorized by current published menu version', () => {
+  const m = menu(); m.version_no = 11;
+  const first = run({ channel: 'messenger', payload: 'T404:M:catalog' }, m);
+  assert.equal(first.mode, 'catalog');
+  assert.equal(first.catalogPage, 1);
+  assert.equal(first.configVersion, 11);
+  const next = run({ channel: 'messenger', payload: 'T404:C:catalog:11:2' }, m);
+  assert.equal(next.mode, 'catalog');
+  assert.equal(next.itemId, 'catalog');
+  assert.equal(next.catalogPage, 2);
+  const old = run({ channel: 'messenger', payload: 'T404:C:catalog:10:2' }, m);
+  assert.equal(old.mode, 'rejected');
+  assert.equal(old.reason, 'catalog_version_stale');
+  assert.equal(run({ channel: 'messenger', payload: 'T404:C:order_lookup:11:2' }, m).mode, 'rejected');
+});
