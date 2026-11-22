@@ -369,3 +369,72 @@ test('concurrent reaction shadow stays ALL OFF and preserves existing handoff ro
   assert.ok(edges['V21 Social Reactions Shadow (ALL OFF)'].main[0].some(e=>e.node==='Human handoff request?'));
   assert.ok(!JSON.stringify(edges['V21 Social Reactions Shadow (ALL OFF)']).includes('Send Messenger Reply'));
 });
+
+function verifyMetaSend({planned=1,receipts=null,planIndex=1}={}) {
+  const original={messageCount:planned,messageIndex:planIndex,pageId:pageA,senderId:senderA,
+    messageId:ID,replyText:'Synthetic catalog QA'};
+  const confirmations=receipts??Array.from({length:planned},(_,i)=>({
+    recipient_id:senderA,message_id:'meta.synthetic.out.'+(i+1)
+  }));
+  const $ = (name)=>{
+    assert.equal(name,'Prepare Messenger Reply');
+    return {first:()=>({json:original}),context:{currentRunIndex:0}};
+  };
+  const $input={all:()=>confirmations.map(item)};
+  const code=source['Verify Messenger Send Result'].code;
+  return JSON.parse(JSON.stringify(vm.runInNewContext('(function(){\n'+code+'\n})()',{$,$input},{timeout:1000})));
+}
+
+test('Meta send receipt: one requested catalog template needs exactly one confirmation',()=>{
+  const verified=verifyMetaSend({planned:1});
+  assert.equal(verified.length,1);
+  assert.equal(verified[0].json.sentMessageCount,1);
+  assert.equal(verified[0].json.metaMessageId,'meta.synthetic.out.1');
+});
+
+test('Meta send receipt: three-part AI answer requires all three distinct Meta IDs',()=>{
+  const verified=verifyMetaSend({planned:3});
+  assert.equal(verified[0].json.sentMessageCount,3);
+  assert.deepEqual(verified[0].json.metaMessageIds,
+    ['meta.synthetic.out.1','meta.synthetic.out.2','meta.synthetic.out.3']);
+});
+
+test('Meta partial transport success never records inbound as fully answered',()=>{
+  assert.throws(()=>verifyMetaSend({planned:3,receipts:[{
+    recipient_id:senderA,message_id:'meta.synthetic.only.one'
+  }]}),/Incomplete Messenger Send API confirmations/);
+  assert.throws(()=>verifyMetaSend({planned:2,receipts:[]}),/Incomplete Messenger Send API confirmations/);
+});
+
+test('Meta send plan count is required and cannot be faked by extra receipts',()=>{
+  for(const planned of [0,4,-1,1.5,'not-a-number']){
+    assert.throws(()=>verifyMetaSend({planned,receipts:[]}),/Invalid Messenger reply plan/);
+  }
+  assert.throws(()=>verifyMetaSend({planned:1,planIndex:2}),/Invalid Messenger reply plan/);
+  assert.throws(()=>verifyMetaSend({planned:1,receipts:[
+    {recipient_id:senderA,message_id:'mid.one'},
+    {recipient_id:senderA,message_id:'mid.two'},
+  ]}),/Incomplete Messenger Send API confirmations/);
+});
+
+test('Meta send receipt rejects mismatched recipient, missing MID and duplicated MIDs',()=>{
+  assert.throws(()=>verifyMetaSend({planned:1,receipts:[{
+    recipient_id:senderB,message_id:'meta.synthetic'
+  }]}),/did not confirm intended recipient/);
+  assert.throws(()=>verifyMetaSend({planned:1,receipts:[{
+    recipient_id:senderA,code:190,error:'Auth expired'
+  }]}),/did not confirm intended recipient/);
+  assert.throws(()=>verifyMetaSend({planned:2,receipts:[
+    {recipient_id:senderA,message_id:'duplicate.mid'},
+    {recipient_id:senderA,message_id:'duplicate.mid'},
+  ]}),/duplicate message ID/);
+});
+
+test('Meta inbound dedupe marker is structurally AFTER full Send receipt verification',()=>{
+  const edges=snapshot.connections;
+  assert.ok(edges['Prepare Messenger Reply'].main[0].some(e=>e.node==='Send Messenger Reply - CONFIGURE TOKEN'));
+  assert.ok(edges['Send Messenger Reply - CONFIGURE TOKEN'].main[0].some(e=>e.node==='Verify Messenger Send Result'));
+  assert.ok(edges['Verify Messenger Send Result'].main[0].some(e=>e.node==='Record Successful Messenger MID'));
+  assert.ok(!edges['Send Messenger Reply - CONFIGURE TOKEN'].main[0].some(e=>e.node==='Record Successful Messenger MID'));
+  assert.equal(source['Record Successful Messenger MID'].settings.writesEventDedupeRow,true);
+});
