@@ -102,7 +102,7 @@ function createPrivateOpaqueSessionBridgeCandidate({
 }={}){
  if(mode!=='SYNTHETIC_SQL_QA_ONLY')fail('OPAQUE_BRIDGE_HOSTED_NOT_APPROVED');
  if(!driver||driver.synthetic!==true||driver.externalWrites!==false||
-    driver.rollbackOnThrow!==true||driver.journalOnly===false||
+    driver.rollbackOnThrow!==true||driver.journalOnly!==true||
     driver.profile!=='SYNTHETIC_OPAQUE_OPERATOR_SESSION_PG_TX'||
     typeof driver.transaction!=='function')
   fail('OPAQUE_BRIDGE_DRIVER_NOT_APPROVED');
