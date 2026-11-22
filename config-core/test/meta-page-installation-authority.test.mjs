@@ -10,15 +10,17 @@ const ctx={
   tenantId:'a0000000-0000-4000-8000-000000000002',
   storeId:'a0000000-0000-4000-8000-000000000003',
   ownerUserId:'a0000000-0000-4000-8000-000000000004',
-  metaPageId:'123456789012345',appId:'999888777666'
+  metaPageId:'123456789012345',appId:'999888777666',
+  installationId:'a0000000-0000-4000-8000-000000000005',
+  oauthNonceSha256:'b'.repeat(64)
 };
 const original=()=>{
   const p={
     schemaVersion:1,audience:META_INSTALL_CONTRACT,issuer:'t404_meta_oauth_gateway',
-    appId:ctx.appId,installationId:'a0000000-0000-4000-8000-000000000005',
+    appId:ctx.appId,installationId:ctx.installationId,
     connectionId:ctx.connectionId,tenantId:ctx.tenantId,storeId:ctx.storeId,
     ownerUserId:ctx.ownerUserId,metaPageId:ctx.metaPageId,
-    metaActorIdSha256:'a'.repeat(64),oauthNonceSha256:'b'.repeat(64),
+    metaActorIdSha256:'a'.repeat(64),oauthNonceSha256:ctx.oauthNonceSha256,
     permissions:['pages_manage_metadata','pages_messaging','pages_show_list'],
     callbackStateVerified:true,tokenAppBindingVerified:true,pageTokenValidated:true,
     pageMessagingTaskVerified:true,pageSubscriptionVerified:true,
@@ -40,6 +42,7 @@ test('signed, scoped Meta Page installation proof allows server draft authority 
   assert.equal(r.metaPageId,ctx.metaPageId);
   assert.equal(r.sendAllowed,false);
   assert.equal(r.requiresIndependentOwnerConsent,true);
+  assert.equal(r.requiresAtomicOneTimeNonceClaim,true);
 });
 test('unsigned or incorrect server key never grants authority',()=>{
   const e=seal(original());
@@ -54,9 +57,9 @@ test('tampered payload signature or version rejects before claims are evaluated'
   assert.equal(verifyMetaPageInstallationReceipt({...e,version:2},key,ctx,now).reason,'invalid_receipt_format');
 });
 test('cross-tenant, cross-store, cross-owner and cross-Page receipt replay blocked',()=>{
-  for(const field of ['tenantId','storeId','ownerUserId','connectionId','appId','metaPageId']){
+  for(const field of ['tenantId','storeId','ownerUserId','connectionId','appId','metaPageId','installationId','oauthNonceSha256']){
     const p=original();
-    p[field]=field==='metaPageId'?'123450001234500':field==='appId'?'123456':field==='tenantId'?'b0000000-0000-4000-8000-000000000002':'b0000000-0000-4000-8000-000000000004';
+    p[field]=field==='metaPageId'?'123450001234500':field==='appId'?'123456':field==='oauthNonceSha256'?'c'.repeat(64):field==='tenantId'?'b0000000-0000-4000-8000-000000000002':'b0000000-0000-4000-8000-000000000004';
     assert.equal(verify(p).reason,'installation_scope_mismatch',field);
   }
 });
@@ -111,4 +114,20 @@ test('a valid receipt for Page A cannot authorize Page B even with the same stor
 test('missing server authority flags cannot be recreated by LLM output',()=>{
   const p=original();delete p.pageTokenValidated;
   blocked(p,'invalid_receipt_claims');
+});
+
+test('a valid signed proof cannot be reused for a new OAuth nonce or pending installation',()=>{
+  const envelope=seal(original());
+  assert.equal(verifyMetaPageInstallationReceipt(envelope,key,{...ctx,oauthNonceSha256:'d'.repeat(64)},now).reason,'installation_scope_mismatch');
+  assert.equal(verifyMetaPageInstallationReceipt(envelope,key,{...ctx,installationId:'b0000000-0000-4000-8000-000000000099'},now).reason,'installation_scope_mismatch');
+});
+test('nonce comparison is NOT atomic replay protection; the caller must consume it once',()=>{
+  const receipt=seal(original());
+  const first=verifyMetaPageInstallationReceipt(receipt,key,ctx,now);
+  const second=verifyMetaPageInstallationReceipt(receipt,key,ctx,now);
+  assert.equal(first.requiresAtomicOneTimeNonceClaim,true);
+  assert.equal(second.requiresAtomicOneTimeNonceClaim,true);
+  // Two pure verifications still succeed: an external atomic nonce ledger is mandatory.
+  assert.equal(first.status,'verified');
+  assert.equal(second.status,'verified');
 });
