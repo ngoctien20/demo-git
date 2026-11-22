@@ -8,6 +8,7 @@ SET LOCAL lock_timeout = '5s';
 DO $pre$ BEGIN
  IF to_regclass('public.assistants') IS NULL THEN RAISE EXCEPTION 'T404_CC_NOT_APPLIED'; END IF;
 END $pre$;
+DROP FUNCTION IF EXISTS public.get_channel_menu(text,text); -- step 20, if applied
 DROP FUNCTION public.resolve_channel_assistant(text,text);
 DROP FUNCTION public.rollback_assistant_config(uuid,int);
 DROP FUNCTION public.publish_assistant_config(uuid,text);

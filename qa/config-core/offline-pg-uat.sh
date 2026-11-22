@@ -155,6 +155,25 @@ ok "$(as service "SELECT count(*) FROM public.resolve_channel_assistant('messeng
 admin "UPDATE public.channel_connections SET status='active'; UPDATE public.assistants SET status='disabled' WHERE id='$AID'" >/dev/null
 ok "$(as service "SELECT count(*) FROM public.resolve_channel_assistant('messenger','2379295362359912')")" 0 RESOLVER_DISABLED_ASSISTANT
 
+# ---------------- step 20: public published-menu read for bot adapters ----------------
+admin "UPDATE public.assistants SET status='active' WHERE id='$AID'" >/dev/null
+runfile "$CC/20_channel_menu_read.sql" T404_CC20_CHANNEL_MENU_READ_OK
+M=$(as anon "SELECT public.get_channel_menu('messenger','2379295362359912')")
+ok "$(printf '%s' "$M" | node -e 'const m=JSON.parse(require("fs").readFileSync(0,"utf8"));console.log(m.version_no+":"+m.menu.map(i=>i.id).join(","))')" "4:handoff,catalog" ANON_READS_PUBLISHED_ENABLED_ITEMS_IN_ORDER
+ok "$(printf '%s' "$M" | grep -c -E "$TA|$SA_STORE|$AID|tenant|store_id|assistant_id|draft")" 0 MENU_HAS_NO_IDS_OR_DRAFT
+SHA5=$(as $OA "SELECT config_sha256 FROM public.assistant_config_versions WHERE assistant_id='$AID' AND state='draft'")
+DRAFT_SECRET=$(printf '%s' "$CFG2" | node -e 'const c=JSON.parse(require("fs").readFileSync(0,"utf8")); c.greeting="BẢN NHÁP CHƯA DUYỆT"; console.log(JSON.stringify(c))')
+as $OA "SELECT public.save_assistant_draft('$AID','$(q "$DRAFT_SECRET")','$SHA5')" >/dev/null
+ok "$(as anon "SELECT public.get_channel_menu('messenger','2379295362359912')->>'greeting'" | grep -c 'BẢN NHÁP')" 0 DRAFT_NOT_EXPOSED
+ok "$(as anon "SELECT public.get_channel_menu('messenger','000') IS NULL")" t UNKNOWN_ACCOUNT_NULL
+ok "$(as anon "SELECT public.get_channel_menu('sms','2379295362359912') IS NULL")" t UNKNOWN_CHANNEL_NULL
+admin "UPDATE public.channel_connections SET status='disabled'" >/dev/null
+ok "$(as anon "SELECT public.get_channel_menu('messenger','2379295362359912') IS NULL")" t DISABLED_CONNECTION_NULL
+admin "UPDATE public.channel_connections SET status='active'" >/dev/null
+deny ANON_STILL_NO_TABLES 'permission denied' as anon "SELECT count(*) FROM public.assistant_config_versions"
+runfile "$CC/80_channel_menu_read_rollback.sql" T404_CC20_ROLLBACK_OK
+runfile "$CC/20_channel_menu_read.sql" T404_CC20_CHANNEL_MENU_READ_OK
+
 # ---------------- V20 untouched ----------------
 ok "$(md5fn 'app_private.t404_qa_tenant_allowed(uuid)')" "$MD5_ALLOW" V20_ALLOWLIST_UNCHANGED
 ok "$(md5fn 'public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)')" "$MD5_WRITER" V20_WRITER_UNCHANGED
