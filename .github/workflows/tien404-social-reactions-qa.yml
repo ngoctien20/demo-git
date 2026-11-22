@@ -124,5 +124,7 @@ jobs:
         run: test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_SERVICE_ROLE_KEY:-}${META_PAGE_ACCESS_TOKEN:-}${N8N_API_KEY:-}${DATABASE_URL:-}"
       - name: Install PostgreSQL client
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Validate offline shell QA syntax before database tests
+        run: bash -n qa/reactions/owner-page-draft-pg17-uat.sh && bash -n qa/reactions/atomic-claim-offline.sh
       - name: Assert ONLY offline synthetic Page owner/store/industry/cas admission
         run: bash qa/reactions/owner-page-draft-pg17-uat.sh
