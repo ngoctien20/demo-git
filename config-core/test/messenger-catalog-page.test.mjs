@@ -63,7 +63,7 @@ test('all 21 synthetic products are selectable across 7 pages, stable and non-du
 test('a button cursor is resolved by published menu and rejects stale versions',()=>{
   const m=menu();
   assert.equal(decide(m,{payload:'T404:M:catalog'}).mode,'catalog');
-  assert.equal(decide(m,{payload:next(msg(render({page:1}))}).catalogPage,2);
+  assert.equal(decide(m,{payload:next(msg(render({page:1})))}).catalogPage,2);
   assert.equal(decide(m,{payload:'T404:C:catalog:6:2'}).reason,'catalog_version_stale');
   const disabled=menu();disabled.menu.find(x=>x.id==='catalog').enabled=false;
   assert.equal(decide(disabled,{payload:'T404:C:catalog:7:2'}).mode,'rejected');
