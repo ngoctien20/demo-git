@@ -440,3 +440,41 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - No production/system changes; no hosted rollback required.
 
 **Status: DESIGN BUG DISCOVERED + FIX IMPLEMENTED/TESTED in Draft and disposable PG17; NOT RELEASED.**
+## 17. Twelfth continuation — claim-bound reply-plan admission in real restricted PostgreSQL 17 (2026-11-22 ~13:38 UTC)
+
+**User request:** Continue from §16 checkpoint commit 504bc92a8adcfd6ca2e5560dcd3e2e04bdf890fd with the next P1 security dependency: prevent a caller from creating a per-part send plan using a forged JavaScript `claimTicket` object; test claim/ledger relationship with disposable PostgreSQL 17 and scoped RLS. No Meta Send, no hosted Supabase migration, no n8n edit, no Commerce order writes.
+
+### Starting audit (VERIFIED, read-only)
+
+- PR #491 OPEN/DRAFT at 504bc92a8adcfd6ca2e5560dcd3e2e04bdf890fd. Messenger n8n Draft `41bcea84-703d-40bc-be2a-71f84ca4e2d8` and Published `1f4069a5-5e74-4c79-935b-40f02b3582d8` were read-only verified, without any n8n changes.
+- `message-attempt-ledger.cjs` still uses `proofOfClaim(ticket)` with ordinary `mode='CLAIM_RESERVED_DRY_RUN'`, `sendAllowed:false`, etc. This is explicitly forgeable in JavaScript and **must never be considered production authorization**. Since the source-only ledger has no Meta transport, this was a candidate-contract gap, NOT a proven live send vulnerability.
+- Existing V13.6M.5 private atomic claim store `private-event-store.cjs` uses an HMAC-derived six-dimensional event identity plus a random UUID `lease_id`, `status='CLAIMED'`, `expires_at`, and keeps the actual lease inside a private `WeakMap`. The existing claim store interface does NOT currently expose a secure cross-module lease transfer. Reused its existing `deriveIdentity` and `SQL.claim` unchanged.
+
+### IMPLEMENTED — additive source-only candidate
+
+- Added `qa/messenger-rich-v136m5/claim-bound-plan-contract.cjs`, default `BLOCKED`, only `SYNTHETIC_SQL_QA_ONLY` with explicitly offline/no external-write driver. Builds `SQL.claimBoundPlan` from the existing ledger `SQL.plan` (guards against SQL version drift) by replacing the parent INSERT VALUES with `INSERT SELECT ... WHERE EXISTS(...)` against `app_private.messenger_event_claims`. The new guarded plan SQL takes 12 parameters including a private `serverClaimLease` UUID and server clock, and in **one SQL statement** checks tenant, store, Page, HMAC sender, bindingVersion, HMAC event key, exact `lease_id`, `status='CLAIMED'`, `claimed_at <= now`, `expires_at > now` before inserting exactly 1–3 child parts. Previous RLS-safe child scope + composite FK design is preserved.
+- Return outputs strictly `BOUND_PLAN_PREVIEW_ONLY` or `CLAIM_NOT_ADMITTED_OR_DUPLICATE_HOLD`, always `sendAllowed:false`, `retryAllowed:false`, `providerAccepted:false`, no PSID/lease/token in user-visible decisions. This is a **SQL claim-admission proof**, not a deployed `eventStore.claim` → ledger connector.
+- Added 9 targeted unit tests in `claim-bound-plan-contract.test.cjs`: fail-closed hosted mode, invalid/fabricated lease input, real issued synthetic claim, duplicate, status finalized, expiry and time skew, identity mismatch across six fields, 50 parallel planners only one winner, malformed body digests, no claim token leaks.
+- Added `pg17-claim-bound-plan-uat.sh` with local-only CI guards; creates and drops its own random PostgreSQL 17 database and two test-only `LOGIN NOBYPASSRLS` roles for Store A/B under same tenant. Private test-only schema contains atomic claims, scoped send plans/parts with composite FK, and role-scoped `FORCE RLS`. Imports the **unchanged existing** SQL.claim plus the **new exact** SQL.claimBoundPlan through Node; does not create hosted schema or call Meta.
+- Updated `.github/workflows/v136m5-private-event-store-qa.yml` for new Node tests / static no-provider guard; updated `.github/workflows/tien404-config-core.yml` for real PG17 claim-bound-plan acceptance.
+
+### TESTED — actual CI evidence
+
+- [V13.6M.5 workflow run 45028402484](https://github.com/ngoctien20/demo-git/actions/runs/45028402484): **299/299 PASS, 0 fail**; security static no-host/no-Send job PASS.
+- [Config Core + PG17 run 45028402469](https://github.com/ngoctien20/demo-git/actions/runs/45028402469): **SUCCESS**. New `PG17_CLAIM_BOUND_PLAN_TESTS=23` **PASS** with real restricted Postgres roles. Verified no claim → no plan, correct claim/lease → exactly one plan and 2 children, wrong lease/HMAC sender/event/Page/Store → denied, same-tenant Store A cannot bind Store B, revoked/finalized or expired claim denied, distinct authorized Store B can create a separate plan, reusing the claim to create a second plan is blocked.
+- Existing same PG CI suites all remain PASS: 21/21 atomic inbound claims, 24/24 restricted inbound claim RLS, 28/28 message ledger concurrency/partial/timeout, 29/29 restricted ledger RLS, 138/138 Config Core Node tests.
+- [V23 Web/Owner App workflow 45028402468](https://github.com/ngoctien20/demo-git/actions/runs/45028402468) SUCCESS (independent offline QA; not live Messenger). Source/CI checkpoint before this documentation: **8bc19fc7670709fb169e6ed57d2977d5ac3abd9a**.
+
+### Important LIMITATIONS / BLOCKED release conditions
+
+1. Real source-only `createPrivateEventStoreCandidate.claim()` intentionally keeps its lease in an internal `WeakMap`. The new contract currently accepts **a server-injected UUID lease for synthetic QA**, and the test fixture can see it. No trusted runtime bridge has been implemented; it would be unsafe to expose raw lease to client messages, webpage, untrusted n8n nodes or logs. An ordinary JS object and guessed lease alone cannot pass the PostgreSQL claim match, but a compromised trusted DB role that can SELECT its own lease may be able to fabricate plans in its allowed scope. Release requires a private server capability, restricted caller design and audit.
+2. SQL guarded existence checks the claim **at plan creation**; it is not a proof that a later real send is authorized or that Meta received/delivered the message. Additional entitlement/window/revocation pre-send gates, durable ledger part state, crash recovery and unknown-provider reconciliation remain outstanding. No blind retries and no exactly-once Meta claim.
+3. The `PG17_CLAIM_BOUND_PLAN_TESTS=23` tests are **disposable** SQL on synthetic identities and per-scope roles, not hosted Supabase RLS or owner A/B. No hosted tables, role/credential minting, production API or webhook wiring were implemented.
+4. Messenger Published still runs the older Data Table dedupe `rowNotExists → Meta Send → record`, not the claim-bound ledger. Both Messenger Draft and Published n8n were unchanged; live customer/mobile/web acceptance remains blocked. PR #491 remains DRAFT, Issue #495 OPEN.
+
+### Rollback / next approved step
+
+- To roll back this continuation only: remove `claim-bound-plan-contract.cjs`, `claim-bound-plan-contract.test.cjs`, `pg17-claim-bound-plan-uat.sh` and revert only their added entries in the two existing CI workflow files. Preserve §16 RLS/composite-FK fix and earlier PG17 tests. No runtime rollback required.
+- Next: design a private, non-extractable bridge between the successful `eventStore.claim()` server-side receipt and the guarded SQL plan, ideally in the same trusted service boundary with scoped transactions; test worker crash/restart and revocation without leaking lease or widening DB grants. Hosted Supabase, Meta Send and n8n publish still require explicit owner approval.
+
+**Status: IMPLEMENTED source-only claim-bound SQL / TESTED offline 299/299 and real restricted PG17 23/23 / NOT wired to live Messenger / NOT RELEASED.**
