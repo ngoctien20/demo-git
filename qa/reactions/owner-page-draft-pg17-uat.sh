@@ -119,8 +119,8 @@ trap 'rm -rf "$NONCE_TMP"' EXIT
 ( q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_D','$INST_D','$CA','$TA','$SA','$OA','$APP','123450001234500',repeat('d',64))" >"$NONCE_TMP/a.out" 2>&1 ) &
 ( q "SELECT app_private.t404_reaction_consume_meta_oauth_nonce('$N_D','$INST_D','$CA','$TA','$SA','$OA','$APP','123450001234500',repeat('d',64))" >"$NONCE_TMP/b.out" 2>&1 ) &
 wait
-ok "$(grep -l t "$NONCE_TMP"/*.out | wc -l | tr -d ' ')" 1 NONCE_CONCURRENT_SINGLE_WINNER
-ok "$(grep -l f "$NONCE_TMP"/*.out | wc -l | tr -d ' ')" 1 NONCE_CONCURRENT_SINGLE_LOSER
+ok "$(grep -l -x t "$NONCE_TMP"/*.out | wc -l | tr -d ' ')" 1 NONCE_CONCURRENT_SINGLE_WINNER
+ok "$(grep -l -x f "$NONCE_TMP"/*.out | wc -l | tr -d ' ')" 1 NONCE_CONCURRENT_SINGLE_LOSER
 ok "$(q "SELECT count(*) FROM app_private.reaction_meta_nonce_claims WHERE oauth_nonce_sha256='$N_D' AND consumed_at IS NOT NULL")" 1 NONCE_CONCURRENT_SINGLE_CONSUMPTION
 rm -rf "$NONCE_TMP"
 trap - EXIT
