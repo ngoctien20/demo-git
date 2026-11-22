@@ -130,4 +130,5 @@ function createMessageReconciliationInspectorCandidate({
    transportActionsEnabled:false,mutationsEnabled:false,
    automaticRetryEnabled:false,realProviderReceiptVerified:false})});
 }
-module.exports={SQL,createMessageReconciliationInspectorCandidate};
+// Pure, source-only classifier reused by the restricted operator candidate.
+module.exports={SQL,classify,createMessageReconciliationInspectorCandidate};
