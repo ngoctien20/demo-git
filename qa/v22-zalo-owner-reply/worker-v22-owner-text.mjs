@@ -71,7 +71,7 @@ function composeBody(b) {
     case 'VOICE_HEARD': {
       const t = cleanEcho(b.transcript, 160);
       const parts = [HEAD, ['\u266a Bot nghe \u0111\u01b0\u1ee3c:', ['b', C.blue]], ['\n\u201c' + (t || '(kh\u00f4ng nghe r\u00f5)') + '\u201d', ['i']]];
-      if (b.understood !== true) parts.push(['\n\u26a0 Ch\u01b0a hi\u1ec3u l\u1ec7nh. Th\u1eed n\u00f3i: \u201ctest shop B chat F01\u201d', ['b', C.orange]]);
+      if (b.understood !== true) parts.push(['\n\u26a0 Ch\u01b0a hi\u1ec3u l\u1ec7nh. Th\u1eed n\u00f3i: \u201cGi\u00e1 F01\u201d ho\u1eb7c \u201cMua F01 hai c\u00e1i\u201d', ['b', C.orange]]);
       return build(parts);
     }
     case 'IMAGE_MATCH': {
