@@ -4,11 +4,13 @@ on:
     paths:
       - "config-core/lib/social-reactions.mjs"
       - "config-core/lib/reaction-admission.mjs"
+      - "config-core/lib/reaction-profiles.mjs"
       - "qa/reactions/**"
       - "config-core/n8n/build-messenger-reactions-shadow.mjs"
       - "config-core/n8n/build-reactions-code.mjs"
       - "config-core/test/social-reactions.test.mjs"
       - "config-core/test/reaction-admission.test.mjs"
+      - "config-core/test/reaction-profiles.test.mjs"
       - "config-core/test/reactions-bundle.test.mjs"
       - "config-core/test/messenger-reaction-shadow.test.mjs"
       - ".github/workflows/tien404-social-reactions-qa.yml"
@@ -33,6 +35,7 @@ jobs:
           node --test
           config-core/test/social-reactions.test.mjs
           config-core/test/reaction-admission.test.mjs
+          config-core/test/reaction-profiles.test.mjs
           config-core/test/reactions-bundle.test.mjs
           config-core/test/messenger-reaction-shadow.test.mjs
       - name: Default page policy OFF and no network in generated node
