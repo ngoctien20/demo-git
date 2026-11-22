@@ -76,6 +76,34 @@ q "INSERT INTO app_private.reaction_page_industries
  '123450001234502','$APP',gen_random_uuid(),'t404_meta_oauth_gateway',1,
  repeat('c',64),true,true,true,true,true,ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'],'verified',now()+interval '12 hours')" >/dev/null
 ok "$(q "SELECT count(*) FROM app_private.reaction_page_industries p WHERE app_private.t404_reaction_meta_install_active(p.connection_id)")" 3 META_PAGE_INSTALL_AUTHORITY_VALIDATED
+
+# V21.6 negative Meta authority checks, no customer data or real Meta API.
+q "UPDATE app_private.reaction_page_industries SET callback_state_verified=false WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_OAUTH_STATE_BAD_EXCLUDED
+deny_user META_CALLBACK_UNVERIFIED unverified_page_industry "$OA" "SELECT public.save_page_reaction_draft('$CA2','$X'::jsonb,NULL)"
+q "UPDATE app_private.reaction_page_industries SET callback_state_verified=true WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET validated_permissions=ARRAY['pages_show_list','pages_manage_metadata'] WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_MESSAGING_PERMISSION_MISSING
+q "UPDATE app_private.reaction_page_industries SET validated_permissions=ARRAY['pages_show_list','pages_manage_metadata','pages_messaging'] WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET meta_page_id='123450001239999' WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_PAGE_ID_MISMATCH_EXCLUDED
+q "UPDATE app_private.reaction_page_industries SET meta_page_id='123450001234502' WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET messaging_task_verified=false WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_MESSAGING_TASK_MISSING
+q "UPDATE app_private.reaction_page_industries SET messaging_task_verified=true WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET subscribed_app_verified=false WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_SUBSCRIBED_APP_UNVERIFIED
+q "UPDATE app_private.reaction_page_industries SET subscribed_app_verified=true WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_page_industries SET proof_status='revoked' WHERE connection_id='$CA2'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 1 META_PROOF_REVOKED_EXCLUDED
+q "UPDATE app_private.reaction_page_industries SET proof_status='verified' WHERE connection_id='$CA2'" >/dev/null
+q "UPDATE app_private.reaction_meta_apps SET status='revoked' WHERE app_id='$APP'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 0 META_APP_REVOKED_DISALLOWS_ALL
+q "UPDATE app_private.reaction_meta_apps SET status='approved' WHERE app_id='$APP'" >/dev/null
+ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 2 META_AUTHORITY_RESTORED_AFTER_SYNTHETIC_TEST
+ok "$(q "SELECT has_table_privilege('authenticated','app_private.reaction_meta_apps','SELECT')")" f META_APP_REGISTRY_NOT_PUBLIC
+ok "$(q "SELECT has_function_privilege('authenticated','app_private.t404_reaction_meta_install_active(uuid)','EXECUTE')")" f META_AUTHORITY_FUNCTION_PRIVATE
+
 ok "$(as "$OA" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 2 OWNER_A_TWO_VERIFIED_PAGES
 ok "$(as "$OB" "SELECT count(*) FROM public.list_verified_reaction_pages('$SB')")" 1 OWNER_B_ONE_VERIFIED_PAGE
 ok "$(as "$OB" "SELECT count(*) FROM public.list_verified_reaction_pages('$SA')")" 0 OWNER_B_NO_A_PAGE_LIST
