@@ -109,6 +109,7 @@ sql "CREATE SCHEMA app_private;
  ('REQUEST_PROVIDER_REVIEW','ESCALATE_TO_OWNER','ACKNOWLEDGE_NO_SEND')),
  request_digest char(64) NOT NULL,created_at timestamptz NOT NULL,
  UNIQUE(plan_id,request_digest),
+ FOREIGN KEY(operator_session_id) REFERENCES app_private.messenger_operator_sessions(id),
  FOREIGN KEY(plan_id,tenant_id,store_id,page_id)
  REFERENCES app_private.messenger_send_plans(id,tenant_id,store_id,page_id));
  ALTER TABLE app_private.messenger_operator_grants ENABLE ROW LEVEL SECURITY;
