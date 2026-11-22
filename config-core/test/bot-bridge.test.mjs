@@ -20,7 +20,7 @@ test('no config rejects new menu payload safely; non-config payload keeps legacy
 
 test('shop: catalog/order go to the existing AI, handoff uses the live handoff sentence + team wording', () => {
   const m = published(templateConfig('shop'));
-  assert.deepEqual(decide(m, { payload: 'T404:M:catalog' }), { mode: 'ai', itemId: 'catalog', chatInput: 'Shop đang có những sản phẩm nào?' });
+  assert.deepEqual(decide(m, { payload: 'T404:M:catalog' }), { mode: 'catalog', itemId: 'catalog', catalogPage: 1, catalogCategory: null });
   assert.equal(decide(m, { payload: 'T404:M:order_lookup' }).chatInput, 'Tôi muốn tra cứu đơn hàng của tôi');
   const h = decide(m, { payload: 'T404:M:handoff' });
   assert.equal(h.mode, 'handoff');
@@ -72,4 +72,41 @@ test('persistent menu body is produced but never sent here', () => {
 
 test('contact info renders only provided fields', () => {
   assert.equal(directReply({ action_type: 'CONTACT_INFO', action_config: { phone: '0912345678', hours: '8h-21h' } }, {}), 'Điện thoại: 0912345678\nGiờ làm việc: 8h-21h');
+});
+
+test('Messenger catalogue cursor is bound to current published version and SHOW_CATALOG item', () => {
+  const cfg = published(templateConfig('shop'));
+  cfg.version_no = 42;
+  assert.deepEqual(decide(cfg, { payload: 'T404:C:catalog:42:deadbeef:2' }), {
+    mode: 'catalog', itemId: 'catalog', catalogPage: 2, catalogDigest: 'deadbeef', catalogCategory: null,
+  });
+  const stale = decide(cfg, { payload: 'T404:C:catalog:41:deadbeef:2' });
+  assert.equal(stale.mode, 'rejected');
+  assert.equal(stale.reason, 'catalog_version_stale');
+  for (const payload of [
+    'T404:C:catalog:42:deadbeef:0', 'T404:C:catalog:42:deadbeef:100', 'T404:C:catalog:42:deadbeef:-1',
+    'T404:C:order_lookup:42:deadbeef:1', 'T404:C:manager:42:deadbeef:1',
+    'T404:C:catalog:42:deadbeef:2:admin', 'T404:C:../catalog:42:2',
+  ]) assert.equal(decide(cfg, { payload }).mode, 'rejected', payload);
+  const hidden = published(templateConfig('shop'));
+  hidden.version_no = 42;
+  hidden.menu.find(it => it.id === 'catalog').enabled = false;
+  assert.equal(decide(hidden, { payload: 'T404:C:catalog:42:deadbeef:2' }).reason, 'catalog_item_inactive');
+  assert.equal(decide(null, { payload: 'T404:C:catalog:42:deadbeef:2' }).reason, 'menu_unavailable');
+  assert.equal(decide(cfg, { payload: 'T404:C:catalog:42:deadbeef:2' }, 'zalo_bot').mode, 'rejected');
+});
+
+test('custom published catalog item id/category routes by action, not by hardcoded id', () => {
+  const cfg = published(templateConfig('shop'));
+  cfg.menu[0].id = 'ao_nam';
+  cfg.menu[0].action_config = { category: 'áo' };
+  cfg.version_no = 8;
+  assert.deepEqual(decide(cfg, { payload: 'T404:M:ao_nam' }), {
+    mode: 'catalog', itemId: 'ao_nam', catalogPage: 1, catalogCategory: 'áo',
+  });
+  assert.deepEqual(decide(cfg, { payload: 'T404:C:ao_nam:8:deadbeef:2' }), {
+    mode: 'catalog', itemId: 'ao_nam', catalogPage: 2, catalogDigest: 'deadbeef', catalogCategory: 'áo',
+  });
+  const fallback = decide(cfg, { payload: 'T404:M:ao_nam' }, 'web');
+  assert.equal(fallback.mode, 'ai');
 });

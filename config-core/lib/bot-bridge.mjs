@@ -54,7 +54,7 @@ export function directReply(action, menu) {
 
 export function decide(menu, event, channel = 'messenger') {
   if (!menu || !Array.isArray(menu.menu)) {
-  if (typeof event?.payload === 'string' && event.payload.startsWith(PAYLOAD_PREFIX)) {
+  if (typeof event?.payload === 'string' && (event.payload.startsWith(PAYLOAD_PREFIX) || event.payload.startsWith('T404:C:'))) {
     return { mode: 'rejected', reason: 'menu_unavailable',
       message: { text: 'Nút này hiện không khả dụng. Bạn có thể nhắn yêu cầu trực tiếp để được hỗ trợ.' } };
   }
@@ -63,13 +63,36 @@ export function decide(menu, event, channel = 'messenger') {
   const payload = typeof event?.payload === 'string' ? event.payload : undefined;
   const isStart = payload === 'TIEN404:START' || payload === 'GET_STARTED';
   if (isStart) return { mode: 'greeting', message: greetingMessage(menu, channel) };
+  // V21 Messenger catalogue cursors are only references to a published SHOW_CATALOG item.
+  // The cursor never grants access to a tenant, SKU or price. Version mismatch rejects stale buttons.
+  if (payload?.startsWith('T404:C:')) {
+    const cursor = /^T404:C:([a-z][a-z0-9_]{1,31}):([1-9][0-9]{0,8}):([0-9a-f]{8}):([1-9][0-9]?)$/.exec(payload);
+    if (!cursor || channel !== 'messenger') {
+      return { mode: 'rejected', reason: 'catalog_cursor_invalid',
+        message: { text: 'Nút chuyển trang không hợp lệ. Bạn hãy mở lại danh mục nhé.' } };
+    }
+    if (String(menu.version_no ?? '') !== cursor[2]) {
+      return { mode: 'rejected', reason: 'catalog_version_stale',
+        message: { text: 'Danh mục đã được cập nhật. Bạn hãy mở lại mục Xem sản phẩm nhé.' } };
+    }
+    const it = resolveInbound({ channel, payload: PAYLOAD_PREFIX + cursor[1] }, menu);
+    if (it.kind !== 'menu' || it.action_type !== 'SHOW_CATALOG') {
+      return { mode: 'rejected', reason: 'catalog_item_inactive',
+        message: { text: 'Mục sản phẩm này hiện không khả dụng. Bạn hãy mở lại menu nhé.' } };
+    }
+    return { mode: 'catalog', itemId: it.item_id, catalogPage: Number(cursor[4]),
+      catalogDigest: cursor[3], catalogCategory: it.action_config?.category ?? null };
+  }
   if (!payload || !payload.startsWith(PAYLOAD_PREFIX)) return { mode: 'legacy' };
   const r = resolveInbound({ channel, payload }, menu);
   if (r.kind !== 'menu') return { mode: 'rejected', reason: r.reason || r.kind, message: greetingMessage(menu, channel) };
   const c = r.action_config;
   switch (r.action_type) {
     case 'SHOW_CATALOG':
-      return { mode: 'ai', itemId: r.item_id, chatInput: c.category ? 'Shop có những mẫu ' + c.category + ' nào?' : 'Shop đang có những sản phẩm nào?' };
+      // Other channel adapters retain the prior AI behavior until independently accepted.
+      return channel === 'messenger'
+        ? { mode: 'catalog', itemId: r.item_id, catalogPage: 1, catalogCategory: c.category ?? null }
+        : { mode: 'ai', itemId: r.item_id, chatInput: c.category ? 'Shop có những mẫu ' + c.category + ' nào?' : 'Shop đang có những sản phẩm nào?' };
     case 'ORDER_LOOKUP':
       return { mode: 'ai', itemId: r.item_id, chatInput: 'Tôi muốn tra cứu đơn hàng của tôi' };
     case 'FAQ':

@@ -4,12 +4,16 @@ import { useStore } from '../store';
 import { Customer, isMissingFeature, must, STAGES, useLoad } from '../data';
 import { dateTime } from '../format';
 import { Empty, Modal, Notice, PageHead, Spinner } from '../ui';
+import { INDUSTRY_META, useWorkspace } from '../workspace';
 
 const stageLabel = (s?: string) => STAGES.find(x => x[0] === s)?.[1] ?? 'Mới';
 const todayEndVN = () => { const d = new Date(Date.now() + 7 * 36e5); d.setUTCHours(23, 59, 59, 999); return new Date(d.getTime() - 7 * 36e5); };
 
 export function Customers() {
   const { store, canManage } = useStore();
+  const ws = useWorkspace();
+  const meta = INDUSTRY_META[ws.primary];
+  const shop = ws.industries.includes('shop');
   const [tab, setTab] = useState('');
   const [edit, setEdit] = useState<Customer | null>(null);
   const { data, error, loading, reload } = useLoad(async () => {
@@ -36,17 +40,17 @@ export function Customers() {
   }, [data]);
   const list = (data?.customers ?? []).filter(c => !tab || (c.stage ?? 'new') === tab);
 
-  if (!canManage) return <><PageHead title="Khách hàng" /><Notice>Chỉ chủ shop và quản lý xem được thông tin khách hàng.</Notice></>;
+  if (!canManage) return <><PageHead title={meta.people} /><Notice>Chỉ chủ sở hữu và quản lý xem được thông tin người tương tác.</Notice></>;
   return (
     <>
-      <PageHead title="Khách hàng" sub="Khách đã nhắn với shop qua các kênh. Chia theo giai đoạn để không bỏ sót ai." />
+      <PageHead title={meta.people} sub={meta.peopleSub} />
       {loading ? <Spinner /> : error || !data ? <Notice kind="err">{friendlyError(error)}</Notice> : (
         <>
           {!data.staged && <Notice kind="warn">Phân loại theo giai đoạn chưa được bật trên máy chủ. Bạn vẫn xem được danh sách khách.</Notice>}
           <div className="kpis">
             <div className="kpi"><span>Cần người xử lý</span><b>{kpi.needs}</b><small>Khiếu nại, đòi gặp người thật, mặc cả</small></div>
             <div className="kpi"><span>Hẹn liên hệ hôm nay</span><b>{kpi.today}</b><small>Gồm cả hẹn đã quá ngày</small></div>
-            <div className="kpi"><span>Đơn đã chốt</span><b>{data.won}</b><small>Đơn đã xác nhận hoặc đã thanh toán</small></div>
+            {shop && <div className="kpi"><span>Đơn đã chốt</span><b>{data.won}</b><small>Đơn đã xác nhận hoặc đã thanh toán</small></div>}
             <div className="kpi"><span>Tỉ lệ chốt</span><b>{kpi.rate}%</b><small>Trên khách đã có kết quả</small></div>
           </div>
           <div className="tabs" role="tablist" aria-label="Lọc theo giai đoạn">

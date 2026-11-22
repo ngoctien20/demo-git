@@ -2,6 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { templateConfig } from '../lib/templates.mjs';
 
 const sdk = fs.readFileSync(new URL('../n8n/bridge.sdk.js', import.meta.url), 'utf8');
@@ -25,4 +27,27 @@ test('bundle: RPC null -> safe rejected; HTTP error -> legacy fallback', () => {
 });
 test('bundle: get started -> greeting quick replies', () => {
   assert.equal(run({ channel: 'messenger', payload: 'TIEN404:START' }, menu()).message.quick_replies.length, 3);
+});
+
+test('bundle: catalog cursor is authorized by current published menu version', () => {
+  const m = menu(); m.version_no = 11;
+  const first = run({ channel: 'messenger', payload: 'T404:M:catalog' }, m);
+  assert.equal(first.mode, 'catalog');
+  assert.equal(first.catalogPage, 1);
+  assert.equal(first.configVersion, 11);
+  const next = run({ channel: 'messenger', payload: 'T404:C:catalog:11:deadbeef:2' }, m);
+  assert.equal(next.mode, 'catalog');
+  assert.equal(next.itemId, 'catalog');
+  assert.equal(next.catalogPage, 2);
+  assert.equal(next.catalogDigest, 'deadbeef');
+  const old = run({ channel: 'messenger', payload: 'T404:C:catalog:10:deadbeef:2' }, m);
+  assert.equal(old.mode, 'rejected');
+  assert.equal(old.reason, 'catalog_version_stale');
+  assert.equal(run({ channel: 'messenger', payload: 'T404:C:order_lookup:11:deadbeef:2' }, m).mode, 'rejected');
+});
+
+test('bundle: generated SDK is byte-identical to checked-in bridge.sdk.js', () => {
+  const generator = fileURLToPath(new URL('../n8n/build-bridge.mjs', import.meta.url));
+  const generated = execFileSync(process.execPath, [generator], {encoding:'utf8',timeout:10000});
+  assert.equal(generated, sdk, 'regenerate bridge.sdk.js from the pure source before release');
 });

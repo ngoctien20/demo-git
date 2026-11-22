@@ -33,6 +33,8 @@ Không có thao tác ghi nào ngoài nhánh `claude/project-thread-2rqcm1` (tài
 | R3 | Kiểm lại qua JWT do GoTrue ký (đăng nhập thật) | Cần mật khẩu user test |
 | R3 | AI eval trên clone | G-12 + bộ case |
 | R4 | Render/Cloudflare deployed commit | G-15 |
+| R3b ✓ | Rà log đăng nhập DB cho S-17 (E-31), vân tay schema + advisor (E-32), S-20..S-22 | Xong 2026-11-22 |
+| R3b | Xuất workflow n8n + schema đầy đủ vào nơi **riêng tư** (repo public sẽ lộ webhook, Page/Sheet ID) | Chủ dự án chọn nơi lưu |
 | R6 | Đánh giá lại quyết định phát hành | Sau R3 |
 
 ## Cách bắt đầu phiên sau
