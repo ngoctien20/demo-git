@@ -15,8 +15,8 @@ const DAILY_CAP = 30;
 // V22.4 owner rule (2026-11-21): 1 reply per customer message preferred, 2 when useful, NEVER more than 3.
 export const PER_MESSAGE_CAP = 3;
 // V22.2: show Zalo 'typing…' before replying. Best-effort (failure never blocks the reply), not a message.
-const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600 };
-const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH'];
+const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600, STICKER_REPLY: 500 };
+const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH', 'STICKER_REPLY'];
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 async function secureEqual(a, b) {
@@ -66,8 +66,22 @@ export function composeMessage(b) {
   return { text: m.text.slice(0, h) + lead.text + m.text.slice(h),
     text_styles: [...m.text_styles.filter((x) => x.start < h), ...lead.text_styles.map((x) => ({ ...x, start: x.start + h })), ...m.text_styles.filter((x) => x.start >= h).map((x) => ({ ...x, start: x.start + n }))] };
 }
+// V22.6: sticker -> mood (decided by AI, validated as an enum here) -> fixed friendly template. No free text.
+export const STICKER_MOODS = {
+  happy: [['\u263a D\u1ea1 shop vui qu\u00e1 \u1ea1!', ['b', C.green]], ['\nB\u1ea1n mu\u1ed1n xem m\u1eabu n\u00e0o, c\u1ee9 nh\u1eafn m\u00e3 ho\u1eb7c g\u1eedi \u1ea3nh cho shop nh\u00e9.']],
+  thanks: [['\u2665 D\u1ea1 shop c\u1ea3m \u01a1n b\u1ea1n \u1ea1!', ['b', C.red]], ['\nB\u1ea1n c\u1ea7n g\u00ec th\u00eam c\u1ee9 nh\u1eafn shop nh\u00e9.']],
+  sad: [['\u2639 Shop xin l\u1ed7i n\u1ebfu c\u00f3 \u0111i\u1ec1u g\u00ec ch\u01b0a t\u1ed1t \u1ea1.', ['b', C.blue]], ['\nB\u1ea1n cho shop bi\u1ebft v\u1ea5n \u0111\u1ec1 \u0111\u1ec3 shop h\u1ed7 tr\u1ee3 ngay nh\u00e9.']],
+  angry: [['\u26a0 Shop th\u00e0nh th\u1eadt xin l\u1ed7i b\u1ea1n.', ['b', C.orange]], ['\nB\u1ea1n m\u00f4 t\u1ea3 gi\u00fap shop v\u1ea5n \u0111\u1ec1, shop x\u1eed l\u00fd ngay \u1ea1.']],
+  question: [['\u2753 B\u1ea1n \u0111ang c\u1ea7n shop h\u1ed7 tr\u1ee3 g\u00ec \u1ea1?', ['b', C.blue]], ['\nB\u1ea1n nh\u1eafn m\u00e3 s\u1ea3n ph\u1ea9m ho\u1eb7c g\u1eedi \u1ea3nh nh\u00e9.']],
+  greeting: [['\u270b Ch\u00e0o b\u1ea1n!', ['b', C.green]], ['\nShop c\u00f3 th\u1ec3 gi\u00fap g\u00ec cho b\u1ea1n h\u00f4m nay \u1ea1?']],
+  other: [['\u263a D\u1ea1 shop \u0111\u00e2y \u1ea1!', ['b', C.green]], ['\nB\u1ea1n c\u1ea7n xem s\u1ea3n ph\u1ea9m n\u00e0o c\u1ee9 nh\u1eafn m\u00e3 ho\u1eb7c g\u1eedi \u1ea3nh nh\u00e9.']],
+};
 function composeBody(b) {
   switch (b.kind) {
+    case 'STICKER_REPLY': {
+      const parts = Object.prototype.hasOwnProperty.call(STICKER_MOODS, b.mood) ? STICKER_MOODS[b.mood] : STICKER_MOODS.other;
+      return build([HEAD, ...parts]);
+    }
     case 'VOICE_HEARD': {
       const t = cleanEcho(b.transcript, 160);
       const parts = [HEAD, ['\u266a Bot nghe \u0111\u01b0\u1ee3c:', ['b', C.blue]], ['\n\u201c' + (t || '(kh\u00f4ng nghe r\u00f5)') + '\u201d', ['i']]];

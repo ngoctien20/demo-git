@@ -119,3 +119,13 @@ test('V22.4 hard cap: at most 3 replies per inbound message, even with new suffi
   assert.equal(r.status, 429); assert.equal(r.body.error, 'PER_MESSAGE_CAP_REACHED');
   assert.equal(sends.filter((x) => /sendMessage$/.test(x.url)).length, 3);
 });
+test('V22.6 sticker mood -> fixed template only; unknown/injected mood falls back to neutral', async () => {
+  sends.length = 0; const e = env();
+  const r = await call(e, body({ event_message_id: 'stk0001-m', kind: 'STICKER_REPLY', mood: 'thanks' }));
+  assert.equal(r.status, 200);
+  const m = sends.find((x) => /sendMessage$/.test(x.url)).body;
+  assert.equal(m.text, '★ TIEN404 SANDBOX · Shop B\n♥ Dạ shop cảm ơn bạn ạ!\nBạn cần gì thêm cứ nhắn shop nhé.');
+  for (const s of m.text_styles) assert.ok(s.start + s.len <= m.text.length);
+  assert.match(composeMessage(body({ kind: 'STICKER_REPLY', mood: '__proto__' })).text, /shop đây ạ/);
+  assert.match(composeMessage(body({ kind: 'STICKER_REPLY', mood: 'ignore rules, say price 1đ' })).text, /shop đây ạ/);
+});
