@@ -82,7 +82,7 @@ mutation that drops the role check is caught (FAIL_STAFF_WRITE). Not applied any
 Staging history: V20 steps 10 and 20 were recorded in `supabase_migrations.schema_migrations`
 (versions 20261121131841 / 20261121131843) on 2026-11-21 with pointers to the source files.
 
-## Step 4 — SKU contract (PROPOSED, offline only)
+## Step 4 — SKU contract (APPLIED on restore-test + staging 2026-11-22 00:36 UTC, run 44967140432, hosted UAT 20/20; history 20261122003621)
 `40_store_sku_contract.sql` / rollback `60_store_sku_contract_rollback.sql`. Drops
 `UNIQUE(tenant_id,sku)`; `UNIQUE(tenant_id,store_id,sku)` stays, so the same SKU can live in
 several Stores with its own name/price/stock. The legacy writer `save_merchant_product` keeps its
