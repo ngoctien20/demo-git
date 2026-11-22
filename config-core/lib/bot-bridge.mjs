@@ -53,7 +53,13 @@ export function directReply(action, menu) {
 }
 
 export function decide(menu, event, channel = 'messenger') {
-  if (!menu || !Array.isArray(menu.menu)) return { mode: 'legacy' };
+  if (!menu || !Array.isArray(menu.menu)) {
+  if (typeof event?.payload === 'string' && event.payload.startsWith(PAYLOAD_PREFIX)) {
+    return { mode: 'rejected', reason: 'menu_unavailable',
+      message: { text: 'Nút này hiện không khả dụng. Bạn có thể nhắn yêu cầu trực tiếp để được hỗ trợ.' } };
+  }
+  return { mode: 'legacy' };
+}
   const payload = typeof event?.payload === 'string' ? event.payload : undefined;
   const isStart = payload === 'TIEN404:START' || payload === 'GET_STARTED';
   if (isStart) return { mode: 'greeting', message: greetingMessage(menu, channel) };
