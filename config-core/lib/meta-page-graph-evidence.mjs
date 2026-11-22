@@ -44,9 +44,17 @@ export function assessMetaPageGraphReadOnlyEvidence(evidence,expected,nowSeconds
     if(!granular) return block('invalid_granular_scope_evidence');
     for(const permission of REQUIRED_PERMISSIONS){
       const matches=granular.filter(g=>g?.scope===permission);
-      if(matches.length && !matches.some(g=>
-        arr(g.target_ids)?.some(id=>String(id)===expected.metaPageId)))
-        return block('meta_page_not_in_granular_scope');
+      // Missing or contradictory per-permission entries are not evidence.
+      // Meta omits target_ids only when permission applies globally.
+      if(matches.length!==1) return block('meta_granular_scope_missing_or_ambiguous');
+      const scope=matches[0];
+      if(scope.target_ids!==undefined){
+        if(!arr(scope.target_ids) || scope.target_ids.length===0 ||
+           scope.target_ids.some(id=>!PAGE_ID.test(String(id))))
+          return block('invalid_granular_target_ids');
+        if(!scope.target_ids.some(id=>String(id)===expected.metaPageId))
+          return block('meta_page_not_in_granular_scope');
+      }
     }
   }
 
