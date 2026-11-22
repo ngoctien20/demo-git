@@ -11,6 +11,11 @@
  * MAY_HAVE_SENT_HOLD is intentionally NOT reclaimable and never auto-retried.
  * API_ACCEPTED_MOCK is NOT delivery, read, or actual provider confirmation.
  *
+ * Child parts duplicate the three authority scope columns and MUST have a
+ * composite FK (plan_id,tenant_id,store_id,page_id) to its parent plan.
+ * This lets FORCE RLS check a child INSERT in the same data-modifying CTE
+ * without depending on visibility of the just-inserted parent row.
+ *
  * Do not promote without a real trusted ingress, owner-approved restricted DB
  * roles, hosted schema/RLS, audited per-part reconciliation, and explicit release.
  */
@@ -27,8 +32,8 @@ const SQL=Object.freeze({
   'ON CONFLICT (tenant_id,store_id,page_id,sender_hash,binding_version,event_hash) DO NOTHING',
   'RETURNING id,expected_count),',
   'parts AS (INSERT INTO app_private.messenger_send_parts',
-  '(plan_id,part_no,body_digest,status)',
-  "SELECT p.id,g.n,($10::text[])[g.n],'PLANNED'",
+  '(plan_id,tenant_id,store_id,page_id,part_no,body_digest,status)',
+  "SELECT p.id,$2::uuid,$3::uuid,$4,g.n,($10::text[])[g.n],'PLANNED'",
   'FROM p CROSS JOIN generate_series(1,$9::int) AS g(n) RETURNING plan_id)',
   'SELECT p.id::text AS plan_id,p.expected_count::int AS expected_count FROM p',
   'WHERE (SELECT count(*) FROM parts)=p.expected_count'
