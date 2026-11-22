@@ -9,6 +9,7 @@ import { Orders } from './pages/Orders';
 import { Customers } from './pages/Customers';
 import { Channels } from './pages/Channels';
 import { BotSettings } from './pages/BotSettings';
+import { ReactionSettings } from './pages/ReactionSettings';
 import { Menu } from './pages/Menu';
 import { Knowledge } from './pages/Knowledge';
 import { Plan } from './pages/Plan';
@@ -16,7 +17,7 @@ import { Account } from './pages/Account';
 
 const NAV: { group: string; items: [string, string, string][] }[] = [
   { group: 'Bán hàng', items: [['/', 'Tổng quan', '◎'], ['/san-pham', 'Sản phẩm & tồn kho', '▣'], ['/don-hang', 'Đơn hàng', '▤'], ['/khach-hang', 'Khách hàng', '♧']] },
-  { group: 'Trợ lý AI', items: [['/cai-dat-bot', 'Cài đặt bot', '✦'], ['/menu-tro-ly', 'Menu trợ lý', '☰'], ['/tri-thuc', 'Hỏi đáp & chính sách', '❖'], ['/kenh-ban', 'Kênh bán', '⇄']] },
+  { group: 'Trợ lý AI', items: [['/cai-dat-bot', 'Cài đặt bot', '✦'], ['/menu-tro-ly', 'Menu trợ lý', '☰'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/tri-thuc', 'Hỏi đáp & chính sách', '❖'], ['/kenh-ban', 'Kênh bán', '⇄']] },
   { group: 'Tài khoản', items: [['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '⚙']] },
 ];
 
@@ -33,6 +34,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       case '/kenh-ban': return <Channels />;
       case '/cai-dat-bot': return <BotSettings />;
       case '/menu-tro-ly': return <Menu />;
+      case '/bieu-cam-fanpage': return <ReactionSettings />;
       case '/tri-thuc': return <Knowledge />;
       case '/goi-dich-vu': return <Plan />;
       case '/tai-khoan': return <Account />;
