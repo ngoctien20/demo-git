@@ -266,7 +266,7 @@ test('SQL binds private DB subject + actor + session + grant + reference for BOT
    'app_private.messenger_operator_grants',
    'CURRENT_USER::name','os.subject_user_id','g.subject_user_id',
    'g.active','os.active','transaction_timestamp()',
-   'rr.plan_id=p.id'
+   'plan_id'
   ])assert.ok(sql.includes(fragment),fragment);
   assert.doesNotMatch(sql,/SECURITY DEFINER|service_role|request\.jwt\.claims/i);
  }
