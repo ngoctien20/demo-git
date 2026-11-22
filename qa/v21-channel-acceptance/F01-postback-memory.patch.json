@@ -1,0 +1,17 @@
+{
+  "_status": "PROPOSED — NOT applied, NOT published. Needs owner approval to edit + publish live workflow Z7FdV7uDvApfbURQ.",
+  "_rollback": "restore_workflow_version Z7FdV7uDvApfbURQ -> f8c23034-df7b-4229-8a55-0418f518fb08, then publish",
+  "workflowId": "Z7FdV7uDvApfbURQ",
+  "versionName": "F-01 Remember postback SKU in chat memory",
+  "operations": [
+    { "type": "addNode", "node": { "name": "Messenger Memory (postback)", "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow", "typeVersion": 1.4, "position": [2300, 900],
+      "parameters": { "sessionIdType": "customKey", "sessionKey": "={{ $('Loop One Message').first(1, $('Loop One Message').context.currentRunIndex).json.sessionId }}", "contextWindowLength": 14 } } },
+    { "type": "addNode", "node": { "name": "Remember Selected Product", "type": "@n8n/n8n-nodes-langchain.memoryManager", "typeVersion": 1.1, "position": [2300, 720],
+      "parameters": { "mode": "insert", "insertMode": "insert", "messages": { "messageValues": [
+        { "type": "user", "message": "={{ 'Khách bấm nút Xem ' + $('Loop One Message').first(1, $('Loop One Message').context.currentRunIndex).json.selectedSku }}" },
+        { "type": "ai", "message": "={{ $json.output }}" } ] } } } },
+    { "type": "addConnection", "source": "Format selected product", "target": "Remember Selected Product" },
+    { "type": "addConnection", "source": "Messenger Memory (postback)", "target": "Remember Selected Product", "connectionType": "ai_memory" }
+  ],
+  "_acceptance": "Owner: press 'Xem A002' button, then type 'Mẫu này bao nhiêu?' -> reply must name A002 / 159.000đ. Regression: type 'Xem A003' -> A003 info with button."
+}
