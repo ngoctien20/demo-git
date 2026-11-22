@@ -78,3 +78,10 @@ Screenshots: `screens/before_*` (develop site) and `screens/after_*`, `screens/a
 ## 7. Rollback
 
 Code only: `git revert ad6ceab8 fd66a82a` (plus this docs commit), or keep branch base 966dbe03. Nothing to undo in the database or n8n.
+
+## 8. Follow-up (V25.1, 2026-11-23)
+
+- `db/v25-workspace/10_workspace_settings.sql` (PROPOSED, not applied): `set_workspace_industry` (owner only, writes `tenants.industry`), `store_briefing_settings` + `save_briefing_settings` (owner/manager; status fixed to `awaiting_sender`, nothing sent). Rollback `90_workspace_settings_rollback.sql`.
+- App: "Ngành chính của không gian làm việc" on Cài đặt; Daily Briefing save works when the server has the table, otherwise stays "chưa mở".
+- Wording: login and 404 no longer say "cửa hàng / chủ shop".
+- QA: `qa/v25-universal/offline-pg-uat.sh` 54 cases (apply → rollback → re-apply), `workspace-ui.cjs` extended (owner/staff/missing-server cases).

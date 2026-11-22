@@ -13,7 +13,7 @@ const pagesDir = join(root, 'site-src', 'pages');
 export const REDIRECTS = {
   'login.html': ['app/#/dang-nhap', 'trang Đăng nhập'],
   'register.html': ['app/#/dang-ky', 'trang Đăng ký dùng thử'],
-  'dashboard.html': ['app/', 'App chủ shop'],
+  'dashboard.html': ['app/', 'TIEN404 AI Workspace'],
   'onboarding.html': ['app/#/dang-ky', 'trang Đăng ký dùng thử'],
   'checkout.html': ['pricing.html', 'Bảng giá'],
   'billing.html': ['app/#/goi-dich-vu', 'Gói dịch vụ trong App'],

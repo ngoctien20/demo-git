@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { BotSettingsRow, isMissingFeature, useLoad } from '../data';
 import { dateTime } from '../format';
 import { Notice, PageHead, Spinner } from '../ui';
+import { WorkspaceKind } from './WorkspaceKind';
 
 const TONES: { v: BotSettingsRow['tone']; label: string; sample: string }[] = [
   { v: 'polite', label: 'Lịch sự', sample: 'Dạ, mẫu này shop còn size M ạ. Anh/chị cần lấy mấy chiếc ạ?' },
@@ -26,7 +27,7 @@ export function BotSettings() {
   useEffect(() => { setF(data ?? EMPTY); }, [data]);
 
   if (loading) return <Spinner />;
-  if (error) return <><PageHead title="Cài đặt" /><Notice kind={isMissingFeature(error) ? 'warn' : 'err'}>{isMissingFeature(error) ? 'Cài đặt bot chưa được bật trên máy chủ. Đội TIEN404 sẽ mở trong đợt cập nhật tới.' : friendlyError(error)}</Notice></>;
+  if (error) return <><PageHead title="Cài đặt" /><WorkspaceKind /><Notice kind={isMissingFeature(error) ? 'warn' : 'err'}>{isMissingFeature(error) ? 'Cài đặt bot chưa được bật trên máy chủ. Đội TIEN404 sẽ mở trong đợt cập nhật tới.' : friendlyError(error)}</Notice></>;
 
   const dirty = JSON.stringify({ ...f, updated_at: '' }) !== JSON.stringify({ ...(data ?? EMPTY), updated_at: '' });
   const addEmail = () => {
@@ -56,6 +57,7 @@ export function BotSettings() {
   return (
     <>
       <PageHead title="Cài đặt" sub={`Cách trợ lý AI nói chuyện với khách của ${store.name}: bật/tắt, giọng văn, thông tin chung, thông báo.`} />
+      <WorkspaceKind />
       {!canManage && <Notice>Bạn đang ở vai trò nhân viên nên chỉ xem được cài đặt.</Notice>}
       <section className="panel toggle-panel">
         <div>

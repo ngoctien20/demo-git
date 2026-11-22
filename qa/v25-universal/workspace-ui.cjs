@@ -82,7 +82,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
   const base = `http://127.0.0.1:${server.address().port}/app/`;
   const b = await chromium.launch();
 
-  async function page(w, h, uid, email) {
+  async function page(w, h, uid, email, missing = []) {
     const ctx = await b.newContext({ viewport: { width: w, height: h } });
     const session = { access_token: 'x.' + Buffer.from(JSON.stringify({ sub: uid, exp: 9999999999 })).toString('base64url') + '.y', token_type: 'bearer',
       expires_in: 3600, expires_at: 9999999999, refresh_token: 'r', user: { id: uid, email, aud: 'authenticated', role: 'authenticated' } };
@@ -93,6 +93,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
       const u = new URL(route.request().url());
       if (u.pathname.startsWith('/auth/v1/')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: session.user }) });
       const m = u.pathname.match(/\/rest\/v1\/(rpc\/)?(\w+)/);
+      if (missing.includes(m && m[2])) return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ code: 'PGRST202', message: `Could not find the ${m[1] ? 'function' : 'table'} public.${m[2]} in the schema cache` }) });
       if (m && m[1]) { rpcCalls.push({ uid, fn: m[2], body: route.request().postDataJSON() }); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(m[2] === 'create_assistant' ? 'a-new' : now) }); }
       const table = m[2];
       reads.push({ uid, table, q: u.search });
@@ -181,10 +182,23 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     const sw = p.getByRole('switch', { name: /Biểu cảm tự động/ });
     ok(await sw.getAttribute('aria-checked') === 'false' && await sw.isDisabled(), 'reaction: automatic reactions OFF and cannot be enabled');
     ok(!rpcCalls.some(c => /reaction/i.test(c.fn)), 'reaction: no reaction RPC/provider call');
-    // Daily briefing candidate: nothing saved.
+    // Daily briefing: preferences saved through save_briefing_settings only; nothing is sent.
     await p.goto(base + '#/bao-cao'); await p.waitForTimeout(300);
-    ok(await p.getByRole('button', { name: 'Lưu cài đặt (chưa mở)' }).isDisabled(), 'daily briefing: save disabled (candidate)');
     ok(await p.locator('td.num', { hasText: '—' }).count() >= 1, 'reports: metrics without verified source show "—"');
+    await p.getByLabel('Tôi muốn nhận báo cáo mỗi sáng khi hệ thống gửi sẵn sàng').check();
+    await p.getByLabel('Giờ gửi').fill('06:45');
+    await p.getByRole('button', { name: 'Lưu cài đặt', exact: true }).click(); await p.waitForTimeout(300);
+    const bs = rpcCalls.filter(c => c.fn === 'save_briefing_settings').pop();
+    ok(bs && bs.body.p_store === S.A && bs.body.p_opt_in === true && bs.body.p_send_time === '06:45' && bs.body.p_destination === 'email' && Array.isArray(bs.body.p_metrics) && bs.body.p_metrics.includes('orders'),
+      'daily briefing: preferences saved via save_briefing_settings for this store');
+    ok(await p.getByText('hiện chưa có tin nào được gửi', { exact: false }).count() === 1 && !rpcCalls.some(c => /send|notify|dispatch/i.test(c.fn)), 'daily briefing: says nothing is sent; no send RPC');
+    // Workspace industry (owner only) via set_workspace_industry.
+    await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
+    ok(await p.getByRole('button', { name: 'Lưu ngành chính' }).isDisabled(), 'industry: save disabled until a different industry is picked');
+    await p.getByRole('radio', { name: /Nghệ sĩ/ }).check();
+    await p.getByRole('button', { name: 'Lưu ngành chính' }).click(); await p.waitForTimeout(300);
+    const wi = rpcCalls.filter(c => c.fn === 'set_workspace_industry').pop();
+    ok(wi && wi.body.p_store === S.A && wi.body.p_industry === 'artist', 'industry: owner changes main industry via set_workspace_industry (store-scoped)');
     // Channels: real connection read, honest labels.
     await p.goto(base + '#/kenh-ban'); await p.waitForTimeout(300);
     ok(await p.getByText('Fanpage demo Hoa Mai').count() === 1 && await p.getByText('Môi trường demo', { exact: false }).count() >= 1, 'channels: connection status from channel_connections, demo env labelled');
@@ -230,7 +244,20 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     ok(await p.getByRole('button', { name: '+ Tạo trợ lý' }).count() === 0, 'staff: cannot create assistants');
     await p.goto(base + '#/hoi-thoai'); await p.waitForTimeout(300);
     ok(await p.getByText('Chỉ chủ sở hữu và quản lý').count() === 1, 'staff: conversations hidden');
+    await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
+    ok(await p.getByRole('button', { name: 'Lưu ngành chính' }).count() === 0 && await p.getByRole('radio', { name: /Nghệ sĩ/ }).isDisabled(), 'staff: cannot change workspace industry');
     ok(!rpcCalls.some(c => c.uid === U.staff), 'staff: no write RPC issued');
+    await ctx.close(); }
+
+  // 5b. Server without V25 settings (db/v25-workspace not applied): honest fallbacks, no crash.
+  { const { p, errs, ctx } = await page(390, 844, U.shopOwner, 'shop@example.com', ['store_briefing_settings', 'set_workspace_industry']);
+    await p.goto(base + '#/bao-cao'); await p.waitForTimeout(400);
+    ok(await p.getByRole('button', { name: 'Lưu cài đặt (chưa mở)' }).isDisabled(), 'briefing (server not updated): save disabled, labelled not open');
+    await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
+    await p.getByRole('radio', { name: /Giáo dục/ }).check();
+    await p.getByRole('button', { name: 'Lưu ngành chính' }).click(); await p.waitForTimeout(300);
+    ok(await p.getByText('chưa được bật trên máy chủ', { exact: false }).count() >= 1, 'industry (server not updated): says the feature is not on the server');
+    await check(p, errs.filter(e => !/404|Failed to load resource/.test(e)), 'shop-cai-dat-missing', '390');
     await ctx.close(); }
 
   // 6. No credentials in the shipped bundle.
