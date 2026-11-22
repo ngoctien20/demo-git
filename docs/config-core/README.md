@@ -1,6 +1,6 @@
 # TIEN404 Universal Configuration Core v1 (Phase 1)
 
-Status: **IMPLEMENTED + TESTED offline. NOT applied to any hosted database. No live bot reads it yet.**
+Status: **APPLIED to restore-test and staging on 2026-11-22 07:01–07:04 UTC (owner-approved), hosted UAT 21/21 each. No live bot reads it yet.**
 
 ## Model
 
@@ -79,6 +79,15 @@ behaviour (`kind:'legacy'`).
 node --test config-core/test/*.test.mjs
 PGHOST=/path/to/socket PGPORT=5432 bash qa/config-core/offline-pg-uat.sh   # local only
 ```
+
+## Hosted apply record (2026-11-22, run 44996262167, workflow tien404-config-core-hosted.yml)
+
+| Target | Steps | Result |
+|---|---|---|
+| restore-test `cunxxzxaboazbszsfneo` | apply 10 → hosted UAT → rollback 90 → re-apply 10 | UAT `pass=21 fail=[]`; fp pre `4841cd7e…` = after rollback; post `03fbc6cb…` = after re-apply |
+| staging `ifxlvrhyjhbzbrkdsida` | encrypted backup (artifact 14744056444, sha256 `f536655f…`, 90 days) → apply 10 → hosted UAT | UAT `pass=21 fail=[]`, 0 UAT rows left; fp pre `4841cd7e…`, post `03fbc6cb…` (same as restore-test) |
+
+Applied with psql → not recorded in `supabase_migrations`. Auth in hosted UAT is simulated (role + jwt claims), not GoTrue-signed.
 
 ## Apply order (needs owner approval per step)
 
