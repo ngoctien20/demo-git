@@ -219,3 +219,40 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 5. Keep **Draft PR #491**, issue **#494** (mobile catalog release acceptance), **#492** (Zalo numbered menu) and security blockers OPEN until independent evidence exists.
 
 **Disposition:** IMPLEMENTED on DRAFT, TESTED with offline simulation and read-only pinned Bridge calls; **NOT VERIFIED end-to-end in Messenger mobile, NOT RELEASED**.
+
+## 11. Sixth continuation — Messenger partial Send API result guard (2026-11-22 ~10:08 UTC)
+
+**Starting state / audit:** Messenger Draft `9342025c-ea16-4965-97ac-bc4b98591996`, Published `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`, inactive Menu Bridge Draft `0d04c978-fa95-4b25-9dc0-df4cdbb2db04`, PR #491 open/draft. The earlier separate Social Reactions Shadow remains **ALL OFF**. n8n user preferences re-read: keep DEMO distinct from Commerce and never disturb Published workflows.
+
+### Problem found
+
+- The outgoing path is `Prepare Messenger Reply` → `Send Messenger Reply - CONFIGURE TOKEN` → `Verify Messenger Send Result` → `Record Successful Messenger MID`.
+- Previous verification checked only `1 <= results.length <= 3` and each result's `recipient_id`/`message_id`. It did **not** require that `results.length == original.messageCount`.
+- Therefore a 3-message planned reply with only one confirmed Meta message could theoretically be marked fully answered, causing later replay/deduplication to suppress missing message fragments. This is a **code-level finding / risk**, not proof Meta has produced the partial result in production.
+- The existing `Skip Duplicate Message ID` uses a **read-only Data Table `rowNotExists`** before sending, followed by writing the dedupe row only after complete acknowledgment. Two truly concurrent webhook retries could pass the preflight before either writes the row. **This is not an atomic claim.** Record independently at [Issue #495](https://github.com/ngoctien20/demo-git/issues/495); no schema, live event table, credentials or customer records modified.
+
+### Safe Draft-only fix
+
+- Updated only n8n Code node `Verify Messenger Send Result` to require `original.messageCount` integer in 1..3; `original.messageIndex==1`; exactly `messageCount` Meta receipt objects; each has a nonempty unique `message_id` and the exact intended `recipient_id`.
+- On any mismatch, **throw and do not advance** to `Record Successful Messenger MID`. The workflow performs **no automatic blind retry** in this change. Partial/ambiguous Send side effects still need a durable claim / reconciliation design; simply failing the workflow cannot guarantee no duplicate reply on external webhook redelivery.
+- No changes to `Send Messenger Reply - CONFIGURE TOKEN` HTTP request/credentials, `Prepare Messenger Reply`, Meta Page profile, commerce tools, handoff, reaction shadow, Published version or other tenant data.
+- Current Messenger Draft after change: **`41bcea84-703d-40bc-be2a-71f84ca4e2d8`** (68 nodes). Published remains **`47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`**. Menu Bridge unchanged/inactive.
+- **Rollback:** restore Messenger Draft **`9342025c-ea16-4965-97ac-bc4b98591996`** to remove only this new receipt guard while keeping the earlier Social Reactions Shadow ALL OFF; do not restore without checking for newer concurrent changes. No publication or external send required for rollback.
+
+### Isolated evidence
+
+- The exact new n8n Code node body plus post-Send graph edges were captured as **credential-free** snippets in `config-core/test/fixtures/messenger-phase2-draft.json`, not as an executable Published workflow.
+- Six new isolated VM tests in `config-core/test/messenger-phase2-route.test.mjs`: 1-message success, 3-message success with distinct Meta MIDs, partial and zero confirmations, excess and invalid planned count, wrong recipient/error response/duplicate MID, and structural assurance that event-success marking follows full verification.
+- [GitHub Actions Config Core CI run 45010853380](https://github.com/ngoctien20/demo-git/actions/runs/45010853380): **138/138 tests PASS, 0 FAIL**, disposable PostgreSQL 17 workflow still PASS; no live Meta send or Commerce database writes.
+- Meta public Messenger documentation and provider examples support a Button Template with up to three postback buttons, quick replies and a 640-character template body, but these are **API format constraints**, not live-device visual acceptance.
+- A read-only inspection of the connected Meta Business Suite Inbox still shows an older text-based catalog response. This is consistent with the unchanged Messenger Published version; **not** proof the Draft pager works on a phone or that a new message was sent during this audit.
+
+### Remaining release gates
+
+1. **Issue #495 P1:** atomic inbound claim, uniqueness across trusted Page/sender/event, timeout/uncertain-send reconciliation and parallel webhook duplicate prevention.
+2. **Issue #494:** dedicated test Page + actual mobile/desktop Messenger button-template and Quick Reply delivery; test all seven pages, terminal pages, stale products, Meta send failure and human handoff/Finish. Requires explicit owner approval identifying workflow version and test recipients before any publish/send.
+3. Verify signed owner A/B tenant isolation; no DEMO credentials/Products/Orders reuse in real Commerce; pending P0 privileged RPC security closure.
+4. Pre-existing n8n linter warnings (Memory Manager, OpenAI builtInTools, canvas complexity); not changed.
+5. Zalo/Telegram numeric menu #492; unrelated to this Messenger Send guard.
+
+**Disposition:** IMPLEMENTED in Messenger Draft and TESTED offline; **NOT RELEASED**, not asserted as Meta-delivered or customer-facing.
