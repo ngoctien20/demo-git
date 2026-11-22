@@ -56,8 +56,8 @@ const VIEW_SQL_FINAL=VIEW_SQL.replace(
 );
 const APPEND_SQL=[
  'INSERT INTO app_private.messenger_review_events',
- '(id,plan_id,tenant_id,store_id,page_id,actor_db_role,access_role,decision_code,request_digest,created_at)',
- 'SELECT $3::uuid,p.id,p.tenant_id,p.store_id,p.page_id,CURRENT_USER::name,g.access_role,$4,$5,transaction_timestamp()',
+ '(id,plan_id,tenant_id,store_id,page_id,operator_session_id,actor_db_role,access_role,decision_code,request_digest,created_at)',
+ 'SELECT $3::uuid,p.id,p.tenant_id,p.store_id,p.page_id,os.id,CURRENT_USER::name,g.access_role,$4,$5,transaction_timestamp()',
  'FROM app_private.messenger_reconciliation_refs rr',
  'JOIN app_private.messenger_send_plans p ON p.id=rr.plan_id',
  'AND p.tenant_id=rr.tenant_id AND p.store_id=rr.store_id AND p.page_id=rr.page_id',
