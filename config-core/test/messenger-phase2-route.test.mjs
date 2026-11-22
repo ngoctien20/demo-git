@@ -181,6 +181,58 @@ test('Meta handoff success gate protects waiting label; failure has no path to l
   assert.ok(edges['Pass Messenger Thread to Page Inbox'].main[0].some(x => x.node === 'Handoff succeeded?'));
 });
 
+function prepareCatalog(reply, currentPatch = {}) {
+  const current = { pageId: pageA, senderId: senderA, messageId: ID, receivedAt: 'synthetic',
+    mediaType: 'text', chatInput: 'Shop đang có những sản phẩm nào?', ...currentPatch };
+  return fakeNode('Prepare Messenger Reply', [item({ output: reply })], { current })
+    .map(x => x.json.messengerMessage);
+}
+
+test('catalog with four SKU lines still offers first three native tap buttons (P1 mobile)', () => {
+  const reply = [
+    '- A002 — Áo thun nam trắng, 159.000đ',
+    '- A003 — Áo thun nam đen, 159.000đ',
+    '- A004 — Áo polo nam, 289.000đ',
+    '- A005 — Áo sơ mi nam, 329.000đ',
+  ].join('\n');
+  const messages = prepareCatalog(reply);
+  assert.equal(messages.length, 1);
+  const buttons = messages[0].attachment?.payload?.buttons;
+  assert.ok(buttons, 'customer must see clickable product choices even when catalog has >3 SKUs');
+  assert.deepEqual(buttons.map(x => x.payload), [
+    'TIEN404:VIEW:A002', 'TIEN404:VIEW:A003', 'TIEN404:VIEW:A004',
+  ]);
+  assert.ok(buttons.every(x => x.type === 'postback'));
+});
+
+test('numbered product list also provides native tap buttons', () => {
+  const messages = prepareCatalog([
+    '1. A002 — Áo thun nam trắng',
+    '2) A003 — Áo thun nam đen',
+    '3. A004 — Áo polo nam',
+    '4. A005 — Áo sơ mi nam',
+  ].join('\n'));
+  assert.deepEqual(messages[0].attachment?.payload?.buttons?.map(x => x.payload), [
+    'TIEN404:VIEW:A002', 'TIEN404:VIEW:A003', 'TIEN404:VIEW:A004',
+  ]);
+});
+
+test('long catalog stays at most three messages and ends with selectable buttons', () => {
+  const lines = Array.from({ length: 12 }, (_, i) => {
+    const sku = 'A' + String(i + 2).padStart(3, '0');
+    return '- ' + sku + ' — ' + 'Áo kiểm thử '.repeat(10);
+  });
+  const messages = prepareCatalog(lines.join('\n'));
+  assert.ok(messages.length >= 2 && messages.length <= 3);
+  assert.equal(messages.at(-1).attachment?.payload?.buttons?.length, 3);
+});
+
+test('ordinary response with no confirmed SKU does not invent product buttons', () => {
+  const messages = prepareCatalog('Mình đang kiểm tra danh mục, bạn vui lòng hỏi lại sau nhé.');
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].attachment, undefined);
+});
+
 function formatProduct(selectedSku, rows) {
   const selected = { selectedSku, pageId: pageA, senderId: senderA, messageId: ID };
   return fakeNode('Format selected product', rows.map(item), { current: selected })[0].json.output;
