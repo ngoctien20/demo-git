@@ -15,8 +15,11 @@ test('bundle: published menu -> decision with version', () => {
   const r = run({ channel: 'messenger', payload: 'T404:M:handoff' }, menu());
   assert.equal(r.mode, 'handoff'); assert.equal(r.configVersion, 7); assert.equal(r.configSource, 'published');
 });
-test('bundle: RPC null / HTTP error -> legacy (live flow unchanged)', () => {
-  assert.equal(run({ channel: 'messenger', payload: 'T404:M:catalog' }, {}).mode, 'legacy');
+test('bundle: RPC null -> safe rejected; HTTP error -> legacy fallback', () => {
+  const unavailable = run({ channel: 'messenger', payload: 'T404:M:catalog' }, {});
+  assert.equal(unavailable.mode, 'rejected');
+  assert.equal(unavailable.reason, 'menu_unavailable');
+  assert.match(unavailable.message.text, /không khả dụng/);
   const e = run({ channel: 'messenger', payload: 'T404:M:catalog' }, { error: { message: 'timeout' } });
   assert.equal(e.mode, 'legacy'); assert.equal(e.configSource, 'read_failed');
 });
