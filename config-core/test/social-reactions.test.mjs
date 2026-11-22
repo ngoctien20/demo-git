@@ -109,8 +109,10 @@ test('positive decision creates a dry-run only Meta request with original MID an
   assert.equal(request.sendAllowed,false);
   assert.equal(request.method,'POST');
   assert.equal(request.body.sender_action,'react');
-  assert.equal(request.body.payload.message_id,'mid.$abc-123');
-  assert.equal(request.body.payload.reaction,'❤️');
+  assert.equal(typeof request.body.payload,'string');
+  const payload = JSON.parse(request.body.payload);
+  assert.equal(payload.message_id,'mid.$abc-123');
+  assert.equal(payload.reaction,'❤️');
   assert.equal(request.body.recipient.id,'7654321');
   assert.equal(request.body.access_token,undefined);
 });
