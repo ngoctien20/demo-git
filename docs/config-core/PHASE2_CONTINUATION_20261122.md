@@ -182,3 +182,40 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - Remaining risk: a mid-session modification to the Products sheet can reflow page indices even when the menu version is unchanged. The adapter rereads fresh prices on each page and responds safely to empty/out-of-range pages, but catalog snapshot/cursor stability has **not** been implemented. Future tenant binding, RLS/owner A-B, full mobile Meta delivery, status/OTP, Zalo numeric menu #492, and workflow validation warnings remain separate gates.
 
 **Disposition:** IMPLEMENTED on DRAFT + TESTED by isolated simulation and offline CI; **NOT RELEASED / NOT VERIFIED on real Messenger mobile**.
+
+## 10. Fifth continuation — Stale catalog / concurrent Social Reaction Draft protection (2026-11-22 ~10:00 UTC)
+
+**Reason:** The prior catalog pager bound each cursor to the published menu version, but **not to the Products snapshot**. A change in product price, inventory or eligible SKU rows between page 1 and page 2 could silently shift the page contents. This is a usability/consistency risk, not an authorization exploit.
+
+### Current verified versions
+
+- Main Messenger Draft **`9342025c-ea16-4965-97ac-bc4b98591996`** (68 nodes), Published remains **`47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`**.
+- Inactive Menu Bridge Draft **`0d04c978-fa95-4b25-9dc0-df4cdbb2db04`**, no Published version.
+- A separate concurrent task added `V21 Social Reactions Shadow (ALL OFF)` in Messenger Draft **`9a705cbe-79bd-4bd5-ae41-578da7286c4f`** after the pagination checkpoint. The diff was audited before modifying: 1 added Code node, a reroute of `Classify explicit human request` -> Shadow -> `Human handoff request?`, no changes to the product/catalogue nodes. The shadow's `PAGE_POLICIES` remains an empty frozen object and its output is **NO SEND**. It was **preserved** by the subsequent three-node patch; no false claim that this separately authored work has been fully tested.
+- **Do not** restore Messenger Draft `18125761` on top of this newer Draft without coordinating with the parallel Social Reactions work; doing so would discard their ALL OFF shadow. For rollback **of this fifth continuation only**, restore Messenger Draft `9a705cbe-79bd-4bd5-ae41-578da7286c4f`; restore inactive Menu Bridge Draft `4709a9b1-0569-4eea-9eb5-b9770c2be2f8`. No Published change required. Consult workflow versions/history before restoring if parallel work continues.
+
+### Change made in this continuation
+
+- The navigation payload is now `T404:C:<published_item_id>:<menu_version>:<catalog_digest>:<page>` rather than the previous version-only cursor.
+- The `catalog_digest` is a deterministic, **non-cryptographic eight-character checksum** of normalized, validated, sorted visible DEMO product data (category, SKU, name, price and stock). The server recalculates it on each read. A mismatch or missing digest for non-first pages fails closed with a plain-language request to reopen the catalog. The checksum is only for **change detection**, not for tenant authorization, cryptographic integrity, payment/price verification or a credential.
+- Menu Bridge re-authorizes the current published `SHOW_CATALOG` item and checks `version_no` on every cursor; then passes the digest unchanged downstream. Messenger `Áp quyết định menu` only propagates a strictly formatted digest to the existing `catalog_page` renderer, where actual comparison happens **after** the fresh, read-only Products lookup.
+- `Prepare Messenger Reply` validates the new cursor form. The Meta button template still has at most 3 SKU buttons, <=2 navigation quick replies and one emitted message on the deterministic catalog path. Provider acceptance/mobile rendering remains **NOT VERIFIED**.
+- The legacy `TIEN404:VIEW:<SKU>`, original order/tool paths, signed inbound gating, human handoff/voice and normal AI messages remain unchanged.
+- No production Meta, Orders, RLS, credentials, Web/Zalo adapter, payment or real tenant/customer data was changed.
+
+### QA and acceptance evidence
+
+- Inactive Bridge isolated pin-data tests (synthetic, NO SEND): `6724` open menu PASS, `6725` valid digest page 2 PASS, `6726` old digest-less cursor rejected PASS, `6727` stale menu version rejected PASS, `6728` non-catalog action rejected PASS, `6729` malformed digest rejected PASS.
+- Offline Node/PG17 CI: [GitHub run 45010180711](https://github.com/ngoctien20/demo-git/actions/runs/45010180711) **PASS, 131/131 unit tests, 0 failures**, including changed price, changed stock, changed SKU list, missing digest, wrong digest and safe navigation back/forward; byte-identical `build-bridge.mjs` / `bridge.sdk.js` parity PASS.
+- The first CI attempt [45010088970](https://github.com/ngoctien20/demo-git/actions/runs/45010088970) failed on **one outdated test input** still using the old version-only cursor; test fixture was corrected and the next run passed. This was a QA fixture issue, not evidence of a live Messenger failure.
+- n8n direct inspection confirmed the updated renderer / decision applier / Send-prep cursor format in Messenger Draft; the Bridge Draft contains `catalogDigest: cursor[3]`. Main Published and Bridge inactive state were re-verified after edits.
+
+### Still blocked / needs separate owner approval
+
+1. Real private Meta Page mobile + Messenger web: Meta Graph Send API response, 7-page navigation usability, button/quick-reply display and incoming postback matching; no actual send was run here.
+2. Full tenant-bound Commerce catalog (current reader intentionally uses **AI_SALES_DEMO** allowlisted Page only), signed owner A/B, anti-replay/idempotency, failed/uncertain Send API handling and order ownership.
+3. Non-cryptographic fingerprint collision risk remains theoretically possible; it is not an authorization mechanism. An authoritative catalogue revision/snapshot and stable pagination contract are needed for commercial multi-store.
+4. Existing Messenger validation warnings for Memory Manager, OpenAI builtInTools and top-level canvas organization remain; this change did not modify those nodes. Bridge public publishable-key lint warning remains.
+5. Keep **Draft PR #491**, issue **#494** (mobile catalog release acceptance), **#492** (Zalo numbered menu) and security blockers OPEN until independent evidence exists.
+
+**Disposition:** IMPLEMENTED on DRAFT, TESTED with offline simulation and read-only pinned Bridge calls; **NOT VERIFIED end-to-end in Messenger mobile, NOT RELEASED**.
