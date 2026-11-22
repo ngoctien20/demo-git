@@ -162,3 +162,17 @@ test('two Fanpages in same tenant cannot borrow a policy from each other',()=>{
   const p=policy(),a=authority({pageId:'page-222'});
   assert.equal(verifyPublishedPageReactionPolicy(p,a,now).reason,'policy_scope_mismatch');
 });
+
+test('owner consent is bound to profile and industry, not merely the revision',()=>{
+  const valid=policy();
+  assert.equal(verifyPublishedPageReactionPolicy(valid,authority(),now).mode,'verified_policy');
+  assert.equal(verifyPublishedPageReactionPolicy(policy({
+    ownerConsent:{...valid.ownerConsent,profileId:'expressive'}
+  }),authority(),now).reason,'owner_consent_missing_or_expired');
+  assert.equal(verifyPublishedPageReactionPolicy(policy({
+    ownerConsent:{...valid.ownerConsent,industryId:'artist'}
+  }),authority(),now).reason,'owner_consent_missing_or_expired');
+  const changed=policy({settings:{...valid.settings,profileId:'restrained',
+    intents:{thanks:true,praise:false},cooldownSeconds:600,maxPerHour:1}});
+  assert.equal(verifyPublishedPageReactionPolicy(changed,authority(),now).reason,'owner_consent_missing_or_expired');
+});
