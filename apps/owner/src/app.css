@@ -207,3 +207,16 @@ input:disabled{background:var(--bg);color:var(--muted)}
   .head-actions{width:100%}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Menu trợ lý */
+.menu-editor{align-items:start}
+.menu-items{display:grid;gap:10px;margin:8px 0 12px;padding:0;list-style:none}
+.menu-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.menu-item.off{opacity:.65}
+.menu-item-head{display:flex;gap:10px;align-items:center}
+.menu-item-head input{flex:1;font-weight:600}
+.services{display:grid;gap:6px}
+.versions{display:grid;gap:6px}
+.versions li{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chat-preview{background:var(--bg);border-radius:12px;padding:12px;display:grid;gap:8px}
+.chat-preview .bubble{background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:8px 12px;margin:0;max-width:95%}
+.chat-preview .bubble.pre{white-space:pre-line}
