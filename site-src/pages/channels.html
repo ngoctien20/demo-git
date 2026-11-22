@@ -1,0 +1,80 @@
+<!--meta {"title":"Kênh kết nối — TIEN404 AI","description":"Messenger, Zalo, Website Chat, Telegram, Instagram: khả năng, trạng thái, giới hạn API và yêu cầu cấp quyền của từng kênh khi dùng TIEN404 AI."}-->
+<section class="page-head">
+ <div class="wrap">
+  <p class="eyebrow">Kênh kết nối</p>
+  <h1>Kết nối đúng kênh, đúng khả năng</h1>
+  <p class="lead">Mỗi nền tảng nhắn tin có giới hạn riêng về nút bấm, độ dài, quyền truy cập và quy định gửi tin. TIEN404 không coi các kênh giống hệt nhau: cùng một cấu hình trợ lý được hiển thị theo khả năng thật của từng kênh.</p>
+  <p class="fine muted">Cập nhật 22/11/2026. "Thử nghiệm" nghĩa là đang chạy có giám sát với nhóm nhỏ, chưa mở cho mọi tổ chức.</p>
+ </div>
+</section>
+
+<section class="section tight">
+ <div class="wrap channel-cards">
+  <article class="card ch" id="messenger">
+   <header><h2>Facebook Messenger</h2><span class="pill wip">Thử nghiệm có kiểm soát</span></header>
+   <dl class="kv">
+    <dt>Chức năng</dt><dd>Trả lời tin nhắn Fanpage, menu nút bấm, nút trả lời nhanh, mở đường dẫn, chuyển nhân viên.</dd>
+    <dt>Giao diện</dt><dd>Tối đa 13 nút trả lời nhanh (20 ký tự); menu cố định ☰ tối đa 20 mục (30 ký tự).</dd>
+    <dt>Trên điện thoại</dt><dd>Menu ☰ có thể không hiện trên một số ứng dụng điện thoại. Lời chào luôn kèm nút trả lời nhanh để khách bấm; lệnh gõ chữ "menu" để mở lại nút đang được chuẩn bị.</dd>
+    <dt>Giới hạn</dt><dd>Chỉ trả lời trong khung 24 giờ kể từ tin cuối của khách theo quy định Meta.</dd>
+    <dt>Cấp quyền</dt><dd>Quyền quản trị Fanpage, kết nối ứng dụng Meta của TIEN404, xét duyệt quyền nhắn tin.</dd>
+    <dt>Chưa có</dt><dd>Tự cập nhật menu cố định ☰ từ App (cần duyệt riêng); phản ứng biểu cảm tự động (mặc định tắt).</dd>
+   </dl>
+  </article>
+  <article class="card ch" id="zalo">
+   <header><h2>Zalo</h2><span class="pill wip">Thử nghiệm</span></header>
+   <dl class="kv">
+    <dt>Chức năng</dt><dd>Nhận và trả lời tin qua Zalo Bot; chủ cửa hàng nhập sản phẩm bằng tệp.</dd>
+    <dt>Giao diện</dt><dd>Chủ yếu là chữ. Menu được hiển thị thành danh sách đánh số để khách gõ số.</dd>
+    <dt>Giới hạn</dt><dd>Theo chính sách Zalo cho bot và Official Account; Zalo OA chưa được kiểm thử.</dd>
+    <dt>Cấp quyền</dt><dd>Tạo Zalo Bot hoặc liên kết Official Account đã xác thực.</dd>
+    <dt>Chưa có</dt><dd>Nút bấm tương tác, đồng bộ danh tính khách với Messenger hay website.</dd>
+   </dl>
+  </article>
+  <article class="card ch" id="website">
+   <header><h2>Website Chat</h2><span class="pill wip">Bản nháp</span></header>
+   <dl class="kv">
+    <dt>Chức năng</dt><dd>Khung chat gắn lên website bằng một đoạn mã, hiển thị nút ngay trong khung chat, hỗ trợ sáng/tối.</dd>
+    <dt>Giao diện</dt><dd>Tối đa 12 nút, 40 ký tự mỗi nút.</dd>
+    <dt>Giới hạn</dt><dd>Chưa mở công khai: cần chống spam, giới hạn tần suất và kiểm soát chi phí AI trước khi phát mã nhúng.</dd>
+    <dt>Cấp quyền</dt><dd>Khai báo tên miền website được phép nhúng.</dd>
+    <dt>Thử ngay</dt><dd>Trợ lý tư vấn của TIEN404 ở trang <a href="demo.html">Dùng thử AI</a> (không truy cập dữ liệu của tổ chức nào).</dd>
+   </dl>
+  </article>
+  <article class="card ch" id="telegram">
+   <header><h2>Telegram</h2><span class="pill wip">Thử nghiệm nội bộ</span></header>
+   <dl class="kv">
+    <dt>Chức năng</dt><dd>Trả lời tin nhắn chữ và tin nhắn thoại qua bot Telegram.</dd>
+    <dt>Giao diện</dt><dd>Chữ; menu hiển thị thành danh sách. Nút bấm trong tin chưa hỗ trợ.</dd>
+    <dt>Cấp quyền</dt><dd>Tạo bot qua BotFather và giao token cho TIEN404 kết nối.</dd>
+    <dt>Chưa có</dt><dd>Kết nối tự phục vụ cho từng tổ chức.</dd>
+   </dl>
+  </article>
+  <article class="card ch" id="instagram">
+   <header><h2>Instagram</h2><span class="pill planned">Dự kiến</span></header>
+   <dl class="kv">
+    <dt>Điều kiện</dt><dd>Tài khoản Instagram chuyên nghiệp liên kết Fanpage, quyền nhắn tin Instagram và xét duyệt ứng dụng của Meta.</dd>
+    <dt>Hiện tại</dt><dd>Chưa trả lời khách thật trên Instagram.</dd>
+   </dl>
+  </article>
+  <article class="card ch" id="khac">
+   <header><h2>Kênh khác</h2><span class="pill planned">Dự kiến</span></header>
+   <dl class="kv">
+    <dt>Ví dụ</dt><dd>TikTok Shop, LINE, email.</dd>
+    <dt>Hiện tại</dt><dd>Cần đăng ký đối tác và quyền API của từng nền tảng. Chưa có kết nối nào.</dd>
+   </dl>
+  </article>
+ </div>
+</section>
+
+<section class="section alt">
+ <div class="wrap narrow">
+  <h2>Nguyên tắc an toàn giữa các kênh</h2>
+  <ul class="ticks">
+   <li>Không tự gộp danh tính khách giữa Messenger, Zalo và website chỉ vì khách cung cấp một mã đơn. Tra cứu chéo kênh phải qua bước xác minh.</li>
+   <li>Mỗi Fanpage hoặc tài khoản kênh thuộc đúng một tổ chức; nút bấm không mang theo mã tổ chức hay quyền hạn.</li>
+   <li>Cấu hình đang chạy không bị sửa ngầm: mọi thay đổi là bản nháp cho tới khi người có quyền kích hoạt.</li>
+   <li>Kênh nào chưa hỗ trợ nút, trợ lý chuyển sang danh sách chữ thay vì gửi nút hỏng.</li>
+  </ul>
+ </div>
+</section>
