@@ -62,3 +62,12 @@ Cần thêm lựa chọn **Chỉ phản hồi bằng chữ** cho tất cả Page
 Không tự điền `enabled=true`, không tạo owner consent giả, không chạy Meta send khi chỉ mới có policy schema, không dùng `rowNotExists` n8n Data Table để chứng minh atomic claim, không phát hành bot hay thay đổi Supabase hosted mà chưa phê duyệt. Không dùng một quy tắc ngành chung để cấp quyền cho Fanpage khác, kể cả khi cùng chủ sở hữu.
 
 **Rollback:** Revert riêng các file reaction-profile/ admission trong Draft PR #493; giữ Shadow Gate Messenger **ALL OFF** và không chạm bản Published.
+
+
+## 7. Kết quả nghiệm thu cô lập (2026-11-22)
+
+- n8n QA `hc7AF0Dol8u9BG1o` (inactive, credential-free): **execution #6733 31/31 PASS**; dữ liệu tổng hợp gồm retail, artist, legal, wholesale, giả mạo ngành và giả mạo consent. Tất cả các trường hợp `metaCallExecuted=false` / `sendAllowed=false`.
+- Lớp owner consent giờ phải khớp cả **industryId + profileId + policy revision**. Ví dụ đổi mức `friendly` thành `expressive` nhưng giữ approval cũ sẽ bị từ chối.
+- CI cho private PostgreSQL 17 đã chứng minh khóa nguyên tử trên DB disposable tại **run #45010560317**; không phải hosted receipt.
+- Messenger Draft phiên kiểm tra gần nhất: `41bcea84-703d-40bc-be2a-71f84ca4e2d8` (nhánh menu cập nhật song song), Shadow Gate vẫn **ALL OFF**; Published `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`. Không ghi vào bản nháp Messenger trong V21.2.
+- **QA profile được nghiệm thu trong code/QA; không phải live UAT theo ngành thật**. Giao diện chủ Fanpage và cổng publish policy chưa triển khai.
