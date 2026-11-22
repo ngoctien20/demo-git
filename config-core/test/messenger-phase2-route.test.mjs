@@ -311,18 +311,19 @@ test('normal non-menu text remains on legacy text route', () => {
 
 test('Next-page quick reply resolves through the same published-config bridge route',()=>{
   const cfg=published(templateConfig('shop'));
-  const s=simulatedPath({payload:'T404:C:catalog:7:2',config:cfg,postback:false});
-  assert.equal(s.tagged.menuPayload,'T404:C:catalog:7:2');
+  const s=simulatedPath({payload:'T404:C:catalog:7:deadbeef:2',config:cfg,postback:false});
+  assert.equal(s.tagged.menuPayload,'T404:C:catalog:7:deadbeef:2');
   assert.equal(s.mode.mode,'catalog');
   assert.equal(s.classified.mediaType,'catalog_page');
   assert.equal(s.classified.catalogPage,2);
   assert.equal(s.classified.catalogVersion,7);
+  assert.equal(s.classified.catalogDigest,'deadbeef');
 });
 
 test('stale/forged catalog cursors cannot reach catalog data or product tools',()=>{
   const cfg=published(templateConfig('shop'));
-  for(const payload of ['T404:C:catalog:6:2','T404:C:catalog:7:100',
-    'T404:C:order_lookup:7:2','T404:C:catalog:7:-1']){
+  for(const payload of ['T404:C:catalog:6:deadbeef:2','T404:C:catalog:7:deadbeef:100',
+    'T404:C:order_lookup:7:deadbeef:2','T404:C:catalog:7:deadbeef:-1']){
     const s=simulatedPath({payload,config:cfg});
     assert.equal(s.mode.mode,'rejected',payload);
     assert.equal(s.classified.mediaType,'menu_reply');
@@ -350,10 +351,10 @@ test('catalog message from validated renderer is sent as one Meta template with 
   const msg={attachment:{type:'template',payload:{template_type:'button',
     text:'Danh mục trang 1/2',
     buttons:[{type:'postback',title:'Xem A002',payload:'TIEN404:VIEW:A002'}]}},
-    quick_replies:[{content_type:'text',title:'Trang tiếp',payload:'T404:C:catalog:7:2'}]};
+    quick_replies:[{content_type:'text',title:'Trang tiếp',payload:'T404:C:catalog:7:deadbeef:2'}]};
   const prepared=fakeNode('Prepare Messenger Reply',[item({catalogMessage:msg})],{current});
   assert.equal(prepared.length,1);
   assert.equal(prepared[0].json.messageCount,1);
   assert.equal(prepared[0].json.messengerMessage.attachment.payload.buttons[0].payload,'TIEN404:VIEW:A002');
-  assert.equal(prepared[0].json.messengerMessage.quick_replies[0].payload,'T404:C:catalog:7:2');
+  assert.equal(prepared[0].json.messengerMessage.quick_replies[0].payload,'T404:C:catalog:7:deadbeef:2');
 });
