@@ -401,3 +401,42 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - This continuation made no live n8n, Supabase hosted, Meta, credential, Orders/Products or customer changes; no runtime rollback required.
 
 **Status: IMPLEMENTED source-only / TESTED offline 290/290 and disposable PG17 ledger 28/28 / BLOCKED hosted & live send / NOT RELEASED.**
+## 16. Eleventh continuation — per-part ledger RLS closure on actual restricted PG17 accounts (2026-11-22 ~12:39 UTC)
+
+**Goal:** Continue Issue #495 from checkpoint 8ee764723ab0b1711030169e36cdac95d8fa4069, test BOTH ledger tables with real non-BYPASSRLS SQL LOGIN accounts. No n8n changes, Supabase hosted migration, credential changes, real Meta send, or customer/order writes.
+
+### Audit (VERIFIED)
+
+- Starting PR #491 OPEN/DRAFT at 8ee764723ab0b1711030169e36cdac95d8fa4069. n8n Messenger Z7FdV7uDvApfbURQ Draft 41bcea84-703d-40bc-be2a-71f84ca4e2d8; Published 1f4069a5-5e74-4c79-935b-40f02b3582d8; workflow remains live, no version changes by this session.
+- Existing ledger SQL.plan used a PostgreSQL data-modifying CTE to INSERT parent send plan and child send parts atomically, while child RLS would normally check parent scope by SELECTing messenger_send_plans. Real restricted-role UAT uncovered this *does not work*: child part INSERT RLS cannot see a just-inserted parent row from the same statement, even though privileged prior PG tests were green.
+- First new disposable CI attempt [run 45022847115](https://github.com/ngoctien20/demo-git/actions/runs/45022847115) FAILED at restricted RLS plan/part creation with `new row violates row-level security policy for table messenger_send_parts`. This is a genuine design/QA finding, not a permission change on any hosted DB. Earlier existing claim/ledger suites continued passing.
+
+### IMPLEMENTED (GitHub Draft only)
+
+- Created qa/messenger-rich-v136m5/pg17-ledger-rls-uat.sh, guarded by CI=true, GITHUB_ACTIONS=true, T404_DISPOSABLE_PG_QA=YES, localhost PGHOST/5432, absence of hosted DB credentials. Creates and later destroys its *own random* PostgreSQL17 QA DB and three temporary independent LOGIN roles (tenant A/store A/Page A, tenant A/store B/Page B, tenant B/store C/Page C) with NOINHERIT/NOBYPASSRLS, random test-only passwords.
+- FIXED the source-only SQL.plan in qa/messenger-rich-v136m5/message-attempt-ledger.cjs: each child part stores `tenant_id`, `store_id`, and `page_id` copied directly from the parent authority proof within the same CTE. This means the child INSERT RLS can validate its own row scope without reading an invisible just-inserted parent.
+- Require an explicit COMPOSITE FOREIGN KEY `(plan_id,tenant_id,store_id,page_id)` → parent `(id,tenant_id,store_id,page_id)` and parent UNIQUE composite key. This prevents a role in Store B from linking its correctly scoped child row to a Store A parent plan, despite direct child RLS success. No `SECURITY DEFINER`, no bypass RLS, no service_role, no policy relaxation.
+- Updated BOTH disposable PG17 fixtures: `pg17-message-ledger-uat.sh` now enforces scoped child columns + composite FK and retains prior 28-case concurrency/timeout tests; `pg17-ledger-rls-uat.sh` defines SELECT/INSERT/UPDATE child RLS against a private SQL role→tenant/store/Page registry (not client-asserted JWT), verifies restricted writer can create parent/children in one CTE and cannot cross boundaries. Added source unit assertion that SQL.plan must populate child scope fields.
+- Hooked the new restricted ledger test into `.github/workflows/tien404-config-core.yml` path filter and a dedicated PG17 test job step. All writes are inside a disposable local test database only, never hosted Supabase.
+
+### TESTED / evidence
+
+- [Config Core PG17 run 45023317038](https://github.com/ngoctien20/demo-git/actions/runs/45023317038): **SUCCESS**. **PG17_LEDGER_RESTRICTED_RLS_TESTS=29 PASS**; includes different-tenant, same-tenant cross-store, new plan+parts from non-BYPASSRLS role, unauthorized part reserve/receipt/timeout/close denied, private Page role membership, forged JWT denial, revoked tenant-role inability to see old plans/parts or write new plans, composite FK negative test `PASS_B_COMPOSITE_FK_DENIES_CROSS_STORE_PARENT`.
+- The same CI confirms old real PG17 suites **21/21** atomic event claim, **24/24** restricted inbound claim RLS and **28/28** per-part ledger concurrency/partial/uncertainty all PASS; Config Core 138/138 Node tests PASS, 0 fail.
+- [V13.6M.5 offline workflow run 45023317076](https://github.com/ngoctien20/demo-git/actions/runs/45023317076): **290/290 PASS, zero fails** including source contract checks, and static security/no-send job SUCCESS.
+- [V23 Web/Owner App run 45023317091](https://github.com/ngoctien20/demo-git/actions/runs/45023317091): SUCCESS (independent offline QA, not live Messenger verification).
+- Fix/test code HEAD before this documentation: **2cb86602d0e880385f326203a54bc91dda68a4b1**. Earlier failed proof and corrected successful proof both retained in GitHub Actions.
+
+### OPEN / BLOCKED
+
+1. **Only local PG17 tests, not hosted Supabase.** The child scope/composite FK design is a source-only candidate; hosted private schemas, grants, restricted runtime role issuance, canonical Page/store authority, backup/restore and negative hosted A/B checks remain blocked pending owner approval.
+2. The test uses one temporary SQL LOGIN per scoped Page/Store, a *synthetic authorization fixture*, not a reviewed multi-tenant role-issuance design. A real production worker must bind trusted installation Page/store/owner with current entitlement and enforce a secure credential/session pool, not accept role names, JWT metadata or tenant ids from user-controlled input.
+3. A unique inbound claim, plan and per-part attempt ledger do NOT guarantee exactly-once Meta external side effects or prove provider delivery. Real Graph API sender, durable per-part attempt journal, uncertain-outcome reconciliation, retry policy and replay retention require independent design and tests. No blind sends/retries.
+4. n8n Messenger Published and Draft were never changed in this continuation. Current Published still uses rowNotExists → Meta Send → record; the production race remains open. No real Android/iOS/web UAT in this continuation. PR #491 remains OPEN/DRAFT; Issue #495 stays OPEN.
+
+### Rollback
+
+- Revert only the source-only scope-column changes in `message-attempt-ledger.cjs`, `pg17-message-ledger-uat.sh`, `message-attempt-ledger.test.cjs`; remove new `pg17-ledger-rls-uat.sh` and restore its added CI path/step. Preserve earlier V13.6M.5, Messenger Social Reactions ALL OFF, independent user/Work revisions.
+- No production/system changes; no hosted rollback required.
+
+**Status: DESIGN BUG DISCOVERED + FIX IMPLEMENTED/TESTED in Draft and disposable PG17; NOT RELEASED.**
