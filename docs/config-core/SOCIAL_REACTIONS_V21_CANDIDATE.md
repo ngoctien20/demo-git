@@ -137,3 +137,18 @@ Nguồn Meta: https://developers.facebook.com/docs/graph-api/reference/page/mess
 **Tiếp theo:** xác nhận bằng ảnh hoặc báo cáo của người dùng rằng ❤️ nằm trên đúng bong bóng tin "Cảm ơn shop nhé!" trên điện thoại/web (không phải tin nhắn ❤️ mới). Nếu không thấy, điều tra trước khi bật flag. Không mở rộng reaction tự động và không publish bot trong giai đoạn này.
 
 **Rollback:** live one-off đã archive; PR #493 vẫn Draft; không có thay đổi Supabase, giá, đơn hàng, thanh toán, credential hay Published Messenger. Không gửi thêm Meta reaction trước khi có nghiệm thu hiển thị.
+
+
+## 10. Messenger mobile visual acceptance — OWNER CONFIRMED (2026-11-22)
+
+**UAT RESULT: PASS — OWNER-REPORTED MOBILE VISUAL CONFIRMATION.**
+
+- Sau khi gửi reaction thử nghiệm, owner xác nhận bằng tin nhắn **"đã có"** để trả lời câu hỏi cụ thể: biểu cảm **❤️** đã xuất hiện trực tiếp trên bong bóng tin **"Cảm ơn shop nhé!"** trong Messenger điện thoại.
+- Đây là bằng chứng xác nhận trực tiếp từ người thử nghiệm, **không phải** ảnh chụp hay kiểm tra giao diện độc lập bởi QA. Chưa có bằng chứng cho Messenger web, các emoji khác hoặc tài khoản khách bình thường.
+- Liên hệ execution nguồn Messenger **6707**, Meta one-off **6711** (HTTP 200, error absent); workflow one-off **N8aRqyJtUVKbYsVa** đã archive để ngăn gửi lặp.
+- CI GitHub tại commit **9c6af97196ffa59632c397ed227531485475f691**: Config Core run **45007786853 SUCCESS** và V23 web + Owner App run **45007786844 SUCCESS**.
+- Trong quá trình UAT, phiên khác đã cập nhật Messenger **draft** sang **9c08fdd3-7583-49e5-adb4-8b4d9e0c0688**; Messenger **Published vẫn 47b48f6d-bc3d-40ae-afe6-96c5fd5452ac**. Không ghi đè draft và không publish.
+- **Phạm vi đạt:** Meta accepted one-off ❤️ và owner thấy ❤️ trên Messenger di động.
+- **Chưa nghiệm thu:** Messenger web, multi-Page A/B real, AI reaction tự động/feature flags, inbound reaction, rollback sau phản ứng tự động, phản hồi khi Meta lỗi/rate limited, human handoff/đặt hàng chạy song song. Không đồng nhất single-request UAT với production release.
+
+**Release gate còn giữ nguyên:** PR #493 là DRAFT. Trước khi ghép vào workflow Messenger cần tái kiểm toán draft mới, kiểm thử regression không-send với đầy đủ luồng shop/menu/order/handoff/voice, fail-safe/idempotency, Page-scoped feature flag mặc định OFF và phê duyệt publish riêng. Không thử gửi thêm reaction nếu chưa được giao UAT mới.
