@@ -1,9 +1,9 @@
 // TIEN404 V21.1 Reaction Admission — pure and fail closed.
 // No network requests, database writes, credentials or release permission.
-import { classifyLightweightReaction } from './social-reactions.mjs';
+import { validatePublishedReactionProfile, classifyReactionForProfile } from './reaction-profiles.mjs';
 
-export const REACTION_ADMISSION_VERSION = 't404.reaction-admission.v1';
-export const REACTION_POLICY_SCHEMA_VERSION = 1;
+export const REACTION_ADMISSION_VERSION = 't404.reaction-admission.v2';
+export const REACTION_POLICY_SCHEMA_VERSION = 2;
 const BLOCK = reason => Object.freeze({ mode: 'blocked', reason });
 const safeId = x => typeof x === 'string' && x.length >= 2 && x.length <= 256 && /^[A-Za-z0-9._:$-]+$/.test(x);
 const safeMillis = x => Number.isSafeInteger(x) && x > 0;
@@ -27,7 +27,8 @@ export function verifyPublishedPageReactionPolicy(record, authority, now = Date.
   if (!authority || authority.source !== 'trusted_server' ||
       authority.resolverVerified !== true || authority.policyReadAuthorized !== true ||
       !safeId(authority.tenantId) || !safeId(authority.pageId) ||
-      !safeId(authority.installationId) || !safeId(authority.ownerId)) return BLOCK('untrusted_policy_source');
+      !safeId(authority.installationId) || !safeId(authority.ownerId) ||
+      !safeId(authority.industryId)) return BLOCK('untrusted_policy_source');
   if (!record || record.schemaVersion !== REACTION_POLICY_SCHEMA_VERSION ||
       record.provider !== 'meta_messenger' || record.lifecycle !== 'published' ||
       !Number.isSafeInteger(record.revision) || record.revision < 1 ||
@@ -46,16 +47,19 @@ export function verifyPublishedPageReactionPolicy(record, authority, now = Date.
       !safeMillis(record.ownerConsent.expiresAtMs) || record.ownerConsent.expiresAtMs <= now ||
       record.ownerConsent.expiresAtMs - now > 365*24*3600_000)
     return BLOCK('owner_consent_missing_or_expired');
+  if (record.industryId !== authority.industryId) return BLOCK('policy_industry_mismatch');
   if (!record.settings || !validPolicyIntents(record.settings.intents) ||
       !Number.isSafeInteger(record.settings.cooldownSeconds) ||
       record.settings.cooldownSeconds < 60 || record.settings.cooldownSeconds > 3600 ||
       !Number.isSafeInteger(record.settings.maxPerHour) ||
       record.settings.maxPerHour < 1 || record.settings.maxPerHour > 6)
     return BLOCK('policy_limits_invalid');
+  const profile = validatePublishedReactionProfile(authority.industryId,record.settings.profileId,record.settings);
+  if (profile.status !== 'validated') return BLOCK(profile.reason);
   return Object.freeze({
     mode: 'verified_policy', provider: 'meta_messenger', tenantId: record.tenantId,
     pageId: record.pageId, installationId: record.installationId, ownerId: record.ownerId,
-    revision: record.revision,
+    revision: record.revision, industryId: profile.industryId, profileId: profile.profileId,
     intents: Object.freeze({thanks: record.settings.intents.thanks, praise: record.settings.intents.praise}),
     cooldownSeconds: record.settings.cooldownSeconds, maxPerHour: record.settings.maxPerHour,
   });
@@ -65,10 +69,10 @@ export function verifyPublishedPageReactionPolicy(record, authority, now = Date.
 export function prepareReactionAdmission({event, policy, authority, thread, business} = {}, now = Date.now()) {
   if (!event || event.channel !== 'messenger' || event.kind !== 'message' || event.messageType !== 'text')
     return BLOCK('not_customer_text');
-  const emoji = classifyLightweightReaction(event.text);
-  if (!emoji) return BLOCK('not_social_only');
   const verified = verifyPublishedPageReactionPolicy(policy, authority, now);
   if (verified.mode !== 'verified_policy') return verified;
+  const emoji = classifyReactionForProfile(event.text,verified.profileId);
+  if (!emoji) return BLOCK('not_social_only');
   if (!safeId(event.tenantId) || !safeId(event.pageId) || !safeId(event.senderId) ||
       !safeId(event.messageId) || event.pageId === event.senderId ||
       event.tenantId !== verified.tenantId || event.pageId !== verified.pageId)
@@ -95,6 +99,7 @@ export function prepareReactionAdmission({event, policy, authority, thread, busi
     provider: 'meta_messenger', tenantId: event.tenantId, pageId: event.pageId,
     senderId: event.senderId, messageId: event.messageId,
     policyRevision: verified.revision, installationId: verified.installationId,
+    profileId: verified.profileId, industryId: verified.industryId,
     dedupeKey: JSON.stringify([event.tenantId, event.pageId, event.senderId, event.messageId, 'react']),
     limits: Object.freeze({cooldownSeconds: verified.cooldownSeconds, maxPerHour: verified.maxPerHour}),
     sendAllowed: false,
