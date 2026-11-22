@@ -113,7 +113,9 @@ jobs:
           assert "OPAQUE_BRIDGE_HOSTED_NOT_APPROVED" in opaque_bridge
           assert "CURRENT_USER::name" in opaque_bridge
           assert "timingSafeEqual" in opaque_bridge
-          assert "RECONCILIATION_READ_ONLY" not in opaque_bridge or "SET TRANSACTION READ ONLY" not in opaque_bridge
+          assert "readOnly:baseSQL.readOnly" in opaque_bridge
+          assert "app_private.messenger_operator_sessions" in opaque_bridge
+          assert "journalOnly!==true" in opaque_bridge
           assert "retryAllowed:false" in opaque_bridge and "sendAllowed:false" in opaque_bridge
           assert "OPERATOR_REVIEW_HOSTED_NOT_APPROVED" in operator
           assert "g.db_role=CURRENT_USER::name" in operator
