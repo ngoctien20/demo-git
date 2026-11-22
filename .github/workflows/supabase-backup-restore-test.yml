@@ -1,0 +1,177 @@
+name: Supabase backup + restore test
+
+# Sao lưu tien404-staging (chỉ ĐỌC), mã hóa bản sao lưu, rồi khôi phục THỬ vào
+# dự án riêng tien404-restore-test và so sánh dấu vân tay hai bên.
+# Không bước nào ghi vào staging. Log chỉ in số đếm và mã băm, không in dữ liệu.
+#
+# Secrets cần có (Settings > Secrets and variables > Actions):
+#   STAGING_DB_PASSWORD  chỉ mật khẩu database của tien404-staging
+#   RESTORE_DB_PASSWORD  chỉ mật khẩu database của tien404-restore-test
+#   BACKUP_PASSPHRASE  cụm mật khẩu dài để mã hóa file backup
+
+on:
+  push:
+    branches: [claude/project-thread-geyx0t]
+    paths:
+      - .github/workflows/supabase-backup-restore-test.yml
+      - ops/supabase-backup/**
+  workflow_dispatch:
+  schedule:
+    - cron: '0 19 * * 0' # Chủ nhật 19:00 UTC = 2:00 sáng thứ Hai giờ Việt Nam (chỉ chạy khi đã có trên main)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+
+env:
+  STAGING_REF: ifxlvrhyjhbzbrkdsida
+  RESTORE_REF: cunxxzxaboazbszsfneo
+
+jobs:
+  backup-and-restore-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets and build connection strings
+        env:
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          RESTORE_DB_PASSWORD: ${{ secrets.RESTORE_DB_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=0
+          for v in STAGING_DB_PASSWORD RESTORE_DB_PASSWORD BACKUP_PASSPHRASE; do
+            if [ -z "${!v}" ]; then echo "::error::Thiếu secret $v"; missing=1; fi
+          done
+          [ "$missing" = 0 ] || exit 1
+          [ "${#BACKUP_PASSPHRASE}" -ge 20 ] || { echo "::error::BACKUP_PASSPHRASE cần ít nhất 20 ký tự"; exit 1; }
+          # Host và user không phải bí mật, cố định ở đây; mật khẩu được mã hóa URL nên ký tự đặc biệt vẫn dùng được
+          python3 > urls.env <<'PY'
+          import os, urllib.parse as u
+          host = "aws-0-ap-southeast-1.pooler.supabase.com"
+          for name, ref in (("STAGING", os.environ["STAGING_REF"]), ("RESTORE", os.environ["RESTORE_REF"])):
+              pw = u.quote(os.environ[f"{name}_DB_PASSWORD"], safe="")
+              print(f"{name}_DB_URL=postgresql://postgres.{ref}:{pw}@{host}:5432/postgres")
+          PY
+          while IFS= read -r line; do
+            echo "::add-mask::${line#*=}"
+            echo "::add-mask::$(python3 -c 'import sys,urllib.parse as u;print(u.urlsplit(sys.argv[1]).password)' "${line#*=}")"
+          done < urls.env
+          cat urls.env >> "$GITHUB_ENV" && rm urls.env
+          [ "$STAGING_REF" != "$RESTORE_REF" ] || { echo "::error::DỪNG: dự án thử trùng staging"; exit 1; }
+          echo "Secrets OK"
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Test database logins (no data read)
+        run: |
+          fail=0
+          for v in STAGING_DB_URL RESTORE_DB_URL; do
+            if psql "${!v}" -X -q -t -c 'select 1' > /dev/null 2> login_err.txt; then
+              echo "$v: login OK"
+            else
+              # Không in nguyên văn lỗi (có thể chứa một phần mật khẩu); chỉ phân loại
+              if grep -q 'password authentication failed' login_err.txt; then why='sai mat khau'
+              elif grep -q 'translate host name' login_err.txt; then why='sai host'
+              elif grep -qi 'timeout\|timed out' login_err.txt; then why='het thoi gian ket noi'
+              else why='loi khac'; fi
+              echo "::error::$v: login FAILED ($why)"; fail=1
+            fi
+          done
+          rm -f login_err.txt
+          exit $fail
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Backup staging (read only)
+        run: |
+          mkdir -p backup
+          supabase db dump --db-url "$STAGING_DB_URL" -f backup/roles.sql --role-only
+          supabase db dump --db-url "$STAGING_DB_URL" -f backup/schema.sql
+          supabase db dump --db-url "$STAGING_DB_URL" -f backup/data.sql --use-copy --data-only
+          # Quyền chính xác (dự án mới tự cấp quyền mặc định cho anon/authenticated, phải đặt lại)
+          psql "$STAGING_DB_URL" -X -At -v ON_ERROR_STOP=1 -f ops/supabase-backup/export-grants.sql > backup/grants.sql
+          echo "grants.sql: $(grep -c '^GRANT' backup/grants.sql) lệnh GRANT"
+          ls -l backup
+
+      - name: Fingerprint staging
+        run: psql "$STAGING_DB_URL" -X -v ON_ERROR_STOP=1 -f ops/supabase-backup/fingerprint.sql > fp_staging.txt && wc -l fp_staging.txt
+
+      - name: Encrypt backup
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          stamp=$(date -u +%Y-%m-%dT%H%MZ)
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          tar -czf - backup | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+            --symmetric --cipher-algo AES256 -o "tien404-staging-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          sha256sum "tien404-staging-$stamp.tar.gz.gpg" | tee "tien404-staging-$stamp.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tien404-staging-backup-${{ env.STAMP }}
+          path: |
+            tien404-staging-*.tar.gz.gpg
+            tien404-staging-*.sha256
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Decrypt the uploaded file (proves the archive opens)
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          rm -rf backup && mkdir restore
+          gpg --batch --pinentry-mode loopback --passphrase-fd 3 -d "tien404-staging-$STAMP.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE" | tar -xzf - -C restore
+          ls -l restore/backup
+
+      - name: Clean restore-test project
+        run: psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f ops/supabase-backup/reset-restore-test.sql
+
+      - name: Restore into restore-test project
+        run: |
+          start=$(date +%s)
+          # Storage của staging trống (không có bucket/file); bỏ các bảng storage nội bộ
+          # mà role postgres không được ghi trên dự án mới (vd. storage.buckets_vectors)
+          awk '/^COPY "?storage"?\./{skip=1} !skip{print} skip && /^\\\.$/{skip=0}' restore/backup/data.sql > restore/backup/data_restore.sql
+          echo "Bỏ qua $(grep -Ec '^COPY "?storage"?\.' restore/backup/data.sql || true) bảng storage; giữ $(grep -c '^COPY ' restore/backup/data_restore.sql) bảng dữ liệu"
+          set +e
+          psql "$RESTORE_DB_URL" -X -q --single-transaction -v ON_ERROR_STOP=1 \
+            -f restore/backup/roles.sql \
+            -f restore/backup/schema.sql \
+            -c 'SET session_replication_role = replica' \
+            -f restore/backup/data_restore.sql > restore.log 2>&1
+          rc=$?
+          if [ "$rc" = 0 ]; then
+            psql "$RESTORE_DB_URL" -X -q -v ON_ERROR_STOP=1 -f restore/backup/grants.sql >> restore.log 2>&1
+            rc=$?
+          fi
+          set -e
+          # Chỉ in dòng ERROR (cắt ngắn), không in dữ liệu
+          grep -E '^(psql:.*)?ERROR' restore.log | cut -c1-200 || true
+          echo "Restore exit code: $rc, took $(( $(date +%s) - start ))s"
+          exit $rc
+
+      - name: Fingerprint restore-test and compare
+        run: |
+          psql "$RESTORE_DB_URL" -X -v ON_ERROR_STOP=1 -f ops/supabase-backup/fingerprint.sql > fp_restore.txt
+          echo "Staging:  $(md5sum < fp_staging.txt)  ($(wc -l < fp_staging.txt) dòng)"
+          echo "Restore:  $(md5sum < fp_restore.txt)  ($(wc -l < fp_restore.txt) dòng)"
+          if diff <(cut -d'|' -f1,2,3 fp_staging.txt) <(cut -d'|' -f1,2,3 fp_restore.txt) > fp.diff; then
+            echo "RESTORE VERIFIED: khớp hoàn toàn" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Khác biệt giữa staging và bản khôi phục (chỉ tên đối tượng và mã băm):"
+            cat fp.diff | cut -c1-300
+            exit 1
+          fi

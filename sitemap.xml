@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://ngoctien20.github.io/demo-git/about.html</loc></url>
+  <url><loc>https://ngoctien20.github.io/demo-git/channels.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/contact.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/demo.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/faq.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/</loc></url>
+  <url><loc>https://ngoctien20.github.io/demo-git/industries.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/pricing.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/privacy.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/refund.html</loc></url>
-  <url><loc>https://ngoctien20.github.io/demo-git/solutions.html</loc></url>
   <url><loc>https://ngoctien20.github.io/demo-git/terms.html</loc></url>
 </urlset>

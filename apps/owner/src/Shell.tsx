@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import { Route } from './router';
 import { useStore } from './store';
 import { SITE_HOME } from './config';
+import { isMissingFeature, useLoad } from './data';
+import { activeIndustries, INDUSTRY_META, moduleOwner, ROLE_LABEL, Workspace, WorkspaceCtx } from './workspace';
+import { Notice, PageHead } from './ui';
 import { Overview } from './pages/Overview';
 import { Products } from './pages/Products';
 import { Orders } from './pages/Orders';
@@ -13,66 +16,119 @@ import { Menu } from './pages/Menu';
 import { Knowledge } from './pages/Knowledge';
 import { Plan } from './pages/Plan';
 import { Account } from './pages/Account';
+import { Assistants } from './pages/Assistants';
+import { IndustryModule } from './pages/IndustryModule';
+import { Conversations } from './pages/Conversations';
+import { Reports } from './pages/Reports';
+import { Notifications } from './pages/Notifications';
+import { Personality } from './pages/Personality';
 
-const NAV: { group: string; items: [string, string, string][] }[] = [
-  { group: 'Bán hàng', items: [['/', 'Tổng quan', '◎'], ['/san-pham', 'Sản phẩm & tồn kho', '▣'], ['/don-hang', 'Đơn hàng', '▤'], ['/khach-hang', 'Khách hàng', '♧']] },
-  { group: 'Trợ lý AI', items: [['/cai-dat-bot', 'Cài đặt bot', '✦'], ['/menu-tro-ly', 'Menu trợ lý', '☰'], ['/tri-thuc', 'Hỏi đáp & chính sách', '❖'], ['/kenh-ban', 'Kênh bán', '⇄']] },
-  { group: 'Tài khoản', items: [['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '⚙']] },
-];
-
-const ROLE_LABEL = { owner: 'Chủ shop', manager: 'Quản lý', staff: 'Nhân viên' } as const;
+type NavItem = [string, string, string];
 
 export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string) => void }) {
   const { store, stores, email } = useStore();
   const [open, setOpen] = useState(false);
+
+  // Assistants of THIS store only (RLS: active store members). Failure = Config Core not reachable;
+  // the Workspace still works with the tenant industry alone.
+  const asst = useLoad(async () => {
+    const r = await supabase.from('assistants').select('id, name, template_key').eq('store_id', store.id).order('created_at');
+    if (r.error) { if (isMissingFeature(r.error)) return null; throw r.error; }
+    return r.data as Workspace['assistants'];
+  }, [store.id]);
+  const reload = useCallback(async () => { await asst.reload(); }, [asst.reload]);
+  const ws = useMemo<Workspace>(() => {
+    const assistants = asst.data ?? [];
+    const industries = activeIndustries(store.tenant_industry, assistants.map(a => a.template_key));
+    return { industries, primary: industries[0], assistants, assistantsReady: !!asst.data && !asst.error, reload };
+  }, [asst.data, asst.error, store.tenant_industry, reload]);
+
+  const nav: { group: string; items: NavItem[] }[] = [
+    { group: 'Trợ lý AI', items: [
+      ['/', 'Tổng quan', '◎'], ['/tro-ly', 'Trợ lý AI', '✦'], ['/menu-tro-ly', 'Menu & hành động', '☰'],
+      ['/tri-thuc', 'Kho kiến thức', '❖'], ['/kenh-ban', 'Kênh kết nối', '⇄'], ['/hoi-thoai', 'Hội thoại & bàn giao', '✉'],
+    ] },
+    ...ws.industries.map(i => ({ group: INDUSTRY_META[i].short, items: INDUSTRY_META[i].modules.map(m => [m.path, m.label, m.icon] as NavItem) })),
+    { group: 'Theo dõi', items: [
+      ['/khach-hang', INDUSTRY_META[ws.primary].people, '♧'], ['/bao-cao', 'Báo cáo', '▥'], ['/thong-bao', 'Thông báo', '◔'],
+    ] },
+    { group: 'Workspace', items: [
+      ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
+    ] },
+  ];
+
+  const owner = moduleOwner(route.path);
   const page = (() => {
+    if (owner && !ws.industries.includes(owner)) return <ModuleOff owner={owner} />;
     switch (route.path) {
       case '/san-pham': return <Products />;
       case '/don-hang': return <Orders />;
+      case '/nghe-si': return <IndustryModule industry="artist" />;
+      case '/dich-vu': return <IndustryModule industry="service" />;
+      case '/khoa-hoc': return <IndustryModule industry="education" />;
       case '/khach-hang': return <Customers />;
       case '/kenh-ban': return <Channels />;
       case '/cai-dat-bot': return <BotSettings />;
       case '/menu-tro-ly': return <Menu />;
       case '/tri-thuc': return <Knowledge />;
+      case '/tro-ly': return <Assistants />;
+      case '/hoi-thoai': return <Conversations />;
+      case '/bao-cao': return <Reports />;
+      case '/thong-bao': return <Notifications />;
+      case '/phong-cach': return <Personality />;
       case '/goi-dich-vu': return <Plan />;
       case '/tai-khoan': return <Account />;
       default: return <Overview />;
     }
   })();
-  const current = NAV.flatMap(g => g.items).find(i => i[0] === route.path)?.[0] ?? '/';
+  const current = nav.flatMap(g => g.items).find(i => i[0] === route.path)?.[0] ?? '/';
 
   return (
-    <div className={`shell${open ? ' nav-open' : ''}`}>
-      <header className="mobile-bar">
-        <button type="button" className="icon-btn" aria-label="Mở menu" aria-expanded={open} onClick={() => setOpen(!open)}>☰</button>
-        <b>{store.name}</b>
-      </header>
-      <aside className="side" onClick={e => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
-        <a className="side-brand" href={SITE_HOME}><span className="logo" aria-hidden="true">T</span>TIEN404<b>AI</b></a>
-        <label className="store-switch">
-          <span>Cửa hàng</span>
-          <select value={store.id} onChange={e => onSwitch(e.target.value)} aria-label="Chọn cửa hàng">
-            {stores.map(s => <option key={s.id} value={s.id}>{s.name}{stores.some(o => o.tenant_id !== s.tenant_id) ? ` · ${s.tenant_name}` : ''}</option>)}
-          </select>
-          <small>{ROLE_LABEL[store.role]}</small>
-        </label>
-        <nav aria-label="Menu App">
-          {NAV.map(g => (
-            <div key={g.group} className="nav-group">
-              <p>{g.group}</p>
-              {g.items.map(([href, label, icon]) => (
-                <a key={href} href={`#${href}`} aria-current={current === href ? 'page' : undefined}><span aria-hidden="true">{icon}</span>{label}</a>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="side-foot">
-          <span className="muted" title={email}>{email}</span>
-          <button type="button" className="link-btn" onClick={() => supabase.auth.signOut()}>Đăng xuất</button>
-        </div>
-      </aside>
-      {open && <div className="scrim" onClick={() => setOpen(false)} />}
-      <main className="content" id="main" key={store.id}>{page}</main>
-    </div>
+    <WorkspaceCtx.Provider value={ws}>
+      <div className={`shell${open ? ' nav-open' : ''}`}>
+        <header className="mobile-bar">
+          <button type="button" className="icon-btn" aria-label={open ? 'Đóng menu' : 'Mở menu'} aria-expanded={open} aria-controls="app-side" onClick={() => setOpen(!open)}>☰</button>
+          <b>{store.name}</b>
+          <span className="pill soft">{INDUSTRY_META[ws.primary].short}</span>
+        </header>
+        <aside className="side" id="app-side" onClick={e => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
+          <a className="side-brand" href={SITE_HOME}><span className="logo" aria-hidden="true">T</span>TIEN404<b>AI</b><small>Workspace</small></a>
+          <label className="store-switch">
+            <span>Không gian làm việc</span>
+            <select value={store.id} onChange={e => onSwitch(e.target.value)} aria-label="Chọn không gian làm việc">
+              {stores.map(s => <option key={s.id} value={s.id}>{s.name}{stores.some(o => o.tenant_id !== s.tenant_id) ? ` · ${s.tenant_name}` : ''}</option>)}
+            </select>
+            <small>{ROLE_LABEL[store.role]} · {ws.industries.map(i => INDUSTRY_META[i].short).join(', ')}</small>
+          </label>
+          <nav aria-label="Menu Workspace">
+            {nav.map(g => (
+              <div key={g.group} className="nav-group">
+                <p>{g.group}</p>
+                {g.items.map(([href, label, icon]) => (
+                  <a key={href} href={`#${href}`} aria-current={current === href ? 'page' : undefined}><span aria-hidden="true">{icon}</span>{label}</a>
+                ))}
+              </div>
+            ))}
+          </nav>
+          <div className="side-foot">
+            <span className="muted" title={email}>{email}</span>
+            <button type="button" className="link-btn" onClick={() => supabase.auth.signOut()}>Đăng xuất</button>
+          </div>
+        </aside>
+        {open && <div className="scrim" onClick={() => setOpen(false)} />}
+        <main className="content" id="main" key={store.id}>{page}</main>
+      </div>
+    </WorkspaceCtx.Provider>
+  );
+}
+
+function ModuleOff({ owner }: { owner: keyof typeof INDUSTRY_META }) {
+  const m = INDUSTRY_META[owner];
+  return (
+    <>
+      <PageHead title={m.modules[0].label} />
+      <Notice>Mục này thuộc mẫu <b>{m.label}</b>. Workspace này chưa dùng mẫu đó nên không cần màn hình này.</Notice>
+      <p><a className="btn btn-ghost" href="#/tro-ly">Tạo trợ lý mẫu {m.short}</a></p>
+    </>
   );
 }

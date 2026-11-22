@@ -26,7 +26,7 @@ export function BotSettings() {
   useEffect(() => { setF(data ?? EMPTY); }, [data]);
 
   if (loading) return <Spinner />;
-  if (error) return <><PageHead title="Cài đặt bot" /><Notice kind={isMissingFeature(error) ? 'warn' : 'err'}>{isMissingFeature(error) ? 'Cài đặt bot chưa được bật trên máy chủ. Đội TIEN404 sẽ mở trong đợt cập nhật tới.' : friendlyError(error)}</Notice></>;
+  if (error) return <><PageHead title="Cài đặt" /><Notice kind={isMissingFeature(error) ? 'warn' : 'err'}>{isMissingFeature(error) ? 'Cài đặt bot chưa được bật trên máy chủ. Đội TIEN404 sẽ mở trong đợt cập nhật tới.' : friendlyError(error)}</Notice></>;
 
   const dirty = JSON.stringify({ ...f, updated_at: '' }) !== JSON.stringify({ ...(data ?? EMPTY), updated_at: '' });
   const addEmail = () => {
@@ -55,11 +55,11 @@ export function BotSettings() {
 
   return (
     <>
-      <PageHead title="Cài đặt bot" sub={`Cách trợ lý AI nói chuyện với khách của ${store.name}.`} />
+      <PageHead title="Cài đặt" sub={`Cách trợ lý AI nói chuyện với khách của ${store.name}: bật/tắt, giọng văn, thông tin chung, thông báo.`} />
       {!canManage && <Notice>Bạn đang ở vai trò nhân viên nên chỉ xem được cài đặt.</Notice>}
       <section className="panel toggle-panel">
         <div>
-          <h2>Bot trả lời khách</h2>
+          <h2>Trợ lý trả lời khách</h2>
           <p className="muted">{f.bot_enabled ? 'Bot đang được phép trả lời khách trên các kênh đã kết nối.' : 'Bot đang tắt. Khách nhắn sẽ chờ bạn tự trả lời.'}</p>
         </div>
         <button type="button" role="switch" aria-checked={f.bot_enabled} className={`switch${f.bot_enabled ? ' on' : ''}`} disabled={!canManage || busy}
@@ -67,7 +67,7 @@ export function BotSettings() {
       </section>
       <form className="panel form" onSubmit={save}>
         <fieldset disabled={!canManage || busy}>
-          <h2>Giọng nói của bot</h2>
+          <h2>Giọng văn</h2>
           <div className="tones">
             {TONES.map(t => (
               <label key={t.v} className={`tone${f.tone === t.v ? ' on' : ''}`}>
@@ -76,7 +76,7 @@ export function BotSettings() {
               </label>
             ))}
           </div>
-          <h2>Thông tin shop</h2>
+          <h2>Thông tin chung</h2>
           <label>Bot dùng thông tin này để trả lời: địa chỉ, giờ mở cửa, phí và thời gian giao hàng, cách thanh toán, đổi trả.
             <textarea rows={6} maxLength={4000} value={f.shop_info} onChange={e => setF({ ...f, shop_info: e.target.value })}
               placeholder={'Địa chỉ: 12 Lê Lợi, Q.1, TP.HCM\nMở cửa: 8:00–21:00 mỗi ngày\nGiao hàng: toàn quốc, 2–4 ngày, phí 30.000đ, miễn phí từ 500.000đ\nThanh toán: COD hoặc chuyển khoản'} />
@@ -86,7 +86,7 @@ export function BotSettings() {
             <textarea rows={3} maxLength={2000} value={f.forbidden_promises} onChange={e => setF({ ...f, forbidden_promises: e.target.value })}
               placeholder={'Không hứa giao trong ngày\nKhông tự giảm giá hay tặng quà\nKhông hứa hoàn tiền khi chưa hỏi chủ shop'} />
           </label>
-          <h2>Email báo đơn chốt</h2>
+          <h2>Email báo đơn chốt (mẫu Cửa hàng)</h2>
           <p className="muted">Khi bot ghi nhận khách chốt đơn, TIEN404 gửi email gồm tên, số điện thoại, sản phẩm, tổng tiền và địa chỉ giao. Tính năng gửi sẽ bật khi đơn hàng chạy trên App.</p>
           <div className="chips">
             {f.notify_emails.map(e => <span key={e} className="chip">{e}<button type="button" aria-label={`Xoá ${e}`} onClick={() => setF({ ...f, notify_emails: f.notify_emails.filter(x => x !== e) })}>✕</button></span>)}

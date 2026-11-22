@@ -8,7 +8,7 @@ const path = require('path');
   const b = await chromium.launch();
   let bad = 0;
   for (const [w, h, tag] of [[1280, 900, 'd'], [390, 844, 'm']]) {
-    const p = await b.newPage({ viewport: { width: w, height: h } });
+    const p = await b.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const errs = [];
     p.on('pageerror', e => errs.push(e.message));
     p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });

@@ -23,7 +23,7 @@ jobs:
           node scripts/build-site.mjs && git diff --exit-code -- '*.html' sitemap.xml
           python3 qa_static.py
           node scripts/check-site-navigation.mjs
-          python3 -m unittest discover -s tests -p 'test_v23_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_v2[35]_*.py' -v
       - name: Browser QA (desktop 1280 + mobile 390, mocked Supabase)
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.49.1

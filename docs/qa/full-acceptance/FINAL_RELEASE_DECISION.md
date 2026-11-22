@@ -35,3 +35,27 @@ Store isolation hosted, Commerce ghi trên Supabase, tồn kho, thông báo đơ
 6. Khi 1–5 PASS ở HOSTED UAT: xem xét **READY FOR CONTROLLED MERCHANT PILOT**.
 
 Billing/subscription (P2) chỉ bắt đầu sau khi P0 đóng.
+
+---
+
+## Round 6 — đánh giá lại (2026-11-22 08:30 UTC)
+
+**Kết luận giữ nguyên: NOT READY.** Không đổi sang READY FOR ISOLATED PILOT vì đường bán hàng thật vẫn chưa đi qua Supabase.
+
+| Điều kiện | 21/11 | 22/11 | Bằng chứng |
+|---|---|---|---|
+| Backup/restore (S-01) | FAIL | **PASS** | E-26, cron hằng tuần |
+| Store isolation hosted (S-02) | FAIL | **PASS ở STAGING** (catalog + Owner A/B) | E-27, E-30 |
+| Sự cố mật khẩu (S-17) | OPEN | Không thấy đăng nhập lạ; **chờ xác nhận đã đổi mật khẩu** | E-31 |
+| Đơn hàng ghi trên Supabase, giữ kho, idempotency | NOT_IMPLEMENTED | NOT_IMPLEMENTED (bot live vẫn ghi Google Sheet DEMO) | S-03 |
+| Sửa đơn qua chat (S-18/S-19) | FAIL | **PUBLISHED** 11:05 UTC (`fDB9` `03384201`) | E-28 |
+| PII trong execution n8n (S-04) | OPEN | **Đã tắt lưu dữ liệu lần chạy thành công** cho bot + 3 tool đơn; execution cũ còn | S-04u |
+| Lịch sử migration đủ để dựng lại DB (S-22) | — | FAIL: nguồn Config Core nằm ở Draft PR #489, V23 web chưa thấy trong nhánh đã tải; `supabase_migrations` không ghi | E-32 |
+| Billing/onboarding tự phục vụ | NOT_IMPLEMENTED | Một phần: `register_shop` có trên staging, chưa UAT | S-21 |
+
+**Ba việc ngắn nhất để lên READY FOR ISOLATED PILOT** (đều cần chủ dự án duyệt):
+1. Xác nhận đã đổi mật khẩu DB (đóng S-17).
+2. Publish bản sửa `manage_order` S-18 cùng Draft đã sửa S-19 (G-06), hoặc tạm dừng bot `Z7Fd` cho tới khi Commerce chạy trên Supabase (G-05).
+3. Bật redaction/tắt lưu dữ liệu execution thành công cho `Z7Fd` và tool đơn hàng (G-07).
+
+Sau ba việc trên, pilot cô lập vẫn chạy trên Sheet DEMO; để lên READY FOR CONTROLLED MERCHANT PILOT cần mục 4–5 của lộ trình phía trên.

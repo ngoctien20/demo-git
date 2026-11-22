@@ -30,17 +30,20 @@ export function App() {
 
   const loadStores = useCallback(async () => {
     setStoresErr('');
-    const [m, s, t] = await Promise.all([
+    const [m, s, t0] = await Promise.all([
       supabase.from('store_memberships').select('store_id, tenant_id, role').eq('active', true),
       supabase.from('stores').select('id, tenant_id, name, is_default').order('created_at'),
-      supabase.from('tenants').select('id, name'),
+      supabase.from('tenants').select('id, name, industry'),
     ]);
-    if (m.error || s.error || t.error) { setStoresErr('Không tải được danh sách cửa hàng. Vui lòng thử lại.'); setStores([]); return; }
+    // tenants.industry drives only UI wording/modules (workspace.ts). Older schemas: fall back to id, name.
+    const t = t0.error ? await supabase.from('tenants').select('id, name') : t0;
+    if (m.error || s.error || t.error) { setStoresErr('Không tải được danh sách không gian làm việc. Vui lòng thử lại.'); setStores([]); return; }
     const role = new Map(m.data.map(r => [r.store_id as string, r.role as Role]));
     const tname = new Map(t.data.map(r => [r.id as string, r.name as string]));
+    const tind = new Map(t.data.map(r => [r.id as string, ((r as { industry?: string | null }).industry ?? null)]));
     setStores(s.data.filter(r => role.has(r.id)).map(r => ({
       id: r.id, tenant_id: r.tenant_id, name: r.name, is_default: r.is_default,
-      role: role.get(r.id)!, tenant_name: tname.get(r.tenant_id) ?? '',
+      role: role.get(r.id)!, tenant_name: tname.get(r.tenant_id) ?? '', tenant_industry: tind.get(r.tenant_id) ?? null,
     })));
   }, []);
 
@@ -56,7 +59,7 @@ export function App() {
   if (!session) return <AuthPage path={PUBLIC_PATHS.includes(route.path) ? route.path : '/dang-nhap'} />;
   if (route.path === '/dat-lai-mat-khau') return <AuthPage path={route.path} />;
 
-  if (stores === null) return <div className="center-screen"><Spinner label="Đang tải cửa hàng…" /></div>;
+  if (stores === null) return <div className="center-screen"><Spinner label="Đang tải không gian làm việc…" /></div>;
   if (storesErr) return <div className="center-screen"><Notice kind="err">{storesErr}</Notice><button className="btn btn-primary" onClick={loadStores}>Thử lại</button></div>;
   if (!store) return <Onboarding email={session.user.email ?? ''} onDone={loadStores} />;
 
