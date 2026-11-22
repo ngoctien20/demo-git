@@ -16,7 +16,7 @@ const inp = $('Bridge input').first().json;
 const res = $input.first().json || {};
 const menu = res && Array.isArray(res.menu) && res.schema_version === 1 ? res : null;
 const channel = String(inp.channel || 'messenger');
-const d = decide(menu, { payload: inp.payload, text: inp.text }, channel);
+const d = res && res.error ? { mode: 'legacy' } : decide(menu, { payload: inp.payload, text: inp.text }, channel);
 return [{ json: { ...d, configVersion: menu ? menu.version_no : null, configSha: menu ? menu.config_sha256 : null,
   configSource: menu ? 'published' : (res && res.error ? 'read_failed' : 'none') } }];`,
 ].join('\n');
