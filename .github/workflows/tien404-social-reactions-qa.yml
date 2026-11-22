@@ -5,6 +5,7 @@ on:
       - "config-core/lib/social-reactions.mjs"
       - "config-core/lib/reaction-admission.mjs"
       - "config-core/lib/reaction-profiles.mjs"
+      - "config-core/lib/meta-page-installation-authority.mjs"
       - "qa/reactions/**"
       - "db/reactions/**"
       - "config-core/n8n/build-messenger-reactions-shadow.mjs"
@@ -12,6 +13,7 @@ on:
       - "config-core/test/social-reactions.test.mjs"
       - "config-core/test/reaction-admission.test.mjs"
       - "config-core/test/reaction-profiles.test.mjs"
+      - "config-core/test/meta-page-installation-authority.test.mjs"
       - "config-core/test/reactions-bundle.test.mjs"
       - "config-core/test/messenger-reaction-shadow.test.mjs"
       - ".github/workflows/tien404-social-reactions-qa.yml"
@@ -37,6 +39,7 @@ jobs:
           config-core/test/social-reactions.test.mjs
           config-core/test/reaction-admission.test.mjs
           config-core/test/reaction-profiles.test.mjs
+          config-core/test/meta-page-installation-authority.test.mjs
           config-core/test/reactions-bundle.test.mjs
           config-core/test/messenger-reaction-shadow.test.mjs
       - name: Default page policy OFF and no network in generated node
