@@ -105,4 +105,4 @@ Messenger (Z7Fd, live): nhánh thoại đã làm và test ở bản nháp, lưu 
 
 - Telegram: publish lại `fffB` bản 008afb65 (chỉ chữ), hoặc unpublish `fffB` để tắt kênh.
 - VOICE: không có trigger công khai; tắt Telegram là đủ.
-- Messenger Z7Fd: bản live vẫn 8f7dcb4f (V25 bình luận), nhánh thoại chưa bật.
+- Messenger Z7Fd: LIVE bản b2245495 (có nhánh thoại, Tiến duyệt 01:44Z 22/11). Rollback = publish 8f7dcb4f.
