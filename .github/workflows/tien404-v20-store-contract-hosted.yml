@@ -1,0 +1,124 @@
+name: "TIEN404 V20 step 4 — SKU contract on restore-test then staging"
+# Owner-approved 2026-11-22 00:29 UTC (decision card "Duyệt: restore-test rồi staging").
+# Job 1: restore-test — apply 40, hosted UAT (rolled back), rollback 60 + re-apply proof.
+# Job 2 only if job 1 is green: staging — encrypted backup, apply 40, pre- and post-40
+# fingerprints must equal restore-test's, same UAT. (v23 web migrations are on both targets.) Any failure rolls back 40 (60).
+# Logs print tags and hashes only (this repository is public).
+on:
+  push:
+    branches: [claude/project-thread-r8380r]
+    paths:
+      - .github/workflows/tien404-v20-store-contract-hosted.yml
+permissions:
+  contents: read
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+env:
+  RESTORE_REF: cunxxzxaboazbszsfneo
+  STAGING_REF: ifxlvrhyjhbzbrkdsida
+jobs:
+  restore-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      fp40: ${{ steps.apply.outputs.fp40 }}
+      fp_pre: ${{ steps.apply.outputs.fp_pre }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build restore-test connection (masked)
+        env:
+          PW: ${{ secrets.RESTORE_DB_PASSWORD }}
+        run: |
+          [ -n "$PW" ] || { echo "::error::missing RESTORE_DB_PASSWORD"; exit 1; }
+          echo "::add-mask::$PW"
+          url=$(python3 -c 'import os,urllib.parse as u;print("postgresql://postgres.%s:%s@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"%(os.environ["RESTORE_REF"],u.quote(os.environ["PW"],safe="")))')
+          echo "::add-mask::$url"; echo "DB_URL=$url" >> "$GITHUB_ENV"
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Login + guard (restore-test marker must exist)
+        run: |
+          case "$DB_URL" in *"$STAGING_REF"*) echo "::error::STOP staging"; exit 1;; esac
+          [ "$(psql "$DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is not null" 2>/dev/null)" = t ] || { echo "::error::login or guard failed"; exit 1; }
+          echo GUARD_OK
+      - name: Apply 40 + hosted UAT (rolled back) + rollback/re-apply proof on restore-test
+        id: apply
+        env:
+          ROLLBACK_CYCLE: "1"
+        run: bash qa/v20-store-authority/contract/apply-40-and-uat.sh
+  staging:
+    needs: restore-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build staging connection (masked)
+        env:
+          PW: ${{ secrets.STAGING_DB_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$PW" ] || { echo "::error::missing STAGING_DB_PASSWORD"; exit 1; }
+          [ "${#BACKUP_PASSPHRASE}" -ge 20 ] || { echo "::error::missing BACKUP_PASSPHRASE"; exit 1; }
+          echo "::add-mask::$PW"
+          url=$(python3 -c 'import os,urllib.parse as u;print("postgresql://postgres.%s:%s@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"%(os.environ["STAGING_REF"],u.quote(os.environ["PW"],safe="")))')
+          echo "::add-mask::$url"; echo "DB_URL=$url" >> "$GITHUB_ENV"
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Login + guard (must NOT be restore-test)
+        run: |
+          [ "$(psql "$DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is null" 2>/dev/null)" = t ] || { echo "::error::login failed or not staging"; exit 1; }
+          n=$(psql "$DB_URL" -X -At -c "select count(*) from pg_constraint where conrelid='public.products'::regclass and conname='products_tenant_id_sku_key'" 2>/dev/null)
+          [ "$n" = 1 ] && echo "NEED_BACKUP=1" >> "$GITHUB_ENV"; echo GUARD_OK
+      - name: Install Supabase CLI from npm (setup-cli 'latest' hit the GitHub API rate limit)
+        if: env.NEED_BACKUP == '1'
+        run: |
+          v=$(npm view supabase version 2>/dev/null); [ -n "$v" ] || { echo "::error::cannot resolve CLI version"; exit 1; }
+          npm install -g "supabase@$v" > /dev/null 2>&1 || { echo "::error::CLI install failed"; exit 1; }
+          supabase --version
+      - name: Backup staging immediately before apply (encrypted)
+        if: env.NEED_BACKUP == '1'
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          mkdir -p backup
+          supabase db dump --db-url "$DB_URL" -f backup/roles.sql --role-only > /dev/null 2>&1 || { echo "::error::roles dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/schema.sql > /dev/null 2>&1 || { echo "::error::schema dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/data.sql --use-copy --data-only > /dev/null 2>&1 || { echo "::error::data dump failed"; exit 1; }
+          [ "$(wc -c < backup/schema.sql)" -gt 10000 ] || { echo "::error::schema dump too small"; exit 1; }
+          stamp=$(date -u +%Y-%m-%dT%H%MZ); echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          tar -czf - backup | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+            -o "tien404-staging-pre-v20s4-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          gpg --batch --pinentry-mode loopback --passphrase-fd 3 -d "tien404-staging-pre-v20s4-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE" 2>/dev/null | tar -tzf - > /dev/null || { echo "::error::backup does not decrypt"; exit 1; }
+          sha256sum "tien404-staging-pre-v20s4-$stamp.tar.gz.gpg" | tee "tien404-staging-pre-v20s4-$stamp.sha256"
+          rm -rf backup; echo BACKUP_OK
+      - uses: actions/upload-artifact@v4
+        if: env.NEED_BACKUP == '1'
+        with:
+          name: tien404-staging-pre-v20s4-${{ env.STAMP }}
+          path: |
+            tien404-staging-pre-v20s4-*.tar.gz.gpg
+            tien404-staging-pre-v20s4-*.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Apply 40 + hosted UAT (rolled back) on staging
+        env:
+          EXPECT_FP40: ${{ needs.restore-test.outputs.fp40 }}
+          T404_EXPECT_FP: ${{ needs.restore-test.outputs.fp_pre }}
+        run: |
+          [ -n "$EXPECT_FP40" ] && [ -n "$T404_EXPECT_FP" ] || { echo "::error::no restore-test fingerprint"; exit 1; }
+          bash qa/v20-store-authority/contract/apply-40-and-uat.sh
+      - name: Side effects
+        if: always()
+        run: echo "N8N=0 PROVIDER_SENDS=0 UAT_WRITES_ROLLED_BACK=1"

@@ -42,6 +42,13 @@ jobs:
           PGUSER: "postgres"
           PGPASSWORD: "postgres"
         run: bash qa/v20-store-authority/offline-admin-uat.sh
+      - name: SKU contract (step 4) — 32 assertions + rollback (PG17)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+        run: bash qa/v20-store-authority/offline-contract-uat.sh
   local-gotrue-jwt-uat:
     runs-on: ubuntu-latest
     timeout-minutes: 28

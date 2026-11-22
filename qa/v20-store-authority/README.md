@@ -72,7 +72,7 @@ apply 10 → 20 → fp must equal restore-test post fp `996aac15…` → snapsho
 writer smoke (`staging/writer-smoke.sh`, every call rolled back). Any failure after apply runs
 80 → 90 automatically. No auth users are created on staging.
 
-## Step 3 — Store admin RPCs (PROPOSED, offline only)
+## Step 3 — Store admin RPCs (APPLIED on restore-test + staging 2026-11-21, run 44923989992, hosted UAT 37/37)
 `30_store_admin_rpcs.sql` / rollback `70_…`: `create_store` (tenant owner only, caller becomes Store
 owner), `set_store_member` (tenant owner or Store owner; target must be an active tenant member; no
 self-edit; last active Store owner protected), `save_merchant_product_in_store` (explicit Store,
@@ -81,3 +81,19 @@ direct INSERT on stores/store_memberships. Offline PG16: `offline-admin-uat.sh` 
 mutation that drops the role check is caught (FAIL_STAFF_WRITE). Not applied anywhere hosted.
 Staging history: V20 steps 10 and 20 were recorded in `supabase_migrations.schema_migrations`
 (versions 20261121131841 / 20261121131843) on 2026-11-21 with pointers to the source files.
+
+## Step 4 — SKU contract (APPLIED on restore-test + staging 2026-11-22 00:36 UTC, run 44967140432, hosted UAT 20/20; history 20261122003621)
+`40_store_sku_contract.sql` / rollback `60_store_sku_contract_rollback.sql`. Drops
+`UNIQUE(tenant_id,sku)`; `UNIQUE(tenant_id,store_id,sku)` stays, so the same SKU can live in
+several Stores with its own name/price/stock. The legacy writer `save_merchant_product` keeps its
+signature, ACL, validation and error codes but is pinned to the tenant's **default** Store (a
+(tenant,SKU) lookup is no longer unique). `save_merchant_product_in_store` is unchanged; its
+`sku_taken` now means "taken in this Store". 60 refuses while any tenant has a SKU in more than
+one Store, then restores the key and the step-2 writer body verbatim; 90 now refuses until 60 ran.
+
+Behaviour change to accept: v1 can no longer edit a branch product (PT409); v1 create of a SKU that
+only exists in a branch now creates a separate default-Store row. `merchant_revenue_v3.top_skus`
+groups by SKU, so an owner who sees several Stores gets one line per SKU across Stores.
+
+Offline PG16: `offline-contract-uat.sh` 32/32 PASS (fp after 60 = fp after 30, writer md5 after
+60 = step-2 md5). Full order: apply 10 → 20 → 30 → 40, roll back 60 → 70 → 80 → 90.

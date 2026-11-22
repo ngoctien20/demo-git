@@ -6,6 +6,9 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 DO $pre$ BEGIN
  IF to_regclass('public.stores') IS NULL THEN RAISE EXCEPTION 'T404_ROLLBACK_NOTHING_TO_ROLL_BACK'; END IF;
+ IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.products'::regclass AND conname='products_tenant_id_sku_key') THEN
+  RAISE EXCEPTION 'T404_ROLLBACK_REFUSED_RUN_60_FIRST'; -- step-4 contract applied: roll it back first
+ END IF;
  IF EXISTS (SELECT 1 FROM public.stores GROUP BY tenant_id HAVING count(*)>1) THEN
   RAISE EXCEPTION 'T404_ROLLBACK_REFUSED_MULTI_STORE_DATA_EXISTS';
  END IF;
