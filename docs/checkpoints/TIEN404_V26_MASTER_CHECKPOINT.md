@@ -11,12 +11,13 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 | GitHub `gh-pages` (website công khai) | `8d3f88f` = PR #496 @ `7a70fa5` | revert `8d3f88f` |
 | n8n Messenger `Z7FdV7uDvApfbURQ` | Published `1f4069a5`, Draft `41bcea84` | publish `47b48f6d` |
 | n8n Config Menu Bridge `9HXjjJ5ghPKUu43b` | Published `0d04c978` | unpublish (Z7Fd dùng `47b48f6d`) |
-| n8n Create Order `KrSn4DNR9ALX5ng4` | Published `4740251a` (Draft `af9ee686` chưa publish) | — |
+| n8n Create Order `KrSn4DNR9ALX5ng4` | Published `af9ee686` (22/11 ~21:10Z, parse VND chặt) | publish `4740251a` |
 | n8n Manage Order `fDB9dvs1qPPVt9Sp` | `03384201` | `137d5689` |
-| n8n Update Order `BkAi6TVUKAjCnI7v` | Published `93cf227a` (Draft `3bd7043f`) | — |
+| n8n Update Order `BkAi6TVUKAjCnI7v` | Published `3bd7043f` (22/11 ~21:10Z, SĐT/địa chỉ) | publish `93cf227a` |
+| n8n Zalo V2 Shadow `OgDZNSAvKEvhnAvn` | **Unpublished** 22/11 21:06Z (trước đó `6277dd87`) | publish `6277dd87` + `rollback.sql` của #481 |
 | n8n Shared Bot Core `A7XYwSqZwr9T7841` | `37af7677` (active) | — |
 | n8n AI SALES Main `v6PBwcqSapVzACMW` | `c0f04eb1` | — |
-| Supabase staging | migrations tới `20261122003621`; + V23 web, Config Core 10/20 áp bằng psql | V20: 60→70→80→90; Config Core: 80, 90 |
+| Supabase staging | migrations tới `20261122210608 revoke_anon_only_qa_shop_b_zalo_claim` (#481 đã áp); + V23 web, Config Core 10/20 áp bằng psql | V20: 60→70→80→90; Config Core: 80, 90 |
 | Backup | B-00 VERIFIED run 44904780877 (21/11) | artifact mã hóa trước mỗi lần áp |
 | **Vận hành bot** | **DỪNG** — n8n Cloud hết hạn dùng thử ~22/11 11:30Z | nâng gói |
 
@@ -27,6 +28,13 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 - B-00 đã VERIFIED; chỉ cần theo dõi run định kỳ.
 
 ## Nhật ký
+
+### 2026-11-22 21:05–21:30Z — Thực hiện mục đã duyệt (anh Tiến: "Được làm đi em", 21:05Z)
+- B-P0-02 DONE: unpublish `OgDZNSAvKEvhnAvn` (active trước đó `6277dd87`), áp migration #481 qua Supabase MCP. Kiểm tra: `proacl={postgres=X/postgres}`, anon/authenticated/service_role EXECUTE = false. Chưa probe REST (proxy container).
+- B-P0-03/04 DONE: publish Create Order `af9ee686`, Update Order `3bd7043f` (chỉ đổi 1 Code node mỗi workflow). Offline 19/19 PASS (parser VND, tiền tố SĐT, địa chỉ có chữ). Chưa có UAT live vì n8n vẫn hết hạn.
+- B-P0-05 VERIFIED: Z7Fd `1f4069a5` POST đi qua `Crypto → Verify Signature Timing-Safe → Verify Meta Signature` trước khi xử lý; sai chữ ký → nhánh trả lỗi.
+- Hợp nhất: #500 (main→develop, `e9b7f106`), #490 (`c8e1383f`), #487 (`9ba3a8cf`). Merge develop vào #489 (`1c4a687`), #489 vào #496 (`5b04b8c`), #496 vào #491 (`c01afb4`), #491 vào #493 (`41a6fbd`, giải xung đột Shell.tsx/app.css, build lại `app/`).
+- Còn lại: merge #489 → #496 → #491 → #493 vào develop khi CI xanh; #488 và #477 chưa làm.
 
 ### 2026-11-22 — Phase 0 audit (read-only)
 - Branch: `claude/project-thread-8kj0gx`, Draft PR (docs-only).
