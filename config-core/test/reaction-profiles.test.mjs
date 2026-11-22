@@ -15,7 +15,7 @@ const base={
   revision:3, tenantId:'tenant-a',pageId:'page-111',installationId:'install-111',
   ownerId:'owner-111',industryId:'retail_general',
   publishedAtMs:now-10000,expiresAtMs:now+3600000,
-  ownerConsent:{approved:true,revision:3,ownerId:'owner-111',approvedAtMs:now-9000,expiresAtMs:now+3600000},
+  ownerConsent:{approved:true,revision:3,ownerId:'owner-111',industryId:'retail_general',profileId:'friendly',approvedAtMs:now-9000,expiresAtMs:now+3600000},
   settings:{profileId:'friendly',intents:{thanks:true,praise:true},cooldownSeconds:300,maxPerHour:2},
 };
 const authority=(patch={})=>({
@@ -150,13 +150,13 @@ test('professional Page always blocks social reaction even if spoofing a harmles
 });
 test('artist gets extra eligible phrases only with a published, consented expressive Page profile',()=>{
   const s={profileId:'expressive',intents:{thanks:true,praise:true},cooldownSeconds:90,maxPerHour:5};
-  const p=policy({industryId:'artist',settings:s});
+  const p=policy({industryId:'artist',settings:s,ownerConsent:{...base.ownerConsent,industryId:'artist',profileId:'expressive'}});
   const yes=prepared(p,authority({industryId:'artist'}),'Đỉnh quá!');
   assert.equal(yes.mode,'claim_required');
   assert.equal(yes.reaction,'👍');
   assert.equal(yes.profileId,'expressive');
   assert.equal(yes.sendAllowed,false);
-  assert.equal(prepared(policy({industryId:'artist',settings:s,enabled:false}),authority({industryId:'artist'}),'Đỉnh quá!').mode,'blocked');
+  assert.equal(prepared(policy({industryId:'artist',settings:s,enabled:false,ownerConsent:{...base.ownerConsent,industryId:'artist',profileId:'expressive'}}),authority({industryId:'artist'}),'Đỉnh quá!').mode,'blocked');
 });
 test('two Fanpages in same tenant cannot borrow a policy from each other',()=>{
   const p=policy(),a=authority({pageId:'page-222'});
