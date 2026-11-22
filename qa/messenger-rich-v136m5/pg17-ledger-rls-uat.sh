@@ -64,12 +64,16 @@ sql "CREATE SCHEMA app_private;
  CREATE TABLE app_private.qa_page_bindings(role_name name NOT NULL,tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,active bool NOT NULL DEFAULT true,PRIMARY KEY(role_name,tenant_id,store_id,page_id));
  CREATE TABLE app_private.messenger_send_plans(
   id uuid PRIMARY KEY, tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,sender_hash char(64) NOT NULL,binding_version int NOT NULL,event_hash char(64) NOT NULL,plan_digest char(64) NOT NULL,expected_count int NOT NULL CHECK(expected_count BETWEEN 1 AND 3),status text NOT NULL CHECK(status IN ('PREPARED','MOCK_PARTS_ACCEPTED')),completed_at timestamptz,
-  UNIQUE(tenant_id,store_id,page_id,sender_hash,binding_version,event_hash));
+  UNIQUE(tenant_id,store_id,page_id,sender_hash,binding_version,event_hash),
+  UNIQUE(id,tenant_id,store_id,page_id));
  CREATE TABLE app_private.messenger_send_parts(
-  plan_id uuid NOT NULL REFERENCES app_private.messenger_send_plans(id),part_no int NOT NULL CHECK(part_no BETWEEN 1 AND 3),
+  plan_id uuid NOT NULL,tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,
+  part_no int NOT NULL CHECK(part_no BETWEEN 1 AND 3),
   body_digest char(64) NOT NULL,status text NOT NULL CHECK(status IN ('PLANNED','MAY_HAVE_SENT_HOLD','UNCERTAIN_HOLD','API_ACCEPTED_MOCK')),
   attempt_id uuid,attempted_at timestamptz,held_at timestamptz,provider_mid_digest char(64),confirmed_at timestamptz,
-  PRIMARY KEY(plan_id,part_no));
+  PRIMARY KEY(plan_id,part_no),
+  FOREIGN KEY(plan_id,tenant_id,store_id,page_id)
+   REFERENCES app_private.messenger_send_plans(id,tenant_id,store_id,page_id));
  CREATE UNIQUE INDEX uq_mid ON app_private.messenger_send_parts(plan_id,provider_mid_digest) WHERE provider_mid_digest IS NOT NULL;
  ALTER TABLE app_private.qa_page_bindings ENABLE ROW LEVEL SECURITY;
  ALTER TABLE app_private.qa_page_bindings FORCE ROW LEVEL SECURITY;
@@ -95,13 +99,25 @@ sql "CREATE SCHEMA app_private;
  AND q.tenant_id=messenger_send_plans.tenant_id AND q.store_id=messenger_send_plans.store_id AND q.page_id=messenger_send_plans.page_id))
  WITH CHECK(EXISTS(SELECT 1 FROM app_private.qa_page_bindings q WHERE q.role_name=CURRENT_USER::name AND q.active
  AND q.tenant_id=messenger_send_plans.tenant_id AND q.store_id=messenger_send_plans.store_id AND q.page_id=messenger_send_plans.page_id));
- CREATE POLICY part_select ON app_private.messenger_send_parts FOR SELECT TO $RA,$RB,$RC USING(EXISTS(
- SELECT 1 FROM app_private.messenger_send_plans p WHERE p.id=messenger_send_parts.plan_id));
- CREATE POLICY part_insert ON app_private.messenger_send_parts FOR INSERT TO $RA,$RB,$RC WITH CHECK(EXISTS(
- SELECT 1 FROM app_private.messenger_send_plans p WHERE p.id=messenger_send_parts.plan_id));
- CREATE POLICY part_update ON app_private.messenger_send_parts FOR UPDATE TO $RA,$RB,$RC
- USING(EXISTS(SELECT 1 FROM app_private.messenger_send_plans p WHERE p.id=messenger_send_parts.plan_id))
- WITH CHECK(EXISTS(SELECT 1 FROM app_private.messenger_send_plans p WHERE p.id=messenger_send_parts.plan_id));
+ CREATE POLICY part_select ON app_private.messenger_send_parts FOR SELECT TO $RA,$RB,$RC USING(EXISTS(SELECT 1 FROM app_private.qa_page_bindings q
+ WHERE q.role_name=CURRENT_USER::name AND q.active
+ AND q.tenant_id=messenger_send_parts.tenant_id
+ AND q.store_id=messenger_send_parts.store_id
+ AND q.page_id=messenger_send_parts.page_id));
+ CREATE POLICY part_insert ON app_private.messenger_send_parts FOR INSERT TO $RA,$RB,$RC WITH CHECK(EXISTS(SELECT 1 FROM app_private.qa_page_bindings q
+ WHERE q.role_name=CURRENT_USER::name AND q.active
+ AND q.tenant_id=messenger_send_parts.tenant_id
+ AND q.store_id=messenger_send_parts.store_id
+ AND q.page_id=messenger_send_parts.page_id));
+ CREATE POLICY part_update ON app_private.messenger_send_parts FOR UPDATE TO $RA,$RB,$RC USING(EXISTS(SELECT 1 FROM app_private.qa_page_bindings q
+ WHERE q.role_name=CURRENT_USER::name AND q.active
+ AND q.tenant_id=messenger_send_parts.tenant_id
+ AND q.store_id=messenger_send_parts.store_id
+ AND q.page_id=messenger_send_parts.page_id)) WITH CHECK(EXISTS(SELECT 1 FROM app_private.qa_page_bindings q
+ WHERE q.role_name=CURRENT_USER::name AND q.active
+ AND q.tenant_id=messenger_send_parts.tenant_id
+ AND q.store_id=messenger_send_parts.store_id
+ AND q.page_id=messenger_send_parts.page_id));
  INSERT INTO app_private.qa_page_bindings(role_name,tenant_id,store_id,page_id)
  VALUES ('$RA','$TA','$SA','$PA'),('$RB','$TA','$SB','$PB'),('$RC','$TB','$SC','$PC');" >/dev/null
 ok "$(sql "SELECT count(*) FROM pg_roles WHERE rolname IN ('$RA','$RB','$RC') AND NOT rolbypassrls AND NOT rolsuper")" 3 THREE_RESTRICTED_LOGIN_ROLES
@@ -121,7 +137,11 @@ ok "$(part "$RB" "$IA" 1 "$BA" | grep -c '|MAY_HAVE_SENT_HOLD' || true)" 0 B_CAN
 ok "$(accept "$RB" "$IA" 1 "$AA" "$M1" | grep -c '|API_ACCEPTED_MOCK' || true)" 0 B_CANNOT_ACCEPT_A_MID
 ok "$(hold "$RB" "$IA" 1 "$AA" | grep -c '|UNCERTAIN_HOLD' || true)" 0 B_CANNOT_HOLD_A
 ok "$(finish "$RB" "$IA" | grep -c '|MOCK_PARTS_ACCEPTED' || true)" 0 B_CANNOT_CLOSE_A
-deny B_CANNOT_FORGE_A_PART "$RB" "INSERT INTO app_private.messenger_send_parts(plan_id,part_no,body_digest,status) VALUES('$IA',3,'$B1','PLANNED')"
+deny B_CANNOT_FORGE_A_PART "$RB" "INSERT INTO app_private.messenger_send_parts(plan_id,tenant_id,store_id,page_id,part_no,body_digest,status) VALUES('$IA','$TA','$SA','$PA',3,'$B1','PLANNED')"
+# Correct B scope still cannot point to A plan_id: enforced by the composite FK, not just RLS.
+if client "$RB" "INSERT INTO app_private.messenger_send_parts(plan_id,tenant_id,store_id,page_id,part_no,body_digest,status) VALUES('$IA','$TA','$SB','$PB',3,'$B1','PLANNED')" >"$TMP/fkdeny" 2>&1; then fail B_FORGED_PARENT_COMPOSITE_FK; fi
+grep -Eqi 'foreign key constraint' "$TMP/fkdeny" || fail WRONG_COMPOSITE_FK_ERROR
+PASS=$((PASS+1)); echo PASS_B_COMPOSITE_FK_DENIES_CROSS_STORE_PARENT
 ok "$(part "$RA" "$IA" 1 "$AA" | grep -c '|MAY_HAVE_SENT_HOLD')" 1 A_RESERVES_OWN_PART
 ok "$(accept "$RA" "$IA" 1 "$AA" "$M1" | grep -c '|API_ACCEPTED_MOCK')" 1 A_CAN_ACCEPT_OWN_MOCK
 ok "$(part "$RA" "$IA" 2 "$AB" | grep -c '|MAY_HAVE_SENT_HOLD')" 1 A_RESERVES_SECOND_PART
