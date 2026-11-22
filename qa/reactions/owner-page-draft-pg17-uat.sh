@@ -76,4 +76,20 @@ deny_user STALE_PROOF unverified_page_industry "$OA" "SELECT public.save_page_re
 ok "$(q "SELECT count(*) FROM public.page_reaction_drafts")" 3 TOTAL_DRAFTS
 ok "$(q "SELECT count(*) FROM app_private.audit_events WHERE event_type='reaction_page_draft_saved'")" 4 AUDIT_RECORDS
 ok "$(q "SELECT to_regprocedure('public.publish_page_reaction_draft(uuid,text)') IS NULL")" t NO_PUBLISH_RPC
+# Two owners of the SAME Page race on the SAME draft SHA; only one commit may win.
+F2='{"schemaVersion":2,"profileId":"friendly","intents":{"thanks":true,"praise":false},"cooldownSeconds":300,"maxPerHour":1}'
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+( as "$OA" "SELECT public.save_page_reaction_draft('$CA','$F'::jsonb,'$SHA2')" >"$TMP/a.log" 2>&1 && echo yes >"$TMP/a.status" || echo no >"$TMP/a.status" ) &
+( as "$OA" "SELECT public.save_page_reaction_draft('$CA','$F2'::jsonb,'$SHA2')" >"$TMP/b.log" 2>&1 && echo yes >"$TMP/b.status" || echo no >"$TMP/b.status" ) &
+wait
+WON=$(grep -l '^yes
+ "$TMP"/*.status | wc -l | tr -d ' ')
+ok "$WON" 1 CONCURRENT_CAS_SINGLE_WINNER
+LOST=$(grep -l '^no
+ "$TMP"/*.status | wc -l | tr -d ' ')
+ok "$LOST" 1 CONCURRENT_CAS_SINGLE_LOSER
+ok "$(q "SELECT count(*) FROM app_private.audit_events WHERE event_type='reaction_page_draft_saved'")" 5 CONCURRENT_CAS_ONE_EXTRA_AUDIT
+ok "$(q "SELECT count(*) FROM public.page_reaction_drafts WHERE connection_id='$CA'")" 1 CONCURRENT_CAS_ONE_ROW
+
 echo "T404_V214_PAGE_DRAFT_PG17_PASS $PASS"
