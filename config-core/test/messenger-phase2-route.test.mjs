@@ -181,6 +181,70 @@ test('Meta handoff success gate protects waiting label; failure has no path to l
   assert.ok(edges['Pass Messenger Thread to Page Inbox'].main[0].some(x => x.node === 'Handoff succeeded?'));
 });
 
+function formatProduct(selectedSku, rows) {
+  const selected = { selectedSku, pageId: pageA, senderId: senderA, messageId: ID };
+  return fakeNode('Format selected product', rows.map(item), { current: selected })[0].json.output;
+}
+
+test('product lookup: Google Sheets Demo is read-only and no-match still reaches formatter', () => {
+  const read = source['Read selected demo product'].settings;
+  assert.equal(read.sourceTag, 'AI_SALES_DEMO_READ_ONLY');
+  assert.equal(read.operation, 'read');
+  assert.equal(read.hasSkuFilter, true);
+  assert.equal(read.alwaysOutputData, true);
+  const edges = snapshot.connections;
+  assert.ok(edges['Read selected demo product'].main[0].some(x => x.node === 'Format selected product'));
+  assert.ok(edges['Format selected product'].main[0].some(x => x.node === 'Remember selected Messenger product'));
+  assert.ok(edges['Remember selected Messenger product'].main[0].some(x => x.node === 'Forward selected product reply'));
+  assert.ok(edges['Forward selected product reply'].main[0].some(x => x.node === 'Prepare Messenger Reply'));
+  assert.ok(!JSON.stringify(edges['Read selected demo product']).includes('create_order'));
+});
+
+test('product A002 matches the read-only DEMO catalog snapshot, not customer-supplied price', () => {
+  assert.equal(formatProduct('A002', [{
+    sku: 'A002', name: 'Áo thun nam trắng basic size M', price: 159000, stock: 25,
+  }]), 'A002 — Áo thun nam trắng basic size M | 159.000đ/cái. Còn 25 cái.');
+});
+
+test('product A011 with zero stock is not recommended as available', () => {
+  const actual = formatProduct('A011', [{
+    sku: 'A011', name: 'Áo polo nam đen size XL', price: 289000, stock: 0,
+  }]);
+  assert.match(actual, /289.000đ\/cái/);
+  assert.match(actual, /đã hết hàng/);
+  assert.doesNotMatch(actual, /Còn \d+ cái/);
+});
+
+test('missing SKU Z999 returns no-data response and no unrelated product', () => {
+  const actual = formatProduct('Z999', [{}]); // n8n Always Output Data emits one empty item
+  assert.match(actual, /chưa tìm thấy mẫu Z999/);
+  assert.doesNotMatch(actual, /A002|159.000đ|Còn \d+/);
+});
+
+test('mismatched row must not leak another SKU as the chosen product', () => {
+  const actual = formatProduct('A002', [{ sku: 'A003', name: 'Áo thun nam đen basic size L', price: 159000, stock: 18 }]);
+  assert.match(actual, /chưa tìm thấy mẫu A002/);
+  assert.doesNotMatch(actual, /A003|Áo thun nam đen/);
+});
+
+test('duplicate SKU rows fail closed without selecting an arbitrary price', () => {
+  const actual = formatProduct('A002', [
+    { sku: 'A002', name: 'Áo thun nam trắng basic size M', price: 159000, stock: 25 },
+    { sku: 'A002', name: 'Áo thun nam trắng basic size M', price: 139000, stock: 25 },
+  ]);
+  assert.match(actual, /chưa xác minh được/);
+  assert.doesNotMatch(actual, /139.000đ|159.000đ/);
+});
+
+test('malformed prices or impossible stock are never presented as verified', () => {
+  const base = { sku: 'A002', name: 'Áo thun nam trắng basic size M', price: 159000, stock: 25 };
+  for (const patch of [{price: '159.000'}, {price: -500}, {price: 12.5}, {stock: -1}, {stock: 1.4},
+    {price: Number.MAX_SAFE_INTEGER + 10}, {name: ''}]) {
+    assert.match(formatProduct('A002', [{ ...base, ...patch }]), /chưa xác minh được/,
+      'bad case ' + JSON.stringify(patch));
+  }
+});
+
 test('normal non-menu text remains on legacy text route', () => {
   const body = { object: 'page', entry: [{ id: pageA, messaging: [{
     sender: { id: senderA }, message: { mid: ID, text: 'Cho xem áo' },
