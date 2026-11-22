@@ -12,7 +12,7 @@ const policy = (patch={}) => ({
   industryId:'retail_general',
   revision:4,tenantId:tenant,pageId:page,installationId:'installation-qa',ownerId:'owner-qa',
   publishedAtMs:now-120000,expiresAtMs:now+30*86400000,
-  ownerConsent:{approved:true,revision:4,ownerId:'owner-qa',approvedAtMs:now-120000,expiresAtMs:now+30*86400000},
+  ownerConsent:{approved:true,revision:4,ownerId:'owner-qa',industryId:'retail_general',profileId:'friendly',approvedAtMs:now-120000,expiresAtMs:now+30*86400000},
   settings:{profileId:'friendly',intents:{thanks:true,praise:true},cooldownSeconds:300,maxPerHour:2},...patch,
 });
 const auth = (patch={}) => ({
