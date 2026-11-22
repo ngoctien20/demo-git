@@ -6,8 +6,8 @@ import {
   classifyReactionForProfile, suggestReactionProfile, validatePublishedReactionProfile,
 } from '../../../../config-core/lib/reaction-profiles.mjs';
 
-type ProfileId = keyof typeof REACTION_PROFILES;
-type IndustryId = keyof typeof INDUSTRY_REACTION_RULES;
+type ProfileId = 'silent' | 'restrained' | 'friendly' | 'expressive';
+type IndustryId = string;
 
 const INDUSTRIES: { value: IndustryId; label: string; group: string }[] = [
   { value: 'retail_general', label: 'Bán lẻ tổng hợp', group: 'Cửa hàng' },
