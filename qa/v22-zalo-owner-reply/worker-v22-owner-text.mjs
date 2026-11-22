@@ -92,7 +92,7 @@ function filePreview(b) {
     if (b.error_count > errs.length) parts.push(['\n\u2022 \u2026', ['i']]);
   }
   parts.push(['\n\u24d8 B\u1ea3n xem tr\u01b0\u1edbc, ch\u01b0a ghi v\u00e0o catalog.', ['i', C.gray]]);
-  if (b.valid_count > 0) parts.push(['\n\u270e Nh\u1eafn \u201cX\u00e1c nh\u1eadn nh\u1eadp\u201d trong 15 ph\u00fat \u0111\u1ec3 ghi ' + b.valid_count + ' s\u1ea3n ph\u1ea9m h\u1ee3p l\u1ec7.', ['b', C.blue]]);
+  if (b.valid_count > 0) parts.push(['\n\u270e Tr\u1ea3 l\u1eddi \u201cok\u201d ho\u1eb7c \u201cx\u00e1c nh\u1eadn\u201d trong 15 ph\u00fat \u0111\u1ec3 ghi ' + b.valid_count + ' s\u1ea3n ph\u1ea9m h\u1ee3p l\u1ec7.', ['b', C.blue]]);
   return build(parts);
 }
 // V22.7.1: result of the owner's "Xác nhận nhập" (sandbox catalog only).
