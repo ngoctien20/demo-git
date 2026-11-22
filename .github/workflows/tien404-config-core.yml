@@ -10,6 +10,7 @@ on:
       - "qa/messenger-rich-v136m5/pg17-message-ledger-uat.sh"
       - "qa/messenger-rich-v136m5/pg17-ledger-rls-uat.sh"
       - "qa/messenger-rich-v136m5/pg17-claim-bound-plan-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-atomic-claim-plan-uat.sh"
       - ".github/workflows/tien404-config-core.yml"
   workflow_dispatch:
 permissions:
@@ -113,3 +114,16 @@ jobs:
           DATABASE_URL: ""
           PGHOSTADDR: ""
         run: bash qa/messenger-rich-v136m5/pg17-claim-bound-plan-uat.sh
+
+      - name: V21 Messenger atomic claim+plan+parts real restricted PG17 rollback QA (disposable NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-atomic-claim-plan-uat.sh
