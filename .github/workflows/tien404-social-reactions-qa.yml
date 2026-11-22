@@ -1,0 +1,132 @@
+name: "TIEN404 Social Reactions V21 — isolated no-send QA"
+on:
+  pull_request:
+    paths:
+      - "config-core/lib/social-reactions.mjs"
+      - "config-core/lib/reaction-admission.mjs"
+      - "config-core/lib/reaction-profiles.mjs"
+      - "config-core/lib/meta-page-installation-authority.mjs"
+      - "config-core/lib/meta-page-graph-evidence.mjs"
+      - "qa/reactions/**"
+      - "db/reactions/**"
+      - "config-core/n8n/build-messenger-reactions-shadow.mjs"
+      - "config-core/n8n/build-reactions-code.mjs"
+      - "config-core/test/social-reactions.test.mjs"
+      - "config-core/test/reaction-admission.test.mjs"
+      - "config-core/test/reaction-profiles.test.mjs"
+      - "config-core/test/meta-page-installation-authority.test.mjs"
+      - "config-core/test/meta-page-graph-evidence.test.mjs"
+      - "config-core/test/reactions-bundle.test.mjs"
+      - "config-core/test/messenger-reaction-shadow.test.mjs"
+      - ".github/workflows/tien404-social-reactions-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse hosted credentials
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${META_PAGE_ACCESS_TOKEN:-}${N8N_API_KEY:-}"
+      - name: Reaction classifier and n8n shadow VM tests
+        run: >-
+          node --test
+          config-core/test/social-reactions.test.mjs
+          config-core/test/reaction-admission.test.mjs
+          config-core/test/reaction-profiles.test.mjs
+          config-core/test/meta-page-installation-authority.test.mjs
+          config-core/test/meta-page-graph-evidence.test.mjs
+          qa/reactions/owner-auth-jwt-readonly-uat.test.mjs
+          qa/reactions/v218-staging-readiness.test.mjs
+          qa/reactions/v219-config-core-source-parity.test.mjs
+          config-core/test/reactions-bundle.test.mjs
+          config-core/test/messenger-reaction-shadow.test.mjs
+      - name: Default page policy OFF and no network in generated node
+        run: |
+          node config-core/n8n/build-messenger-reactions-shadow.mjs > /tmp/t404-react-shadow.js
+          grep -Fq 'const PAGE_POLICIES = Object.freeze({});' /tmp/t404-react-shadow.js
+          grep -Fq 'outgoingSendEnabled: false' /tmp/t404-react-shadow.js
+          if grep -Eq 'graph[.]facebook[.]com|[$][.]httpRequest|httpBearerAuth' /tmp/t404-react-shadow.js; then
+            echo "Unexpected live-send primitive in shadow gate"
+            exit 1
+          fi
+
+  pg17_atomic_ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: t404qa
+          POSTGRES_PASSWORD: ci-only-disposable-qa
+          POSTGRES_DB: t404qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U t404qa -d t404qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TIEN404_DISPOSABLE_PG17_QA: "YES"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGUSER: "t404qa"
+      PGDATABASE: "t404qa"
+      PGPASSWORD: "ci-only-disposable-qa"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Refuse hosted credentials
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${META_PAGE_ACCESS_TOKEN:-}${N8N_API_KEY:-}"
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+      - name: Run disposable PG17 atomic claim + concurrency acceptance
+        run: bash qa/reactions/atomic-claim-offline.sh
+
+  pg17_page_draft_owner_ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-disposable-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TIEN404_DISPOSABLE_PG17_QA: "YES"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGUSER: "postgres"
+      PGPASSWORD: "ci-disposable-only"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Refuse hosted tokens
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_SERVICE_ROLE_KEY:-}${META_PAGE_ACCESS_TOKEN:-}${N8N_API_KEY:-}${DATABASE_URL:-}"
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Validate offline shell QA syntax before database tests
+        run: bash -n qa/reactions/owner-page-draft-pg17-uat.sh && bash -n qa/reactions/atomic-claim-offline.sh
+      - name: Assert ONLY offline synthetic Page owner/store/industry/cas admission
+        run: bash qa/reactions/owner-page-draft-pg17-uat.sh

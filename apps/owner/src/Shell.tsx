@@ -12,6 +12,7 @@ import { Orders } from './pages/Orders';
 import { Customers } from './pages/Customers';
 import { Channels } from './pages/Channels';
 import { BotSettings } from './pages/BotSettings';
+import { ReactionSettings } from './pages/ReactionSettings';
 import { Menu } from './pages/Menu';
 import { Knowledge } from './pages/Knowledge';
 import { Plan } from './pages/Plan';
@@ -53,7 +54,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       ['/khach-hang', INDUSTRY_META[ws.primary].people, '♧'], ['/bao-cao', 'Báo cáo', '▥'], ['/thong-bao', 'Thông báo', '◔'],
     ] },
     { group: 'Workspace', items: [
-      ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
+      ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
     ] },
   ];
 
@@ -70,6 +71,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       case '/kenh-ban': return <Channels />;
       case '/cai-dat-bot': return <BotSettings />;
       case '/menu-tro-ly': return <Menu />;
+      case '/bieu-cam-fanpage': return <ReactionSettings />;
       case '/tri-thuc': return <Knowledge />;
       case '/tro-ly': return <Assistants />;
       case '/hoi-thoai': return <Conversations />;
