@@ -18,9 +18,9 @@ const products = Array.from({ length: 21 }, (_, i) => {
     name: (isA ? 'Áo thun' : 'Quần jean') + ' mẫu kiểm thử ' + i,
     price: isA ? 159000 : 450000, stock: i === 10 ? 0 : 20 - (i % 17) };
 });
-function render({rows=products,page=1,category=null,itemId='catalog',version=7,pageId=DEMO_PAGE,senderId=SENDER,mediaType='catalog_page'}={}) {
+function render({rows=products,page=1,category=null,itemId='catalog',version=7,pageId=DEMO_PAGE,senderId=SENDER,mediaType='catalog_page',digest=null}={}) {
   const current = {pageId,senderId,mediaType,catalogPage:page,
-    catalogCategory:category,catalogItemId:itemId,catalogVersion:version};
+    catalogCategory:category,catalogItemId:itemId,catalogVersion:version,catalogDigest:digest};
   const $ = (name) => {
     assert.equal(name, 'Loop One Message');
     return { first: () => ({json:current}), context: {currentRunIndex:0} };
@@ -37,8 +37,10 @@ function previous(m){return m.quick_replies?.find(q=>q.title==='Trang trước')
 
 test('all 21 synthetic products are selectable across 7 pages, stable and non-duplicated',()=>{
   const seen=[];
+  const digest=render({page:1})[0].catalogDigest;
+  assert.match(digest,/^[0-9a-f]{8}$/);
   for(let page=1;page<=7;page++){
-    const result=render({page});
+    const result=render({page,digest:page===1?null:digest});
     assert.equal(result.length,1);
     assert.equal(result[0].catalogPage,page);
     assert.equal(result[0].catalogPages,7);
@@ -50,9 +52,9 @@ test('all 21 synthetic products are selectable across 7 pages, stable and non-du
     assert.ok(buttons(m).every(b=>b.type==='postback'&&/^TIEN404:VIEW:[AB][0-9]{3}$/.test(b.payload)));
     seen.push(...buttons(m).map(b=>b.payload));
     if(page===1)assert.equal(previous(m),undefined);
-    else assert.equal(previous(m),'T404:C:catalog:7:'+(page-1));
+    else assert.equal(previous(m),'T404:C:catalog:7:'+digest+':'+(page-1));
     if(page===7)assert.equal(next(m),undefined);
-    else assert.equal(next(m),'T404:C:catalog:7:'+(page+1));
+    else assert.equal(next(m),'T404:C:catalog:7:'+digest+':'+(page+1));
     assert.ok((m.quick_replies??[]).length<=2);
   }
   assert.equal(new Set(seen).size,21);
@@ -76,7 +78,7 @@ test('a configured custom item id/category remains in cursors and applies only c
   const r=render({category:first.catalogCategory,itemId:first.itemId});
   assert.equal(r[0].catalogCount,11);
   assert.equal(r[0].catalogPages,4);
-  assert.equal(next(msg(r)),'T404:C:ao_nam:7:2');
+  assert.equal(next(msg(r)),'T404:C:ao_nam:7:'+r[0].catalogDigest+':2');
   assert.equal(decide(m,{payload:next(msg(r))}).catalogCategory,'áo');
   const q=render({category:'quần'});
   assert.equal(q[0].catalogCount,10);
@@ -85,7 +87,7 @@ test('a configured custom item id/category remains in cursors and applies only c
 });
 
 test('out-of-range page and unsupported category fail safely; do not reveal other items',()=>{
-  assert.match(text(msg(render({page:8}))),/Danh mục đã thay đổi/);
+  assert.match(text(msg(render({page:8,digest:render()[0].catalogDigest}))),/Danh mục đã thay đổi/);
   assert.match(text(msg(render({category:'bí mật'}))),/chưa khả dụng/);
   assert.match(text(msg(render({page:100}))),/chưa khả dụng/);
   assert.match(text(msg(render({version:0}))),/chưa khả dụng/);
@@ -126,4 +128,34 @@ test('long catalog product names are clipped and cannot create oversized templat
   assert.equal(buttons(msg(result)).length,3);
   assert.ok(text(msg(result)).length<=640);
   assert.ok(text(msg(result)).length>20);
+});
+
+test('a product price, stock or SKU-list change invalidates an in-flight next-page cursor',()=>{
+  const digest=render({page:1})[0].catalogDigest;
+  const changedPrice=products.map(p=>({...p,...(p.sku==='A002'?{price:p.price+1000}:{})}));
+  const changedStock=products.map(p=>({...p,...(p.sku==='A003'?{stock:0}:{})}));
+  const removed=products.filter(p=>p.sku!=='A001');
+  for(const rows of [changedPrice,changedStock,removed]){
+    const r=render({page:2,digest,rows});
+    assert.match(text(msg(r)),/Danh mục đã thay đổi/);
+    assert.equal(buttons(msg(r)).length,0);
+    assert.equal(next(msg(r)),undefined);
+  }
+});
+
+test('catalog paging without a current snapshot fingerprint fails closed after first page',()=>{
+  const r=render({page:2});
+  assert.match(text(msg(r)),/hết hiệu lực/);
+  assert.equal(buttons(msg(r)).length,0);
+  assert.match(text(msg(render({page:2,digest:'ffffffff'}))),/Danh mục đã thay đổi/);
+});
+
+test('unchanged catalogue fingerprint supports both back/forward without fake pricing',()=>{
+  const first=render({page:1});
+  const digest=first[0].catalogDigest;
+  const second=render({page:2,digest});
+  assert.equal(second[0].catalogDigest,digest);
+  const returned=render({page:1,digest});
+  assert.deepEqual(buttons(msg(returned)).map(b=>b.payload),buttons(msg(first)).map(b=>b.payload));
+  assert.equal(previous(msg(returned)),undefined);
 });
