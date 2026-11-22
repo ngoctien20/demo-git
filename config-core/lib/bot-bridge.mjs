@@ -66,7 +66,7 @@ export function decide(menu, event, channel = 'messenger') {
   // V21 Messenger catalogue cursors are only references to a published SHOW_CATALOG item.
   // The cursor never grants access to a tenant, SKU or price. Version mismatch rejects stale buttons.
   if (payload?.startsWith('T404:C:')) {
-    const cursor = /^T404:C:([a-z][a-z0-9_]{1,31}):([1-9][0-9]{0,8}):([1-9][0-9]?)$/.exec(payload);
+    const cursor = /^T404:C:([a-z][a-z0-9_]{1,31}):([1-9][0-9]{0,8}):([0-9a-f]{8}):([1-9][0-9]?)$/.exec(payload);
     if (!cursor || channel !== 'messenger') {
       return { mode: 'rejected', reason: 'catalog_cursor_invalid',
         message: { text: 'Nút chuyển trang không hợp lệ. Bạn hãy mở lại danh mục nhé.' } };
@@ -80,8 +80,8 @@ export function decide(menu, event, channel = 'messenger') {
       return { mode: 'rejected', reason: 'catalog_item_inactive',
         message: { text: 'Mục sản phẩm này hiện không khả dụng. Bạn hãy mở lại menu nhé.' } };
     }
-    return { mode: 'catalog', itemId: it.item_id, catalogPage: Number(cursor[3]),
-      catalogCategory: it.action_config?.category ?? null };
+    return { mode: 'catalog', itemId: it.item_id, catalogPage: Number(cursor[4]),
+      catalogDigest: cursor[3], catalogCategory: it.action_config?.category ?? null };
   }
   if (!payload || !payload.startsWith(PAYLOAD_PREFIX)) return { mode: 'legacy' };
   const r = resolveInbound({ channel, payload }, menu);
