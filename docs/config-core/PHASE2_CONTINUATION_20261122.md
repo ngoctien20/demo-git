@@ -519,3 +519,41 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - Next offline P1: build a bounded **read-only reconciliation/observation inspector** that identifies `MAY_HAVE_SENT_HOLD`, `UNCERTAIN_HOLD`, partial 1/3 or 2/3, plan mismatches and stale attempts without automatically claiming, resending or revealing PSID/lease; test crash/restart and owner revocation. Independent hosted admission/release review remains a separate gate.
 
 **Disposition: IMPLEMENTED source-only / TESTED 309/309 offline, 26/26 real restricted PG17, 50 simulated and 2 real concurrent workers / NOT RELEASED.**
+## 19. Fourteenth continuation — bounded READ-ONLY message reconciliation inspector + real restricted PostgreSQL 17 (2026-11-22 ~14:34 UTC)
+
+**Objective:** Continue from GitHub Draft PR #491 checkpoint `f9cbd2639c2fac0689c003589135cfe57c7a56a7` and Issue #495. Provide operator-safe, *read-only* incident triage for Messenger partial 1/3, 2/3, uncertain transport and worker crashes without changing send, order or customer data. All work in source-only Draft. No Supabase hosted migration, Meta Graph API call or Messenger Published workflow change.
+
+### VERIFIED baseline / source audit
+
+- Read-only audit: PR #491 remained OPEN/DRAFT at initial SHA `f9cbd2639c2fac0689c003589135cfe57c7a56a7`; n8n `Z7FdV7uDvApfbURQ` Draft `41bcea84-703d-40bc-be2a-71f84ca4e2d8`, Published `1f4069a5-5e74-4c79-935b-40f02b3582d8` active. User preferences confirmed AI_SALES_DEMO must remain isolated. No n8n write was attempted.
+- Existing `message-attempt-ledger.cjs` distinguishes PLANNED, MAY_HAVE_SENT_HOLD, UNCERTAIN_HOLD, API_ACCEPTED_MOCK; closes only after every expected mock part is recorded. Those mock statuses must never be represented as actual Meta accepted/delivered/read. This work did not alter the ledger writer or atomic claim-plan candidate.
+
+### IMPLEMENTED (SOURCE ONLY / ADDITIVE)
+
+- New `qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs`. Explicit default BLOCKED; accepts only `SYNTHETIC_SQL_QA_ONLY` driver with `synthetic:true`, `externalWrites:false`, `readOnly:true`, `rollbackOnThrow:true`, known offline profile. The SQL transaction begins with `SET TRANSACTION READ ONLY` before a single scoped SELECT. The query reads existing plan/part statuses (tenant+store+Page filtered) and returns counts for PLANNED, MAY_HAVE_SENT_HOLD, stale in-flight relative to configurable server cutoff, UNCERTAIN_HOLD, API_ACCEPTED_MOCK and unexpected statuses. No UPDATE, INSERT, DELETE, Meta or Order operations.
+- Classifies per-plan diagnostic outcome as `DATA_INTEGRITY_REVIEW`, `UNCERTAIN_OUTCOME_REVIEW`, `STALE_MAY_HAVE_SENT_REVIEW`, `MAY_HAVE_SENT_REVIEW`, `PARTIAL_MOCK_ACK_REVIEW`, `MOCK_COMPLETE_PLAN_NOT_CLOSED`, `MOCK_ALL_PARTS_RECORDED`, or `PLANNED_NOT_ATTEMPTED`; never authorizes retry/send. Even 3/3 acknowledged is explicitly MOCK, not proof of provider acceptance or delivery.
+- Returns only a private HMAC-pseudonymized opaque plan reference and aggregate counts; does **not** return plan UUID, raw PSID, tenant/store/Page IDs, attempt UUID, claim lease, raw provider MID or MID digest. Hard limit of 50 output rows and query LIMIT 51 to mark `truncated:true` / `complete:false` whenever an audit batch is incomplete; no false full-audit claim.
+- New `message-reconciliation-inspector.test.cjs` with 16 synthetic cases: no-send/hosted default refusal, no records, 1/3 and 2/3 partials, unknown timeout, stale/fresh/missing attempt time, restart-safe read-only snapshot, 3/3 mock-only vs plan-not-closed, inconsistent row counts/unknown state fail-closed, cross-shop/tenant scope, forged scope, no PII leaks, 51-row truncated preview, explicit SELECT-only SQL, malformed driver response.
+- New `pg17-readonly-reconciliation-uat.sh` creates random disposable local PG17 DB and three independent real LOGIN roles with NOINHERIT/NOBYPASSRLS. Applies FORCE RLS to plan, part and private role→Page scope tables, populates synthetic 1/3, 2/3 timeout, stale/fresh in-flight, complete mock, planned-only cases across tenant A Store A/B and tenant B Store C; executes the **exact inspector SELECT from JS module** in explicit read-only transactions and verifies denial of cross-store/tenant reads. Runs a separate privileged-user negative INSERT inside READ ONLY transaction to prove writes are blocked. Tests new client/restart snapshot stability and role revocation. Deletes disposable DB/roles on exit.
+- Updated both GitHub CI workflows to include new 16-case unit suite, a static no-network/no-hosted-write audit, and real disposable PG17 restricted read-only acceptance.
+
+### TESTED — CI evidence
+
+- [Messenger V13.6M.5 offline CI run 45033444814](https://github.com/ngoctien20/demo-git/actions/runs/45033444814) **SUCCESS, 325/325 tests PASS, 0 fail**, including 16 new reconciliation cases and no-Send/no-provider static gate PASS.
+- [Config Core + PG17 run 45033445192](https://github.com/ngoctien20/demo-git/actions/runs/45033445192) **SUCCESS** with `PG17_READ_ONLY_RECONCILIATION_TESTS=20` PASS. Inherited Config Core 138/138, atomic event claims 21/21, inbound claim RLS 24/24, message ledger concurrency 28/28, ledger RLS 29/29, scoped claim-bound plan 23/23 and atomic claim→plan→parts 26/26 PASS.
+- [V23 web + Owner App CI run 45033444827](https://github.com/ngoctien20/demo-git/actions/runs/45033444827) SUCCESS, independent offline QA. Latest code/CI successful checkpoint before this doc: `7874c2015b244985ab297fa4909467ad420b3f24`.
+
+### Limitations / BLOCKED release gates
+
+1. **Only synthetic identities and disposable PG17**, not Supabase hosted or live Messenger. Actual worker is not connected to this inspector; no real webhook/provider error was diagnosed. The output is a test-only operational report, not external Meta delivery truth.
+2. The `SERVER_VERIFIED_MESSENGER_BINDING` proof in the isolated source module is shape-checked at its boundary, not cryptographically verified there. Real read-only admission must use server-validated token/owner entitlement, current Page→Tenant→Store binding, restricted role issuance and hosted RLS (tenant A/B and Store A/B). A guessed user scope is not authorization. Synthetic RLS proves only local fixture isolation.
+3. Inspector must remain strictly read-only and **never** automatically retry UNCERTAIN_HOLD or MAY_HAVE_SENT_HOLD. Real Messenger remote side effects can have occurred before a timeout. Human/provider-safe reconciliation and policy-compliant recovery need independent approval; exactly-once Meta delivery is unproven.
+4. Bounded result returns at most 50 reports; if `truncated:true`, the current scan is incomplete. This version has no production cursor/pagination, no claim ownership enforcement for a real admin viewer, no alert delivery, no retention/archival policy, and no real trusted host adaptation.
+5. Existing Messenger Published retains Data Table check-before-send ordering and has not been fixed in live runtime. Messenger Draft/Published, Supabase hosted schema/grants, credentials, Meta Send, Commerce Orders/Products and real customer data were **not modified** in this continuation. PR #491 stays DRAFT / Issue #495 OPEN.
+
+### Rollback and next step
+
+- To rollback just this continuation: delete `message-reconciliation-inspector.cjs`, `message-reconciliation-inspector.test.cjs`, `pg17-readonly-reconciliation-uat.sh` and revert their appended checks in `.github/workflows/v136m5-private-event-store-qa.yml` and `.github/workflows/tien404-config-core.yml`. All prior V13.6M.5, per-part ledger, atomic claim+plan, Page-menu/reaction QA remain unchanged. No production rollback required.
+- Next source-only P1 recommendation: authenticated *operator review decision contract* with explicit `NO_SEND` evidence trail and scope/authority rechecks (never an automatic resend), plus review whether minimal report metrics can be safely displayed in the Owner App; hosted migration or live send requires separate owner approval.
+
+**Status: IMPLEMENTED source-only / TESTED 325/325 offline and PG17 20/20 read-only RLS / PRODUCTION BLOCKED / NOT RELEASED.**
