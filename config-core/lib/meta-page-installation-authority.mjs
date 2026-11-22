@@ -32,6 +32,8 @@ export function verifyMetaPageInstallationReceipt(envelope,key,expected,nowMs=Da
   if (!expected || !UUID.test(expected.connectionId||'') ||
       !UUID.test(expected.tenantId||'') || !UUID.test(expected.storeId||'') ||
       !UUID.test(expected.ownerUserId||'') ||
+      !UUID.test(expected.installationId||'') ||
+      !HEX.test(expected.oauthNonceSha256||'') ||
       !mustStr(expected.appId) || !DIGITS.test(expected.metaPageId||''))
     return BLOCK('untrusted_installation_context');
   if (!envelope || envelope.version!==1 || !mustStr(envelope.payload,4096) ||
@@ -65,7 +67,9 @@ export function verifyMetaPageInstallationReceipt(envelope,key,expected,nowMs=Da
     return BLOCK('invalid_receipt_claims');
   if (p.appId!==expected.appId || p.connectionId!==expected.connectionId ||
       p.tenantId!==expected.tenantId || p.storeId!==expected.storeId ||
-      p.ownerUserId!==expected.ownerUserId || p.metaPageId!==expected.metaPageId)
+      p.ownerUserId!==expected.ownerUserId || p.metaPageId!==expected.metaPageId ||
+      p.installationId!==expected.installationId ||
+      p.oauthNonceSha256!==expected.oauthNonceSha256)
     return BLOCK('installation_scope_mismatch');
   if (!Array.isArray(p.permissions) || p.permissions.length!==permissions.length ||
       !permissions.every(s=>p.permissions.includes(s)) ||
@@ -82,6 +86,7 @@ export function verifyMetaPageInstallationReceipt(envelope,key,expected,nowMs=Da
     storeId:p.storeId,ownerUserId:p.ownerUserId,metaPageId:p.metaPageId,
     appId:p.appId,installationId:p.installationId,verifiedAtMs:p.verifiedAtMs,
     expiresAtMs:p.expiresAtMs,attestationVersion:1,
-    sendAllowed:false,requiresIndependentOwnerConsent:true
+    sendAllowed:false,requiresIndependentOwnerConsent:true,
+    requiresAtomicOneTimeNonceClaim:true
   });
 }
