@@ -102,7 +102,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $fn$
    SELECT 1
    FROM app_private.reaction_page_industries pr
    JOIN public.channel_connections c ON c.id=pr.connection_id
-   JOIN app_private.reaction_meta_nonce_claims nonce ON nonce.nonce_sha256=pr.oauth_nonce_sha256
+   JOIN app_private.reaction_meta_nonce_claims nonce ON nonce.oauth_nonce_sha256=pr.oauth_nonce_sha256
       AND nonce.connection_id=c.id
       AND nonce.installation_id=pr.installation_id
       AND nonce.tenant_id=c.tenant_id AND nonce.store_id=c.store_id
