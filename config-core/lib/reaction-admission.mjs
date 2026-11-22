@@ -133,9 +133,12 @@ export function verifyAtomicReactionClaim(preflight, receipt, now = Date.now()) 
 export function planSocialResponseAfterProvider(candidate, outcome) {
   if (!candidate || candidate.mode !== 'dispatch_candidate')
     return Object.freeze({mode: 'normal_text', reason: 'no_verified_candidate', retryReaction: false});
-  if (outcome && outcome.action === 'react' && outcome.messageId === candidate.messageId &&
-      outcome.pageId === candidate.pageId && outcome.transportConfirmed === true &&
-      outcome.providerAccepted === true && outcome.providerError === false)
+  if (outcome && outcome.source === 'trusted_meta_send_result' &&
+      outcome.requestCorrelationVerified === true && outcome.claimId === candidate.claimId &&
+      outcome.recipientId === candidate.senderId && outcome.action === 'react' &&
+      outcome.messageId === candidate.messageId && outcome.pageId === candidate.pageId &&
+      outcome.transportConfirmed === true && outcome.providerAccepted === true &&
+      outcome.providerError === false)
     return Object.freeze({mode: 'reaction_only', reason: 'provider_accepted', retryReaction: false});
   return Object.freeze({mode: 'normal_text', reason: 'reaction_not_confirmed', retryReaction: false});
 }
