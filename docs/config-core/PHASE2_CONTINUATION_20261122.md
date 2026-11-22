@@ -320,3 +320,41 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - To roll back only this continuation, remove messenger-inbound-gate.cjs and messenger-inbound-gate.test.cjs and restore the prior V13.6M.5 CI workflow file. Keep the earlier PG17 UAT, Social Reactions ALL OFF and other independent draft changes. No runtime rollback is needed.
 
 **Status: IMPLEMENTED + TESTED in isolated GitHub Draft; NOT VERIFIED in live Meta/hosted RLS; NOT RELEASED.**
+## 14. Ninth continuation — real signed Page/Store admission and restricted PostgreSQL role QA (2026-11-22 ~11:36 UTC)
+
+**Checkpoint baseline:** PR #491 head 6509b306e97f2224e29a0455b04a44c1675c719b, Messenger Draft 41bcea84-703d-40bc-be2a-71f84ca4e2d8. Safe scope: source-only GitHub Draft and disposable CI PostgreSQL17. No Meta Send, no hosted Supabase schema change, no n8n mutation or orders/customer writes.
+
+### Important live-state drift discovered READ-ONLY
+
+- During this continuation the actual Messenger Published version read from n8n became **1f4069a5-5e74-4c79-935b-40f02b3582d8**, while the previous checkpoint said **47b48f6d-bc3d-40ae-afe6-96c5fd5452ac**. Workflow metadata updatedAt 2026-11-22T11:04:49.906Z; Draft remained 41bcea84-703d-40bc-be2a-71f84ca4e2d8, 68 nodes, Published 64. The Published graph includes `Tìm nút menu`, `Nút menu đã cấu hình?`, `Đọc menu đã kích hoạt (CONFIG BRIDGE)`, `Áp quyết định menu`, `Trả lời menu cố định?`. Menu Bridge 9HXjjJ5ghPKUu43b still had an inactive Draft when last checked.
+- n8n execution search with startedAfter 2026-11-22T11:04:00Z returned zero executions at inspection. This is NOT proof of working mobile/web behavior or a production regression. No attempt was made to publish, restore or interfere with parallel work. Confirm the published graph with the release owner before a live test.
+
+### New verified HMAC + canonical authority integration, offline only
+
+- Created `qa/messenger-rich-v136m5/messenger-signed-admission.cjs`, a **SYNTHETIC_QA_ONLY** adapter that reuses the existing `verifyMetaRaw()` path from V13.6M.1 through the V13.6M.3 canonical pipeline, existing V13.6M.2 restricted read-only repository `DB_PROBE` and `SQL.binding`, per-event isolation, Shop status/entitlement gate, and V13.6M.5 HMAC-scoped event `replayCheck()`/atomic claim source.
+- The Meta HMAC is calculated over the exact original raw webhook string, with server-injected QA app secret. Incorrect HMAC/tampered raw body is denied **before** any repository call. The adapter accepts only `inspectSigned({rawBody,signature})`, not `verified:true`/tenant/store from client input. Per-event private resolver is refreshed between multiple Page/PSID messages. Outputs contain only route/status summary; no PSID, lease, customer message, provider payload, token or permission to send.
+- `qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs` added **12 synthetic negative/positive cases**: real HMAC verification, schema/RLS preflight, unknown/ambiguous/forged bindings, owner revoked/Store paused/entitlement expired, multiple Page/PSID isolation, same Page differing MID, untrusted postbacks, stale event, browser-supplied authority ignored, replay duplication. The injected DB remains synthetic/read-only: this test does NOT prove hosted Page binding or Meta traffic.
+- [V13.6M.5 CI run 45017779409](https://github.com/ngoctien20/demo-git/actions/runs/45017779409) **270/270 tests PASS, 0 fail**; static no-send/no-hosted-write gate PASS.
+
+### Real PostgreSQL17 role-specific RLS UAT
+
+- Added `qa/messenger-rich-v136m5/pg17-restricted-rls-uat.sh`, invoked by `.github/workflows/tien404-config-core.yml`. Creates a random disposable local database and three independent temporary PostgreSQL LOGIN roles with `NOBYPASSRLS`. These roles connect with their own ephemeral QA passwords rather than being simulated with `SET ROLE` from a superuser.
+- Uses the **same existing V13.6M.5 `SQL.claim` and `SQL.finalize`** over a temporary private claim table + an isolated role-to-Page/tenant/store binding table protected with ENABLE + FORCE RLS, explicit grants, and a role-scoped policy using `current_user` and the trusted test binding table. No SECURiTY DEFINER or public RPC, no hosted migration.
+- [Config Core CI run 45018100550](https://github.com/ngoctien20/demo-git/actions/runs/45018100550) **PASS**: Config Core 138/138 unit tests, previous real PG17 atomic uniqueness 21/21, and NEW `PG17_REAL_RESTRICTED_RLS_TESTS=24` **PASS**.
+- New PG tests verified same-tenant different Store and different tenant isolation, 3 non-BYPASSRLS roles, two FORCE RLS tables, positive scoped claim and duplicate suppression, private role-binding SELECT isolation, cross-tenant/store/Page INSERT denial, cross-store READ/UPDATE denial, inability to impersonate another SQL role or mutate protected bindings, correct and wrong lease finalization, fake client JWT claims cannot confer scope, owner role revocation hides existing claims and denies further writes.
+- Hard local-only CI guards: `CI=true`, `GITHUB_ACTIONS=true`, `T404_DISPOSABLE_PG_QA=YES`, `PGHOST=127.0.0.1|localhost`, `PGPORT=5432`, empty hosted access environment. Random database/roles are cleaned by trap. No customer data, no production credential or hosting work.
+- The independent V13.6M.5 workflow [45018100571](https://github.com/ngoctien20/demo-git/actions/runs/45018100571) PASS. CI harness code commit before this checkpoint: **01f94cb3d1ce3764edf2e0619e8acdf86ee8b998**.
+
+### Explicit limits / OPEN gates
+
+1. These are real cryptographic code tests and real disposable PG17 RLS tests with synthetic Page bindings and test roles. They do **not** show current hosted Supabase has the same tables, grants, private schema exposure, DB-role credential mapping, owner approvals, JWT session verification or Page/tenant/store authority. Hosted A/B acceptance is still BLOCKED.
+2. Current live Messenger workflow still does `rowNotExists` → Send → insert dedupe and is not wired to this atomic claim/signature adapter. On the changed Published version there are no observed recent execution outcomes. Do not call it fixed or released.
+3. Exact-once external Meta sending is not guaranteed by the DB claim. Per-message durable outbox/attempt ledger, failure/timeout reconciliation, expiry policy, human handoff and no-blind-retry protocol remain P1.
+4. n8n Published drift requires release owner comparison/approval; DO NOT restore or publish without explicit authorization. PR #491 stays OPEN/DRAFT; Issues #495 and #494 remain OPEN.
+
+### Rollback
+
+- Remove only new GitHub Draft files `messenger-signed-admission.cjs`, `.test.cjs`, `pg17-restricted-rls-uat.sh`; restore the two affected CI files to the previous PR revision, preserving previous PG17 21-pass test, prior synthetic gate tests and concurrent Social Reactions Shadow ALL OFF.
+- No n8n/Meta/Supabase hosted operations were performed here; no runtime rollback is needed.
+
+**Status: VERIFIED published drift read-only; IMPLEMENTED source-only adapter; TESTED real PG17 24/24 and offline HMAC 270/270; BLOCKED hosted integration; NOT RELEASED.**
