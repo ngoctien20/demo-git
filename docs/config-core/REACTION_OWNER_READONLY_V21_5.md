@@ -26,7 +26,7 @@ Không bao giờ tải \`external_account_id\`, credential, sender PSID, token h
 
 Có thể chọn giữa nhiều kết nối của cùng shop (nếu sau này có), nhưng toàn bộ cấu hình phản ứng vẫn ở chế độ simulation, bắt đầu OFF, không có Save/Enable. Không kết nối Meta sender/Commerce.
 
-Browser QA: \`qa/reactions/owner-preview-browser.cjs\` mock thêm Shop A connection và Shop B connection, yêu cầu chỉ hiển thị A, truy vấn phải có cả 3 điều kiện \`tenant_id/store_id/channel\`, truy cập SUPABASE chỉ GET/HEAD; kiểm thử trên Chromium desktop 1280px và mobile 390px. **Ghi kết quả mới nhất từ CI trước khi tuyên bố TESTED**.
+Browser QA: \`qa/reactions/owner-preview-browser.cjs\` mock thêm Shop A connection và Shop B connection, yêu cầu chỉ hiển thị A, truy vấn phải có cả 3 điều kiện \`tenant_id/store_id/channel\`, truy cập SUPABASE chỉ GET/HEAD; kiểm thử trên Chromium desktop 1280px và mobile 390px. **TESTED:** [GitHub Actions run #45019733623](https://github.com/ngoctien20/demo-git/actions/runs/45019733623) SUCCESS: TypeScript/Vite PASS, Chromium desktop 1280px và mobile 390px **40/40 assertions PASS**. Mock có Page của Shop A và Page của Shop B nhưng UI chỉ hiển thị A; mọi truy vấn chứa tenant/store/channel, Page active không bị coi là Meta-verified, no-write/no-RPC/no console error, reload OFF.
 
 ## 3. Owner-only verified Page API CANDIDATE
 
@@ -51,3 +51,8 @@ CI disposable PG17 job \`pg17_page_draft_owner_ab\` qua **44/44** bài kiểm tr
 - Candidate SQL rollback \`db/reactions/90_page_reaction_drafts_ROLLBACK_CANDIDATE.sql\` xóa cả \`list_verified_reaction_pages\`; chỉ chạy trong disposable hoặc staging được owner cho phép cùng backup/restore proof.
 - PR #493 tiếp tục ở trạng thái **Draft**. Messenger Published thuộc nhánh menu, không tự sửa. Shadow code trong Messenger Draft giữ reaction OFF.
 - Khuyến cáo Supabase official: bảo vệ Data API bằng **cả GRANT và RLS**, review kỹ \`SECURITY DEFINER\` trong schema exposed; xem https://supabase.com/docs/guides/api/securing-your-api .
+
+
+## 6. Staging reproducible read-only preflight
+
+Đã commit `qa/reactions/hosted-readonly-preflight.sql` và **chạy SELECT-only trên Supabase staging**: marker `T404_V215_READONLY_PREFLIGHT_OK`, PostgreSQL 17.11; channel registry/assistants/tenant+store memberships có thật; RLS forced, authenticated SELECT được cấp, không direct INSERT/UPDATE, anon SELECT chặn, policy store member tồn tại; 1 Messenger demo connection có chuỗi assistant/store active. Private proof registry / reaction draft table / save draft RPC / verified Page list RPC **đều chưa tồn tại trên hosted**. Không có API gửi reaction được gọi. Đây là kiểm toán cấu trúc, không xác thực OAuth Page Meta hoặc real JWT Owner A/B.
