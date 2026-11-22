@@ -92,4 +92,8 @@ ok "$LOST" 1 CONCURRENT_CAS_SINGLE_LOSER
 ok "$(q "SELECT count(*) FROM app_private.audit_events WHERE event_type='reaction_page_draft_saved'")" 5 CONCURRENT_CAS_ONE_EXTRA_AUDIT
 ok "$(q "SELECT count(*) FROM public.page_reaction_drafts WHERE connection_id='$CA'")" 1 CONCURRENT_CAS_ONE_ROW
 
+runfile "$ROOT/db/reactions/90_page_reaction_drafts_ROLLBACK_CANDIDATE.sql" T404_V214_REACTION_DRAFT_ROLLBACK_OK
+ok "$(q "SELECT to_regclass('public.page_reaction_drafts') IS NULL")" t ROLLBACK_DRAFT_TABLE
+ok "$(q "SELECT to_regclass('app_private.reaction_page_industries') IS NULL")" t ROLLBACK_INDUSTRY_REGISTRY
+ok "$(q "SELECT to_regclass('public.channel_connections') IS NOT NULL")" t CONFIG_CORE_UNCHANGED
 echo "T404_V214_PAGE_DRAFT_PG17_PASS $PASS"
