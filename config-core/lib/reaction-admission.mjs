@@ -43,6 +43,8 @@ export function verifyPublishedPageReactionPolicy(record, authority, now = Date.
   if (!record.ownerConsent || record.ownerConsent.approved !== true ||
       record.ownerConsent.revision !== record.revision ||
       record.ownerConsent.ownerId !== authority.ownerId ||
+      record.ownerConsent.industryId !== record.industryId ||
+      record.ownerConsent.profileId !== record.settings?.profileId ||
       !fresh(record.ownerConsent.approvedAtMs, now, 365*24*3600_000) ||
       !safeMillis(record.ownerConsent.expiresAtMs) || record.ownerConsent.expiresAtMs <= now ||
       record.ownerConsent.expiresAtMs - now > 365*24*3600_000)
