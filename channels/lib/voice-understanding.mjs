@@ -73,6 +73,8 @@ export const DIGIT_WORDS = { KHONG: '0', LINH: '0', LE: '0', MOT: '1', MOTS: '1'
 export const LETTER_WORDS = { A: 'A', B: 'B', BE: 'B', BI: 'B', BEE: 'B' };
 export const QTY_WORDS = { MOT: 1, HAI: 2, BA: 3, BON: 4, TU: 4, NAM: 5, SAU: 6, BAY: 7, TAM: 8, CHIN: 9, MUOI: 10 };
 
+export const BA_LIKE = new Set(['BO', 'BOY', 'BOI', 'BOO']);
+
 // Luật đọc transcript (không dùng AI): tìm mã, ý định, số lượng. Chỉ nhận mã có trong danh mục.
 export function voiceRules(transcript, skus) {
   const valid = new Set(skus || []);
@@ -104,6 +106,25 @@ export function voiceRules(transcript, skus) {
     if (isNum(tok[i]) && isNum(tok[i + 1]) && !isNum(tok[i - 1]) && /^[A-Z]{1,3}$/.test(tok[i - 1]) && !['CAI', 'SIZ', 'GIA', 'MUA', 'LAY', 'CON'].includes(tok[i - 1])) codeLike = true;
   }
   const uniq = [...new Set(found)];
+  // Mã gần đúng (giọng thật qua Messenger, exec 6450/6456/6477): Gemini hay nghe "ba" thành "bo/bò/boy"
+  // nên "a không không ba" ra "A00 bò", "A000 bo", "A002 bo". Mỗi cụm mã có tiếng giống "ba" ngay sau
+  // → thêm mã thay số cuối bằng 3 vào danh sách cần HỎI XÁC NHẬN (không tự báo giá).
+  const alts = new Set();
+  for (let i = 0; i < tok.length; i++) {
+    const letter = LETTER_WORDS[tok[i]] || (tok[i] === 'AO' ? 'A' : null); // "áo không không bo" = "a không không ba"
+    if (!letter) continue;
+    let digits = '';
+    let j = i + 1;
+    while (j < tok.length && digits.length < 3) {
+      const d = /^\d{1,3}$/.test(tok[j]) ? tok[j] : DIGIT_WORDS[tok[j]];
+      if (d === undefined || digits.length + d.length > 3) break;
+      digits += d; j++;
+    }
+    if (!digits || !BA_LIKE.has(tok[j] || '')) continue;
+    const cand = digits.length < 3 ? letter + (digits + '3').padStart(3, '0') : letter + digits.slice(0, 2) + '3';
+    if (valid.has(cand)) alts.add(cand);
+  }
+  const nearSku = !uniq.length && alts.size === 1 ? [...alts][0] : null;
   const rest = tok.filter((_, k) => !used.has(k));
   const restStr = ' ' + rest.join(' ') + ' ';
   const buy = / (?:MUA|LAY|DAT|CHOT) /.test(restStr) || (uniq.length > 0 && / (?:MO|MU|MUO) /.test(restStr));
@@ -112,7 +133,7 @@ export function voiceRules(transcript, skus) {
   const m = /(?:^| )(\d{1,3}|MOT|HAI|BA|BON|TU|NAM|SAU|BAY|TAM|CHIN|MUOI) (?:CAI|CHIEC|BO|SET|DOI|CON|AO|QUAN|SP|SAN PHAM)\b/.exec(restStr.trim());
   if (m) quantity = /^\d+$/.test(m[1]) ? Number(m[1]) : QTY_WORDS[m[1]];
   if (!(quantity >= 1 && quantity <= 999)) quantity = null;
-  return { sku: uniq.length === 1 ? uniq[0] : null, skuCount: uniq.length, codeLike, intent: buy ? 'buy' : price || uniq.length ? 'price' : 'other', quantity };
+  return { sku: uniq.length === 1 ? uniq[0] : null, skuCount: uniq.length, codeLike, nearSku, alts: [...alts], intent: buy ? 'buy' : price || uniq.length ? 'price' : 'other', quantity };
 }
 
 export const ASK_AGAIN = {
@@ -121,6 +142,12 @@ export const ASK_AGAIN = {
   ai_error: 'Dạ shop chưa nghe được tin nhắn thoại lúc này. Mình nhắn lại bằng chữ giúp shop nhé ạ.',
   unclear: 'Dạ shop nghe chưa rõ tin nhắn thoại. Mình nói lại chậm hơn, hoặc nhắn mã sản phẩm (ví dụ A003) bằng chữ giúp shop nhé ạ.',
   sku_conflict: 'Dạ shop nghe chưa chắc mã sản phẩm. Mình nhắn mã (ví dụ A003) bằng chữ giúp shop nhé ạ.',
+};
+export const confirmSkuText = (c) => {
+  const list = [].concat(c).slice(0, 3);
+  return list.length === 1
+    ? 'Dạ shop nghe giống mã ' + list[0] + ', có phải mình hỏi mã ' + list[0] + ' không ạ? Đúng thì mình nhắn "Xem ' + list[0] + '", chưa đúng thì nhắn mã bằng chữ giúp shop nhé.'
+    : 'Dạ shop nghe chưa chắc mã, mình hỏi mã ' + list.join(' hay ') + ' ạ? Mình nhắn "Xem" kèm mã (ví dụ "Xem ' + list[list.length - 1] + '") giúp shop nhé.';
 };
 
 // Quyết định cuối: gộp kết quả Gemini + luật, trả dữ liệu gọi lõi chung hoặc câu hỏi lại khách.
@@ -138,12 +165,21 @@ export function decideVoice(ai, skus, failReason, names) {
   const valid = new Set(skus || []);
   const rb = voiceRules(transcript, skus);
   const aiSku = ai.sku && valid.has(ai.sku) && ai.confidence !== 'low' ? ai.sku : null;
+  const confirm = (list) => ({ ok: false, reason: 'confirm_sku', suggestSku: list[0], suggestSkus: list, transcript, replyText: confirmSkuText(list) });
+  // Mã nghe gần đúng (có tiếng giống "ba" sau mã): hỏi xác nhận, không báo giá/không gọi AI bán hàng.
+  if (rb.alts.length) {
+    if (aiSku && aiSku !== rb.sku && !rb.alts.includes(aiSku)) return fail('sku_conflict');
+    return confirm([...new Set([rb.sku, ...rb.alts].filter(Boolean))]);
+  }
   if (aiSku && rb.sku && aiSku !== rb.sku) return fail('sku_conflict');
   // Khách đọc mã nhưng luật không đọc ra mã nào: không tin mã AI tự suy (exec 6385: "đê không không hai" → AI đoán A002).
   if (aiSku && !rb.sku && rb.codeLike) return fail('sku_conflict');
   // AI chắc (medium/high) mà không thấy mã: tin AI, không lấy mã từ luật (tránh "cho bé 2 tuổi" thành B002).
   // AI không chắc: chỉ đi tiếp khi luật đọc ra đúng 1 mã trong danh mục, ngược lại hỏi lại.
   if (ai.confidence === 'low' && !rb.sku) return fail('unclear');
+  // Khách đọc mã: chỉ trả lời thẳng khi Gemini và luật cùng ra một mã và Gemini chắc chắn (giọng thật dễ nghe lệch 1 số).
+  // (AI chắc chắn mà không thấy mã, vd "cho bé 2 tuổi": tin AI, không coi là mã B002.)
+  if (rb.sku && (aiSku === rb.sku ? ai.confidence !== 'high' : ai.confidence === 'low')) return confirm([rb.sku]);
   const sku = aiSku || (ai.confidence === 'low' ? rb.sku : null);
   const how = aiSku && rb.sku ? 'agree' : aiSku ? 'ai' : rb.sku ? 'rules' : 'transcript';
   const intent = ai.confidence !== 'low' && ai.intent !== 'unknown' ? ai.intent : rb.intent;

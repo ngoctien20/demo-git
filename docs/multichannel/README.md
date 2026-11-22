@@ -88,6 +88,10 @@ Chặn sai (từ test thật): Gemini nghe giọng khó thường "bịa" ra đ�
 | Messenger bản nháp: chỉ tin chữ (hồi quy) | PASS: "Xem A004" → A004 như bản live | exec 6438 |
 | Messenger bản nháp: thoại không rõ | PASS: 1 tin hỏi lại, không gọi AI | exec 6440 |
 
+**Messenger giọng thật (01:45Z, cả 3 tin đều nói A003)**: exec 6450/6453/6456 nghe thành "A000 bo gió", "Áo thun form boy", "Xem lại A000" → bot hỏi lại 2 tin, 1 tin chuyển AI (không báo sai giá). Thử lại cùng file trên Gemini Flash Lite và Flash (QA tạm, đã archive): cả hai nghe "ba" thành "bo/bò/boy", "giá" thành "gió"; có lần ra **A002** (exec 6477) → bản live V24.1 sẽ báo giá A002 sai mẫu.
+
+**V24.2 (bản nháp VOICE, chờ duyệt)**: mã có tiếng giống "ba" ngay sau (bo/bò/boy, cả "áo không không bo") → hỏi "Dạ shop nghe chưa chắc mã, mình hỏi mã A002 hay A003 ạ?"; mã chỉ do luật đọc ra hoặc Gemini chưa chắc → hỏi xác nhận 1 mã; chỉ trả lời thẳng khi Gemini + luật cùng 1 mã và Gemini "high". Test: 26/26 unit; 3 file thật (exec 6493): hỏi lại / chuyển AI / "có phải A003?"; 4 mẫu cũ (6503): A003 vẫn trả lời thẳng, 3 mẫu còn lại vẫn hỏi lại an toàn. Áp cho mọi kênh vì chỉ sửa VOICE.
+
 Đã bật (Tiến duyệt 01:33Z 22/11): VOICE `F7Eh` bản b26706ca, Telegram `fffB` bản fb6e283c. Rollback Telegram = publish lại 008afb65 (chỉ chữ).
 
 Messenger (Z7Fd, live): nhánh thoại đã làm và test ở bản nháp, lưu trong lịch sử n8n là bản **b2245495** (và `channels/n8n/messenger-voice.ops.json`). Bản nháp đã được trả về 8f7dcb4f (= bản live) để không ai publish nhầm. Bật = publish b2245495 khi Tiến duyệt; rollback = publish 8f7dcb4f. Tin thoại Messenger tới từ CDN của Meta (`*.fbcdn.net`, `*.fbsbx.com`), thường là mp4/aac; chưa thử Gemini với file Messenger thật. Web widget chưa nối (cần nút ghi âm).

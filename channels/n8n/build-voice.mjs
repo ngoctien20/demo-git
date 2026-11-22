@@ -5,7 +5,7 @@ const blocks = fs.readFileSync(new URL('../lib/voice-understanding.mjs', import.
   .split(/\n(?=export )/).slice(1).map((b) => b.replace(/^\/\/.*\n/gm, '').replace(/^export /, '').trim());
 const pick = (...names) => names.map((n) => { const b = blocks.find((x) => new RegExp('^(?:const|function) ' + n + '\\b').test(x)); if (!b) throw new Error('missing ' + n); return b; }).join('\n');
 const libPrep = pick('MAX_AUDIO_BYTES', 'AUDIO_MIME', 'VOICE_SCHEMA', 'LETTER_SAY', 'buildVoicePrompt', 'buildGeminiBody');
-const libDecide = pick('geminiText', 'parseGemini', 'DIGIT_WORDS', 'LETTER_WORDS', 'QTY_WORDS', 'voiceRules', 'ASK_AGAIN', 'foldVi', 'decideVoice');
+const libDecide = pick('geminiText', 'parseGemini', 'DIGIT_WORDS', 'LETTER_WORDS', 'QTY_WORDS', 'BA_LIKE', 'voiceRules', 'ASK_AGAIN', 'confirmSkuText', 'foldVi', 'decideVoice');
 const J = (v) => JSON.stringify(v, null, 1);
 const TRIGGER = 'Nhận âm thanh từ adapter';
 const prepCode = `// Kiểm tra âm thanh + tạo yêu cầu Gemini (danh mục đọc từ Sheet AI_SALES_DEMO để gợi ý mã).

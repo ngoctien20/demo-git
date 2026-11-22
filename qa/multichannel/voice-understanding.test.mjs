@@ -14,7 +14,7 @@ test('rules: đọc mã kiểu nói', () => {
   assert.equal(voiceRules('Z999 giá sao', SKUS).sku, null, 'mã ngoài danh mục');
 });
 test('rules: ý định + số lượng', () => {
-  assert.deepEqual(voiceRules('mua A003 hai cái', SKUS), { sku: 'A003', skuCount: 1, codeLike: true, intent: 'buy', quantity: 2 });
+  assert.deepEqual(voiceRules('mua A003 hai cái', SKUS), { sku: 'A003', skuCount: 1, codeLike: true, nearSku: null, alts: [], intent: 'buy', quantity: 2 });
   assert.equal(voiceRules('mo A003', SKUS).intent, 'buy');
   assert.equal(voiceRules('giá B002', SKUS).intent, 'price');
   assert.equal(voiceRules('đơn của mình giao chưa', SKUS).intent, 'other');
@@ -41,9 +41,13 @@ test('decide: AI chắc, không có mã → không lấy mã sai từ luật', (
   const d = decideVoice(parseGemini(gem({ transcript: 'có áo cho bé 2 tuổi không', intent: 'other', sku: null, confidence: 'high' })), SKUS);
   assert.equal(d.sku, null); assert.equal(d.selectedSku, '');
 });
-test('decide: AI không chắc nhưng luật đọc ra mã → đi tiếp', () => {
+test('decide: AI không chắc, chỉ luật đọc ra mã → hỏi xác nhận mã (V24.2, giọng thật dễ lệch 1 số)', () => {
   const d = decideVoice(parseGemini(gem({ transcript: 'giá a không không ba', intent: 'unknown', sku: null, confidence: 'low' })), SKUS);
-  assert.equal(d.ok, true); assert.equal(d.how, 'rules'); assert.equal(d.selectedSku, 'A003');
+  assert.equal(d.reason, 'confirm_sku'); assert.deepEqual(d.suggestSkus, ['A003']);
+  const med = decideVoice(parseGemini(gem({ transcript: 'giá A003 bao nhiêu', intent: 'price', sku: 'A003', confidence: 'medium' })), SKUS);
+  assert.equal(med.reason, 'confirm_sku', 'AI + luật cùng mã nhưng AI chưa chắc');
+  const high = decideVoice(parseGemini(gem({ transcript: 'Áo A không không ba bao nhiêu?', intent: 'price', sku: 'A003', confidence: 'high' })), SKUS);
+  assert.equal(high.selectedSku, 'A003', 'Telegram live exec 6427 vẫn trả lời thẳng');
 });
 test('decide: hỏi lại khi không rõ / lệch mã / lỗi AI / mã bịa', () => {
   assert.equal(decideVoice(parseGemini(gem({ transcript: 'ừm ờ', intent: 'unknown', confidence: 'low' })), SKUS).reason, 'unclear');
@@ -76,4 +80,25 @@ test('decide: mã đọc nghe sai chữ cái → không tin mã AI tự đoán (
   assert.equal(ok.ok, true, 'mô tả sản phẩm, không đọc mã → vẫn tin AI');
   const size = decideVoice(parseGemini(gem({ transcript: 'lấy quần jean đen size ba mươi', intent: 'buy', sku: 'B002', confidence: 'high' })), SKUS);
   assert.equal(size.ok, true, 'size ba mươi không phải mã');
+});
+test('decide: mã gần đúng từ giọng thật Messenger → hỏi xác nhận, không báo giá (exec 6450/6456)', () => {
+  const ask = (t, conf = 'high', sku = null) => decideVoice(parseGemini(gem({ transcript: t, intent: 'price', sku, confidence: conf })), SKUS);
+  for (const t of ['A000 bo gió bao nhiêu', 'A00 bò gió bao nhiêu?', 'A không không bo giờ bao nhiêu.']) {
+    const d = ask(t);
+    assert.equal(d.ok, false, t);
+    assert.equal(d.reason, 'confirm_sku', t);
+    assert.equal(d.suggestSku, 'A003', t);
+    assert.match(d.replyText, /có phải mình hỏi mã A003/);
+  }
+  assert.equal(ask('Xem lại A000 bao nhiêu', 'low').reason, 'unclear', 'không có tiếng giống "ba" → chỉ hỏi lại');
+  assert.equal(ask('A00 bò gió bao nhiêu', 'high', 'A007').reason, 'sku_conflict', 'AI đoán mã khác → không gợi ý');
+  assert.equal(voiceRules('mua A003 hai bộ', SKUS).nearSku, null, 'đã có mã đúng thì không gợi ý');
+  // exec 6477/6479: cùng file thoại, lần sau Gemini nghe thành A002 → hỏi "A002 hay A003", không báo giá A002
+  for (const [t, conf, sku] of [['A002 bo gió bao nhiêu', 'low', null], ['Xem A002 áo không không bo gió bo nhiêu', 'medium', 'A002']]) {
+    const d = ask(t, conf, sku);
+    assert.equal(d.reason, 'confirm_sku', t);
+    assert.deepEqual(d.suggestSkus, ['A002', 'A003'], t);
+    assert.match(d.replyText, /A002 hay A003/);
+  }
+  assert.equal(voiceRules('cho mình xem bộ đồ', SKUS).nearSku, null);
 });
