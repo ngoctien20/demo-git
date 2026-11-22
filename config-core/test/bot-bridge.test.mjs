@@ -6,8 +6,12 @@ import { templateConfig } from '../lib/templates.mjs';
 // Shape returned by public.get_channel_menu: only enabled+released items.
 const published = (cfg) => ({ ...cfg, version_no: 1, config_sha256: 'x', menu: cfg.menu.filter((m) => m.enabled) });
 
-test('no config or non-config payload -> legacy flow untouched', () => {
-  assert.deepEqual(decide(null, { payload: 'T404:M:catalog' }), { mode: 'legacy' });
+test('no config rejects new menu payload safely; non-config payload keeps legacy', () => {
+  const unavailable = decide(null, { payload: 'T404:M:catalog' });
+  assert.equal(unavailable.mode, 'rejected');
+  assert.equal(unavailable.reason, 'menu_unavailable');
+  assert.match(unavailable.message.text, /không khả dụng/);
+  assert.deepEqual(decide(null, { payload: 'TIEN404:VIEW:A003' }), { mode: 'legacy' });
   const m = published(templateConfig('shop'));
   assert.deepEqual(decide(m, { text: 'áo A003 giá sao' }), { mode: 'legacy' });
   assert.deepEqual(decide(m, { payload: 'TIEN404:VIEW:A003' }), { mode: 'legacy' });
