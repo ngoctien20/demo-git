@@ -1,5 +1,13 @@
-# TIEN404 public-site login: real Supabase Auth entrypoint is Render staging.
-# Cloudflare Pages HTTP redirect (no client-side demo login, no credentials in query).
-# Do not redirect /register, /dashboard, /account or /demo until independently audited.
-/login https://tien404-auth-staging.onrender.com/login.html 302
-/login.html https://tien404-auth-staging.onrender.com/login.html 302
+# TIEN404 public site (V23): login and sign-up live in the owner App (/app/, Supabase Auth).
+# Retired demo pages also ship as noindex meta-refresh stubs for hosts without _redirects support.
+/login /app/#/dang-nhap 302
+/login.html /app/#/dang-nhap 302
+/register.html /app/#/dang-ky 301
+/dashboard.html /app/ 301
+/onboarding.html /app/#/dang-ky 301
+/billing.html /app/#/goi-dich-vu 301
+/invoice.html /app/#/goi-dich-vu 301
+/checkout.html /pricing.html 301
+/impact.html /pricing.html 301
+/lab.html /demo.html 301
+/industries.html /solutions.html#nganh 301

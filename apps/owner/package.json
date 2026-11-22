@@ -1,0 +1,24 @@
+{
+  "name": "tien404-owner-app",
+  "version": "0.1.0",
+  "description": "TIEN404 AI owner App (Supabase Auth + store-scoped RLS)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  },
+  "private": true,
+  "type": "module"
+}

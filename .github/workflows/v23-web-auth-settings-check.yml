@@ -1,0 +1,21 @@
+name: "TIEN404 V23 web — read public Supabase Auth settings (read-only)"
+# Reads the PUBLIC /auth/v1/settings endpoint with the publishable key (no secrets) and prints
+# only the sign-up related flags. Changes nothing.
+on:
+  push:
+    branches: [claude/project-thread-4ko028]
+    paths:
+      - .github/workflows/v23-web-auth-settings-check.yml
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read settings
+        run: |
+          curl -fsS https://ifxlvrhyjhbzbrkdsida.supabase.co/auth/v1/settings \
+            -H "apikey: sb_publishable_e7L9qkumVD6Y57RSLaWsaQ_tRjF7OvF" -o s.json
+          python3 -c 'import json;s=json.load(open("s.json"));print("DISABLE_SIGNUP=%s MAILER_AUTOCONFIRM=%s EMAIL_ENABLED=%s"%(s.get("disable_signup"),s.get("mailer_autoconfirm"),s.get("external",{}).get("email")))'
+          # run 2026-11-22T00:36Z
