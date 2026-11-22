@@ -40,6 +40,17 @@
         ],
         "combinator": "and"
       }
+    },
+    "Format selected product": {
+      "code": "const current=$('Loop One Message').first(1,$('Loop One Message').context.currentRunIndex).json;\nconst sku=current.selectedSku;\nconst rows=$input.all().map(item=>item.json).filter(row=>row.sku===sku);\nlet output='Shop chưa xác minh được thông tin mẫu '+sku+', mình chờ shop kiểm tra lại nhé.';\nif(rows.length===0){\n output='Dạ shop chưa tìm thấy mẫu '+sku+' ạ. Mình muốn shop gợi ý mẫu tương tự không?';\n} else if(rows.length===1){\n const {name,price,stock}=rows[0];\n const valid=n=>typeof n==='number'?Number.isSafeInteger(n)&&n>=0:typeof n==='string'&&/^\\d+$/.test(n)&&Number.isSafeInteger(Number(n));\n if(typeof name==='string'&&name.trim()&&valid(price)&&valid(stock)){\n  output=sku+' — '+name.trim()+' | '+Number(price).toLocaleString('vi-VN')+'đ/cái. '+(Number(stock)===0?'Mẫu này đã hết hàng.':'Còn '+Number(stock)+' cái.');\n }\n}\nreturn [{json:{output}}];\n"
+    },
+    "Read selected demo product": {
+      "settings": {
+        "alwaysOutputData": true,
+        "hasSkuFilter": true,
+        "operation": "read",
+        "sourceTag": "AI_SALES_DEMO_READ_ONLY"
+      }
     }
   },
   "connections": {
@@ -224,6 +235,28 @@
         [
           {
             "node": "Send Messenger Reply - CONFIGURE TOKEN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read selected demo product": {
+      "main": [
+        [
+          {
+            "node": "Format selected product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format selected product": {
+      "main": [
+        [
+          {
+            "node": "Remember selected Messenger product",
             "type": "main",
             "index": 0
           }
