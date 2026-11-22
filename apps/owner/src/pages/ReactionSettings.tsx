@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
+import { ReactionPageReadiness } from './ReactionPageReadiness';
 import { Notice, PageHead } from '../ui';
 import {
   INDUSTRY_REACTION_RULES, REACTION_PROFILES,
@@ -106,6 +107,7 @@ export function ReactionSettings() {
   return (
     <>
       <PageHead title="Biểu cảm Fanpage" sub={'Xem thử cách tương tác cho ' + store.name + ' trước khi kết nối Fanpage.'} />
+      <ReactionPageReadiness />
       <Notice kind="warn"><b>Bản xem trước — chưa phát hành.</b> Chưa có Fanpage được xác thực trong màn hình này. Thay đổi bên dưới chỉ nằm trong phiên xem trước, không lưu vào cửa hàng, không gọi Meta và không bật bot thật.</Notice>
 
       <section className="panel form" aria-label="Mô phỏng chính sách Fanpage">
