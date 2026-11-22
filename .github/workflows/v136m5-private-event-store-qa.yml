@@ -53,7 +53,9 @@ jobs:
           node --check qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs
           node --check qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs
           node --check qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs
-          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs
+          node --check qa/messenger-rich-v136m5/operator-reconciliation-review.cjs
+          node --check qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs
   static-release-gate:
     name: Deny hosted writes and unsafe migration
     runs-on: ubuntu-24.04
@@ -73,6 +75,7 @@ jobs:
           bound=Path("qa/messenger-rich-v136m5/claim-bound-plan-contract.cjs").read_text()
           atomic=Path("qa/messenger-rich-v136m5/atomic-claim-plan.cjs").read_text()
           reconciliation=Path("qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs").read_text()
+          operator=Path("qa/messenger-rich-v136m5/operator-reconciliation-review.cjs").read_text()
           sql=Path("qa/messenger-rich-v136m5/PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql").read_text()
           for p,s in [("contract",source),("simulator",model)]:
             for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
@@ -98,6 +101,13 @@ jobs:
           for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
                          "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
             assert banned not in reconciliation,("message-reconciliation-inspector.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in operator,("operator-reconciliation-review.cjs",banned)
+          assert "OPERATOR_REVIEW_HOSTED_NOT_APPROVED" in operator
+          assert "g.db_role=CURRENT_USER::name" in operator
+          assert "INSERT INTO app_private.messenger_review_events" in operator
+          assert "retryAllowed:false" in operator and "sendAllowed:false" in operator
           assert "RECONCILIATION_HOSTED_NOT_APPROVED" in reconciliation
           assert "SET TRANSACTION READ ONLY" in reconciliation
           assert "retryAllowed:false" in reconciliation and "sendAllowed:false" in reconciliation
