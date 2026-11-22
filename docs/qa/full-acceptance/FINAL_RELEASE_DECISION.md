@@ -48,8 +48,8 @@ Billing/subscription (P2) chỉ bắt đầu sau khi P0 đóng.
 | Store isolation hosted (S-02) | FAIL | **PASS ở STAGING** (catalog + Owner A/B) | E-27, E-30 |
 | Sự cố mật khẩu (S-17) | OPEN | Không thấy đăng nhập lạ; **chờ xác nhận đã đổi mật khẩu** | E-31 |
 | Đơn hàng ghi trên Supabase, giữ kho, idempotency | NOT_IMPLEMENTED | NOT_IMPLEMENTED (bot live vẫn ghi Google Sheet DEMO) | S-03 |
-| Sửa đơn qua chat (S-18/S-19) | FAIL | Bản sửa PROPOSED, chưa publish | E-28 |
-| PII trong execution n8n (S-04) | OPEN | OPEN | — |
+| Sửa đơn qua chat (S-18/S-19) | FAIL | **PUBLISHED** 11:05 UTC (`fDB9` `03384201`) | E-28 |
+| PII trong execution n8n (S-04) | OPEN | **Đã tắt lưu dữ liệu lần chạy thành công** cho bot + 3 tool đơn; execution cũ còn | S-04u |
 | Lịch sử migration đủ để dựng lại DB (S-22) | — | FAIL: nguồn Config Core nằm ở Draft PR #489, V23 web chưa thấy trong nhánh đã tải; `supabase_migrations` không ghi | E-32 |
 | Billing/onboarding tự phục vụ | NOT_IMPLEMENTED | Một phần: `register_shop` có trên staging, chưa UAT | S-21 |
 
