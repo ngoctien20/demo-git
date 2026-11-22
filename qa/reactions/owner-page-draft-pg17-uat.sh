@@ -83,11 +83,9 @@ trap 'rm -rf "$TMP"' EXIT
 ( as "$OA" "SELECT public.save_page_reaction_draft('$CA','$F'::jsonb,'$SHA2')" >"$TMP/a.log" 2>&1 && echo yes >"$TMP/a.status" || echo no >"$TMP/a.status" ) &
 ( as "$OA" "SELECT public.save_page_reaction_draft('$CA','$F2'::jsonb,'$SHA2')" >"$TMP/b.log" 2>&1 && echo yes >"$TMP/b.status" || echo no >"$TMP/b.status" ) &
 wait
-WON=$(grep -l '^yes
- "$TMP"/*.status | wc -l | tr -d ' ')
+WON=$(grep -l yes "$TMP"/*.status | wc -l | tr -d " ")
 ok "$WON" 1 CONCURRENT_CAS_SINGLE_WINNER
-LOST=$(grep -l '^no
- "$TMP"/*.status | wc -l | tr -d ' ')
+LOST=$(grep -l no "$TMP"/*.status | wc -l | tr -d " ")
 ok "$LOST" 1 CONCURRENT_CAS_SINGLE_LOSER
 ok "$(q "SELECT count(*) FROM app_private.audit_events WHERE event_type='reaction_page_draft_saved'")" 5 CONCURRENT_CAS_ONE_EXTRA_AUDIT
 ok "$(q "SELECT count(*) FROM public.page_reaction_drafts WHERE connection_id='$CA'")" 1 CONCURRENT_CAS_ONE_ROW
