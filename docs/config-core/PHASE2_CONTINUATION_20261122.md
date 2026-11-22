@@ -598,3 +598,46 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - Next suggested gate: design and test a **private opaque reference resolver** and operator-session admission proof in sandbox, with current owner/staff roles and grant revocation. Do NOT connect to hosted Supabase, deploy, send Meta or publish workflows without explicit approval.
 
 **Disposition: IMPLEMENTED source-only / TESTED 340/340 offline and 34/34 actual restricted PG17 operator RLS / hosted owner-staff access BLOCKED / NOT RELEASED.**
+## 21. Sixteenth continuation — private opaque reference + signed operator-session admission (2026-11-22 ~15:52 UTC)
+
+**Task:** Continue from §20 / `06439427f7d5a07894eca75887d1e02eed23ee1a`. Remove the raw internal `serverPrivatePlanId` requirement from browser-facing review requests, ensure a valid operator session **AND** current PostgreSQL role/subject/grant authority on EACH read or append. No production deployment or live sending.
+
+### Starting audit (VERIFIED, read-only)
+
+- PR #491 OPEN/DRAFT with starting HEAD `06439427f7d5a07894eca75887d1e02eed23ee1a`.
+- n8n Messenger workflow `Z7FdV7uDvApfbURQ`: Draft `41bcea84-703d-40bc-be2a-71f84ca4e2d8`, Published `1f4069a5-5e74-4c79-935b-40f02b3582d8`, active. Never edited. AI_SALES_DEMO remains isolated from TIEN404 Commerce.
+- Existing `operator-reconciliation-review.cjs` expects a *private* `serverPrivatePlanId` and uses restricted `CURRENT_USER` roles on synthetic PG17. It cannot be wired directly to a web client. `message-reconciliation-inspector.cjs` already emits HMAC-truncated 128-bit opaque refs but did not have a private ref→plan resolver.
+
+### IMPLEMENTED (additive SOURCE-ONLY)
+
+- Added `qa/messenger-rich-v136m5/private-opaque-session-bridge.cjs` (new independent candidate, no rewrite of working operator review). Default mode `BLOCKED`; accepts only `SYNTHETIC_SQL_QA_ONLY` with explicitly synthetic / no-external-write / journal-only / rollback-on-throw transaction driver. No database driver, Meta client, provider Send, network, live token issuer or hosted calls.
+- Browser-shaped inputs limited to `{sessionToken,reference}` for view and `{sessionToken,reference,decision,requestId}` for append. No role/tenant/store/Page, raw plan UUID, claim lease, recipient PSID or provider MID in the browser contract. The module **does NOT issue sessions**.
+- `sessionToken` format `v1.UUID.expiryEpochMs.HMAC_SHA256`, with domain-separated server HMAC, `timingSafeEqual`, syntax checks, and at most 15 minutes remaining TTL. This signature protects only the synthetic session identifier; **session validity is NOT authorization**. A real issuer must be authenticated and keep signing keys private.
+- New `SQL.view` is derived from the existing read-only inspector SQL; it requires an `app_private.messenger_reconciliation_refs` mapping to the private plan, joined to `app_private.messenger_operator_sessions` (exact session UUID, `CURRENT_USER` role, active and unexpired) and `app_private.messenger_operator_grants` (exact subject_user_id, tenant/store/Page, active and unexpired). Runs under `SET TRANSACTION READ ONLY`; returns 0/1 scoped plan to the backend, then only a pseudonymous report, never raw plan UUID.
+- New `SQL.append` is a single **INSERT-only** statement into the candidate `app_private.messenger_review_events`, with the exact same current session/subject/role/tenant/store/Page/opaque-ref checks and decision allowlist (`OWNER`: review/escalate/ACK_NO_SEND, `MANAGER`: review/escalate, `STAFF`: cannot append). The journal stores `operator_session_id` and authoritative `actor_db_role=CURRENT_USER::name`, HMAC request idempotency digest and DB timestamp. The reply plans/parts/claim never update and no retry is possible.
+- Added 15 source-only unit cases in `private-opaque-session-bridge.test.cjs`: signed token verification/tamper/forgery/TTL, stolen cross-role token, cross-store opaque ref, current grant/session expiry and revocation, staff/manager restrictions, idempotency, no-send/no-owner-app/no-hosted flags, no raw scope/UUID in public result.
+- Added `pg17-private-opaque-session-uat.sh`: creates/drops a random disposable PG17 database and 4 isolated `LOGIN NOINHERIT NOBYPASSRLS` accounts: owner A, manager A, staff A, owner B (same tenant, other Page/Store). Creates private-only synthetic Page grant, operator session, send plan/parts, reconciliation reference mapping, and append-only journal with **FORCE RLS** on all 6 private tables. Maps two HMAC refs using the same source-domain algorithm; read-only SQL and append SQL are pulled from the real JS candidate. Journal table has composite FK to plan scope AND FK to operator session; owner/staff cannot write private session or reference-mapping tables.
+- Extended static no-host/no-send/credential checks in V13.6M.5 CI; added disposable PG17 step to Config Core CI. Existing stable modules and n8n not modified.
+
+### TESTED — actual GitHub CI
+
+- [Messenger offline run 45040588408](https://github.com/ngoctien20/demo-git/actions/runs/45040588408): **SUCCESS**, all **355/355 PASS**, static hosted/Meta send denial job PASS.
+- [Config Core + real local PG17 run 45040588438](https://github.com/ngoctien20/demo-git/actions/runs/45040588438): **SUCCESS**, new `PG17_OPAQUE_SESSION_BRIDGE_TESTS=38` PASS including stolen-session wrong SQL role, guessed ref, cross-shop read and append, staff/manager restrictions, journal stored actor/session ID, private ref/session insertion denied, client-faked JWT role denied, expired/revoked session/grant denied, immutable ledger, append-only journal, FK protection. Existing suites also PASS: PG17 claim 21/21; claim RLS 24/24; ledger 28/28; ledger RLS 29/29; claim-bound 23/23; atomic plan 26/26; reconciliation read-only 20/20; operator review 34/34; Config Core 138/138.
+- [V23 Owner App QA run 45040588433](https://github.com/ngoctien20/demo-git/actions/runs/45040588433): SUCCESS, independent offline test (NOT real integration of bridge into Owner App).
+- **QA transparency:** [initial Messenger run 45040194662](https://github.com/ngoctien20/demo-git/actions/runs/45040194662) FAILED 1 assertion because an equijoin used `p.id=rr.plan_id` while test asserted only reverse spelling `rr.plan_id=p.id`. Fixed test to assert the mapping is linked without relying on join direction. This did NOT relax authorization or modify SQL behavior. Subsequent 355/355 PASS. Final code + CI checkpoint before docs: `e8639846163235ad6cf4479b2c58018ad22fa405`.
+
+### BLOCKED / limitations
+
+1. **Not an end-to-end authentication implementation.** The source-only token verifier checks a synthetic HMAC-signed token. A real login/issuer, token theft protection (`HttpOnly`/`Secure`/`SameSite`/CSRF), rate-limiting, key rotation, tenant-bound cookie/session storage, owner consent and real hosted session revocation are NOT deployed or tested.
+2. The test uses a distinct PostgreSQL login per operator. Supabase hosted often uses pooled shared DB roles; **`CURRENT_USER` in this disposable fixture does not prove a real Supabase JWT/tenant authorization architecture**. Before hosted rollout, pick a trusted gateway/DB authorization design that cannot be forged via client JWT claims, SQL GUC or injected user data; audit credentials, role grants and RLS with real owner/staff identities.
+3. The private HMAC reconciliation refs mapping table is **synthetically pre-seeded**, not generated atomically by the existing live sender or `atomic-claim-plan.cjs`. Production needs source provenance, atomic creation during plan creation, safe rotation/retention, unique mapping constraints and negative tests for store reassignment. The opaque ref alone is NEVER an authentication credential.
+4. Review events are append-only for restricted operator roles but not cryptographically tamper-evident against database owners. Real audit sealing, backup/retention and incident handling are still design gates.
+5. `API_ACCEPTED_MOCK` remains a synthetic receipt, never proof of Meta acceptance/delivery/read. `UNCERTAIN_HOLD`/`MAY_HAVE_SENT_HOLD` never auto-retry. Existing Messenger Published still uses non-atomic Data Table check→Meta Send→record and is NOT remediated in production.
+6. No n8n Draft/Published update, no hosted Supabase schema/RLS/role/credential change, no actual owner App integration, no Meta Send, no Orders/Products/billing or customer writes, no merge, no release. PR #491 OPEN/DRAFT and Issue #495 OPEN.
+
+### Rollback and next safe step
+
+- Revert only new `private-opaque-session-bridge.cjs`, `.test.cjs`, `pg17-private-opaque-session-uat.sh` and their two CI additions. Preserve §§16–20 fixes, previous PG suites and the Messenger workflow; no runtime rollback needed.
+- Next safe offline gate: build a **trusted private reference-mapping creation contract** tied atomically to newly acquired claim/plan (not browser input), with immutable scope, composite FK and no orphan on rollback. Hosted admission/UAT requires separate owner approval; do NOT publish or send Meta automatically.
+
+**Status: IMPLEMENTED source-only / TESTED offline 355/355 and PG17 operator opaque session 38/38 / hosted BLOCKED / NOT RELEASED.**
