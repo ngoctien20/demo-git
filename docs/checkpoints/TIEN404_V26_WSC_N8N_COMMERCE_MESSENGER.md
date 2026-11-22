@@ -69,7 +69,10 @@ Dữ liệu thật hiện tại (đọc Products, 19 SKU): giá dạng `159.000�
 | Không có idempotency thật: Sheet không có transaction; chống trùng chỉ là đọc-rồi-ghi trong 30 phút | Trung bình | Không đổi so với Published. Giải quyết ở DB tenant (B-P1-05), không ở n8n. |
 | Tồn kho không bị trừ khi tạo đơn | Đã biết | Không đổi. Thông báo trả về đã ghi rõ “Tồn kho chưa bị trừ”. |
 
-### 2.5 Gói publish B-P0-03 (PROPOSED — **chưa thực hiện, cần duyệt**)
+### 2.5 Gói publish B-P0-03
+
+> **Cập nhật 22:40Z:** `af9ee686` đã được publish lúc 21:06:59Z (phiên khác, có duyệt). Bản `4740251a` không còn trong lịch sử phiên bản. Kiểm live và rollback: xem `TIEN404_V26_WSC_GO_LIVE_RUNBOOK.md`.
+
 
 - Điều kiện vào: n8n đã nâng gói (B-P0-01); có execution mới bất kỳ chứng minh n8n chạy.
 - Thao tác: `publish_workflow(workflowId=KrSn4DNR9ALX5ng4, versionId=af9ee686-2a9f-483e-9622-6e449500ac5e)`.
@@ -110,7 +113,10 @@ Dữ liệu thật hiện tại (đọc Products, 19 SKU): giá dạng `159.000�
 - Đơn đã tạo bằng số bàn `02x` (Create Order vẫn nhận) sẽ **không tự đổi địa chỉ** được, phải qua nhân viên. TESTED (ca GAP). Chấp nhận được cho DEMO; PROPOSED: thống nhất 1 hàm chuẩn hóa SĐT cho cả Create/Update/Manage.
 - Lời báo khi địa chỉ không có chữ vẫn là “quá ngắn” → hơi sai nghĩa (nhỏ).
 
-### 3.5 Gói publish B-P0-04 (PROPOSED — chưa thực hiện, cần duyệt)
+### 3.5 Gói publish B-P0-04
+
+> **Cập nhật 22:40Z:** `3bd7043f` đã được publish lúc 21:07:00Z. Bản `93cf227a` không còn trong lịch sử. Xem runbook go-live.
+
 
 - Thao tác: `publish_workflow(BkAi6TVUKAjCnI7v, versionId=3bd7043f-78e7-4a1c-93e5-2bc9d60ac767)`.
 - Kiểm sau publish: `test_workflow` pin `Lookup`/`Update` với SĐT `0123456789` → `invalid_phone`, không ghi Sheet.
