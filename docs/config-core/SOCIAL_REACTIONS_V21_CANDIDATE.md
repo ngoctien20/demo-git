@@ -1,6 +1,6 @@
 # TIEN404 AI Social Reactions — V21 CANDIDATE (22/11/2026)
 
-**Trạng thái: IMPLEMENTED ở nhánh QA, NO-SEND, NOT RELEASED.**
+**Trạng thái: IMPLEMENTED ở GitHub + n8n Messenger Draft (shadow mặc định OFF), TESTED qua QA cô lập, NOT RELEASED.**
 
 ## 1. Phạm vi đã có
 
@@ -171,7 +171,7 @@ Status: **IMPLEMENTED in GitHub candidate + n8n isolated QA, NOT WIRED to shared
 - Dedicated reaction CI at commit d7c4a18: run **45008880586 SUCCESS**.
 - Old aggregate Config Core CI during parallel catalog development failed on unrelated menu tests (syntax in messenger-catalog-page.test.mjs, and a previous ai-to-catalog expectation in messenger-phase2-route.test.mjs); do not mask as a reaction failure, and do not alter other team's catalog tests here.
 
-### Why not writing shared Messenger DRAFT yet
+### Historical checkpoint: why DRAFT was not edited in section 11 (superseded by section 12)
 
 Messenger workflow Z7FdV7uDvApfbURQ is being edited by another QA workstream. During this work its draft advanced from 9c08fdd3 to **18125761-5898-4950-bcd8-3c8d15539063**, adding paginated DEMO catalog support. The latest graph contains 67 nodes, published is still **47b48f6d-bc3d-40ae-afe6-96c5fd5452ac**.
 
