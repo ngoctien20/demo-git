@@ -29,6 +29,11 @@ Rollback for all rows: `db/config-core/90_config_core_rollback.sql` (tested in t
 | CC-C03 | C | Page bound to one tenant only; cross-tenant binding refused | `PAGE_BOUND_TWICE`, `CROSS_TENANT_ASSISTANT_BINDING` | PASS (offline) |
 | CC-C04 | C | Resolver returns only active+published, channel-scoped | `RESOLVER_*` | PASS (offline) |
 | CC-C05 | C | Payload cannot pick action/tenant; legacy payloads kept | unit `resolver…`, `legacy…` | PASS (unit) |
-| CC-C06 | C | Live Messenger renders new menu | — | NOT RUN (Phase 2, needs publish approval) |
+| CC-C06 | C | Live Messenger renders new menu | — | NOT RUN (needs Z7Fd wiring + publish approval) |
+| CC-P01 | 2 | Anon reads only published enabled released items, in order, no ids/draft | offline `ANON_READS_*`, `MENU_HAS_NO_IDS_OR_DRAFT`, `DRAFT_NOT_EXPOSED`; hosted UAT 20 `pass=9` | PASS (offline + hosted) |
+| CC-P02 | 2 | Unknown account/channel or disabled connection → NULL; anon still cannot read tables | `UNKNOWN_*_NULL`, `DISABLED_CONNECTION_NULL`, `ANON_STILL_NO_TABLES` | PASS (offline + hosted) |
+| CC-P03 | 2 | Bridge decisions (legacy untouched, AI sentence, handoff matches live classifier, no invented data, forged payload rejected) | unit `bot-bridge.test.mjs` | PASS (unit) |
+| CC-P04 | 2 | n8n Code node = tested bundle; read error → legacy; real staging read | `bridge-bundle.test.mjs`; n8n exec 6689, 6690 (pinned), 6691 (staging demo Page → ai), 6692 (unknown Page → legacy) | PASS |
+| CC-P05 | 2 | App Menu page renders 1280/390, no overflow/console errors; save_assistant_draft payload = {assistant, config, expected_sha} | `qa/v23-web/app-ui.cjs` (mocked Supabase) | PASS (browser, mocked) |
 | CC-X01 | — | SQL and JS validators agree | 52 `PARITY_*` | PASS (offline) |
 | CC-X02 | — | Rollback 90 leaves no objects; V20 functions unchanged; re-apply works | `ROLLBACK_NO_*`, `V20_*_UNCHANGED*` | PASS (offline) |
