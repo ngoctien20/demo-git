@@ -71,6 +71,7 @@ WITH expected_cols(table_name,column_name,data_type,not_null) AS (VALUES
  ('app_private','t404_cfg_manager_tenant','edb143eb13f712d2f93aef622ae63f58'),
  ('app_private','t404_cfg_sha','c352c5fe4a2373b4cacabf7d83b06646'),
  ('app_private','t404_cfg_validate','b5b318b342140ee26237ec3f66d55a05'),
+ ('public','get_channel_menu','6bcbcbc04f984c0bf87065fba44dd6a7'),
  ('public','create_assistant','3c4f587b2f458f42250888f855cf7f58'),
  ('public','publish_assistant_config','5c7f446ed8310046faf542f45313d44d'),
  ('public','resolve_channel_assistant','b3f4bdc745a39b4a786425a7e4f5f787'),
@@ -79,17 +80,20 @@ WITH expected_cols(table_name,column_name,data_type,not_null) AS (VALUES
 ), fn_diff AS (
  SELECT e.nsp,e.name,CASE WHEN p.oid IS NULL THEN 'function_missing'
  WHEN md5(p.prosrc)<>e.md5_digest THEN 'function_body_drift'
+ WHEN p.proname='get_channel_menu' AND
+  (NOT has_function_privilege('anon',p.oid,'EXECUTE') OR
+   NOT has_function_privilege('authenticated',p.oid,'EXECUTE')) THEN 'menu_read_grant_drift'
  WHEN p.proname='resolve_channel_assistant' AND
   (has_function_privilege('anon',p.oid,'EXECUTE') OR
    has_function_privilege('authenticated',p.oid,'EXECUTE')) THEN 'resolver_public_grant'
- WHEN n.nspname='public' AND p.proname<>'resolve_channel_assistant' AND
+ WHEN n.nspname='public' AND p.proname NOT IN ('resolve_channel_assistant','get_channel_menu') AND
   (NOT has_function_privilege('authenticated',p.oid,'EXECUTE') OR
    has_function_privilege('anon',p.oid,'EXECUTE')) THEN 'rpc_grant_drift'
  WHEN n.nspname='app_private' AND
   (has_function_privilege('anon',p.oid,'EXECUTE') OR
    has_function_privilege('authenticated',p.oid,'EXECUTE')) THEN 'private_exposed'
  WHEN p.proname IN ('create_assistant','save_assistant_draft',
-  'publish_assistant_config','rollback_assistant_config','resolve_channel_assistant',
+  'publish_assistant_config','rollback_assistant_config','resolve_channel_assistant','get_channel_menu',
   't404_cfg_manager_tenant','t404_cfg_lock_assistant') AND NOT p.prosecdef THEN 'missing_security_definer'
  WHEN coalesce(array_to_string(p.proconfig,','),'') NOT LIKE '%search_path=%' THEN 'missing_search_path'
  ELSE NULL END discrepancy
