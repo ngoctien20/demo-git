@@ -7,7 +7,7 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 | Thành phần | Phiên bản đang chạy / tham chiếu | Rollback |
 |---|---|---|
 | GitHub `main` | `78ba605` | — |
-| GitHub `develop` | `0e12f4c` | — |
+| GitHub `develop` | `078c91d` (gồm #500, #490, #487, #489, #496, #491, #493) | revert từng merge commit theo thứ tự ngược |
 | GitHub `gh-pages` (website công khai) | `8d3f88f` = PR #496 @ `7a70fa5` | revert `8d3f88f` |
 | n8n Messenger `Z7FdV7uDvApfbURQ` | Published `1f4069a5`, Draft `41bcea84` | publish `47b48f6d` |
 | n8n Config Menu Bridge `9HXjjJ5ghPKUu43b` | Published `0d04c978` | unpublish (Z7Fd dùng `47b48f6d`) |
@@ -34,7 +34,9 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 - B-P0-03/04 DONE: publish Create Order `af9ee686`, Update Order `3bd7043f` (chỉ đổi 1 Code node mỗi workflow). Offline 19/19 PASS (parser VND, tiền tố SĐT, địa chỉ có chữ). Chưa có UAT live vì n8n vẫn hết hạn.
 - B-P0-05 VERIFIED: Z7Fd `1f4069a5` POST đi qua `Crypto → Verify Signature Timing-Safe → Verify Meta Signature` trước khi xử lý; sai chữ ký → nhánh trả lỗi.
 - Hợp nhất: #500 (main→develop, `e9b7f106`), #490 (`c8e1383f`), #487 (`9ba3a8cf`). Merge develop vào #489 (`1c4a687`), #489 vào #496 (`5b04b8c`), #496 vào #491 (`c01afb4`), #491 vào #493 (`41a6fbd`, giải xung đột Shell.tsx/app.css, build lại `app/`).
-- Còn lại: merge #489 → #496 → #491 → #493 vào develop khi CI xanh; #488 và #477 chưa làm.
+- Merge vào develop (CI head xanh từng PR): #489 `e4d541a7`, #496 `1d8310b9`, #491 `9a4789db`, #493 `078c91d8`. Kiểm tra develop `078c91d`: config-core 242/242, messenger QA 144/144, build `app/` không lệch.
+- Đóng #479, #480 (superseded bởi #482/#485). #481 đổi tiêu đề “ĐÃ ÁP STAGING”.
+- Chưa làm: #488 (cần thiết kế Shared Core), #477 develop→main (giữ theo yêu cầu trước của chủ dự án).
 
 ### 2026-11-22 — Phase 0 audit (read-only)
 - Branch: `claude/project-thread-8kj0gx`, Draft PR (docs-only).
