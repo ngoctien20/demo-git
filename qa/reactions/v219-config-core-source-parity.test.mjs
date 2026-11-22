@@ -6,11 +6,12 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 const core=readFileSync(new URL('../../db/config-core/10_config_core.sql',import.meta.url),'utf8');
 const audit=readFileSync(new URL('./v219-config-core-source-parity.sql',import.meta.url),'utf8');
+const menu=readFileSync(new URL('../../db/config-core/20_channel_menu_read.sql',import.meta.url),'utf8');
 const tables=['action_types','industry_templates','assistants','assistant_config_versions','channel_connections'];
 const functions=[
 'app_private.t404_acv_guard','app_private.t404_cfg_lock_assistant','app_private.t404_cfg_manager_tenant',
 'app_private.t404_cfg_sha','app_private.t404_cfg_validate','public.create_assistant',
-'public.publish_assistant_config','public.resolve_channel_assistant',
+'public.publish_assistant_config','public.resolve_channel_assistant','public.get_channel_menu',
 'public.rollback_assistant_config','public.save_assistant_draft'
 ];
 const digest=(str)=>createHash('md5').update(str,'utf8').digest('hex');
@@ -38,10 +39,34 @@ test('45 expected table columns exactly match source names, types and nullabilit
  }
  assert.equal(count,45);
 });
-test('each fingerprint is pinned to the exact 10 function source bodies',()=>{
+test('each fingerprint is pinned to 10 Config Core + 1 menu function source bodies',()=>{
  for(const fn of functions){
-  const a=core.indexOf('CREATE FUNCTION '+fn+'(');
-  const start=core.indexOf('AS $f$',a);
+  const actualSource=fn==='public.get_channel_menu'?menu:core;
+  const a=actualSource.indexOf('CREATE FUNCTION '+fn+'(');
+  const start=actualSource.indexOf('AS $f
+  const end=actualSource.indexOf('$f$;',start+6);
+  assert.ok(a>=0&&start>a&&end>start,fn);
+  const body=actualSource.slice(start+6,end);
+  const [schema,name]=fn.split('.');
+  assert.ok(audit.includes("('"+schema+"','"+name+"','"+digest(body)+"')"),fn+' body fingerprint changed');
+ }
+});
+test('audit enforces constraints, triggers, forced RLS, privileged RPC grants, and migration provenance',()=>{
+ for(const name of [
+ 'assistants_scope_key','assistants_store_fk','assistants_template_fk',
+ 'acv_assistant_fk','acv_version_key','acv_published_meta',
+ 'acv_one_draft','acv_one_published','t404_acv_guard',
+ 'channel_connections_account_key','channel_connections_store_fk','channel_connections_assistant_fk',
+ 'action_types_auth_read','industry_templates_auth_read','assistants_store_member_read',
+ 'acv_store_member_read','channel_connections_store_member_read'
+ ])assert.ok(audit.includes("'"+name+"'"),name);
+ assert.ok(audit.includes('config_core_tracked_names'));
+ assert.ok(audit.includes('has_function_privilege'));
+ assert.ok(audit.includes('relforcerowsecurity'));
+ assert.ok(audit.includes('source_expected_function_bodies'));
+ assert.ok(audit.includes("'get_channel_menu'"));
+});
+,a);
   const end=core.indexOf('$f$;',start+6);
   assert.ok(a>=0&&start>a&&end>start,fn);
   const body=core.slice(start+6,end);
