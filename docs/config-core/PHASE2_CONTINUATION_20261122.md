@@ -358,3 +358,46 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - No n8n/Meta/Supabase hosted operations were performed here; no runtime rollback is needed.
 
 **Status: VERIFIED published drift read-only; IMPLEMENTED source-only adapter; TESTED real PG17 24/24 and offline HMAC 270/270; BLOCKED hosted integration; NOT RELEASED.**
+## 15. Tenth continuation — Messenger per-message outbox/attempt ledger with PG17 real concurrency (2026-11-22 ~12:00 UTC)
+
+**Goal:** Continue Issue #495 by closing the source-only model gap between unique inbound claims and uncertain Meta Send API responses. Use the existing V13.6M.5 claim infrastructure; do not modify n8n or deploy hosted tables. PR #491 remains DRAFT.
+
+### Audit / starting versions
+
+- Read n8n user preferences, Messenger workflow metadata and GitHub PR #491 before edits. Messenger current Draft 41bcea84-703d-40bc-be2a-71f84ca4e2d8, Published 1f4069a5-5e74-4c79-935b-40f02b3582d8; both **unchanged in this continuation**. Published differs from older 47b48f6d checkpoint; we did not restore it.
+- Existing code reused: qa/messenger-rich-v136m5/private-event-store.cjs for trusted HMAC-scoped event claim identity. New ledger exists independently as a *source-only* transactional state machine; it does not install an authorization path to Send API.
+
+### IMPLEMENTED — GitHub Draft only
+
+- Created qa/messenger-rich-v136m5/message-attempt-ledger.cjs as a source-only, SYNTHETIC_SQL_QA_ONLY SQL transaction contract. It requires a no-send mock claim ticket and server-derived tenant/store/Page/sender, fingerprint and HMAC secret; **a mock claim ticket is forgeable and MUST NOT authorize production sends**. Rejects hosted/live modes and drivers that declare external writes.
+- SQL.plan creates at most one unique reply plan per scoped inbound event (tenant, store, Page, HMAC-sender, binding-version, HMAC-event) and inserts exactly 1-3 body-digest parts atomically in a PostgreSQL CTE. On duplicate event, returns DUPLICATE_PLAN_HOLD even if a caller changes reply content. No raw PSID, customer text, access token or order details are recorded by this contract.
+- SQL.reserve is an atomic compare-and-set from PLANNED to MAY_HAVE_SENT_HOLD, with an attempt UUID per part, **before** any hypothetical external provider side effect. Reserving again never creates a second attempt, even across different PostgreSQL client processes.
+- SQL.accept accepts a mock receipt only under matching plan, part and attempt UUID, with a HMAC digest of the synthetic provider MID and intended recipient. A local partial UNIQUE index enforces distinct receipt digest per plan. This does not constitute real Meta acceptance or delivery.
+- SQL.uncertain moves a reserved part to UNCERTAIN_HOLD on timeout, missing/mismatched receipt, or transport ambiguity; no automatic retry or takeover. A database transaction failure while recording a result also leaves the attempt in MAY_HAVE_SENT_HOLD and marks the in-memory ticket as requiring reconciliation.
+- SQL.close permits MOCK_PARTS_ACCEPTED only when **every expected part** has API_ACCEPTED_MOCK; 1/3, 2/3, planned or held parts cannot close. All mock status objects retain sendAllowed:false, retryAllowed:false, providerAccepted:false and delivered:false.
+- Created qa/messenger-rich-v136m5/synthetic-message-ledger-model.cjs for strictly local serialized synthetic SQL transactions, and message-attempt-ledger.test.cjs with 20 focused offline cases. The synthetic model is **not durable** across fresh process starts.
+- Created qa/messenger-rich-v136m5/pg17-message-ledger-uat.sh for real disposable LOCAL PostgreSQL17. It imports the exact SQL strings from the new source, creates temporary private plans/parts tables with UNIQUE scoped event, per-part key, attempt UUID and provider-MID digest constraints, and tests concurrency/partial/timeout across independent psql clients. It drops its own random database at exit. This is a **disposable test schema**, not an approved hosted migration.
+- Updated both existing CI workflows to run the new tests and no-provider/network static guard; existing source/readiness and non-BYPASSRLS claim-store suites remain untouched.
+
+### TESTED — evidence
+
+- First new offline CI run 45019501065 had **1/290 failing test** due to wrong expectation: after attempting to close incomplete 2/3 plan, the candidate intentionally locks the local ticket. Fixed test expectation in commit 2c555072f76eb56c5c6b5d082a9deea1481011c0; no production-safety behavior was loosened. Subsequent CI PASS.
+- [V13.6M.5 CI run 45019644868](https://github.com/ngoctien20/demo-git/actions/runs/45019644868): **290/290 PASS, 0 FAIL**, including new 20 ledger tests; static no-host/no-Meta/no-send checks PASS.
+- [Config Core & PG17 run 45019644923](https://github.com/ngoctien20/demo-git/actions/runs/45019644923): **SUCCESS**. Config Core 138/138 PASS; previously installed local PG17 event claim 21/21 PASS and restricted role FORCE RLS claim test 24/24 PASS; NEW real PG17 send-ledger suite `PG17_REAL_MESSAGE_LEDGER_TESTS=28` **PASS**.
+- Real ledger PG17 verified competing transactions create one plan and three parts, two competing part reservations yield one winning attempt, 1/3 and 2/3 cannot close, timeout on last part stays UNCERTAIN_HOLD and blocks retry, status remains in new psql connection, duplicate synthetic provider MID is rejected by UNIQUE, and another distinct event with all 3 parts can close exactly once in mock-only state.
+- [V23 web + Owner App run 45019644893](https://github.com/ngoctien20/demo-git/actions/runs/45019644893): PASS (independent mocked/offline QA). Source/CI HEAD before documentation: aafd8e787106f75504b52eac3ce7dc35f3941290.
+
+### OPEN / BLOCKED release gates
+
+1. The new ledger tables do **not** exist on Supabase hosted and this code does not run in live n8n. Published Messenger still uses Data Table rowNotExists → Send → record; the actual runtime duplicate-send race is NOT fixed. Neither Draft nor Published changed here.
+2. New ledger PG17 tests use a disposable test database with privileged test creator; the **new send-plan/part tables do not yet have restricted-writer tenant A/B and same-tenant store A/B RLS negative acceptance**. Earlier non-BYPASSRLS tests apply only to the inbound claim table. Do not conflate them.
+3. This SQL CTE design is an experiment; production requires an actual trusted, non-forgeable claim receipt bound to server-authenticated Page/Store and configured adapter; real Meta raw HMAC, owner/tenant authorization, token management, restricted writer role, RLS on hosted, migration backup/restore and rollback review.
+4. There is no provider transport or real outbox sender worker. Exactly-once Graph API side effects are not promised. Acknowledgment may be lost after Meta accepted a send; manual/provider-safe reconciliation must precede any retry. Distinguish `API_ACCEPTED_MOCK` from provider API accepted, delivered or read.
+5. Explicit owner approval is required before any hosted table/role/RPC modification, Meta Send, production n8n publish/restore, changes to customer data, credentials or release.
+
+### Rollback / checkpoint
+
+- Revert Draft-only files message-attempt-ledger.cjs, synthetic-message-ledger-model.cjs, message-attempt-ledger.test.cjs, pg17-message-ledger-uat.sh and restore both modified CI workflow files to pre-ledger HEAD. Preserve all previous signed ingress, V13.6M.5 private event claim, PG17 RLS and Social Reactions ALL OFF work.
+- This continuation made no live n8n, Supabase hosted, Meta, credential, Orders/Products or customer changes; no runtime rollback required.
+
+**Status: IMPLEMENTED source-only / TESTED offline 290/290 and disposable PG17 ledger 28/28 / BLOCKED hosted & live send / NOT RELEASED.**
