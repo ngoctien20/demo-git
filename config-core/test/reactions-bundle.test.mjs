@@ -41,7 +41,8 @@ test('generated code: direct social intent yields a candidate and a no-send payl
   assert.equal(out.length, 1);
   assert.equal(out[0].json.decision.mode, 'reaction_candidate');
   assert.equal(out[0].json.dryRun.sendAllowed, false);
-  assert.equal(out[0].json.dryRun.body.payload.reaction, '❤️');
+  assert.equal(typeof out[0].json.dryRun.body.payload, 'string');
+  assert.equal(JSON.parse(out[0].json.dryRun.body.payload).reaction, '❤️');
   assert.equal(out[0].json.metaCallExecuted, false);
 });
 
