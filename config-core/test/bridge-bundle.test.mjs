@@ -2,6 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { templateConfig } from '../lib/templates.mjs';
 
 const sdk = fs.readFileSync(new URL('../n8n/bridge.sdk.js', import.meta.url), 'utf8');
@@ -41,4 +43,10 @@ test('bundle: catalog cursor is authorized by current published menu version', (
   assert.equal(old.mode, 'rejected');
   assert.equal(old.reason, 'catalog_version_stale');
   assert.equal(run({ channel: 'messenger', payload: 'T404:C:order_lookup:11:2' }, m).mode, 'rejected');
+});
+
+test('bundle: generated SDK is byte-identical to checked-in bridge.sdk.js', () => {
+  const generator = fileURLToPath(new URL('../n8n/build-bridge.mjs', import.meta.url));
+  const generated = execFileSync(process.execPath, [generator], {encoding:'utf8',timeout:10000});
+  assert.equal(generated, sdk, 'regenerate bridge.sdk.js from the pure source before release');
 });
