@@ -1,0 +1,321 @@
+[
+ {
+  "type": "setNodeParameter",
+  "nodeName": "Extract Messenger Text",
+  "path": "/jsCode",
+  "value": "const payload=$('Webhook1').first().json.body??{};\nconst allowedPage='2379295362359912';\nif(payload.object!=='page'||!Array.isArray(payload.entry))return [];\n// V22 fast path: only a clear single-SKU question (e.g. \"Xem A003\", \"A003 giá bao nhiêu\") skips the AI.\nconst detectSku=text=>{\n const norm=text.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[?!.,~…]+/g,' ').replace(/\\s+/g,' ').trim();\n const all=norm.match(/\\b[a-z]\\d{3}\\b/g)||[];\n if(new Set(all).size!==1)return null;\n const re=/^(?:(?:cho (?:em|minh|toi|chi|anh|e|m) )?(?:xem|check|coi|hoi|tu van|xin) )?(?:(?:thong tin|gia) )?(?:(?:mau|ma|sp|san pham) )?([a-z]\\d{3})(?: (?:gia bao nhieu|bao nhieu tien|bao nhieu|gia sao|gia|con hang khong|con hang ko|con khong|con ko|con k|con hang|con|thong tin|the nao|sao|nhe|nha|a|ah|voi|di|shop|ad))*$/;\n const m=re.exec(norm);\n return m?m[1].toUpperCase():null;\n};\nconst menuQuestions={\n 'TIEN404:ASK:catalog':'Shop đang có những sản phẩm nào?',\n 'TIEN404:ASK:ao':'Shop có những mẫu áo nào?',\n 'TIEN404:ASK:quan':'Shop có những mẫu quần nào?',\n 'TIEN404:ASK:order':'Tôi muốn tra cứu đơn hàng của tôi',\n 'TIEN404:ASK:human':'Tôi muốn gặp nhân viên tư vấn'\n};\nconst out=[];const seen=new Set();\nfor(const entry of payload.entry){\n const pageId=String(entry.id??'');\n if(pageId!==allowedPage||!Array.isArray(entry.messaging))continue;\n for(const e of entry.messaging){\n  if(!e.message&&!e.postback&&!e.referral)continue;\n  const m=e.message??{};\n  if(m.is_echo===true||m.is_deleted===true||m.is_unsupported===true)continue;\n  const senderId=String(e.sender?.id??'');\n  const recipientId=String(e.recipient?.id??'');\n  if(!/^\\d{5,30}$/.test(senderId)||recipientId!==allowedPage)continue;\n  let ts=Number(e.timestamp??0);\n  if(ts>0&&ts<1e12)ts*=1000; // referral events send seconds\n  if(ts>0&&(ts>Date.now()+300000||Date.now()-ts>23*3600000))continue;\n  let chatInput=typeof m.text==='string'?m.text.trim():'';\n  let mediaType='text';\n  let selectedSku;\n  let fastPath;\n  let memoryUserText;\n  let audioUrl;\n  const isSticker=!chatInput&&Array.isArray(m.attachments)&&m.attachments.some(a=>a?.type==='sticker'||a?.payload?.sticker_id);\n  if(isSticker){\n   // V26: sticker (vd nút like 👍) không phải ảnh sản phẩm.\n   mediaType='sticker';\n   chatInput='Khách vừa gửi một nhãn dán (sticker) như 👍, không có chữ. Đáp lại đúng 1 câu ngắn thân thiện và hỏi khách cần shop hỗ trợ gì. (Ghi chú nội bộ, không nhắc với khách: sticker KHÔNG phải xác nhận đặt hàng; chỉ khi shop đang chờ khách xác nhận đơn thì mới xin khách xác nhận bằng chữ.)';\n  } else if(!chatInput&&Array.isArray(m.attachments)&&m.attachments.length){\n   const type=String(m.attachments[0]?.type??'file').toLowerCase();\n   mediaType=['image','video','audio','file','fallback'].includes(type)?type:'file';\n   // V24.1: tin thoại từ CDN của Meta → nghe qua TIEN404 VOICE (F7EhVGWIALKWg8Y6) trước vòng lặp.\n   const url=String(m.attachments[0]?.payload?.url??'');\n   if(mediaType==='audio'&&url.length<=2000&&/^https:\\/\\/[a-z0-9.-]+\\.(?:fbcdn\\.net|fbsbx\\.com)\\//i.test(url)){mediaType='voice';audioUrl=url;chatInput='[Tin nhắn thoại]';}\n   else{\n   const label={image:'ảnh',video:'video',audio:'tin nhắn thoại',file:'tệp',fallback:'tệp'};\n   chatInput='Khách vừa gửi '+label[mediaType]+'. Hệ thống chưa phân tích được nội dung tệp, hãy lịch sự xin khách mô tả sản phẩm hoặc yêu cầu bằng chữ. Không giả vờ đã xem/nghe.';\n   }\n  }\n  if(e.postback){\n   const action=String(e.postback.payload??'');\n   const selected=/^TIEN404:VIEW:([A-Z][0-9]{3})$/.exec(action);\n   if(selected){\n    selectedSku=selected[1];\n    mediaType='product_detail';\n    fastPath='postback';\n    memoryUserText='Tôi vừa bấm nút Xem '+selectedSku;\n    chatInput='Xem thông tin mẫu '+selectedSku;\n   } else if(action==='TIEN404:START'){\n   mediaType='postback';\n   chatInput='Khách vừa nhấn Bắt đầu trò chuyện. Chào khách và hỏi muốn tư vấn sản phẩm hay hỗ trợ đơn hàng.';\n   } else if(menuQuestions[action]){\n   // V24: persistent menu / ice breaker buttons become the customer's own question.\n   mediaType='text';\n   chatInput=menuQuestions[action];\n   } else if(action.startsWith('TIEN404:')){continue;} else {\n   mediaType='postback';\n   chatInput='Khách vừa nhấn Bắt đầu trò chuyện. Chào khách và hỏi muốn tư vấn sản phẩm hay hỗ trợ đơn hàng.';\n   }\n  } else if(e.referral&&!e.message){\n   // handled below\n  } else if(mediaType==='text'&&chatInput&&chatInput.length<=80&&!chatInput.startsWith('QA_CORE:')){\n   const sku=detectSku(chatInput);\n   if(sku){selectedSku=sku;mediaType='product_detail';fastPath='text';memoryUserText=chatInput;}\n  }\n  // V26: link m.me/...?ref=SKU hoặc quảng cáo có ref -> gửi luôn giá/tồn của mẫu đó (không AI).\n  const refRaw=String((e.referral||e.postback?.referral||{}).ref??'').trim().toUpperCase();\n  const refSku=/^[A-Z][0-9]{3}$/.test(refRaw)?refRaw:null;\n  if(e.referral&&!e.message&&!e.postback&&!refSku)continue;\n  if(refSku&&(!e.message||e.postback)&&(!e.postback||mediaType==='postback')){\n   selectedSku=refSku;mediaType='product_detail';fastPath='referral';\n   memoryUserText='Tôi mở link xem mẫu '+refSku;chatInput='Xem thông tin mẫu '+refSku;\n  }\n  if(!chatInput||chatInput.length>1800)continue;\n  const rawId=String(m.mid??e.postback?.mid??'').trim();\n  const messageId=rawId||(e.postback?'pb_'+senderId+'_'+String(ts||0):e.referral?'ref_'+senderId+'_'+String(ts||0):'attachment_'+senderId+'_'+String(ts||0));\n  if(messageId.length<4||messageId.length>512||/\\s/.test(messageId))continue;\n  if(seen.has(messageId))continue;\n  seen.add(messageId);\n  out.push({json:{pageId,senderId,messageId,chatInput,mediaType,...(selectedSku?{selectedSku,fastPath,memoryUserText}:{}),...(audioUrl?{audioUrl}:{}),sessionId:'messenger:'+pageId+':'+senderId,receivedAt:new Date().toISOString()},pairedItem:{item:0}});\n }\n}\nreturn out;\n\n"
+ },
+ {
+  "type": "setNodeParameter",
+  "nodeName": "Prepare Messenger Reply",
+  "path": "/jsCode",
+  "value": "// V24 (quick replies) + V23 reply-count rule: 1 message by default, 2 when it helps (long text + button card), hard max 3 per customer message.\nconst MAX_MESSAGES=3;\nconst TEXT_LIMIT=1800;\nconst incoming=$input.first().json;\nconst current=$('Loop One Message').first(1, $('Loop One Message').context.currentRunIndex).json;\nlet reply=typeof incoming.output==='string'?incoming.output.trim():'';\n// V24.1: tin thoại đã hiểu → mở đầu bằng câu bot nghe được (vẫn 1 tin).\nif(reply&&typeof current.heard==='string'&&current.heard)reply='🎤 Shop nghe: \"'+current.heard.slice(0,200)+'\"\\n\\n'+reply;\nif(!/^\\d{5,30}$/.test(String(current.senderId??'')))return [];\nif(!/^\\d{5,30}$/.test(String(current.pageId??'')))return [];\nif(!reply)return [];\nconst officialWebsiteUrl='https://ngoctien20.github.io/demo-git/';\nconst isCustomerText=current.mediaType==='text' && !String(current.chatInput??'').startsWith('QA_CORE:');\nconst normalizedInput=String(current.chatInput??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();\nconst asksForWebsite=/(?:website|trang web|link chinh thuc|link web)/i.test(normalizedInput);\nlet card=null; // {buttons, intro}\nif(isCustomerText && asksForWebsite && reply.includes(officialWebsiteUrl)){\n card={buttons:[{type:'web_url',url:officialWebsiteUrl,title:'Mở website'}],intro:'Website chính thức của shop:'};\n} else if(isCustomerText){\n const skus=[...new Set(Array.from(reply.matchAll(/^\\s*(?:[-•*]\\s*)?(?:\\*\\*)?([A-Z]\\d{3})\\b/gm),m=>m[1]))];\n if(skus.length>0 && skus.length<=3)card={buttons:skus.map(sku=>({type:'postback',title:'Xem '+sku,payload:'TIEN404:VIEW:'+sku})),intro:'Bấm để xem nhanh từng mẫu:'};\n}\n// Split long text on paragraph/line boundaries into chunks of at most TEXT_LIMIT characters.\nconst splitText=(text,maxChunks)=>{\n if(text.length<=TEXT_LIMIT)return [text];\n const parts=text.split(/(\\n\\s*\\n|\\n)/);\n const chunks=[];let cur='';\n for(const p of parts){\n  if((cur+p).length<=TEXT_LIMIT){cur+=p;continue;}\n  if(cur.trim())chunks.push(cur.trim());\n  cur=p;\n  while(cur.length>TEXT_LIMIT){chunks.push(cur.slice(0,TEXT_LIMIT).trim());cur=cur.slice(TEXT_LIMIT);}\n }\n if(cur.trim())chunks.push(cur.trim());\n if(chunks.length>maxChunks){\n  const kept=chunks.slice(0,maxChunks);\n  kept[maxChunks-1]=kept[maxChunks-1].slice(0,TEXT_LIMIT-1)+'…';\n  return kept;\n }\n return chunks;\n};\nconst messages=[];\nif(card && reply.length<=640){\n // Best case: a single message that carries both the answer and the buttons.\n messages.push({attachment:{type:'template',payload:{template_type:'button',text:reply,buttons:card.buttons}}});\n} else if(card){\n for(const t of splitText(reply,MAX_MESSAGES-1))messages.push({text:t});\n messages.push({attachment:{type:'template',payload:{template_type:'button',text:card.intro,buttons:card.buttons}}});\n} else {\n for(const t of splitText(reply,MAX_MESSAGES))messages.push({text:t});\n}\n// V24 quick replies (Messenger shows them as tappable chips under the last message; they are not extra messages).\nconst qr=(titles)=>titles.map((title,i)=>({content_type:'text',title:title.slice(0,20),payload:'TIEN404:QR:'+(i+1)}));\nlet quickReplies=null;\nconst isGreeting=current.mediaType==='postback' || (current.mediaType==='text' && normalizedInput.trim().length<=40 && /^(?:xin chao|chao|hi|hello|alo|shop oi|ad oi|hey)\\b/.test(normalizedInput.trim()));\nif(current.mediaType==='product_detail' && current.selectedSku){\n if(/chưa tìm thấy/i.test(reply))quickReplies=qr(['Gợi ý giúp mình','Xem áo','Xem quần']);\n else if(/hết hàng/i.test(reply))quickReplies=qr(['Xem mẫu tương tự','Xem mẫu khác']);\n else if(/Còn \\d+ cái/.test(reply))quickReplies=qr(['Đặt '+current.selectedSku,'Xem mẫu khác']);\n} else if(isGreeting){\n quickReplies=qr(['Xem áo','Xem quần','Tra cứu đơn','Gặp nhân viên']);\n}\nif(quickReplies && messages.length)messages[messages.length-1].quick_replies=quickReplies;\nconst capped=messages.slice(0,MAX_MESSAGES);\nreturn capped.map((messengerMessage,index)=>({json:{messengerMessage,messageIndex:index+1,messageCount:capped.length,pageId:current.pageId,senderId:current.senderId,messageId:current.messageId,receivedAt:current.receivedAt,replyText:reply.slice(0,TEXT_LIMIT)}}));\n"
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Tin thoại Messenger?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1600,
+    -80
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict"
+     },
+     "conditions": [
+      {
+       "leftValue": "={{ $json.mediaType === 'voice' && typeof $json.audioUrl === 'string' }}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Tải tin thoại Messenger",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1820,
+    -200
+   ],
+   "parameters": {
+    "url": "={{ $json.audioUrl }}",
+    "options": {
+     "redirect": {
+      "redirect": {
+       "followRedirects": true,
+       "maxRedirects": 2
+      }
+     },
+     "response": {
+      "response": {
+       "responseFormat": "file",
+       "outputPropertyName": "data"
+      }
+     },
+     "timeout": 8000
+    }
+   }
+  }
+ },
+ {
+  "type": "setNodeSettings",
+  "nodeName": "Tải tin thoại Messenger",
+  "settings": {
+   "onError": "continueRegularOutput",
+   "alwaysOutputData": true,
+   "retryOnFail": false
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Thoại → base64 (Messenger)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2040,
+    -200
+   ],
+   "parameters": {
+    "jsCode": "// Mỗi tin thoại 1 item, giữ nguyên thứ tự với nhánh 'Tin thoại?'. Lỗi tải → base64 rỗng → VOICE trả câu hỏi lại.\nconst src=$('Tin thoại Messenger?').all(0);\nconst items=$input.all();const out=[];\nfor(let i=0;i<items.length;i++){\n let b64='',mime='audio/mp4';\n try{const bin=items[i].binary&&items[i].binary.data;if(bin){const t=String(bin.mimeType||'').toLowerCase();mime=/^audio\\/(?:mpeg|mp3|aac|ogg|wav|webm|flac|amr)$/.test(t)?t:'audio/mp4';const buf=await this.helpers.getBinaryDataBuffer(i,'data');if(buf.length<=5242880)b64=buf.toString('base64');}}catch(e){}\n out.push({json:{channel:'messenger',audioBase64:b64,mimeType:mime,messageId:src[i]?.json?.messageId||''},pairedItem:{item:i}});\n}\nreturn out;"
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Nghe tin thoại (TIEN404 VOICE)",
+   "type": "n8n-nodes-base.executeWorkflow",
+   "typeVersion": 1.4,
+   "position": [
+    2260,
+    -200
+   ],
+   "parameters": {
+    "source": "database",
+    "workflowId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "F7EhVGWIALKWg8Y6",
+     "cachedResultName": "TIEN404 VOICE → chữ (dùng chung mọi kênh)"
+    },
+    "mode": "each",
+    "options": {
+     "waitForSubWorkflow": true
+    },
+    "workflowInputs": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "channel": "={{ $json.channel }}",
+      "audioBase64": "={{ $json.audioBase64 }}",
+      "mimeType": "={{ $json.mimeType }}"
+     },
+     "schema": [
+      {
+       "id": "channel",
+       "displayName": "channel",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "audioBase64",
+       "displayName": "audioBase64",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "mimeType",
+       "displayName": "mimeType",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      }
+     ]
+    }
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Ghép chữ từ thoại (Messenger)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2480,
+    -200
+   ],
+   "parameters": {
+    "jsCode": "// Ghép kết quả VOICE vào đúng tin Messenger gốc (theo thứ tự). Hiểu được → tin chữ/fast path như khách gõ; không → hỏi lại.\nconst src=$('Tin thoại Messenger?').all(0);\nreturn $input.all().map((it,i)=>{\n const m=src[i].json, v=it.json||{};\n if(v.ok===true&&typeof v.text==='string'&&v.text.trim()){\n  const base={...m,chatInput:v.text.slice(0,1800),heard:String(v.transcript||'').slice(0,200),memoryUserText:v.memoryUserText||v.text};\n  delete base.audioUrl;\n  if(v.selectedSku)return {json:{...base,mediaType:'product_detail',selectedSku:v.selectedSku,fastPath:'voice'},pairedItem:{item:i}};\n  return {json:{...base,mediaType:'text'},pairedItem:{item:i}};\n }\n const r={...m,mediaType:'voice_retry',chatInput:'[Tin nhắn thoại chưa nghe rõ]',retryText:v.replyText||'Dạ shop chưa nghe được tin nhắn thoại. Mình nhắn lại bằng chữ giúp shop nhé ạ.'};\n delete r.audioUrl;\n return {json:r,pairedItem:{item:i}};\n});"
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Gộp tin chữ + thoại",
+   "type": "n8n-nodes-base.merge",
+   "typeVersion": 3,
+   "position": [
+    2700,
+    -80
+   ],
+   "parameters": {
+    "mode": "append"
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Hỏi lại thoại?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1730,
+    400
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict"
+     },
+     "conditions": [
+      {
+       "leftValue": "={{ $json.mediaType === 'voice_retry' }}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  }
+ },
+ {
+  "type": "addNode",
+  "node": {
+   "name": "Câu hỏi lại tin thoại",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1950,
+    400
+   ],
+   "parameters": {
+    "jsCode": "return [{json:{output:$json.retryText}}];"
+   }
+  }
+ },
+ {
+  "type": "removeConnection",
+  "source": "Human handoff request?",
+  "sourceIndex": 1,
+  "target": "Loop One Message"
+ },
+ {
+  "type": "addConnection",
+  "source": "Human handoff request?",
+  "sourceIndex": 1,
+  "target": "Tin thoại Messenger?"
+ },
+ {
+  "type": "addConnection",
+  "source": "Tin thoại Messenger?",
+  "sourceIndex": 0,
+  "target": "Tải tin thoại Messenger"
+ },
+ {
+  "type": "addConnection",
+  "source": "Tin thoại Messenger?",
+  "sourceIndex": 1,
+  "target": "Gộp tin chữ + thoại",
+  "targetIndex": 1
+ },
+ {
+  "type": "addConnection",
+  "source": "Tải tin thoại Messenger",
+  "target": "Thoại → base64 (Messenger)"
+ },
+ {
+  "type": "addConnection",
+  "source": "Thoại → base64 (Messenger)",
+  "target": "Nghe tin thoại (TIEN404 VOICE)"
+ },
+ {
+  "type": "addConnection",
+  "source": "Nghe tin thoại (TIEN404 VOICE)",
+  "target": "Ghép chữ từ thoại (Messenger)"
+ },
+ {
+  "type": "addConnection",
+  "source": "Ghép chữ từ thoại (Messenger)",
+  "target": "Gộp tin chữ + thoại",
+  "targetIndex": 0
+ },
+ {
+  "type": "addConnection",
+  "source": "Gộp tin chữ + thoại",
+  "target": "Loop One Message"
+ },
+ {
+  "type": "removeConnection",
+  "source": "Loop One Message",
+  "sourceIndex": 1,
+  "target": "Product detail postback?"
+ },
+ {
+  "type": "addConnection",
+  "source": "Loop One Message",
+  "sourceIndex": 1,
+  "target": "Hỏi lại thoại?"
+ },
+ {
+  "type": "addConnection",
+  "source": "Hỏi lại thoại?",
+  "sourceIndex": 0,
+  "target": "Câu hỏi lại tin thoại"
+ },
+ {
+  "type": "addConnection",
+  "source": "Hỏi lại thoại?",
+  "sourceIndex": 1,
+  "target": "Product detail postback?"
+ },
+ {
+  "type": "addConnection",
+  "source": "Câu hỏi lại tin thoại",
+  "target": "Prepare Messenger Reply"
+ }
+]
