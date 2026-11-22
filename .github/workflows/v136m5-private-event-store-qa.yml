@@ -44,7 +44,10 @@ jobs:
           node --check qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs
           node --check qa/messenger-rich-v136m5/messenger-signed-admission.cjs
           node --check qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs
-          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs
+          node --check qa/messenger-rich-v136m5/message-attempt-ledger.cjs
+          node --check qa/messenger-rich-v136m5/synthetic-message-ledger-model.cjs
+          node --check qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs
   static-release-gate:
     name: Deny hosted writes and unsafe migration
     runs-on: ubuntu-24.04
@@ -59,6 +62,8 @@ jobs:
           model=Path("qa/messenger-rich-v136m5/synthetic-pg-model.cjs").read_text()
           gate=Path("qa/messenger-rich-v136m5/messenger-inbound-gate.cjs").read_text()
           signed=Path("qa/messenger-rich-v136m5/messenger-signed-admission.cjs").read_text()
+          ledger=Path("qa/messenger-rich-v136m5/message-attempt-ledger.cjs").read_text()
+          ledger_model=Path("qa/messenger-rich-v136m5/synthetic-message-ledger-model.cjs").read_text()
           sql=Path("qa/messenger-rich-v136m5/PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql").read_text()
           for p,s in [("contract",source),("simulator",model)]:
             for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
@@ -70,6 +75,15 @@ jobs:
           for banned in ["fetch(", "axios(", "graph.facebook.com", "PAGE_ACCESS_TOKEN",
                          "process.env", "pg.Pool(", "createClient(", "httpRequest("]:
             assert banned not in signed,("messenger-signed-admission.cjs",banned)
+          for path,src in [("message-attempt-ledger.cjs",ledger),
+                           ("synthetic-message-ledger-model.cjs",ledger_model)]:
+            for banned in ["fetch(", "axios(", "graph.facebook.com", "PAGE_ACCESS_TOKEN",
+                           "process.env", "pg.Pool(", "createClient(", "httpRequest("]:
+              assert banned not in src,(path,banned)
+          assert "LEDGER_HOSTED_NOT_APPROVED" in ledger
+          assert "MAY_HAVE_SENT_HOLD" in ledger and "UNCERTAIN_HOLD" in ledger
+          assert "sendAllowed:false" in ledger and "retryAllowed:false" in ledger
+          assert "ON CONFLICT" in ledger and "DO NOTHING" in ledger
           assert "SIGNED_ADMISSION_HOSTED_NOT_APPROVED" in signed
           assert "previewMessengerV136M3" in signed and "eventIsolation:true" in signed
           assert "providerSendEnabled:false" in signed
