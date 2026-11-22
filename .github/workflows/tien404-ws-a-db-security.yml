@@ -1,0 +1,60 @@
+name: "TIEN404 WS-A DB security (offline PostgreSQL 17, no hosted access)"
+on:
+  pull_request:
+    paths:
+      - "db/**"
+      - "qa/v20-store-authority/**"
+      - ".github/workflows/tien404-ws-a-db-security.yml"
+  push:
+    branches: ["claude/project-thread-p1sd2v"]
+    paths:
+      - "db/**"
+      - ".github/workflows/tien404-ws-a-db-security.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ws-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      pg:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGUSER: "postgres"
+      PGPASSWORD: "postgres"
+      WSA_TMP: ${{ runner.temp }}/wsa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Refuse hosted credentials
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_DB_URL:-}${DATABASE_URL:-}${STAGING_DB_PASSWORD:-}"
+      - name: Fetch pinned V23 web + Config Core SQL (PR #489 head) when not yet on this branch
+        run: test -f db/config-core/10_config_core.sql || git fetch -q origin 886f1f2e1931a2cc0089618a6f90619727d2ecee || git fetch -q origin refs/pull/489/head
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Server version
+        run: psql -XAtc 'show server_version'
+      - name: "B-P0-08 rebuild check: repo SQL vs staging function fingerprint"
+        run: bash db/ws-a/rebuild-check.sh
+      - name: "B-P0-06 SECURITY DEFINER negative suite"
+        run: bash db/ws-a/secdef-negative-suite.sh
+      - name: "B-P0-06 mutation self-test (suite must catch 3 deliberate weakenings)"
+        run: bash db/ws-a/mutation-selftest.sh
+      - name: "B-P1-05 Order Ownership Gateway DRAFT offline UAT"
+        run: bash db/order-ownership/offline-uat.sh
+      - name: "B-P0-07 offline dump/restore drill with pg_dump 17 from the service container"
+        env:
+          # pg_dump/psql 17 run inside the postgres:17 service container (its own localhost:5432).
+          PG_DUMP: docker exec -e PGPASSWORD=postgres -i ${{ job.services.pg.id }} pg_dump
+          PSQL_RESTORE: docker exec -e PGPASSWORD=postgres -i ${{ job.services.pg.id }} psql -h 127.0.0.1 -U postgres
+        run: bash db/ws-a/restore-drill.sh

@@ -1,0 +1,37 @@
+app_private.t404_acv_guard()|false|false|false|false|true|3c59fa5d0b5d63b5d96e814e3ea3e1b9
+app_private.t404_cfg_int(v jsonb, mn numeric, mx numeric)|false|false|false|false|true|b5f03a97893e2e544be5f9440bcdd0cc
+app_private.t404_cfg_lock_assistant(p_assistant uuid, OUT tid uuid, OUT sid uuid)|true|false|false|false|true|0286184056feda976793e8ab481a43d7
+app_private.t404_cfg_manager_tenant(p_store uuid)|true|false|false|false|true|723703d7e7d75603010fbb6bb9b81601
+app_private.t404_cfg_phone_ok(v jsonb)|false|false|false|false|true|4fc7a04102cc0b31e6f095941d26e150
+app_private.t404_cfg_sha(cfg jsonb)|false|false|false|false|true|bd915f059e4f54149946c46faeec3f31
+app_private.t404_cfg_str(v jsonb, mn integer, mx integer)|false|false|false|false|true|7fa60a328eed66049274c039a9be97ad
+app_private.t404_cfg_url_error(v jsonb, hosts text[])|false|false|false|false|true|a789c79f10fa0630f115c839d6d5513e
+app_private.t404_cfg_validate(cfg jsonb, p_mode text)|false|false|false|false|true|52f75297f721c167b89a07ccf7ed22bc
+app_private.t404_qa_tenant_allowed(p_tenant uuid)|true|false|false|false|true|7eede8a3a630cf7b58349265ce982120
+app_private.t404_store_manager_tenant(p_store uuid)|true|false|false|false|true|1c14c4159a7639d5cfe29773f705b4cd
+app_private.t404_store_scope_guard()|true|false|false|false|true|a8e361bb265658d06e3c4f36a727ae91
+app_private.t404_tenant_default_store()|true|false|false|false|true|1688bf5718049eacb05a5717fc36893c
+public.create_assistant(p_store uuid, p_name text, p_template_key text)|true|false|true|true|true|7220c73efaa62e052358ef9e00f1cec0
+public.create_store(p_tenant uuid, p_store_key text, p_name text)|true|false|true|true|true|b0d56b4316baef6c5222a22e29a5d78e
+public.delete_store_faq(p_store uuid, p_id uuid)|true|false|true|true|true|c14ce9435b3d3734e711f33932983537
+public.get_channel_menu(p_channel text, p_external_account_id text)|true|true|true|true|true|64f9dfbefe7e36aa924a81f591b49362
+public.merchant_paid_orders_daily(p_tenant uuid, p_days integer)|false|false|true|true|true|ade82c47c3ba865f4c6de049cb35f200
+public.merchant_revenue_v3(p_shop uuid, p_start date, p_end date)|false|false|true|true|true|5a50cbcdc8e503afef62a73dc5f294c7
+public.publish_assistant_config(p_assistant uuid, p_expected_sha text)|true|false|true|true|true|9340c6a65e4b2568bc0a38c0714c486e
+public.qa_owner_pairing(p_shop uuid, p_action text, p_challenge uuid)|true|false|true|false|true|599b62f852b948f8846348185769a8d6
+public.qa_shop_b_zalo_claim(p_challenge uuid, p_code text, p_sender text, p_event text)|true|true|false|false|true|37f127c1475378b2810197961398d945
+public.register_shop(p_name text, p_industry text)|true|false|true|true|true|09331dbcba400da971da445f51d1df31
+public.resolve_channel_assistant(p_channel text, p_external_account_id text)|true|false|false|true|true|172b370a7ba269f20eee6f0d786e4152
+public.rollback_assistant_config(p_assistant uuid, p_version_no integer)|true|false|true|true|true|d2e169281cae85b445a59179e2d92e83
+public.save_assistant_draft(p_assistant uuid, p_config jsonb, p_expected_sha text)|true|false|true|true|true|b5428c2e87bfc8cbde24bb313ee88289
+public.save_merchant_product(p_tenant uuid, p_sku text, p_name text, p_price bigint, p_active boolean, p_initial_stock integer, p_expected_updated_at timestamp with time zone)|true|false|true|false|true|e2b4277196d9048dd7375132a3bc623f
+public.save_merchant_product_in_store(p_store uuid, p_sku text, p_name text, p_price bigint, p_active boolean, p_initial_stock integer, p_expected_updated_at timestamp with time zone)|true|false|true|true|true|0a1ad7df8aaf21fa4a8fdfdc1a4f97d9
+public.save_store_bot_settings(p_store uuid, p_shop_info text, p_forbidden text, p_tone text, p_bot_enabled boolean, p_notify_emails text[], p_expected_updated_at timestamp with time zone)|true|false|true|true|true|5c7f181ee4addec3c06722efb3c2240b
+public.save_store_faq(p_store uuid, p_id uuid, p_question text, p_answer text, p_active boolean)|true|false|true|true|true|a3f5f54d2fc8bbb79ad6f8cf681fb37e
+public.set_customer_stage(p_store uuid, p_customer uuid, p_stage text, p_follow_up_at timestamp with time zone, p_note text)|true|false|true|true|true|ad1743859f78b973156a56319733f483
+public.set_product_stock(p_store uuid, p_product uuid, p_new_stock integer, p_expected_updated_at timestamp with time zone)|true|false|true|true|true|81b007d1c28d9c498a21d640f64e5228
+public.set_store_member(p_store uuid, p_user uuid, p_role text, p_active boolean)|true|false|true|true|true|b00f89c2d88b9cff4668e31325bbb6d9
+public.submit_lead(p_name text, p_shop text, p_phone text, p_email text, p_industry text, p_plan text, p_message text, p_source text)|true|true|true|true|true|f2b54c35dac5457eb18d4d35d4cc0eb1
+public.tien404_qa_sandbox_order_guard()|false|false|false|true|false|a6d157ec90d0b260f63f63df3ab64ca4
+public.tien404_qa_sandbox_product_guard()|false|false|false|true|false|b94681b398e5836a3a4248dd4ec36a3f
+public.tien404_tester_track_change()|true|false|false|true|false|9c88505f1e93327fed4ad3119a39f33b
