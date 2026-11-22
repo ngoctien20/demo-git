@@ -358,3 +358,14 @@ test('catalog message from validated renderer is sent as one Meta template with 
   assert.equal(prepared[0].json.messengerMessage.attachment.payload.buttons[0].payload,'TIEN404:VIEW:A002');
   assert.equal(prepared[0].json.messengerMessage.quick_replies[0].payload,'T404:C:catalog:7:deadbeef:2');
 });
+
+test('concurrent reaction shadow stays ALL OFF and preserves existing handoff routing',()=>{
+  const edges=snapshot.connections;
+  const shadow=source['V21 Social Reactions Shadow (ALL OFF)'].settings;
+  assert.equal(shadow.shadowOnly,true);
+  assert.equal(shadow.allPagesOff,true);
+  assert.equal(shadow.hasNoSend,true);
+  assert.ok(edges['Classify explicit human request'].main[0].some(e=>e.node==='V21 Social Reactions Shadow (ALL OFF)'));
+  assert.ok(edges['V21 Social Reactions Shadow (ALL OFF)'].main[0].some(e=>e.node==='Human handoff request?'));
+  assert.ok(!JSON.stringify(edges['V21 Social Reactions Shadow (ALL OFF)']).includes('Send Messenger Reply'));
+});
