@@ -478,3 +478,44 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - Next: design a private, non-extractable bridge between the successful `eventStore.claim()` server-side receipt and the guarded SQL plan, ideally in the same trusted service boundary with scoped transactions; test worker crash/restart and revocation without leaking lease or widening DB grants. Hosted Supabase, Meta Send and n8n publish still require explicit owner approval.
 
 **Status: IMPLEMENTED source-only claim-bound SQL / TESTED offline 299/299 and real restricted PG17 23/23 / NOT wired to live Messenger / NOT RELEASED.**
+## 18. Thirteenth continuation — atomic claim + plan + parts without lease transfer (2026-11-22 ~13:50 UTC)
+
+**Goal:** Continue P1 Issue #495 from GitHub Draft PR #491 head `7c0878ca18eae49e4677bfd2fc95f7c7e45f90f1`. Eliminate the remaining need to pass an extractable lease between `private-event-store` and `claim-bound-plan-contract`. Preserve their successful older QA and live Messenger.
+
+### Audit (READ-ONLY VERIFIED)
+
+- Starting GitHub PR #491 OPEN/DRAFT, Messenger workflow `Z7FdV7uDvApfbURQ` Draft `41bcea84-703d-40bc-be2a-71f84ca4e2d8`, Published `1f4069a5-5e74-4c79-935b-40f02b3582d8`. No n8n edit or publish.
+- Existing `claim-bound-plan-contract.cjs` checks exact live PostgreSQL lease but requires a server-injected UUID. Existing V13.6M.5 `createPrivateEventStoreCandidate.claim()` retains its lease inside private WeakMap. Neither was altered in this continuation.
+- Reused existing V13.6M.5 HMAC-scoped `deriveIdentity` and SQL claim uniqueness, existing per-part ledger SQL schema, child direct-scope RLS design, composite FK, and all previous QA.
+
+### IMPLEMENTED — an independent additive source-only candidate
+
+- Created `qa/messenger-rich-v136m5/atomic-claim-plan.cjs`: default `BLOCKED`; only `SYNTHETIC_SQL_QA_ONLY` with a synthetic driver explicitly advertising `rollbackOnThrow:true` and zero external writes. No HTTP, Meta token, Supabase client, Order writes, dynamic imports, or hosted service.
+- The **single PostgreSQL statement** uses data-modifying CTEs `claimed` → `prepared` → `parts`: (1) claim unique tenant/store/Page/HMAC sender/bindingVersion/eventHash with a server-side ephemeral random UUID lease and retention window; (2) create one reply plan **SELECT FROM newly acquired claim**; (3) create 1–3 parts with direct tenant/store/Page scope and expected composite FK to the plan; (4) return only plan id and count *to the private transaction driver*, then return only an opaque status/count to its caller. The random lease is never passed between JS modules nor returned to external callers.
+- `ON CONFLICT DO NOTHING` handles replay. A `WHERE NOT EXISTS older plan` condition prevents a newly minted orphan claim if an old plan survives claim retention. The candidate's transaction callback intentionally **throws on zero or malformed result before COMMIT**, requiring rollback across claim + plan + parts; duplicate returns `DUPLICATE_OR_NOT_ADMITTED_HOLD` with `sendAllowed:false`, `retryAllowed:false`.
+- Created `atomic-claim-plan.test.cjs` (10 new synthetic tests): 1/2/3-part completeness, 50 concurrent entrances across workers (1 winner), rollback fail-closed, no orphan claim when plan survives, cross Page/store/tenant/sender/bindingVersion/event key isolation, rejected malformed trusted source/digests, no lease/PSID in outputs, hosted/send disabled.
+- Created local-only `pg17-atomic-claim-plan-uat.sh` importing **the exact SQL** from `atomic-claim-plan.cjs`. Creates and drops a random disposable PostgreSQL17 DB, two independent restricted LOGIN `NOINHERIT NOBYPASSRLS` roles (same tenant, Store A/B), and three FORCE RLS tables with private role-to-Page scope. Scope is trusted in DB test fixture, not read from client JWT. No hosted credentials and no Meta calls.
+- Updated the existing V13.6M.5 offline CI syntax, test and no-network static gate and Config Core PostgreSQL 17 CI for this isolated new suite. No existing per-part, claim-bound, protected Page authority, or published workflow logic was rewritten.
+
+### TESTED — actual evidence
+
+- [V13.6M.5 offline CI run 45029311824](https://github.com/ngoctien20/demo-git/actions/runs/45029311824) **309/309 PASS, 0 fail**; security static job PASS.
+- [Config Core PG17 CI run 45029311901](https://github.com/ngoctien20/demo-git/actions/runs/45029311901) **SUCCESS**, initial new atomic claim/plan real PG17 tests 22/22 PASS. Existing local PG suites 21/21 claim, 24/24 restricted claim RLS, 28/28 per-part ledger, 29/29 restricted ledger RLS, 23/23 claim-bound plan PASS; 138/138 Config Core Node tests PASS.
+- Added a further **real two-connection concurrent PostgreSQL race** to the new PG17 suite, verifying 1 winner → exactly one claim, one plan and two child rows, no duplicate writes. [Config Core PG17 CI run 45029458251](https://github.com/ngoctien20/demo-git/actions/runs/45029458251) **SUCCESS**, `PG17_ATOMIC_CLAIM_PLAN_TESTS=26`, with `PASS_TWO_PG_CLIENTS_ONE_ATOMIC_WINNER`, `PASS_RACING_ONE_CLAIM`, `PASS_RACING_ONE_PLAN`. Real rollback before commit and no replan after restart also PASS.
+- The direct source/no-send and browser-independent CI after the latest PG script change were triggered as runs [45029458254](https://github.com/ngoctien20/demo-git/actions/runs/45029458254) and [45029458310](https://github.com/ngoctien20/demo-git/actions/runs/45029458310); their completed status should be checked independently. Code checkpoint before this documentation: `40dd7b591d5c4e882646607d1989d05faf83d2ea`.
+
+### Remaining BLOCKED gates
+
+1. **Still offline source-only.** The single-transaction candidate is not wired to the real Meta HMAC verifier, hosted private binding/entitlement resolver, Messenger n8n webhook, Supabase schema or Graph API sender. Its synthetic `trusted` object is shape-validated by `deriveIdentity`, not independently cryptographically verified; a real trusted ingress is mandatory before a live release.
+2. The new `SQL.claimAndPlan` currently generates the random lease in the private Node code and sends it as a SQL parameter solely inside the trusted local transaction. It does not expose the lease via returned responses; this is *not a security guarantee against a compromised DB driver, SQL logging or privileged operator*. Hosted deployment must audit secret exposure, grants, logs and restricted worker credentials.
+3. The disposable PG17 test roles have scoped RLS on tenant/store/Page, not real hosted owner/JWT/merchant admission; production role issuance and RLS A/B user authorization are unproven. The scope registry in tests is synthetic.
+4. Atomic claim+plan exactly once in PostgreSQL does NOT imply exactly-once Meta sending. A worker crash after actual Meta side effects leaves outcomes uncertain; per-part attempt journal, manual/provider-safe reconciliation, expiry/retention and revocation/window checks at send time are still needed. Never blindly resend uncertain parts.
+5. The live Messenger workflow remains unchanged (Draft `41bcea84...`, Published `1f4069a5...`) and still has the old non-atomic Data Table `rowNotExists → Meta Send → record`. Neither real Messenger mobile/web QA nor production duplicate-send remediation is complete.
+6. Hosted DB migration, role/grant changes, real provider send, n8n publish/restore and PR merge require explicit owner approval. Issue #495 stays OPEN and PR #491 stays DRAFT.
+
+### Rollback / safe continuation
+
+- Revert only new `atomic-claim-plan.cjs`, `atomic-claim-plan.test.cjs`, `pg17-atomic-claim-plan-uat.sh` and their added entries in two CI workflow files. Preserve earlier §16 RLS/composite FK and §17 claim-bound plan QA. No runtime rollback: NO production DB, n8n, Meta or customer data was changed.
+- Next offline P1: build a bounded **read-only reconciliation/observation inspector** that identifies `MAY_HAVE_SENT_HOLD`, `UNCERTAIN_HOLD`, partial 1/3 or 2/3, plan mismatches and stale attempts without automatically claiming, resending or revealing PSID/lease; test crash/restart and owner revocation. Independent hosted admission/release review remains a separate gate.
+
+**Disposition: IMPLEMENTED source-only / TESTED 309/309 offline, 26/26 real restricted PG17, 50 simulated and 2 real concurrent workers / NOT RELEASED.**
