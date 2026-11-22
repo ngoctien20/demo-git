@@ -44,6 +44,7 @@ jobs:
           config-core/test/meta-page-installation-authority.test.mjs
           config-core/test/meta-page-graph-evidence.test.mjs
           qa/reactions/owner-auth-jwt-readonly-uat.test.mjs
+          qa/reactions/v218-staging-readiness.test.mjs
           config-core/test/reactions-bundle.test.mjs
           config-core/test/messenger-reaction-shadow.test.mjs
       - name: Default page policy OFF and no network in generated node
