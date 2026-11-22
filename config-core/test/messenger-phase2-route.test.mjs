@@ -151,6 +151,17 @@ test('mixed-page batch: same message id never crosses Page or sender boundaries'
   assert.deepEqual(tagged, ['T404:M:catalog', 'T404:M:profile', undefined]);
 });
 
+test('quick reply without mid uses the same synthetic ID fallback as Extract Messenger Text', () => {
+  const ts = 1785000000000;
+  const body = messengerBody(pageA, senderA, 'T404:M:catalog', { postback: false, ts });
+  delete body.entry[0].messaging[0].message.mid;
+  const syntheticId = 'attachment_' + senderA + '_' + ts;
+  const tagged = fakeNode('Tìm nút menu', [item({
+    pageId: pageA, senderId: senderA, messageId: syntheticId, mediaType: 'text',
+  })], { webhook: body });
+  assert.equal(tagged[0].json.menuPayload, 'T404:M:catalog');
+});
+
 test('same composite event id duplicated in webhook cannot change first selected action', () => {
   const body = messengerBody(pageA, senderA, 'T404:M:catalog', { postback: false });
   body.entry[0].messaging.push({
