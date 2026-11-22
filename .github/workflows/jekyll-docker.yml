@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
 
@@ -13,8 +16,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Build the site in the jekyll/builder container
+      # Image pinned by digest (jekyll/builder:latest as of 2026-11-21, Jekyll 4.4.1).
       run: |
-        docker run \
-        -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
-        jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
+        docker run --rm \
+        -v "${{ github.workspace }}:/srv/jekyll" \
+        jekyll/builder@sha256:9a1d688659e8e7e0e7413120f94656eefddc81ee1adc2623a731e2f0289fd8cf \
+        jekyll build --future
+    - name: Verify build output
+      run: test -f _site/index.html

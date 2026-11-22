@@ -1,0 +1,4 @@
+# Keep internal AI tooling out of the generated/published site.
+exclude:
+  - CLAUDE.md
+  - tools/
