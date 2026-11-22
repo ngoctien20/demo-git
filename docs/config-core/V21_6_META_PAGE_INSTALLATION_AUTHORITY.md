@@ -66,7 +66,7 @@ Không thay đổi tenant, membership, session hoặc dữ liệu. Đây là **R
 | Candidate SQL + disposable PG17 rollback | TESTED — 59/59 |
 | Trusted owner consent + reaction sender release | OFF / NO-GO |
 
-**CI ngoài phạm vi cần tách nhóm:** Config Core tổng hợp fail ở QA Messenger send-ledger với lỗi thiếu cột tenant_id trong messenger_send_parts; chưa sửa vì thuộc nhánh Messenger đang làm song song. V23 web aggregate fail yêu cầu đồng bộ committed app/ bundles sau build; không được tắt gate hoặc tự deploy. Dedicated reaction QA PASS.
+**CI tổng hợp:** Có các run trung gian Config Core fail vì QA Messenger send-ledger tham chiếu cột tenant_id không có trong messenger_send_parts; thay đổi của nhánh song song chưa được chứng minh tại các run đó. **Run Config Core mới nhất tại checkpoint HEAD d8082727 — #45023490080 SUCCESS**; không giữ lỗi trung gian làm blocker hiện tại. Social Reactions #45023490015 SUCCESS; Owner Preview #45023490013 SUCCESS. **V23 web aggregate #45023490001 vẫn FAIL** do cổng kiểm tra đồng bộ committed app/ bundles sau build; không tắt gate hoặc tự deploy.
 
 ## 6. Checkpoint / bước tiếp theo
 
