@@ -4,6 +4,7 @@
 \set ON_ERROR_STOP on
 BEGIN;
 SET LOCAL lock_timeout='5s';
+DROP FUNCTION IF EXISTS public.list_verified_reaction_pages(uuid);
 DROP FUNCTION IF EXISTS public.save_page_reaction_draft(uuid,jsonb,text);
 DROP TABLE IF EXISTS public.page_reaction_drafts;
 DROP TABLE IF EXISTS app_private.reaction_page_industries;
