@@ -35,14 +35,15 @@ test('bundle: catalog cursor is authorized by current published menu version', (
   assert.equal(first.mode, 'catalog');
   assert.equal(first.catalogPage, 1);
   assert.equal(first.configVersion, 11);
-  const next = run({ channel: 'messenger', payload: 'T404:C:catalog:11:2' }, m);
+  const next = run({ channel: 'messenger', payload: 'T404:C:catalog:11:deadbeef:2' }, m);
   assert.equal(next.mode, 'catalog');
   assert.equal(next.itemId, 'catalog');
   assert.equal(next.catalogPage, 2);
-  const old = run({ channel: 'messenger', payload: 'T404:C:catalog:10:2' }, m);
+  assert.equal(next.catalogDigest, 'deadbeef');
+  const old = run({ channel: 'messenger', payload: 'T404:C:catalog:10:deadbeef:2' }, m);
   assert.equal(old.mode, 'rejected');
   assert.equal(old.reason, 'catalog_version_stale');
-  assert.equal(run({ channel: 'messenger', payload: 'T404:C:order_lookup:11:2' }, m).mode, 'rejected');
+  assert.equal(run({ channel: 'messenger', payload: 'T404:C:order_lookup:11:deadbeef:2' }, m).mode, 'rejected');
 });
 
 test('bundle: generated SDK is byte-identical to checked-in bridge.sdk.js', () => {
