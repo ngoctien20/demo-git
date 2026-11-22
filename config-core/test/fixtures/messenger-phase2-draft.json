@@ -85,6 +85,14 @@
           "typeValidation": "strict"
         }
       }
+    },
+    "V21 Social Reactions Shadow (ALL OFF)": {
+      "settings": {
+        "shadowOnly": true,
+        "allPagesOff": true,
+        "hasNoSend": true,
+        "type": "n8n-nodes-base.code"
+      }
     }
   },
   "connections": {
@@ -154,7 +162,7 @@
       "main": [
         [
           {
-            "node": "Human handoff request?",
+            "node": "V21 Social Reactions Shadow (ALL OFF)",
             "type": "main",
             "index": 0
           }
@@ -371,6 +379,17 @@
         [
           {
             "node": "Prepare Messenger Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "V21 Social Reactions Shadow (ALL OFF)": {
+      "main": [
+        [
+          {
+            "node": "Human handoff request?",
             "type": "main",
             "index": 0
           }
