@@ -43,7 +43,7 @@ test('each fingerprint is pinned to 10 Config Core + 1 menu function source bodi
  for(const fn of functions){
   const actualSource=fn==='public.get_channel_menu'?menu:core;
   const a=actualSource.indexOf('CREATE FUNCTION '+fn+'(');
-  const start=actualSource.indexOf('AS $f
+  const start=actualSource.indexOf('AS $f$',a);
   const end=actualSource.indexOf('$f$;',start+6);
   assert.ok(a>=0&&start>a&&end>start,fn);
   const body=actualSource.slice(start+6,end);
@@ -53,38 +53,16 @@ test('each fingerprint is pinned to 10 Config Core + 1 menu function source bodi
 });
 test('audit enforces constraints, triggers, forced RLS, privileged RPC grants, and migration provenance',()=>{
  for(const name of [
- 'assistants_scope_key','assistants_store_fk','assistants_template_fk',
- 'acv_assistant_fk','acv_version_key','acv_published_meta',
- 'acv_one_draft','acv_one_published','t404_acv_guard',
- 'channel_connections_account_key','channel_connections_store_fk','channel_connections_assistant_fk',
- 'action_types_auth_read','industry_templates_auth_read','assistants_store_member_read',
- 'acv_store_member_read','channel_connections_store_member_read'
+  'assistants_scope_key','assistants_store_fk','assistants_template_fk',
+  'acv_assistant_fk','acv_version_key','acv_published_meta',
+  'acv_one_draft','acv_one_published','t404_acv_guard',
+  'channel_connections_account_key','channel_connections_store_fk','channel_connections_assistant_fk',
+  'action_types_auth_read','industry_templates_auth_read','assistants_store_member_read',
+  'acv_store_member_read','channel_connections_store_member_read'
  ])assert.ok(audit.includes("'"+name+"'"),name);
  assert.ok(audit.includes('config_core_tracked_names'));
  assert.ok(audit.includes('has_function_privilege'));
  assert.ok(audit.includes('relforcerowsecurity'));
  assert.ok(audit.includes('source_expected_function_bodies'));
  assert.ok(audit.includes("'get_channel_menu'"));
-});
-,a);
-  const end=core.indexOf('$f$;',start+6);
-  assert.ok(a>=0&&start>a&&end>start,fn);
-  const body=core.slice(start+6,end);
-  const [schema,name]=fn.split('.');
-  assert.ok(audit.includes("('"+schema+"','"+name+"','"+digest(body)+"')"),fn+' body fingerprint changed');
- }
-});
-test('audit enforces constraints, triggers, forced RLS, privileged RPC grants, and migration provenance',()=>{
- for(const name of [
- 'assistants_scope_key','assistants_store_fk','assistants_template_fk',
- 'acv_assistant_fk','acv_version_key','acv_published_meta',
- 'acv_one_draft','acv_one_published','t404_acv_guard',
- 'channel_connections_account_key','channel_connections_store_fk','channel_connections_assistant_fk',
- 'action_types_auth_read','industry_templates_auth_read','assistants_store_member_read',
- 'acv_store_member_read','channel_connections_store_member_read'
- ])assert.ok(audit.includes("'"+name+"'"),name);
- assert.ok(audit.includes('config_core_tracked_names'));
- assert.ok(audit.includes('has_function_privilege'));
- assert.ok(audit.includes('relforcerowsecurity'));
- assert.ok(audit.includes('source_expected_function_bodies'));
 });
