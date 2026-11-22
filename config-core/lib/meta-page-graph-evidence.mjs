@@ -50,7 +50,7 @@ export function assessMetaPageGraphReadOnlyEvidence(evidence,expected,nowSeconds
       const scope=matches[0];
       if(scope.target_ids!==undefined){
         if(!arr(scope.target_ids) || scope.target_ids.length===0 ||
-           scope.target_ids.some(id=>!PAGE_ID.test(String(id))))
+           scope.target_ids.some(id=>typeof id!=='string' || !PAGE_ID.test(id)))
           return block('invalid_granular_target_ids');
         if(!scope.target_ids.some(id=>String(id)===expected.metaPageId))
           return block('meta_page_not_in_granular_scope');
