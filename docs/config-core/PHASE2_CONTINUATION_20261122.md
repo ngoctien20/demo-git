@@ -293,3 +293,30 @@ This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED
 - Only GitHub Draft files were added/updated: `qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh` and `.github/workflows/tien404-config-core.yml`. Revert the introducing commits `6e7c294c07bed4eea799be49565a0bd7368c9fe2` and `638cdc51487625ab5cee289e9f6a4affa0a6e942` (or restore earlier file contents) to remove the new CI test; **do not** revert concurrent Messenger Social Reactions Draft updates.
 - No hosted schema/API rollout and no n8n published/draft mutation in this continuation; no runtime rollback needed.
 - **Status: TESTED (real disposable PG17 contract), PROPOSED/BLOCKED (hosted atomic claim + Meta Send integration), NOT RELEASED.**
+## 13. Eighth continuation — P1 atomic claim to uncertain-Send outcome gate (2026-11-22 ~10:23 UTC)
+
+**Scope:** GitHub Draft source-only orchestration. Messenger n8n Draft and Published, Supabase hosted, customer data, credential, Meta Send and orders all unchanged. Reused the existing V13.6M.5 private event-store SQL contract rather than creating another table or queue.
+
+### IMPLEMENTED / TESTED
+
+- Added qa/messenger-rich-v136m5/messenger-inbound-gate.cjs, a SYNTHETIC_QA_ONLY wrapper around the prior createPrivateEventStoreCandidate source. It rejects missing injected HMAC/timing-safe, trusted Page→Store resolver, active entitlement/window, bad replay fingerprint and fake event stores. These are **synthetic server-injected QA attestations only**, not a real Meta webhook cryptographic signature verifier.
+- A first claim produces a server-only, NO SEND ticket; duplicate webhook receives DUPLICATE_HOLD. Tickets have no raw PSID/secret/lease. A dry-run decision explicitly never enables Meta calls or Commerce/order writes.
+- Synthetic provider receipts are checked for expected 1–3 count, distinct nonempty Meta-shaped message_id and exact intended recipient. A fully simulated response can finalize the prior lease-bound store as PREVIEW_READY only; acceptedByMeta:false, delivered:false and sendAllowed:false remain explicit.
+- Partial 1/3 receipts, timeout/unknown external effect, wrong recipient, missing or duplicated message ID yield irreversible UNCERTAIN_HOLD, retryAllowed:false; no auto-finalization and no automatic stalled-claim takeover. Concurrent finalize calls permit at most one attempt, and a failed transaction enters HOLD pending reconciliation.
+- Added 14 dedicated isolated unit tests and updated .github/workflows/v136m5-private-event-store-qa.yml to execute them and static checks for no network/Meta, credentials, pg pools or hosted writes. Original V13.6M.5 migration blueprint stays guarded and unapplied.
+- GitHub Actions https://github.com/ngoctien20/demo-git/actions/runs/45012156906 : **258/258 PASS, 0 FAIL**, both offline-contract and static-release-gate jobs PASS.
+- GitHub Actions https://github.com/ngoctien20/demo-git/actions/runs/45012156961 : **PASS**, includes existing disposable real PG17 concurrency contract verification (21 cases). Code checkpoint before this documentation commit: 8d755f09909feb20ef876ad9c12ca6b49b1bc00e.
+
+### BLOCKED / NOT RELEASED
+
+1. Actual n8n Messenger inbound still uses Data Table rowNotExists → Send → insert success, not the atomic SQL contract; no live migration or n8n change was made in this step.
+2. A production endpoint must verify Meta raw HMAC itself, independently resolve trusted tenant/store/Page/binding/entitlement and enforce restricted non-BYPASSRLS role. Untrusted client-supplied booleans must NEVER grant authority. Hosted owner A/B and cross-store negative QA and backup/restore are still absent.
+3. An atomic claim alone does not give exactly-once external Meta sends. Future approved durable outbox, per-part provider delivery evidence and manual/automatic **reconciliation (not blind retry)** of uncertain outcomes remain prerequisites.
+4. Issue #495 stays OPEN; Issue #494 mobile/web Messenger UAT stays OPEN; no publish/merge/Meta send. PR #491 remains DRAFT.
+
+### Checkpoint / rollback
+
+- Messenger Draft 41bcea84-703d-40bc-be2a-71f84ca4e2d8, Published 47b48f6d-bc3d-40ae-afe6-96c5fd5452ac; Menu Bridge inactive Draft 0d04c978-fa95-4b25-9dc0-df4cdbb2db04.
+- To roll back only this continuation, remove messenger-inbound-gate.cjs and messenger-inbound-gate.test.cjs and restore the prior V13.6M.5 CI workflow file. Keep the earlier PG17 UAT, Social Reactions ALL OFF and other independent draft changes. No runtime rollback is needed.
+
+**Status: IMPLEMENTED + TESTED in isolated GitHub Draft; NOT VERIFIED in live Meta/hosted RLS; NOT RELEASED.**
