@@ -15,8 +15,8 @@ const DAILY_CAP = 30;
 // V22.4 owner rule (2026-11-21): 1 reply per customer message preferred, 2 when useful, NEVER more than 3.
 export const PER_MESSAGE_CAP = 3;
 // V22.2: show Zalo 'typing…' before replying. Best-effort (failure never blocks the reply), not a message.
-const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600, STICKER_REPLY: 500, FILE_IMPORT_PREVIEW: 900 };
-const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH', 'STICKER_REPLY', 'FILE_IMPORT_PREVIEW'];
+const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600, STICKER_REPLY: 500, FILE_IMPORT_PREVIEW: 900, FILE_IMPORT_DONE: 700 };
+const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH', 'STICKER_REPLY', 'FILE_IMPORT_PREVIEW', 'FILE_IMPORT_DONE'];
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 async function secureEqual(a, b) {
@@ -77,7 +77,7 @@ export const STICKER_MOODS = {
   other: [['\u263a D\u1ea1 shop \u0111\u00e2y \u1ea1!', ['b', C.green]], ['\nB\u1ea1n c\u1ea7n xem s\u1ea3n ph\u1ea9m n\u00e0o c\u1ee9 nh\u1eafn m\u00e3 ho\u1eb7c g\u1eedi \u1ea3nh nh\u00e9.']],
 };
 // V22.7: owner product-file import PREVIEW. Counts and error codes only; nothing is written to the catalog.
-export const FILE_ERRORS = { NO_SKU: 'thi\u1ebfu m\u00e3', BAD_SKU: 'm\u00e3 kh\u00f4ng h\u1ee3p l\u1ec7', DUP_SKU: 'tr\u00f9ng m\u00e3', NO_NAME: 'thi\u1ebfu t\u00ean', BAD_PRICE: 'gi\u00e1 kh\u00f4ng ph\u1ea3i s\u1ed1 h\u1ee3p l\u1ec7', BAD_STOCK: 't\u1ed3n kho kh\u00f4ng h\u1ee3p l\u1ec7', BAD_HEADER: 'thi\u1ebfu c\u1ed9t b\u1eaft bu\u1ed9c', TOO_MANY: 'qu\u00e1 500 d\u00f2ng', UNREADABLE: 'kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c file' };
+export const FILE_ERRORS = { NO_SKU: 'thi\u1ebfu m\u00e3', BAD_SKU: 'm\u00e3 kh\u00f4ng h\u1ee3p l\u1ec7', DUP_SKU: 'tr\u00f9ng m\u00e3', NO_NAME: 'thi\u1ebfu t\u00ean', BAD_PRICE: 'gi\u00e1 kh\u00f4ng ph\u1ea3i s\u1ed1 h\u1ee3p l\u1ec7', BAD_STOCK: 't\u1ed3n kho kh\u00f4ng h\u1ee3p l\u1ec7', BAD_HEADER: 'thi\u1ebfu c\u1ed9t b\u1eaft bu\u1ed9c', TOO_MANY: 'qu\u00e1 100 d\u00f2ng', UNREADABLE: 'kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c file' };
 function filePreview(b) {
   const ok = safeInt(b.valid_count, 0, 500), bad = safeInt(b.error_count, 0, 500);
   const errs = Array.isArray(b.errors) ? b.errors.slice(0, 5) : [];
@@ -92,11 +92,20 @@ function filePreview(b) {
     if (b.error_count > errs.length) parts.push(['\n\u2022 \u2026', ['i']]);
   }
   parts.push(['\n\u24d8 B\u1ea3n xem tr\u01b0\u1edbc, ch\u01b0a ghi v\u00e0o catalog.', ['i', C.gray]]);
+  if (b.valid_count > 0) parts.push(['\n\u270e Nh\u1eafn \u201cX\u00e1c nh\u1eadn nh\u1eadp\u201d trong 15 ph\u00fat \u0111\u1ec3 ghi ' + b.valid_count + ' s\u1ea3n ph\u1ea9m h\u1ee3p l\u1ec7.', ['b', C.blue]]);
   return build(parts);
+}
+// V22.7.1: result of the owner's "Xác nhận nhập" (sandbox catalog only).
+function fileDone(b) {
+  if (!safeInt(b.imported_count, 0, 100)) return null;
+  if (b.imported_count === 0) return build([HEAD, ['\u26a0 Kh\u00f4ng c\u00f3 file n\u00e0o \u0111ang ch\u1edd x\u00e1c nh\u1eadn', ['b', C.orange]], ['\nC\u00f3 th\u1ec3 \u0111\u00e3 qu\u00e1 15 ph\u00fat. G\u1eedi l\u1ea1i file nh\u00e9.', ['i', C.gray]]]);
+  return build([HEAD, ['\u2714 \u0110\u00e3 nh\u1eadp ' + b.imported_count + ' s\u1ea3n ph\u1ea9m v\u00e0o catalog th\u1eed Shop B', ['b', C.green]],
+    ['\n\u24d8 Gi\u00e1 c\u00f3 hi\u1ec7u l\u1ef1c 3 gi\u1edd (sandbox).', ['i', C.gray]]]);
 }
 function composeBody(b) {
   switch (b.kind) {
     case 'FILE_IMPORT_PREVIEW': return filePreview(b);
+    case 'FILE_IMPORT_DONE': return fileDone(b);
     case 'STICKER_REPLY': {
       const parts = Object.prototype.hasOwnProperty.call(STICKER_MOODS, b.mood) ? STICKER_MOODS[b.mood] : STICKER_MOODS.other;
       return build([HEAD, ...parts]);
