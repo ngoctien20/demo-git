@@ -79,7 +79,7 @@ sql "CREATE SCHEMA app_private;
  CREATE TABLE app_private.messenger_review_events(
   id uuid PRIMARY KEY,
   plan_id uuid NOT NULL,tenant_id uuid NOT NULL,store_id uuid NOT NULL,page_id text NOT NULL,
-  access_role text NOT NULL CHECK(access_role IN ('OWNER','MANAGER')),
+  actor_db_role name NOT NULL,access_role text NOT NULL CHECK(access_role IN ('OWNER','MANAGER')),
   decision_code text NOT NULL CHECK(decision_code IN
    ('REQUEST_PROVIDER_REVIEW','ESCALATE_TO_OWNER','ACKNOWLEDGE_NO_SEND')),
   request_digest char(64) NOT NULL,created_at timestamptz NOT NULL,
@@ -130,7 +130,8 @@ sql "CREATE SCHEMA app_private;
  WHERE g.db_role=CURRENT_USER::name AND g.active
  AND g.valid_until>transaction_timestamp()
  AND g.tenant_id=messenger_review_events.tenant_id AND g.store_id=messenger_review_events.store_id
- AND g.page_id=messenger_review_events.page_id AND g.access_role=messenger_review_events.access_role
+ AND g.page_id=messenger_review_events.page_id AND g.db_role=messenger_review_events.actor_db_role
+ AND g.access_role=messenger_review_events.access_role
  AND ((g.access_role='OWNER' AND messenger_review_events.decision_code IN
  ('REQUEST_PROVIDER_REVIEW','ESCALATE_TO_OWNER','ACKNOWLEDGE_NO_SEND'))
  OR (g.access_role='MANAGER' AND messenger_review_events.decision_code IN
@@ -194,12 +195,14 @@ ok "$(append "$RA" "$I2" "$TA" "$SB" "$PB" "$J4" REQUEST_PROVIDER_REVIEW "$(prin
 ok "$(append "$RA" "$I3" "$TB" "$SC" "$PC" "$J4" REQUEST_PROVIDER_REVIEW "$(printf '%064d' 13)" | grep -c '|REQUEST_PROVIDER_REVIEW' || true)" 0 OWNER_A_CANNOT_APPEND_C
 ok "$(append "$RA" "$I1" "$TA" "$SA" "$PA" "$J5" ACKNOWLEDGE_NO_SEND "$REQ1" | grep -c '|ACKNOWLEDGE_NO_SEND' || true)" 0 REUSED_IDEMPOTENCY_NO_DUPLICATE
 ok "$(sql "SELECT count(*) FROM app_private.messenger_review_events")" 3 ONLY_THREE_APPROVED_RECORDS
+ok "$(sql "SELECT count(*) FROM app_private.messenger_review_events WHERE actor_db_role='$RA' AND access_role='OWNER'")" 1 AUDIT_ACTOR_IS_REAL_OWNER_LOGIN
+ok "$(sql "SELECT count(*) FROM app_private.messenger_review_events WHERE actor_db_role='$RM' AND access_role='MANAGER'")" 2 AUDIT_ACTOR_IS_REAL_MANAGER_LOGIN
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts WHERE status='UNCERTAIN_HOLD'")" 1 LEDGER_UNCERTAINTY_UNCHANGED
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_plans WHERE status='PREPARED'")" 3 LEDGER_PLANS_UNCHANGED
 deny STAFF_CANNOT_IMPERSONATE_OWNER "$RS" "SET ROLE $RA"
 deny OWNER_CANNOT_EDIT_REVIEW "$RA" "UPDATE app_private.messenger_review_events SET decision_code='ACKNOWLEDGE_NO_SEND' WHERE plan_id='$I1'"
 deny OWNER_CANNOT_DELETE_REVIEW "$RA" "DELETE FROM app_private.messenger_review_events WHERE plan_id='$I1'"
-deny STAFF_DIRECT_INSERT_FORGED_ROLE "$RS" "INSERT INTO app_private.messenger_review_events(id,plan_id,tenant_id,store_id,page_id,access_role,decision_code,request_digest,created_at) VALUES('$J6','$I1','$TA','$SA','$PA','OWNER','ACKNOWLEDGE_NO_SEND','$(printf '%064d' 14)',transaction_timestamp())"
+deny STAFF_DIRECT_INSERT_FORGED_ROLE "$RS" "INSERT INTO app_private.messenger_review_events(id,plan_id,tenant_id,store_id,page_id,actor_db_role,access_role,decision_code,request_digest,created_at) VALUES('$J6','$I1','$TA','$SA','$PA','$RA','OWNER','ACKNOWLEDGE_NO_SEND','$(printf '%064d' 14)',transaction_timestamp())"
 
 # A fake client JWT can be set in session, but cannot change CURRENT_USER or registry.
 ok "$(client "$RS" "SELECT set_config('request.jwt.claims','{\"role\":\"OWNER\",\"tenant_id\":\"$TA\",\"store_id\":\"$SA\"}',false);
