@@ -262,6 +262,46 @@
           }
         ]
       ]
+    },
+    "Product detail postback?": {
+      "main": [
+        [
+          {
+            "node": "Read selected demo product",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "V17.15 Route QA_CORE Only?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remember selected Messenger product": {
+      "main": [
+        [
+          {
+            "node": "Forward selected product reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward selected product reply": {
+      "main": [
+        [
+          {
+            "node": "Prepare Messenger Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }
