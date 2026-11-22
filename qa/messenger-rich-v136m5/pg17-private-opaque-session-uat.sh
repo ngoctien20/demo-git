@@ -242,6 +242,28 @@ deny RAW_FAKE_OPERATOR_SESSION_INSERT "$RS" "INSERT INTO app_private.messenger_r
 deny RAW_JOURNAL_UPDATE "$RA" "UPDATE app_private.messenger_review_events SET decision_code='ACKNOWLEDGE_NO_SEND'"
 deny RAW_JOURNAL_DELETE "$RA" "DELETE FROM app_private.messenger_review_events"
 deny DB_ROLE_IMPERSONATION "$RS" "SET ROLE $RA"
+# Negative private-session mapping admission: users never get to mint a
+# reference mapping or create a session, even with their allowed DB login.
+deny STAFF_CANNOT_CREATE_REFERENCE "$RS" "INSERT INTO app_private.messenger_reconciliation_refs(reference,plan_id,tenant_id,store_id,page_id) VALUES('$(printf '%032d' 11)','$PIDA','$TA','$SA','$PA')"
+deny OWNER_CANNOT_MINT_SESSION "$RA" "INSERT INTO app_private.messenger_operator_sessions(id,db_role,subject_user_id,tenant_id,store_id,page_id,active,expires_at) VALUES('$J5','$RA','$UA','$TA','$SA','$PA',true,transaction_timestamp()+interval '1 day')"
+# A spoofed JWT session GUC has no effect on the trusted CURRENT_USER or
+# private Grant/session table: STAFF cannot elevate to OWNER.
+if PGUSER="$RS" PGPASSWORD="$PW" psql -XAtq -v ON_ERROR_STOP=1 -d "$DB" >"$TMP/fake_jwt" <<SQL
+SELECT set_config('request.jwt.claims','{"role":"OWNER","tenant_id":"$TA"}',false);
+PREPARE fake_jwt(text,uuid,uuid,text,text) AS $APPEND;
+EXECUTE fake_jwt('$REF_A','$SES','$J5','ACKNOWLEDGE_NO_SEND','$(printf '%064d' 16)');
+SQL
+then
+ ok "$(grep -c '|ACKNOWLEDGE_NO_SEND' "$TMP/fake_jwt" || true)" 0 STAFF_JWT_SPOOF_DENIED
+else
+ fail JWT_SPOOF_NEGATIVE_QUERY_ERROR
+fi
+sql "UPDATE app_private.messenger_operator_sessions SET expires_at=transaction_timestamp()-interval '1 minute' WHERE id='$SEM'" >/dev/null
+ok "$(view "$RM" "$REF_A" "$SEM" | grep -c "^$PIDA|" || true)" 0 EXPIRED_MANAGER_SESSION_DENIED
+ok "$(append "$RM" "$REF_A" "$SEM" "$J5" ESCALATE_TO_OWNER "$(printf '%064d' 17)" | grep -c '|ESCALATE_TO_OWNER' || true)" 0 EXPIRED_MANAGER_CANNOT_APPEND
+sql "UPDATE app_private.messenger_operator_grants SET valid_until=transaction_timestamp()-interval '1 minute' WHERE db_role='$RS'" >/dev/null
+ok "$(view "$RS" "$REF_A" "$SES" | grep -c "^$PIDA|" || true)" 0 EXPIRED_STAFF_GRANT_DENIED
+
 sql "UPDATE app_private.messenger_operator_sessions SET active=false WHERE id='$SEA'" >/dev/null
 ok "$(view "$RA" "$REF_A" "$SEA" | grep -c "^$PIDA|" || true)" 0 REVOKED_SESSION_CANNOT_VIEW
 ok "$(append "$RA" "$REF_A" "$SEA" "$J5" ESCALATE_TO_OWNER "$(printf '%064d' 12)" | grep -c '|ESCALATE_TO_OWNER' || true)" 0 REVOKED_SESSION_CANNOT_APPEND
