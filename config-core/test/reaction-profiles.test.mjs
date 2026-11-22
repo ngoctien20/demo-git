@@ -124,11 +124,11 @@ test('expressive is still no reaction for price, order, refund, sensitive or urg
 test('published Page policy fails when owner selects a forbidden style for trusted industry',()=>{
   const p=policy({industryId:'healthcare',settings:{
     profileId:'expressive',intents:{thanks:true,praise:true},cooldownSeconds:90,maxPerHour:5
-  }});
+  },ownerConsent:{...base.ownerConsent,industryId:'healthcare',profileId:'expressive'}});
   assert.equal(verifyPublishedPageReactionPolicy(p,authority({industryId:'healthcare'}),now).reason,'profile_disallowed_for_industry');
 });
 test('trusted industry mismatch blocks Page policy even if owner attempted to change industry',()=>{
-  assert.equal(verifyPublishedPageReactionPolicy(policy({industryId:'artist'}),authority(),now).reason,'policy_industry_mismatch');
+  assert.equal(verifyPublishedPageReactionPolicy(policy({industryId:'artist',ownerConsent:{...base.ownerConsent,industryId:'artist'}}),authority(),now).reason,'policy_industry_mismatch');
   assert.equal(verifyPublishedPageReactionPolicy(policy(),authority({industryId:'artist'}),now).reason,'policy_industry_mismatch');
 });
 test('legacy schema v1 cannot bypass profile enforcement after migration',()=>{
@@ -143,7 +143,7 @@ test('per-Page consent remains necessary regardless of suggested style',()=>{
 test('professional Page always blocks social reaction even if spoofing a harmless message',()=>{
   const p=policy({industryId:'legal',settings:{
     profileId:'restrained',intents:{thanks:true,praise:false},cooldownSeconds:600,maxPerHour:1
-  }});
+  },ownerConsent:{...base.ownerConsent,industryId:'legal',profileId:'restrained'}});
   const res=prepared(p,authority({industryId:'legal'}));
   assert.equal(res.mode,'blocked');
   assert.equal(res.reason,'profile_disallowed_for_industry');
