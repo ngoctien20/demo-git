@@ -1,0 +1,12 @@
+﻿sku,ten_san_pham,gia_vnd,ton_kho,mau,size,danh_muc,mo_ta,ghi_chu_QA
+F01,Áo thun cổ tròn đen trơn,159000,3,Đen,L,Áo thun,"Cotton 100%, tay ngắn",Dòng hợp lệ (đã có)
+F02,Áo thun cổ tròn trắng trơn,149000,10,Trắng,M,Áo thun,"Cotton 100%, tay ngắn",Dòng hợp lệ
+F03,Áo polo xanh navy,229000,5,Xanh navy,L,Áo polo,"Cổ bẻ, vải cá sấu",Dòng hợp lệ
+F04,Quần jean ống suông,359000,0,Xanh nhạt,30,Quần,Hết hàng để test 'hết hàng',"Dòng hợp lệ, tồn 0"
+F05,Áo khoác gió đen,399000,7,Đen,XL,Áo khoác,Chống nước nhẹ,Dòng hợp lệ
+F06,Váy hoa nhí,289000,4,Hoa nhí,S,Váy,Dáng xòe,Dòng hợp lệ
+F07,Mũ lưỡi trai,99000,20,Be,Free,Phụ kiện,Có khóa chỉnh,Dòng hợp lệ
+F08,Áo sơ mi trắng,giá liên hệ,6,Trắng,M,Áo sơ mi,,LỖI CỐ Ý: giá không phải số
+F02,Áo thun trắng (trùng mã),149000,2,Trắng,L,Áo thun,,LỖI CỐ Ý: trùng mã F02
+,Túi tote vải,129000,8,Kem,Free,Phụ kiện,,LỖI CỐ Ý: thiếu mã
+F09,Quần short kaki,199000,-3,Be,31,Quần,,LỖI CỐ Ý: tồn âm

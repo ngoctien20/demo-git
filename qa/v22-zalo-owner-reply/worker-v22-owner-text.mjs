@@ -15,8 +15,8 @@ const DAILY_CAP = 30;
 // V22.4 owner rule (2026-11-21): 1 reply per customer message preferred, 2 when useful, NEVER more than 3.
 export const PER_MESSAGE_CAP = 3;
 // V22.2: show Zalo 'typing…' before replying. Best-effort (failure never blocks the reply), not a message.
-const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600, STICKER_REPLY: 500 };
-const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH', 'STICKER_REPLY'];
+const TYPING_MS = { VOICE_HEARD: 400, IMAGE_MATCH: 500, IMAGE_NO_MATCH: 500, PRICE_PREVIEW: 900, QUANTITY_REQUIRED: 700, ORDER_DRAFT_PREVIEW: 1500, INVALID_QUANTITY: 600, BLOCKED_STALE_SNAPSHOT: 600, STICKER_REPLY: 500, FILE_IMPORT_PREVIEW: 900 };
+const KINDS = ['PRICE_PREVIEW', 'QUANTITY_REQUIRED', 'ORDER_DRAFT_PREVIEW', 'INVALID_QUANTITY', 'BLOCKED_STALE_SNAPSHOT', 'VOICE_HEARD', 'IMAGE_MATCH', 'IMAGE_NO_MATCH', 'STICKER_REPLY', 'FILE_IMPORT_PREVIEW'];
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 async function secureEqual(a, b) {
@@ -76,8 +76,27 @@ export const STICKER_MOODS = {
   greeting: [['\u270b Ch\u00e0o b\u1ea1n!', ['b', C.green]], ['\nShop c\u00f3 th\u1ec3 gi\u00fap g\u00ec cho b\u1ea1n h\u00f4m nay \u1ea1?']],
   other: [['\u263a D\u1ea1 shop \u0111\u00e2y \u1ea1!', ['b', C.green]], ['\nB\u1ea1n c\u1ea7n xem s\u1ea3n ph\u1ea9m n\u00e0o c\u1ee9 nh\u1eafn m\u00e3 ho\u1eb7c g\u1eedi \u1ea3nh nh\u00e9.']],
 };
+// V22.7: owner product-file import PREVIEW. Counts and error codes only; nothing is written to the catalog.
+export const FILE_ERRORS = { NO_SKU: 'thi\u1ebfu m\u00e3', BAD_SKU: 'm\u00e3 kh\u00f4ng h\u1ee3p l\u1ec7', DUP_SKU: 'tr\u00f9ng m\u00e3', NO_NAME: 'thi\u1ebfu t\u00ean', BAD_PRICE: 'gi\u00e1 kh\u00f4ng ph\u1ea3i s\u1ed1 h\u1ee3p l\u1ec7', BAD_STOCK: 't\u1ed3n kho kh\u00f4ng h\u1ee3p l\u1ec7', BAD_HEADER: 'thi\u1ebfu c\u1ed9t b\u1eaft bu\u1ed9c', TOO_MANY: 'qu\u00e1 500 d\u00f2ng', UNREADABLE: 'kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c file' };
+function filePreview(b) {
+  const ok = safeInt(b.valid_count, 0, 500), bad = safeInt(b.error_count, 0, 500);
+  const errs = Array.isArray(b.errors) ? b.errors.slice(0, 5) : [];
+  const skus = Array.isArray(b.sample_skus) ? b.sample_skus.filter((x) => typeof x === 'string' && /^[A-Z0-9-]{1,20}$/.test(x)).slice(0, 6) : [];
+  if (!ok || !bad || errs.some((e) => !e || !FILE_ERRORS[e.code] || !safeInt(e.row, 0, 100000))) return null;
+  const name = cleanEcho(b.file_name, 60);
+  const parts = [HEAD, ['\u25a4 \u0110\u00e3 \u0111\u1ecdc file' + (name ? ': ' + name : ''), ['b', C.blue]],
+    ['\n\u2714 H\u1ee3p l\u1ec7: ' + b.valid_count + ' s\u1ea3n ph\u1ea9m', ['b', C.green]], [skus.length ? ' (' + skus.join(', ') + (b.valid_count > skus.length ? ', \u2026' : '') + ')' : '']];
+  if (b.error_count > 0) {
+    parts.push(['\n\u26a0 L\u1ed7i: ' + b.error_count + ' d\u00f2ng', ['b', C.orange]]);
+    for (const e of errs) parts.push([(e.row ? '\n\u2022 D\u00f2ng ' + e.row + ': ' : '\n\u2022 ') + FILE_ERRORS[e.code]]);
+    if (b.error_count > errs.length) parts.push(['\n\u2022 \u2026', ['i']]);
+  }
+  parts.push(['\n\u24d8 B\u1ea3n xem tr\u01b0\u1edbc, ch\u01b0a ghi v\u00e0o catalog.', ['i', C.gray]]);
+  return build(parts);
+}
 function composeBody(b) {
   switch (b.kind) {
+    case 'FILE_IMPORT_PREVIEW': return filePreview(b);
     case 'STICKER_REPLY': {
       const parts = Object.prototype.hasOwnProperty.call(STICKER_MOODS, b.mood) ? STICKER_MOODS[b.mood] : STICKER_MOODS.other;
       return build([HEAD, ...parts]);
