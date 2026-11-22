@@ -39,6 +39,7 @@ E=$(printf '%064d' 2)
 E2=$(printf '%064d' 3)
 E3=$(printf '%064d' 4)
 E4=$(printf '%064d' 5)
+E5=$(printf '%064d' 10)
 D=$(printf '%064d' 6)
 B1=$(printf '%064d' 7)
 B2=$(printf '%064d' 8)
@@ -48,10 +49,14 @@ I1=10000000-0000-4000-8000-000000000001
 I2=10000000-0000-4000-8000-000000000002
 I3=10000000-0000-4000-8000-000000000003
 I4=10000000-0000-4000-8000-000000000004
+I5=10000000-0000-4000-8000-000000000005
+I6=10000000-0000-4000-8000-000000000006
 L1=20000000-0000-4000-8000-000000000001
 L2=20000000-0000-4000-8000-000000000002
 L3=20000000-0000-4000-8000-000000000003
 L4=20000000-0000-4000-8000-000000000004
+L5=20000000-0000-4000-8000-000000000005
+L6=20000000-0000-4000-8000-000000000006
 stmt(){
  local id="$1" store="$2" page="$3" event="$4" lease="$5"
  printf "PREPARE qa(uuid,uuid,uuid,text,text,int,text,text,int,text[],uuid,timestamptz,timestamptz) AS %s; EXECUTE qa('%s','%s','%s','%s','%s',3,'%s','%s',2,ARRAY['%s','%s'],'%s','%s','%s');" \
@@ -134,6 +139,29 @@ ok "$(attempt "$RA" "$I4" "$SA" "$PA" "$E3" "$L4" | grep -c '|2' || true)" 0 RES
 sql "DELETE FROM app_private.messenger_event_claims WHERE event_hash='$E3'" >/dev/null
 ok "$(attempt "$RA" "$I4" "$SA" "$PA" "$E3" "$L4" | grep -c '|2' || true)" 0 STALE_PLAN_BLOCKS_NEW_CLAIM
 ok "$(sql "SELECT count(*) FROM app_private.messenger_event_claims WHERE event_hash='$E3'")" 0 NO_ORPHAN_CLAIM
+
+# Two independent restricted PostgreSQL clients compete for one event.
+# A successful commit owns both claim and reply plan; the other MUST wait
+# at the unique claim key and then insert zero rows.
+race(){
+ local id="$1" lease="$2" pause="$3"
+ PGUSER="$RA" PGPASSWORD="$PW" psql -XAtq -v ON_ERROR_STOP=1 -d "$DB" <<SQL >"$TMP/race_$id" 2>&1
+BEGIN;
+$(stmt "$id" "$SA" "$PA" "$E5" "$lease")
+SELECT pg_sleep($pause);
+COMMIT;
+SQL
+}
+race "$I5" "$L5" 1.3 &
+race_a=$!
+sleep 0.2
+race "$I6" "$L6" 0 &
+race_b=$!
+wait "$race_a";wait "$race_b"
+ok "$(grep -h -c '|2' "$TMP"/race_* | awk '{n+=$1}END{print n+0}')" 1 TWO_PG_CLIENTS_ONE_ATOMIC_WINNER
+ok "$(sql "SELECT count(*) FROM app_private.messenger_event_claims WHERE event_hash='$E5'")" 1 RACING_ONE_CLAIM
+ok "$(sql "SELECT count(*) FROM app_private.messenger_send_plans WHERE event_hash='$E5'")" 1 RACING_ONE_PLAN
+ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts sp JOIN app_private.messenger_send_plans p ON p.id=sp.plan_id WHERE p.event_hash='$E5'")" 2 RACING_TWO_PARTS_ONLY
 
 sql "UPDATE app_private.qa_scope SET active=false WHERE role_name='$RA'" >/dev/null
 ok "$(client "$RA" "SELECT count(*) FROM app_private.messenger_send_plans")" 0 REVOKED_CANNOT_VIEW_OLD
