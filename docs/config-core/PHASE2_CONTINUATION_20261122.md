@@ -86,3 +86,16 @@ These cases used `test_workflow` on the 3-node **inactive** Bridge with pinned t
 5. Build the Event/Daily Briefing contract from verified channel and business events; do not infer paid orders from conversations.
 
 Ownership: this checkpoint covers QA and draft work only. **No claim of released multi-industry/multi-channel capability.**
+
+## 7. Second continuation — Messenger multi-Page ingress (2026-11-22 08:41 UTC)
+
+The earlier draft correlation node `Tìm nút menu` keyed postback/quick-reply payloads only by `messageId`. Future multiple Fanpages could have collisions in one webhook batch (or conflicting sender contexts), allowing the wrong button to be associated with a normalized message. This is a **security/tenant-isolation hardening**, not a claim of a confirmed production exploit.
+
+- **Draft-only edit:** composite key `JSON.stringify([pageId,senderId,messageId])`; first duplicate of the same composite key wins.
+- **Compatibility:** quick replies missing Meta `mid` use the same `attachment_<sender>_<timestamp>` synthetic ID as `Extract Messenger Text`; legacy `TIEN404:*` stays unchanged.
+- Messenger **new DRAFT**: `b967d427-62e6-40aa-90f4-60d222bb6e03`. Published still `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`.
+- New synthetic, **credential-free** node/graph snapshot: `config-core/test/fixtures/messenger-phase2-draft.json`; it includes no full workflow, webhook signature, token or credential.
+- New offline Node.js VM runner: `config-core/test/messenger-phase2-route.test.mjs`. It replays the actual audited Code-node bodies against fake Messenger webhook postbacks/quick-replies and pure Config Core decisions; asserts AI routing, artist bio, manager handoff, stale/disabled buttons, no-config response, legacy payload, Get Started, cross-Page and cross-sender collisions, duplicate events, missing `mid` and Meta-success-only waiting label.
+- **Boundary:** tests do not execute the Meta Graph API, external services, real order tools or provider standby, and cannot replace mobile/desktop live acceptance. The `Extract Messenger Text` node itself is not copied into the public repo; upstream signature and allow-list remain separate checks.
+- **Rollback only for this second draft edit:** restore n8n draft `abd98c7e-2ed1-42fe-8e76-215e74e285c7` (prior role-aware update) or the original menu draft `1f4069a5-5e74-4c79-935b-40f02b3582d8` if required. Never publish during rollback.
+- **CI:** GitHub Actions runs `45003909606` (Config Core) and `45003909604` (Owner App) passed on the initial test snapshot. Newest run `45004017065` is required to verify the missing-MID addition; confirm its conclusion before marking this round TESTED.
