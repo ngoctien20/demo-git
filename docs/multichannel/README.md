@@ -109,4 +109,18 @@ Messenger (Z7Fd, live): nhánh thoại đã làm và test ở bản nháp, lưu 
 
 - Telegram: publish lại `fffB` bản 008afb65 (chỉ chữ), hoặc unpublish `fffB` để tắt kênh.
 - VOICE: không có trigger công khai; tắt Telegram là đủ.
-- Messenger Z7Fd: LIVE bản b2245495 (có nhánh thoại, Tiến duyệt 01:44Z 22/11). Rollback = publish 8f7dcb4f.
+- Messenger Z7Fd: (lịch sử) LIVE bản b2245495 (có nhánh thoại, Tiến duyệt 01:44Z 22/11). Rollback = publish 8f7dcb4f.
+
+## 7. Messenger: nhánh thoại bị mất khi bàn giao Page Inbox (22/11 ~06:40Z)
+
+Bản live d1ec9147 (bàn giao Page Inbox, thread khác) được dựng từ bản nháp 8f7dcb4f mà em đã trả về sau khi test, nên không có nhánh thoại b2245495. Bài học: sau khi publish, để bản nháp = bản live, không trả nháp về bản cũ.
+
+Bản nháp gộp **47b48f6d** = d1ec9147 + nhánh thoại (Extract giữ sticker/referral V26 và thêm audioUrl; "Human handoff request?" nhánh false → "Tin thoại Messenger?" → VOICE → "Gộp tin chữ + thoại" → Loop; Shadow và Seen giữ nguyên). Thao tác ở `channels/n8n/messenger-voice.ops.json`.
+
+| Test (gửi bị chặn, PSID giả) | Kết quả | Exec |
+|---|---|---|
+| Thoại A003 + chữ "Xem A004" | PASS: "🎤 Shop nghe … A003 … còn 18" + A004 như cũ | 6680 |
+| "gặp nhân viên" | PASS: đi nhánh bàn giao, không vào vòng trả lời | 6677 |
+| Thoại nghe lệch (A002 bo) | PASS: hỏi "A002 hay A003" | 6678 |
+
+Bật = publish 47b48f6d (cần Tiến duyệt); rollback = publish d1ec9147.
