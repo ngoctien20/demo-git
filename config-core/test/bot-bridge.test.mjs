@@ -77,23 +77,23 @@ test('contact info renders only provided fields', () => {
 test('Messenger catalogue cursor is bound to current published version and SHOW_CATALOG item', () => {
   const cfg = published(templateConfig('shop'));
   cfg.version_no = 42;
-  assert.deepEqual(decide(cfg, { payload: 'T404:C:catalog:42:2' }), {
-    mode: 'catalog', itemId: 'catalog', catalogPage: 2, catalogCategory: null,
+  assert.deepEqual(decide(cfg, { payload: 'T404:C:catalog:42:deadbeef:2' }), {
+    mode: 'catalog', itemId: 'catalog', catalogPage: 2, catalogDigest: 'deadbeef', catalogCategory: null,
   });
-  const stale = decide(cfg, { payload: 'T404:C:catalog:41:2' });
+  const stale = decide(cfg, { payload: 'T404:C:catalog:41:deadbeef:2' });
   assert.equal(stale.mode, 'rejected');
   assert.equal(stale.reason, 'catalog_version_stale');
   for (const payload of [
-    'T404:C:catalog:42:0', 'T404:C:catalog:42:100', 'T404:C:catalog:42:-1',
-    'T404:C:order_lookup:42:1', 'T404:C:manager:42:1',
-    'T404:C:catalog:42:2:admin', 'T404:C:../catalog:42:2',
+    'T404:C:catalog:42:deadbeef:0', 'T404:C:catalog:42:deadbeef:100', 'T404:C:catalog:42:deadbeef:-1',
+    'T404:C:order_lookup:42:deadbeef:1', 'T404:C:manager:42:deadbeef:1',
+    'T404:C:catalog:42:deadbeef:2:admin', 'T404:C:../catalog:42:2',
   ]) assert.equal(decide(cfg, { payload }).mode, 'rejected', payload);
   const hidden = published(templateConfig('shop'));
   hidden.version_no = 42;
   hidden.menu.find(it => it.id === 'catalog').enabled = false;
-  assert.equal(decide(hidden, { payload: 'T404:C:catalog:42:2' }).reason, 'catalog_item_inactive');
-  assert.equal(decide(null, { payload: 'T404:C:catalog:42:2' }).reason, 'menu_unavailable');
-  assert.equal(decide(cfg, { payload: 'T404:C:catalog:42:2' }, 'zalo_bot').mode, 'rejected');
+  assert.equal(decide(hidden, { payload: 'T404:C:catalog:42:deadbeef:2' }).reason, 'catalog_item_inactive');
+  assert.equal(decide(null, { payload: 'T404:C:catalog:42:deadbeef:2' }).reason, 'menu_unavailable');
+  assert.equal(decide(cfg, { payload: 'T404:C:catalog:42:deadbeef:2' }, 'zalo_bot').mode, 'rejected');
 });
 
 test('custom published catalog item id/category routes by action, not by hardcoded id', () => {
@@ -104,8 +104,8 @@ test('custom published catalog item id/category routes by action, not by hardcod
   assert.deepEqual(decide(cfg, { payload: 'T404:M:ao_nam' }), {
     mode: 'catalog', itemId: 'ao_nam', catalogPage: 1, catalogCategory: 'áo',
   });
-  assert.deepEqual(decide(cfg, { payload: 'T404:C:ao_nam:8:2' }), {
-    mode: 'catalog', itemId: 'ao_nam', catalogPage: 2, catalogCategory: 'áo',
+  assert.deepEqual(decide(cfg, { payload: 'T404:C:ao_nam:8:deadbeef:2' }), {
+    mode: 'catalog', itemId: 'ao_nam', catalogPage: 2, catalogDigest: 'deadbeef', catalogCategory: 'áo',
   });
   const fallback = decide(cfg, { payload: 'T404:M:ao_nam' }, 'web');
   assert.equal(fallback.mode, 'ai');
