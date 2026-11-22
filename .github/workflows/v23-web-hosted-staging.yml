@@ -1,0 +1,79 @@
+name: "TIEN404 V23 web — apply db/v23-web on STAGING (backup first, UAT rolled back)"
+# Owner approved 2026-11-22 00:24 UTC on the decision card "Áp SQL v23 lên staging luôn không anh?" → "Áp lên staging".
+# Precondition proven: restore-test run 44966129996 (51/51, zero residue).
+# Encrypted backup immediately before apply; any failure rolls back what this run applied (70→80→90).
+# Logs print tags and hashes only (this repository is public).
+on:
+  push:
+    branches: [claude/project-thread-4ko028]
+    paths:
+      - .github/workflows/v23-web-hosted-staging.yml
+permissions:
+  contents: read
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+env:
+  STAGING_REF: ifxlvrhyjhbzbrkdsida
+jobs:
+  staging:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build staging connection (masked)
+        env:
+          PW: ${{ secrets.STAGING_DB_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$PW" ] || { echo "::error::missing STAGING_DB_PASSWORD"; exit 1; }
+          [ "${#BACKUP_PASSPHRASE}" -ge 20 ] || { echo "::error::missing BACKUP_PASSPHRASE"; exit 1; }
+          echo "::add-mask::$PW"
+          url=$(python3 -c 'import os,urllib.parse as u;print("postgresql://postgres.%s:%s@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"%(os.environ["STAGING_REF"],u.quote(os.environ["PW"],safe="")))')
+          echo "::add-mask::$url"; echo "DB_URL=$url" >> "$GITHUB_ENV"
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Login + guard (must NOT be restore-test)
+        run: |
+          [ "$(psql "$DB_URL" -X -At -c "select to_regclass('restore_test_guard.marker') is null" 2>/dev/null)" = t ] || { echo "::error::login failed or not staging"; exit 1; }
+          n=$(psql "$DB_URL" -X -At -c "select to_regclass('public.store_bot_settings') is null" 2>/dev/null)
+          [ "$n" = t ] && echo "NEED_BACKUP=1" >> "$GITHUB_ENV"; echo GUARD_OK
+      - name: Install Supabase CLI from npm
+        if: env.NEED_BACKUP == '1'
+        run: |
+          v=$(npm view supabase version 2>/dev/null); [ -n "$v" ] || { echo "::error::cannot resolve CLI version"; exit 1; }
+          npm install -g "supabase@$v" > /dev/null 2>&1 || { echo "::error::CLI install failed"; exit 1; }
+          supabase --version
+      - name: Backup staging immediately before apply (encrypted)
+        if: env.NEED_BACKUP == '1'
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          mkdir -p backup
+          supabase db dump --db-url "$DB_URL" -f backup/roles.sql --role-only > /dev/null 2>&1 || { echo "::error::roles dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/schema.sql > /dev/null 2>&1 || { echo "::error::schema dump failed"; exit 1; }
+          supabase db dump --db-url "$DB_URL" -f backup/data.sql --use-copy --data-only > /dev/null 2>&1 || { echo "::error::data dump failed"; exit 1; }
+          [ "$(wc -c < backup/schema.sql)" -gt 10000 ] || { echo "::error::schema dump too small"; exit 1; }
+          stamp=$(date -u +%Y-%m-%dT%H%MZ); echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          tar -czf - backup | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+            -o "tien404-staging-pre-v23web-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          gpg --batch --pinentry-mode loopback --passphrase-fd 3 -d "tien404-staging-pre-v23web-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE" 2>/dev/null | tar -tzf - > /dev/null || { echo "::error::backup does not decrypt"; exit 1; }
+          sha256sum "tien404-staging-pre-v23web-$stamp.tar.gz.gpg" | tee "tien404-staging-pre-v23web-$stamp.sha256"
+          rm -rf backup; echo BACKUP_OK
+      - uses: actions/upload-artifact@v4
+        if: env.NEED_BACKUP == '1'
+        with:
+          name: tien404-staging-pre-v23web-${{ env.STAMP }}
+          path: |
+            tien404-staging-pre-v23web-*.tar.gz.gpg
+            tien404-staging-pre-v23web-*.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Apply v23 10→20→30 + hosted UAT (rolled back) on staging
+        run: bash qa/v23-web/hosted/apply-v23-and-uat.sh
