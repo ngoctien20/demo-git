@@ -26,6 +26,18 @@ const fx = {
     { id: 'c3', display_name: 'Khách Zalo 3', phone: null, email: null, created_at: now, stage: 'needs_human', follow_up_at: null, note: 'Đòi gặp chủ shop' }],
   order_items: [{ quantity: 2, unit_price_vnd: 289000, line_total_vnd: 578000, products: { sku: 'AO-SOMI-TRANG-M', name: 'Áo sơ mi trắng size M' } }],
   store_bot_settings: [{ shop_info: 'Mở cửa 8:00–21:00. Giao toàn quốc 2–4 ngày.', forbidden_promises: 'Không hứa giao trong ngày', tone: 'friendly', bot_enabled: true, notify_emails: ['owner@example.com'], updated_at: now }],
+  assistants: [{ id: 'a1', name: 'Trợ lý Shop Hoa Mai', template_key: 'shop', status: 'active', created_at: now, store_id: S1 }],
+  industry_templates: [{ template_key: 'shop', name: 'Cửa hàng', industry: 'retail', version: 1 }, { template_key: 'artist', name: 'Nghệ sĩ / Nhà sáng tạo', industry: 'creator', version: 1 }],
+  assistant_config_versions: (() => {
+    const cfg = { schema_version: 1, greeting: 'Chào bạn! Mình là trợ lý của shop.', addressing: { self: 'mình', customer: 'bạn' }, menu: [
+      { id: 'catalog', action_type: 'SHOW_CATALOG', label: 'Xem sản phẩm', enabled: true, sort_order: 10, action_config: {} },
+      { id: 'website', action_type: 'OPEN_LINK', label: 'Xem website', enabled: false, sort_order: 20, action_config: { url: 'https://example.com/THAY-LINK-WEBSITE', link_kind: 'website' } },
+      { id: 'handoff', action_type: 'HUMAN_HANDOFF', label: 'Gặp nhân viên', enabled: true, sort_order: 30, action_config: { team: 'sales' } }] };
+    return [
+      { assistant_id: 'a1', version_no: 3, state: 'draft', config: cfg, config_sha256: 'sha3', source: 'edit', created_at: now, published_at: null },
+      { assistant_id: 'a1', version_no: 2, state: 'published', config: cfg, config_sha256: 'sha2', source: 'edit', created_at: now, published_at: now },
+      { assistant_id: 'a1', version_no: 1, state: 'superseded', config: cfg, config_sha256: 'sha1', source: 'template:shop@1', created_at: now, published_at: now }];
+  })(),
   store_faqs: [{ id: 'f1', question: 'Shop có đổi trả không?', answer: 'Đổi trong 7 ngày nếu còn tem mác.', active: true, updated_at: now }],
 };
 const rpcCalls = [];
@@ -73,7 +85,7 @@ const server = http.createServer((req, res) => {
     const e = errs.splice(0); if (ov || e.length || spinning) bad++;
     console.log(tag, name.padEnd(12), (h1 || '').trim().padEnd(26), ov ? 'OVERFLOW' : 'ok', spinning ? 'STILL_LOADING' : '', e.join(' | '));
   }
-  const routes = ['/', '/san-pham', '/don-hang', '/khach-hang', '/cai-dat-bot', '/tri-thuc', '/kenh-ban', '/goi-dich-vu', '/tai-khoan'];
+  const routes = ['/', '/san-pham', '/don-hang', '/khach-hang', '/cai-dat-bot', '/menu-tro-ly', '/tri-thuc', '/kenh-ban', '/goi-dich-vu', '/tai-khoan'];
   for (const [w, h, tag] of [[1280, 860, 'd'], [390, 844, 'm']]) {
     { const { p, errs, ctx } = await page(w, h, { loggedIn: false }); await p.goto(base + '#/dang-nhap'); await check(p, errs, 'login', tag);
       await p.goto(base + '#/dang-ky'); await check(p, errs, 'signup', tag); await ctx.close(); }
@@ -96,7 +108,16 @@ const server = http.createServer((req, res) => {
       const okTog = tog && tog.body.p_bot_enabled === false && tog.body.p_expected_updated_at === now && tog.body.p_tone === 'friendly';
       console.log('RPC text-price refused + save_merchant_product_in_store payload', okAdd ? 'ok' : 'FAIL ' + JSON.stringify(add));
       console.log('RPC save_store_bot_settings toggle payload', okTog ? 'ok' : 'FAIL ' + JSON.stringify(tog));
-      if (!okAdd || !okTog) bad++;
+      await p.goto(base + '#/menu-tro-ly'); await p.waitForTimeout(400);
+      await p.getByLabel('Tên nút').first().fill('Xem hàng mới');
+      const prevOk = await p.locator('.chat-preview .chip', { hasText: 'Xem hàng mới' }).count() > 0;
+      await p.getByRole('button', { name: 'Lưu nháp' }).click(); await p.waitForTimeout(300);
+      const save = rpcCalls.find(c => c.fn === 'save_assistant_draft');
+      const okMenu = prevOk && save && save.body.p_assistant === 'a1' && save.body.p_expected_sha === 'sha3' && save.body.p_config.menu[0].label === 'Xem hàng mới'
+        && Object.keys(save.body).sort().join() === 'p_assistant,p_config,p_expected_sha';
+      console.log('Menu: live preview + save_assistant_draft payload', okMenu ? 'ok' : 'FAIL ' + JSON.stringify(save));
+      await check(p, errs, 'menu-saved', tag);
+      if (!okAdd || !okTog || !okMenu) bad++;
     }
     await ctx.close();
   }
