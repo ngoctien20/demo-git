@@ -5,6 +5,7 @@ on:
       - "config-core/**"
       - "db/config-core/**"
       - "qa/config-core/**"
+      - "qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh"
       - ".github/workflows/tien404-config-core.yml"
   workflow_dispatch:
 permissions:
@@ -43,3 +44,16 @@ jobs:
           PGUSER: "postgres"
           PGPASSWORD: "postgres"
         run: bash qa/config-core/offline-pg-uat.sh
+
+      - name: V21 Messenger real PostgreSQL 17 atomic claim UAT (disposable DB, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh
