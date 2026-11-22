@@ -137,3 +137,48 @@ The earlier draft correlation node `Tìm nút menu` keyed postback/quick-reply p
 6. Pre-existing n8n validation warnings for Messenger memory subnode and OpenAI builtInTools configuration were not modified or cleared; re-evaluate before publication.
 
 This is **IMPLEMENTED + OFFLINE TESTED**, not RELEASED or LIVE END-TO-END TESTED.
+
+## 9. Fourth continuation — Published-authorized Messenger product catalog paging (2026-11-22 ~09:42 UTC)
+
+**Scope:** Draft-only implementation and isolated QA for [Issue #494](https://github.com/ngoctien20/demo-git/issues/494). This is a **DEMO-only Messenger adapter**, not the generic Commerce catalog or a platform-wide tenant authorization release. No Meta Graph API calls, live messages, order writes, pricing changes, credentials or published workflow activation.
+
+### Audit + checkpoint
+
+- Starting Messenger Draft `9c08fdd3-7583-49e5-adb4-8b4d9e0c0688`, Published `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`; inactive Menu Bridge Draft `4376f77c-5747-481e-85b5-0c82d673d859`, no published version.
+- Current Messenger Draft **`18125761-5898-4950-bcd8-3c8d15539063`**, with 67 nodes (3 new). Published **still `47b48f6d-bc3d-40ae-afe6-96c5fd5452ac`**; no publish.
+- Menu Bridge new inactive Draft **`4709a9b1-0569-4eea-9eb5-b9770c2be2f8`**, still no published version.
+- Google Sheets catalog source is exactly **AI_SALES_DEMO / Products**, the same DEMO-only spreadsheet as existing product-detail lookup. Existing Commerce data and credentials remain separate. Product catalogue lookup is `operation=read`, `alwaysOutputData=true`, no SKU filter (read all current DEMO products).
+- Public Meta documentation and provider examples confirm button templates allow up to 3 buttons, and quick replies are supported for navigation; actual Messenger mobile UI remains to be proven on the test Page.
+
+### Implementation
+
+1. Config Core `SHOW_CATALOG` is recognized by its **published action type and stable item ID**, not a hardcoded `catalog` ID. The Messenger adapter's bridge now returns `mode:'catalog'`, `itemId`, `catalogCategory`, and `catalogPage:1`. Non-Messenger channels keep the previous `mode:'ai'` until individually approved.
+2. The page buttons use `T404:C:<published_item_id>:<published_config_version>:<page>`. On every tap, the bridge rereads the published menu and rejects invalid cursors, outdated menu versions and inactive/other action items. Cursors carry **no SKU price, tenant ID, credential or tool name**.
+3. Messenger ingress `Extract Messenger Text` and `Tìm nút menu` recognize both postback and Quick Reply catalog cursors. The composite Page+sender+event-ID correlation remains intact. `Áp quyết định menu` converts only validated catalog decisions to `mediaType:'catalog_page'`.
+4. After existing `Trả lời menu cố định?`, `Danh mục Messenger cần phân trang?` directs only catalog events to `Đọc danh mục Products DEMO` -> `Trình bày trang danh mục Messenger` -> existing `Prepare Messenger Reply` -> existing Send flow. All non-catalog messages retain original product-detail / AI / handoff routing.
+5. The renderer `config-core/n8n/messenger-catalog-page.code.mjs` does **not** use the AI for prices, filters malformed rows and duplicated SKUs, sorts by SKU and returns 3 clickable SKU postbacks per page, with native `Trang tiếp`/`Trang trước` quick replies. All 21 current DEMO SKU slots fit 7 pages. Out-of-stock products remain selectable for truthful detail; no payment/order is written by browsing.
+6. The DEMO adapter explicitly restricts catalog read/output to the currently allowed test Page. Supported `action_config.category` mapping is currently `all` / `áo` / `quần`; unrecognized categories fail closed rather than showing untrusted products. **This must be generalized through tenant-scoped catalog authority before Commerce rollout**.
+7. All browser/mobile Meta delivery and standby/resume testing remains **NOT RUN**. Template + quick reply behavior has been simulated as JSON, not verified through an actual Meta send.
+
+### Test evidence
+
+- Isolated n8n Bridge pin-data QA on inactive Draft (no send/write):
+  - `6716`: current published catalog button -> page 1 PASS
+  - `6717`: authorized next-page cursor -> page 2 PASS
+  - `6718`: prior config version -> rejected PASS
+  - `6719`: non-catalog action ID cursor -> rejected PASS
+  - `6720`: out-of-bounds page -> rejected PASS
+  - `6721`: legacy SKU postback keeps previous behavior PASS
+- Source-aligned, offline `config-core/test/messenger-catalog-page.test.mjs` tests pagination for **21 synthetic products, seven pages**, category map, tenant Page isolation, invalid/duplicate prices/SKUs, safe empty pages, bounded templates and next/previous.
+- `config-core/test/messenger-phase2-route.test.mjs` uses sanitized real Messenger Code-node snippets and graph edges. It checks catalog events **bypass AI and write tools** while order, handoff, voice and legacy SKU nodes remain connected.
+- CI functional commit `af2ab967a9dfdcf54bf0ecf801ba320b6ec07149`: Config Core run **45008743670 PASS, 127/127 unit tests, 0 fail**, offline PostgreSQL 17 UAT PASS. Owner App run **45008743633** separately verifies desktop/mobile browser with mocked Supabase, **not real Messenger UI**.
+- Added byte-for-byte `build-bridge.mjs` -> `bridge.sdk.js` generator parity assertion. Confirm final CI after the checkpoint before labeling that assertion TESTED.
+
+### Release gates and rollback
+
+- Keep `#491` **Draft**, stacked on Claude's `#489`. Keep `#494` open until actual test Page **mobile + web** UAT proves every product can be tapped across pages, correct live DEMO price/stock, and safe Meta send/quick reply delivery.
+- Before changing any Meta Profile persistent menu or n8n Published version, request **explicit user approval** identifying both target version and QA sample Page. No ambiguous approval from prior separate work applies.
+- Restore Messenger Draft **`9c08fdd3-7583-49e5-adb4-8b4d9e0c0688`** to roll back the new pager without touching the published workflow; restore Menu Bridge inactive Draft **`4376f77c-5747-481e-85b5-0c82d673d859`** independently. Do not publish while rolling back.
+- Remaining risk: a mid-session modification to the Products sheet can reflow page indices even when the menu version is unchanged. The adapter rereads fresh prices on each page and responds safely to empty/out-of-range pages, but catalog snapshot/cursor stability has **not** been implemented. Future tenant binding, RLS/owner A-B, full mobile Meta delivery, status/OTP, Zalo numeric menu #492, and workflow validation warnings remain separate gates.
+
+**Disposition:** IMPLEMENTED on DRAFT + TESTED by isolated simulation and offline CI; **NOT RELEASED / NOT VERIFIED on real Messenger mobile**.
