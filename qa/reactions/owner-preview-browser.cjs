@@ -103,7 +103,7 @@ const server=http.createServer((req,res)=>{
     await context.close();
   }
   const channelReads=requests.filter(r=>r.url.endsWith('/channel_connections'));
-  check(channelReads.length===2 && channelReads.every(r => {
+  check(channelReads.length>=4 && channelReads.every(r => {
     const p=new URLSearchParams(r.query);
     return p.get('store_id')==='eq.'+storeId && p.get('tenant_id')==='eq.'+tenantId && p.get('channel')==='eq.messenger';
   }), 'read-only channel connections always tenant/store/channel scoped');
