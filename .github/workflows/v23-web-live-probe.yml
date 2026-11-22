@@ -1,0 +1,19 @@
+name: "TIEN404 V23 web — read-only probe of the live owner App"
+on:
+  push:
+    branches: [claude/project-thread-4ko028]
+    paths: [qa/v23-web/live-probe.cjs, .github/workflows/v23-web-live-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - run: npm i --no-save playwright@1.49.1 > /dev/null 2>&1 && npx playwright install --with-deps chromium > /dev/null 2>&1
+      - run: node qa/v23-web/live-probe.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: live-probe, path: 'probe-*.png', retention-days: 7 }
