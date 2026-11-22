@@ -264,6 +264,8 @@ test('API acceptance mocks are not provider delivered/read receipts or send auth
 test('SQL explicitly enforces UNIQUE event plan, per-part lease and full mock close',()=>{
  assert.match(SQL.plan,/ON CONFLICT \(tenant_id,store_id,page_id,sender_hash,binding_version,event_hash\) DO NOTHING/);
  assert.match(SQL.plan,/generate_series\(1,\$9::int\)/);
+ assert.match(SQL.plan,/\(plan_id,tenant_id,store_id,page_id,part_no,body_digest,status\)/);
+ assert.match(SQL.plan,/SELECT p\.id,\$2::uuid,\$3::uuid,\$4,g\.n/);
  assert.match(SQL.reserve,/status='PLANNED'/);
  assert.match(SQL.reserve,/status='MAY_HAVE_SENT_HOLD'/);
  assert.match(SQL.accept,/attempt_id=\$3::uuid/);
