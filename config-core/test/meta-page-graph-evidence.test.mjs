@@ -112,3 +112,14 @@ test('malformed granular target_ids object is rejected before permissions are ad
  e.tokenDebug.data.granular_scopes[0].target_ids={0:expected.metaPageId};
  assert.equal(check(e,expected,now).reason,'invalid_granular_target_ids');
 });
+
+test('Meta user token without granular scopes cannot grant Page authority',()=>{
+ const e=evidence();
+ delete e.tokenDebug.data.granular_scopes;
+ assert.equal(check(e,expected,now).reason,'meta_granular_scopes_not_attested');
+});
+test('granular_scopes not an array never grants Page authority',()=>{
+ const e=evidence();
+ e.tokenDebug.data.granular_scopes='pages_messaging,pages_manage_metadata,pages_show_list';
+ assert.equal(check(e,expected,now).reason,'meta_granular_scopes_not_attested');
+});
