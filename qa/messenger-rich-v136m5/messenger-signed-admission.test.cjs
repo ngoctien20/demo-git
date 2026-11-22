@@ -124,7 +124,7 @@ test('tampered message/body/signature denied BEFORE any repository call or claim
  const e=signed();
  const bad=[
   {...e,rawBody:e.rawBody.replace('Xin chào shop','Hack order')},
-  {...e,signature:e.signature.slice(0,-1)+'0'},
+  {...e,signature:e.signature.slice(0,-1)+(e.signature.at(-1)==='0'?'1':'0')},
   {...e,signature:'sha1='+e.signature.slice(7)},
   {...e,signature:''}
  ];
@@ -149,7 +149,7 @@ test('forged binding, revoked owner, disabled inbound and inactive Store denied'
   {owner_verified:false},{owner_membership_confirmed:false},
   {inbound_enabled:false},{binding_state:'revoked'},
   {store_state:'paused'},{binding_version:0},
-  {tenant_id:TENANT_B}
+  {page_id:'99999999999999999'}
  ];
  for(const patch of changes){
   const f=fixture({bindings:{...BINDINGS,[PAGE_A]:[binding(PAGE_A,TENANT_A,STORE_A,patch)]}});
