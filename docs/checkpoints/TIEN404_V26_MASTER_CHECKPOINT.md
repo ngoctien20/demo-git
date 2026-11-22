@@ -29,6 +29,11 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 
 ## Nhật ký
 
+### 2026-11-22 22:40Z — Việc offline chờ n8n (anh Tiến sẽ nâng gói tối nay)
+- Thiết kế tích hợp Shared AI Core (#488 + Config Core): [TIEN404_V26_SHARED_CORE_DESIGN.md](TIEN404_V26_SHARED_CORE_DESIGN.md) — PROPOSED, các bước S1–S8, cần duyệt ở S1 (merge), S5 (migration), S6–S8 (publish).
+- Kế hoạch UAT live: [TIEN404_V26_LIVE_UAT_PLAN.md](TIEN404_V26_LIVE_UAT_PLAN.md) — preflight P1–P5, Messenger M-01..09, đơn hàng O-01..07 (cần xác nhận vì ghi Sheet DEMO), handoff H-01..03.
+- Không thay đổi hệ thống nào trong bước này.
+
 ### 2026-11-22 21:05–21:30Z — Thực hiện mục đã duyệt (anh Tiến: "Được làm đi em", 21:05Z)
 - B-P0-02 DONE: unpublish `OgDZNSAvKEvhnAvn` (active trước đó `6277dd87`), áp migration #481 qua Supabase MCP. Kiểm tra: `proacl={postgres=X/postgres}`, anon/authenticated/service_role EXECUTE = false. Chưa probe REST (proxy container).
 - B-P0-03/04 DONE: publish Create Order `af9ee686`, Update Order `3bd7043f` (chỉ đổi 1 Code node mỗi workflow). Offline 19/19 PASS (parser VND, tiền tố SĐT, địa chỉ có chữ). Chưa có UAT live vì n8n vẫn hết hạn.
