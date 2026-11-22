@@ -83,8 +83,14 @@ Chặn sai (từ test thật): Gemini nghe giọng khó thường "bịa" ra đ�
 | s3 "quần jean nam dưới bốn trăm nghìn" | PASS: chuyển nguyên câu cho AI | exec 6397 |
 | s4 tiếng ồn | PASS: hỏi lại | exec 6398 |
 | Telegram đầu-cuối (tin thoại giả lập, chặn ở node gửi) | PASS 7,3 s, 1 tin: "🎤 Shop nghe … A003 — Áo thun nam đen basic size L, 159.000đ, còn 18" | exec 6405 (VOICE + lõi 6407) |
+| **Telegram LIVE, giọng thật của chủ shop** | PASS 10,5 s, 1 tin: nghe "Áo A không không ba bao nhiêu?" → A003 159.000đ, còn 18 | exec 6427 (VOICE 6428) |
+| Messenger bản nháp: tin thoại + tin chữ cùng lúc | PASS: tin thoại → A003 có quick reply; tin chữ A002 như cũ | Z7Fd exec 6433 (gửi bị chặn) |
+| Messenger bản nháp: chỉ tin chữ (hồi quy) | PASS: "Xem A004" → A004 như bản live | exec 6438 |
+| Messenger bản nháp: thoại không rõ | PASS: 1 tin hỏi lại, không gọi AI | exec 6440 |
 
-Kênh khác: Messenger (Z7Fd, live) và web widget chưa nối; nối Messenger là sửa workflow live nên cần duyệt riêng. Widget cần thêm nút ghi âm.
+Đã bật (Tiến duyệt 01:33Z 22/11): VOICE `F7Eh` bản b26706ca, Telegram `fffB` bản fb6e283c. Rollback Telegram = publish lại 008afb65 (chỉ chữ).
+
+Messenger (Z7Fd, live): nhánh thoại đã làm và test ở bản nháp, lưu trong lịch sử n8n là bản **b2245495** (và `channels/n8n/messenger-voice.ops.json`). Bản nháp đã được trả về 8f7dcb4f (= bản live) để không ai publish nhầm. Bật = publish b2245495 khi Tiến duyệt; rollback = publish 8f7dcb4f. Tin thoại Messenger tới từ CDN của Meta (`*.fbcdn.net`, `*.fbsbx.com`), thường là mp4/aac; chưa thử Gemini với file Messenger thật. Web widget chưa nối (cần nút ghi âm).
 
 ## 5. Rủi ro còn lại
 
@@ -97,4 +103,6 @@ Kênh khác: Messenger (Z7Fd, live) và web widget chưa nối; nối Messenger 
 
 ## 6. Rollback
 
-Chưa publish gì nên không có gì cần rollback trên kênh thật. Muốn dọn: archive 3 workflow `A7XYwSqZwr9T7841`, `jkMNMEFz7ZezCqJA`, `fffBRIDD7wWIQnXr` trong n8n. Z7Fd không bị sửa (vẫn bản 4b0fe018).
+- Telegram: publish lại `fffB` bản 008afb65 (chỉ chữ), hoặc unpublish `fffB` để tắt kênh.
+- VOICE: không có trigger công khai; tắt Telegram là đủ.
+- Messenger Z7Fd: bản live vẫn 8f7dcb4f (V25 bình luận), nhánh thoại chưa bật.
