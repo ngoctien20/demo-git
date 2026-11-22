@@ -123,4 +123,4 @@ Bản nháp gộp **47b48f6d** = d1ec9147 + nhánh thoại (Extract giữ sticke
 | "gặp nhân viên" | PASS: đi nhánh bàn giao, không vào vòng trả lời | 6677 |
 | Thoại nghe lệch (A002 bo) | PASS: hỏi "A002 hay A003" | 6678 |
 
-**LIVE 47b48f6d** (Tiến duyệt "Bật ngay" 06:55Z, publish ~06:57Z); rollback = publish d1ec9147. Sau publish giữ bản nháp = bản đang chạy, không khôi phục nháp về bản cũ.
+**LIVE 47b48f6d** (Tiến duyệt "Bật ngay" 06:55Z, publish ~06:57Z); rollback = publish d1ec9147. Sau publish giữ bản nháp = bản đang chạy, không khôi phục nháp về bản cũ. Thoại thật 07:17Z: exec 6683 chưa rõ → hỏi lại (7,9s); exec 6686 "áo A003 bao nhiêu" → báo A003 (8,8s). PASS.
