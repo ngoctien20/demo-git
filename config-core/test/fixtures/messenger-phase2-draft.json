@@ -1,7 +1,7 @@
 {
   "source": "n8n-sanitized-draft-node-logic",
   "workflow": "Z7FdV7uDvApfbURQ",
-  "draftVersion": "9342025c-ea16-4965-97ac-bc4b98591996",
+  "draftVersion": "41bcea84-703d-40bc-be2a-71f84ca4e2d8",
   "activeVersionBaseline": "47b48f6d-bc3d-40ae-afe6-96c5fd5452ac",
   "description": "Sanitized non-credential node logic, DEMO read properties and graph only; QA snapshot, not a deployable workflow.",
   "nodes": {
@@ -92,6 +92,20 @@
         "allPagesOff": true,
         "hasNoSend": true,
         "type": "n8n-nodes-base.code"
+      }
+    },
+    "Verify Messenger Send Result": {
+      "code": "// V21: fail closed unless Meta confirms every message planned for this inbound event.\n// A partial/ambiguous HTTP result MUST NOT record the inbound event as successfully answered.\nconst results=$input.all().map(i=>i.json);\nconst original=$('Prepare Messenger Reply').first(0, $('Prepare Messenger Reply').context.currentRunIndex).json;\nconst expected=Number(original.messageCount);\nif(!Number.isSafeInteger(expected)||expected<1||expected>3||Number(original.messageIndex)!==1){\n throw new Error('Invalid Messenger reply plan; no successful MID recorded');\n}\nif(results.length!==expected){\n throw new Error('Incomplete Messenger Send API confirmations: expected '+expected+', confirmed '+results.length);\n}\nconst confirmedIds=new Set();\nfor(const result of results){\n if(typeof result.message_id!=='string'||!result.message_id.trim()||\n  String(result.recipient_id??'')!==String(original.senderId??'')){\n  throw new Error('Meta Send API did not confirm intended recipient and message ID');\n }\n if(confirmedIds.has(result.message_id)){\n  throw new Error('Meta Send API returned duplicate message ID; do not record complete delivery');\n }\n confirmedIds.add(result.message_id);\n}\nreturn [{json:{...original,metaMessageId:results[0].message_id,\n metaMessageIds:[...confirmedIds],sentMessageCount:results.length,\n deliveryAcceptedAt:new Date().toISOString()}}];"
+    },
+    "Send Messenger Reply - CONFIGURE TOKEN": {
+      "settings": {
+        "method": "POST",
+        "hasMetaSend": true
+      }
+    },
+    "Record Successful Messenger MID": {
+      "settings": {
+        "writesEventDedupeRow": true
       }
     }
   },
@@ -390,6 +404,39 @@
         [
           {
             "node": "Human handoff request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Messenger Reply - CONFIGURE TOKEN": {
+      "main": [
+        [
+          {
+            "node": "Verify Messenger Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Messenger Send Result": {
+      "main": [
+        [
+          {
+            "node": "Record Successful Messenger MID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Successful Messenger MID": {
+      "main": [
+        [
+          {
+            "node": "Loop One Message",
             "type": "main",
             "index": 0
           }
