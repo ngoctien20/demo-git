@@ -8,16 +8,17 @@ import {
 const now = 1795345000000;
 const page = '1234567890', otherPage = '9999999999', sender = '7654321098', tenant = 'tenant-qa';
 const policy = (patch={}) => ({
-  schemaVersion:1,provider:'meta_messenger',lifecycle:'published',enabled:true,
+  schemaVersion:2,provider:'meta_messenger',lifecycle:'published',enabled:true,
+  industryId:'retail_general',
   revision:4,tenantId:tenant,pageId:page,installationId:'installation-qa',ownerId:'owner-qa',
   publishedAtMs:now-120000,expiresAtMs:now+30*86400000,
   ownerConsent:{approved:true,revision:4,ownerId:'owner-qa',approvedAtMs:now-120000,expiresAtMs:now+30*86400000},
-  settings:{intents:{thanks:true,praise:true},cooldownSeconds:300,maxPerHour:2},...patch,
+  settings:{profileId:'friendly',intents:{thanks:true,praise:true},cooldownSeconds:300,maxPerHour:2},...patch,
 });
 const auth = (patch={}) => ({
   source:'trusted_server',resolverVerified:true,policyReadAuthorized:true,
   tenantId:tenant,pageId:page,installationId:'installation-qa',ownerId:'owner-qa',
-  webhookHmacVerified:true,recipientPageVerified:true,sourceMessageId:'m_qa_7777',
+  industryId:'retail_general',webhookHmacVerified:true,recipientPageVerified:true,sourceMessageId:'m_qa_7777',
   sourceSenderId:sender,messageTimestampMs:now-8000,notEcho:true,
   messageIsOriginalText:true,...patch,
 });
@@ -46,7 +47,7 @@ const receipt = (preflight,patch={}) => ({
 const preflight = () => prepareReactionAdmission(request(),now);
 
 test('contract v1: verified published owner-approved Page policy, no send grant',()=>{
-  assert.equal(REACTION_ADMISSION_VERSION,'t404.reaction-admission.v1');
+  assert.equal(REACTION_ADMISSION_VERSION,'t404.reaction-admission.v2');
   assert.equal(verifyPublishedPageReactionPolicy(policy(),auth(),now).mode,'verified_policy');
   const a=preflight();
   assert.equal(a.mode,'claim_required');
@@ -57,7 +58,7 @@ test('contract v1: verified published owner-approved Page policy, no send grant'
 });
 test('default OFF, unpublished, wrong schema, disabled owner consent all block',()=>{
   for(const patch of [
-    {enabled:false},{lifecycle:'draft'},{schemaVersion:2},{revision:0},{ownerConsent:null},
+    {enabled:false},{lifecycle:'draft'},{schemaVersion:1},{revision:0},{ownerConsent:null},
     {ownerConsent:{...policy().ownerConsent,approved:false}},
     {ownerConsent:{...policy().ownerConsent,revision:3}},
   ]) assert.equal(verifyPublishedPageReactionPolicy(policy(patch),auth(),now).mode,'blocked');
