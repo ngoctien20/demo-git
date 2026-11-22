@@ -75,12 +75,12 @@ export function decide(menu, event, channel = 'messenger') {
       return { mode: 'rejected', reason: 'catalog_version_stale',
         message: { text: 'Danh mục đã được cập nhật. Bạn hãy mở lại mục Xem sản phẩm nhé.' } };
     }
-    const it = visibleItems(menu, channel).find((x) => x.id === cursor[1] && x.action_type === 'SHOW_CATALOG');
-    if (!it) {
+    const it = resolveInbound({ channel, payload: PAYLOAD_PREFIX + cursor[1] }, menu);
+    if (it.kind !== 'menu' || it.action_type !== 'SHOW_CATALOG') {
       return { mode: 'rejected', reason: 'catalog_item_inactive',
         message: { text: 'Mục sản phẩm này hiện không khả dụng. Bạn hãy mở lại menu nhé.' } };
     }
-    return { mode: 'catalog', itemId: it.id, catalogPage: Number(cursor[3]),
+    return { mode: 'catalog', itemId: it.item_id, catalogPage: Number(cursor[3]),
       catalogCategory: it.action_config?.category ?? null };
   }
   if (!payload || !payload.startsWith(PAYLOAD_PREFIX)) return { mode: 'legacy' };
