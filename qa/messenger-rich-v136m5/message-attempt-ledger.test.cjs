@@ -141,7 +141,7 @@ test('partial 2/3 accepted then timeout on final part requires reconciliation',a
  assert.deepEqual(model.diagnostics().statuses,
   ['API_ACCEPTED_MOCK','API_ACCEPTED_MOCK','UNCERTAIN_HOLD']);
  await assert.rejects(ledger.closeMockPlan(p),/LEDGER_PARTIAL_OR_UNCERTAIN_HOLD/);
- assert.equal((await reserve(ledger,p,3)).status,'ALREADY_RESERVED_HOLD');
+ await assert.rejects(reserve(ledger,p,3),/LEDGER_PLAN_TICKET_INVALID/);
 });
 test('timeout after hypothetical remote success stays uncertain; no auto resend',async()=>{
  const {ledger,model}=make();
