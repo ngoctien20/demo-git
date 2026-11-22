@@ -6,18 +6,48 @@
 import { pathToFileURL } from 'node:url';
 const HOST='https://ifxlvrhyjhbzbrkdsida.supabase.co';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PUBLISHABLE_KEY=/^sb_publishable_[A-Za-z0-9_-]{6,}$/;
 const fail=(reason)=>{throw new Error(reason);};
+// Decode untrusted JWT only for local safety checks. Server-side /auth/v1/user
+// remains authoritative for signature, expiration, issuer and identity.
+const inspectSessionJwt=(token)=>{
+  if(typeof token!=='string'||token.length>8192||
+     !/^[A-Za-z0-9_-]+[.][A-Za-z0-9_-]+[.][A-Za-z0-9_-]+$/.test(token))
+    fail('invalid_owner_session_jwt');
+  let header,claims;
+  try{
+    const [head,payload]=token.split('.');
+    header=JSON.parse(Buffer.from(head,'base64url').toString('utf8'));
+    claims=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));
+  }catch{fail('invalid_owner_session_jwt');}
+  const now=Math.floor(Date.now()/1000);
+  if(!header||header.alg==='none'||typeof header.alg!=='string'||
+     !claims||claims.role!=='authenticated'||
+     !(claims.aud==='authenticated'||
+       (Array.isArray(claims.aud)&&claims.aud.includes('authenticated')))||
+     claims.iss!==HOST+'/auth/v1' || !UUID.test(claims.sub||'')||
+     !Number.isSafeInteger(claims.exp)||claims.exp<=now||
+     (claims.iat!==undefined &&
+       (!Number.isSafeInteger(claims.iat)||claims.iat>now+60)))
+    fail('owner_jwt_claims_not_authenticated');
+  return claims.sub;
+};
 
 export async function checkRealOwnerJwtReadOnly({
   fetchImpl, publishableKey, ownerAJwt, ownerBJwt, storeA, storeB,
   expectedAPageCount=1,
 }){
-  if(typeof fetchImpl!=='function' || !publishableKey ||
-     /^(?:sb_secret_|service_role)/i.test(publishableKey) ||
-     !ownerAJwt || !ownerBJwt || ownerAJwt===ownerBJwt ||
+  if(typeof fetchImpl!=='function' || !PUBLISHABLE_KEY.test(publishableKey||'') ||
+     ownerAJwt===ownerBJwt ||
      !UUID.test(storeA||'') || !UUID.test(storeB||'') || storeA===storeB ||
      !Number.isInteger(expectedAPageCount) || expectedAPageCount<1)
     fail('invalid_uat_configuration');
+
+  // An apikey with elevated permissions must never be sent by this UAT tool.
+  // The actual Supabase Auth server validates the signature via /auth/v1/user.
+  const expectedUidA=inspectSessionJwt(ownerAJwt);
+  const expectedUidB=inspectSessionJwt(ownerBJwt);
+  if(expectedUidA===expectedUidB)fail('same_authenticated_owner');
 
   let calls=0;
   const onlyGet=async(path,token)=>{
@@ -41,6 +71,8 @@ export async function checkRealOwnerJwtReadOnly({
     return x.body.id;
   };
   const [uidA,uidB]=await Promise.all([auth(ownerAJwt),auth(ownerBJwt)]);
+  if(uidA!==expectedUidA||uidB!==expectedUidB)
+    fail('auth_server_jwt_subject_mismatch');
   if(uidA===uidB)fail('same_authenticated_owner');
   const members=async(token,uid,store)=>{
     const q=new URLSearchParams({
