@@ -23,6 +23,7 @@ import { Conversations } from './pages/Conversations';
 import { Reports } from './pages/Reports';
 import { Notifications } from './pages/Notifications';
 import { Personality } from './pages/Personality';
+import { QuickSetup } from './pages/QuickSetup';
 
 type NavItem = [string, string, string];
 
@@ -53,7 +54,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
 
   const nav: { group: string; items: NavItem[] }[] = [
     { group: 'Trợ lý AI', items: [
-      ['/', 'Tổng quan', '◎'], ['/tro-ly', 'Trợ lý AI', '✦'], ['/menu-tro-ly', 'Menu & hành động', '☰'],
+      ['/', 'Tổng quan', '◎'], ['/tro-ly', 'Trợ lý AI', '✦'], ['/tao-nhanh', 'Tạo trợ lý nhanh', '⚡'], ['/menu-tro-ly', 'Menu & hành động', '☰'],
       ['/tri-thuc', 'Kho kiến thức', '❖'], ['/kenh-ban', 'Kênh kết nối', '⇄'], ['/hoi-thoai', 'Hội thoại & bàn giao', '✉'],
     ] },
     ...ws.industries.map(i => ({ group: INDUSTRY_META[i].short, items: INDUSTRY_META[i].modules.map(m => [m.path, m.label, m.icon] as NavItem) })),
@@ -81,6 +82,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       case '/bieu-cam-fanpage': return <ReactionSettings />;
       case '/tri-thuc': return <Knowledge />;
       case '/tro-ly': return <Assistants />;
+      case '/tao-nhanh': return <QuickSetup />;
       case '/hoi-thoai': return <Conversations />;
       case '/bao-cao': return <Reports />;
       case '/thong-bao': return <Notifications />;

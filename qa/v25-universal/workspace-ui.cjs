@@ -125,7 +125,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
   }
 
   // 1. Every route, every viewport, shop owner + artist owner.
-  const shopRoutes = ['/', '/tro-ly', '/menu-tro-ly', '/tri-thuc', '/kenh-ban', '/hoi-thoai', '/san-pham', '/don-hang', '/khach-hang', '/bao-cao', '/thong-bao', '/cai-dat-bot', '/phong-cach', '/goi-dich-vu', '/tai-khoan'];
+  const shopRoutes = ['/', '/tro-ly', '/tao-nhanh', '/menu-tro-ly', '/tri-thuc', '/kenh-ban', '/hoi-thoai', '/san-pham', '/don-hang', '/khach-hang', '/bao-cao', '/thong-bao', '/cai-dat-bot', '/phong-cach', '/goi-dich-vu', '/tai-khoan'];
   const artistRoutes = ['/', '/tro-ly', '/nghe-si', '/menu-tro-ly', '/kenh-ban', '/khach-hang', '/bao-cao', '/phong-cach'];
   for (const [w, h] of [[360, 740], [390, 844], [768, 1024], [1280, 860], [1440, 900]]) {
     const tag = String(w);
@@ -143,6 +143,13 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     const nav = await p.locator('nav[aria-label="Menu Workspace"]').innerText();
     ok(nav.includes('Sản phẩm & tồn kho') && nav.includes('Đơn hàng') && !nav.includes('Hồ sơ & âm nhạc'), 'shop workspace nav: products/orders, no artist module');
     ok(nav.includes('Trợ lý AI') && nav.includes('Menu & hành động') && nav.includes('Kho kiến thức') && nav.includes('Kênh kết nối') && nav.includes('Hội thoại & bàn giao') && nav.includes('Báo cáo') && nav.includes('Thông báo') && nav.includes('Gói dịch vụ') && nav.includes('Cài đặt'), 'universal navigation items present');
+    // Tạo trợ lý nhanh: until the Worker route is deployed, nothing can be sent; the sample is labelled and cannot be saved.
+    await p.goto(base + '#/tao-nhanh'); await p.waitForTimeout(300);
+    ok(await p.getByRole('button', { name: 'Đọc bảng giá' }).isDisabled(), 'quick setup: reading disabled while the route is not deployed');
+    await p.getByRole('button', { name: 'Xem ví dụ' }).click(); await p.waitForTimeout(200);
+    ok(await p.getByText('VÍ DỤ MẪU').count() === 1 && await p.getByRole('button', { name: /Xác nhận lưu/ }).isDisabled(), 'quick setup: sample is labelled and cannot be saved');
+    ok(await p.locator('tr.needs-check').count() === 2, 'quick setup: rows the AI was unsure about are highlighted');
+    if (out !== '-') { await p.screenshot({ path: `${out}/ws_quick-setup-sample_1280.png`, fullPage: true }); await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(150); await p.screenshot({ path: `${out}/ws_quick-setup-sample_390.png`, fullPage: true }); await p.setViewportSize({ width: 1280, height: 860 }); }
     // Regression: V23 product add flow still works (Acceptance 02).
     await p.goto(base + '#/san-pham'); await p.waitForTimeout(300);
     await p.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
