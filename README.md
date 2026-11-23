@@ -16,7 +16,7 @@ Không có khoá bí mật nào trong repo: khoá Supabase ở đây chỉ là k
 | `qa/` | Kiểm thử offline (V13.6 Messenger, V20 Store Authority, V21–V25, reactions, config-core). |
 | `docs/` | Ghi chú kỹ thuật và checkpoint. |
 
-Bản lưu trữ trước khi dọn (QA cũ V13–V20.1, tài sản web cũ): tag `archive/truoc-don-dep-2026-11-23`.
+Bản trước khi dọn (QA cũ V13–V20.1, tài sản web cũ) vẫn nằm trong lịch sử git ở commit `9355974`; lấy lại file bằng `git checkout 9355974 -- <đường-dẫn>`.
 
 ## Kiểm tra nhanh
 
