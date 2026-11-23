@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'"/>
+<title>TIEN404 AI Chat Widget · QA</title>
+<style>
+:root{color-scheme:dark;--brand:#36c4a7;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:#e9f3ff}
+*{box-sizing:border-box}body{margin:0;background:transparent;overflow:hidden}
+#bubble{position:absolute;right:8px;bottom:8px;border:1px solid #6affd6;background:#102d2b;color:#f1fffa;border-radius:999px;padding:12px 17px;font:inherit;font-weight:750;cursor:pointer;box-shadow:0 7px 22px #0009;max-width:calc(100% - 16px)}
+#bubble:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #ffdd87;outline-offset:2px}
+#panel{position:absolute;inset:7px 7px 8px;border-radius:19px;border:1px solid #31465b;background:#101b2b;box-shadow:0 15px 48px #0009;overflow:hidden;display:flex;flex-direction:column}
+#panel[hidden]{display:none}
+.top{padding:14px;background:#172b37;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.top strong{font-size:15px}.top small{font-size:10px;display:block;color:#b6ccce;margin-top:4px}
+.top button{color:#e7f6ff;border:1px solid #456274;background:#23384a;border-radius:10px;font-size:16px;width:34px;height:34px;cursor:pointer}
+.logo{display:inline-grid;place-items:center;background:var(--brand);color:#06191a;border-radius:11px;font-weight:900;width:32px;height:32px;margin-right:7px}
+.title{display:flex;align-items:center;gap:2px;min-width:0}
+.info{min-width:0}.info strong{display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.banner{font-size:11px;padding:8px 12px;background:#25453d;color:#cafce5}
+.feed{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px;min-height:0}
+.msg{background:#24364b;color:#e8efff;padding:11px 12px;max-width:90%;border-radius:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.you{align-self:flex-end;background:#226955;color:#fff}
+.msg span{font-size:10px;display:block;margin-bottom:4px;opacity:.8}
+.product{background:#18283d;border:1px solid #3c5873;border-radius:12px;padding:12px;max-width:91%;line-height:1.6}
+.product strong{font-size:14px}.product small{color:#b5c8de}
+.actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 10px}
+.actions button{background:#243d4b;color:#e8f4ff;border:1px solid #49687b;border-radius:9px;font:inherit;font-size:12px;padding:7px 9px;cursor:pointer}
+.compose{display:flex;gap:7px;border-top:1px solid #324b5c;padding:10px}
+.compose input{flex:1;min-width:0;background:#0b1421;border:1px solid #4c667e;border-radius:10px;color:#f8faff;padding:11px;font:inherit}
+.compose button{border:0;border-radius:10px;background:var(--brand);color:#032321;font-weight:800;padding:10px;cursor:pointer}
+.label{font-size:11px;color:#a9bbd2;padding:0 12px 10px}
+@media(max-width:390px){#panel{inset:4px}.top{padding:10px}.feed{padding:9px}.actions{padding:0 9px 7px}}
+</style></head><body>
+<button type="button" id="bubble" aria-label="Mở trợ lý AI TIEN404">✦ Tư vấn AI <span aria-hidden="true">↗</span></button>
+<section id="panel" aria-label="Cuộc trò chuyện AI mô phỏng" hidden>
+<div class="top"><div class="title"><span class="logo" aria-hidden="true">AI</span><div class="info"><strong id="shopname">Trợ lý TIEN404</strong><small>Đang xem bản QA</small></div></div>
+<button type="button" id="close" aria-label="Thu gọn trò chuyện">×</button></div>
+<div class="banner">MÔ PHỎNG · Không gửi tin, không lưu đơn hay thông tin khách</div>
+<div id="feed" role="log" aria-live="polite" class="feed"></div>
+<div class="actions"><button type="button" data-action="catalog">Xem sản phẩm</button>
+<button type="button" data-action="price">Hỏi giá</button>
+<button type="button" data-action="human">Gặp nhân viên</button></div>
+<form class="compose" id="form"><input id="message" aria-label="Nhập lời nhắn thử" maxlength="500" required placeholder="Nhập tin nhắn..." />
+<button type="submit">Gửi thử</button></form>
+<div class="label">TIEN404 AI · Preview only · Dữ liệu fixture</div>
+</section>
+<script>
+'use strict';
+const shops={
+ qa_shop_a:{name:'Tạp hóa An',primary:'#49dab0',greet:'Chào bạn! Mình có thể hỗ trợ về sản phẩm và chính sách cửa hàng.',sku:'QA-A01',product:'Gạo đóng gói (QA)'},
+ qa_shop_b:{name:'Thời trang Bình',primary:'#baa1ff',greet:'Chào bạn! Mình hỗ trợ chọn mẫu và kích cỡ nhé.',sku:'QA-B01',product:'Áo thun đen (QA)'},
+ qa_shop_c:{name:'Vật liệu Cường',primary:'#efb767',greet:'Chào anh/chị! Mình có thể hỗ trợ vật tư và yêu cầu báo giá.',sku:'QA-C01',product:'Gạch xây dựng (QA)'}
+};
+const qa=new URL(location.href).searchParams.get('qa');
+const shop=Object.hasOwn(shops,qa)?shops[qa]:shops.qa_shop_a;
+document.documentElement.style.setProperty('--brand',shop.primary);
+document.getElementById('shopname').textContent=shop.name;
+const panel=document.getElementById('panel'),bubble=document.getElementById('bubble'),feed=document.getElementById('feed'),input=document.getElementById('message');
+const msg=(person,value)=>{
+ const p=document.createElement('div');p.className='msg '+(person==='Khách QA'?'you':'');
+ const name=document.createElement('span');name.textContent=person;
+ p.append(name,document.createTextNode(String(value).slice(0,500)));
+ feed.append(p);feed.scrollTop=feed.scrollHeight;
+};
+msg('AI · Bản xem trước',shop.greet);
+function resize(open){
+ panel.hidden=!open;bubble.hidden=open;
+ // This message contains only synthetic dimensions, no data or auth claims.
+ if(window.parent!==window)window.parent.postMessage({kind:'TIEN404_QA_WIDGET_SIZE',height:open?520:72},'*');
+}
+bubble.addEventListener('click',()=>resize(true));
+document.getElementById('close').addEventListener('click',()=>resize(false));
+const makeProduct=()=>{
+ const p=document.createElement('div');p.className='product';
+ const title=document.createElement('strong');title.textContent=shop.product;
+ const detail=document.createElement('div');detail.textContent='Mã: '+shop.sku;
+ const info=document.createElement('small');info.textContent='Giá và tồn kho: phải xác minh từ Commerce Core';
+ p.append(title,detail,info);feed.append(p);feed.scrollTop=feed.scrollHeight;
+};
+for(const b of document.querySelectorAll('[data-action]'))b.addEventListener('click',()=>{
+ if(b.dataset.action==='catalog')makeProduct();
+ if(b.dataset.action==='price')msg('AI · Bản xem trước','Giá cần đọc từ hệ thống sản phẩm của đúng shop. Chưa có báo giá thực.');
+ if(b.dataset.action==='human')msg('AI · Bản xem trước','Tôi sẽ ghi nhận yêu cầu gặp nhân viên khi chức năng handoff được phê duyệt.');
+});
+document.getElementById('form').addEventListener('submit',event=>{
+ event.preventDefault();const text=input.value.trim();if(!text)return;
+ msg('Khách QA',text);input.value='';
+ msg('AI · Bản xem trước','Đây là môi trường QA không gọi AI hay Messenger thật. Nhân viên sẽ kiểm tra dữ liệu shop trước khi phát hành.');
+});
+resize(false);
+</script>
+</body></html>

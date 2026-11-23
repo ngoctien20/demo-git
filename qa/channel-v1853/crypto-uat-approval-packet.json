@@ -1,0 +1,79 @@
+{
+  "phase": "V18.5.3",
+  "timestamp": "2026-11-18 JST",
+  "status": "SOURCE_ONLY_CRYPTOGRAPHIC_UAT_NOT_HOSTED",
+  "parentPR": 405,
+  "blockedProduction": true,
+  "scope": "SIGNED_PRIVATE_OPERATOR_JWT_VERIFICATION_AND_GATEWAY_NOHOST_UAT",
+  "existingSharedCore": {
+    "id": "iyfGUiEsZlNTBWOR",
+    "published": "456862c9-e5ee-4bfa-9931-47dbc39ab73d",
+    "fullAgentApproved": false,
+    "reachableSupportTicketInsert": true,
+    "onlyCandidateChildren": [
+      "oOOXicKXGkBskKqh",
+      "igPOsSbEgd4NgtRA"
+    ]
+  },
+  "cloudflareInventory": {
+    "accessAppsChecked": 4,
+    "widgetAccessAppVerified": false,
+    "reusedWorker": "tien404-widget-gateway-v144-staging",
+    "lastKnownDeployment": "a9f197fe-68c1-4321-bfb1-bc333d3093c6",
+    "lastKnownVersion": "98c8aad5-2dae-47c3-9cb0-8473065213e6",
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false,
+    "bindings": 0,
+    "changePerformed": false
+  },
+  "implementation": {
+    "cryptographicAlgorithm": "RS256 only",
+    "pinnedIssuer": true,
+    "pinnedAudience": true,
+    "pinnedJwk": true,
+    "approvedPrivateOperatorSub": true,
+    "jwksFetchedByCode": false,
+    "tokenHeader": "Cf-Access-Jwt-Assertion",
+    "rejectRemoteJwkHeader": true,
+    "strictSessionExpiry": true,
+    "fullPublicCustomerIdentityVerified": false,
+    "storeAccessAuthorized": false,
+    "hostedOriginAuthVerified": false,
+    "sourceModule": "qa/channel-v1853/access-jwt-verifier.cjs"
+  },
+  "qa": {
+    "offlineSignedJwtTests": "PENDING_CI",
+    "offlineHttpGatewayIntegration": "PENDING_CI",
+    "realAccessLoginTests": 0,
+    "realCloudflareJwtTokensFetched": 0,
+    "hostedGatewayTests": 0,
+    "liveN8nCalls": 0,
+    "actualCustomerOrderReads": 0,
+    "orderWrites": 0,
+    "providerSends": 0
+  },
+  "permissions": {
+    "deployModifyExistingWorker": false,
+    "createOrChangeAccessApp": false,
+    "changeAccessPolicy": false,
+    "enableWorkersDevOrRoutes": false,
+    "createD1OrBindings": false,
+    "rotateAnyCredentials": false,
+    "enableRealJWTIntake": false,
+    "bindRealN8nCaller": false,
+    "invokeRealCommerce": false,
+    "runProduction": false,
+    "changeLiveWidget": false,
+    "incurPaidUsage": false
+  },
+  "requiredFutureApprovals": [
+    "exact protected staging hostname and operator list",
+    "approved Access App and audience",
+    "signed JWT origin independent validation plus bypass negative",
+    "atomic rate/replay D1 on isolated staging",
+    "real n8n Catalog/Cart read-only caller",
+    "owner approval of synthetic public catalog",
+    "rollback and expense cap"
+  ],
+  "nohostRollback": "Close/revert stacked Draft PR; original V14.4 Cloudflare Worker remains unchanged."
+}

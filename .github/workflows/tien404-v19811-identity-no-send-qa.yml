@@ -1,0 +1,40 @@
+name: "TIEN404 V19.8.11 Zalo Bot Identity Evidence and Merchant No-Send Admission"
+
+on:
+  pull_request:
+    paths:
+      - "qa/channel-v19811/**"
+      - ".github/workflows/tien404-v19811-identity-no-send-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-no-send-contract:
+    name: "Mock provider evidence / consent negatives / no-send guard"
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout without persistence
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test synthetic merchant consent and no-send admission gate
+        run: node qa/channel-v19811/protected-no-send-admission.test.mjs
+      - name: Test official Zalo read-only response schema with mock results only
+        run: node qa/channel-v19811/zalo-official-readonly-verifier.test.mjs
+      - name: Ensure live provider endpoints are NOT called
+        run: |
+          test -z "${ZALO_BOT_TOKEN:-}"
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_DB_PASSWORD:-}"
+          test ! -e qa/channel-v19811/.env
+          test ! -e qa/channel-v19811/hosted-migration.sql
+          echo "REAL_ZALO_API_CALLS=0"
+          echo "PROVIDER_SENDS=0"
+          echo "HOSTED_COMMERCE_READS=0"

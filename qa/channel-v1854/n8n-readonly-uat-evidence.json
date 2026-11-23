@@ -1,0 +1,130 @@
+{
+  "phase": "V18.5.4",
+  "date": "2026-11-18 JST",
+  "status": "REAL_N8N_READ_ONLY_SANDBOX_UAT_VERIFIED",
+  "harness": {
+    "workflowId": "715VV39ohwibkoUK",
+    "name": "TIEN404 Widget Read-Only Commerce UAT V18.5.4",
+    "project": "n8n Personal",
+    "folder": "90_QA - DIAGNOSTICS",
+    "active": false,
+    "published": false,
+    "executionId": "5341",
+    "mode": "manual",
+    "status": "success",
+    "subExecutions": 9
+  },
+  "publishedChildren": {
+    "catalog": {
+      "workflowId": "oOOXicKXGkBskKqh",
+      "versionId": "e0f1e345-8e6c-40cb-8e6a-d7ad2eb92696",
+      "operation": "DataTable row.get"
+    },
+    "cart": {
+      "workflowId": "igPOsSbEgd4NgtRA",
+      "versionId": "eff32e20-a6d0-4975-88b8-107eae752b4b",
+      "operation": "DataTable row.get"
+    },
+    "resolver": {
+      "workflowId": "5Eeh8hbpsoNhuiVo",
+      "versionId": "a99c7350-7aea-446d-bdc5-4b10f52c3ad1",
+      "operations": [
+        "DataTable row.get",
+        "DataTable row.get",
+        "DataTable row.get"
+      ]
+    },
+    "fullAgentInvoked": false,
+    "supportTicketWriterInvoked": false
+  },
+  "cases": [
+    {
+      "executionId": "5342",
+      "case": "Materials catalog",
+      "status": "success",
+      "sku": "VL-101",
+      "priceVnd": 79000,
+      "stock": 120
+    },
+    {
+      "executionId": "5344",
+      "case": "Materials cart preview",
+      "status": "success",
+      "sku": "VL-101",
+      "quantity": 3,
+      "subtotalVnd": 237000,
+      "canConfirm": false,
+      "canWrite": false
+    },
+    {
+      "executionId": "5346",
+      "case": "Grocery catalog",
+      "status": "success",
+      "sku": "TG-101",
+      "priceVnd": 4500,
+      "stock": 200
+    },
+    {
+      "executionId": "5348",
+      "case": "Grocery cart preview",
+      "status": "success",
+      "sku": "TG-101",
+      "quantity": 2,
+      "subtotalVnd": 9000,
+      "canConfirm": false,
+      "canWrite": false
+    },
+    {
+      "executionId": "5350",
+      "case": "Materials cannot read Grocery SKU",
+      "status": "success",
+      "productsReturned": 0
+    },
+    {
+      "executionId": "5352",
+      "case": "Grocery cannot read Materials SKU",
+      "status": "success",
+      "productsReturned": 0
+    },
+    {
+      "executionId": "5354",
+      "case": "Materials cart rejects Grocery SKU",
+      "status": "success",
+      "success": false,
+      "error": "sku_not_found:TG-101",
+      "canConfirm": false
+    },
+    {
+      "executionId": "5356",
+      "case": "Grocery cart rejects Materials SKU",
+      "status": "success",
+      "success": false,
+      "error": "sku_not_found:VL-101",
+      "canConfirm": false
+    },
+    {
+      "executionId": "5358",
+      "case": "Unknown Website channel",
+      "status": "success",
+      "success": false,
+      "reason": "unregistered_channel"
+    }
+  ],
+  "assertions": {
+    "passed": 9,
+    "failed": 0,
+    "orderWrites": 0,
+    "stockWrites": 0,
+    "providerSends": 0,
+    "customerOrderReads": 0,
+    "customerPiiRead": 0,
+    "aiCalls": 0
+  },
+  "scopeLimitations": {
+    "tenantIsolation": "CROSS_TENANT_SANDBOX_ONLY",
+    "storeLevelIsolation": "NOT_VERIFIED",
+    "reason": "Current Resolver and Catalog/Cart filters bind tenantId, not storeId. These two QA website channels map to two distinct sandbox tenants, not two stores under one tenant.",
+    "widgetToGatewayToN8n": "NOT_RUN",
+    "realCloudflareAccessJwt": "NOT_RUN"
+  }
+}

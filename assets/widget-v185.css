@@ -1,0 +1,28 @@
+/* V18.5 isolated widget CSS. Loaded dynamically only when staging flag is TRUE.
+ * Keeps the existing launcher/panel and mobile behavior; does not style legacy
+ * @n8n/chat when feature flag is off. */
+.tien404-v185-widget{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;background:#101328;color:#f3f4ff;font-family:inherit}
+.tien404-v185-banner{flex:none;text-align:center;padding:9px 12px;font-size:11px;font-weight:800;letter-spacing:.01em;background:#172f42;color:#b1eafa;border-bottom:1px solid #315671}
+.tien404-v185-feed{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:15px 12px 25px;scrollbar-width:thin}
+.tien404-v185-message{max-width:93%;padding:11px 14px;font-size:14px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap;background:#282d4b;color:#f0f3ff;border-radius:15px 15px 15px 5px}
+.tien404-v185-message.is-user{align-self:flex-end;background:#7452d9;color:#fff;border-radius:15px 15px 5px 15px}
+.tien404-v185-product{display:flex;align-items:flex-start;gap:12px;width:min(100%,345px);padding:11px;border:1px solid #37496b;border-radius:14px;background:#19243c}
+.tien404-v185-product img{height:78px;width:78px;object-fit:cover;border-radius:10px;flex:0 0 78px}
+.tien404-v185-product>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tien404-v185-product strong{font-size:13px;color:#fff;overflow-wrap:anywhere}
+.tien404-v185-product span{font-size:14px;font-weight:800;color:#94e0ff}
+.tien404-v185-product small{color:#bac8d9;font-size:11px;overflow-wrap:anywhere}
+.tien404-v185-actions{display:flex;gap:7px;flex-wrap:wrap;max-width:100%;margin-top:2px}
+.tien404-v185-actions button{border:1px solid #5c76ad;border-radius:40px;padding:7px 12px;font:inherit;font-size:12px;background:#223251;color:#d8edff;cursor:pointer;min-height:36px}
+.tien404-v185-actions button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#tien404-chat-panel:has(.tien404-v185-widget) .ai-live-card{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#tien404-chat-panel:has(.tien404-v185-widget) #n8n-chat{height:min(450px,65dvh);min-height:200px;flex:1 1 auto;display:flex;min-width:0}
+#tien404-chat-panel:has(.tien404-v185-widget) #tien404-composer{flex:none}
+@media(max-width:600px){
+  #tien404-chat-panel:has(.tien404-v185-widget) #n8n-chat{height:min(490px,57dvh);min-height:170px}
+  .tien404-v185-message{font-size:13px;max-width:96%}
+  .tien404-v185-banner{padding:7px 8px;font-size:10px}
+  .tien404-v185-feed{padding:12px 9px 18px}
+  .tien404-v185-product{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.tien404-v185-widget *{scroll-behavior:auto!important}}

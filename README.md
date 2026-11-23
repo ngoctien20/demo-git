@@ -16,6 +16,15 @@ Không có khoá bí mật nào trong repo: khoá Supabase ở đây chỉ là k
 | `qa/` | Kiểm thử offline (V13.6 Messenger, V20 Store Authority, V21–V25, reactions, config-core). |
 | `docs/` | Ghi chú kỹ thuật và checkpoint. |
 
+## Để dành dùng sau (chưa chạy trên web hiện tại)
+
+| Thứ | Dùng cho |
+|---|---|
+| `qa/channel-v143`, `v144`, `v185`, `v1851`–`v1855` + `assets/widget-v185-*`, `ai-consultant.js`, `live-chat.css` | Khung chat nhúng vào web của shop + cổng bảo vệ Cloudflare (đã có test). |
+| `qa/channel-v19811` | Kiểm tra Zalo OA chính chủ (chỉ đọc). |
+| `qa/v201-p0-s1` | Ghép chủ shop qua mã QR (offline). |
+| `src/scss/` + `MOTION_GUIDE.md` + `assets/style.css` | Hệ hiệu ứng chuyển động bản cũ (dựng lại bằng `npm run build:css`). |
+
 Bản trước khi dọn (QA cũ V13–V20.1, tài sản web cũ) vẫn nằm trong lịch sử git ở commit `9355974`; lấy lại file bằng `git checkout 9355974 -- <đường-dẫn>`.
 
 ## Kiểm tra nhanh

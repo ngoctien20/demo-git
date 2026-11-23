@@ -1,0 +1,40 @@
+/* TIEN404 AI / pages */
+.notice{display:flex;gap:12px;align-items:flex-start;margin-bottom:22px;padding:14px 19px;border:1px solid #554976;border-radius:13px;background:#251c3d;color:#cebfeb;font-size:13px}
+
+.notice strong{color:white}
+
+.mode-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+
+.mode-tabs a{padding:8px 14px;border:1px solid #383a58;border-radius:12px;background:#15182b;font-size:13px}
+
+.mode-tabs a:hover,.mode-tabs a.active{background:#2e254d;border-color:#8b64c8}
+
+.info-box{padding:22px 26px;background:#12182b;border:1px solid #2e465d;border-radius:17px;color:#c5cee4}
+
+.info-box p{font-size:14px}
+
+.info-box h3{margin-top:0;font-size:17px}
+
+.industry-hero{display:flex;justify-content:space-between;align-items:center;gap:20px}
+
+.industry-hero .card-icon{width:75px;height:75px;font-size:33px;margin:0}
+
+.blank-state{border:1px dashed #44486b;border-radius:15px;padding:34px;text-align:center;color:#9fa4bd}
+
+.legal{max-width:860px}
+
+.legal h2{font-size:25px;margin-top:36px}
+
+.legal p,.legal li{color:#aeb1c6;font-size:14px}
+
+.legal ul{padding-left:24px}
+
+.notfound{min-height:60vh;display:grid;place-items:center;text-align:center}
+
+.notfound strong{font-size:130px;line-height:1;color:#9870f9}
+
+.notfound h1{font-size:34px}
+
+.small-note{font-size:11px;color:#8185a2}
+
+.hide{display:none!important}
