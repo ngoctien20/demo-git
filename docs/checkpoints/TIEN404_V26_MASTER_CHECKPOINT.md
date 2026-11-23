@@ -29,6 +29,12 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 
 ## Nhật ký
 
+### 2026-11-23 ~03:10Z — Sheet AI_SALES_DEMO đa ngành (anh Tiến yêu cầu)
+- Sao lưu trước: bản sao `AI_SALES_DEMO_BACKUP_20261123_truoc_da_nganh` trên Drive.
+- Sửa: đổi tên tab `huomg_dan` → `huong_dan` và viết lại hướng dẫn cho mọi tab; `price_clean` tính cả cột; xếp Products theo SKU (A001 lên đầu).
+- Đa ngành: Products thêm cột `nganh, nhom, don_vi` bên phải (4 cột bot đọc giữ nguyên); thêm tab `Cau_hinh_nganh` (shop/dich_vu/giao_duc/nghe_si → 3 nút menu theo Action Registry), `Dich_vu`, `Khoa_hoc`, `Nghe_si`, `Lich_hen` với dữ liệu DEMO. Bot chưa đọc các tab mới; nối vào bot là bước sau (cần duyệt publish).
+- Đính chính: cột `price` là số có định dạng, không phải chữ.
+
 ### 2026-11-22 22:40Z — Việc offline chờ n8n (anh Tiến sẽ nâng gói tối nay)
 - Thiết kế tích hợp Shared AI Core (#488 + Config Core): [TIEN404_V26_SHARED_CORE_DESIGN.md](TIEN404_V26_SHARED_CORE_DESIGN.md) — PROPOSED, các bước S1–S8, cần duyệt ở S1 (merge), S5 (migration), S6–S8 (publish).
 - Kế hoạch UAT live: [TIEN404_V26_LIVE_UAT_PLAN.md](TIEN404_V26_LIVE_UAT_PLAN.md) — preflight P1–P5, Messenger M-01..09, đơn hàng O-01..07 (cần xác nhận vì ghi Sheet DEMO), handoff H-01..03.

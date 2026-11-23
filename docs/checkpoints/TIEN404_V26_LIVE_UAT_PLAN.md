@@ -20,7 +20,7 @@ Lưu ý: `saveDataSuccessExecution=none` trên Z7Fd/đơn hàng ⇒ execution th
 
 ## 1. Dữ liệu thật dùng cho UAT (đọc Sheet AI_SALES_DEMO lúc 22/11 22:40Z)
 
-Sheet có 4 tab: `Products` (21 SKU, cột `sku, name, price, stock, price_clean`), `Orders` (7 đơn), `Customers` (trống), `huomg_dan` (hướng dẫn nhập).
+Sheet (cập nhật 23/11): `Products` (21 SKU ngành shop, cột `sku, name, price, stock, price_clean, nganh, nhom, don_vi`; 4 cột đầu không đổi), `Orders` (7 đơn), `Customers` (trống), `huong_dan`, và các tab đa ngành DEMO chưa nối bot: `Cau_hinh_nganh`, `Dich_vu`, `Khoa_hoc`, `Nghe_si`, `Lich_hen`. Bản sao lưu trước khi sửa: `AI_SALES_DEMO_BACKUP_20261123_truoc_da_nganh`.
 
 | Nhóm | SKU dùng để thử | Giá / tồn trong Sheet | Mục đích |
 |---|---|---|---|
@@ -66,11 +66,12 @@ Thông tin khách thử (không phải người thật): tên “Khách QA Messe
 
 Sau UAT: chủ dự án chọn giữ hay xoá các dòng đơn thử (xoá cần duyệt). Tồn kho trong `Products` **không** tự trừ khi tạo đơn (thiết kế hiện tại), nên không cần hoàn tồn.
 
-## 4. Điểm dữ liệu cần lưu ý (không sửa trong UAT)
+## 4. Điểm dữ liệu cần lưu ý
 
-- Cột `price` đang là chữ có định dạng (“159.000đ”), trong khi tab `huomg_dan` ghi “chỉ nhập số”. Bản Create Order mới đọc đúng cả hai dạng; cột `price_clean` có số sạch nhưng các tool hiện chưa dùng.
-- A001 “Áo polo nam xanh navy size G” giá 245.000đ nằm cuối bảng; 4 đơn cũ của A001 có đơn giá 250.000đ (giá đã đổi sau khi đặt). Manage Order giữ đơn giá cũ khi chỉ đổi thông tin liên hệ.
-- Tên tab `huomg_dan` có lỗi chính tả; tab `Customers` trống.
+- Cột `price` là **số** có định dạng hiển thị `#,##0"đ"` (đúng quy tắc “chỉ nhập số”); bản nhận định cũ “giá là chữ” là sai. `price_clean` nay tính cho cả cột (trước chỉ tới dòng 22).
+- A001 “Áo polo nam xanh navy size G” 245.000đ: đã xếp lại lên đầu bảng; chữ “size G” chờ chủ dự án xác nhận. 4 đơn cũ của A001 đơn giá 250.000đ giữ nguyên (giá lúc đặt).
+- Tab `huomg_dan` đã đổi tên thành `huong_dan` (bot không đọc tab này).
+- Các tab ngành khác chỉ là dữ liệu DEMO; UAT này chỉ thử ngành shop.
 
 ## 5. Handoff và khôi phục bot
 
