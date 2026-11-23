@@ -5,12 +5,10 @@ on:
       - work/v136m-messenger-rich-ui-offline-staging-20261115
     paths:
       - "qa/messenger-rich-v136m/**"
-      - "docs/ai-handoff/V13_6M_*"
       - ".github/workflows/v136m-messenger-rich-ui-qa.yml"
   pull_request:
     paths:
       - "qa/messenger-rich-v136m/**"
-      - "docs/ai-handoff/V13_6M_*"
       - ".github/workflows/v136m-messenger-rich-ui-qa.yml"
   workflow_dispatch:
 permissions:
