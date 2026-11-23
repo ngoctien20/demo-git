@@ -7,14 +7,12 @@ on:
       - "qa/messenger-rich-v136m/**"
       - "qa/messenger-rich-v136m1/**"
       - "qa/messenger-rich-v136m2/**"
-      - "docs/ai-handoff/V13_6M2_*"
       - ".github/workflows/v136m2-trusted-messenger-resolver-qa.yml"
   pull_request:
     paths:
       - "qa/messenger-rich-v136m/**"
       - "qa/messenger-rich-v136m1/**"
       - "qa/messenger-rich-v136m2/**"
-      - "docs/ai-handoff/V13_6M2_*"
       - ".github/workflows/v136m2-trusted-messenger-resolver-qa.yml"
   workflow_dispatch:
 permissions:

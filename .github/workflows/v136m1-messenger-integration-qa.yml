@@ -6,13 +6,11 @@ on:
     paths:
       - "qa/messenger-rich-v136m/**"
       - "qa/messenger-rich-v136m1/**"
-      - "docs/ai-handoff/V13_6M1_*"
       - ".github/workflows/v136m1-messenger-integration-qa.yml"
   pull_request:
     paths:
       - "qa/messenger-rich-v136m/**"
       - "qa/messenger-rich-v136m1/**"
-      - "docs/ai-handoff/V13_6M1_*"
       - ".github/workflows/v136m1-messenger-integration-qa.yml"
   workflow_dispatch:
 permissions:
