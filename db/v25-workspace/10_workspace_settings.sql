@@ -1,7 +1,9 @@
 -- TIEN404 V25 Universal Workspace — owner settings. STATUS: PROPOSED (not applied anywhere).
 -- REQUIRES V20 10/20/30, V23 web 20 and Config Core 10 (uses app_private.t404_cfg_manager_tenant).
---   public.set_workspace_industry(p_store, p_industry)  owner only; writes tenants.industry
---       (retail | artist | service | education | other). No schema change, no store_id change.
+--   public.workspace_profiles  one row per Store: free industry name, any mix of modules
+--       (shop | artist | service | education), how customers are called. Read by Store members (RLS).
+--   public.save_workspace_profile(p_store, p_label, p_modules, p_people_label)  owner only.
+--       tenants.industry and store_id are not changed.
 --   public.store_briefing_settings  one row per Store; read by owner/manager (RLS); no direct writes
 --   public.save_briefing_settings(p_store, p_opt_in, p_send_time, p_destination, p_metrics)
 --       owner/manager. Saves preferences only: NOTHING is sent. status stays 'awaiting_sender'
@@ -13,31 +15,54 @@ SET LOCAL lock_timeout = '5s';
 DO $pre$ BEGIN
  IF to_regprocedure('app_private.t404_cfg_manager_tenant(uuid)') IS NULL THEN RAISE EXCEPTION 'T404_V25_PRECHECK_CONFIG_CORE_MISSING'; END IF;
  IF to_regprocedure('public.register_shop(text,text)') IS NULL THEN RAISE EXCEPTION 'T404_V25_PRECHECK_V23_MISSING'; END IF;
- IF to_regprocedure('public.set_workspace_industry(uuid,text)') IS NOT NULL THEN RAISE EXCEPTION 'T404_V25_ALREADY_APPLIED'; END IF;
+ IF to_regclass('public.workspace_profiles') IS NOT NULL THEN RAISE EXCEPTION 'T404_V25_ALREADY_APPLIED'; END IF;
 END $pre$;
 
--- 1. Workspace industry (owner only) ------------------------------------------------------
-CREATE FUNCTION public.set_workspace_industry(p_store uuid, p_industry text)
- RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
-DECLARE tid uuid := app_private.t404_cfg_manager_tenant(p_store); old text;
+-- 1. Workspace profile (owner only): free industry name + any mix of modules + how customers are called.
+CREATE TABLE public.workspace_profiles(
+ store_id uuid PRIMARY KEY,
+ tenant_id uuid NOT NULL,
+ label text NOT NULL CHECK (char_length(btrim(label)) BETWEEN 2 AND 60),
+ modules text[] NOT NULL DEFAULT '{}' CHECK (modules <@ ARRAY['shop','artist','service','education']::text[]),
+ people_label text NOT NULL CHECK (char_length(btrim(people_label)) BETWEEN 2 AND 40),
+ updated_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+ updated_at timestamptz NOT NULL DEFAULT now(),
+ CONSTRAINT workspace_profiles_store_fk FOREIGN KEY (tenant_id, store_id) REFERENCES public.stores(tenant_id, id) ON DELETE RESTRICT
+);
+REVOKE ALL ON public.workspace_profiles FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.workspace_profiles TO authenticated;
+GRANT ALL ON public.workspace_profiles TO service_role;
+ALTER TABLE public.workspace_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_profiles FORCE ROW LEVEL SECURITY;
+CREATE POLICY workspace_profiles_member_read ON public.workspace_profiles FOR SELECT TO authenticated
+ USING (EXISTS (SELECT 1 FROM public.store_memberships sm
+   JOIN public.stores s ON s.tenant_id=sm.tenant_id AND s.id=sm.store_id AND s.active
+   JOIN public.tenant_memberships tm ON tm.tenant_id=sm.tenant_id AND tm.user_id=sm.user_id AND tm.active
+   WHERE sm.tenant_id=workspace_profiles.tenant_id AND sm.store_id=workspace_profiles.store_id
+     AND sm.user_id=(SELECT auth.uid()) AND sm.active));
+
+CREATE FUNCTION public.save_workspace_profile(p_store uuid, p_label text, p_modules text[], p_people_label text)
+ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
+DECLARE tid uuid := app_private.t404_cfg_manager_tenant(p_store); m text[]; lb text := btrim(coalesce(p_label,'')); pl text := btrim(coalesce(p_people_label,''));
 BEGIN
- IF NOT EXISTS (SELECT 1 FROM public.tenant_memberships m WHERE m.tenant_id=tid AND m.user_id=auth.uid() AND m.active AND m.role='owner')
+ IF NOT EXISTS (SELECT 1 FROM public.tenant_memberships x WHERE x.tenant_id=tid AND x.user_id=auth.uid() AND x.active AND x.role='owner')
   OR NOT EXISTS (SELECT 1 FROM public.store_memberships sm WHERE sm.tenant_id=tid AND sm.store_id=p_store AND sm.user_id=auth.uid() AND sm.active AND sm.role='owner') THEN
   RAISE EXCEPTION 'access_denied' USING ERRCODE='42501';
  END IF;
- IF p_industry IS NULL OR p_industry NOT IN ('retail','artist','service','education','other') THEN
-  RAISE EXCEPTION 'invalid_industry' USING ERRCODE='22023';
+ SELECT coalesce(array_agg(DISTINCT x ORDER BY x),'{}') INTO m FROM unnest(coalesce(p_modules,'{}')) x;
+ IF char_length(lb) NOT BETWEEN 2 AND 60 OR char_length(pl) NOT BETWEEN 2 AND 40
+  OR NOT (m <@ ARRAY['shop','artist','service','education']::text[]) THEN
+  RAISE EXCEPTION 'invalid_profile' USING ERRCODE='22023';
  END IF;
- SELECT t.industry INTO old FROM public.tenants t WHERE t.id=tid FOR UPDATE;
- IF old IS DISTINCT FROM p_industry THEN
-  UPDATE public.tenants SET industry=p_industry, updated_at=now() WHERE id=tid;
-  INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,metadata)
-   VALUES (tid,auth.uid(),'workspace_industry_set',jsonb_build_object('store_id',p_store,'from',old,'to',p_industry));
- END IF;
- RETURN p_industry;
+ INSERT INTO public.workspace_profiles AS w(store_id,tenant_id,label,modules,people_label,updated_by,updated_at)
+  VALUES (p_store,tid,lb,m,pl,auth.uid(),now())
+  ON CONFLICT (store_id) DO UPDATE SET label=EXCLUDED.label, modules=EXCLUDED.modules, people_label=EXCLUDED.people_label,
+   updated_by=EXCLUDED.updated_by, updated_at=now();
+ INSERT INTO app_private.audit_events(tenant_id,actor_id,event_type,metadata)
+  VALUES (tid,auth.uid(),'workspace_profile_save',jsonb_build_object('store_id',p_store,'label',lb,'modules',to_jsonb(m)));
 END $f$;
-REVOKE ALL ON FUNCTION public.set_workspace_industry(uuid,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.set_workspace_industry(uuid,text) TO authenticated;
+REVOKE ALL ON FUNCTION public.save_workspace_profile(uuid,text,text[],text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.save_workspace_profile(uuid,text,text[],text) TO authenticated;
 
 -- 2. Daily briefing preferences (saved only; no sender) -----------------------------------
 CREATE TABLE public.store_briefing_settings(
@@ -87,11 +112,14 @@ REVOKE ALL ON FUNCTION public.save_briefing_settings(uuid,boolean,time,text,text
 GRANT EXECUTE ON FUNCTION public.save_briefing_settings(uuid,boolean,time,text,text[]) TO authenticated;
 
 DO $post$ BEGIN
- IF has_function_privilege('anon','public.set_workspace_industry(uuid,text)','EXECUTE')
+ IF has_function_privilege('anon','public.save_workspace_profile(uuid,text,text[],text)','EXECUTE')
   OR has_function_privilege('anon','public.save_briefing_settings(uuid,boolean,time,text,text[])','EXECUTE') THEN RAISE EXCEPTION 'T404_V25_POST_ANON_EXEC'; END IF;
  IF has_table_privilege('authenticated','public.store_briefing_settings','INSERT')
   OR has_table_privilege('authenticated','public.store_briefing_settings','UPDATE')
-  OR has_table_privilege('anon','public.store_briefing_settings','SELECT') THEN RAISE EXCEPTION 'T404_V25_POST_DIRECT_WRITE'; END IF;
+  OR has_table_privilege('anon','public.store_briefing_settings','SELECT')
+  OR has_table_privilege('authenticated','public.workspace_profiles','INSERT')
+  OR has_table_privilege('authenticated','public.workspace_profiles','UPDATE')
+  OR has_table_privilege('anon','public.workspace_profiles','SELECT') THEN RAISE EXCEPTION 'T404_V25_POST_DIRECT_WRITE'; END IF;
  RAISE NOTICE 'T404_V25_WORKSPACE_SETTINGS_OK';
 END $post$;
 COMMIT;

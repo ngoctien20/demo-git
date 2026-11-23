@@ -81,7 +81,7 @@ Code only: `git revert ad6ceab8 fd66a82a` (plus this docs commit), or keep branc
 
 ## 8. Follow-up (V25.1, 2026-11-23)
 
-- `db/v25-workspace/10_workspace_settings.sql` (PROPOSED, not applied): `set_workspace_industry` (owner only, writes `tenants.industry`), `store_briefing_settings` + `save_briefing_settings` (owner/manager; status fixed to `awaiting_sender`, nothing sent). Rollback `90_workspace_settings_rollback.sql`.
-- App: "Ngành chính của không gian làm việc" on Cài đặt; Daily Briefing save works when the server has the table, otherwise stays "chưa mở".
+- `db/v25-workspace/10_workspace_settings.sql`: `workspace_profiles` + `save_workspace_profile` (owner only): free industry name (2-60 chars), ANY mix of modules shop/service/education/artist (or none), own word for customers. 16 presets in the App are only starting points. `store_briefing_settings` + `save_briefing_settings` (owner/manager; status fixed to `awaiting_sender`, nothing sent). Rollback `90_workspace_settings_rollback.sql`.
+- App: "Hồ sơ ngành" on Cài đặt (presets + free name + module checkboxes + customer word; nav, Overview, Customers follow it); Daily Briefing save works when the server has the table, otherwise stays "chưa mở".
 - Wording: login and 404 no longer say "cửa hàng / chủ shop".
 - QA: `qa/v25-universal/offline-pg-uat.sh` 54 cases (apply → rollback → re-apply), `workspace-ui.cjs` extended (owner/staff/missing-server cases).

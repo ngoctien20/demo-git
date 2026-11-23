@@ -94,6 +94,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
       if (u.pathname.startsWith('/auth/v1/')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: session.user }) });
       const m = u.pathname.match(/\/rest\/v1\/(rpc\/)?(\w+)/);
       if (missing.includes(m && m[2])) return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ code: 'PGRST202', message: `Could not find the ${m[1] ? 'function' : 'table'} public.${m[2]} in the schema cache` }) });
+      if (m && m[1] && m[2] === 'save_workspace_profile') { const bd = route.request().postDataJSON(); fx.workspace_profiles = [...(fx.workspace_profiles || []).filter(r => r.store_id !== bd.p_store), { store_id: bd.p_store, label: bd.p_label, modules: bd.p_modules, people_label: bd.p_people_label, updated_at: now }]; }
       if (m && m[1]) { rpcCalls.push({ uid, fn: m[2], body: route.request().postDataJSON() }); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(m[2] === 'create_assistant' ? 'a-new' : now) }); }
       const table = m[2];
       reads.push({ uid, table, q: u.search });
@@ -192,13 +193,6 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     ok(bs && bs.body.p_store === S.A && bs.body.p_opt_in === true && bs.body.p_send_time === '06:45' && bs.body.p_destination === 'email' && Array.isArray(bs.body.p_metrics) && bs.body.p_metrics.includes('orders'),
       'daily briefing: preferences saved via save_briefing_settings for this store');
     ok(await p.getByText('hiện chưa có tin nào được gửi', { exact: false }).count() === 1 && !rpcCalls.some(c => /send|notify|dispatch/i.test(c.fn)), 'daily briefing: says nothing is sent; no send RPC');
-    // Workspace industry (owner only) via set_workspace_industry.
-    await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
-    ok(await p.getByRole('button', { name: 'Lưu ngành chính' }).isDisabled(), 'industry: save disabled until a different industry is picked');
-    await p.getByRole('radio', { name: /Nghệ sĩ/ }).check();
-    await p.getByRole('button', { name: 'Lưu ngành chính' }).click(); await p.waitForTimeout(300);
-    const wi = rpcCalls.filter(c => c.fn === 'set_workspace_industry').pop();
-    ok(wi && wi.body.p_store === S.A && wi.body.p_industry === 'artist', 'industry: owner changes main industry via set_workspace_industry (store-scoped)');
     // Channels: real connection read, honest labels.
     await p.goto(base + '#/kenh-ban'); await p.waitForTimeout(300);
     ok(await p.getByText('Fanpage demo Hoa Mai').count() === 1 && await p.getByText('Môi trường demo', { exact: false }).count() >= 1, 'channels: connection status from channel_connections, demo env labelled');
@@ -211,7 +205,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     const nav = await p.locator('nav[aria-label="Menu Workspace"]').innerText();
     ok(nav.includes('Hồ sơ & âm nhạc') && !nav.includes('Sản phẩm & tồn kho') && nav.includes('Người hâm mộ'), 'artist nav: artist module, no product screen, people label');
     await p.goto(base + '#/san-pham'); await p.waitForTimeout(300);
-    ok(await p.getByText('Mục này thuộc mẫu').count() === 1 && !reads.some(r => r.uid === U.artistOwner && r.table === 'products'), 'artist: product route blocked, products never queried');
+    ok(await p.getByText('chưa bật cho không gian làm việc này', { exact: false }).count() === 1 && !reads.some(r => r.uid === U.artistOwner && r.table === 'products'), 'artist: product route blocked, products never queried');
     await p.goto(base + '#/nghe-si'); await p.waitForTimeout(400);
     await p.getByLabel('Nghệ danh / tên hiển thị').fill('Gió Bấc');
     const music = p.locator('section.slot', { hasText: 'Danh sách phát YouTube' });
@@ -245,19 +239,35 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     await p.goto(base + '#/hoi-thoai'); await p.waitForTimeout(300);
     ok(await p.getByText('Chỉ chủ sở hữu và quản lý').count() === 1, 'staff: conversations hidden');
     await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
-    ok(await p.getByRole('button', { name: 'Lưu ngành chính' }).count() === 0 && await p.getByRole('radio', { name: /Nghệ sĩ/ }).isDisabled(), 'staff: cannot change workspace industry');
+    ok(await p.getByRole('button', { name: 'Lưu hồ sơ ngành' }).count() === 0 && await p.getByLabel('Tên ngành của bạn').isDisabled(), 'staff: cannot change the workspace profile');
     ok(!rpcCalls.some(c => c.uid === U.staff), 'staff: no write RPC issued');
     await ctx.close(); }
 
   // 5b. Server without V25 settings (db/v25-workspace not applied): honest fallbacks, no crash.
-  { const { p, errs, ctx } = await page(390, 844, U.shopOwner, 'shop@example.com', ['store_briefing_settings', 'set_workspace_industry']);
+  { const { p, errs, ctx } = await page(390, 844, U.shopOwner, 'shop@example.com', ['store_briefing_settings', 'workspace_profiles', 'save_workspace_profile']);
     await p.goto(base + '#/bao-cao'); await p.waitForTimeout(400);
     ok(await p.getByRole('button', { name: 'Lưu cài đặt (chưa mở)' }).isDisabled(), 'briefing (server not updated): save disabled, labelled not open');
     await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
-    await p.getByRole('radio', { name: /Giáo dục/ }).check();
-    await p.getByRole('button', { name: 'Lưu ngành chính' }).click(); await p.waitForTimeout(300);
-    ok(await p.getByText('chưa được bật trên máy chủ', { exact: false }).count() >= 1, 'industry (server not updated): says the feature is not on the server');
+    ok(await p.getByText('Máy chủ chưa hỗ trợ lưu hồ sơ ngành', { exact: false }).count() === 1 && await p.getByRole('button', { name: 'Lưu hồ sơ ngành' }).isDisabled(), 'profile (server not updated): says so, save disabled, App still infers industry');
     await check(p, errs.filter(e => !/404|Failed to load resource/.test(e)), 'shop-cai-dat-missing', '390');
+    await ctx.close(); }
+
+  // 5c. Flexible industry: owner turns the shop into a dental clinic that also runs courses (runs last: changes the mock).
+  { const { p, errs, ctx } = await page(1280, 860, U.shopOwner, 'shop@example.com');
+    await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(400);
+    await p.getByRole('button', { name: /Phòng khám \/ nha khoa/ }).click();
+    await p.getByLabel('Tên ngành của bạn').fill('Nha khoa Hoa Mai');
+    await p.getByRole('checkbox', { name: /Khóa học & tuyển sinh/ }).check();
+    await p.getByRole('button', { name: 'Lưu hồ sơ ngành' }).click(); await p.waitForTimeout(500);
+    const wp = rpcCalls.filter(c => c.fn === 'save_workspace_profile').pop();
+    ok(wp && wp.body.p_store === S.A && wp.body.p_label === 'Nha khoa Hoa Mai' && wp.body.p_people_label === 'Bệnh nhân' && [...wp.body.p_modules].sort().join() === 'education,service',
+      'profile: free industry name + any module mix + own customer word saved via save_workspace_profile (store-scoped)');
+    const nav = await p.locator('nav[aria-label="Menu Workspace"]').innerText();
+    ok(nav.includes('Dịch vụ & lịch hẹn') && nav.includes('Khóa học & tuyển sinh') && !nav.includes('Sản phẩm & tồn kho') && nav.includes('Bệnh nhân'), 'profile: nav follows the saved modules and customer word');
+    ok((await p.locator('.topbar, header').first().innerText().catch(() => '')).includes('Nha khoa Hoa Mai') || await p.getByText('Nha khoa Hoa Mai').count() >= 1, 'profile: owner industry name shown');
+    await p.goto(base + '#/khach-hang'); await check(p, errs, 'profile-khach-hang', '1280');
+    ok((await p.locator('h1').first().textContent()).trim() === 'Bệnh nhân', 'profile: customers page uses the owner word');
+    await p.goto(base + '#/dich-vu'); await check(p, errs, 'profile-dich-vu', '1280');
     await ctx.close(); }
 
   // 6. No credentials in the shipped bundle.

@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { isMissingFeature, useLoad } from '../data';
 import { friendlyError, supabase } from '../supabase';
 import { vnd } from '../format';
-import { Industry, INDUSTRY_META, useWorkspace } from '../workspace';
+import { Industry, useWorkspace } from '../workspace';
 import { Notice, PageHead, Spinner } from '../ui';
 
 type Metric = { key: string; label: string; source: string; industries?: Industry[]; value: (d: Data) => string | null };
@@ -72,7 +72,6 @@ type BriefingRow = { opt_in: boolean; send_time: string; destination: 'email' | 
 
 function Briefing({ metrics, data }: { metrics: Metric[]; data: Data | null }) {
   const { store, email } = useStore();
-  const ws = useWorkspace();
   const saved = useLoad(async () => {
     const r = await supabase.from('store_briefing_settings').select('opt_in, send_time, destination, metrics, updated_at').eq('store_id', store.id).maybeSingle();
     if (r.error) return { ready: !isMissingFeature(r.error), row: null as BriefingRow | null };
@@ -104,7 +103,7 @@ function Briefing({ metrics, data }: { metrics: Metric[]; data: Data | null }) {
   return (
     <section className="panel form briefing">
       <div className="status-line"><h2>Báo cáo AI mỗi sáng</h2><span className="pill warn">{ready ? 'Lưu được · chưa gửi' : 'Bản đề xuất · chưa gửi'}</span></div>
-      <p className="muted">Mỗi sáng gửi tóm tắt hoạt động đã xác minh cho chủ {INDUSTRY_META[ws.primary].short.toLowerCase()}. {ready ? 'Bạn lưu được lựa chọn của mình; hệ thống gửi chưa bật nên chưa có báo cáo nào được gửi đi.' : 'Phần này mới là thiết kế giao diện và hợp đồng dữ liệu: chưa lưu cài đặt, chưa có hệ thống gửi.'}</p>
+      <p className="muted">Mỗi sáng gửi tóm tắt hoạt động đã xác minh cho bạn. {ready ? 'Bạn lưu được lựa chọn của mình; hệ thống gửi chưa bật nên chưa có báo cáo nào được gửi đi.' : 'Phần này mới là thiết kế giao diện và hợp đồng dữ liệu: chưa lưu cài đặt, chưa có hệ thống gửi.'}</p>
       <div className="row2">
         <label>Giờ gửi<input type="time" value={time} onChange={e => setTime(e.target.value)} /></label>
         <label>Múi giờ<select disabled value="Asia/Ho_Chi_Minh"><option value="Asia/Ho_Chi_Minh">Giờ Việt Nam (GMT+7)</option></select></label>

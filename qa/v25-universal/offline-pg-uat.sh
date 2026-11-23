@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # TIEN404 V25 workspace settings — OFFLINE UAT on a disposable LOCAL PostgreSQL.
-# Stack: V20 00/10/20/30 + V23 web 10/20/30 + Config Core 10 + db/v25-workspace/10, rollback 90, re-apply.
+# Workspace profile + briefing prefs. Stack: V20 00/10/20/30 + V23 web 10/20/30 + Config Core 10 + db/v25-workspace/10, rollback 90, re-apply.
 # Simulated Supabase roles + request.jwt.claims. NOT hosted acceptance. Refuses non-local hosts.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"; ROOT="$DIR/../.."; V20="$ROOT/qa/v20-store-authority"; V23="$ROOT/db/v23-web"
@@ -37,24 +37,29 @@ admin "INSERT INTO auth.users(id,email) VALUES ('$MA','manager-a@qa.invalid'),('
   SELECT tenant_id,id,'$SA','staff' FROM public.stores WHERE tenant_id='$TA' AND is_default;" >/dev/null
 SA_STORE=$(admin "SELECT id FROM public.stores WHERE tenant_id='$TA' AND is_default")
 SB_STORE=$(admin "SELECT id FROM public.stores WHERE tenant_id='$TB' AND is_default")
-IND_B=$(admin "SELECT industry FROM public.tenants WHERE id='$TB'")
+IND_A=$(admin "SELECT industry FROM public.tenants WHERE id='$TA'")
 
 for round in 1 2; do
  runfile "$V25/10_workspace_settings.sql" T404_V25_WORKSPACE_SETTINGS_OK
  deny NOT_REAPPLIABLE 'T404_V25_ALREADY_APPLIED' "${PSQL[@]}" -d "$PGDATABASE" -f "$V25/10_workspace_settings.sql"
- # industry
- ok "$(as $OA "SELECT public.set_workspace_industry('$SA_STORE','artist')")" artist OWNER_SETS_INDUSTRY
- ok "$(admin "SELECT industry FROM public.tenants WHERE id='$TA'")" artist INDUSTRY_WRITTEN
- ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE event_type='workspace_industry_set' AND tenant_id='$TA'")" "$round" INDUSTRY_AUDITED
- ok "$(as $OA "SELECT public.set_workspace_industry('$SA_STORE','artist')")" artist SAME_VALUE_IDEMPOTENT
- ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE event_type='workspace_industry_set' AND tenant_id='$TA'")" "$round" NO_AUDIT_ON_NOOP
- deny MANAGER_INDUSTRY 'access_denied' as $MA "SELECT public.set_workspace_industry('$SA_STORE','service')"
- deny STAFF_INDUSTRY 'access_denied' as $SA "SELECT public.set_workspace_industry('$SA_STORE','service')"
- deny CROSS_TENANT_INDUSTRY 'access_denied' as $OA "SELECT public.set_workspace_industry('$SB_STORE','service')"
- deny ANON_INDUSTRY 'permission denied' as anon "SELECT public.set_workspace_industry('$SA_STORE','service')"
- deny BAD_INDUSTRY 'invalid_industry' as $OA "SELECT public.set_workspace_industry('$SA_STORE','casino')"
- ok "$(admin "SELECT industry FROM public.tenants WHERE id='$TB'")" "$IND_B" OTHER_TENANT_UNCHANGED
- deny DIRECT_TENANT_UPDATE 'permission denied' as $OA "UPDATE public.tenants SET industry='x' WHERE id='$TA'"
+ # workspace profile (free label, any modules, people label)
+ as $OA "SELECT public.save_workspace_profile('$SA_STORE','  Phòng khám nha khoa ',ARRAY['service','education','service'],'Bệnh nhân')" >/dev/null
+ ok "$(as $SA "SELECT label||'|'||array_to_string(modules,',')||'|'||people_label FROM public.workspace_profiles WHERE store_id='$SA_STORE'")" "Phòng khám nha khoa|education,service|Bệnh nhân" OWNER_SAVES_PROFILE_STAFF_READS
+ as $OA "SELECT public.save_workspace_profile('$SA_STORE','Quỹ từ thiện',ARRAY[]::text[],'Nhà hảo tâm')" >/dev/null
+ ok "$(as $MA "SELECT label||'|'||cardinality(modules)||'|'||people_label FROM public.workspace_profiles WHERE store_id='$SA_STORE'")" "Quỹ từ thiện|0|Nhà hảo tâm" PROFILE_UPSERT_NO_MODULES
+ ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE event_type='workspace_profile_save' AND tenant_id='$TA'")" "$((round*2))" PROFILE_AUDITED
+ ok "$(admin "SELECT industry FROM public.tenants WHERE id='$TA'")" "$IND_A" TENANT_INDUSTRY_UNTOUCHED
+ deny MANAGER_PROFILE 'access_denied' as $MA "SELECT public.save_workspace_profile('$SA_STORE','Spa',ARRAY['service'],'Khách')"
+ deny STAFF_PROFILE 'access_denied' as $SA "SELECT public.save_workspace_profile('$SA_STORE','Spa',ARRAY['service'],'Khách')"
+ deny CROSS_TENANT_PROFILE 'access_denied' as $OA "SELECT public.save_workspace_profile('$SB_STORE','Spa',ARRAY['service'],'Khách')"
+ deny ANON_PROFILE 'permission denied' as anon "SELECT public.save_workspace_profile('$SA_STORE','Spa',ARRAY['service'],'Khách')"
+ deny BAD_MODULE 'invalid_profile' as $OA "SELECT public.save_workspace_profile('$SA_STORE','Spa',ARRAY['casino'],'Khách')"
+ deny SHORT_LABEL 'invalid_profile' as $OA "SELECT public.save_workspace_profile('$SA_STORE',' x ',ARRAY['service'],'Khách')"
+ deny LONG_PEOPLE 'invalid_profile' as $OA "SELECT public.save_workspace_profile('$SA_STORE','Spa',ARRAY['service'],repeat('a',41))"
+ ok "$(as $OB "SELECT count(*) FROM public.workspace_profiles")" 0 OTHER_TENANT_CANNOT_READ_PROFILE
+ ok "$(as anon "SELECT count(*) FROM public.workspace_profiles" 2>&1 | grep -c 'permission denied')" 1 ANON_CANNOT_READ_PROFILE
+ deny DIRECT_PROFILE_INSERT 'permission denied' as $OA "INSERT INTO public.workspace_profiles(store_id,tenant_id,label,people_label,updated_by) VALUES ('$SA_STORE','$TA','x x','y y','$OA')"
+ deny DIRECT_PROFILE_UPDATE 'permission denied' as $OA "UPDATE public.workspace_profiles SET label='hack'"
  # briefing
  as $MA "SELECT public.save_briefing_settings('$SA_STORE',true,'07:45:30','email',ARRAY['orders','handoff','orders'])" >/dev/null
  ok "$(as $OA "SELECT opt_in||'|'||send_time||'|'||destination||'|'||array_to_string(metrics,',')||'|'||status FROM public.store_briefing_settings WHERE store_id='$SA_STORE'")" "true|07:45:00|email|handoff,orders|awaiting_sender" MANAGER_SAVES_BRIEFING
@@ -72,8 +77,7 @@ for round in 1 2; do
  deny STATUS_ONLY_AWAITING 'check constraint' admin "UPDATE public.store_briefing_settings SET status='active'"
  if [ $round = 1 ]; then
   runfile "$V25/90_workspace_settings_rollback.sql" T404_V25_WORKSPACE_SETTINGS_ROLLBACK_OK
-  ok "$(admin "SELECT to_regclass('public.store_briefing_settings') IS NULL AND to_regprocedure('public.set_workspace_industry(uuid,text)') IS NULL")" t ROLLBACK_CLEAN
-  admin "UPDATE public.tenants SET industry='other' WHERE id='$TA'" >/dev/null
+  ok "$(admin "SELECT to_regclass('public.store_briefing_settings') IS NULL AND to_regclass('public.workspace_profiles') IS NULL AND to_regprocedure('public.save_workspace_profile(uuid,text,text[],text)') IS NULL")" t ROLLBACK_CLEAN
  fi
 done
 echo "T404_V25_WORKSPACE_OFFLINE_PASS $PASS"
