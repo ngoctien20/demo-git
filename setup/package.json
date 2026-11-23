@@ -1,0 +1,16 @@
+{
+  "name": "tien404-setup-draft",
+  "private": true,
+  "type": "module",
+  "description": "TIEN404: build an assistant draft from a price-list photo or a public page (owner confirms before anything is saved)",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "bundle": "esbuild worker/setup-route.mjs --bundle --format=esm --platform=browser --conditions=workerd,worker,browser --outfile=dist/setup-route.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
