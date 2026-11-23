@@ -159,3 +159,10 @@ test('route: daily cap per owner', async () => {
   for (let i = 0; i < 20; i++) assert.equal((await call(req({ text: 'Sơn gel tay 120k, đắp bột 250k, mở cửa 9h-21h' }), env)).status, 200);
   assert.equal((await call(req({ text: 'Sơn gel tay 120k, đắp bột 250k, mở cửa 9h-21h' }), env)).status, 429);
 });
+
+test('Worker entry: unknown path 404, route off by default (wrangler.toml)', async () => {
+  const { default: worker } = await import('../worker/index.mjs');
+  assert.equal((await worker.fetch(new Request('https://w.example/'), {})).status, 404);
+  const r = await worker.fetch(new Request('https://w.example' + SETUP_PATH, { method: 'POST' }), { SETUP_DRAFT_ENABLED: 'false' });
+  assert.equal(r.status, 423);
+});

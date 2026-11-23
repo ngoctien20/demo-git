@@ -27,13 +27,16 @@ Chủ shop xem, sửa, bấm **Xác nhận** → nhập vào `Products` / `Dich_
 
 Test: `node --test setup/test/*.test.mjs` (14 ca, không gọi mạng, không cần key).
 
-## Bật (mỗi bước 🔒 cần anh duyệt riêng)
+## Bật (Tiến chọn "Tạo trợ lý nhanh" bật trước, 23/11/2026)
 
-1. 🔒 Tạo API key Claude cho TIEN404 (anh tạo trên console.anthropic.com), đặt secret `ANTHROPIC_API_KEY` cho Worker.
-2. 🔒 Tạo D1 `tien404-setup` + bảng `setup_draft_usage` (lệnh trong `SETUP_DB_DDL`).
-3. 🔒 Deploy route vào Worker (bật `nodejs_compat`), biến `SETUP_DRAFT_ENABLED=true`, `APP_ORIGINS=https://ngoctien20.github.io`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
-   Gộp file: `cd setup && npm ci && npm run bundle`. Tắt khẩn cấp: `SETUP_DRAFT_ENABLED=false`.
-4. Trang "Tạo trợ lý nhanh" trong App (bước sau): chọn ảnh → xem bản nháp, ô vàng = cần xem lại → Xác nhận.
-5. 🔒 Thử với 5 bảng giá thật (nail, spa, quán ăn, shop quần áo, trung tâm học); đo: % món đọc đúng giá, số món phải sửa tay.
+Worker riêng `tien404-setup-draft` (`setup/wrangler.toml`), không sửa Worker đang chạy. Công tắc `SETUP_DRAFT_ENABLED` để `"false"` khi deploy.
+
+1. Tạo D1: `npx wrangler d1 create tien404-setup`, điền `database_id`, rồi `npx wrangler d1 execute tien404-setup --remote --file migrations/0001_setup_draft_usage.sql`.
+2. Deploy: `cd setup && npm ci && npx wrangler deploy` (route vẫn tắt).
+3. Anh tự đặt secret `ANTHROPIC_API_KEY` trong Cloudflare: Workers › tien404-setup-draft › Settings › Variables and Secrets. Không dán key vào chat hay repo.
+4. 🔒 Bật thử: `SETUP_DRAFT_ENABLED = "true"`, điền `SETUP_API` trong `apps/owner/src/config.ts`, build App, deploy gh-pages.
+5. Thử 5 bảng giá thật (nail, spa, quán ăn, shop quần áo, trung tâm học); đo % món đọc đúng giá, số món phải sửa tay.
+
+Tắt khẩn cấp: `SETUP_DRAFT_ENABLED = "false"` (hoặc xoá secret). Rollback App: revert commit gh-pages.
 
 Chi phí ước tính (chưa đo thật): một ảnh bảng giá khoảng 2.000 token vào và 2.000-4.000 token ra, tức khoảng 1.000-3.000đ mỗi lần theo giá Claude Opus 5.5 ($4 vào / $20 ra mỗi triệu token).
