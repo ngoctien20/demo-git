@@ -42,6 +42,8 @@ E4=$(printf '%064d' 5)
 E5=$(printf '%064d' 10)
 E6=$(printf '%064d' 11)
 E7=$(printf '%064d' 12)
+E8=$(printf '%064d' 13)
+E9=$(printf '%064d' 14)
 D=$(printf '%064d' 6)
 B1=$(printf '%064d' 7)
 B2=$(printf '%064d' 8)
@@ -55,6 +57,8 @@ I5=10000000-0000-4000-8000-000000000005
 I6=10000000-0000-4000-8000-000000000006
 I7=10000000-0000-4000-8000-000000000007
 I8=10000000-0000-4000-8000-000000000008
+I9=10000000-0000-4000-8000-000000000009
+I10=10000000-0000-4000-8000-000000000010
 L1=20000000-0000-4000-8000-000000000001
 L2=20000000-0000-4000-8000-000000000002
 L3=20000000-0000-4000-8000-000000000003
@@ -62,6 +66,8 @@ L4=20000000-0000-4000-8000-000000000004
 L5=20000000-0000-4000-8000-000000000005
 L6=20000000-0000-4000-8000-000000000006
 L8=20000000-0000-4000-8000-000000000008
+L9=20000000-0000-4000-8000-000000000009
+L10=20000000-0000-4000-8000-000000000010
 ref_for(){
  REF_PLAN="$1" REF_STORE="$2" REF_PAGE="$3" node -e '
  const {createHmac}=require("node:crypto");
@@ -78,6 +84,18 @@ stmt(){
  "$ATOMIC" "$id" "$TA" "$store" "$page" "$H" "$event" "$D" "$B1" "$B2" "$lease" "$NOW" "$EXP" "$ref"
 }
 attempt(){ client "$1" "$(stmt "$2" "$3" "$4" "$5" "$6")"; }
+stmt_n(){
+ local id="$1" store="$2" page="$3" event="$4" lease="$5" count="$6" ref parts
+ ref=$(ref_for "$id" "$store" "$page")
+ case "$count" in
+  1) parts="ARRAY['$B1']" ;;
+  3) parts="ARRAY['$B1','$B2','$B1']" ;;
+  *) echo DENY_COUNT; return 2 ;;
+ esac
+ printf "PREPARE qn(uuid,uuid,uuid,text,text,int,text,text,int,text[],uuid,timestamptz,timestamptz,text) AS %s; EXECUTE qn('%s','%s','%s','%s','%s',3,'%s','%s',%s,%s,'%s','%s','%s','%s');" \
+ "$ATOMIC" "$id" "$TA" "$store" "$page" "$H" "$event" "$D" "$count" "$parts" "$lease" "$NOW" "$EXP" "$ref"
+}
+
 
 admin "CREATE DATABASE $DB" >/dev/null; created=1
 admin "CREATE ROLE $RA LOGIN NOINHERIT NOBYPASSRLS PASSWORD '$PW';
@@ -148,6 +166,7 @@ ok "$(sql "SELECT count(*) FROM app_private.messenger_event_claims")" 1 CLAIM_CO
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_plans")" 1 PLAN_COMMITTED
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts")" 2 TWO_PARTS_COMMITTED
 ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs")" 1 ONE_PRIVATE_REFERENCE_COMMITTED
+ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs WHERE reference='$(ref_for "$I1" "$SA" "$PA")' AND plan_id='$I1'")" 1 EXACT_HMAC_REFERENCE_PARITY
 ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs r JOIN app_private.messenger_send_plans p ON p.id=r.plan_id AND p.tenant_id=r.tenant_id AND p.store_id=r.store_id AND p.page_id=r.page_id")" 1 REFERENCE_MATCHES_PLAN_COMPOSITE_SCOPE
 ok "$(attempt "$RA" "$I2" "$SA" "$PA" "$E" "$L2" | grep -c '|2' || true)" 0 REPLAY_BLOCKED
 ok "$(sql "SELECT count(*) FROM app_private.messenger_event_claims")" 1 NO_DUPLICATE_CLAIM
@@ -219,11 +238,19 @@ COMMIT;
 SQL
 then fail REF_COLLISION_SHOULD_ROLLBACK; fi
 grep -qi 'division by zero' "$TMP/collision" || fail COLLISION_ROLLBACK_NOT_CONFIRMED
+ok "$(grep -c '|2' "$TMP/collision" || true)" 0 REF_CONFLICT_SQL_RETURNS_ZERO
 ok "$(sql "SELECT count(*) FROM app_private.messenger_event_claims WHERE event_hash='$E7'")" 0 REF_CONFLICT_NO_ORPHAN_CLAIM
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_plans WHERE id='$I8'")" 0 REF_CONFLICT_NO_ORPHAN_PLAN
 ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts WHERE plan_id='$I8'")" 0 REF_CONFLICT_NO_ORPHAN_PARTS
 ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs WHERE plan_id='$I8'")" 0 REF_CONFLICT_NO_NEW_REFERENCE
 ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs WHERE reference='$collision_ref' AND plan_id='$I7'")" 1 ORIGINAL_REFERENCE_UNCHANGED
+
+# Verify 1 and 3-part message construction also creates exactly one map each.
+ok "$(client "$RA" "$(stmt_n "$I9" "$SA" "$PA" "$E8" "$L9" 1)" | grep -c '|1')" 1 ONE_PART_ATOMIC_MAP_ACCEPTED
+ok "$(client "$RA" "$(stmt_n "$I10" "$SA" "$PA" "$E9" "$L10" 3)" | grep -c '|3')" 1 THREE_PART_ATOMIC_MAP_ACCEPTED
+ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts WHERE plan_id='$I9'")" 1 ONE_PART_WRITTEN
+ok "$(sql "SELECT count(*) FROM app_private.messenger_send_parts WHERE plan_id='$I10'")" 3 THREE_PARTS_WRITTEN
+ok "$(sql "SELECT count(*) FROM app_private.messenger_reconciliation_refs WHERE plan_id IN ('$I9','$I10')")" 2 ONE_PRIVATE_MAP_PER_EXTRA_PLAN
 
 sql "UPDATE app_private.qa_scope SET active=false WHERE role_name='$RA'" >/dev/null
 ok "$(client "$RA" "SELECT count(*) FROM app_private.messenger_send_plans")" 0 REVOKED_CANNOT_VIEW_OLD
