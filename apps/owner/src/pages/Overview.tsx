@@ -44,7 +44,6 @@ export function Overview() {
 
   if (loading) return <Spinner />;
   if (error || !data) return <Notice kind="err">Không tải được số liệu của Workspace.</Notice>;
-  const meta = INDUSTRY_META[ws.primary];
   const steps: [boolean, string, string][] = [
     [ws.assistants.length > 0, 'Tạo trợ lý từ mẫu ngành', '#/tro-ly'],
     [data.hasInfo || data.faqs > 0, 'Nhập kho kiến thức: giới thiệu, câu hỏi thường gặp', '#/tri-thuc'],
@@ -55,12 +54,12 @@ export function Overview() {
   ];
   return (
     <>
-      <PageHead title="Tổng quan" sub={`${store.name} · ${ws.industries.map(i => INDUSTRY_META[i].label).join(' · ')}`} />
+      <PageHead title="Tổng quan" sub={`${store.name} · ${ws.label}`} />
       {!data.v23 && <Notice kind="warn">Một số chức năng (cài đặt, hỏi đáp, giai đoạn khách) chưa được bật trên máy chủ.</Notice>}
       <div className="kpis">
         <div className="kpi"><span>Trợ lý đang chạy</span><b>{data.live}</b><small>{ws.assistants.length} trợ lý · {data.drafts} bản nháp chưa kích hoạt</small></div>
         <div className="kpi"><span>Kênh đã gắn</span><b>{data.channels ?? '—'}</b><small>Xem trạng thái ở Kênh kết nối</small></div>
-        <div className="kpi"><span>Cần người xử lý</span><b>{data.needs ?? '—'}</b><small>{meta.people} đang chờ nhân viên</small></div>
+        <div className="kpi"><span>Cần người xử lý</span><b>{data.needs ?? '—'}</b><small>{ws.people} đang chờ nhân viên</small></div>
         {shop
           ? <div className="kpi"><span>Đơn hàng 30 ngày</span><b>{canManage ? data.orders : '—'}</b><small>{canManage ? `${data.pending} chờ duyệt · ${vnd(data.revenue)} đã xác nhận` : 'Chỉ chủ sở hữu, quản lý xem được'}</small></div>
           : <div className="kpi"><span>Câu hỏi trong kho kiến thức</span><b>{data.faqs}</b><small>Trợ lý ưu tiên dùng đúng nội dung này</small></div>}

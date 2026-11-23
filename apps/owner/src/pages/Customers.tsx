@@ -40,10 +40,10 @@ export function Customers() {
   }, [data]);
   const list = (data?.customers ?? []).filter(c => !tab || (c.stage ?? 'new') === tab);
 
-  if (!canManage) return <><PageHead title={meta.people} /><Notice>Chỉ chủ sở hữu và quản lý xem được thông tin người tương tác.</Notice></>;
+  if (!canManage) return <><PageHead title={ws.people} /><Notice>Chỉ chủ sở hữu và quản lý xem được thông tin người tương tác.</Notice></>;
   return (
     <>
-      <PageHead title={meta.people} sub={meta.peopleSub} />
+      <PageHead title={ws.people} sub={ws.custom ? `Những người đã nhắn với ${ws.label.toLowerCase()} của bạn qua các kênh.` : meta.peopleSub} />
       {loading ? <Spinner /> : error || !data ? <Notice kind="err">{friendlyError(error)}</Notice> : (
         <>
           {!data.staged && <Notice kind="warn">Phân loại theo giai đoạn chưa được bật trên máy chủ. Bạn vẫn xem được danh sách khách.</Notice>}

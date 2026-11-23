@@ -5,6 +5,8 @@ on:
       - "config-core/**"
       - "db/config-core/**"
       - "qa/config-core/**"
+      - "db/v25-workspace/**"
+      - "qa/v25-universal/offline-pg-uat.sh"
       - "qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh"
       - "qa/messenger-rich-v136m5/pg17-restricted-rls-uat.sh"
       - "qa/messenger-rich-v136m5/pg17-message-ledger-uat.sh"
@@ -52,6 +54,14 @@ jobs:
           PGUSER: "postgres"
           PGPASSWORD: "postgres"
         run: bash qa/config-core/offline-pg-uat.sh
+
+      - name: V25 workspace settings (industry + briefing prefs) -> UAT -> rollback -> re-apply (PG17)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+        run: bash qa/v25-universal/offline-pg-uat.sh
 
       - name: V21 Messenger real PostgreSQL 17 atomic claim UAT (disposable DB, NO SEND)
         env:

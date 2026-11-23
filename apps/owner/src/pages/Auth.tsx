@@ -48,7 +48,7 @@ export function AuthPage({ path }: { path: string }) {
 
   const title = { login: 'Đăng nhập', signup: 'Tạo tài khoản dùng thử', forgot: 'Quên mật khẩu', reset: 'Đặt mật khẩu mới' }[mode];
   const sub = {
-    login: 'Quản lý cửa hàng, sản phẩm và trợ lý AI của bạn.',
+    login: 'Quản lý trợ lý AI, kênh kết nối và khách hàng của bạn.',
     signup: 'Giai đoạn thử nghiệm: không cần thẻ, web chưa thu phí trực tuyến.',
     forgot: 'Nhập email đã đăng ký, chúng tôi gửi liên kết đặt lại mật khẩu.',
     reset: 'Nhập mật khẩu mới cho tài khoản của bạn.',

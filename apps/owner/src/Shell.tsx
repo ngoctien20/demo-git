@@ -4,7 +4,7 @@ import { Route } from './router';
 import { useStore } from './store';
 import { SITE_HOME } from './config';
 import { isMissingFeature, useLoad } from './data';
-import { activeIndustries, INDUSTRY_META, moduleOwner, ROLE_LABEL, Workspace, WorkspaceCtx } from './workspace';
+import { resolveWorkspace, INDUSTRY_META, Profile, moduleOwner, ROLE_LABEL, Workspace, WorkspaceCtx } from './workspace';
 import { Notice, PageHead } from './ui';
 import { Overview } from './pages/Overview';
 import { Products } from './pages/Products';
@@ -37,12 +37,19 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
     if (r.error) { if (isMissingFeature(r.error)) return null; throw r.error; }
     return r.data as Workspace['assistants'];
   }, [store.id]);
-  const reload = useCallback(async () => { await asst.reload(); }, [asst.reload]);
+  // Owner's Workspace profile (V25.1). Missing table = server not updated yet: fall back to inference.
+  const prof = useLoad(async () => {
+    const r = await supabase.from('workspace_profiles').select('label, modules, people_label, updated_at').eq('store_id', store.id).maybeSingle();
+    if (r.error) return { ready: false, row: null as Profile | null };
+    return { ready: true, row: r.data as Profile | null };
+  }, [store.id]);
+  const reload = useCallback(async () => { await Promise.all([asst.reload(), prof.reload()]); }, [asst.reload, prof.reload]);
   const ws = useMemo<Workspace>(() => {
     const assistants = asst.data ?? [];
-    const industries = activeIndustries(store.tenant_industry, assistants.map(a => a.template_key));
-    return { industries, primary: industries[0], assistants, assistantsReady: !!asst.data && !asst.error, reload };
-  }, [asst.data, asst.error, store.tenant_industry, reload]);
+    const profile = prof.data?.row ?? null;
+    const r = resolveWorkspace(store.tenant_industry, assistants.map(a => a.template_key), profile);
+    return { ...r, profile, profileReady: prof.data?.ready === true, assistants, assistantsReady: !!asst.data && !asst.error, reload };
+  }, [asst.data, asst.error, prof.data, store.tenant_industry, reload]);
 
   const nav: { group: string; items: NavItem[] }[] = [
     { group: 'Trợ lý AI', items: [
@@ -51,7 +58,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
     ] },
     ...ws.industries.map(i => ({ group: INDUSTRY_META[i].short, items: INDUSTRY_META[i].modules.map(m => [m.path, m.label, m.icon] as NavItem) })),
     { group: 'Theo dõi', items: [
-      ['/khach-hang', INDUSTRY_META[ws.primary].people, '♧'], ['/bao-cao', 'Báo cáo', '▥'], ['/thong-bao', 'Thông báo', '◔'],
+      ['/khach-hang', ws.people, '♧'], ['/bao-cao', 'Báo cáo', '▥'], ['/thong-bao', 'Thông báo', '◔'],
     ] },
     { group: 'Workspace', items: [
       ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
@@ -91,7 +98,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
         <header className="mobile-bar">
           <button type="button" className="icon-btn" aria-label={open ? 'Đóng menu' : 'Mở menu'} aria-expanded={open} aria-controls="app-side" onClick={() => setOpen(!open)}>☰</button>
           <b>{store.name}</b>
-          <span className="pill soft">{INDUSTRY_META[ws.primary].short}</span>
+          <span className="pill soft">{ws.label}</span>
         </header>
         <aside className="side" id="app-side" onClick={e => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
           <a className="side-brand" href={SITE_HOME}><span className="logo" aria-hidden="true">T</span>TIEN404<b>AI</b><small>Workspace</small></a>
@@ -100,7 +107,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
             <select value={store.id} onChange={e => onSwitch(e.target.value)} aria-label="Chọn không gian làm việc">
               {stores.map(s => <option key={s.id} value={s.id}>{s.name}{stores.some(o => o.tenant_id !== s.tenant_id) ? ` · ${s.tenant_name}` : ''}</option>)}
             </select>
-            <small>{ROLE_LABEL[store.role]} · {ws.industries.map(i => INDUSTRY_META[i].short).join(', ')}</small>
+            <small>{ROLE_LABEL[store.role]} · {ws.label}</small>
           </label>
           <nav aria-label="Menu Workspace">
             {nav.map(g => (
@@ -129,8 +136,8 @@ function ModuleOff({ owner }: { owner: keyof typeof INDUSTRY_META }) {
   return (
     <>
       <PageHead title={m.modules[0].label} />
-      <Notice>Mục này thuộc mẫu <b>{m.label}</b>. Workspace này chưa dùng mẫu đó nên không cần màn hình này.</Notice>
-      <p><a className="btn btn-ghost" href="#/tro-ly">Tạo trợ lý mẫu {m.short}</a></p>
+      <Notice>Mô-đun <b>{m.modules[0].label}</b> chưa bật cho không gian làm việc này. Chủ sở hữu bật được ở Cài đặt › Hồ sơ ngành, hoặc tạo trợ lý theo mẫu {m.short}.</Notice>
+      <p className="row-actions"><a className="btn btn-ghost" href="#/cai-dat-bot">Mở Hồ sơ ngành</a><a className="btn btn-ghost" href="#/tro-ly">Tạo trợ lý mẫu {m.short}</a></p>
     </>
   );
 }

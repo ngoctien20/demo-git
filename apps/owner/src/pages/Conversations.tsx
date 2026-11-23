@@ -5,7 +5,7 @@ import { isMissingFeature, useLoad } from '../data';
 import { supabase } from '../supabase';
 import { dateTime } from '../format';
 import { HANDOFF_DEFAULT, TEAM_LABEL, Version } from '../assistant';
-import { INDUSTRY_META, useWorkspace } from '../workspace';
+import { useWorkspace } from '../workspace';
 import { Empty, Notice, PageHead, Spinner } from '../ui';
 
 const CH: Record<string, string> = { messenger: 'Messenger', zalo: 'Zalo', zalo_bot: 'Zalo', web: 'Website', telegram: 'Telegram', line: 'LINE', api: 'API' };
@@ -49,9 +49,9 @@ export function Conversations() {
       <section className="panel">
         <h2>Cần người xử lý</h2>
         {data.needs === null ? <Notice kind="warn">Không tải được danh sách.</Notice>
-          : !data.needs.length ? <p className="muted">Không có {INDUSTRY_META[ws.primary].people.toLowerCase()} nào đang chờ người thật.</p>
+          : !data.needs.length ? <p className="muted">Không có {ws.people.toLowerCase()} nào đang chờ người thật.</p>
             : <ul className="plain needs-list">{data.needs.map(n => <li key={n.id}><b>{n.display_name}</b> <small className="muted">· {dateTime(n.created_at)}{n.note ? ` · ${n.note}` : ''}</small></li>)}</ul>}
-        <a className="link-btn" href="#/khach-hang">Mở danh sách {INDUSTRY_META[ws.primary].people.toLowerCase()}</a>
+        <a className="link-btn" href="#/khach-hang">Mở danh sách {ws.people.toLowerCase()}</a>
       </section>
       <section className="panel">
         <h2>Bàn giao đang chạy</h2>
