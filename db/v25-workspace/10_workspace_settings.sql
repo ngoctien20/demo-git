@@ -1,4 +1,4 @@
--- TIEN404 V25 Universal Workspace — owner settings. STATUS: PROPOSED (not applied anywhere).
+-- TIEN404 V25 Universal Workspace — owner settings. STATUS: APPLIED 2026-11-23 (owner-approved) on restore-test, then staging (migration 20261123020421); hosted UAT rolled back, residue 0.
 -- REQUIRES V20 10/20/30, V23 web 20 and Config Core 10 (uses app_private.t404_cfg_manager_tenant).
 --   public.workspace_profiles  one row per Store: free industry name, any mix of modules
 --       (shop | artist | service | education), how customers are called. Read by Store members (RLS).

@@ -85,3 +85,4 @@ Code only: `git revert ad6ceab8 fd66a82a` (plus this docs commit), or keep branc
 - App: "Hồ sơ ngành" on Cài đặt (presets + free name + module checkboxes + customer word; nav, Overview, Customers follow it); Daily Briefing save works when the server has the table, otherwise stays "chưa mở".
 - Wording: login and 404 no longer say "cửa hàng / chủ shop".
 - QA: `qa/v25-universal/offline-pg-uat.sh` 54 cases (apply → rollback → re-apply), `workspace-ui.cjs` extended (owner/staff/missing-server cases).
+- 2026-11-23 02:04Z APPLIED (Tiến: "mấy cái cần duyệt anh duyệt hết"): restore-test then staging via Supabase migration `v25_workspace_settings` (staging version 20261123020421). Hosted UAT on both (owner save, briefing save, cross-tenant denied, direct insert denied, other tenant sees 0, anon denied) inside a rolled-back block; residue 0.
