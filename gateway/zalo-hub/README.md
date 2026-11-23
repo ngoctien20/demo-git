@@ -46,7 +46,7 @@ Ngắt: `POST /v1/admin/disconnect` → `deleteWebhook`, xoá mọi bản mã. N
 
 | # | Việc | Đảo ngược |
 |---|---|---|
-| 1 | Tạo D1 `tien404-zalo-hub-staging` + áp `migrations/0001_init.sql` | `0001_init.down.sql` hoặc xoá D1 |
+| 1 | Tạo D1 `tien404-zalo-hub-staging` + áp `migrations/0001_init.sql` | `rollback/0001_init.down.sql` (để ngoài `migrations/` vì wrangler áp mọi file .sql trong đó) hoặc xoá D1 |
 | 2 | Tạo Worker mới `tien404-zalo-hub-staging`, đặt secret `ZH_MASTER_KEY`, `ZH_ADMIN_KEY`; để `ZH_ENABLED=false` | Xoá Worker |
 | 3 | Tạo luồng n8n QA (chưa publish) với `forward_key` của bot QA | Xoá workflow |
 | 4 | Bật `ZH_ENABLED=true`, chạy `connect-qa.mjs` → đổi webhook **bot QA** sang hub | `/v1/admin/disconnect` rồi đặt lại webhook cũ của bot QA |

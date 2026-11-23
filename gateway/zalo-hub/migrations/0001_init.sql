@@ -2,7 +2,7 @@
 -- One row per shop ↔ Zalo bot connection. Secrets are never stored in clear:
 --   token_sealed / forward_key_sealed = AES-256-GCM under ZH_MASTER_KEY (Worker secret)
 --   wh_secret_hash / pairing_code_hash = SHA-256 hex
--- Rollback: migrations/0001_init.down.sql
+-- Rollback: rollback/0001_init.down.sql (kept outside migrations/ so wrangler never applies it)
 
 CREATE TABLE IF NOT EXISTS zh_connections (
   id                 TEXT PRIMARY KEY,
