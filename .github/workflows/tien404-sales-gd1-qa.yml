@@ -1,0 +1,28 @@
+name: "TIEN404 Sale GD1 — order rules, owner alert, funnel (offline)"
+on:
+  pull_request:
+    paths:
+      - "sales/**"
+      - ".github/workflows/tien404-sales-gd1-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sales_gd1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse hosted credentials
+        run: test -z "${N8N_API_KEY:-}${META_PAGE_ACCESS_TOKEN:-}${ZALO_BOT_TOKEN:-}${CLOUDFLARE_API_TOKEN:-}"
+      - name: Offline tests
+        run: node --test sales/test/*.test.mjs
+      - name: Generated n8n node has no network primitives
+        run: |
+          node sales/n8n/build-validate-order.mjs > /tmp/validate-order.js
+          if grep -Eq 'httpRequest|fetch[(]|require[(]' /tmp/validate-order.js; then echo "network primitive in Validate Order"; exit 1; fi
