@@ -86,3 +86,14 @@ Code only: `git revert ad6ceab8 fd66a82a` (plus this docs commit), or keep branc
 - Wording: login and 404 no longer say "cửa hàng / chủ shop".
 - QA: `qa/v25-universal/offline-pg-uat.sh` 54 cases (apply → rollback → re-apply), `workspace-ui.cjs` extended (owner/staff/missing-server cases).
 - 2026-11-23 02:04Z APPLIED (Tiến: "mấy cái cần duyệt anh duyệt hết"): restore-test then staging via Supabase migration `v25_workspace_settings` (staging version 20261123020421). Hosted UAT on both (owner save, briefing save, cross-tenant denied, direct insert denied, other tenant sees 0, anon denied) inside a rolled-back block; residue 0.
+
+## 9. Daily Briefing sender (V25.2, 2026-11-23, PROPOSED)
+
+- `db/v25-workspace/20_briefing_sender.sql` (rollback `80_briefing_sender_rollback.sql`). No service_role:
+  - n8n calls `briefing_claim_due_v1()` / `briefing_report_v1(delivery, ok, error)` via PostgREST with the publishable key plus header `x-t404-briefing-key`. The key is generated inside the DB and stored only in Vault (`t404_briefing_sender_key`); the owner copies it once into an n8n credential.
+  - Ledger `app_private.briefing_deliveries` (UNIQUE store + local date) means at most one email per Store per day, even on retries.
+  - Recipients = confirmed emails of active owner/manager of that Store. Metrics from the last 24 h, only those the owner picked; no source → "chưa có dữ liệu".
+  - `briefing_recent_deliveries(store)` lets owner/manager see the last 7 sends (no addresses).
+- n8n workflow `lSBmm3t6P6RlTGEm` "TIEN404 V25 – Báo cáo sáng (email)" (folder Commerce / 01_CORE - ENGINE), DRAFT, not published. Source: `n8n/v25-briefing/workflow.sdk.js`. Schedule 15 min → claim → build email → Gmail → report.
+- QA: `qa/v25-universal/offline-briefing-uat.sh` 42 cases (apply → rollback → re-apply; wrong/no key denied; once a day; telegram excluded; staff and unconfirmed emails excluded). In CI.
+- To go live: apply 20 on restore-test → staging; create n8n credential "T404 briefing key" (templated custom auth, header `x-t404-briefing-key` = Vault value); publish the workflow.
