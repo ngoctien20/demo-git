@@ -9,7 +9,6 @@ on:
       - "qa/messenger-rich-v136m2/**"
       - "qa/messenger-rich-v136m3/**"
       - "qa/messenger-rich-v136m4/**"
-      - "docs/ai-handoff/V13_6M4_*"
       - ".github/workflows/v136m4-messenger-event-replay-qa.yml"
   pull_request:
     paths:
@@ -18,7 +17,6 @@ on:
       - "qa/messenger-rich-v136m2/**"
       - "qa/messenger-rich-v136m3/**"
       - "qa/messenger-rich-v136m4/**"
-      - "docs/ai-handoff/V13_6M4_*"
       - ".github/workflows/v136m4-messenger-event-replay-qa.yml"
   workflow_dispatch:
 permissions:

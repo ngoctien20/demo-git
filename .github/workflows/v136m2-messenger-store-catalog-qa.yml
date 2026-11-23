@@ -7,13 +7,11 @@ on:
       - "qa/messenger-rich-v136m1/**"
       - "qa/messenger-rich-v136m2/**"
       - ".github/workflows/v136m2-messenger-store-catalog-qa.yml"
-      - "docs/ai-handoff/V13_6M2_*"
   pull_request:
     paths:
       - "qa/messenger-rich-v136m1/**"
       - "qa/messenger-rich-v136m2/**"
       - ".github/workflows/v136m2-messenger-store-catalog-qa.yml"
-      - "docs/ai-handoff/V13_6M2_*"
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,12 +1,12 @@
 {
   "name": "tien404-ai-website",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
-  "description": "TIEN404 AI premium motion website with static GitHub Pages preview and optional Python lead API",
+  "description": "TIEN404 AI public website (GitHub Pages) built from site-src; old motion Sass kept in src/scss",
   "scripts": {
+    "build:site": "node scripts/build-site.mjs",
     "build:css": "sass --no-source-map --style=compressed src/scss/main.scss assets/style.css",
-    "dev:css": "sass --watch src/scss/main.scss assets/style.css",
-    "test": "python -m pytest -q",
+    "test": "python -m unittest discover -s tests -v",
     "qa:static": "python qa_static.py"
   },
   "devDependencies": {
