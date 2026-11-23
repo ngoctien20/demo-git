@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIEN404 V18.5 — Widget x Shared Core UI QA (SYNTHETIC)</title>
+<link rel="stylesheet" href="../../assets/style.css">
+<link rel="stylesheet" href="../../assets/live-chat.css">
+<style>
+body{margin:0;background:#0d1326;color:#f3f5ff;font-family:Arial,sans-serif}
+main{max-width:900px;margin:4rem auto;padding:0 18px}
+h1{font-size:clamp(23px,4vw,36px);margin:10px 0}
+.notice{padding:15px 17px;border:1px solid #4b75b6;border-radius:12px;background:#223049;margin:18px 0;color:#d7eaff}
+button.open{padding:12px 17px;background:#8062d9;color:white;border:0;border-radius:10px}
+</style>
+<script>
+/* SYNTHETIC ONLY: intercept the gateway endpoint, never connect to the Internet.
+ * This fixture is an UI preview, NOT an actual invocation of n8n Commerce AI.
+ */
+window.TIEN404_CONFIG=Object.freeze({
+ widgetV185:Object.freeze({enabled:true,staging:true,
+   gatewayBase:'https://mock-widget.qa.invalid',widgetId:'platform_widget',
+   allowedImageOrigins:[]})
+});
+let count=0;
+window.fetch=async (input,options)=>{
+ const url=String(input);
+ if (!url.startsWith('https://mock-widget.qa.invalid/widget/v18.5/'))
+   throw new Error('OFFLINE_QA_FORBIDS_EXTERNAL_FETCH');
+ if(options?.method!=='POST')throw new Error('OFFLINE_QA_POST_ONLY');
+ const payload=JSON.parse(options.body||'{}');
+ const isSession=url.endsWith('/session');
+ if(!isSession && (!payload.session||!payload.eventId||!payload.message))
+   return new Response('{}',{status:403,headers:{'content-type':'application/json'}});
+ count++;
+ const body=isSession?{
+   session:'T404W1.synthetic_ui_not_a_real_token',anonymous:true,previewOnly:true,
+   privateOrderAccess:false,providerSends:0,orderWrites:0,
+   mode:'PLATFORM_CONSULTANT'
+ }:{
+   mode:'PLATFORM_CONSULTANT',status:'PREVIEW_ONLY',
+   channel:'WEB_WIDGET',providerSends:0,orderWrites:0,
+   privateOrderAccess:false,canRelease:false,
+   publicPreview:{
+     type:'PRODUCT_LIST',
+     text:'[UI GIẢ LẬP] Đây là dữ liệu mẫu để xem cách widget hiển thị thẻ sản phẩm. Chưa gọi AI Core thật.',
+     products:[{itemId:'product_a',sku:'QA-A001',name:'Sản phẩm minh họa — không bán thật',
+       priceVnd:159000,stock:3,imageUrl:null}],
+     actions:[{id:'BROWSE_CATALOG',label:'Xem sản phẩm mẫu'}]
+   }
+ };
+ return new Response(JSON.stringify(body),{status:200,
+   headers:{'content-type':'application/json'}});
+};
+</script>
+</head>
+<body>
+<main>
+  <strong>TIEN404 AI / V18.5 CANDIDATE</strong>
+  <h1>Website Widget × Shared Commerce Core</h1>
+  <p class="notice"><b>OFFLINE SYNTHETIC UI QA · NO SEND · NO CUSTOMER DATA.</b><br>
+    Trang này sử dụng dữ liệu mô phỏng trong trình duyệt; không kết nối n8n, không xác thực Store,
+    không truy cập Orders và không đại diện cho Gateway đã được triển khai.</p>
+  <p>Nhấn <b>Chat AI</b> góc dưới để thử giao diện thẻ sản phẩm và hộp thoại trên máy tính hoặc điện thoại.</p>
+  <button class="open" type="button" data-tien404-open-chat>Mở widget QA</button>
+</main>
+<div class="tien404-floating-widget" id="tien404-floating-widget">
+ <button type="button" id="tien404-chat-launcher" class="tien404-chat-launcher"
+  aria-label="Mở TIEN404 AI QA" aria-controls="tien404-chat-panel"
+  aria-expanded="false"><span>Chat AI · QA</span></button>
+ <section class="tien404-chat-panel" id="tien404-chat-panel" aria-label="Widget QA" hidden>
+  <header class="tien404-panel-head"><div><strong>TIEN404 AI QA</strong>
+   <small>Shared Core / UI Synthetic Preview</small></div>
+   <button type="button" id="tien404-chat-close" aria-label="Thu nhỏ">—</button></header>
+  <div class="ai-live-card">
+   <div id="n8n-chat" class="tien404-ai-chat" aria-label="Hội thoại QA"></div>
+   <form id="tien404-composer" class="tien404-composer" hidden>
+    <label class="tien404-composer-label" for="tien404-message">Tin nhắn</label>
+    <div class="tien404-composer-row">
+     <textarea id="tien404-message" rows="2" maxlength="800"
+      placeholder="Nhập câu hỏi QA"></textarea>
+     <button id="tien404-send" type="submit">Gửi</button>
+    </div>
+    <p id="tien404-composer-status" class="tien404-composer-status" role="status" aria-live="polite"></p>
+   </form>
+   <p id="n8n-chat-fallback" hidden>Chưa thể mở Widget QA.</p>
+  </div>
+ </section>
+</div>
+<script type="module" src="../../assets/ai-consultant.js"></script>
+</body></html>

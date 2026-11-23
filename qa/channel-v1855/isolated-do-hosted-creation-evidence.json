@@ -1,0 +1,134 @@
+{
+  "checkpoint": "V18.5.5-B5_ISOLATED_SQLITE_DO_OWNER_DEPLOYED_NO_PUBLIC_ROUTES",
+  "date": "2026-11-18 JST",
+  "status": "HOSTED_CLASS_NAMESPACE_VERIFIED_PRIVATE_NO_PUBLIC_ROUTE_NOT_CONNECTED_TO_WIDGET",
+  "scopeAuthorization": {
+    "userMessage": "được tiếp tục",
+    "approvedAction": "Deploy one isolated staging Worker solely to provision a SQLite-backed Durable Object class and namespace.",
+    "notAuthorized": [
+      "Connect to existing Website Widget",
+      "Activate/publish n8n webhook",
+      "Change cloud secrets or credentials",
+      "Change Commerce production orders, inventory, invoices or tenant membership",
+      "Enable workers.dev or preview urls",
+      "Deploy or modify V14.4 Widget",
+      "Production release"
+    ]
+  },
+  "before": {
+    "existingDoNamespaces": 3,
+    "newOwnerWorkerExisted": false,
+    "newDoNamespaceExisted": false,
+    "existingWidgetDeploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "existingWidgetVersionId": "da022974-1832-425f-bf82-afddc558b893",
+    "existingWidgetBindings": [
+      "T404_ACCESS_AUD",
+      "T404_QA_OPERATOR_EMAIL"
+    ],
+    "n8nIngressWorkflowId": "JZL4p8tLb65eU3aB",
+    "n8nAdapterWorkflowId": "rYwrJfJavcaZcjUI"
+  },
+  "applied": {
+    "workerName": "tien404-v1855-read-quota-isolated-staging",
+    "workerId": "9096a97fe3c74bd7b2625b5617cbeafd",
+    "deploymentId": "172fd5ad-59c0-4083-bf19-85496a55055b",
+    "versionId": "72e2fe69-4682-4204-a9c9-b0768f86d673",
+    "cloudflareScriptEtag": "379f26cefd87ba25bd9e041d33e5f8a3aca028fba25732a2cf432b34eb0c4b0f",
+    "namespaceName": "tien404-v1855-read-quota-isolated-staging_T404ReadAdmission",
+    "namespaceId": "ca50ad778789491d967cc216fb39d0bd",
+    "className": "T404ReadAdmission",
+    "classStorage": "sqlite",
+    "lifecycleMethod": "declarative exports object {type:durable-object, storage:sqlite} on new isolated Worker",
+    "classReconciliation": {
+      "created": [
+        "T404ReadAdmission"
+      ],
+      "warnings": []
+    },
+    "sourceModules": [
+      "owner.mjs",
+      "t404-read-admission-do.mjs",
+      "read-admission-policy.mjs"
+    ],
+    "gitHubSourcePaths": [
+      "qa/channel-v1855/isolated-do-owner-candidate.mjs",
+      "qa/channel-v1855/t404-read-admission-do.mjs",
+      "qa/channel-v1855/read-admission-policy.mjs"
+    ],
+    "noPublicRouteDefaultResponse": {
+      "httpStatus": 404,
+      "reason": "DO_OWNER_HAS_NO_PUBLIC_ENDPOINT"
+    },
+    "createdOnlyOneNewNamespace": true,
+    "createdNewWorker": true
+  },
+  "afterReadOnlyVerification": {
+    "cloudflareNamespaceCount": 4,
+    "exactNamespacePresent": true,
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false,
+    "customDomainsAttached": 0,
+    "scheduledTriggers": 0,
+    "namespaceInstances": 0,
+    "workerBindings": 0,
+    "moduleSourceHas404Response": true,
+    "moduleSourceExportsClass": true,
+    "moduleSourceHasNoN8nTokenBinding": true,
+    "existingWidgetDeploymentId": "b4f501e0-ff37-4ea4-be77-6e3148667b15",
+    "existingWidgetVersionId": "da022974-1832-425f-bf82-afddc558b893",
+    "existingWidgetBindings": [
+      "T404_ACCESS_AUD",
+      "T404_QA_OPERATOR_EMAIL"
+    ]
+  },
+  "qa": {
+    "sourceRegressionVerifiedAtPreviousGitHead": {
+      "runId": 44315412508,
+      "passed": 154,
+      "failed": 0
+    },
+    "localCloudflareWorkerdVerifiedAtPreviousGitHead": {
+      "runId": 44315412508,
+      "passed": 4,
+      "failed": 0
+    },
+    "liveClassNamespaceMigration": "VERIFIED",
+    "liveDoObjectInvocation": "NOT_TESTED",
+    "hostedDurableObjectSql": "NOT_TESTED",
+    "hostedConcurrentAdmission": "NOT_TESTED",
+    "realHttpHeaderAuth": "NOT_TESTED",
+    "alternateAccessIdentityDenial": "PENDING",
+    "storeABRls": "NOT_VERIFIED",
+    "production": "NO_GO"
+  },
+  "securityAndCost": {
+    "secretReadOrModified": false,
+    "newWorkerConfiguredBindings": 0,
+    "existingWidgetUpdated": false,
+    "n8nWorkflowUpdated": false,
+    "n8nWorkflowActivated": false,
+    "realCustomerDataAccess": false,
+    "orderWrites": 0,
+    "stockWrites": 0,
+    "providerSends": 0,
+    "costMayAccrue": true,
+    "billingPlanAndRemainingAllowance": "NOT_VERIFIED_403_FORBIDDEN",
+    "cloudflareBillingCap": "NOT_VERIFIED",
+    "claimZeroCost": false
+  },
+  "rollback": {
+    "scope": "ISOLATED DO OWNER ONLY",
+    "existingWidget": "Unchanged, requires no rollback.",
+    "newOwnerWorker": "workers.dev and previews disabled; zero routes and bindings. Class lifecycle cannot roll back to pre-creation version.",
+    "cleanup": "Do not remove class or delete namespace/data without explicit future approval.",
+    "emergency": "Keep new Worker unreachable and do not attach any client binding."
+  },
+  "nextApprovalsRequired": [
+    "Separate approval to attach cross-Worker DO binding to Widget",
+    "Separate approval to set Worker secret and exact n8n URL",
+    "Separate approval for real HTTP Header Auth UAT and activating n8n Webhook",
+    "Cloudflare Access second-identity denial evidence",
+    "Same-tenant Store A/B RLS test",
+    "Verified Cloudflare budget and quota before public traffic"
+  ]
+}

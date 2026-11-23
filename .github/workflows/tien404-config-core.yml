@@ -1,0 +1,181 @@
+name: "TIEN404 Config Core v1 (unit + offline Postgres, no hosted access)"
+on:
+  pull_request:
+    paths:
+      - "config-core/**"
+      - "db/config-core/**"
+      - "qa/config-core/**"
+      - "db/v25-workspace/**"
+      - "qa/v25-universal/offline-pg-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-restricted-rls-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-message-ledger-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-ledger-rls-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-claim-bound-plan-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-atomic-claim-plan-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-readonly-reconciliation-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-operator-review-uat.sh"
+      - "qa/messenger-rich-v136m5/pg17-private-opaque-session-uat.sh"
+      - ".github/workflows/tien404-config-core.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  config-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      pg:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse hosted credentials
+        run: test -z "${SUPABASE_ACCESS_TOKEN:-}${SUPABASE_DB_URL:-}${DATABASE_URL:-}"
+      - name: Unit tests (validator, templates, renderer, legacy payloads)
+        run: node --test config-core/test/*.test.mjs
+      - name: Template seed in SQL matches JS
+        run: node config-core/build-seed.mjs --check
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: V20 replica -> config core 10 -> UAT (isolation, versioning, rollback, SQL/JS parity) -> 90 -> re-apply (PG17)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+        run: bash qa/config-core/offline-pg-uat.sh
+
+      - name: V25 workspace settings (industry + briefing prefs) -> UAT -> rollback -> re-apply (PG17)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+        run: bash qa/v25-universal/offline-pg-uat.sh
+
+      - name: V21 Messenger real PostgreSQL 17 atomic claim UAT (disposable DB, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-atomic-claim-uat.sh
+
+      - name: V21 Messenger restricted role FORCE RLS QA (disposable PG17, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-restricted-rls-uat.sh
+
+      - name: V21 Messenger message-attempt ledger real PG17 QA (disposable, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-message-ledger-uat.sh
+
+      - name: V21 Messenger both ledger tables restricted FORCE RLS PG17 (disposable, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-ledger-rls-uat.sh
+
+      - name: V21 Messenger claim-bound plan PG17 active lease and scoped RLS acceptance (local NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-claim-bound-plan-uat.sh
+
+      - name: V21 Messenger atomic claim+plan+parts real restricted PG17 rollback QA (disposable NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-atomic-claim-plan-uat.sh
+
+      - name: V21 Messenger read-only reconciliation inspector actual PG17 NOBYPASSRLS QA (disposable, NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-readonly-reconciliation-uat.sh
+
+      - name: V21 Messenger owner-manager-staff append-only operator review actual PG17 RLS QA (disposable NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-operator-review-uat.sh
+
+      - name: V21 Messenger private opaque reference + current DB session grant PG17 (disposable NO SEND)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGPASSWORD: "postgres"
+          T404_DISPOSABLE_PG_QA: "YES"
+          SUPABASE_DB_URL: ""
+          SUPABASE_ACCESS_TOKEN: ""
+          DATABASE_URL: ""
+          PGHOSTADDR: ""
+        run: bash qa/messenger-rich-v136m5/pg17-private-opaque-session-uat.sh

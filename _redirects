@@ -1,0 +1,13 @@
+# TIEN404 public site (V23): login and sign-up live in the owner App (/app/, Supabase Auth).
+# Retired demo pages also ship as noindex meta-refresh stubs for hosts without _redirects support.
+/login /app/#/dang-nhap 302
+/login.html /app/#/dang-nhap 302
+/register.html /app/#/dang-ky 301
+/dashboard.html /app/ 301
+/onboarding.html /app/#/dang-ky 301
+/billing.html /app/#/goi-dich-vu 301
+/invoice.html /app/#/goi-dich-vu 301
+/checkout.html /pricing.html 301
+/impact.html /pricing.html 301
+/lab.html /demo.html 301
+/solutions.html /industries.html 301

@@ -10,11 +10,6 @@ name: Supabase backup + restore test
 #   BACKUP_PASSPHRASE  cụm mật khẩu dài để mã hóa file backup
 
 on:
-  push:
-    branches: [claude/project-thread-geyx0t]
-    paths:
-      - .github/workflows/supabase-backup-restore-test.yml
-      - ops/supabase-backup/**
   workflow_dispatch:
   schedule:
     - cron: '0 19 * * 0' # Chủ nhật 19:00 UTC = 2:00 sáng thứ Hai giờ Việt Nam (chỉ chạy khi đã có trên main)

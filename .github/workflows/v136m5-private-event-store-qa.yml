@@ -1,0 +1,162 @@
+name: TIEN404 V13.6M.5 Private Event Store OFFLINE QA
+on:
+  push:
+    branches:
+      - work/v136m5-private-event-store-readiness-offline-20261115
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - ".github/workflows/v136m5-private-event-store-qa.yml"
+  pull_request:
+    paths:
+      - "qa/messenger-rich-v136m/**"
+      - "qa/messenger-rich-v136m1/**"
+      - "qa/messenger-rich-v136m2/**"
+      - "qa/messenger-rich-v136m3/**"
+      - "qa/messenger-rich-v136m4/**"
+      - "qa/messenger-rich-v136m5/**"
+      - ".github/workflows/v136m5-private-event-store-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contract:
+    name: Seven-suite private event transaction contract QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and all inherited source contracts
+        run: |
+          node --check qa/messenger-rich-v136m5/private-event-store.cjs
+          node --check qa/messenger-rich-v136m5/synthetic-pg-model.cjs
+          node --check qa/messenger-rich-v136m5/private-event-store.test.cjs
+          node --check qa/messenger-rich-v136m5/messenger-inbound-gate.cjs
+          node --check qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs
+          node --check qa/messenger-rich-v136m5/messenger-signed-admission.cjs
+          node --check qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs
+          node --check qa/messenger-rich-v136m5/message-attempt-ledger.cjs
+          node --check qa/messenger-rich-v136m5/synthetic-message-ledger-model.cjs
+          node --check qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs
+          node --check qa/messenger-rich-v136m5/claim-bound-plan-contract.cjs
+          node --check qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs
+          node --check qa/messenger-rich-v136m5/atomic-claim-plan.cjs
+          node --check qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs
+          node --check qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs
+          node --check qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs
+          node --check qa/messenger-rich-v136m5/operator-reconciliation-review.cjs
+          node --check qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs
+          node --check qa/messenger-rich-v136m5/private-opaque-session-bridge.cjs
+          node --check qa/messenger-rich-v136m5/private-opaque-session-bridge.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs qa/messenger-rich-v136m5/private-opaque-session-bridge.test.cjs
+  static-release-gate:
+    name: Deny hosted writes and unsafe migration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static audit no production send / SQL proposal guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source=Path("qa/messenger-rich-v136m5/private-event-store.cjs").read_text()
+          model=Path("qa/messenger-rich-v136m5/synthetic-pg-model.cjs").read_text()
+          gate=Path("qa/messenger-rich-v136m5/messenger-inbound-gate.cjs").read_text()
+          signed=Path("qa/messenger-rich-v136m5/messenger-signed-admission.cjs").read_text()
+          ledger=Path("qa/messenger-rich-v136m5/message-attempt-ledger.cjs").read_text()
+          ledger_model=Path("qa/messenger-rich-v136m5/synthetic-message-ledger-model.cjs").read_text()
+          bound=Path("qa/messenger-rich-v136m5/claim-bound-plan-contract.cjs").read_text()
+          atomic=Path("qa/messenger-rich-v136m5/atomic-claim-plan.cjs").read_text()
+          reconciliation=Path("qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs").read_text()
+          operator=Path("qa/messenger-rich-v136m5/operator-reconciliation-review.cjs").read_text()
+          opaque_bridge=Path("qa/messenger-rich-v136m5/private-opaque-session-bridge.cjs").read_text()
+          sql=Path("qa/messenger-rich-v136m5/PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql").read_text()
+          for p,s in [("contract",source),("simulator",model)]:
+            for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                           "PAGE_ACCESS_TOKEN", "httpRequest(", "createClient(", "pg.Pool("]:
+              assert banned not in s,(p,banned)
+          for banned in ["fetch(", "axios(", "graph.facebook.com", "PAGE_ACCESS_TOKEN",
+                         "process.env", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in gate,("messenger-inbound-gate.cjs",banned)
+          for banned in ["fetch(", "axios(", "graph.facebook.com", "PAGE_ACCESS_TOKEN",
+                         "process.env", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in signed,("messenger-signed-admission.cjs",banned)
+          for path,src in [("message-attempt-ledger.cjs",ledger),
+                           ("synthetic-message-ledger-model.cjs",ledger_model)]:
+            for banned in ["fetch(", "axios(", "graph.facebook.com", "PAGE_ACCESS_TOKEN",
+                           "process.env", "pg.Pool(", "createClient(", "httpRequest("]:
+              assert banned not in src,(path,banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in bound,("claim-bound-plan-contract.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in atomic,("atomic-claim-plan.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in reconciliation,("message-reconciliation-inspector.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in operator,("operator-reconciliation-review.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in opaque_bridge,("private-opaque-session-bridge.cjs",banned)
+          assert "OPAQUE_BRIDGE_HOSTED_NOT_APPROVED" in opaque_bridge
+          assert "CURRENT_USER::name" in opaque_bridge
+          assert "timingSafeEqual" in opaque_bridge
+          assert "readOnly:baseSQL.readOnly" in opaque_bridge
+          assert "app_private.messenger_operator_sessions" in opaque_bridge
+          assert "journalOnly!==true" in opaque_bridge
+          assert "retryAllowed:false" in opaque_bridge and "sendAllowed:false" in opaque_bridge
+          assert "OPERATOR_REVIEW_HOSTED_NOT_APPROVED" in operator
+          assert "g.db_role=CURRENT_USER::name" in operator
+          assert "INSERT INTO app_private.messenger_review_events" in operator
+          assert "retryAllowed:false" in operator and "sendAllowed:false" in operator
+          assert "RECONCILIATION_HOSTED_NOT_APPROVED" in reconciliation
+          assert "SET TRANSACTION READ ONLY" in reconciliation
+          assert "retryAllowed:false" in reconciliation and "sendAllowed:false" in reconciliation
+          assert "providerSendEnabled:false" in reconciliation
+          assert "ATOMIC_CLAIM_PLAN_HOSTED_NOT_APPROVED" in atomic
+          assert "rollbackOnThrow!==true" in atomic
+          assert "FROM claimed c" in atomic and "FROM prepared p" in atomic
+          assert "retryAllowed:false" in atomic and "sendAllowed:false" in atomic
+          assert "CLAIM_BOUND_HOSTED_NOT_APPROVED" in bound
+          assert "ec.lease_id=$11::uuid" in bound
+          assert "ec.status=\'CLAIMED\'" in bound
+          assert "expires_at > $12::timestamptz" in bound
+          assert "LEDGER_HOSTED_NOT_APPROVED" in ledger
+          assert "MAY_HAVE_SENT_HOLD" in ledger and "UNCERTAIN_HOLD" in ledger
+          assert "sendAllowed:false" in ledger and "retryAllowed:false" in ledger
+          assert "ON CONFLICT" in ledger and "DO NOTHING" in ledger
+          assert "SIGNED_ADMISSION_HOSTED_NOT_APPROVED" in signed
+          assert "previewMessengerV136M3" in signed and "eventIsolation:true" in signed
+          assert "providerSendEnabled:false" in signed
+          assert "INBOUND_GATE_HOSTED_NOT_APPROVED" in gate
+          assert "sendAllowed:false" in gate and "retryAllowed:false" in gate
+          assert "UNCERTAIN_HOLD" in gate and "PREVIEW_READY" in gate
+          assert "mode='BLOCKED'" in source
+          assert "mode!=='SYNTHETIC_SQL_QA_ONLY'" in source
+          assert "driver.synthetic!==true" in source
+          assert "driver.externalWrites!==false" in source
+          assert "durableReplayReady:false" in source
+          assert "ON CONFLICT" in source and "DO NOTHING" in source
+          assert "AND status='CLAIMED'" in source
+          assert "createHmac(" in source and "senderHash" in source
+          assert "RAISE EXCEPTION 'TIEN404_V13_6M5_MIGRATION_NOT_APPROVED'" in sql
+          assert "DO_NOT_RUN" in "PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql"
+          active=[line.strip() for line in sql.splitlines()
+                  if line.strip() and not line.lstrip().startswith("--")]
+          assert any(line.startswith("RAISE EXCEPTION") for line in active)
+          assert not any(line.upper().startswith(("CREATE ","ALTER ","INSERT ","UPDATE ",
+                                                  "DELETE ","GRANT ","REVOKE ","DROP ")) for line in active)
+          assert "backedByPostgres:false" in source
+          assert "durableAcrossProcessRestart:false" in model
+          print("PASS: source-only, no provider API, no schema writes, atomic SQL reviewed")
+          PY
