@@ -1,6 +1,6 @@
 # TIEN404 Zalo Hub — cổng chung cho bot Zalo của nhiều shop
 
-Trạng thái: **PROPOSED**. Code và kiểm thử offline (19/19 PASS). Chưa tạo D1, chưa deploy Worker, chưa đổi webhook bot nào, chưa đụng n8n/Supabase.
+Trạng thái: **PROPOSED**. Code và kiểm thử offline (20/20 PASS). Chưa tạo D1, chưa deploy Worker, chưa đổi webhook bot nào, chưa đụng n8n/Supabase.
 
 Thiết kế và nguồn tài liệu Zalo: tài liệu "Shop tự nối bot Zalo — kiểm tra và thiết kế" (https://claude.ai/artifact/8xqoRi8zWxrVbsUkhJZrUx).
 
@@ -37,7 +37,10 @@ Ngắt: `POST /v1/admin/disconnect` → `deleteWebhook`, xoá mọi bản mã. N
 
 - `store_id = qa-zalo-bot`. **Không dùng Bot TIEN404 AI** (đang trỏ webhook về n8n, giữ nguyên).
 - Chạy trên máy anh: `node tools/connect-qa.mjs --store qa-zalo-bot --forward https://ngoctien20.app.n8n.cloud/webhook/<qa-path>`. Mã bot được hỏi ẩn trên terminal, không dán vào chat hay repo.
-- Luồng n8n QA tối thiểu: Webhook (raw body) → Code `n8n/verify-forward.js` → soạn câu → Code `n8n/sign-send.js` → HTTP Request `POST <hub>/v1/send`.
+- Luồng n8n QA đã tạo (chưa publish): `QA · Zalo Hub · bot QA (qa-zalo-bot)` id `yYDIPEBBIW1v9Mj9`, thư mục `90_QA - DIAGNOSTICS`. Không cần Code node:
+  - Webhook `POST /webhook/tien404-zalo-hub-qa`, Header Auth credential **mới**: tên header `x-tien404-forward-key`, giá trị = `forward_key` của bot QA. (n8n tự gắn tạm credential cũ "Header Auth account" — phải đổi sang credential mới.)
+  - HTTP Request `POST <hub>/v1/send`, Header Auth credential mới: header `Authorization`, giá trị `Bearer <forward_key>`. Sửa URL `<hub-host>` sau khi deploy.
+- Luồng có code (tuỳ chọn, chặt hơn vì có chống phát lại): `n8n/verify-forward.js` + `n8n/sign-send.js` (ký HMAC).
 
 ## Các bước cần anh Tiến duyệt riêng (theo thứ tự)
 

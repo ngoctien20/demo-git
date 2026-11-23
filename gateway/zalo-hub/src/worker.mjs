@@ -165,7 +165,8 @@ async function forward(env, deps, c, ev, now) {
   try {
     const res = await deps.fetch(c.forward_url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-tien404-ts': ts, 'x-tien404-signature': await signBody(key, ts, payload), 'x-tien404-connection': c.id },
+      // Signature for code flows; x-tien404-forward-key lets an n8n Webhook node check it with a Header Auth credential.
+      headers: { 'content-type': 'application/json', 'x-tien404-ts': ts, 'x-tien404-signature': await signBody(key, ts, payload), 'x-tien404-connection': c.id, 'x-tien404-forward-key': key },
       body: payload,
       redirect: 'manual',
       signal: AbortSignal.timeout(10000),
@@ -187,7 +188,13 @@ async function handleSend(request, env, deps) {
   const c = await db.byId(env.ZH_DB, connId);
   if (!c || !c.forward_key_sealed) return json(401, { ok: false, error: 'UNAUTHORIZED' });
   const now = deps.now();
-  const ok = await verifyBody(await forwardKeyOf(env, c), request.headers.get('x-tien404-ts'), r.text, request.headers.get('x-tien404-signature'), now);
+  const fk = await forwardKeyOf(env, c);
+  // Two ways to authenticate, same per-shop key: HMAC over ts.body (code flows), or
+  // "Authorization: Bearer <forward_key>" (n8n Header Auth credential, no code needed).
+  const auth = request.headers.get('authorization') || '';
+  const ok = request.headers.get('x-tien404-signature')
+    ? await verifyBody(fk, request.headers.get('x-tien404-ts'), r.text, request.headers.get('x-tien404-signature'), now)
+    : auth.startsWith('Bearer ') && (await secureEqual(auth.slice(7), fk));
   if (!ok) return json(401, { ok: false, error: 'UNAUTHORIZED' });
 
   if (c.status !== 'active') return json(409, { ok: false, error: 'CONNECTION_' + String(c.status).toUpperCase() });

@@ -282,3 +282,16 @@ test('n8n snippets use the same signature scheme as the hub', async () => {
   assert.equal(n8nSig, await signBody(key, ts, body));
   assert.ok(await verifyBody(key, ts, body, n8nSig, Number(ts) * 1000));
 });
+
+test('n8n mode: Bearer forward_key works for /v1/send; wrong or other shop key is refused', async () => {
+  const h = harness();
+  const a = await connect(h, 'shop-a', TOKEN_A);
+  const b = await connect(h, 'shop-b', TOKEN_B);
+  await pairOwner(h, a, 'owner-a');
+  await hook(h, a, textEvent('cust-a', 'hi', 'ma1'));
+  assert.equal(h.st.forwards.at(-1).headers['x-tien404-forward-key'], a.forward_key);
+  const send = (key) => h.req('POST', '/v1/send', { connection_id: a.connection_id, chat_id: 'cust-a', text: 'Dạ shop chào anh/chị' }, { 'x-tien404-connection': a.connection_id, authorization: 'Bearer ' + key });
+  assert.equal((await send(a.forward_key)).status, 200);
+  assert.equal((await send(b.forward_key)).status, 401);
+  assert.equal((await send('x'.repeat(43))).status, 401);
+});
