@@ -1,0 +1,6 @@
+[
+  {"name": "n8n", "source": "sample", "state": "paused", "detail": "dữ liệu mẫu: hết trial, chờ nâng gói. Điền health_url + source=http khi có"},
+  {"name": "Worker", "source": "sample", "state": "unknown", "detail": "dữ liệu mẫu: Cloudflare Worker, chưa cắm health check"},
+  {"name": "Supabase", "source": "sample", "state": "up", "detail": "dữ liệu mẫu: staging, chưa cắm health check"},
+  {"name": "Web", "source": "sample", "state": "up", "detail": "dữ liệu mẫu: gh-pages"}
+]

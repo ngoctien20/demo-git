@@ -1,0 +1,298 @@
+{
+ "repo": "ngoctien20/demo-git",
+ "branch": "develop",
+ "head": {
+  "sha": "c795dbb3ca60c8d4332c77dc86d3df1e335347d1",
+  "message": "Merge pull request #505: dọn repo, giữ phần dùng được sau này",
+  "date": "2026-11-23T11:04:28Z"
+ },
+ "checks": {
+  "pass": 35,
+  "fail": 0,
+  "pending": 0,
+  "skip": 0,
+  "total": 35
+ },
+ "check_names": [
+  {
+   "name": "preview",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "isolated-no-send-qa",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "native-access-and-real-readonly-evidence",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "config-core",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "chromium-responsive",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "inherited-rich-ui-chromium",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Mock provider evidence / consent negatives / no-send guard",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "plain-postgres-uat",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Inherited four tab preview Chromium QA no sends",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "HMAC-first canonical pipeline and inherited Store QA",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "source-and-security",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "candidate-source-and-regression",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "synthetic-core-adapter",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Pure Resolver and Messenger integration security tests",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "protected-http-negative-qa",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "security-contract",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "nav-qa",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "published-core-readonly-synthetic",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "db-offline",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Deny hosted writes and unsafe migration",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Multi-PSID and offline replay + inherited security",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "reactions",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "source-only-jwt-gateway-admission",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Pure Meta payload and negative trust QA (NO SEND)",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "pg17_atomic_ledger",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "local-gotrue-jwt-uat",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "chromium-widget-responsive",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "protected-readonly-adapter",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "widget-browser-regression",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Chromium five sizes and four lab modes (NO SEND)",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "store-resolver-no-send-tests",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "pg17_page_draft_owner_ab",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "site",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "Seven-suite private event transaction contract QA",
+   "status": "completed",
+   "conclusion": "success"
+  },
+  {
+   "name": "SQLite Durable Object in isolated workerd (NO CLOUD DEPLOY)",
+   "status": "completed",
+   "conclusion": "success"
+  }
+ ],
+ "prs": [
+  {
+   "number": 507,
+   "title": "Zalo Hub: cổng chung nhận bot Zalo của nhiều shop (offline, chưa deploy)",
+   "draft": true,
+   "created_at": "2026-11-23T15:04:31Z",
+   "head_sha": "38280d319f2d53ecc9c79458c7e0756186daa46d",
+   "base": "develop",
+   "checks": {
+    "pass": 1,
+    "fail": 0,
+    "pending": 0,
+    "skip": 0,
+    "total": 1
+   }
+  },
+  {
+   "number": 506,
+   "title": "Đa ngành: đặt lịch + cọc VietQR + nhắc lịch, tự dựng trợ lý từ ảnh bảng giá (+ trang App)",
+   "draft": true,
+   "created_at": "2026-11-23T11:01:31Z",
+   "head_sha": "f136d559ecde6bbbcc128dabf06524d92c8bc38c",
+   "base": "develop",
+   "checks": {
+    "pass": 4,
+    "fail": 0,
+    "pending": 0,
+    "skip": 0,
+    "total": 4
+   }
+  },
+  {
+   "number": 504,
+   "title": "[V21.11][DRAFT][NO DEPLOY] Real Meta & Owner evidence gates + staging approval preflight",
+   "draft": true,
+   "created_at": "2026-11-23T10:54:21Z",
+   "head_sha": "33fc5edaa03c0f5786896ee9e015b36e61374d72",
+   "base": "develop",
+   "checks": {
+    "pass": 3,
+    "fail": 0,
+    "pending": 0,
+    "skip": 0,
+    "total": 3
+   }
+  },
+  {
+   "number": 503,
+   "title": "[V21 P1][DRAFT] Atomic private reference mapping + PG17 RLS QA (NO SEND)",
+   "draft": true,
+   "created_at": "2026-11-23T10:53:12Z",
+   "head_sha": "8dba3e60e112331973b518e5f66a377a726502a7",
+   "base": "develop",
+   "checks": {
+    "pass": 3,
+    "fail": 0,
+    "pending": 0,
+    "skip": 0,
+    "total": 3
+   }
+  },
+  {
+   "number": 502,
+   "title": "Sale GĐ1: giữ tồn khi đặt, báo đơn cho chủ shop, đếm tin nhắn → đơn (offline)",
+   "draft": true,
+   "created_at": "2026-11-23T08:41:33Z",
+   "head_sha": "53a69b5afc05ae4b2272f14c8fa1b1ed37cb1334",
+   "base": "develop",
+   "checks": {
+    "pass": 1,
+    "fail": 0,
+    "pending": 0,
+    "skip": 0,
+    "total": 1
+   }
+  },
+  {
+   "number": 499,
+   "title": "WS-A (V26): SECURITY DEFINER negative suite, rebuild check, restore drill, Order Ownership Gateway draft",
+   "draft": true,
+   "created_at": "2026-11-22T16:24:03Z",
+   "head_sha": "3327cb4980df14fc1f3398d30d316199981ad965",
+   "base": "develop",
+   "checks": null
+  },
+  {
+   "number": 498,
+   "title": "V26 WS-C: phân tích offline n8n Commerce + Messenger (không publish)",
+   "draft": true,
+   "created_at": "2026-11-22T16:16:56Z",
+   "head_sha": "b0148419740e1e5808f2260e7588a3c8cb320e9d",
+   "base": "develop",
+   "checks": null
+  },
+  {
+   "number": 497,
+   "title": "[V26 Phase 0][DRAFT] Kiểm toán hệ thống read-only + master checkpoint",
+   "draft": true,
+   "created_at": "2026-11-22T16:07:05Z",
+   "head_sha": "6bfe8f6039a8171befb39cf55b00c7053f65a88e",
+   "base": "develop",
+   "checks": null
+  }
+ ],
+ "rate_remaining": null
+}

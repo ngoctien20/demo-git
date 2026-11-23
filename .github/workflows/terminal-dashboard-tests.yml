@@ -1,0 +1,28 @@
+name: Terminal dashboard · offline tests
+on:
+  pull_request:
+    paths: ['tools/terminal-dashboard/**']
+  push:
+    branches: [develop]
+    paths: ['tools/terminal-dashboard/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline unit tests
+        working-directory: tools/terminal-dashboard
+        run: python -m unittest discover -s tests -v
+      - name: Offline smoke run
+        working-directory: tools/terminal-dashboard
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python tien404_dash.py --offline --no-anim --width 100
