@@ -1,0 +1,9 @@
+[
+  {"status": "waiting", "owner": "Tiến", "title": "Nâng gói n8n Cloud để bot chạy lại (mọi UAT live đang chờ việc này)"},
+  {"status": "waiting", "owner": "Tiến", "title": "Tạo repo GitHub PRIVATE trống tien404-db-private và thêm vào dự án"},
+  {"status": "waiting", "owner": "Tiến", "title": "Tạo pepper OTP trong Supabase Vault staging (lệnh vault.create_secret đã gửi)"},
+  {"status": "waiting", "owner": "Tiến", "title": "Chọn Zalo Bot/OA chính thức cho shop thử"},
+  {"status": "blocked", "owner": "Claude", "title": "Live UAT Messenger + báo cáo sáng V25: chờ n8n chạy lại"},
+  {"status": "doing", "owner": "Claude", "title": "Draft PR #502 / #506 / #507: chờ duyệt, chưa bật"},
+  {"status": "waiting", "owner": "Tiến", "title": "PR #477 develop→main: đang GIỮ theo quyết định của Tiến"}
+]
