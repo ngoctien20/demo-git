@@ -1,0 +1,23 @@
+# TIEN404 Zalo Hub — Cloudflare Worker config TEMPLATE (copy to wrangler.toml; never commit real values).
+# A NEW worker, separate from tien404-zalo-outbound-v1-staging (that one keeps serving Bot TIEN404 AI → n8n).
+name = "tien404-zalo-hub-staging"
+main = "src/worker.mjs"
+compatibility_date = "2026-11-01"
+
+[vars]
+ZH_ENABLED = "false"            # whole hub; flip to "true" only after owner approval
+ZH_SEND_ENABLED = "false"       # outbound sends to Zalo
+ZH_PUBLIC_BASE_URL = "https://tien404-zalo-hub-staging.<account>.workers.dev"
+ZH_FORWARD_HOSTS = "ngoctien20.app.n8n.cloud"
+ZH_MONTHLY_CAP = "3000"         # Zalo Basic plan, per bot
+ZH_USER_WARN = "40"             # Zalo Basic plan allows 50 users per bot
+
+[[d1_databases]]
+binding = "ZH_DB"
+database_name = "tien404-zalo-hub-staging"
+database_id = "<create with: wrangler d1 create tien404-zalo-hub-staging>"
+migrations_dir = "migrations"
+
+# Secrets (wrangler secret put …), never in this file:
+#   ZH_MASTER_KEY  base64 of 32 random bytes  (openssl rand -base64 32)
+#   ZH_ADMIN_KEY   ≥ 32 random chars           (openssl rand -base64 36)
