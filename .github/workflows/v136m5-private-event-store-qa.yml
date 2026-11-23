@@ -57,7 +57,9 @@ jobs:
           node --check qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs
           node --check qa/messenger-rich-v136m5/private-opaque-session-bridge.cjs
           node --check qa/messenger-rich-v136m5/private-opaque-session-bridge.test.cjs
-          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs qa/messenger-rich-v136m5/private-opaque-session-bridge.test.cjs
+          node --check qa/messenger-rich-v136m5/atomic-claim-plan-private-ref.cjs
+          node --check qa/messenger-rich-v136m5/atomic-claim-plan-private-ref.test.cjs
+          node --test qa/messenger-rich-v136m/adapter.test.cjs qa/messenger-rich-v136m1/integration.test.cjs qa/messenger-rich-v136m2/trusted-repository.test.cjs qa/messenger-rich-v136m2/trusted-resolver.test.cjs qa/messenger-rich-v136m3/canonical-pipeline.test.cjs qa/messenger-rich-v136m4/event-isolation.test.cjs qa/messenger-rich-v136m5/private-event-store.test.cjs qa/messenger-rich-v136m5/messenger-inbound-gate.test.cjs qa/messenger-rich-v136m5/messenger-signed-admission.test.cjs qa/messenger-rich-v136m5/message-attempt-ledger.test.cjs qa/messenger-rich-v136m5/claim-bound-plan-contract.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan.test.cjs qa/messenger-rich-v136m5/message-reconciliation-inspector.test.cjs qa/messenger-rich-v136m5/operator-reconciliation-review.test.cjs qa/messenger-rich-v136m5/private-opaque-session-bridge.test.cjs qa/messenger-rich-v136m5/atomic-claim-plan-private-ref.test.cjs
   static-release-gate:
     name: Deny hosted writes and unsafe migration
     runs-on: ubuntu-24.04
@@ -79,6 +81,7 @@ jobs:
           reconciliation=Path("qa/messenger-rich-v136m5/message-reconciliation-inspector.cjs").read_text()
           operator=Path("qa/messenger-rich-v136m5/operator-reconciliation-review.cjs").read_text()
           opaque_bridge=Path("qa/messenger-rich-v136m5/private-opaque-session-bridge.cjs").read_text()
+          ref_writer=Path("qa/messenger-rich-v136m5/atomic-claim-plan-private-ref.cjs").read_text()
           sql=Path("qa/messenger-rich-v136m5/PROPOSAL_ONLY_PRIVATE_EVENT_STORE_DO_NOT_RUN.sql").read_text()
           for p,s in [("contract",source),("simulator",model)]:
             for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
@@ -110,6 +113,14 @@ jobs:
           for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
                          "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
             assert banned not in opaque_bridge,("private-opaque-session-bridge.cjs",banned)
+          for banned in ["fetch(", "axios(", "process.env", "graph.facebook.com",
+                         "PAGE_ACCESS_TOKEN", "pg.Pool(", "createClient(", "httpRequest("]:
+            assert banned not in ref_writer,("atomic-claim-plan-private-ref.cjs",banned)
+          assert "ATOMIC_REF_HOSTED_NOT_APPROVED" in ref_writer
+          assert "app_private.messenger_reconciliation_refs" in ref_writer
+          assert "referencePersisted:true" in ref_writer
+          assert "ATOMIC_REF_ROLLBACK_HOLD" in ref_writer
+          assert "retryAllowed:false" in ref_writer and "sendAllowed:false" in ref_writer
           assert "OPAQUE_BRIDGE_HOSTED_NOT_APPROVED" in opaque_bridge
           assert "CURRENT_USER::name" in opaque_bridge
           assert "timingSafeEqual" in opaque_bridge
