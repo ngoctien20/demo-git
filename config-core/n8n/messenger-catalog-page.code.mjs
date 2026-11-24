@@ -80,6 +80,13 @@ const msg = {
       payload: 'TIEN404:VIEW:' + p.sku })) } },
   ...(qr.length ? { quick_replies: qr } : {}),
 };
-return [{ json: { catalogMessage: msg, catalogPage: page, catalogPages: pages,
+// Native Messenger carousel candidate, based only on the validated DEMO rows.
+const catalogCards = shown.map(p => ({
+  title: (p.sku + ' — ' + p.name).slice(0,80),
+  subtitle: (p.price.toLocaleString('vi-VN') + 'đ | ' + (p.stock === 0 ? 'Hết hàng' : 'Còn ' + p.stock)).slice(0,80),
+  buttons: [{type:'postback', title:'Xem '+p.sku, payload:'TIEN404:VIEW:'+p.sku}]
+}));
+return [{ json: { catalogMessage: msg, catalogCards, catalogPage: page, catalogPages: pages,
   catalogCount: products.length, catalogCategory: cat, configVersion: version,
   catalogDigest } }];
+
