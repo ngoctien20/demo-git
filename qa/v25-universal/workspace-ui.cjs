@@ -145,7 +145,9 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     ok(nav.includes('Trợ lý AI') && nav.includes('Menu & hành động') && nav.includes('Kho kiến thức') && nav.includes('Kênh kết nối') && nav.includes('Hội thoại & bàn giao') && nav.includes('Báo cáo') && nav.includes('Thông báo') && nav.includes('Gói dịch vụ') && nav.includes('Cài đặt'), 'universal navigation items present');
     // Tạo trợ lý nhanh: until the Worker route is deployed, nothing can be sent; the sample is labelled and cannot be saved.
     await p.goto(base + '#/tao-nhanh'); await p.waitForTimeout(300);
-    ok(await p.getByRole('button', { name: 'Đọc bảng giá' }).isDisabled(), 'quick setup: reading disabled while the route is not deployed');
+    { const read = p.getByRole('button', { name: 'Đọc bảng giá' }); let aiCalls = 0; p.on('request', r => { if (r.url().includes('/v1/setup/draft')) aiCalls++; });
+      await read.click(); await p.waitForTimeout(200);
+      ok(await read.isEnabled() && await p.getByText('Chọn ảnh bảng giá trước.').count() === 1 && aiCalls === 0, 'quick setup: no photo -> asks for one, nothing sent to the AI route'); }
     await p.getByRole('button', { name: 'Xem ví dụ' }).click(); await p.waitForTimeout(200);
     ok(await p.getByText('VÍ DỤ MẪU').count() === 1 && await p.getByRole('button', { name: /Xác nhận lưu/ }).isDisabled(), 'quick setup: sample is labelled and cannot be saved');
     ok(await p.locator('tr.needs-check').count() === 2, 'quick setup: rows the AI was unsure about are highlighted');
