@@ -15,4 +15,4 @@ SUPABASE_ANON_KEY = "sb_publishable_e7L9qkumVD6Y57RSLaWsaQ_tRjF7OvF"   # public 
 [[d1_databases]]
 binding = "SETUP_DB"
 database_name = "tien404-setup"
-database_id = "REPLACE_AFTER_d1_create"
+database_id = "cb534e8d-d76d-4468-bf0f-fd72e6f244bd"
