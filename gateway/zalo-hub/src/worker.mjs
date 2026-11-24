@@ -99,6 +99,18 @@ async function tokenOf(env, c) {
 async function forwardKeyOf(env, c) {
   return open(env, c.forward_key_sealed, c.id, c.store_id, 'forward_key');
 }
+async function inboundKeyOf(env, c) {
+  return c.inbound_key_sealed ? open(env, c.inbound_key_sealed, c.id, c.store_id, 'inbound_key') : null;
+}
+async function sealKeys(env, id, storeId) {
+  const forwardKey = randomSecret(32);
+  const inboundKey = randomSecret(32);
+  return {
+    forwardKey, inboundKey,
+    forward_key_sealed: await seal(env, forwardKey, id, storeId, 'forward_key'),
+    inbound_key_sealed: await seal(env, inboundKey, id, storeId, 'inbound_key'),
+  };
+}
 
 /* ---------------- Zalo → hub ---------------- */
 async function handleWebhook(request, env, deps, pathId) {
@@ -151,6 +163,7 @@ async function pairOwner(env, deps, c, ev, now) {
 
 async function forward(env, deps, c, ev, now) {
   const key = await forwardKeyOf(env, c);
+  const inbound = await inboundKeyOf(env, c);
   const users = await db.countUsers(env.ZH_DB, c.id);
   const payload = JSON.stringify({
     v: 1,
@@ -165,8 +178,13 @@ async function forward(env, deps, c, ev, now) {
   try {
     const res = await deps.fetch(c.forward_url, {
       method: 'POST',
-      // Signature for code flows; x-tien404-forward-key lets an n8n Webhook node check it with a Header Auth credential.
-      headers: { 'content-type': 'application/json', 'x-tien404-ts': ts, 'x-tien404-signature': await signBody(key, ts, payload), 'x-tien404-connection': c.id, 'x-tien404-forward-key': key },
+      // Signature for code flows. The header key is for an n8n Webhook Header Auth credential; n8n logs request
+      // headers, so it is a separate inbound_key and never the send key. Legacy rows (no inbound_key yet) still
+      // send the forward_key header until POST /v1/admin/rotate-keys.
+      headers: {
+        'content-type': 'application/json', 'x-tien404-ts': ts, 'x-tien404-signature': await signBody(key, ts, payload), 'x-tien404-connection': c.id,
+        ...(inbound ? { 'x-tien404-inbound-key': inbound } : { 'x-tien404-forward-key': key }),
+      },
       body: payload,
       redirect: 'manual',
       signal: AbortSignal.timeout(10000),
@@ -256,13 +274,13 @@ async function handleConnect(env, deps, b) {
   const id = randomId(16);
   const pathId = randomId(16);
   const whSecret = randomSecret(32);
-  const forwardKey = randomSecret(32);
+  const keys = await sealKeys(env, id, storeId);
   const p = await newPairing(env, id, now);
   await db.insert(env.ZH_DB, {
     id, store_id: storeId, status: 'pending_owner', bot_id: botId, bot_name: botName,
     token_sealed: await seal(env, token, id, storeId, 'token'), token_last4: zalo.last4(token), key_version: 1,
     path_id: pathId, wh_secret_hash: await sha256Hex(whSecret), forward_url: b.forward_url,
-    forward_key_sealed: await seal(env, forwardKey, id, storeId, 'forward_key'),
+    forward_key_sealed: keys.forward_key_sealed, inbound_key_sealed: keys.inbound_key_sealed,
     pairing_code_hash: p.hash, pairing_expires_at: p.expiresAt, connected_at: now,
   });
 
@@ -286,8 +304,10 @@ async function handleConnect(env, deps, b) {
     status: 'pending_owner',
     pairing_code: p.code,
     pairing_expires_at: new Date(p.expiresAt).toISOString(),
-    // Shown once. Goes into the shop flow's credential (verifies forwards, signs /v1/send).
-    forward_key: forwardKey,
+    // Shown once each. forward_key → credential of the /v1/send request (Bearer) or HMAC signing.
+    // inbound_key → Header Auth credential of the n8n Webhook node (header x-tien404-inbound-key).
+    forward_key: keys.forwardKey,
+    inbound_key: keys.inboundKey,
     // Only in manual mode: the owner pastes these two into Zalo Bot Creator → Thiết lập chung.
     manual_webhook: manual ? { url: webhookUrl, secret_token: whSecret } : undefined,
   });
@@ -333,6 +353,11 @@ async function handleAdmin(request, env, deps, path) {
     const p = await newPairing(env, c.id, now);
     await db.setPairing(env.ZH_DB, c.id, p.hash, p.expiresAt, now);
     return json(200, { ok: true, status: 'pending_owner', pairing_code: p.code, pairing_expires_at: new Date(p.expiresAt).toISOString() });
+  }
+  if (path === '/v1/admin/rotate-keys') {
+    const keys = await sealKeys(env, c.id, c.store_id);
+    await db.setKeys(env.ZH_DB, c.id, keys.forward_key_sealed, keys.inbound_key_sealed, now);
+    return json(200, { ok: true, connection_id: c.id, store_id: c.store_id, forward_key: keys.forwardKey, inbound_key: keys.inboundKey });
   }
   if (path === '/v1/admin/disable') {
     await db.setStatus(env.ZH_DB, c.id, 'disabled', now);

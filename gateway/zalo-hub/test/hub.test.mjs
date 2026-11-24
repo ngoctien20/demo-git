@@ -85,7 +85,7 @@ test('connect: getMe, per-shop path + secret, token sealed, nothing secret store
   assert.equal(c.manual_webhook, undefined);
   const row = h.env.ZH_DB.sqlite.prepare('SELECT * FROM zh_connections').get();
   const dump = JSON.stringify(row);
-  for (const s of [TOKEN_A, c.secret, c.forward_key, c.pairing_code]) assert.ok(!dump.includes(s), 'clear secret in DB');
+  for (const s of [TOKEN_A, c.secret, c.forward_key, c.inbound_key, c.pairing_code]) assert.ok(!dump.includes(s), 'clear secret in DB');
   assert.equal(row.token_last4, TOKEN_A.slice(-4));
 });
 
@@ -289,9 +289,42 @@ test('n8n mode: Bearer forward_key works for /v1/send; wrong or other shop key i
   const b = await connect(h, 'shop-b', TOKEN_B);
   await pairOwner(h, a, 'owner-a');
   await hook(h, a, textEvent('cust-a', 'hi', 'ma1'));
-  assert.equal(h.st.forwards.at(-1).headers['x-tien404-forward-key'], a.forward_key);
+  const fh = h.st.forwards.at(-1).headers;
+  assert.equal(fh['x-tien404-inbound-key'], a.inbound_key);
+  assert.equal(fh['x-tien404-forward-key'], undefined, 'send key must never travel to n8n (n8n logs headers)');
+  assert.notEqual(a.inbound_key, a.forward_key);
+  assert.equal((await h.req('POST', '/v1/send', { connection_id: a.connection_id, chat_id: 'cust-a', text: 'x' }, { 'x-tien404-connection': a.connection_id, authorization: 'Bearer ' + a.inbound_key })).status, 401, 'inbound key cannot send');
   const send = (key) => h.req('POST', '/v1/send', { connection_id: a.connection_id, chat_id: 'cust-a', text: 'Dạ shop chào anh/chị' }, { 'x-tien404-connection': a.connection_id, authorization: 'Bearer ' + key });
   assert.equal((await send(a.forward_key)).status, 200);
   assert.equal((await send(b.forward_key)).status, 401);
   assert.equal((await send('x'.repeat(43))).status, 401);
+});
+
+test('rotate-keys: new forward + inbound keys, old ones stop at once; legacy rows fall back until rotated', async () => {
+  const h = harness();
+  const a = await connect(h, 'shop-a', TOKEN_A);
+  await pairOwner(h, a, 'owner-a');
+  // Simulate a row connected before 0002 (no inbound key): hub still sends the forward_key header.
+  h.env.ZH_DB.sqlite.prepare('UPDATE zh_connections SET inbound_key_sealed = NULL').run();
+  await hook(h, a, textEvent('cust-a', 'hi', 'mr1'));
+  assert.equal(h.st.forwards.at(-1).headers['x-tien404-forward-key'], a.forward_key);
+
+  assert.equal((await h.req('POST', '/v1/admin/rotate-keys', { connection_id: a.connection_id })).status, 401, 'admin only');
+  const r = await h.admin('/v1/admin/rotate-keys', { connection_id: a.connection_id });
+  assert.equal(r.status, 200);
+  assert.ok(r.body.forward_key !== a.forward_key && r.body.inbound_key && r.body.inbound_key !== r.body.forward_key);
+  await hook(h, a, textEvent('cust-a', 'hi again', 'mr2'));
+  const fh = h.st.forwards.at(-1).headers;
+  assert.equal(fh['x-tien404-inbound-key'], r.body.inbound_key);
+  assert.equal(fh['x-tien404-forward-key'], undefined);
+  const send = (key) => h.req('POST', '/v1/send', { connection_id: a.connection_id, chat_id: 'cust-a', text: 'Dạ' }, { 'x-tien404-connection': a.connection_id, authorization: 'Bearer ' + key });
+  assert.equal((await send(a.forward_key)).status, 401, 'old key dead');
+  assert.equal((await send(r.body.forward_key)).status, 200);
+  const row = JSON.stringify(h.env.ZH_DB.sqlite.prepare('SELECT * FROM zh_connections').get());
+  for (const k of [r.body.forward_key, r.body.inbound_key]) assert.ok(!row.includes(k));
+
+  await h.admin('/v1/admin/disconnect', { connection_id: a.connection_id });
+  const wiped = h.env.ZH_DB.sqlite.prepare('SELECT inbound_key_sealed FROM zh_connections').get();
+  assert.equal(wiped.inbound_key_sealed, null);
+  assert.equal((await h.admin('/v1/admin/rotate-keys', { connection_id: a.connection_id })).status, 404);
 });

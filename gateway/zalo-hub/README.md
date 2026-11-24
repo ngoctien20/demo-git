@@ -1,6 +1,6 @@
 # TIEN404 Zalo Hub — cổng chung cho bot Zalo của nhiều shop
 
-Trạng thái: **PROPOSED**. Code và kiểm thử offline (20/20 PASS). Chưa tạo D1, chưa deploy Worker, chưa đổi webhook bot nào, chưa đụng n8n/Supabase.
+Trạng thái (2026-11-24): bản 0001 **đã chạy thật trên staging** với bot QA (`qa-zalo-bot`): Zalo → hub → n8n → lõi AI bán hàng → `/v1/send` → Zalo, PASS. Bản 0002 (tách mã, đổi mã) **mới offline, 21/21 PASS**, chưa áp D1, chưa deploy.
 
 Thiết kế và nguồn tài liệu Zalo: tài liệu "Shop tự nối bot Zalo — kiểm tra và thiết kế" (https://claude.ai/artifact/8xqoRi8zWxrVbsUkhJZrUx).
 
@@ -17,7 +17,10 @@ Luồng shop trả lời
 
 - Token bot chỉ nằm trong D1 dạng AES-256-GCM, khoá chính `ZH_MASTER_KEY` là secret của Worker. Bản mã gắn với (kết nối, shop, trường): chép sang dòng/shop khác thì không giải được.
 - Secret webhook và mã ghép 6 số chỉ lưu SHA-256.
-- n8n không cầm token Zalo. Nó chỉ có `forward_key` của đúng shop đó.
+- n8n không cầm token Zalo. Nó có 2 mã của đúng shop đó:
+  - `inbound_key`: hub gửi kèm header `x-tien404-inbound-key` mỗi tin chuyển tới, node Webhook n8n kiểm bằng Header Auth. n8n lưu header vào nhật ký chạy, nên mã này chỉ cho phép gõ cửa n8n, không gửi được tin Zalo.
+  - `forward_key`: chỉ dùng chiều n8n → hub (`Authorization: Bearer …` trong credential, n8n che đi trong nhật ký) và để ký HMAC. Hub không bao giờ gửi mã này đi.
+- Đổi mã: `POST /v1/admin/rotate-keys {connection_id}` (hoặc `tools/rotate-qa.mjs`): 2 mã mới, mã cũ chết ngay. Dòng nối trước 0002 (chưa có `inbound_key`) vẫn chạy như cũ (header `x-tien404-forward-key`) cho tới khi đổi mã.
 - `/v1/send` chỉ gửi tới người đã từng nhắn bot của shop đó, hoặc chủ shop. Shop A không nhắn được khách của shop B.
 - Mỗi bot chỉ thuộc một shop; mỗi shop tối đa một bot đang chạy (index duy nhất trong D1).
 - Chặn khi gần/hết hạn mức gói Basic của Zalo: 3.000 tin/tháng (`ZH_MONTHLY_CAP`), cảnh báo ở 40/50 người (`ZH_USER_WARN`).
@@ -51,6 +54,7 @@ Ngắt: `POST /v1/admin/disconnect` → `deleteWebhook`, xoá mọi bản mã. N
 | 3 | Tạo luồng n8n QA (chưa publish) với `forward_key` của bot QA | Xoá workflow |
 | 4 | Bật `ZH_ENABLED=true`, chạy `connect-qa.mjs` → đổi webhook **bot QA** sang hub | `/v1/admin/disconnect` rồi đặt lại webhook cũ của bot QA |
 | 5 | Bật `ZH_SEND_ENABLED=true`, nhắn thử từ Zalo | `ZH_SEND_ENABLED=false` |
+| 6 | Áp `migrations/0002_inbound_key.sql` lên D1, deploy Worker bản mới, chạy `tools/rotate-qa.mjs`, đổi credential Webhook n8n sang header `x-tien404-inbound-key` | Deploy lại Worker cũ, rồi `rollback/0002_inbound_key.down.sql` |
 
 Tắt khẩn cấp: `ZH_ENABLED=false` (hub bỏ qua mọi tin, trả 200 để Zalo không gửi lại) hoặc `/v1/admin/disable` cho từng shop.
 

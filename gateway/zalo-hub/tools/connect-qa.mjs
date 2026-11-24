@@ -50,7 +50,9 @@ if (!res.ok || !body.ok) fail(`hub trả ${res.status} ${body.error || ''} ${bod
 console.log(`\nĐã nối: ${body.bot_name} (token …${body.token_last4}) cho shop ${body.store_id}`);
 console.log(`connection_id: ${body.connection_id}`);
 console.log(`\n>>> Mở Zalo, nhắn vào bot mã ghép: ${body.pairing_code}  (hết hạn ${body.pairing_expires_at})`);
-console.log(`\nforward_key (chỉ hiện lần này, dán vào credential n8n rồi xoá màn hình):\n${body.forward_key}`);
+console.log('\nHai mã dưới đây chỉ hiện lần này. Dán vào n8n rồi xoá màn hình:');
+if (body.inbound_key) console.log(`  inbound_key → credential Webhook (Name: x-tien404-inbound-key, Value: mã này):\n  ${body.inbound_key}`);
+console.log(`  forward_key → credential gửi tin (Name: Authorization, Value: Bearer + dấu cách + mã này):\n  ${body.forward_key}`);
 if (body.manual_webhook) {
   console.log('\nDán vào Zalo Bot Creator → Thiết lập chung:');
   console.log('  Webhook URL : ' + body.manual_webhook.url);
