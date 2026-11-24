@@ -205,3 +205,5 @@ Những gì đã làm đẹp:
 - 14:57Z: **V27.2 `a256a7df` PUBLISHED** (Tiến duyệt trên thẻ). Rollback lần lượt `f6d33dab` → `41bcea84` → `9342025c`.
 - **U27-1 PASS (TESTED live, 14:58Z):** Tiến nhắn "xin chào" (14:58:26, được ghi nhận). Bấm chip "Xem sản phẩm" (14:58:34) thì thấy carousel: thẻ `A001 · Áo polo nam xanh navy size S` / `245.000đ · Còn 5` / nút "Xem A001", có mũi tên vuốt sang thẻ sau, tiếp theo là tin "Sản phẩm · trang 1/7 · 21 mẫu" kèm "Trang tiếp". Lượt bấm được ghi nhận lúc 14:58:39, nghĩa là bước kiểm S4 đã xác nhận đủ 2 tin Meta trả về. Không có lượt chạy lỗi. Ảnh chụp do Tiến gửi trong thread.
 - Còn chờ thử: U27-3 (bấm Xem trên thẻ), U27-4 (Trang tiếp), U27-2 (iOS/desktop).
+- **U27-3 PASS (live, 15:00Z):** bấm "Xem A001" trên thẻ → "A001 — Áo polo nam xanh navy size S | 245.000đ/cái. Còn 5 cái." + chip "Đặt A001" / "Xem mẫu khác" (đúng Sheet). Thẻ A003 hiển thị "·59.000đ" là do mũi tên ‹ của Messenger web che chữ số "1"; Sheet A003 = 159.000đ, còn 18 (VERIFIED), dữ liệu gửi đúng. UX ghi nhận: Messenger web đặt mũi tên đè lên mép trái thẻ, không chỉnh được từ phía bot.
+- Còn chờ: U27-4 (Trang tiếp), U27-2 (iOS/Android app).
