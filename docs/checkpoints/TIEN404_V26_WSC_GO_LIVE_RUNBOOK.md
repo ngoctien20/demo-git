@@ -87,10 +87,10 @@ Code trong `qa/v26-wsc/nodes/*.4740251a.js` và `*.93cf227a.js` được chép t
 | U7 | | | NOT RUN | |
 | U8 | | | NOT RUN | |
 | U9 | | | NOT RUN | |
-| S1 | | | NOT RUN | |
-| S2 | | | NOT RUN | |
-| S3 | | | NOT RUN | |
-| S4 | | | NOT RUN | |
+| S1 | 2026-11-24 13:4x | publish b967d427 | IMPLEMENTED (activeVersionId xác nhận; draft V27 18c0473d giữ nguyên) | Tiến duyệt trên thẻ quyết định |
+| S2 | 2026-11-24 13:4x | publish 9c08fdd3 | IMPLEMENTED (activeVersionId xác nhận) | Tiến duyệt trên thẻ quyết định |
+| S3 | 2026-11-24 13:44 | publish 9342025c | IMPLEMENTED; chờ Tiến bấm nút danh mục để TESTED live | Tiến duyệt trên thẻ quyết định |
+| S4 | | | NOT RUN (chưa duyệt) | |
 
 Ghi chú bằng chứng: `saveDataSuccessExecution=none` trên Z7Fd/KrSn/BkAi nên execution thành công **không lưu dữ liệu node**. Bằng chứng gồm: execution id + trạng thái, ảnh chụp Messenger của chủ dự án, dòng Sheet. Muốn lưu dữ liệu node trong lúc UAT phải bật tạm setting này (🔒, có PII) rồi tắt lại.
 
@@ -100,3 +100,9 @@ Ghi chú bằng chứng: `saveDataSuccessExecution=none` trên Z7Fd/KrSn/BkAi n�
 - Thống nhất 1 hàm chuẩn hóa SĐT cho Create/Update/Manage (Create đang nhận số bàn 02x, Update thì từ chối).
 - Xoay verify token GET của webhook Messenger, chuyển khỏi node IF.
 - Bật lại lưu lịch sử phiên bản đủ dài cho KrSn/BkAi (hoặc lưu snapshot JSON riêng tư) để rollback bằng versionId luôn khả dụng.
+
+## 7. Ghi nhận go-live 2026-11-24
+
+- 13:4xZ publish Z7Fd lần lượt S1 `b967d427` → S2 `9c08fdd3` → S3 `9342025c`. activeVersionId hiện tại = `9342025c`. Draft `18c0473d` (V27 bố cục danh mục, phiên khác, NO_PUBLISH) không bị đổi.
+- Rollback: publish `9c08fdd3` (về S2) hoặc khẩn cấp `1f4069a5`.
+- Chưa làm: S4 `41bcea84`; sửa mô tả tham số địa chỉ của tool create_order (địa chỉ bị cắt ở dấu phẩy, PROPOSED).
