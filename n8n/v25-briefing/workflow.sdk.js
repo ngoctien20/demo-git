@@ -1,5 +1,5 @@
 // TIEN404 V25 Daily Briefing sender. Draft only; publish needs the n8n credential
-// credential "T404 briefing key" (Templated custom auth: {"headers":{"x-t404-briefing-key":"{{briefing_key}}"}}, value = Vault secret t404_briefing_sender_key).
+// credential "T404 briefing key" (Header Auth: Name x-t404-briefing-key, Value = Vault secret t404_briefing_sender_key). Workflow timezone Asia/Ho_Chi_Minh.
 import { workflow, node, trigger, newCredential, expr } from '@n8n/workflow-sdk';
 
 const BASE = 'https://ifxlvrhyjhbzbrkdsida.supabase.co/rest/v1/rpc/';
@@ -17,12 +17,12 @@ const claim = node({
     name: 'Lấy shop đến giờ gửi',
     parameters: {
       method: 'POST', url: BASE + 'briefing_claim_due_v1',
-      authentication: 'genericCredentialType', genericAuthType: 'httpTemplatedCustomAuth',
+      authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
       sendHeaders: true, headerParameters: { parameters: [{ name: 'apikey', value: APIKEY }] },
       sendBody: true, specifyBody: 'json', jsonBody: '{}',
       options: { timeout: 20000 }
     },
-    credentials: { httpTemplatedCustomAuth: keyCred }
+    credentials: { httpHeaderAuth: keyCred }
   }
 });
 
@@ -64,13 +64,13 @@ const report = node({
     name: 'Ghi kết quả gửi',
     parameters: {
       method: 'POST', url: BASE + 'briefing_report_v1',
-      authentication: 'genericCredentialType', genericAuthType: 'httpTemplatedCustomAuth',
+      authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
       sendHeaders: true, headerParameters: { parameters: [{ name: 'apikey', value: APIKEY }] },
       sendBody: true, specifyBody: 'json',
       jsonBody: expr('{{ JSON.stringify({ p_delivery: $(\'Soạn email\').item.json.delivery_id, p_ok: !$json.error && !!$json.id, p_error: $json.error ? String($json.error.message || $json.error).slice(0, 300) : null }) }}'),
       options: { timeout: 20000 }
     },
-    credentials: { httpTemplatedCustomAuth: keyCred }
+    credentials: { httpHeaderAuth: keyCred }
   }
 });
 
