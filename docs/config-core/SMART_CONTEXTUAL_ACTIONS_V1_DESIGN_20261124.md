@@ -133,3 +133,41 @@ Wrong Page → no output; stale digest → plain text; 0 hợp lệ → plain te
 - Publish đề xuất: `41bcea84` (S4) → kiểm 1 tin thường → `18c0473d` (V27).
 - Rollback V27: publish lại `41bcea84` (giữ S4) hoặc `9342025c` (bỏ cả S4); khẩn cấp `1f4069a5`. Nút cũ trong hội thoại khách vẫn chạy vì payload `TIEN404:VIEW:*` và `T404:C:*` không đổi.
 - Không có migration, Meta Page profile, Persistent Menu hay dữ liệu nào bị đổi bởi V27.
+
+---
+
+## V27 — Bảng chọn kiểu thẻ theo ngữ cảnh, ngành và khả năng kênh (theo mẫu của Tiến 14:27Z)
+
+Bộ chọn thuần: `config-core/lib/context-card-planner.mjs` (`planCards`), test `config-core/test/context-card-planner.test.mjs` (13 ca). **Chưa nối vào n8n, chưa publish.**
+
+### 4 kiểu thẻ
+| Mẫu | Kiểu | Messenger dùng | Khi nào |
+|---|---|---|---|
+| 01 | Nút ngang phía dưới | Quick Replies (≤3 hiển thị đầu, tối đa 13) | Lựa chọn nhanh: chào hỏi, hỏi tiếp. Không mở được link |
+| 02 | Thẻ vuốt ngang | Generic template 2–10 thẻ, + 1 tin chữ mang "Trang trước/Trang tiếp" | Nhiều sản phẩm/dịch vụ **đã xác minh** |
+| 03 | Nút dọc gắn tin nhắn | Button template ≤3 nút | Hành động quan trọng của 1 mục (Đặt sản phẩm, Xem mẫu tương tự) |
+| 04 | Thẻ nội dung theo ngành | Generic 1 thẻ, ≤3 nút, được mở link, ảnh bìa nếu host được phép | Page nghệ sĩ/giáo dục có mục cần mở link (Nghe nhạc) |
+
+Ghi chú mẫu 02: "Trang tiếp ›" trong mẫu nằm dưới carousel. Messenger không cho đặt nút tự do ở đó, nên nó là Quick Reply trên tin chữ ngay sau carousel (giống draft `18c0473d`).
+
+### Bảng chọn
+| Ngữ cảnh | Shop (có SHOW_CATALOG) | Nghệ sĩ (có link nhạc) | Dịch vụ / giáo dục | Kênh chỉ có chữ (Zalo Bot/OA, Telegram) |
+|---|---|---|---|---|
+| Chào hỏi | 01 | 04 (Nghe nhạc mở link · Thông tin · Liên hệ quản lý) | 01, hoặc 04 nếu có mục link | Danh sách đánh số |
+| Xem nhiều mục | 02; 1 mục → 03; 0 mục → chữ | **Chữ, không bao giờ thẻ bán hàng** | 02 (khi có SHOW_SERVICES) | Danh sách đánh số |
+| Xem chi tiết | 03; text >640 → chữ + 03 | 03 với hành động của Page | 03 | Danh sách đánh số |
+| Tra cứu đơn | Chữ + tối đa 1 nút (xác minh trước) | — | — | Chữ |
+| Đang chuyển nhân viên | Chỉ chữ, không nút | Chỉ chữ | Chỉ chữ | Chỉ chữ |
+
+### Tự quay về khi không hỗ trợ
+`04 → 03 → 01 → chữ` và `02 → 03 → chữ`. Mỗi tin được kiểm theo giới hạn Meta (`validMessage`) **trước** khi trả ra; sai là bỏ kiểu đó và ghi lý do vào `degraded` (vd `carousel:invalid`, `image_dropped`, `no_catalog_action`). Luôn ≤3 tin, Quick Reply chỉ ở tin cuối, cắt chữ theo code point (không vỡ emoji).
+
+### Quy tắc an toàn
+- Nút chỉ lấy từ menu **đã publish** của chính Page (`visibleItems`); Page nghệ sĩ không có SHOW_CATALOG thì không thể ra nút bán hàng (P-04, P-05).
+- Giá/tồn chỉ từ dòng đã xác minh do bên gọi truyền vào; planner không tự tạo.
+- Ảnh chỉ khi `https` và host nằm trong danh sách cho phép; ảnh sai thì bỏ ảnh, giữ thẻ (P-06).
+
+### Bước nối vào bot (PROPOSED, cần duyệt)
+1. Dùng planner trong node `Prepare Messenger Reply` của một bản nháp mới, dựng trên `18c0473d`.
+2. Chạy lại các test offline, sau đó chạy UAT U27-1..8 và thêm U27-9 (Page nghệ sĩ thử) khi có Page nghệ sĩ.
+3. Publish theo từng phiên bản đã duyệt. Rollback giống mục trên.
