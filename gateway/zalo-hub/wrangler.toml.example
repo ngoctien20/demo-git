@@ -17,6 +17,7 @@ ZH_APP_ORIGINS = "https://ngoctien20.github.io"
 ZH_SUPABASE_URL = "https://ifxlvrhyjhbzbrkdsida.supabase.co"
 ZH_SUPABASE_KEY = "<publishable key, same as apps/owner/src/config.ts>"
 ZH_LITE_CONNECT_ENABLED = "false"   # Lite: connect by pasting the token into Bot TIEN404 AI
+ZH_LITE_REPLY_DAILY_CAP = "30"     # Bot TIEN404 AI replies per owner per day
 ZH_SHARED_FORWARD_URL = "https://ngoctien20.app.n8n.cloud/webhook/tien404-zalo-hub-shared"
 
 [[d1_databases]]
@@ -29,5 +30,6 @@ migrations_dir = "migrations"
 #   ZH_MASTER_KEY  base64 of 32 random bytes  (openssl rand -base64 32)
 #   ZH_ADMIN_KEY   ≥ 32 random chars           (openssl rand -base64 36)
 #   ZH_SHARED_INBOUND_KEY  ≥ 32 chars: hub → shared n8n flow (header x-tien404-inbound-key)
+#   ZH_SYSTEM_BOT_TOKEN    token of Bot TIEN404 AI, only for /v1/lite/reply (answers the user who wrote)
 #   ZH_LITE_KEY            ≥ 32 chars: Bot TIEN404 AI's n8n flow → /v1/lite/*
 #   ZH_SHARED_SEND_KEY     ≥ 32 chars: shared n8n flow → /v1/send (Authorization: Bearer …); never sent by the hub

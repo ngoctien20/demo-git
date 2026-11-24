@@ -442,6 +442,15 @@ test('Lite: Bot TIEN404 AI relays the pasted token → shop keyed by owner Zalo 
   assert.equal((await lite('/v1/lite/status', { zalo_user_id: 'owner-z1' })).body.connection.status, 'active');
   assert.equal((await lite('/v1/lite/disconnect', { zalo_user_id: 'owner-z1' })).body.status, 'revoked');
   assert.equal(h.st.webhooks[TOKEN_A], undefined);
+  // Reply through Bot TIEN404 AI: only with the system token configured, capped per user per day.
+  assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z1', text: 'Gần xong rồi ạ' })).body.error, 'SYSTEM_BOT_NOT_CONFIGURED');
+  h.env.ZH_SYSTEM_BOT_TOKEN = TOKEN_B; h.env.ZH_LITE_REPLY_DAILY_CAP = '2';
+  assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z1', text: 'Gần xong rồi ạ' })).status, 200);
+  const sent = h.st.zalo.at(-1);
+  assert.deepEqual([sent.token, sent.method, sent.body.chat_id], [TOKEN_B, 'sendMessage', 'owner-z1']);
+  assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z1', text: 'x' })).status, 200);
+  assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z1', text: 'x' })).body.error, 'LITE_REPLY_CAP');
+  assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z2', text: 'x' })).status, 200, 'cap is per user');
   const off = harness({ ...SHARED, ZH_LITE_KEY: LITE });
   assert.equal((await off.req('POST', '/v1/lite/status', { zalo_user_id: 'owner-z1' }, { authorization: 'Bearer ' + LITE })).body.error, 'LITE_CONNECT_DISABLED');
 });

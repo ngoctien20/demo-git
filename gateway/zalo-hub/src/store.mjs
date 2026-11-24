@@ -66,3 +66,10 @@ export async function countUsers(db, connectionId) {
   const r = await db.prepare('SELECT COUNT(*) AS n FROM zh_seen_users WHERE connection_id = ?').bind(connectionId).first();
   return r ? Number(r.n) : 0;
 }
+
+/** Count one Lite reply for (day, user); returns the new count. */
+export async function bumpLiteReply(db, day, userId) {
+  await db.prepare('INSERT INTO zh_lite_replies (day, zalo_user_id, n) VALUES (?, ?, 1) ON CONFLICT(day, zalo_user_id) DO UPDATE SET n = n + 1').bind(day, userId).run();
+  const r = await db.prepare('SELECT n FROM zh_lite_replies WHERE day = ? AND zalo_user_id = ?').bind(day, userId).first();
+  return r ? Number(r.n) : 0;
+}

@@ -23,6 +23,7 @@
  * Lite plan (elderly owners, Zalo only): Bot TIEN404 AI's flow relays "nối bot" + the pasted token here.
  * Bearer ZH_LITE_KEY; the shop is keyed by the owner's Zalo id on Bot TIEN404 AI (store_id 'zl-' + hash).
  *   POST /v1/lite/connect|status|pairing|disconnect   {zalo_user_id[, token_text]}   (ZH_LITE_CONNECT_ENABLED)
+ *   POST /v1/lite/reply  {zalo_user_id, text}  Bot TIEN404 AI (secret ZH_SYSTEM_BOT_TOKEN) answers that user; capped per day.
  * Owner-connected shops use flow_mode 'shared': one TIEN404 flow (ZH_SHARED_FORWARD_URL), hub-level secrets
  * ZH_SHARED_INBOUND_KEY / ZH_SHARED_SEND_KEY, so the owner never sees or pastes any key.
  *
@@ -493,6 +494,17 @@ async function handleLite(request, env, deps, path) {
   const live = await db.liveByStore(env.ZH_DB, storeId);
   const now = deps.now();
   if (path === '/v1/lite/status') return json(200, { ok: true, store_id: storeId, connection: live ? publicView(live, await db.countUsers(env.ZH_DB, live.id)) : null });
+  if (path === '/v1/lite/reply') {
+    // Bot TIEN404 AI answers the same Zalo user who wrote to it. Text comes from the Lite flow (n8n).
+    const sys = env.ZH_SYSTEM_BOT_TOKEN;
+    if (!zalo.extractToken(sys || '')) return json(503, { ok: false, error: 'SYSTEM_BOT_NOT_CONFIGURED' });
+    if (env.ZH_SEND_ENABLED !== 'true') return json(503, { ok: false, error: 'SEND_DISABLED' });
+    if (typeof b.text !== 'string' || b.text.length < 1 || b.text.length > 1500) return json(400, { ok: false, error: 'BAD_TEXT' });
+    const n = await db.bumpLiteReply(env.ZH_DB, new Date(now).toISOString().slice(0, 10), b.zalo_user_id);
+    if (n > intEnv(env.ZH_LITE_REPLY_DAILY_CAP, 30)) return json(429, { ok: false, error: 'LITE_REPLY_CAP' });
+    const res = await zalo.sendMessage(deps.fetch, zalo.extractToken(sys), b.zalo_user_id, b.text);
+    return res.ok ? json(200, { ok: true }) : json(502, { ok: false, error: 'ZALO_' + res.error_code });
+  }
   if (path === '/v1/lite/connect') {
     if (env.ZH_ENABLED !== 'true') return json(503, { ok: false, error: 'HUB_DISABLED' });
     return handleConnect(env, deps, { store_id: storeId, token_text: b.token_text }, true);

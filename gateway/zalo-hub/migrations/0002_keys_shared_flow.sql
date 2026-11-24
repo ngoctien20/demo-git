@@ -10,3 +10,11 @@
 --                          shown to or pasted by the shop owner. Validated in code (no CHECK: keeps DROP COLUMN possible).
 ALTER TABLE zh_connections ADD COLUMN inbound_key_sealed TEXT;
 ALTER TABLE zh_connections ADD COLUMN flow_mode TEXT NOT NULL DEFAULT 'own';
+-- 3) Lite replies: Bot TIEN404 AI answers the owner who typed "nối bot" (hub holds that bot's token as a secret).
+--    Per user per UTC day counter, so a leaked ZH_LITE_KEY cannot turn the system bot into a spammer.
+CREATE TABLE IF NOT EXISTS zh_lite_replies (
+  day          TEXT NOT NULL,
+  zalo_user_id TEXT NOT NULL,
+  n            INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, zalo_user_id)
+);

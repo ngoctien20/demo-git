@@ -48,6 +48,8 @@ Gói Lite không cần web. Plus/Pro dùng App để tuỳ chỉnh sâu.
 4. Chủ shop nhắn mã 6 số vào bot của mình → "Đã nối xong".
 
 - Cửa hàng Lite gắn với tài khoản Zalo của chủ shop trên Bot TIEN404 AI: `store_id = 'zl-' + sha256(...)` (không lộ id Zalo). Cùng người → cùng cửa hàng; người khác không lấy được bot đã nối.
+- Trả lời chủ shop: `/v1/lite/reply {zalo_user_id, text}`. Hub giữ mã Bot TIEN404 AI (secret `ZH_SYSTEM_BOT_TOKEN`) và chỉ gửi cho đúng người vừa nhắn, tối đa `ZH_LITE_REPLY_DAILY_CAP` tin/người/ngày.
+- Bot TIEN404 AI cũng là bot gói Basic: tối đa 50 người nhắn (cộng dồn), nên nối qua Zalo phục vụ khoảng 50 chủ shop tới khi Zalo mở gói Pro. Nối qua App không bị giới hạn này.
 - Lệnh khác: `/v1/lite/status`, `/v1/lite/pairing` (mã mới), `/v1/lite/disconnect`. Bật bằng `ZH_LITE_CONNECT_ENABLED=true`.
 - Nếu mã bot lỡ lộ (ví dụ chủ shop không xoá tin): Zalo Bot Creator → Reset token, mã cũ chết ngay, nối lại bằng mã mới.
 
