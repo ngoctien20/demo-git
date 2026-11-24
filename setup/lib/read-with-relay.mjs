@@ -102,8 +102,15 @@ export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model, api }, 
   if (!base || !apiKey) return { ok: false, error: 'AI_NOT_CONFIGURED' };
   const m = model || RELAY_DEFAULT_MODEL;
   if (api === 'chat') {
-    const r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, m));
-    return r.ok ? fromChat(r.body) : { ok: false, error: r.status ? httpError(r.status) : 'AI_UNAVAILABLE', detail: 'chat ' + r.status + reason(r) };
+    // AI_MODEL may list backups ("a,b"): on busy/unavailable (429/5xx/network) try the next model.
+    const models = m.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 3);
+    let r;
+    for (const one of models) {
+      r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, one));
+      if (r.ok) return fromChat(r.body);
+      if (r.status && r.status !== 429 && r.status < 500) break;
+    }
+    return { ok: false, error: r.status ? httpError(r.status) : 'AI_UNAVAILABLE', detail: 'chat ' + r.status + reason(r) };
   }
   const r1 = await post(fetchImpl, base + '/responses', apiKey, buildResponsesRequest(input, m));
   if (r1.ok) return fromResponses(r1.body);

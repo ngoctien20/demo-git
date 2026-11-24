@@ -253,3 +253,16 @@ test('relay: Gemini OpenAI-compatible mode calls chat only, at the Gemini path',
   const bad = await readWithRelay(async () => res(400, JSON.stringify([{ error: { message: 'model not found' } }])), { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', apiKey: 'k', api: 'chat' }, { text: 'x' });
   assert.equal(bad.error, 'AI_REQUEST_REJECTED'); assert.match(bad.detail, /^chat 400/);
 });
+
+test('relay: Gemini busy (503) -> next model in AI_MODEL; auth errors do not retry', async () => {
+  const tried = [];
+  const fake = async (u, init) => { const m = JSON.parse(init.body).model; tried.push(m); return m === 'b' ? res(200, JSON.stringify(CHAT_OK)) : res(503, JSON.stringify([{ error: { message: 'high demand' } }])); };
+  const cfg = { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', apiKey: 'k', api: 'chat', model: 'a, b, c' };
+  assert.equal((await readWithRelay(fake, cfg, { text: 'x' })).ok, true); assert.deepEqual(tried, ['a', 'b']);
+  tried.length = 0;
+  const all = await readWithRelay(async (u, init) => { tried.push(JSON.parse(init.body).model); return res(503, '{}'); }, cfg, { text: 'x' });
+  assert.equal(all.error, 'AI_UNAVAILABLE'); assert.deepEqual(tried, ['a', 'b', 'c']);
+  tried.length = 0;
+  const auth = await readWithRelay(async (u, init) => { tried.push(JSON.parse(init.body).model); return res(400, '{}'); }, cfg, { text: 'x' });
+  assert.equal(auth.error, 'AI_REQUEST_REJECTED'); assert.deepEqual(tried, ['a']);
+});

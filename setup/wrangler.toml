@@ -16,7 +16,7 @@ APP_ORIGINS = "https://ngoctien20.github.io"
 AI_PROVIDER = "relay"
 AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 AI_API = "chat"
-AI_MODEL = "gemini-3.5-flash-lite"
+AI_MODEL = "gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.1-flash-lite"   # first = main, rest = backups when busy
 SUPABASE_URL = "https://ifxlvrhyjhbzbrkdsida.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_e7L9qkumVD6Y57RSLaWsaQ_tRjF7OvF"   # public publishable key (same as the App)
 
