@@ -27,19 +27,24 @@ if(current.mediaType==='catalog_page'){
     ...(qs.length?{quick_replies:qs}:{})};
   }
  }
- // V27 native layout: 2–3 trusted items => generic carousel followed by accessible text and page controls.
- // Keep original button template on missing, malformed, single-item or mismatched card data.
+ // V27.1 native layout: 2–3 trusted items => generic carousel (photo when verified) followed by a short
+ // follow-up text carrying page controls. Any missing/malformed/mismatched data => original button template.
  const cards=Array.isArray(incoming.catalogCards)?incoming.catalogCards:[];
  const originalButtons=mm.attachment?.payload?.buttons??[];
- const validCards=cards.length>=2&&cards.length<=3&&cards.length===originalButtons.length&&cards.every((c,i)=>{
+ const cpLen=s=>[...s].length;
+ const imgOk=u=>u===undefined||(typeof u==='string'&&u.length<=1000&&/^https:\/\/(lh3\.googleusercontent\.com|i\.imgur\.com|ngoctien20\.github\.io)\//.test(u));
+ const follow=typeof incoming.catalogFollowText==='string'&&incoming.catalogFollowText.trim()&&cpLen(incoming.catalogFollowText)<=300?incoming.catalogFollowText:null;
+ const validCards=!!follow&&cards.length>=2&&cards.length<=3&&cards.length===originalButtons.length&&cards.every((c,i)=>{
   const btn=originalButtons[i], cb=c?.buttons;
-  return c&&typeof c.title==='string'&&c.title.length>0&&c.title.length<=80&&
-   typeof c.subtitle==='string'&&c.subtitle.length>0&&c.subtitle.length<=80&&
+  return c&&typeof c.title==='string'&&cpLen(c.title)>0&&cpLen(c.title)<=80&&
+   typeof c.subtitle==='string'&&cpLen(c.subtitle)>0&&cpLen(c.subtitle)<=80&&imgOk(c.image_url)&&
    Array.isArray(cb)&&cb.length===1&&cb[0].type==='postback'&&cb[0].payload===btn.payload&&
-   cb[0].title===btn.title&&c.title.startsWith(btn.payload.slice('TIEN404:VIEW:'.length)+' — ');
+   cb[0].title===btn.title&&c.title.startsWith(btn.payload.slice('TIEN404:VIEW:'.length)+' · ');
  });
- const plan=validCards?[{attachment:{type:'template',payload:{template_type:'generic',elements:cards.map(c=>({title:c.title,subtitle:c.subtitle,buttons:c.buttons.map(x=>({type:'postback',title:x.title,payload:x.payload}))}))}}},
-  {text:mm.attachment.payload.text.replace('Bấm Xem để nhận chi tiết mẫu:','Bấm thẻ ở trên hoặc nhắn mã mẫu để xem chi tiết.'),...(mm.quick_replies?.length?{quick_replies:mm.quick_replies}:{})}]:[mm];
+ const hasImg=validCards&&cards.some(c=>c.image_url);
+ const plan=validCards?[{attachment:{type:'template',payload:{template_type:'generic',...(hasImg?{image_aspect_ratio:'square'}:{}),
+   elements:cards.map(c=>({title:c.title,subtitle:c.subtitle,...(c.image_url?{image_url:c.image_url}:{}),buttons:c.buttons.map(x=>({type:'postback',title:x.title,payload:x.payload}))}))}}},
+  {text:follow,...(mm.quick_replies?.length?{quick_replies:mm.quick_replies}:{})}]:[mm];
  const safeReply=mm.text??mm.attachment?.payload?.text??fallback.text;
  return plan.map((messengerMessage,index)=>({json:{messengerMessage,messageIndex:index+1,messageCount:plan.length,pageId:current.pageId,
   senderId:current.senderId,messageId:current.messageId,receivedAt:current.receivedAt,replyText:safeReply}}));
@@ -107,4 +112,5 @@ if(current.mediaType==='product_detail' && current.selectedSku){
 if(quickReplies && messages.length)messages[messages.length-1].quick_replies=quickReplies;
 const capped=messages.slice(0,MAX_MESSAGES);
 return capped.map((messengerMessage,index)=>({json:{messengerMessage,messageIndex:index+1,messageCount:capped.length,pageId:current.pageId,senderId:current.senderId,messageId:current.messageId,receivedAt:current.receivedAt,replyText:reply.slice(0,TEXT_LIMIT)}}));
+
 

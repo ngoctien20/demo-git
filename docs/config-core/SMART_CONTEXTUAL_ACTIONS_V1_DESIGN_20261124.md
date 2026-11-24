@@ -171,3 +171,25 @@ Ghi chú mẫu 02: "Trang tiếp ›" trong mẫu nằm dưới carousel. Messen
 1. Dùng planner trong node `Prepare Messenger Reply` của một bản nháp mới, dựng trên `18c0473d`.
 2. Chạy lại các test offline, sau đó chạy UAT U27-1..8 và thêm U27-9 (Page nghệ sĩ thử) khi có Page nghệ sĩ.
 3. Publish theo từng phiên bản đã duyệt. Rollback giống mục trên.
+
+---
+
+## V27.1: nối vào bản nháp n8n (Tiến duyệt nối 14:30Z, **chưa duyệt publish**)
+
+**IMPLEMENTED:** Z7Fd có bản nháp **`f6d33dab`** "V27.1 Messenger carousel polish — draft, NO_PUBLISH", dựng trên `18c0473d`. Bản live vẫn là `9342025c` (đã kiểm `activeVersionId` sau khi lưu). Bản nháp chỉ sửa 2 node Code, không thêm node hay đường nối nào. Mã trong repo được xuất lại từ chính bản nháp nên khớp với n8n.
+
+Những gì đã làm đẹp:
+- Tiêu đề thẻ có dạng `A002 · Áo thun nam trắng basic size M`. Dòng phụ có dạng `159.000đ · Còn 25`, hoặc `Hết hàng`.
+- **Ảnh sản phẩm:** chỉ hiện ảnh khi Sheet Products có cột `image_url` chứa link `https` thuộc host được phép (`lh3.googleusercontent.com`, `i.imgur.com`, `ngoctien20.github.io`), và khi đó thẻ là khung vuông. Link sai hoặc không có ảnh thì thẻ vẫn hiện, chỉ không có ảnh. Ảnh không làm thay đổi mã trang (digest), nên các nút "Trang tiếp" cũ vẫn dùng được. **Sheet hiện chưa có cột ảnh**, cần Tiến thêm.
+- Tin chữ sau thẻ được rút gọn còn: `Sản phẩm · trang 1/7 · 21 mẫu` / `Bấm "Xem" trên thẻ hoặc nhắn mã mẫu (vd A001) để xem chi tiết.`, kèm nút Trang trước/Trang tiếp. Cách này sửa F-V27-4.
+- Chữ được cắt theo code point, nên không còn vỡ emoji. Cách này sửa F-V27-1.
+- Dò link ảnh bằng regex chứ không dùng `URL()`, vì sandbox của Code node có thể không có `URL`.
+
+**TESTED (offline):** chạy đúng mã của bản nháp, toàn bộ 267/267 test qua, trong đó có V27-11 (ảnh hợp lệ thì giữ, ảnh sai thì bỏ) và V27-12 (ảnh không đổi digest). Chưa chạy trong n8n, vì chạy thử ở đó có thể gửi tin Meta thật.
+
+**Còn mở:** F-V27-2 (nếu Meta từ chối thẻ vuốt thì khách không nhận được tin nào) chưa được sửa trong n8n. Muốn sửa phải đổi cách xử lý lỗi của node Send, mà node này dùng chung cho mọi câu trả lời, nên rủi ro cao hơn lợi ích. Thay vào đó, bước kiểm tra là ca U27-1 khi thử thật; nếu thẻ không hiện thì rollback ngay.
+
+### Thứ tự publish đề xuất (mỗi bước cần Tiến duyệt cụ thể)
+1. `41bcea84` (S4): nhắn 1 câu "xin chào" để kiểm, phải thấy bot trả lời bình thường.
+2. `f6d33dab` (V27.1, đã gồm S4 và V27): chạy U27-1..8 trên Android, iOS và messenger.com.
+3. Rollback: `41bcea84`, rồi `9342025c`, khẩn cấp thì `1f4069a5`.
