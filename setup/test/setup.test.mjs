@@ -207,6 +207,8 @@ test('relay: Responses API first, falls back to chat/completions, maps errors', 
   assert.equal((await readWithRelay(relayFake({ responses: [429, {}] }), cfg, { text: 'x' })).error, 'AI_BUSY');
   const rej = await readWithRelay(relayFake({ responses: [400, {}], chat: [401, {}] }), cfg, { text: 'x' });
   assert.equal(rej.error, 'AI_REQUEST_REJECTED'); assert.equal(rej.detail, 'responses 400, chat 401');
+  const deny = await readWithRelay(relayFake({ responses: [403, { error: { message: 'group not allowed for key sk-abc' } }], chat: [403, { message: 'blocked' }] }), cfg, { text: 'x' });
+  assert.equal(deny.detail, 'responses 403 (group not allowed for key …), chat 403 (blocked)');
   assert.equal((await readWithRelay(relayFake({ responses: [200, { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
   assert.equal((await readWithRelay(relayFake({ responses: [404, {}], chat: [200, { choices: [{ finish_reason: 'length', message: { content: '{' } }] }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
   assert.equal((await readWithRelay(relayFake({ responses: [200, { output_text: 'xin chào' }] }), cfg, { text: 'x' })).error, 'AI_BAD_JSON');

@@ -85,6 +85,12 @@ function fromChat(body) {
   return parseJson(choice?.message?.content);
 }
 
+// Short, key-free reason from the relay's error body (or the network error) for the owner to see.
+function reason(r) {
+  const m = r.why || r.body?.error?.message || r.body?.message || (typeof r.body?.error === 'string' ? r.body.error : '');
+  return m ? ' (' + String(m).replace(/https?:\/\/\S+|sk-[\w-]+/g, '…').slice(0, 120) + ')' : '';
+}
+
 // Try /responses first; if the relay doesn't serve it (400/404/405), use /chat/completions.
 // Returns { ok, raw } | { ok: false, error, detail? } (detail = HTTP status only, never the key).
 export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model }, input) {
@@ -93,8 +99,8 @@ export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model }, input
   const m = model || RELAY_DEFAULT_MODEL;
   const r1 = await post(fetchImpl, base + '/responses', apiKey, buildResponsesRequest(input, m));
   if (r1.ok) return fromResponses(r1.body);
-  if (![400, 404, 405].includes(r1.status)) return { ok: false, error: r1.status ? httpError(r1.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + (r1.why ? ' (' + r1.why + ')' : '') };
+  if (![400, 403, 404, 405].includes(r1.status)) return { ok: false, error: r1.status ? httpError(r1.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + reason(r1) };
   const r2 = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, m));
   if (r2.ok) return fromChat(r2.body);
-  return { ok: false, error: r2.status ? httpError(r2.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + ', chat ' + r2.status };
+  return { ok: false, error: r2.status ? httpError(r2.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + reason(r1) + ', chat ' + r2.status + reason(r2) };
 }
