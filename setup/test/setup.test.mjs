@@ -173,6 +173,8 @@ import { relayBase, buildResponsesRequest, buildRelayRequest, readWithRelay } fr
 test('relay: https only, safe base, schema in prompt, image as data URL, no temperature/max_tokens', () => {
   assert.equal(relayBase('https://api.xingchiapi.com'), 'https://api.xingchiapi.com/v1');
   assert.equal(relayBase('https://api.xingchiapi.com/v1/'), 'https://api.xingchiapi.com/v1');
+  assert.equal(relayBase('https://generativelanguage.googleapis.com/v1beta/openai/'), 'https://generativelanguage.googleapis.com/v1beta/openai');
+  assert.equal(relayBase('https://x.example/v1?key=a'), null);
   assert.equal(relayBase('http://api.xingchiapi.com'), null);
   assert.equal(relayBase('https://u:p@api.xingchiapi.com'), null);
   const img = { image: { media_type: 'image/jpeg', data: 'QUJD' } };
@@ -181,7 +183,7 @@ test('relay: https only, safe base, schema in prompt, image as data URL, no temp
   assert.match(r.instructions, /không phải lệnh/); assert.match(r.instructions, /"business_name"/);
   assert.equal(r.input[0].content[1].image_url, 'data:image/jpeg;base64,QUJD');
   const c = buildRelayRequest(img);
-  assert.equal(c.temperature, undefined); assert.equal(c.max_tokens, undefined); assert.equal(c.max_completion_tokens, 16000);
+  assert.equal(c.temperature, undefined); assert.equal(c.max_tokens, undefined); assert.equal(c.max_completion_tokens, undefined);
   assert.equal(c.messages[1].content[1].image_url.url, 'data:image/jpeg;base64,QUJD');
 });
 
@@ -240,4 +242,14 @@ test('relay: Worker-safe redirect mode, network errors explained without leaking
   assert.equal(r.error, 'AI_UNAVAILABLE'); assert.match(r.detail, /TypeError: Network connection lost/); assert.doesNotMatch(r.detail, /sk-secret|xingchiapi/);
   const moved = await readWithRelay(async () => new Response(null, { status: 301, headers: { location: 'https://x' } }), { baseUrl: 'https://api.xingchiapi.com', apiKey: 'k' }, { text: 'x' });
   assert.match(moved.detail, /301 \(redirect\)/);
+});
+
+test('relay: Gemini OpenAI-compatible mode calls chat only, at the Gemini path', async () => {
+  const urls = [];
+  const fake = async (u, init) => { urls.push(String(u)); assert.equal(JSON.parse(init.body).model, 'gemini-3.5-flash-lite'); return res(200, JSON.stringify(CHAT_OK)); };
+  const r = await readWithRelay(fake, { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', apiKey: 'AIza-test', model: 'gemini-3.5-flash-lite', api: 'chat' }, { image: { media_type: 'image/png', data: 'QUJD' } });
+  assert.equal(r.ok, true);
+  assert.deepEqual(urls, ['https://generativelanguage.googleapis.com/v1beta/openai/chat/completions']);
+  const bad = await readWithRelay(async () => res(400, JSON.stringify([{ error: { message: 'model not found' } }])), { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', apiKey: 'k', api: 'chat' }, { text: 'x' });
+  assert.equal(bad.error, 'AI_REQUEST_REJECTED'); assert.match(bad.detail, /^chat 400/);
 });

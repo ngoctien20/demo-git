@@ -93,7 +93,7 @@ export async function setupDraftRoute(request, env, path, { now = Date.now(), fe
   } catch { return json(503, { ok: false, error: 'USAGE_STORE_UNAVAILABLE' }, cors); }
 
   const r = relay
-    ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL }, input)
+    ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL, api: env.AI_API }, input)
     : await readWithClaude(await makeClient(env), input);
   if (!r.ok) return json(r.error === 'AI_BUSY' ? 429 : 502, { ok: false, error: r.error, ...(r.detail ? { detail: r.detail } : {}) }, cors);
   let draft;

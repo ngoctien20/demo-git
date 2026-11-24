@@ -9,12 +9,14 @@ import { SYSTEM } from './read-with-claude.mjs';
 
 export const RELAY_DEFAULT_MODEL = 'gpt-6.1-sol';
 
-// Base for both endpoints: https://host[/path]/v1
+// API base. A bare host gets /v1 (OpenAI style: https://api.openai.com -> /v1); a base with its own
+// path is kept as is (Gemini: https://generativelanguage.googleapis.com/v1beta/openai).
 export function relayBase(baseUrl) {
   let u;
   try { u = new URL(String(baseUrl || '')); } catch { return null; }
-  if (u.protocol !== 'https:' || u.username || u.password) return null;
-  return u.origin + u.pathname.replace(/\/+$/, '').replace(/\/v1$/, '') + '/v1';
+  if (u.protocol !== 'https:' || u.username || u.password || u.search || u.hash) return null;
+  const path = u.pathname.replace(/\/+$/, '');
+  return u.origin + (path || '/v1');
 }
 export const relayEndpoint = (baseUrl) => { const b = relayBase(baseUrl); return b && b + '/chat/completions'; };
 
@@ -37,7 +39,8 @@ export function buildRelayRequest(input, model = RELAY_DEFAULT_MODEL) {
   const content = input.image
     ? [{ type: 'text', text: askText(input) }, { type: 'image_url', image_url: { url: dataUrl(input.image) } }]
     : askText(input);
-  return { model, max_completion_tokens: 16000, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: systemText() }, { role: 'user', content }] };
+  // No max_tokens / max_completion_tokens / temperature: providers disagree on them; defaults are enough.
+  return { model, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: systemText() }, { role: 'user', content }] };
 }
 
 const httpError = (status) => (status === 429 ? 'AI_BUSY' : status >= 500 ? 'AI_UNAVAILABLE' : 'AI_REQUEST_REJECTED');
@@ -87,16 +90,21 @@ function fromChat(body) {
 
 // Short, key-free reason from the relay's error body (or the network error) for the owner to see.
 function reason(r) {
-  const m = r.why || r.body?.error?.message || r.body?.message || (typeof r.body?.error === 'string' ? r.body.error : '');
+  const m = r.why || r.body?.error?.message || r.body?.[0]?.error?.message || r.body?.message || (typeof r.body?.error === 'string' ? r.body.error : '');
   return m ? ' (' + String(m).replace(/https?:\/\/\S+|sk-[\w-]+/g, '…').slice(0, 120) + ')' : '';
 }
 
 // Try /responses first; if the relay doesn't serve it (400/404/405), use /chat/completions.
 // Returns { ok, raw } | { ok: false, error, detail? } (detail = HTTP status only, never the key).
-export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model }, input) {
+// api: 'responses' (default: /responses, then chat on 400/403/404/405) or 'chat' (chat only, e.g. Gemini).
+export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model, api }, input) {
   const base = relayBase(baseUrl);
   if (!base || !apiKey) return { ok: false, error: 'AI_NOT_CONFIGURED' };
   const m = model || RELAY_DEFAULT_MODEL;
+  if (api === 'chat') {
+    const r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, m));
+    return r.ok ? fromChat(r.body) : { ok: false, error: r.status ? httpError(r.status) : 'AI_UNAVAILABLE', detail: 'chat ' + r.status + reason(r) };
+  }
   const r1 = await post(fetchImpl, base + '/responses', apiKey, buildResponsesRequest(input, m));
   if (r1.ok) return fromResponses(r1.body);
   if (![400, 403, 404, 405].includes(r1.status)) return { ok: false, error: r1.status ? httpError(r1.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + reason(r1) };

@@ -29,10 +29,11 @@ Chủ shop xem, sửa, bấm **Xác nhận** → nhập vào `Products` / `Dich_
 
 Test: `node --test setup/test/*.test.mjs` (18 ca, không gọi mạng, không cần key).
 
-## Chế độ thử tiết kiệm (Tiến chọn 24/11/2026)
+## Chế độ thử (24/11/2026)
 
-`AI_PROVIDER = "relay"`, `AI_BASE_URL = "https://api.xingchiapi.com"`, `AI_MODEL = "gpt-6.1-sol"` (Responses API, tự chuyển sang chat/completions nếu trạm không hỗ trợ), secret `RELAY_API_KEY`.
-Trạm trung gian là bên thứ ba, thấy hết ảnh/chữ gửi lên: **chỉ dùng khi chưa có shop thật**. Trước khi mời shop thật, đổi `AI_PROVIDER = "anthropic"` và đặt `ANTHROPIC_API_KEY`.
+`AI_PROVIDER = "relay"` gọi một API kiểu OpenAI bằng secret `RELAY_API_KEY`.
+- **Đang dùng:** khóa Gemini chính thức (Google AI Studio, gói miễn phí): `AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"`, `AI_API = "chat"`, `AI_MODEL = "gemini-3.5-flash-lite"`. Gói miễn phí: Google có thể dùng dữ liệu gửi lên để cải thiện sản phẩm, nên **chỉ thử với ảnh mẫu**. Trước khi có shop thật: bật trả phí trên AI Studio hoặc đổi `AI_PROVIDER = "anthropic"`.
+- **Không dùng được:** xingchiapi (trạm chỉ cho công cụ lập trình như Codex, đã tắt chat/completions). Không giả danh client để lách.
 
 ## Bật (Tiến chọn "Tạo trợ lý nhanh" bật trước, 23/11/2026)
 
