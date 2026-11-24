@@ -1,6 +1,6 @@
 # TIEN404 Zalo Hub — cổng chung cho bot Zalo của nhiều shop
 
-Trạng thái (2026-11-24): bản 0001 **đã chạy thật trên staging** với bot QA (`qa-zalo-bot`): Zalo → hub → n8n → lõi AI bán hàng → `/v1/send` → Zalo, PASS. Bản 0002 (tách mã, đổi mã, **chủ shop tự nối bot trong App**) **mới offline, 24/24 PASS**, chưa áp D1, chưa deploy.
+Trạng thái (2026-11-24): bản 0001 **đã chạy thật trên staging** với bot QA (`qa-zalo-bot`): Zalo → hub → n8n → lõi AI bán hàng → `/v1/send` → Zalo, PASS. Bản 0002 (tách mã, đổi mã, **chủ shop tự nối bot trong App**, **gói Lite nối hoàn toàn trên Zalo**) **mới offline, 25/25 PASS**, chưa áp D1, chưa deploy.
 
 Thiết kế và nguồn tài liệu Zalo: tài liệu "Shop tự nối bot Zalo — kiểm tra và thiết kế" (https://claude.ai/artifact/8xqoRi8zWxrVbsUkhJZrUx).
 
@@ -38,6 +38,19 @@ Luồng shop trả lời
 - Nhân viên (`staff`) hay người của cửa hàng khác: `NOT_STORE_MANAGER`, không gọi tới Zalo.
 - Hạn chế hiện tại: lõi AI bán hàng (`A7XYwSqZwr9T7841`) vẫn đọc Sheet demo AI_SALES_DEMO cho mọi shop. Trước khi nhận shop thật, luồng chung phải đọc đúng hàng hoá của từng `store_id`.
 
+## Gói Lite: nối bot hoàn toàn trên Zalo (cho người lớn tuổi)
+
+Gói Lite không cần web. Plus/Pro dùng App để tuỳ chỉnh sâu.
+
+1. Chủ shop tạo bot trong Zalo Bot Manager, nhận mã bot.
+2. Mở **Bot TIEN404 AI**, gõ "nối bot", rồi dán nguyên tin nhắn chứa mã bot.
+3. Luồng n8n của Bot TIEN404 AI (không lưu nhật ký chạy) chuyển ngay tới `POST /v1/lite/connect {zalo_user_id, token_text}` với `Bearer ZH_LITE_KEY`, rồi trả lời mã 6 số và nhắc xoá tin vừa dán.
+4. Chủ shop nhắn mã 6 số vào bot của mình → "Đã nối xong".
+
+- Cửa hàng Lite gắn với tài khoản Zalo của chủ shop trên Bot TIEN404 AI: `store_id = 'zl-' + sha256(...)` (không lộ id Zalo). Cùng người → cùng cửa hàng; người khác không lấy được bot đã nối.
+- Lệnh khác: `/v1/lite/status`, `/v1/lite/pairing` (mã mới), `/v1/lite/disconnect`. Bật bằng `ZH_LITE_CONNECT_ENABLED=true`.
+- Nếu mã bot lỡ lộ (ví dụ chủ shop không xoá tin): Zalo Bot Creator → Reset token, mã cũ chết ngay, nối lại bằng mã mới.
+
 ## Nối một shop (quản trị, luồng riêng)
 
 1. Chủ shop tạo bot trong Zalo (OA "Zalo Bot Manager" → Tạo bot) và nhận mã bot qua tin nhắn.
@@ -67,6 +80,7 @@ Ngắt: `POST /v1/admin/disconnect` → `deleteWebhook`, xoá mọi bản mã. N
 | 4 | Bật `ZH_ENABLED=true`, chạy `connect-qa.mjs` → đổi webhook **bot QA** sang hub | `/v1/admin/disconnect` rồi đặt lại webhook cũ của bot QA |
 | 5 | Bật `ZH_SEND_ENABLED=true`, nhắn thử từ Zalo | `ZH_SEND_ENABLED=false` |
 | 6 | Áp `migrations/0002_keys_shared_flow.sql` lên D1, deploy Worker bản mới, chạy `tools/rotate-qa.mjs`, đổi credential Webhook n8n sang header `x-tien404-inbound-key` | Deploy lại Worker cũ, rồi `rollback/0002_keys_shared_flow.down.sql` |
+| 8 | Gói Lite: đặt secret `ZH_LITE_KEY` + credential n8n, gắn nhánh "nối bot" vào luồng Bot TIEN404 AI, bật `ZH_LITE_CONNECT_ENABLED=true` | `ZH_LITE_CONNECT_ENABLED=false`, khôi phục bản luồng Bot TIEN404 AI cũ |
 | 7 | Tạo luồng n8n chung + 2 secret `ZH_SHARED_*`, đặt biến owner self-connect, bật `ZH_OWNER_CONNECT_ENABLED=true`, deploy App | `ZH_OWNER_CONNECT_ENABLED=false` |
 
 Tắt khẩn cấp: `ZH_ENABLED=false` (hub bỏ qua mọi tin, trả 200 để Zalo không gửi lại) hoặc `/v1/admin/disable` cho từng shop.

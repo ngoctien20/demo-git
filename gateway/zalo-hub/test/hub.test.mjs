@@ -417,3 +417,31 @@ test('owner cannot take over a store TIEN404 connected by hand (QA bot), and can
   assert.equal(h2.st.webhooks[TOKEN_B], undefined, 'webhook deleted at Zalo');
   assert.equal((await h2.owner('GET', '/v1/owner/status?store_id=' + STORE_UUID)).body.connection, null);
 });
+
+test('Lite: Bot TIEN404 AI relays the pasted token → shop keyed by owner Zalo id, shared flow, pairing code', async () => {
+  const LITE = 'l'.repeat(40);
+  const h = harness({ ...SHARED, ZH_LITE_CONNECT_ENABLED: 'true', ZH_LITE_KEY: LITE });
+  const lite = (path, body, key = LITE) => h.req('POST', path, body, { authorization: 'Bearer ' + key });
+  assert.equal((await lite('/v1/lite/connect', { zalo_user_id: 'owner-z1', token_text: TOKEN_A }, 'x'.repeat(40))).status, 401);
+  assert.equal((await lite('/v1/lite/connect', { zalo_user_id: 'bad id!', token_text: TOKEN_A })).body.error, 'BAD_ZALO_USER');
+  const r = await lite('/v1/lite/connect', { zalo_user_id: 'owner-z1', token_text: `Mã bot của bạn: ${TOKEN_A}` });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.match(r.body.store_id, /^zl-[0-9a-f]{24}$/);
+  assert.equal(r.body.flow_mode, 'shared');
+  assert.match(r.body.pairing_code, /^\d{6}$/);
+  assert.equal(r.body.forward_key, undefined);
+  // Same Zalo owner → same shop; a second bot is refused until the first is disconnected.
+  assert.equal((await lite('/v1/lite/connect', { zalo_user_id: 'owner-z1', token_text: TOKEN_B })).body.error, 'STORE_HAS_LIVE_BOT');
+  // Another Zalo owner cannot take this bot.
+  assert.equal((await lite('/v1/lite/connect', { zalo_user_id: 'owner-z2', token_text: TOKEN_A })).body.error, 'BOT_OWNED_BY_OTHER_STORE');
+  const s1 = await lite('/v1/lite/status', { zalo_user_id: 'owner-z1' });
+  assert.equal(s1.body.connection.status, 'pending_owner');
+  assert.equal((await lite('/v1/lite/status', { zalo_user_id: 'owner-z2' })).body.connection, null);
+  const c = { ...r.body, path: new URL(h.st.webhooks[TOKEN_A].url).pathname, secret: h.st.webhooks[TOKEN_A].secret_token };
+  await pairOwner(h, c, 'owner-own-bot');
+  assert.equal((await lite('/v1/lite/status', { zalo_user_id: 'owner-z1' })).body.connection.status, 'active');
+  assert.equal((await lite('/v1/lite/disconnect', { zalo_user_id: 'owner-z1' })).body.status, 'revoked');
+  assert.equal(h.st.webhooks[TOKEN_A], undefined);
+  const off = harness({ ...SHARED, ZH_LITE_KEY: LITE });
+  assert.equal((await off.req('POST', '/v1/lite/status', { zalo_user_id: 'owner-z1' }, { authorization: 'Bearer ' + LITE })).body.error, 'LITE_CONNECT_DISABLED');
+});

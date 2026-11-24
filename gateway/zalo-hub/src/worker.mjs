@@ -20,6 +20,9 @@
  *   POST /v1/owner/connect             {store_id, token_text} → shared flow, returns the 6-digit pairing code.
  *   POST /v1/owner/pairing             {store_id} → new pairing code.
  *   POST /v1/owner/disconnect          {store_id}.
+ * Lite plan (elderly owners, Zalo only): Bot TIEN404 AI's flow relays "nối bot" + the pasted token here.
+ * Bearer ZH_LITE_KEY; the shop is keyed by the owner's Zalo id on Bot TIEN404 AI (store_id 'zl-' + hash).
+ *   POST /v1/lite/connect|status|pairing|disconnect   {zalo_user_id[, token_text]}   (ZH_LITE_CONNECT_ENABLED)
  * Owner-connected shops use flow_mode 'shared': one TIEN404 flow (ZH_SHARED_FORWARD_URL), hub-level secrets
  * ZH_SHARED_INBOUND_KEY / ZH_SHARED_SEND_KEY, so the owner never sees or pastes any key.
  *
@@ -471,6 +474,39 @@ async function handleOwner(request, env, deps, path) {
   return withHeaders(await out(), cors);
 }
 
+/* ---------------- Lite: connect from Zalo via Bot TIEN404 AI ---------------- */
+async function liteStoreId(zaloUserId) {
+  return 'zl-' + (await sha256Hex('tien404-lite:' + zaloUserId)).slice(0, 24);
+}
+
+async function handleLite(request, env, deps, path) {
+  if (env.ZH_LITE_CONNECT_ENABLED !== 'true') return json(503, { ok: false, error: 'LITE_CONNECT_DISABLED' });
+  const key = env.ZH_LITE_KEY;
+  const h = request.headers.get('authorization') || '';
+  if (!sharedKey(key) || !h.startsWith('Bearer ') || !(await secureEqual(h.slice(7), key))) return json(401, { ok: false, error: 'UNAUTHORIZED' });
+  if (request.method !== 'POST') return json(405, { ok: false });
+  const r = await readJson(request);
+  if (r.error) return json(400, { ok: false, error: r.error });
+  const b = r.body || {};
+  if (typeof b.zalo_user_id !== 'string' || !CHAT_ID_RE.test(b.zalo_user_id)) return json(400, { ok: false, error: 'BAD_ZALO_USER' });
+  const storeId = await liteStoreId(b.zalo_user_id);
+  const live = await db.liveByStore(env.ZH_DB, storeId);
+  const now = deps.now();
+  if (path === '/v1/lite/status') return json(200, { ok: true, store_id: storeId, connection: live ? publicView(live, await db.countUsers(env.ZH_DB, live.id)) : null });
+  if (path === '/v1/lite/connect') {
+    if (env.ZH_ENABLED !== 'true') return json(503, { ok: false, error: 'HUB_DISABLED' });
+    return handleConnect(env, deps, { store_id: storeId, token_text: b.token_text }, true);
+  }
+  if (!live) return json(404, { ok: false, error: 'NOT_CONNECTED' });
+  if (path === '/v1/lite/pairing') {
+    const p = await newPairing(env, live.id, now);
+    await db.setPairing(env.ZH_DB, live.id, p.hash, p.expiresAt, now);
+    return json(200, { ok: true, status: 'pending_owner', bot_name: live.bot_name, pairing_code: p.code, pairing_expires_at: new Date(p.expiresAt).toISOString() });
+  }
+  if (path === '/v1/lite/disconnect') return handleDisconnect(env, deps, { connection_id: live.id });
+  return json(404, { ok: false });
+}
+
 export async function route(request, env, deps) {
   const path = new URL(request.url).pathname;
   try {
@@ -478,6 +514,7 @@ export async function route(request, env, deps) {
     if (request.method === 'POST' && path === '/v1/send') return await handleSend(request, env, deps);
     if (path.startsWith('/v1/admin/')) return await handleAdmin(request, env, deps, path);
     if (path.startsWith('/v1/owner/')) return await handleOwner(request, env, deps, path);
+    if (path.startsWith('/v1/lite/')) return await handleLite(request, env, deps, path);
     if (path === '/health') return json(200, { ok: true, enabled: env.ZH_ENABLED === 'true' });
     return json(404, { ok: false });
   } catch (e) {
