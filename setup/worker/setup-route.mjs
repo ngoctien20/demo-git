@@ -95,7 +95,7 @@ export async function setupDraftRoute(request, env, path, { now = Date.now(), fe
   const r = relay
     ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL }, input)
     : await readWithClaude(await makeClient(env), input);
-  if (!r.ok) return json(r.error === 'AI_BUSY' ? 429 : 502, { ok: false, error: r.error }, cors);
+  if (!r.ok) return json(r.error === 'AI_BUSY' ? 429 : 502, { ok: false, error: r.error, ...(r.detail ? { detail: r.detail } : {}) }, cors);
   let draft;
   try { draft = checkDraft(r.raw, { sourceText: input.text || '' }); } catch { return json(502, { ok: false, error: 'AI_BAD_DRAFT' }, cors); }
   return json(200, { ok: true, source: sources[0], draft }, cors);

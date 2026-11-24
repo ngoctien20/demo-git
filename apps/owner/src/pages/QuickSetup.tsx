@@ -86,7 +86,7 @@ export function QuickSetup() {
       const { data } = await supabase.auth.getSession();
       const r = await fetch(SETUP_API, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (data.session?.access_token ?? '') }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.ok) throw new Error(ERRORS[j.error] ?? 'Chưa đọc được. Thử ảnh rõ hơn hoặc thử lại sau.');
+      if (!r.ok || !j.ok) throw new Error((ERRORS[j.error] ?? 'Chưa đọc được. Thử ảnh rõ hơn hoặc thử lại sau.') + (j.error ? ` (mã lỗi: ${j.error}${j.detail ? ', ' + j.detail : ''})` : ''));
       load(j.draft as Draft, false);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); }
     finally { setBusy(false); }

@@ -31,7 +31,7 @@ Test: `node --test setup/test/*.test.mjs` (18 ca, không gọi mạng, không c�
 
 ## Chế độ thử tiết kiệm (Tiến chọn 24/11/2026)
 
-`AI_PROVIDER = "relay"`, `AI_BASE_URL = "https://api.xingchiapi.com"`, `AI_MODEL` (mặc định `gpt-4o-mini`), secret `RELAY_API_KEY`.
+`AI_PROVIDER = "relay"`, `AI_BASE_URL = "https://api.xingchiapi.com"`, `AI_MODEL = "gpt-6.1-sol"` (Responses API, tự chuyển sang chat/completions nếu trạm không hỗ trợ), secret `RELAY_API_KEY`.
 Trạm trung gian là bên thứ ba, thấy hết ảnh/chữ gửi lên: **chỉ dùng khi chưa có shop thật**. Trước khi mời shop thật, đổi `AI_PROVIDER = "anthropic"` và đặt `ANTHROPIC_API_KEY`.
 
 ## Bật (Tiến chọn "Tạo trợ lý nhanh" bật trước, 23/11/2026)

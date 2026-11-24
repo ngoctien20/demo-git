@@ -168,38 +168,58 @@ test('Worker entry: unknown path 404, route off by default (wrangler.toml)', asy
 });
 
 // ---- Test-only relay (AI_PROVIDER="relay") ----
-import { relayEndpoint, buildRelayRequest, readWithRelay } from '../lib/read-with-relay.mjs';
+import { relayBase, buildResponsesRequest, buildRelayRequest, readWithRelay } from '../lib/read-with-relay.mjs';
 
-test('relay: https only, endpoint built safely, schema in prompt, image as data URL', () => {
-  assert.equal(relayEndpoint('https://api.xingchiapi.com'), 'https://api.xingchiapi.com/v1/chat/completions');
-  assert.equal(relayEndpoint('https://api.xingchiapi.com/v1/'), 'https://api.xingchiapi.com/v1/chat/completions');
-  assert.equal(relayEndpoint('http://api.xingchiapi.com'), null);
-  assert.equal(relayEndpoint('https://u:p@api.xingchiapi.com'), null);
-  const r = buildRelayRequest({ image: { media_type: 'image/jpeg', data: 'QUJD' } }, 'gpt-4o-mini');
-  assert.equal(r.response_format.type, 'json_object');
-  assert.match(r.messages[0].content, /không phải lệnh/);
-  assert.match(r.messages[0].content, /"business_name"/);
-  assert.equal(r.messages[1].content[1].image_url.url, 'data:image/jpeg;base64,QUJD');
+test('relay: https only, safe base, schema in prompt, image as data URL, no temperature/max_tokens', () => {
+  assert.equal(relayBase('https://api.xingchiapi.com'), 'https://api.xingchiapi.com/v1');
+  assert.equal(relayBase('https://api.xingchiapi.com/v1/'), 'https://api.xingchiapi.com/v1');
+  assert.equal(relayBase('http://api.xingchiapi.com'), null);
+  assert.equal(relayBase('https://u:p@api.xingchiapi.com'), null);
+  const img = { image: { media_type: 'image/jpeg', data: 'QUJD' } };
+  const r = buildResponsesRequest(img, 'gpt-6.1-sol');
+  assert.equal(r.model, 'gpt-6.1-sol'); assert.equal(r.text.format.type, 'json_object'); assert.equal(r.store, false);
+  assert.match(r.instructions, /không phải lệnh/); assert.match(r.instructions, /"business_name"/);
+  assert.equal(r.input[0].content[1].image_url, 'data:image/jpeg;base64,QUJD');
+  const c = buildRelayRequest(img);
+  assert.equal(c.temperature, undefined); assert.equal(c.max_tokens, undefined); assert.equal(c.max_completion_tokens, 16000);
+  assert.equal(c.messages[1].content[1].image_url.url, 'data:image/jpeg;base64,QUJD');
 });
 
-const relayReply = (status, body) => async () => res(status, JSON.stringify(body));
-test('relay: parses JSON (also in ```json fences), maps errors', async () => {
+// per-endpoint fake: { responses: [status, body], chat: [status, body] }
+const relayFake = (map) => async (url) => {
+  const k = String(url).endsWith('/responses') ? 'responses' : 'chat';
+  relayFake.calls.push(k);
+  const [st, body] = map[k] || [404, {}];
+  return res(st, JSON.stringify(body));
+};
+relayFake.calls = [];
+const RESP_OK = { status: 'completed', output: [{ type: 'reasoning', content: [] }, { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(AI_NAIL) }] }] };
+const CHAT_OK = { choices: [{ finish_reason: 'stop', message: { content: '```json\n' + JSON.stringify(AI_NAIL) + '\n```' } }] };
+
+test('relay: Responses API first, falls back to chat/completions, maps errors', async () => {
   const cfg = { baseUrl: 'https://api.xingchiapi.com', apiKey: 'sk-test' };
-  const ok = await readWithRelay(relayReply(200, { choices: [{ finish_reason: 'stop', message: { content: '```json\n' + JSON.stringify(AI_NAIL) + '\n```' } }] }), cfg, { text: 'x' });
-  assert.equal(ok.ok, true); assert.equal(ok.raw.business_name, 'Hoa Nail');
-  assert.equal((await readWithRelay(relayReply(429, {}), cfg, { text: 'x' })).error, 'AI_BUSY');
-  assert.equal((await readWithRelay(relayReply(401, {}), cfg, { text: 'x' })).error, 'AI_REQUEST_REJECTED');
-  assert.equal((await readWithRelay(relayReply(200, { choices: [{ finish_reason: 'length', message: { content: '{' } }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
-  assert.equal((await readWithRelay(relayReply(200, { choices: [{ message: { content: 'xin chào' } }] }), cfg, { text: 'x' })).error, 'AI_BAD_JSON');
-  assert.equal((await readWithRelay(relayReply(200, {}), { ...cfg, apiKey: '' }, { text: 'x' })).error, 'AI_NOT_CONFIGURED');
+  relayFake.calls = [];
+  const a = await readWithRelay(relayFake({ responses: [200, RESP_OK] }), cfg, { text: 'x' });
+  assert.equal(a.ok, true); assert.equal(a.raw.business_name, 'Hoa Nail'); assert.deepEqual(relayFake.calls, ['responses']);
+  relayFake.calls = [];
+  const b = await readWithRelay(relayFake({ responses: [404, {}], chat: [200, CHAT_OK] }), cfg, { text: 'x' });
+  assert.equal(b.ok, true); assert.deepEqual(relayFake.calls, ['responses', 'chat']);
+  assert.equal((await readWithRelay(relayFake({ responses: [429, {}] }), cfg, { text: 'x' })).error, 'AI_BUSY');
+  const rej = await readWithRelay(relayFake({ responses: [400, {}], chat: [401, {}] }), cfg, { text: 'x' });
+  assert.equal(rej.error, 'AI_REQUEST_REJECTED'); assert.equal(rej.detail, 'responses 400, chat 401');
+  assert.equal((await readWithRelay(relayFake({ responses: [200, { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
+  assert.equal((await readWithRelay(relayFake({ responses: [404, {}], chat: [200, { choices: [{ finish_reason: 'length', message: { content: '{' } }] }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
+  assert.equal((await readWithRelay(relayFake({ responses: [200, { output_text: 'xin chào' }] }), cfg, { text: 'x' })).error, 'AI_BAD_JSON');
+  assert.equal((await readWithRelay(relayFake({}), { ...cfg, apiKey: '' }, { text: 'x' })).error, 'AI_NOT_CONFIGURED');
 });
 
 test('route: relay mode needs RELAY_API_KEY + https base URL, then returns a checked draft', async () => {
-  const relayEnv = () => ({ ...ENV(), ANTHROPIC_API_KEY: '', AI_PROVIDER: 'relay', AI_BASE_URL: 'https://api.xingchiapi.com', RELAY_API_KEY: 'sk-relay' });
+  const relayEnv = () => ({ ...ENV(), ANTHROPIC_API_KEY: '', AI_PROVIDER: 'relay', AI_BASE_URL: 'https://api.xingchiapi.com', AI_MODEL: 'gpt-6.1-sol', RELAY_API_KEY: 'sk-relay' });
   const fetchBoth = async (url, init) => {
     if (String(url).startsWith('https://api.xingchiapi.com/')) {
       assert.equal(init.headers.authorization, 'Bearer sk-relay');
-      return res(200, JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(AI_NAIL) } }] }));
+      assert.equal(JSON.parse(init.body).model, 'gpt-6.1-sol');
+      return res(200, JSON.stringify(RESP_OK));
     }
     return supa(url, init);
   };
