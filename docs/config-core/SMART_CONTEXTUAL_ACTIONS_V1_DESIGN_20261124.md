@@ -193,3 +193,12 @@ Những gì đã làm đẹp:
 1. `41bcea84` (S4): nhắn 1 câu "xin chào" để kiểm, phải thấy bot trả lời bình thường.
 2. `f6d33dab` (V27.1, đã gồm S4 và V27): chạy U27-1..8 trên Android, iOS và messenger.com.
 3. Rollback: `41bcea84`, rồi `9342025c`, khẩn cấp thì `1f4069a5`.
+
+---
+
+## Live 2026-11-24 + V27.2
+
+- 14:50Z: S4 `41bcea84` được publish (Tiến duyệt). Tiến nhắn "xin chào" lúc 14:50:13 và tin được ghi nhận trong EVENT_KEYS lúc 14:50:17, không có lượt chạy lỗi: **PASS**.
+- 14:52Z: V27.1 `f6d33dab` được publish. Tiến thử lúc 14:52:06, tin được ghi nhận nhưng đi vào **luồng AI** (chỉ có 3 nút dọc, không có thẻ vuốt). Không phải lỗi. **VERIFIED:** hiện chỉ payload `T404:M:catalog` (nút "Xem sản phẩm" của menu đã publish, sau "Bắt đầu") mới mở được danh mục. Các chip chào hỏi "Xem áo"/"Xem quần" (`TIEN404:QR:n`) và ☰ menu cũ của Page (`TIEN404:ASK:catalog`) vẫn đi sang AI.
+- Z7Fd đặt `saveDataSuccessExecution=none`, nên không xem được lượt chạy thành công. Kiểm tra bằng dòng EVENT_KEYS kết hợp danh sách lượt chạy lỗi.
+- **V27.2 bản nháp `a256a7df`** (dựng trên `f6d33dab`, chưa publish): chip chào đổi thành `Xem sản phẩm` (`T404:M:catalog`) · `Tra cứu đơn` · `Gặp nhân viên`, đúng mẫu 01. `TIEN404:ASK:catalog` được đổi thành `T404:M:catalog` ở node "Tìm nút menu". Các payload Áo/Quần/đơn/nhân viên giữ nguyên, vì con trỏ trang `T404:C` chưa mang nhóm hàng (muốn hỗ trợ thì phải sửa bridge `9HXj`). Test V27-13..15 qua, toàn bộ 270/270. Rollback: `f6d33dab`.

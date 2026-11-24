@@ -107,7 +107,10 @@ if(current.mediaType==='product_detail' && current.selectedSku){
  else if(/hết hàng/i.test(reply))quickReplies=qr(['Xem mẫu tương tự','Xem mẫu khác']);
  else if(/Còn \d+ cái/.test(reply))quickReplies=qr(['Đặt '+current.selectedSku,'Xem mẫu khác']);
 } else if(isGreeting){
- quickReplies=qr(['Xem áo','Xem quần','Tra cứu đơn','Gặp nhân viên']);
+ // V27.2: greeting chips follow mock-up 01 (3 quick choices). "Xem sản phẩm" opens the published catalog
+ // carousel; the other two keep their old payload so the existing text routing is unchanged.
+ quickReplies=[{content_type:'text',title:'Xem sản phẩm',payload:'T404:M:catalog'},
+  {content_type:'text',title:'Tra cứu đơn',payload:'TIEN404:QR:3'},{content_type:'text',title:'Gặp nhân viên',payload:'TIEN404:QR:4'}];
 }
 if(quickReplies && messages.length)messages[messages.length-1].quick_replies=quickReplies;
 const capped=messages.slice(0,MAX_MESSAGES);

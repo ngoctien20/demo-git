@@ -165,9 +165,38 @@ test('V27-10 non-catalog paths are unchanged by V27 (greeting quick replies, SKU
     mediaType: 'text', chatInput: 'xin chào' };
   const g = prepare({ output: 'Chào bạn!' }, cur);
   assert.equal(g.length, 1);
-  assert.deepEqual(g[0].messengerMessage.quick_replies.map((q) => q.title),
-    ['Xem áo', 'Xem quần', 'Tra cứu đơn', 'Gặp nhân viên']);
+  assert.deepEqual(g[0].messengerMessage.quick_replies.map((q) => [q.title, q.payload]),
+    [['Xem sản phẩm', 'T404:M:catalog'], ['Tra cứu đơn', 'TIEN404:QR:3'], ['Gặp nhân viên', 'TIEN404:QR:4']]);
   const s = prepare({ output: '- A003 Áo thun 159.000đ\n- A006 Áo sơ mi' }, { ...cur, chatInput: 'có áo nào' });
   assert.equal(s.length, 1);
   assert.equal(s[0].messengerMessage.attachment.payload.template_type, 'button');
+});
+
+// V27.2 entry points: the old ☰ menu / ice-breaker payload must reach the published catalog item.
+const FIND = src('messenger-find-menu.v27-draft.code.js');
+function findMenu(event, item) {
+  const body = { entry: [{ id: DEMO_PAGE, messaging: [event] }] };
+  const $ = (name) => { assert.equal(name, 'Webhook1'); return { first: () => ({ json: { body } }) }; };
+  return run(FIND, { $, $input: { all: () => [{ json: item }] } }).map((x) => x.json);
+}
+test('V27-13 old ☰ "Xem sản phẩm" postback and new greeting chip both route to T404:M:catalog', () => {
+  const base = { pageId: DEMO_PAGE, senderId: SENDER };
+  const pb = findMenu({ sender: { id: SENDER }, timestamp: 1795000000000, postback: { mid: 'm_pb', payload: 'TIEN404:ASK:catalog' } },
+    { ...base, messageId: 'm_pb', mediaType: 'postback' });
+  assert.equal(pb[0].menuPayload, 'T404:M:catalog');
+  const qr = findMenu({ sender: { id: SENDER }, timestamp: 1795000000000, message: { mid: 'm_qr', text: 'Xem sản phẩm', quick_reply: { payload: 'T404:M:catalog' } } },
+    { ...base, messageId: 'm_qr', mediaType: 'text' });
+  assert.equal(qr[0].menuPayload, 'T404:M:catalog');
+});
+test('V27-14 other legacy payloads keep their old (AI / handoff) routing', () => {
+  for (const payload of ['TIEN404:ASK:ao', 'TIEN404:ASK:quan', 'TIEN404:ASK:order', 'TIEN404:ASK:human', 'TIEN404:QR:3']) {
+    const r = findMenu({ sender: { id: SENDER }, timestamp: 1795000000000, postback: { mid: 'm_x', payload } },
+      { pageId: DEMO_PAGE, senderId: SENDER, messageId: 'm_x', mediaType: 'postback' });
+    assert.equal(r[0].menuPayload, undefined, payload);
+  }
+});
+test('V27-15 a catalog payload from another Page/sender never attaches to this message', () => {
+  const r = findMenu({ sender: { id: '99999999999' }, timestamp: 1795000000000, postback: { mid: 'm_y', payload: 'TIEN404:ASK:catalog' } },
+    { pageId: DEMO_PAGE, senderId: SENDER, messageId: 'm_y', mediaType: 'postback' });
+  assert.equal(r[0].menuPayload, undefined);
 });
