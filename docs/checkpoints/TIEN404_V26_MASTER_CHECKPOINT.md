@@ -29,6 +29,14 @@ Tài liệu sống: mỗi milestone thêm một mục mới ở đầu “Nhật
 
 ## Nhật ký
 
+### 2026-11-23 22:30Z – 2026-11-24 11:00Z — UAT live Messenger (n8n đã nâng gói)
+- Preflight: Z7Fd `1f4069a5`, Create Order `af9ee686`, Update Order `3bd7043f`, Manage Order `03384201`, Menu Bridge `0d04c978` đúng bản. Exec 6734 (22:28Z, pin data chữ ký 0…0) dừng ở Crypto = đúng.
+- Đợt 1 (22:34–22:39Z): 10 webhook thật, `hmacVerified=true`, 0 execution lỗi; nội dung do chủ dự án xác nhận không có câu sai. Nút danh mục chỉ chào = lỗi đã biết, sửa ở S3 `9342025c` (WS-C).
+- Đợt 2 (24/11 09:29–09:35Z): PASS O-01 (`ORD-20261124093007-6794-753032`, A002×1, 159000, pending), O-02 không trùng, O-03/O-04 không tạo dòng, O-05 không đổi địa chỉ, O-08 exec 6824 `order_not_matched`. CHƯA XÁC NHẬN O-06 (địa chỉ chưa đổi trên Sheet) và O-07 (quantity vẫn 1, có thể chưa xác nhận). Địa chỉ “Địa chỉ QA, không giao hàng” lưu thành “Địa chỉ QA”: AI tách phần ghi chú (`$fromAI('address')`), không phải lỗi code KrSn → PROPOSED sửa mô tả tham số khi publish Z7Fd.
+- Đợt 3: H-01..H-03 PASS theo chủ dự án (bot im khi chuyển nhân viên, trả lời lại sau khi đánh dấu xong).
+- Persistent menu Meta (đọc exec 6307 ngày 22/11): 4 mục + get_started + 4 ice breakers đã đặt; chủ dự án thấy trên máy tính, không thấy trên điện thoại → đang tìm nguyên nhân (cache app/hiển thị mobile).
+- Execution thành công không lưu (`saveDataSuccessExecution=none`): bằng chứng = danh sách exec + Sheet + xác nhận của chủ dự án.
+
 ### 2026-11-23 ~03:10Z — Sheet AI_SALES_DEMO đa ngành (anh Tiến yêu cầu)
 - Sao lưu trước: bản sao `AI_SALES_DEMO_BACKUP_20261123_truoc_da_nganh` trên Drive.
 - Sửa: đổi tên tab `huomg_dan` → `huong_dan` và viết lại hướng dẫn cho mọi tab; `price_clean` tính cả cột; xếp Products theo SKU (A001 lên đầu).
