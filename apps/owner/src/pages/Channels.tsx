@@ -9,6 +9,7 @@ import { SITE_HOME } from '../config';
 import { CAPS, TEAM_LABEL, Version } from '../assistant';
 import { useWorkspace } from '../workspace';
 import { Notice, PageHead, Spinner } from '../ui';
+import { ZaloConnect } from './ZaloConnect';
 
 type Conn = { id: string; channel: string; display_name: string | null; environment: string; status: string; assistant_id: string | null; updated_at: string };
 
@@ -38,7 +39,7 @@ const ENV: Record<string, string> = { demo: 'Môi trường demo', staging: 'Mô
 const STATUS: Record<string, [string, string]> = { active: ['ok', 'Đã gắn'], pending: ['warn', 'Đang chờ kiểm tra'], disabled: ['', 'Đã tắt'] };
 
 export function Channels() {
-  const { store } = useStore();
+  const { store, canManage } = useStore();
   const ws = useWorkspace();
   const { data, error, loading } = useLoad(async () => {
     const c = await supabase.from('channel_connections').select('id, channel, display_name, environment, status, assistant_id, updated_at').eq('store_id', store.id);
@@ -59,7 +60,7 @@ export function Channels() {
   return (
     <>
       <PageHead title="Kênh kết nối" sub={`Nơi khách nhắn với trợ lý của ${store.name}. Mỗi kênh có khả năng khác nhau.`} />
-      <Notice>Trong giai đoạn thử nghiệm, đội TIEN404 gắn từng Fanpage/tài khoản vào đúng Workspace sau khi kiểm tra quyền sở hữu. App chỉ hiển thị trạng thái, không tự gắn hay chuyển kênh.</Notice>
+      <Notice>Trong giai đoạn thử nghiệm, đội TIEN404 gắn từng Fanpage/tài khoản vào đúng Workspace sau khi kiểm tra quyền sở hữu. App chỉ hiển thị trạng thái, không tự gắn hay chuyển kênh. Riêng Zalo Bot: chủ shop tự nối bằng mã bot ngay bên dưới.</Notice>
       {error && <Notice kind="err">Không tải được trạng thái kết nối. Các kênh dưới đây hiển thị như chưa kết nối.</Notice>}
       {data?.conns === null && <Notice kind="warn">Trạng thái kết nối chưa được bật trên máy chủ.</Notice>}
       <div className="channel-grid">
@@ -69,7 +70,7 @@ export function Channels() {
           return (
             <section key={c.key} className="panel channel">
               <header className="channel-head"><h2>{c.name}</h2><span className={`pill ${c.label === 'Dự kiến' ? '' : 'soft'}`}>{c.label}</span></header>
-              {mine.length ? (
+              {c.key === 'zalo_bot' ? <ZaloConnect storeId={store.id} canManage={canManage} /> : mine.length ? (
                 <ul className="plain conn-list">
                   {mine.map(m => (
                     <li key={m.id}>
@@ -88,7 +89,7 @@ export function Channels() {
                 <dt>Chưa có</dt><dd>{c.missing.join('; ')}</dd>
                 {caps && <><dt>Hiển thị menu</dt><dd>{caps.mode === 'buttons' ? 'Nút bấm' : 'Danh sách chữ, khách gõ số'}{caps.verified ? '' : ' · chưa kiểm thử'}</dd></>}
               </dl>
-              {!mine.length && c.label !== 'Dự kiến' && <a className="btn btn-ghost btn-sm" href={`${SITE_HOME}contact.html?goi=cua-hang`} target="_blank" rel="noopener">Nhờ TIEN404 kết nối</a>}
+              {!mine.length && c.label !== 'Dự kiến' && c.key !== 'zalo_bot' && <a className="btn btn-ghost btn-sm" href={`${SITE_HOME}contact.html?goi=cua-hang`} target="_blank" rel="noopener">Nhờ TIEN404 kết nối</a>}
             </section>
           );
         })}

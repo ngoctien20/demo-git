@@ -1,5 +1,5 @@
 /* TIEN404 Zalo Hub — one shared gateway for many shops' Zalo Bots (Zalo Bot Platform, official API).
- * PROPOSED, not deployed. Owner approved building the shared gateway on 2026-11-23 (code + Draft PR first).
+ * Staging: 0001 live with the QA bot since 2026-11-24. 0002 (key split, shared flow, owner self-connect) offline only.
  *
  * Routes
  *   POST /v1/zalo/wh/:path_id      Zalo → hub. Per-shop path + per-shop secret (header X-Bot-Api-Secret-Token).
@@ -12,6 +12,16 @@
  *   POST /v1/admin/pairing          New 6-digit owner code (e.g. after it expired).
  *   POST /v1/admin/disable|enable   Pause / resume one shop without touching its Zalo settings.
  *   GET  /v1/admin/connections?store_id=   Masked status only.
+ *   POST /v1/admin/rotate-keys      New forward_key + inbound_key for an 'own'-flow shop (old ones die at once).
+ *
+ * Owner self-connect from the TIEN404 App (ZH_OWNER_CONNECT_ENABLED='true'); Bearer = the owner's Supabase
+ * access token, checked against Supabase Auth + store_memberships (role owner/manager) on every call:
+ *   GET  /v1/owner/status?store_id=    Masked status of that store's Zalo bot.
+ *   POST /v1/owner/connect             {store_id, token_text} → shared flow, returns the 6-digit pairing code.
+ *   POST /v1/owner/pairing             {store_id} → new pairing code.
+ *   POST /v1/owner/disconnect          {store_id}.
+ * Owner-connected shops use flow_mode 'shared': one TIEN404 flow (ZH_SHARED_FORWARD_URL), hub-level secrets
+ * ZH_SHARED_INBOUND_KEY / ZH_SHARED_SEND_KEY, so the owner never sees or pastes any key.
  *
  * Kill switches: ZH_ENABLED='true' (whole hub), ZH_SEND_ENABLED='true' (outbound), per-shop status 'disabled'.
  */
@@ -56,7 +66,7 @@ export function forwardUrlAllowed(env, url) {
 function publicView(c, userCount) {
   return {
     connection_id: c.id, store_id: c.store_id, status: c.status, bot_id: c.bot_id, bot_name: c.bot_name,
-    token_last4: c.token_last4, owner_paired: !!c.owner_chat_id, sent_month: c.sent_month, sent_count: Number(c.sent_count || 0),
+    token_last4: c.token_last4, flow_mode: c.flow_mode || 'own', owner_paired: !!c.owner_chat_id, sent_month: c.sent_month, sent_count: Number(c.sent_count || 0),
     users: userCount, connected_at: c.connected_at, revoked_at: c.revoked_at, last_ok_at: c.last_ok_at,
   };
 }
@@ -161,9 +171,13 @@ async function pairOwner(env, deps, c, ev, now) {
   if (r.ok) await db.countSend(env.ZH_DB, c.id, monthOf(now), now);
 }
 
+const sharedKey = (k) => typeof k === 'string' && k.length >= 32;
+
 async function forward(env, deps, c, ev, now) {
-  const key = await forwardKeyOf(env, c);
-  const inbound = await inboundKeyOf(env, c);
+  const shared = c.flow_mode === 'shared';
+  if (shared && !sharedKey(env.ZH_SHARED_INBOUND_KEY)) { deps.log('SHARED_FLOW_NOT_CONFIGURED', c.id); return; }
+  const key = shared ? env.ZH_SHARED_INBOUND_KEY : await forwardKeyOf(env, c);
+  const inbound = shared ? env.ZH_SHARED_INBOUND_KEY : await inboundKeyOf(env, c);
   const users = await db.countUsers(env.ZH_DB, c.id);
   const payload = JSON.stringify({
     v: 1,
@@ -176,7 +190,7 @@ async function forward(env, deps, c, ev, now) {
   });
   const ts = String(Math.floor(now / 1000));
   try {
-    const res = await deps.fetch(c.forward_url, {
+    const res = await deps.fetch(shared ? env.ZH_SHARED_FORWARD_URL : c.forward_url, {
       method: 'POST',
       // Signature for code flows. The header key is for an n8n Webhook Header Auth credential; n8n logs request
       // headers, so it is a separate inbound_key and never the send key. Legacy rows (no inbound_key yet) still
@@ -204,9 +218,11 @@ async function handleSend(request, env, deps) {
   const connId = request.headers.get('x-tien404-connection') || '';
   if (!ID_RE.test(connId) || b.connection_id !== connId) return json(401, { ok: false, error: 'UNAUTHORIZED' });
   const c = await db.byId(env.ZH_DB, connId);
-  if (!c || !c.forward_key_sealed) return json(401, { ok: false, error: 'UNAUTHORIZED' });
+  if (!c || c.status === 'revoked') return json(401, { ok: false, error: 'UNAUTHORIZED' });
+  const shared = c.flow_mode === 'shared';
+  if (shared ? !sharedKey(env.ZH_SHARED_SEND_KEY) : !c.forward_key_sealed) return json(401, { ok: false, error: 'UNAUTHORIZED' });
   const now = deps.now();
-  const fk = await forwardKeyOf(env, c);
+  const fk = shared ? env.ZH_SHARED_SEND_KEY : await forwardKeyOf(env, c);
   // Two ways to authenticate, same per-shop key: HMAC over ts.body (code flows), or
   // "Authorization: Bearer <forward_key>" (n8n Header Auth credential, no code needed).
   const auth = request.headers.get('authorization') || '';
@@ -252,10 +268,14 @@ async function newPairing(env, id, now) {
   return { code, expiresAt, hash: await sha256Hex(code) };
 }
 
-async function handleConnect(env, deps, b) {
+async function handleConnect(env, deps, b, shared = false) {
   const storeId = b.store_id;
   if (typeof storeId !== 'string' || !STORE_ID_RE.test(storeId)) return json(400, { ok: false, error: 'BAD_STORE_ID' });
-  if (!forwardUrlAllowed(env, b.forward_url)) return json(400, { ok: false, error: 'FORWARD_URL_NOT_ALLOWED' });
+  if (shared) {
+    if (!forwardUrlAllowed(env, env.ZH_SHARED_FORWARD_URL) || !sharedKey(env.ZH_SHARED_INBOUND_KEY) || !sharedKey(env.ZH_SHARED_SEND_KEY)) {
+      return json(503, { ok: false, error: 'SHARED_FLOW_NOT_CONFIGURED' });
+    }
+  } else if (!forwardUrlAllowed(env, b.forward_url)) return json(400, { ok: false, error: 'FORWARD_URL_NOT_ALLOWED' });
   const token = zalo.extractToken(b.token_text);
   if (!token) return json(400, { ok: false, error: 'TOKEN_NOT_FOUND' });
   const base = String(env.ZH_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
@@ -274,18 +294,19 @@ async function handleConnect(env, deps, b) {
   const id = randomId(16);
   const pathId = randomId(16);
   const whSecret = randomSecret(32);
-  const keys = await sealKeys(env, id, storeId);
+  const keys = shared ? null : await sealKeys(env, id, storeId);
   const p = await newPairing(env, id, now);
   await db.insert(env.ZH_DB, {
     id, store_id: storeId, status: 'pending_owner', bot_id: botId, bot_name: botName,
     token_sealed: await seal(env, token, id, storeId, 'token'), token_last4: zalo.last4(token), key_version: 1,
-    path_id: pathId, wh_secret_hash: await sha256Hex(whSecret), forward_url: b.forward_url,
-    forward_key_sealed: keys.forward_key_sealed, inbound_key_sealed: keys.inbound_key_sealed,
+    path_id: pathId, wh_secret_hash: await sha256Hex(whSecret), forward_url: shared ? 'shared' : b.forward_url,
+    forward_key_sealed: keys ? keys.forward_key_sealed : null, inbound_key_sealed: keys ? keys.inbound_key_sealed : null,
+    flow_mode: shared ? 'shared' : 'own',
     pairing_code_hash: p.hash, pairing_expires_at: p.expiresAt, connected_at: now,
   });
 
   const webhookUrl = `${base}/v1/zalo/wh/${pathId}`;
-  const manual = b.set_webhook === false;
+  const manual = !shared && b.set_webhook === false;
   if (!manual) {
     const wh = await zalo.setWebhook(deps.fetch, token, webhookUrl, whSecret);
     const verification = wh.ok && wh.result && wh.result.verification;
@@ -306,8 +327,9 @@ async function handleConnect(env, deps, b) {
     pairing_expires_at: new Date(p.expiresAt).toISOString(),
     // Shown once each. forward_key → credential of the /v1/send request (Bearer) or HMAC signing.
     // inbound_key → Header Auth credential of the n8n Webhook node (header x-tien404-inbound-key).
-    forward_key: keys.forwardKey,
-    inbound_key: keys.inboundKey,
+    forward_key: keys ? keys.forwardKey : undefined,
+    inbound_key: keys ? keys.inboundKey : undefined,
+    flow_mode: shared ? 'shared' : 'own',
     // Only in manual mode: the owner pastes these two into Zalo Bot Creator → Thiết lập chung.
     manual_webhook: manual ? { url: webhookUrl, secret_token: whSecret } : undefined,
   });
@@ -355,6 +377,7 @@ async function handleAdmin(request, env, deps, path) {
     return json(200, { ok: true, status: 'pending_owner', pairing_code: p.code, pairing_expires_at: new Date(p.expiresAt).toISOString() });
   }
   if (path === '/v1/admin/rotate-keys') {
+    if (c.flow_mode === 'shared') return json(400, { ok: false, error: 'SHARED_FLOW_USES_HUB_KEYS' });
     const keys = await sealKeys(env, c.id, c.store_id);
     await db.setKeys(env.ZH_DB, c.id, keys.forward_key_sealed, keys.inbound_key_sealed, now);
     return json(200, { ok: true, connection_id: c.id, store_id: c.store_id, forward_key: keys.forwardKey, inbound_key: keys.inboundKey });
@@ -371,12 +394,90 @@ async function handleAdmin(request, env, deps, path) {
   return json(404, { ok: false });
 }
 
+/* ---------------- owner self-connect (TIEN404 App) ---------------- */
+function corsHeaders(env, request) {
+  const origin = request.headers.get('origin') || '';
+  const allowed = String(env.ZH_APP_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!allowed.includes(origin)) return null;
+  return { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'authorization, content-type', 'access-control-max-age': '600', vary: 'origin' };
+}
+function withHeaders(res, extra) {
+  if (!extra) return res;
+  const h = new Headers(res.headers);
+  for (const [k, v] of Object.entries(extra)) h.set(k, v);
+  return new Response(res.body, { status: res.status, headers: h });
+}
+
+/** Who is calling, and may they manage this store? Asks Supabase with the caller's own token (RLS applies). */
+async function ownerOf(request, env, deps, storeId) {
+  const h = request.headers.get('authorization') || '';
+  const jwt = h.startsWith('Bearer ') ? h.slice(7) : '';
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(jwt) || jwt.length > 4096) return { error: 401 };
+  if (typeof storeId !== 'string' || !STORE_ID_RE.test(storeId)) return { error: 400 };
+  const base = String(env.ZH_SUPABASE_URL || '').replace(/\/+$/, '');
+  const apikey = String(env.ZH_SUPABASE_KEY || '');
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base) || !apikey) return { error: 503 };
+  const headers = { apikey, authorization: 'Bearer ' + jwt, accept: 'application/json' };
+  const u = await deps.fetch(base + '/auth/v1/user', { headers, signal: AbortSignal.timeout(8000) });
+  if (!u.ok) return { error: 401 };
+  const user = await u.json().catch(() => null);
+  const uid = user && typeof user.id === 'string' ? user.id : '';
+  if (!/^[0-9a-f-]{36}$/.test(uid)) return { error: 401 };
+  const q = `${base}/rest/v1/store_memberships?select=role&active=eq.true&user_id=eq.${uid}&store_id=eq.${encodeURIComponent(storeId)}`;
+  const m = await deps.fetch(q, { headers, signal: AbortSignal.timeout(8000) });
+  if (!m.ok) return { error: 403 };
+  const rows = await m.json().catch(() => []);
+  const role = Array.isArray(rows) && rows[0] ? rows[0].role : null;
+  if (role !== 'owner' && role !== 'manager') return { error: 403 };
+  return { uid, role };
+}
+
+async function handleOwner(request, env, deps, path) {
+  const cors = corsHeaders(env, request);
+  if (request.method === 'OPTIONS') return cors ? new Response(null, { status: 204, headers: cors }) : json(403, { ok: false });
+  const out = async () => {
+    if (env.ZH_OWNER_CONNECT_ENABLED !== 'true') return json(503, { ok: false, error: 'OWNER_CONNECT_DISABLED' });
+    let b = {};
+    if (request.method === 'POST') {
+      const r = await readJson(request);
+      if (r.error) return json(400, { ok: false, error: r.error });
+      b = r.body || {};
+    } else if (request.method === 'GET') {
+      b = { store_id: new URL(request.url).searchParams.get('store_id') || '' };
+    } else return json(405, { ok: false });
+    const who = await ownerOf(request, env, deps, b.store_id);
+    if (who.error) return json(who.error, { ok: false, error: { 400: 'BAD_STORE_ID', 401: 'SIGN_IN_AGAIN', 403: 'NOT_STORE_MANAGER', 503: 'AUTH_NOT_CONFIGURED' }[who.error] });
+    const live = await db.liveByStore(env.ZH_DB, b.store_id);
+    const now = deps.now();
+    if (request.method === 'GET' && path === '/v1/owner/status') {
+      return json(200, { ok: true, connection: live ? publicView(live, await db.countUsers(env.ZH_DB, live.id)) : null });
+    }
+    if (request.method !== 'POST') return json(405, { ok: false });
+    if (path === '/v1/owner/connect') {
+      if (env.ZH_ENABLED !== 'true') return json(503, { ok: false, error: 'HUB_DISABLED' });
+      if (live && live.flow_mode !== 'shared') return json(409, { ok: false, error: 'STORE_MANAGED_BY_TIEN404' });
+      return handleConnect(env, deps, { store_id: b.store_id, token_text: b.token_text }, true);
+    }
+    if (!live) return json(404, { ok: false, error: 'NOT_CONNECTED' });
+    if (live.flow_mode !== 'shared') return json(409, { ok: false, error: 'STORE_MANAGED_BY_TIEN404' });
+    if (path === '/v1/owner/pairing') {
+      const p = await newPairing(env, live.id, now);
+      await db.setPairing(env.ZH_DB, live.id, p.hash, p.expiresAt, now);
+      return json(200, { ok: true, status: 'pending_owner', pairing_code: p.code, pairing_expires_at: new Date(p.expiresAt).toISOString() });
+    }
+    if (path === '/v1/owner/disconnect') return handleDisconnect(env, deps, { connection_id: live.id });
+    return json(404, { ok: false });
+  };
+  return withHeaders(await out(), cors);
+}
+
 export async function route(request, env, deps) {
   const path = new URL(request.url).pathname;
   try {
     if (request.method === 'POST' && path.startsWith('/v1/zalo/wh/')) return await handleWebhook(request, env, deps, path.slice('/v1/zalo/wh/'.length));
     if (request.method === 'POST' && path === '/v1/send') return await handleSend(request, env, deps);
     if (path.startsWith('/v1/admin/')) return await handleAdmin(request, env, deps, path);
+    if (path.startsWith('/v1/owner/')) return await handleOwner(request, env, deps, path);
     if (path === '/health') return json(200, { ok: true, enabled: env.ZH_ENABLED === 'true' });
     return json(404, { ok: false });
   } catch (e) {

@@ -16,7 +16,7 @@ function harness(over = {}) {
     ZH_DB: makeD1(), ZH_ADMIN_KEY: ADMIN, ZH_MASTER_KEY: b64(randomBytes(32)), ZH_ENABLED: 'true', ZH_SEND_ENABLED: 'true',
     ZH_PUBLIC_BASE_URL: 'https://hub.example.test', ZH_FORWARD_HOSTS: 'flow.example.test', ...over,
   };
-  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {} };
+  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {}, users: {}, members: [], sb: [] };
   const bots = { [TOKEN_A]: { id: 'bot-a', account_name: 'bot.ShopA' }, [TOKEN_B]: { id: 'bot-b', account_name: 'bot.ShopB' } };
   const fetchImpl = async (url, init) => {
     const u = String(url);
@@ -33,6 +33,15 @@ function harness(over = {}) {
       if (method === 'deleteWebhook') { delete st.webhooks[token]; return new Response(JSON.stringify({ ok: true, result: true })); }
       return new Response(JSON.stringify({ ok: true, result: { message_id: 'z' + st.zalo.length, date: st.now } }));
     }
+    if (u.startsWith('https://fakeproj.supabase.co/')) {
+      const jwt = String(init.headers.authorization || '').slice(7);
+      const user = st.users[jwt];
+      if (u.endsWith('/auth/v1/user')) return user ? new Response(JSON.stringify({ id: user.id })) : new Response('{}', { status: 401 });
+      const q = new URL(u).searchParams;
+      const rows = (st.members || []).filter((m) => 'eq.' + m.user_id === q.get('user_id') && 'eq.' + m.store_id === q.get('store_id'));
+      st.sb.push(u);
+      return new Response(JSON.stringify(rows.map((m) => ({ role: m.role }))));
+    }
     if (u.startsWith('https://flow.example.test/')) {
       st.forwards.push({ url: u, headers: init.headers, body: init.body });
       return new Response('{}', { status: 200 });
@@ -43,7 +52,7 @@ function harness(over = {}) {
   const req = async (method, path, body, headers = {}) => {
     const r = await route(new Request('https://hub.example.test' + path, { method, headers: { 'content-type': 'application/json', ...headers }, body: body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)) }), env, deps);
     await Promise.all(st.pending.splice(0));
-    return { status: r.status, body: await r.json() };
+    return { status: r.status, headers: Object.fromEntries(r.headers), body: await r.json() };
   };
   const admin = (path, body) => req('POST', path, body, { authorization: 'Bearer ' + ADMIN });
   return { env, st, req, admin };
@@ -327,4 +336,84 @@ test('rotate-keys: new forward + inbound keys, old ones stop at once; legacy row
   const wiped = h.env.ZH_DB.sqlite.prepare('SELECT inbound_key_sealed FROM zh_connections').get();
   assert.equal(wiped.inbound_key_sealed, null);
   assert.equal((await h.admin('/v1/admin/rotate-keys', { connection_id: a.connection_id })).status, 404);
+});
+
+const UID_OWNER = '11111111-1111-4111-8111-111111111111';
+const UID_STAFF = '22222222-2222-4222-8222-222222222222';
+const STORE_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const OTHER_UUID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const JWT_OWNER = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJvd25lciJ9.c2lnb3duZXI';
+const JWT_STAFF = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJzdGFmZiJ9.c2lnc3RhZmY';
+const SHARED = { ZH_OWNER_CONNECT_ENABLED: 'true', ZH_SUPABASE_URL: 'https://fakeproj.supabase.co', ZH_SUPABASE_KEY: 'sb_publishable_fake',
+  ZH_APP_ORIGINS: 'https://app.example.test', ZH_SHARED_FORWARD_URL: 'https://flow.example.test/webhook/zalo-shared',
+  ZH_SHARED_INBOUND_KEY: 'i'.repeat(40), ZH_SHARED_SEND_KEY: 's'.repeat(40) };
+function ownerHarness(over = {}) {
+  const h = harness({ ...SHARED, ...over });
+  h.st.users[JWT_OWNER] = { id: UID_OWNER };
+  h.st.users[JWT_STAFF] = { id: UID_STAFF };
+  h.st.members.push({ user_id: UID_OWNER, store_id: STORE_UUID, role: 'owner' }, { user_id: UID_STAFF, store_id: STORE_UUID, role: 'staff' });
+  h.owner = (method, path, body, jwt = JWT_OWNER) => h.req(method, path, body, { authorization: 'Bearer ' + jwt, origin: 'https://app.example.test' });
+  return h;
+}
+
+test('owner self-connect: signed-in owner pastes token → shared flow, pairing code, no key ever shown', async () => {
+  const h = ownerHarness();
+  const r = await h.owner('POST', '/v1/owner/connect', { store_id: STORE_UUID, token_text: `Bot Token: ${TOKEN_A}` });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.flow_mode, 'shared');
+  assert.match(r.body.pairing_code, /^\d{6}$/);
+  assert.equal(r.body.forward_key, undefined);
+  assert.equal(r.body.inbound_key, undefined);
+  assert.equal(r.body.manual_webhook, undefined);
+  const c = { ...r.body, path: new URL(h.st.webhooks[TOKEN_A].url).pathname, secret: h.st.webhooks[TOKEN_A].secret_token };
+  await pairOwner(h, c, 'owner-zalo');
+  await hook(h, c, textEvent('cust-1', 'A003 còn không', 'mo1'));
+  const f = h.st.forwards.at(-1);
+  assert.equal(f.url, SHARED.ZH_SHARED_FORWARD_URL);
+  assert.equal(f.headers['x-tien404-inbound-key'], SHARED.ZH_SHARED_INBOUND_KEY);
+  assert.equal(JSON.parse(f.body).store_id, STORE_UUID);
+  const send = (key) => h.req('POST', '/v1/send', { connection_id: c.connection_id, chat_id: 'cust-1', text: 'Dạ còn ạ' }, { 'x-tien404-connection': c.connection_id, authorization: 'Bearer ' + key });
+  assert.equal((await send(SHARED.ZH_SHARED_INBOUND_KEY)).status, 401, 'inbound key cannot send');
+  assert.equal((await send(SHARED.ZH_SHARED_SEND_KEY)).status, 200);
+  const st = await h.owner('GET', '/v1/owner/status?store_id=' + STORE_UUID);
+  assert.equal(st.body.connection.status, 'active');
+  assert.equal(st.body.connection.flow_mode, 'shared');
+  assert.equal(JSON.stringify(st.body).includes(TOKEN_A), false);
+  assert.equal((await h.admin('/v1/admin/rotate-keys', { connection_id: c.connection_id })).body.error, 'SHARED_FLOW_USES_HUB_KEYS');
+});
+
+test('owner self-connect is refused for staff, other stores, bad tokens, wrong origin, or when switched off', async () => {
+  const h = ownerHarness();
+  const body = { store_id: STORE_UUID, token_text: TOKEN_A };
+  assert.equal((await h.owner('POST', '/v1/owner/connect', body, JWT_STAFF)).body.error, 'NOT_STORE_MANAGER');
+  assert.equal((await h.owner('POST', '/v1/owner/connect', { ...body, store_id: OTHER_UUID })).body.error, 'NOT_STORE_MANAGER');
+  assert.equal((await h.owner('POST', '/v1/owner/connect', body, 'not.a.jwt!')).body.error, 'SIGN_IN_AGAIN');
+  assert.equal((await h.owner('POST', '/v1/owner/connect', body, 'eyJx.eyJy.unknown')).body.error, 'SIGN_IN_AGAIN');
+  assert.equal((await h.req('POST', '/v1/owner/connect', body)).status, 401, 'no token');
+  assert.equal(Object.keys(h.st.webhooks).length, 0, 'nothing reached Zalo');
+  const pre = await route(new Request('https://hub.example.test/v1/owner/connect', { method: 'OPTIONS', headers: { origin: 'https://evil.example' } }), h.env, { fetch: () => { throw new Error('no'); }, now: () => 0, waitUntil() {}, log() {} });
+  assert.equal(pre.status, 403);
+  const ok = await h.owner('POST', '/v1/owner/connect', body);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers['access-control-allow-origin'], 'https://app.example.test');
+  const off = ownerHarness({ ZH_OWNER_CONNECT_ENABLED: 'false' });
+  assert.equal((await off.owner('POST', '/v1/owner/connect', body)).body.error, 'OWNER_CONNECT_DISABLED');
+  const noShared = ownerHarness({ ZH_SHARED_SEND_KEY: '' });
+  assert.equal((await noShared.owner('POST', '/v1/owner/connect', body)).body.error, 'SHARED_FLOW_NOT_CONFIGURED');
+});
+
+test('owner cannot take over a store TIEN404 connected by hand (QA bot), and can disconnect own bot', async () => {
+  const h = ownerHarness();
+  await connect(h, STORE_UUID, TOKEN_A);
+  assert.equal((await h.owner('POST', '/v1/owner/connect', { store_id: STORE_UUID, token_text: TOKEN_B })).body.error, 'STORE_MANAGED_BY_TIEN404');
+  assert.equal((await h.owner('POST', '/v1/owner/disconnect', { store_id: STORE_UUID })).body.error, 'STORE_MANAGED_BY_TIEN404');
+  const h2 = ownerHarness();
+  await h2.owner('POST', '/v1/owner/connect', { store_id: STORE_UUID, token_text: TOKEN_B });
+  assert.equal((await h2.owner('POST', '/v1/owner/connect', { store_id: STORE_UUID, token_text: TOKEN_A })).body.error, 'STORE_HAS_LIVE_BOT');
+  const p = await h2.owner('POST', '/v1/owner/pairing', { store_id: STORE_UUID });
+  assert.match(p.body.pairing_code, /^\d{6}$/);
+  const d = await h2.owner('POST', '/v1/owner/disconnect', { store_id: STORE_UUID });
+  assert.equal(d.body.status, 'revoked');
+  assert.equal(h2.st.webhooks[TOKEN_B], undefined, 'webhook deleted at Zalo');
+  assert.equal((await h2.owner('GET', '/v1/owner/status?store_id=' + STORE_UUID)).body.connection, null);
 });

@@ -1,5 +1,5 @@
 /* TIEN404 Zalo Hub — D1 data access. All SQL lives here. `db` is a Cloudflare D1 binding (env.ZH_DB). */
-const COLS = 'id, store_id, status, bot_id, bot_name, token_sealed, token_last4, key_version, path_id, wh_secret_hash, forward_url, forward_key_sealed, inbound_key_sealed, pairing_code_hash, pairing_expires_at, pairing_attempts, owner_chat_id, sent_month, sent_count, connected_at, revoked_at, last_ok_at, updated_at';
+const COLS = 'id, store_id, status, bot_id, bot_name, token_sealed, token_last4, key_version, path_id, wh_secret_hash, forward_url, forward_key_sealed, inbound_key_sealed, flow_mode, pairing_code_hash, pairing_expires_at, pairing_attempts, owner_chat_id, sent_month, sent_count, connected_at, revoked_at, last_ok_at, updated_at';
 
 export const byPath = (db, pathId) => db.prepare(`SELECT ${COLS} FROM zh_connections WHERE path_id = ?`).bind(pathId).first();
 export const byId = (db, id) => db.prepare(`SELECT ${COLS} FROM zh_connections WHERE id = ?`).bind(id).first();
@@ -11,9 +11,9 @@ export async function listByStore(db, storeId) {
 }
 
 export function insert(db, c) {
-  return db.prepare(`INSERT INTO zh_connections (id, store_id, status, bot_id, bot_name, token_sealed, token_last4, key_version, path_id, wh_secret_hash, forward_url, forward_key_sealed, inbound_key_sealed, pairing_code_hash, pairing_expires_at, pairing_attempts, owner_chat_id, sent_month, sent_count, connected_at, revoked_at, last_ok_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, ?, NULL, NULL, ?)`)
-    .bind(c.id, c.store_id, c.status, c.bot_id, c.bot_name, c.token_sealed, c.token_last4, c.key_version, c.path_id, c.wh_secret_hash, c.forward_url, c.forward_key_sealed, c.inbound_key_sealed, c.pairing_code_hash, c.pairing_expires_at, c.connected_at, c.connected_at)
+  return db.prepare(`INSERT INTO zh_connections (id, store_id, status, bot_id, bot_name, token_sealed, token_last4, key_version, path_id, wh_secret_hash, forward_url, forward_key_sealed, inbound_key_sealed, flow_mode, pairing_code_hash, pairing_expires_at, pairing_attempts, owner_chat_id, sent_month, sent_count, connected_at, revoked_at, last_ok_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, ?, NULL, NULL, ?)`)
+    .bind(c.id, c.store_id, c.status, c.bot_id, c.bot_name, c.token_sealed, c.token_last4, c.key_version, c.path_id, c.wh_secret_hash, c.forward_url, c.forward_key_sealed, c.inbound_key_sealed, c.flow_mode || 'own', c.pairing_code_hash, c.pairing_expires_at, c.connected_at, c.connected_at)
     .run();
 }
 export const hardDelete = (db, id) => db.prepare('DELETE FROM zh_connections WHERE id = ?').bind(id).run();
