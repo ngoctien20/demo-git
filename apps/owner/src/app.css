@@ -313,3 +313,9 @@ input:disabled{background:var(--bg);color:var(--muted)}
 .chip.on,.chip:hover{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,transparent)}
 .chip:disabled{cursor:default;opacity:.6}
 .sub-legend{font-weight:600;margin-bottom:8px}
+.zalo-connect{display:flex;flex-direction:column;gap:10px}
+.zalo-connect .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.zalo-connect textarea{margin-top:6px}
+.zalo-connect .row-btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.zalo-connect .channel .btn,.zalo-connect .btn{margin-top:0;align-self:flex-start}
+.pair-code{font-size:34px;font-weight:800;letter-spacing:6px;font-variant-numeric:tabular-nums;margin:6px 0}

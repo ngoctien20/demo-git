@@ -72,6 +72,9 @@ const server = http.createServer((req, res) => {
       return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'content-range': `0-${Math.max(rows.length - 1, 0)}/${rows.length}` },
         body: route.request().method() === 'HEAD' ? '' : JSON.stringify(single ? (rows[0] ?? null) : rows) });
     });
+    // Zalo Hub owner self-connect (gateway/zalo-hub /v1/owner/*): fixture = store has no Zalo bot yet.
+    await ctx.route(/zalo-hub[^/]*\.workers\.dev\//, route => route.fulfill({ status: 200, contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, connection: null }) }));
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     return { p, errs, ctx };
