@@ -6,11 +6,13 @@
  *  - 20 drafts per owner per day (D1), body max 7 MB, photo max 5 MB, JPEG/PNG/WebP only.
  *  - Links: public https pages only (setup/lib/page-text.mjs). No Facebook scraping.
  *  - Writes NOTHING to Sheet/Supabase. Saving happens only after the owner confirms, via the existing import.
- *  - ANTHROPIC_API_KEY lives only in Worker secrets; never returned, never logged.
+ *  - ANTHROPIC_API_KEY / RELAY_API_KEY live only in Worker secrets; never returned, never logged.
+ *  - AI_PROVIDER='relay' (test only, no real shop data) sends the request to AI_BASE_URL instead of Anthropic.
  */
 import { checkDraft } from '../lib/draft.mjs';
 import { fetchPageText } from '../lib/page-text.mjs';
 import { readWithClaude, IMAGE_TYPES } from '../lib/read-with-claude.mjs';
+import { readWithRelay, relayEndpoint } from '../lib/read-with-relay.mjs';
 
 export const SETUP_PATH = '/v1/setup/draft';
 export const DAILY_CAP_PER_OWNER = 20;
@@ -53,7 +55,9 @@ export async function setupDraftRoute(request, env, path, { now = Date.now(), fe
   if (request.method !== 'POST') return json(405, { ok: false, error: 'METHOD_NOT_ALLOWED' }, cors);
   if (origin && !cors) return json(403, { ok: false, error: 'ORIGIN_NOT_ALLOWED' });
   if (env.SETUP_DRAFT_ENABLED !== 'true') return json(423, { ok: false, error: 'SETUP_DRAFT_DISABLED' }, cors);
-  if (!env.ANTHROPIC_API_KEY || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SETUP_DB) return json(503, { ok: false, error: 'REQUIRED_BINDING_MISSING' }, cors);
+  const relay = env.AI_PROVIDER === 'relay';
+  const aiReady = relay ? Boolean(env.RELAY_API_KEY && relayEndpoint(env.AI_BASE_URL)) : Boolean(env.ANTHROPIC_API_KEY);
+  if (!aiReady || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SETUP_DB) return json(503, { ok: false, error: 'REQUIRED_BINDING_MISSING' }, cors);
   const owner = await ownerId(request, env, fetchImpl);
   if (!owner) return json(401, { ok: false, error: 'UNAUTHORIZED' }, cors);
   if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return json(415, { ok: false, error: 'JSON_REQUIRED' }, cors);
@@ -88,8 +92,9 @@ export async function setupDraftRoute(request, env, path, { now = Date.now(), fe
     if (Number(row?.n) > DAILY_CAP_PER_OWNER) return json(429, { ok: false, error: 'DAILY_CAP_REACHED' }, cors);
   } catch { return json(503, { ok: false, error: 'USAGE_STORE_UNAVAILABLE' }, cors); }
 
-  const client = await makeClient(env);
-  const r = await readWithClaude(client, input);
+  const r = relay
+    ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL }, input)
+    : await readWithClaude(await makeClient(env), input);
   if (!r.ok) return json(r.error === 'AI_BUSY' ? 429 : 502, { ok: false, error: r.error }, cors);
   let draft;
   try { draft = checkDraft(r.raw, { sourceText: input.text || '' }); } catch { return json(502, { ok: false, error: 'AI_BAD_DRAFT' }, cors); }

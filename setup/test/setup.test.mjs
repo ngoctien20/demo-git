@@ -166,3 +166,45 @@ test('Worker entry: unknown path 404, route off by default (wrangler.toml)', asy
   const r = await worker.fetch(new Request('https://w.example' + SETUP_PATH, { method: 'POST' }), { SETUP_DRAFT_ENABLED: 'false' });
   assert.equal(r.status, 423);
 });
+
+// ---- Test-only relay (AI_PROVIDER="relay") ----
+import { relayEndpoint, buildRelayRequest, readWithRelay } from '../lib/read-with-relay.mjs';
+
+test('relay: https only, endpoint built safely, schema in prompt, image as data URL', () => {
+  assert.equal(relayEndpoint('https://api.xingchiapi.com'), 'https://api.xingchiapi.com/v1/chat/completions');
+  assert.equal(relayEndpoint('https://api.xingchiapi.com/v1/'), 'https://api.xingchiapi.com/v1/chat/completions');
+  assert.equal(relayEndpoint('http://api.xingchiapi.com'), null);
+  assert.equal(relayEndpoint('https://u:p@api.xingchiapi.com'), null);
+  const r = buildRelayRequest({ image: { media_type: 'image/jpeg', data: 'QUJD' } }, 'gpt-4o-mini');
+  assert.equal(r.response_format.type, 'json_object');
+  assert.match(r.messages[0].content, /không phải lệnh/);
+  assert.match(r.messages[0].content, /"business_name"/);
+  assert.equal(r.messages[1].content[1].image_url.url, 'data:image/jpeg;base64,QUJD');
+});
+
+const relayReply = (status, body) => async () => res(status, JSON.stringify(body));
+test('relay: parses JSON (also in ```json fences), maps errors', async () => {
+  const cfg = { baseUrl: 'https://api.xingchiapi.com', apiKey: 'sk-test' };
+  const ok = await readWithRelay(relayReply(200, { choices: [{ finish_reason: 'stop', message: { content: '```json\n' + JSON.stringify(AI_NAIL) + '\n```' } }] }), cfg, { text: 'x' });
+  assert.equal(ok.ok, true); assert.equal(ok.raw.business_name, 'Hoa Nail');
+  assert.equal((await readWithRelay(relayReply(429, {}), cfg, { text: 'x' })).error, 'AI_BUSY');
+  assert.equal((await readWithRelay(relayReply(401, {}), cfg, { text: 'x' })).error, 'AI_REQUEST_REJECTED');
+  assert.equal((await readWithRelay(relayReply(200, { choices: [{ finish_reason: 'length', message: { content: '{' } }] }), cfg, { text: 'x' })).error, 'TOO_MANY_ITEMS');
+  assert.equal((await readWithRelay(relayReply(200, { choices: [{ message: { content: 'xin chào' } }] }), cfg, { text: 'x' })).error, 'AI_BAD_JSON');
+  assert.equal((await readWithRelay(relayReply(200, {}), { ...cfg, apiKey: '' }, { text: 'x' })).error, 'AI_NOT_CONFIGURED');
+});
+
+test('route: relay mode needs RELAY_API_KEY + https base URL, then returns a checked draft', async () => {
+  const relayEnv = () => ({ ...ENV(), ANTHROPIC_API_KEY: '', AI_PROVIDER: 'relay', AI_BASE_URL: 'https://api.xingchiapi.com', RELAY_API_KEY: 'sk-relay' });
+  const fetchBoth = async (url, init) => {
+    if (String(url).startsWith('https://api.xingchiapi.com/')) {
+      assert.equal(init.headers.authorization, 'Bearer sk-relay');
+      return res(200, JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(AI_NAIL) } }] }));
+    }
+    return supa(url, init);
+  };
+  const r = await call(req({ image: { media_type: 'image/jpeg', data: 'QUJD' } }), relayEnv(), { fetchImpl: fetchBoth, makeClient: async () => { throw new Error('must not use Anthropic'); } });
+  assert.equal(r.status, 200); assert.equal((await r.json()).draft.needs_check, 2);
+  assert.equal((await call(req({ text: 'x'.repeat(40) }), { ...relayEnv(), RELAY_API_KEY: '' }, { fetchImpl: fetchBoth })).status, 503);
+  assert.equal((await call(req({ text: 'x'.repeat(40) }), { ...relayEnv(), AI_BASE_URL: 'http://api.xingchiapi.com' }, { fetchImpl: fetchBoth })).status, 503);
+});

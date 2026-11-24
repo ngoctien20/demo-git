@@ -1,5 +1,6 @@
 # Separate Worker for "Tạo trợ lý nhanh". Deploy only with the owner's approval.
-# Secret (owner sets it in the Cloudflare dashboard, never in this repo): ANTHROPIC_API_KEY
+# Secret (owner sets it in the Cloudflare dashboard, never in this repo): ANTHROPIC_API_KEY,
+# or RELAY_API_KEY when AI_PROVIDER = "relay".
 name = "tien404-setup-draft"
 main = "worker/index.mjs"
 compatibility_date = "2026-11-01"
@@ -9,6 +10,10 @@ workers_dev = true
 [vars]
 SETUP_DRAFT_ENABLED = "false"            # switch: "true" only after the owner approves the trial
 APP_ORIGINS = "https://ngoctien20.github.io"
+# AI: "anthropic" (official) or "relay" (OpenAI-compatible relay, TEST ONLY, no real shop data; Tiến 2026-11-24)
+AI_PROVIDER = "relay"
+AI_BASE_URL = "https://api.xingchiapi.com"
+AI_MODEL = "gpt-4o-mini"
 SUPABASE_URL = "https://ifxlvrhyjhbzbrkdsida.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_e7L9qkumVD6Y57RSLaWsaQ_tRjF7OvF"   # public publishable key (same as the App)
 

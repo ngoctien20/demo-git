@@ -6,7 +6,7 @@ import { DRAFT_SCHEMA } from './draft.mjs';
 export const MODEL = 'claude-opus-5-5';
 export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-const SYSTEM = [
+export const SYSTEM = [
   'Bạn đọc bảng giá / menu / trang giới thiệu của một cửa hàng nhỏ ở Việt Nam và điền vào schema JSON.',
   'Quy tắc:',
   '- Chỉ ghi những gì THẤY RÕ trong ảnh hoặc văn bản. Không đoán, không bịa tên, giá hay thời lượng.',

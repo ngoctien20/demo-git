@@ -25,7 +25,14 @@ Chủ shop xem, sửa, bấm **Xác nhận** → nhập vào `Products` / `Dich_
 | `lib/read-with-claude.mjs` | 1 lần gọi Claude (`claude-opus-5-5`, structured output, tự chuyển model dự phòng nếu bị từ chối) |
 | `worker/setup-route.mjs` | Route Worker `POST /v1/setup/draft` |
 
-Test: `node --test setup/test/*.test.mjs` (14 ca, không gọi mạng, không cần key).
+| `lib/read-with-relay.mjs` | **Chỉ để thử**: gọi qua trạm trung gian kiểu OpenAI (xingchiapi) khi `AI_PROVIDER = "relay"` |
+
+Test: `node --test setup/test/*.test.mjs` (18 ca, không gọi mạng, không cần key).
+
+## Chế độ thử tiết kiệm (Tiến chọn 24/11/2026)
+
+`AI_PROVIDER = "relay"`, `AI_BASE_URL = "https://api.xingchiapi.com"`, `AI_MODEL` (mặc định `gpt-4o-mini`), secret `RELAY_API_KEY`.
+Trạm trung gian là bên thứ ba, thấy hết ảnh/chữ gửi lên: **chỉ dùng khi chưa có shop thật**. Trước khi mời shop thật, đổi `AI_PROVIDER = "anthropic"` và đặt `ANTHROPIC_API_KEY`.
 
 ## Bật (Tiến chọn "Tạo trợ lý nhanh" bật trước, 23/11/2026)
 
