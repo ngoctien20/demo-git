@@ -46,19 +46,26 @@ const parseJson = (t) => {
   try { return { ok: true, raw: JSON.parse(text) }; } catch { return { ok: false, error: 'AI_BAD_JSON' }; }
 };
 
+// Cloudflare Workers only support redirect 'follow' | 'manual' ('error' throws before sending),
+// so use 'manual' and treat any 3xx as a failure. On a network error keep only the error kind
+// (name + short message, no URL/key) so the App can show why.
 async function post(fetchImpl, url, apiKey, payload) {
   try {
     const res = await fetchImpl(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + apiKey },
       body: JSON.stringify(payload),
-      redirect: 'error',
-      signal: AbortSignal.timeout(90_000),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(100_000),
     });
+    if (res.status >= 300 && res.status < 400) return { status: res.status, ok: false, body: null, why: 'redirect' };
     let body = null;
     try { body = await res.json(); } catch { /* non-JSON error page */ }
     return { status: res.status, ok: res.ok, body };
-  } catch { return { status: 0, ok: false, body: null }; }
+  } catch (e) {
+    const why = (String(e?.name || 'Error') + ': ' + String(e?.message || '')).replace(/https?:\/\/\S+|sk-[\w-]+/g, '…').slice(0, 120);
+    return { status: 0, ok: false, body: null, why };
+  }
 }
 
 function fromResponses(body) {
@@ -86,7 +93,7 @@ export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model }, input
   const m = model || RELAY_DEFAULT_MODEL;
   const r1 = await post(fetchImpl, base + '/responses', apiKey, buildResponsesRequest(input, m));
   if (r1.ok) return fromResponses(r1.body);
-  if (![400, 404, 405].includes(r1.status)) return { ok: false, error: r1.status ? httpError(r1.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status };
+  if (![400, 404, 405].includes(r1.status)) return { ok: false, error: r1.status ? httpError(r1.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + (r1.why ? ' (' + r1.why + ')' : '') };
   const r2 = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, m));
   if (r2.ok) return fromChat(r2.body);
   return { ok: false, error: r2.status ? httpError(r2.status) : 'AI_UNAVAILABLE', detail: 'responses ' + r1.status + ', chat ' + r2.status };

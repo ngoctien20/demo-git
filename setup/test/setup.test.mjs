@@ -228,3 +228,14 @@ test('route: relay mode needs RELAY_API_KEY + https base URL, then returns a che
   assert.equal((await call(req({ text: 'x'.repeat(40) }), { ...relayEnv(), RELAY_API_KEY: '' }, { fetchImpl: fetchBoth })).status, 503);
   assert.equal((await call(req({ text: 'x'.repeat(40) }), { ...relayEnv(), AI_BASE_URL: 'http://api.xingchiapi.com' }, { fetchImpl: fetchBoth })).status, 503);
 });
+
+test('relay: Worker-safe redirect mode, network errors explained without leaking the key', async () => {
+  let seen;
+  await readWithRelay(async (u, init) => { seen = init; return res(200, JSON.stringify(RESP_OK)); }, { baseUrl: 'https://api.xingchiapi.com', apiKey: 'sk-test' }, { text: 'x' });
+  assert.equal(seen.redirect, 'manual'); // 'error' is not supported by Cloudflare Workers
+  const boom = async () => { throw new TypeError('Network connection lost to https://api.xingchiapi.com with sk-secret-123'); };
+  const r = await readWithRelay(boom, { baseUrl: 'https://api.xingchiapi.com', apiKey: 'sk-secret-123' }, { text: 'x' });
+  assert.equal(r.error, 'AI_UNAVAILABLE'); assert.match(r.detail, /TypeError: Network connection lost/); assert.doesNotMatch(r.detail, /sk-secret|xingchiapi/);
+  const moved = await readWithRelay(async () => new Response(null, { status: 301, headers: { location: 'https://x' } }), { baseUrl: 'https://api.xingchiapi.com', apiKey: 'k' }, { text: 'x' });
+  assert.match(moved.detail, /301 \(redirect\)/);
+});
