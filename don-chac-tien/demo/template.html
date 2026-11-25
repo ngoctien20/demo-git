@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đơn chắc tiền</title>
+<style>
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#15202b; --muted:#5b6876; --line:#dfe4ea;
+  --me:#1f6feb; --me-ink:#ffffff; --bot:#ffffff; --bot-ink:#15202b; --chip:#e8f0fe; --chip-ink:#0b4fbf;
+  --ok:#0f7b45; --warn:#9a5b00; --money:#0f7b45; --shadow:0 1px 2px rgba(0,0,0,.08),0 6px 24px rgba(0,0,0,.06);
+  --fs:19px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141a; --panel:#161d25; --ink:#e8eef4; --muted:#9fb0c0; --line:#2a3440;
+    --me:#2f81f7; --me-ink:#fff; --bot:#1d2631; --bot-ink:#e8eef4; --chip:#1c2a3d; --chip-ink:#9cc3ff; --money:#4cc38a; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --panel:#161d25; --ink:#e8eef4; --muted:#9fb0c0; --line:#2a3440;
+  --me:#2f81f7; --me-ink:#fff; --bot:#1d2631; --bot-ink:#e8eef4; --chip:#1c2a3d; --chip-ink:#9cc3ff; --money:#4cc38a; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--fs)/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+body.big{--fs:22px}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;align-items:start}
+header.top{max-width:1180px;margin:0 auto;padding:20px 16px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header.top h1{font-size:1.35em;margin:0;letter-spacing:-.01em}
+header.top p{margin:0;color:var(--muted);font-size:.8em;flex:1 1 320px}
+.tog{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:.78em;cursor:pointer}
+.phone{background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;height:min(860px,calc(100vh - 110px));min-height:560px}
+.phone .bar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--me);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.1em;flex:none}
+.bar b{display:block;font-size:.95em}.bar small{color:var(--muted);font-size:.7em}
+.chat{flex:1;overflow:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.msg{max-width:88%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word;font-size:.92em}
+.me{align-self:flex-end;background:var(--me);color:var(--me-ink);border-bottom-right-radius:6px}
+.bot{align-self:flex-start;background:var(--bot);color:var(--bot-ink);border:1px solid var(--line);border-bottom-left-radius:6px}
+.bot.fwd{border-left:4px solid var(--money)}
+.qrbox{margin-top:10px;background:#fff;border-radius:12px;padding:8px;display:grid;place-items:center}
+.qrbox svg{width:100%;max-width:240px;height:auto;display:block}
+.qrmeta{font-size:.7em;color:var(--muted);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.qrmeta a{color:var(--chip-ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;border-top:1px solid var(--line);scrollbar-width:none}
+.chip{flex:none;border:0;background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:10px 16px;font:inherit;font-size:.8em;font-weight:600;cursor:pointer;min-height:44px}
+form.send{display:flex;gap:8px;padding:10px 12px 14px}
+form.send input{flex:1;min-width:0;font:inherit;font-size:.92em;padding:12px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+form.send button{border:0;background:var(--me);color:#fff;border-radius:999px;padding:0 20px;font:inherit;font-weight:700;min-height:48px;cursor:pointer}
+.side{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.card h2{font-size:.95em;margin:0 0 10px}
+.card p{margin:.3em 0;color:var(--muted);font-size:.78em}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;counter-reset:s}
+.flow div{background:var(--bg);border-radius:12px;padding:10px;font-size:.7em;line-height:1.3;counter-increment:s}
+.flow div::before{content:counter(s);display:block;font-weight:800;color:var(--me);font-size:1.3em}
+.sim{display:flex;gap:8px;flex-wrap:wrap}
+.sim button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 14px;font:inherit;font-size:.75em;cursor:pointer;min-height:44px}
+table{width:100%;border-collapse:collapse;font-size:.72em}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.st{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.92em;background:var(--chip);color:var(--chip-ink);white-space:nowrap}
+.st.da_tra,.st.da_giao{background:rgba(15,123,69,.12);color:var(--money)}
+.st.het_han,.st.huy{background:rgba(120,120,120,.15);color:var(--muted)}
+.st.tra_thieu{background:rgba(154,91,0,.14);color:var(--warn)}
+.note{font-size:.68em;color:var(--muted)}
+@media (max-width:900px){header.top h1{font-size:1.1em}header.top p{font-size:.72em}.wrap{grid-template-columns:1fr}.phone{height:78vh}.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body class="big">
+<header class="top">
+  <h1>Đơn chắc tiền · mô phỏng</h1>
+  <p>Chủ shop nhắn cho bot trên Zalo như nói chuyện. Bot tạo đơn, giữ hàng, làm mã VietQR đúng số tiền, tiền về thì báo. Trang này chạy đúng lõi thật, dữ liệu mẫu, không gửi tin, không có tài khoản thật.</p>
+  <button class="tog" id="size" type="button">Chữ nhỏ hơn</button>
+</header>
+<main class="wrap">
+  <section class="phone" aria-label="Khung chat với bot">
+    <div class="bar"><div class="ava" aria-hidden="true">₫</div><div><b>Bot Shop Hoa</b><small>Trợ lý đơn chắc tiền · chỉ chủ shop thấy</small></div></div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="send" id="send"><input id="box" autocomplete="off" placeholder="Nhắn cho bot… vd: chị Lan 2 cái A003" aria-label="Tin nhắn"><button>Gửi</button></form>
+  </section>
+  <aside class="side">
+    <div class="card">
+      <h2>Vòng tiền của một đơn</h2>
+      <div class="flow"><div>Chủ nhắn: “chị Lan 2 cái A003”</div><div>Bot tạo đơn, giữ 2 cái trong 12 giờ</div><div>Bot gửi tin + mã QR, chủ chuyển tiếp cho khách</div><div>Khách quét, tiền vào thẳng tài khoản shop</div><div>Bot báo “tiền về”, tối tổng kết</div></div>
+    </div>
+    <div class="card">
+      <h2>Giả lập phía ngân hàng</h2>
+      <p>Bình thường SePay/Casso báo tự động. Ở đây bấm để thử.</p>
+      <div class="sim">
+        <button type="button" data-sim="full">Khách chuyển đủ (đơn cũ nhất)</button>
+        <button type="button" data-sim="short">Khách chuyển thiếu 50.000đ</button>
+        <button type="button" data-sim="nocode">Tiền về không ghi nội dung</button>
+        <button type="button" data-sim="night">Sang 22:30 tối (nhả hàng + tổng kết)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sổ đơn</h2>
+      <table><thead><tr><th>Số</th><th>Khách</th><th>Hàng</th><th class="r">Tổng</th><th>Trạng thái</th></tr></thead><tbody id="book"></tbody></table>
+      <p class="note" id="fee"></p>
+    </div>
+    <div class="card">
+      <h2>Kho</h2>
+      <table><thead><tr><th>Mã</th><th>Tên</th><th class="r">Giá</th><th class="r">Tồn</th><th class="r">Bán được</th></tr></thead><tbody id="stock"></tbody></table>
+    </div>
+  </aside>
+</main>
+<script>
+/*BUNDLE*/
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let now = Date.UTC(2026, 10, 25, 3, 0); // 10:00 giờ Việt Nam
+  const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+  let st = newShop({ name: 'Shop Hoa', now });
+  let txn = 0;
+  const ctx = () => ({ now, rand });
+  const seed = ['tên shop Shop Hoa', 'ngân hàng MB 0123456789 NGUYEN THI HOA', '1', 'thêm hàng A003 áo thun đen 159k còn 18', 'thêm hàng A006 váy hoa nhí 599k còn 5', 'thêm hàng A011 áo len cổ lọ 289k còn 1'];
+  for (const t of seed) st = ownerMessage(st, t, ctx()).state;
+
+  const chat = $('chat');
+  function bubble(cls, text, qr) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + cls;
+    d.textContent = text;
+    if (qr) {
+      const box = document.createElement('div'); box.className = 'qrbox';
+      const q = encodeQr(qr.payload);
+      box.innerHTML = qrSvg(q);
+      d.appendChild(box);
+      const meta = document.createElement('div'); meta.className = 'qrmeta';
+      const p = parseVietQr(qr.payload);
+      const a = document.createElement('a');
+      a.textContent = 'Tải ảnh QR';
+      a.download = 'QR-' + qr.code + '.png';
+      a.href = URL.createObjectURL(new Blob([qrPng(q, { scale: 10 })], { type: 'image/png' }));
+      const s = document.createElement('span'); s.textContent = 'Mã chuẩn VietQR · ' + (p.amount ? vnd(p.amount) : 'khách tự nhập tiền');
+      meta.append(s, a); d.appendChild(meta);
+      d.classList.add('fwd');
+    }
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function show(out) { for (const m of out) bubble('bot', m.text, m.qr); render(); }
+  function send(text) { bubble('me', text); const r = ownerMessage(st, text, ctx()); st = r.state; show(r.out); }
+
+  const STV = { cho_tra: 'chờ tiền', tra_thieu: 'chuyển thiếu', da_tra: 'đã trả', cod: 'COD', da_giao: 'đã giao', huy: 'huỷ', het_han: 'hết giữ' };
+  function render() {
+    const book = $('book'); book.textContent = '';
+    for (const o of st.orders.slice().reverse()) {
+      const tr = document.createElement('tr');
+      const cells = [String(o.no), o.name || '—', o.items.length ? o.items.map((i) => i.qty + '×' + i.sku).join(', ') : 'theo số tiền', vnd(o.total)];
+      cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i === 3) td.className = 'r'; tr.appendChild(td); });
+      const td = document.createElement('td'); const sp = document.createElement('span'); sp.className = 'st ' + o.status; sp.textContent = STV[o.status]; td.appendChild(sp); tr.appendChild(td);
+      book.appendChild(tr);
+    }
+    if (!st.orders.length) book.innerHTML = '<tr><td colspan="5" class="note">Chưa có đơn. Bấm “Tạo đơn mẫu” bên trái.</td></tr>';
+    const stock = $('stock'); stock.textContent = '';
+    for (const p of Object.values(st.products)) {
+      const tr = document.createElement('tr');
+      [p.sku, p.name, vnd(p.price), String(p.stock), String(available(st, p.sku, now))].forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i >= 2) td.className = 'r'; tr.appendChild(td); });
+      stock.appendChild(tr);
+    }
+    const f = monthFee(st, local(now).month);
+    $('fee').textContent = 'Phí TIEN404 tháng này (đề xuất): ' + f.paid_orders + ' đơn đã thu → ' + vnd(f.fee) + '. 30 đơn đầu miễn phí, đơn chưa thu tiền không tính.';
+  }
+
+  const chips = [['Tạo đơn mẫu', 'chị Lan 2 cái A003 giao Q7 0912345678'], ['Đơn theo số tiền', 'cô Hoa 350k'], ['Ai chưa trả', 'ai chưa trả'], ['Hôm nay', 'hôm nay'], ['Kho', 'kho'], ['Đã nhận đơn 1', 'đã nhận đơn 1'], ['Đã giao 1', 'đã giao 1'], ['QR quầy', 'in qr'], ['Hướng dẫn', 'giúp']];
+  for (const [label, text] of chips) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = label; b.onclick = () => send(text); $('chips').appendChild(b);
+  }
+  $('send').onsubmit = (e) => { e.preventDefault(); const t = $('box').value.trim(); if (t) { send(t); $('box').value = ''; } };
+  $('size').onclick = () => { document.body.classList.toggle('big'); $('size').textContent = document.body.classList.contains('big') ? 'Chữ nhỏ hơn' : 'Chữ to hơn'; };
+
+  document.querySelectorAll('[data-sim]').forEach((b) => { b.onclick = () => {
+    const kind = b.dataset.sim;
+    if (kind === 'night') { now = Date.UTC(2026, 10, 25, 15, 30) > now ? Date.UTC(2026, 10, 25, 15, 30) : now + 86400e3; const r = tick(st, ctx()); st = r.state; show(r.out.length ? r.out : [{ text: '(Tối nay không có gì cần báo)' }]); return; }
+    const o = st.orders.find((x) => x.status === 'cho_tra' || x.status === 'tra_thieu');
+    if (!o) { show([{ text: '(Không có đơn nào đang chờ tiền. Tạo đơn trước nhé.)' }]); return; }
+    const left = o.due - o.paid;
+    const amount = kind === 'short' ? Math.max(1000, left - 50000) : left;
+    const memo = kind === 'nocode' ? 'CHUYEN TIEN' : 'MBVCB.' + (++txn) + '.' + o.code + '.CT tu NGUYEN VAN KHACH';
+    const r = bankTransfer(st, { id: 'demo:' + (++txn), amount, memo, account: st.shop.bank.account, via: 'bank' }, ctx());
+    st = r.state; show(r.out);
+  }; });
+
+  bubble('bot', 'Chào bác! Shop mẫu đã có số tài khoản (MB, số giả) và 3 mặt hàng.\n\n' + HELP);
+  render();
+})();
+</script>
+</body>
+</html>

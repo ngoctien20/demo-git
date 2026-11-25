@@ -1,0 +1,30 @@
+name: TIEN404 Đơn chắc tiền (OFFLINE)
+on:
+  pull_request:
+    paths:
+      - 'don-chac-tien/**'
+      - '.github/workflows/don-chac-tien-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: for f in don-chac-tien/lib/*.mjs don-chac-tien/worker/*.mjs don-chac-tien/tools/*.mjs; do node --check "$f"; done
+      - name: Independent QR decoder for the round-trip test
+        run: cd don-chac-tien && npm i --no-save --no-package-lock jsqr@1.4.0 pngjs@7.0.0
+      - name: Offline tests (real migration SQL via node:sqlite, fake hub, no network)
+        run: node --test don-chac-tien/test/*.test.mjs
+      - name: Demo page is up to date
+        run: node don-chac-tien/tools/build-demo.mjs && git diff --exit-code don-chac-tien/demo/don-chac-tien-demo.html
+      - name: No real wrangler.toml committed
+        run: test ! -f don-chac-tien/worker/wrangler.toml
