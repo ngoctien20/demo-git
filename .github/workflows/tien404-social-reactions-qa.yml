@@ -46,6 +46,7 @@ jobs:
           qa/reactions/owner-auth-jwt-readonly-uat.test.mjs
           qa/reactions/v218-staging-readiness.test.mjs
           qa/reactions/v219-config-core-source-parity.test.mjs
+          qa/reactions/v2111-evidence-review.test.mjs
           config-core/test/reactions-bundle.test.mjs
           config-core/test/messenger-reaction-shadow.test.mjs
       - name: Default page policy OFF and no network in generated node

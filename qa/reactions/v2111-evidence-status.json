@@ -1,0 +1,55 @@
+{
+  "format": "t404.reaction.v2111.evidence-review.v1",
+  "project": "tien404-staging",
+  "gates": {
+    "meta_test_app_authority": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "meta_page_oauth_graph_get": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "owner_a_b_signed_auth_uat": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "fresh_staging_encrypted_backup": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "same_artifact_disposable_restore": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "reaction_schema_security_review": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    },
+    "explicit_staging_migration_approval": {
+      "status": "BLOCKED",
+      "evidence_ref": null,
+      "sha256": null,
+      "captured_at": null,
+      "reviewed_by_role": null
+    }
+  }
+}
