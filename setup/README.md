@@ -27,7 +27,7 @@ Chủ shop xem, sửa, bấm **Xác nhận** → nhập vào `Products` / `Dich_
 
 | `lib/read-with-relay.mjs` | **Chỉ để thử**: gọi qua trạm trung gian kiểu OpenAI (xingchiapi) khi `AI_PROVIDER = "relay"` |
 
-Test: `node --test setup/test/*.test.mjs` (18 ca, không gọi mạng, không cần key).
+Test: `node --test setup/test/*.test.mjs` (22 ca, không gọi mạng, không cần key).
 
 ## Chế độ thử (24/11/2026)
 

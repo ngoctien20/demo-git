@@ -35,12 +35,13 @@ export function buildResponsesRequest(input, model = RELAY_DEFAULT_MODEL) {
 }
 
 // Chat Completions fallback for relays without /responses.
-export function buildRelayRequest(input, model = RELAY_DEFAULT_MODEL) {
+export function buildRelayRequest(input, model = RELAY_DEFAULT_MODEL, reasoning = '') {
   const content = input.image
     ? [{ type: 'text', text: askText(input) }, { type: 'image_url', image_url: { url: dataUrl(input.image) } }]
     : askText(input);
   // No max_tokens / max_completion_tokens / temperature: providers disagree on them; defaults are enough.
-  return { model, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: systemText() }, { role: 'user', content }] };
+  // reasoning ('low'...) = less thinking, faster answer; only sent when configured (AI_REASONING).
+  return { model, response_format: { type: 'json_object' }, ...(reasoning ? { reasoning_effort: reasoning } : {}), messages: [{ role: 'system', content: systemText() }, { role: 'user', content }] };
 }
 
 const httpError = (status) => (status === 429 ? 'AI_BUSY' : status >= 500 ? 'AI_UNAVAILABLE' : 'AI_REQUEST_REJECTED');
@@ -97,7 +98,7 @@ function reason(r) {
 // Try /responses first; if the relay doesn't serve it (400/404/405), use /chat/completions.
 // Returns { ok, raw } | { ok: false, error, detail? } (detail = HTTP status only, never the key).
 // api: 'responses' (default: /responses, then chat on 400/403/404/405) or 'chat' (chat only, e.g. Gemini).
-export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model, api }, input) {
+export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model, api, reasoning }, input) {
   const base = relayBase(baseUrl);
   if (!base || !apiKey) return { ok: false, error: 'AI_NOT_CONFIGURED' };
   const m = model || RELAY_DEFAULT_MODEL;
@@ -106,8 +107,10 @@ export async function readWithRelay(fetchImpl, { baseUrl, apiKey, model, api }, 
     const models = m.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 3);
     let r;
     for (const one of models) {
-      r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, one));
-      if (r.ok) return fromChat(r.body);
+      r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, one, reasoning));
+      // A model that does not accept reasoning_effort answers 400: try it once more without.
+      if (!r.ok && r.status === 400 && reasoning) r = await post(fetchImpl, base + '/chat/completions', apiKey, buildRelayRequest(input, one));
+      if (r.ok) return { ...fromChat(r.body), model: one };
       if (r.status && r.status !== 429 && r.status < 500) break;
     }
     return { ok: false, error: r.status ? httpError(r.status) : 'AI_UNAVAILABLE', detail: 'chat ' + r.status + reason(r) };

@@ -3,7 +3,7 @@
 // until the owner reviews it here and presses "Xác nhận". Saving uses only RPCs that already exist:
 //   products -> save_merchant_product_in_store, FAQs -> save_store_faq,
 //   services -> the service assistant DRAFT (save_assistant_draft; customers see it only after Kích hoạt).
-import { ChangeEvent, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { friendlyError, supabase } from '../supabase';
 import { useStore } from '../store';
 import { SETUP_API } from '../config';
@@ -42,13 +42,13 @@ const SAMPLE: Draft = {
 };
 
 async function photoToBase64(file: File): Promise<{ media_type: string; data: string }> {
-  // Shrink big phone photos (fewer tokens, under 5 MB). Text on a price list stays readable at 1800 px.
+  // Shrink big phone photos (fewer tokens, under 5 MB). Text on a price list stays readable at 1400 px (smaller = faster AI).
   const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+  const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
   const c = document.createElement('canvas');
   c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
   c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
-  const blob: Blob = await new Promise((ok, no) => c.toBlob(b => (b ? ok(b) : no(new Error('encode'))), 'image/jpeg', 0.85));
+  const blob: Blob = await new Promise((ok, no) => c.toBlob(b => (b ? ok(b) : no(new Error('encode'))), 'image/jpeg', 0.8));
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -63,6 +63,15 @@ export function QuickSetup() {
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [secs, setSecs] = useState(0);
+  const [took, setTook] = useState('');
+  // Seconds counter while the AI reads, so a slow read does not look frozen.
+  useEffect(() => {
+    if (!busy) { setSecs(0); return; }
+    const t0 = Date.now();
+    const id = setInterval(() => setSecs(Math.round((Date.now() - t0) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [busy]);
   const [err, setErr] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [sample, setSample] = useState(false);
@@ -77,7 +86,7 @@ export function QuickSetup() {
   };
 
   async function send() {
-    setErr(''); setBusy(true);
+    setErr(''); setBusy(true); setTook('');
     try {
       let body: Record<string, unknown>;
       if (src === 'image') { if (!file) throw new Error('Chọn ảnh bảng giá trước.'); body = { image: await photoToBase64(file) }; }
@@ -88,6 +97,7 @@ export function QuickSetup() {
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.ok) throw new Error((ERRORS[j.error] ?? 'Chưa đọc được. Thử ảnh rõ hơn hoặc thử lại sau.') + (j.error ? ` (mã lỗi: ${j.error}${j.detail ? ', ' + j.detail : ''})` : ''));
       load(j.draft as Draft, false);
+      if (typeof j.ms === 'number') setTook('AI đọc xong trong ' + Math.max(1, Math.round(j.ms / 1000)) + ' giây.');
     } catch (e) { setErr(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); }
     finally { setBusy(false); }
   }
@@ -188,7 +198,7 @@ export function QuickSetup() {
             <button type="button" className="btn btn-primary" disabled={!canManage || !SETUP_API || busy} onClick={send}>{busy ? 'AI đang đọc…' : 'Đọc bảng giá'}</button>
             <button type="button" className="btn btn-ghost" onClick={() => load(SAMPLE, true)}>Xem ví dụ</button>
           </p>
-          {busy && <Spinner label="AI đang đọc, thường mất 10-30 giây…" />}
+          {busy && <Spinner label={'AI đang đọc… ' + secs + ' giây (thường 10-30 giây)'} />}
         </section>
       )}
 
@@ -200,7 +210,7 @@ export function QuickSetup() {
             <p className="muted">Gọi khách là “{draft.customer_word}”{draft.opening_hours && <> · Giờ mở cửa: {draft.opening_hours}</>}</p>
             {draft.unreadable && <Notice kind="warn">AI chưa đọc chắc: {draft.unreadable}</Notice>}
           </section>
-          <p className="muted">Ô màu vàng là chỗ cần anh/chị xem lại. Chỉ những dòng được tick mới được lưu. Giá luôn là giá anh/chị nhìn thấy ở đây.</p>
+          <p className="muted">Ô màu vàng là chỗ cần anh/chị xem lại. Chỉ những dòng được tick mới được lưu. Giá luôn là giá anh/chị nhìn thấy ở đây.{took && ' ' + took}</p>
           <div className="table-wrap">
             <table className="table quick-table">
               <thead><tr><th>Lưu</th><th>Tên</th><th>Loại</th><th>Giá trên bảng</th><th className="num">Giá lưu (VND)</th><th className="num">Tồn kho / phút</th><th>Kiểm tra</th></tr></thead>

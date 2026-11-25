@@ -92,13 +92,15 @@ export async function setupDraftRoute(request, env, path, { now = Date.now(), fe
     if (Number(row?.n) > DAILY_CAP_PER_OWNER) return json(429, { ok: false, error: 'DAILY_CAP_REACHED' }, cors);
   } catch { return json(503, { ok: false, error: 'USAGE_STORE_UNAVAILABLE' }, cors); }
 
+  const t0 = Date.now();
   const r = relay
-    ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL, api: env.AI_API }, input)
+    ? await readWithRelay(fetchImpl, { baseUrl: env.AI_BASE_URL, apiKey: env.RELAY_API_KEY, model: env.AI_MODEL, api: env.AI_API, reasoning: env.AI_REASONING }, input)
     : await readWithClaude(await makeClient(env), input);
   if (!r.ok) return json(r.error === 'AI_BUSY' ? 429 : 502, { ok: false, error: r.error, ...(r.detail ? { detail: r.detail } : {}) }, cors);
   let draft;
   try { draft = checkDraft(r.raw, { sourceText: input.text || '' }); } catch { return json(502, { ok: false, error: 'AI_BAD_DRAFT' }, cors); }
-  return json(200, { ok: true, source: sources[0], draft }, cors);
+  // ms + model: so the owner (and we) can see how long the AI took. No secrets.
+  return json(200, { ok: true, source: sources[0], draft, ms: Date.now() - t0, ...(r.model ? { model: r.model } : {}) }, cors);
 }
 
 // D1 table for the daily cap (apply once, needs approval):

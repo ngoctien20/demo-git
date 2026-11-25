@@ -266,3 +266,12 @@ test('relay: Gemini busy (503) -> next model in AI_MODEL; auth errors do not ret
   const auth = await readWithRelay(async (u, init) => { tried.push(JSON.parse(init.body).model); return res(400, '{}'); }, cfg, { text: 'x' });
   assert.equal(auth.error, 'AI_REQUEST_REJECTED'); assert.deepEqual(tried, ['a']);
 });
+
+test('relay: reasoning_effort sent when set, retried without it on 400, model reported', async () => {
+  const bodies = [];
+  const fake = async (u, init) => { const b = JSON.parse(init.body); bodies.push(b); return b.reasoning_effort ? res(400, '{}') : res(200, JSON.stringify(CHAT_OK)); };
+  const r = await readWithRelay(fake, { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', apiKey: 'k', api: 'chat', model: 'g1', reasoning: 'low' }, { text: 'x' });
+  assert.equal(r.ok, true); assert.equal(r.model, 'g1');
+  assert.equal(bodies[0].reasoning_effort, 'low'); assert.equal(bodies[1].reasoning_effort, undefined);
+  assert.equal(buildRelayRequest({ text: 'x' }).reasoning_effort, undefined);
+});
