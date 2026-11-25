@@ -87,8 +87,8 @@ test('P-09 invalid carousel (title too long after clip impossible / bad payload)
   assert.ok(p.messages.every(validMessage));
 });
 
-test('P-10 text-only channels (Zalo Bot/OA, Telegram) -> numbered text, same actions', () => {
-  for (const ch of ['zalo_bot', 'zalo_oa', 'telegram']) {
+test('P-10 text-only channels (Zalo Bot/OA) -> numbered text, same actions', () => {
+  for (const ch of ['zalo_bot', 'zalo_oa']) {
     const g = planCards({ channel: ch, context: 'greeting', config: shop(), text: 'Chào bạn!' });
     assert.equal(g.kind, 'text');
     assert.match(g.messages[0].text, /1\. Xem sản phẩm/);

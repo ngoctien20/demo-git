@@ -209,3 +209,36 @@ Những gì đã làm đẹp:
 - Còn chờ: U27-4 (Trang tiếp), U27-2 (iOS/Android app).
 - 15:01:54Z: Tiến bấm chip **"Xem mẫu khác"** dưới chi tiết A001, không phải "Trang tiếp". Tin được ghi nhận lúc 15:02:01, khoảng 6,6 giây, đi qua **luồng AI** (AI gợi ý A004 cùng loại polo, kèm 1 nút dọc "Xem A004"). Giá AI đưa ra đúng Sheet (A004 289.000đ, còn 14), không có lỗi. Thực ra đây là khoảng trống: chip "Xem mẫu khác" và "Xem mẫu tương tự" vẫn do AI trả lời và chưa dùng thẻ vuốt. Chip "Trang tiếp" của trang 1 đã biến mất sau khi khách nhắn tin khác (Quick Reply chỉ hiện ở tin cuối cùng), nên muốn thử U27-4 thì phải mở lại "Xem sản phẩm".
 - **PROPOSED V27.3:** đổi "Xem mẫu khác" thành carousel "mẫu tương tự" do code dựng (không qua AI). Nguồn là Sheet: cùng cột `nhom` với mẫu đang xem, bỏ mẫu hiện tại, ưu tiên mẫu còn hàng, tối đa 3 thẻ, không phân trang nên không cần sửa con trỏ của bridge. Nếu có ít hơn 2 mẫu thì quay về AI như hiện nay.
+
+---
+
+## V27.4: đồng bộ đa kênh + trường webhook Messenger (2026-11-25, Tiến duyệt làm nháp, CHƯA publish)
+
+Một bộ chọn (`planCards`) quyết định *nên hiện gì*. Sau đó mỗi kênh có adapter riêng (`config-core/lib/channel-adapters.mjs`) quyết định *hiện thế nào* cho phù hợp khả năng của kênh đó, kèm danh sách `degraded` ghi rõ phần nào bị lùi. Payload hành động giống hệt nhau trên mọi kênh (test A-08), nên server chỉ cần xử lý một kiểu.
+
+### Ma trận khả năng
+| Kiểu thẻ | Messenger | Website widget | Telegram | Zalo Bot |
+|---|---|---|---|---|
+| 01 Nút nhanh | Quick Replies (≤13, ≤20 ký tự) | Chip dính đáy, CSS tự do (≤6) | Inline keyboard, 3 nút/hàng | Danh sách đánh số |
+| 02 Thẻ vuốt | Generic 2–10 thẻ, ảnh vuông | Carousel cuộn ngang, scroll-snap, ảnh từ origin được phép | Không có carousel thật: 1 tin HTML liệt kê + nút "Xem" 3/hàng + hàng "Trang tiếp" | Danh sách đánh số |
+| 03 Nút dọc | Button template ≤3 | Nút dọc, ≤4 | Inline keyboard 1 nút/hàng | Danh sách đánh số |
+| 04 Thẻ ngành | Generic 1 thẻ, nút mở link | Thẻ rộng, ảnh bìa, nút link mở tab mới | `sendPhoto` + caption + nút url/callback | Chữ + link |
+| Giới hạn đặc biệt | payload ≤1000 | không chèn HTML (chỉ `textContent`) | `callback_data` ≤64 byte: quá dài thì bỏ nút và ghi `degraded`, không cắt bớt | — |
+
+Bản xem trước widget và Telegram: `/mnt/project-files/v27-channels/widget-preview.png` (dựng từ đúng adapter, không gửi gì). Renderer chạy trên trình duyệt: `config-core/web/widget-blocks.js`.
+
+### Trường webhook Messenger
+Hiện đã bật: messages, messaging_postbacks, messaging_referrals, message_reactions, messaging_handovers, standby, feed. Đề xuất bật thêm:
+| Trường | Dùng để | Mức |
+|---|---|---|
+| message_echoes | Nhân viên trả lời trong Page Inbox thì bot tự im với khách đó; lịch sử hội thoại đầy đủ | **Nên thêm** |
+| messaging_optins | Khách bấm "Nhận thông báo" thì báo khi có hàng lại hoặc tình trạng đơn sau 24h, đúng chính sách Meta | **Nên thêm** |
+| messaging_policy_enforcement | Meta cảnh báo hoặc chặn thì báo chủ shop và dừng gửi | **Nên thêm** |
+| message_reads / message_deliveries | Đo tỉ lệ đã xem / đã nhận | Tuỳ chọn (rất nhiều sự kiện, tốn lượt chạy n8n) |
+| message_edits | Khách sửa tin chưa được trả lời | Tuỳ chọn |
+
+Bộ phân loại `config-core/lib/messenger-webhook-events.mjs` xác định sự kiện nào bot được trả lời (`reply`) và việc cần làm (`action`): echo của chính app thì bỏ qua, echo của nhân viên thì dừng bot cho khách đó, token opt-in chỉ lưu ở server và không bao giờ đưa vào tin nhắn hay log. Test W-01..03.
+
+Hồ sơ Page (Get Started, Ice Breakers, Persistent Menu): đang dùng payload cũ `TIEN404:ASK:*`. Đề xuất sinh lại từ menu đã publish (`render()` → `T404:M:<id>`) để menu ☰, ice breaker và nút chào cùng mở carousel. **Đây là thay đổi trên Meta Page, cần Tiến duyệt riêng.**
+
+**TESTED (offline):** 281/281 (thêm A-01..08, W-01..03). Chưa nối vào n8n hay widget đang chạy, cũng chưa có bot Telegram live.

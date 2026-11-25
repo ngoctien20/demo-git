@@ -20,7 +20,10 @@ export const MESSENGER_LIMITS = Object.freeze({
 export const CARD_CAPS = Object.freeze({
   messenger: { quick_replies: true, carousel: true, button_card: true, content_card: true, links: true },
   web: { quick_replies: true, carousel: true, button_card: true, content_card: true, links: true },
-  zalo_bot: { links: true }, zalo_oa: { links: true }, telegram: { links: true },
+  // Telegram: inline keyboards stand in for quick replies/buttons; carousel is adapted to a list +
+  // keyboard by channel-adapters.mjs (Telegram has no native carousel).
+  telegram: { quick_replies: true, carousel: true, button_card: true, content_card: true, links: true },
+  zalo_bot: { links: true }, zalo_oa: { links: true },
 });
 const UX_FIRST_SCREEN = 3;
 const LINK_TYPES = new Set(['OPEN_LINK', 'SHOW_PLAYLIST']);
