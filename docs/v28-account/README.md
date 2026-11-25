@@ -1,6 +1,6 @@
 # V28 Tài khoản — đăng ký/đăng nhập, Gói và thanh toán (DEMO), Quản trị nền tảng
 
-Trạng thái: **Draft, chưa áp lên staging/production, chưa deploy.**
+Trạng thái: SQL **đã áp** restore-test rồi staging ngày 2026-11-25 (Tiến duyệt; sao lưu trước bằng run 45715148922; migration staging 20261125225107; hosted UAT `qa/v28-account/hosted/v28-uat.sql` 22/22, dữ liệu thử 0). App **chưa deploy** gh-pages, PR vẫn Draft.
 
 ## App chủ shop (apps/owner)
 - `#/dang-nhap`, `#/dang-ky` (`?goi=lite|plus|pro` mang gói từ trang bảng giá), `#/quen-mat-khau`, `#/dat-lai-mat-khau`:
@@ -20,7 +20,7 @@ Trạng thái: **Draft, chưa áp lên staging/production, chưa deploy.**
 - Khi `db/v28-account` CHƯA áp: App tự lưu demo trong trình duyệt (localStorage theo cửa hàng) và ghi rõ điều đó.
 - Khi chạy thật: thay nút "Mô phỏng: đã thanh toán" bằng đối soát ngân hàng (luồng "đơn chắc tiền" có `don-chac-tien/lib/vietqr.mjs`).
 
-## Máy chủ — `db/v28-account/10_billing_demo_admin.sql` (PROPOSED)
+## Máy chủ — `db/v28-account/10_billing_demo_admin.sql` (APPLIED staging)
 - Bảng `billing_demo_subscriptions`, `billing_demo_invoices` (CHECK `is_demo = true`), không cấp quyền đọc/ghi trực tiếp;
   chỉ qua RPC. Đọc: mọi thành viên cửa hàng. Đổi gói/xác nhận/huỷ: **chỉ chủ sở hữu**. Tối đa 20 hoá đơn/ngày/cửa hàng.
 - Admin tách hẳn khỏi vai trò shop: `app_private.platform_admins` (anon/authenticated không đọc được). Chủ shop không bao giờ

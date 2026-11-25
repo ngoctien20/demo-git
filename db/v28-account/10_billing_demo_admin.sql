@@ -1,4 +1,4 @@
--- TIEN404 V28 Account — DEMO plan billing + platform Admin. STATUS: PROPOSED (NOT applied anywhere hosted).
+-- TIEN404 V28 Account — DEMO plan billing + platform Admin. STATUS: APPLIED 2026-11-25 (owner-approved) on restore-test, then staging (migration 20261125225107); hosted UAT 22/22 rolled back, residue 0.
 -- REQUIRES V20 10+20+30 and V23 web 10+20+30 (stores, store_memberships, store_bot_settings, audit_events).
 --
 -- A. Gói và thanh toán (DEMO ONLY — no money moves, no bank data is stored):
