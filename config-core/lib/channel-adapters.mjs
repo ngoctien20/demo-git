@@ -8,6 +8,8 @@
 //   Web widget : own blocks (chips, carousel with images, cards, buttons) — fully custom CSS
 //   Zalo Bot   : plain text + numbered choices (no buttons on the official Bot API we use)
 
+import { toCssVars, nativeHints } from './card-style.mjs';
+
 const enc = new TextEncoder();
 const bytes = (s) => enc.encode(String(s)).length;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -51,7 +53,8 @@ function rows(buttons, perRow) {
 }
 
 /** @returns {{method:string, params:object}[]} Bot API calls (≤3), plus degraded reasons. */
-export function toTelegram(plan) {
+export function toTelegram(plan, { style } = {}) {
+  const perRow = style ? nativeHints('telegram', style).buttonsPerRow : TELEGRAM_LIMITS.buttonsPerRow;
   const degraded = [...(plan.degraded ?? [])];
   const c = collect(plan);
   const calls = [];
@@ -70,7 +73,7 @@ export function toTelegram(plan) {
     const nav = c.chips.map((a) => tgButton(a, degraded)).filter(Boolean);
     const text = clip(lines.join('\n\n') + (c.texts.length ? '\n\n' + c.texts.map(esc).join('\n') : ''), TELEGRAM_LIMITS.text);
     calls.push({ method: 'sendMessage', params: { text, parse_mode: 'HTML',
-      reply_markup: { inline_keyboard: [...rows(kb, TELEGRAM_LIMITS.buttonsPerRow), ...(nav.length ? [nav] : [])] } } });
+      reply_markup: { inline_keyboard: [...rows(kb, perRow), ...(nav.length ? [nav] : [])] } } });
     if (c.cards.some((k) => k.image)) degraded.push('tg_carousel_images_as_list');
   } else {
     const kb = [...c.buttons, ...c.chips].map((a) => tgButton(a, degraded)).filter(Boolean);
@@ -84,7 +87,7 @@ export function toTelegram(plan) {
 
 // ---------- Web widget (own HTML/CSS, highest customisation) ----------
 /** @returns {{blocks:object[], degraded:string[]}} render-only blocks; the widget never trusts labels for authority. */
-export function toWebWidget(plan, { imageOrigins = [] } = {}) {
+export function toWebWidget(plan, { imageOrigins = [], style } = {}) {
   const degraded = [...(plan.degraded ?? [])];
   const c = collect(plan);
   const okImg = (u) => { if (!u) return undefined; try { const x = new URL(u); return x.protocol === 'https:' && imageOrigins.includes(x.origin) ? x.href : (degraded.push('web_image_dropped'), undefined); } catch { return undefined; } };
@@ -95,7 +98,9 @@ export function toWebWidget(plan, { imageOrigins = [] } = {}) {
   else if (c.cards.length === 1) blocks.unshift({ type: 'card', title: c.cards[0].title, subtitle: c.cards[0].subtitle, image: okImg(c.cards[0].image), actions: c.cards[0].actions.map(act) });
   if (c.buttons.length) blocks.push({ type: 'buttons', layout: 'vertical', actions: c.buttons.slice(0, WEB_LIMITS.buttons).map(act) });
   if (c.chips.length) blocks.push({ type: 'chips', placement: 'sticky-bottom', actions: c.chips.slice(0, WEB_LIMITS.chips).map(act) });
-  return { blocks, degraded };
+  // Owner style → theme the renderer applies (CSS vars + classes). Labels/payloads are unaffected.
+  const theme = style ? { vars: toCssVars(style), variant: style.variant, layout: style.layout, animation: style.animation, card: style.card, image_ratio: style.image_ratio } : undefined;
+  return { blocks, degraded, ...(theme ? { theme } : {}) };
 }
 
 // ---------- Zalo Bot (text only) ----------
@@ -110,7 +115,7 @@ export function toZaloText(plan) {
 
 export function adaptPlan(plan, channel, opts) {
   if (channel === 'messenger') return { messages: plan.messages, degraded: plan.degraded ?? [] };
-  if (channel === 'telegram') return toTelegram(plan);
+  if (channel === 'telegram') return toTelegram(plan, opts);
   if (channel === 'web') return toWebWidget(plan, opts);
   return toZaloText(plan);
 }

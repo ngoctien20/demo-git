@@ -238,7 +238,7 @@ table.cap td.y { color: var(--ok); font-weight: 600 } table.cap td.n { color: va
   const SUPPORT = { web: ['primary','size','shape','variant','layout','animation','card','image_ratio','show'], messenger: ['image_ratio','show'], telegram: ['layout','show'], zalo: ['show'] };
   const CH = [['web','Web'],['messenger','Messenger'],['telegram','Telegram'],['zalo','Zalo']];
   const COLORS = ['#1f6feb','#0f7b6c','#e8590c','#c2255c','#7048e8','#1d1d1f'];
-  const DEF = { primary: '#1f6feb', size: 'md', shape: 'rounded', variant: 'solid', layout: 'stack', animation: 'fade', card: 'photo_top', image_ratio: 'horizontal', show: { price: true, stock: true, badge: true } };
+  const DEF = { primary: '#1f6feb', size: 'md', shape: 'rounded', variant: 'solid', layout: 'stack', animation: 'fade', card: 'photo_top', image_ratio: 'square', show: { price: true, stock: true, badge: true } };
   let S = JSON.parse(JSON.stringify(DEF));
   try { const saved = JSON.parse(localStorage.getItem('t404-card-style') || 'null'); if (saved) S = Object.assign(S, saved); } catch {}
 

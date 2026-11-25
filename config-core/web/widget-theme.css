@@ -1,0 +1,45 @@
+/* TIEN404 V27.5 web widget theme. Root element gets CSS vars + data-t4-* from applyTheme(). */
+.t4-root {
+  --t404-primary: #1f6feb; --t404-on-primary: #ffffff; --t404-btn-pad: 9px 14px; --t404-btn-fs: 14px; --t404-btn-radius: 10px;
+  --t4-surface: #ffffff; --t4-ink: #17201d; --t4-muted: #5d6a65; --t4-line: #dde3e0; --t4-bubble: #e9ecef;
+  display: flex; flex-direction: column; gap: 8px; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--t4-ink);
+}
+@media (prefers-color-scheme: dark) { .t4-root { --t4-surface: #242526; --t4-ink: #e6ece9; --t4-muted: #9aa8a2; --t4-line: #3a3b3c; --t4-bubble: #303235 } }
+.t4-bubble { margin: 0; align-self: flex-start; max-width: 85%; padding: 8px 12px; border-radius: 14px 14px 14px 4px; background: var(--t4-bubble); white-space: pre-line }
+.t4-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 6px }
+.t4-card { flex: 0 0 78%; scroll-snap-align: start; display: flex; flex-direction: column; background: var(--t4-surface); border: 1px solid var(--t4-line); border-radius: 14px; overflow: hidden; box-shadow: 0 6px 16px -10px rgba(0,0,0,.35) }
+.t4-card-wide { flex-basis: auto }
+.t4-media { aspect-ratio: 1.91 / 1; background: var(--t4-bubble) }
+.t4-media img { width: 100%; height: 100%; object-fit: cover; display: block }
+[data-t4-image-ratio="square"] .t4-media { aspect-ratio: 1 / 1 }
+[data-t4-card="compact"] .t4-card { flex-direction: row; flex-basis: 92% }
+[data-t4-card="compact"] .t4-media { aspect-ratio: auto; width: 38%; flex: none }
+.t4-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 }
+.t4-title { font-size: 13.5px; line-height: 1.3 }
+.t4-sub { color: var(--t4-muted); font-size: 12.5px }
+.t4-card-actions, .t4-buttons { display: flex; flex-direction: column; gap: 6px }
+[data-t4-layout="row"] .t4-card-actions, [data-t4-layout="row"] .t4-buttons { flex-direction: row; flex-wrap: wrap }
+[data-t4-layout="row"] .t4-card-btn, [data-t4-layout="row"] .t4-btn { flex: 1 1 0 }
+.t4-card-btn, .t4-btn, .t4-chip { font: inherit; font-weight: 650; font-size: var(--t404-btn-fs); padding: var(--t404-btn-pad); border-radius: var(--t404-btn-radius);
+  border: 1.5px solid var(--t4-line); background: transparent; color: var(--t4-ink); cursor: pointer; text-align: center; text-decoration: none;
+  position: relative; overflow: hidden; transition: transform .15s ease, box-shadow .2s ease }
+.t4-primary { background: var(--t404-primary); border-color: var(--t404-primary); color: var(--t404-on-primary) }
+[data-t4-variant="outline"] .t4-primary { background: transparent; color: var(--t404-primary) }
+[data-t4-variant="soft"] .t4-primary { background: color-mix(in srgb, var(--t404-primary) 14%, transparent); border-color: transparent; color: var(--t404-primary) }
+.t4-chips { display: flex; gap: 6px; flex-wrap: wrap }
+.t4-chip { font-size: 12.5px; padding: 6px 12px; border-color: var(--t404-primary); color: var(--t404-primary) }
+.t4-card-btn:hover, .t4-btn:hover, .t4-chip:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px var(--t404-primary) }
+.t4-card-btn:active, .t4-btn:active, .t4-chip:active { transform: scale(.97) }
+:is(.t4-card-btn, .t4-btn, .t4-chip):focus-visible { outline: 2px solid var(--t404-primary); outline-offset: 2px }
+
+@keyframes t4-fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+@keyframes t4-slide { from { opacity: 0; transform: translateX(38px) } to { opacity: 1; transform: none } }
+@keyframes t4-pop { 0% { opacity: 0; transform: scale(.86) } 60% { opacity: 1; transform: scale(1.03) } 100% { transform: none } }
+@keyframes t4-shine { from { left: -60% } to { left: 130% } }
+[data-t4-animation="fade"] :is(.t4-card, .t4-bubble, .t4-chips),
+[data-t4-animation="shine"] :is(.t4-card, .t4-bubble, .t4-chips) { animation: t4-fade .45s ease both; animation-delay: calc(var(--t404-i, 0) * 80ms) }
+[data-t4-animation="slide"] .t4-card { animation: t4-slide .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--t404-i, 0) * 80ms) }
+[data-t4-animation="pop"] .t4-card { animation: t4-pop .5s cubic-bezier(.3,1.4,.5,1) both; animation-delay: calc(var(--t404-i, 0) * 80ms) }
+[data-t4-animation="shine"] .t4-primary::after { content: ""; position: absolute; inset: 0 auto 0 -60%; width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); animation: t4-shine 2.4s ease-in-out .6s infinite }
+@media (prefers-reduced-motion: reduce) { .t4-root *, .t4-root *::after { animation: none !important; transition: none !important } }

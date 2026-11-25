@@ -82,9 +82,10 @@ export function validMessage(m) {
  * @param {Array}  [a.actions]   detail: [{title,payload}] already authorised by the caller
  * @param {Array}  [a.pageControls] quick replies for paging, e.g. Trang trước/Trang tiếp
  * @param {string[]} [a.imageHosts] https hosts allowed for card images
+ * @param {object} [a.style]   resolved card style (card-style.mjs resolveCardStyle); Messenger uses image_ratio only
  * @returns {{kind:string, messages:object[], degraded:string[]}}
  */
-export function planCards({ channel, context, config, text = '', rows = [], actions = [], pageControls = [], imageHosts = [] }) {
+export function planCards({ channel, context, config, text = '', rows = [], actions = [], pageControls = [], imageHosts = [], style }) {
   const caps = CARD_CAPS[channel] ?? {};
   const items = visibleItems(config, channel);
   const degraded = [];
@@ -153,8 +154,9 @@ export function planCards({ channel, context, config, text = '', rows = [], acti
         else if (r.image_url) degraded.push('image_dropped:' + r.key);
         return e;
       });
+      const square = style?.image_ratio === 'square' && elements.some((e) => e.image_url);
       const r = out('carousel', [
-        { attachment: { type: 'template', payload: { template_type: 'generic', elements } } },
+        { attachment: { type: 'template', payload: { template_type: 'generic', ...(square ? { image_aspect_ratio: 'square' } : {}), elements } } },
         { text: clipCp(text || 'Bấm thẻ ở trên hoặc nhắn mã để xem chi tiết.', MESSENGER_LIMITS.text), ...(controls.length ? { quick_replies: controls } : {}) }]);
       if (r) return r;
     }

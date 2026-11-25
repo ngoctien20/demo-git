@@ -42,7 +42,7 @@ if(current.mediaType==='catalog_page'){
    cb[0].title===btn.title&&c.title.startsWith(btn.payload.slice('TIEN404:VIEW:'.length)+' · ');
  });
  const hasImg=validCards&&cards.some(c=>c.image_url);
- const plan=validCards?[{attachment:{type:'template',payload:{template_type:'generic',...(hasImg?{image_aspect_ratio:'square'}:{}),
+ const plan=validCards?[{attachment:{type:'template',payload:{template_type:'generic',...(hasImg&&incoming.catalogImageRatio!=='horizontal'?{image_aspect_ratio:'square'}:{}),
    elements:cards.map(c=>({title:c.title,subtitle:c.subtitle,...(c.image_url?{image_url:c.image_url}:{}),buttons:c.buttons.map(x=>({type:'postback',title:x.title,payload:x.payload}))}))}}},
   {text:follow,...(mm.quick_replies?.length?{quick_replies:mm.quick_replies}:{})}]:[mm];
  const safeReply=mm.text??mm.attachment?.payload?.text??fallback.text;

@@ -242,3 +242,22 @@ Bộ phân loại `config-core/lib/messenger-webhook-events.mjs` xác định s�
 Hồ sơ Page (Get Started, Ice Breakers, Persistent Menu): đang dùng payload cũ `TIEN404:ASK:*`. Đề xuất sinh lại từ menu đã publish (`render()` → `T404:M:<id>`) để menu ☰, ice breaker và nút chào cùng mở carousel. **Đây là thay đổi trên Meta Page, cần Tiến duyệt riêng.**
 
 **TESTED (offline):** 281/281 (thêm A-01..08, W-01..03). Chưa nối vào n8n hay widget đang chạy, cũng chưa có bot Telegram live.
+
+## V27.5 — Thẻ tùy chỉnh theo shop/kênh (2026-11-25, bản nháp, CHƯA bật)
+
+Tiến duyệt Card Studio (artifact) và yêu cầu làm hoàn thiện. Trạng thái: IMPLEMENTED + TESTED offline; KHÔNG publish, KHÔNG áp DB, KHÔNG sửa Sheet thật.
+
+| Phần | File | Ghi chú |
+|---|---|---|
+| Cấu hình `card_style` | `config-core/lib/card-style.mjs` | `{ base, channels: { web, messenger, telegram, zalo_bot, zalo_oa } }`; khóa lạ = lỗi; màu `#rrggbb`; chữ trên nút tự chọn trắng/đen theo tương phản |
+| Kiểm tra cấu hình | `action-registry.mjs` `validateConfig` | `card_style` là khóa gốc tùy chọn; không có = như cũ |
+| DB (nháp) | `db/config-core/30_card_style.sql`, rollback `85_card_style_rollback.sql` | Thêm `card_style` vào `app_private.t404_cfg_validate`. Thử trên Postgres tạm: JS↔SQL khớp 10/10, rollback trả thân hàm giống hệt (md5). Thêm vào `qa/config-core/offline-pg-uat.sh` (136 PASS). **Chưa áp staging — cần duyệt.** |
+| Dữ liệu thẻ | `productRow()` + node n8n danh mục | Cột tùy chọn trong Sheet: `image_url`, `badge` (≤16 ký tự, chỉ chữ/số), `old_price` (> giá). Không có cột = như cũ. Tồn ≤5 hiện "Chỉ còn n" |
+| Messenger | n8n Z7Fd draft **69947c8e** (live vẫn a256a7df) | Chỉ áp `image_ratio` + bật/tắt giá/tồn/nhãn. Mã node = file repo (đã đối chiếu) |
+| Telegram | `toTelegram(plan, {style})` | `layout: stack` → 1 nút/hàng, `row` → 3 nút/hàng |
+| Web widget | `toWebWidget(plan, {style}).theme` + `web/widget-blocks.js` + `web/widget-theme.css` | màu, cỡ, bo góc, kiểu nút, xếp nút, hiệu ứng (fade/slide/pop/shine), bố cục thẻ; tôn trọng `prefers-reduced-motion`; chỉ nhận biến CSS trong danh sách trắng |
+| Zalo | text | chỉ nội dung |
+
+Giới hạn thật: màu/cỡ/hiệu ứng nút trên Messenger và Telegram do nền tảng vẽ, không đổi được.
+
+Việc còn lại cần Tiến duyệt riêng: (1) thêm cột `image_url`/`badge`/`old_price` vào Sheet AI_SALES_DEMO; (2) áp `30_card_style.sql` lên staging; (3) cho bridge 9HXj trả `card_style` đã publish vào n8n (`current.cardStyle`); (4) publish Z7Fd 69947c8e (rollback a256a7df). Lưu ý khi publish 69947c8e không đổi gì khác ngoài: tồn ≤5 hiện "Chỉ còn n" thay vì "Còn n".

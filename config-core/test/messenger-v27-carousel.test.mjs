@@ -200,3 +200,26 @@ test('V27-15 a catalog payload from another Page/sender never attaches to this m
     { pageId: DEMO_PAGE, senderId: SENDER, messageId: 'm_y', mediaType: 'postback' });
   assert.equal(r[0].menuPayload, undefined);
 });
+
+// V27.5: optional Sheet columns badge/old_price + owner card style (image ratio, show flags).
+test('V27-16 badge, old price and low stock appear on the card; bad badge/old price ignored; digest unchanged', () => {
+  const rows = mk(3).map((p, i) => ({ ...p, stock: [5, 18, 0][i],
+    badge: ['Bán chạy', '<script>', 'x'.repeat(17)][i], old_price: [199000, 100000, 'abc'][i] }));
+  const r = renderer(rows)[0];
+  assert.deepEqual(r.catalogCards.map((c) => c.subtitle), [
+    'Bán chạy · 159.000đ (giá cũ 199.000đ) · Chỉ còn 5', '159.000đ · Còn 18', '159.000đ · Hết hàng']);
+  assert.equal(r.catalogDigest, renderer(mk(3).map((p, i) => ({ ...p, stock: [5, 18, 0][i] })))[0].catalogDigest);
+  assert.equal(pipeline(rows).length, 2, 'still a valid carousel');
+});
+
+test('V27-17 card style: show flags hide price/stock/badge; horizontal ratio drops the square hint', () => {
+  const rows = mk(3).map((p) => ({ ...p, badge: 'Mới', image_url: 'https://i.imgur.com/a.jpg' }));
+  const cur = { ...current(), cardStyle: { image_ratio: 'horizontal', show: { stock: false, badge: false } } };
+  const r = renderer(rows, cur)[0];
+  assert.equal(r.catalogImageRatio, 'horizontal');
+  assert.equal(r.catalogCards[0].subtitle, '159.000đ');
+  const g = prepare(r, cur)[0].messengerMessage.attachment.payload;
+  assert.equal(g.image_aspect_ratio, undefined);
+  const none = renderer(rows, { ...current(), cardStyle: { show: { price: false, stock: false, badge: false } } })[0];
+  assert.equal(none.catalogCards[0].subtitle, 'Bấm Xem để biết chi tiết');
+});

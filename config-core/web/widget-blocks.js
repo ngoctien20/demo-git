@@ -1,25 +1,44 @@
-// TIEN404 V27.4 web widget block renderer (browser, no deps). Renders toWebWidget() blocks with
+// TIEN404 V27.4/V27.5 web widget block renderer (browser, no deps). Renders toWebWidget() blocks with
 // textContent only (never innerHTML), https links with rel=noopener, and calls onAction(payload)
 // for action buttons — the server re-resolves every payload against the published config.
-export function renderBlocks(root, blocks, { onAction = () => {} } = {}) {
+// V27.5: optional `theme` from toWebWidget() (owner card_style) → CSS vars + classes, styled by widget-theme.css.
+const VAR_RE = /^--t404-[a-z-]+$/;
+const SAFE_VAL = /^[#0-9a-zA-Z .%-]{1,32}$/;
+const ENUMS = { variant: ['solid', 'outline', 'soft'], layout: ['stack', 'row'], animation: ['none', 'fade', 'slide', 'pop', 'shine'], card: ['photo_top', 'compact'], image_ratio: ['horizontal', 'square'] };
+
+export function applyTheme(root, theme) {
+  if (!theme) return;
+  for (const [k, v] of Object.entries(theme.vars ?? {})) if (VAR_RE.test(k) && SAFE_VAL.test(String(v))) root.style.setProperty(k, String(v));
+  for (const [k, allowed] of Object.entries(ENUMS)) {
+    const v = theme[k];
+    if (allowed.includes(v)) root.dataset['t4' + k[0].toUpperCase() + k.slice(1).replace(/_(\w)/g, (_, c) => c.toUpperCase())] = v;
+  }
+}
+
+export function renderBlocks(root, blocks, { onAction = () => {}, theme } = {}) {
+  applyTheme(root, theme);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const actionEl = (a, cls) => {
     if (a.kind === 'link' && /^https:\/\//.test(a.url)) { const l = el('a', cls, a.label); l.href = a.url; l.target = '_blank'; l.rel = 'noopener noreferrer'; return l; }
     const b = el('button', cls, a.label); b.type = 'button'; b.addEventListener('click', () => onAction(a.payload)); return b;
   };
-  const card = (it, cls) => {
+  const card = (it, cls, i = 0) => {
     const c = el('article', cls);
-    if (it.image) { const i = el('img'); i.src = it.image; i.alt = it.title; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; c.append(i); }
-    c.append(el('strong', 't4-title', it.title));
-    if (it.subtitle) c.append(el('span', 't4-sub', it.subtitle));
-    const acts = el('div', 't4-card-actions'); for (const a of it.actions ?? []) acts.append(actionEl(a, 't4-card-btn')); c.append(acts);
+    c.style.setProperty('--t404-i', String(i)); // stagger index for animations
+    if (it.image) { const f = el('div', 't4-media'); const img = el('img'); img.src = it.image; img.alt = it.title; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; f.append(img); c.append(f); }
+    const body = el('div', 't4-body');
+    body.append(el('strong', 't4-title', it.title));
+    if (it.subtitle) body.append(el('span', 't4-sub', it.subtitle));
+    const acts = el('div', 't4-card-actions');
+    (it.actions ?? []).forEach((a, k) => acts.append(actionEl(a, 't4-card-btn' + (k === 0 ? ' t4-primary' : ''))));
+    body.append(acts); c.append(body);
     return c;
   };
   for (const b of blocks) {
     if (b.type === 'text') root.append(el('p', 't4-bubble', b.text));
-    else if (b.type === 'carousel') { const r = el('div', 't4-carousel'); r.setAttribute('role', 'list'); for (const it of b.items) { const c = card(it, 't4-card'); c.setAttribute('role', 'listitem'); r.append(c); } root.append(r); }
+    else if (b.type === 'carousel') { const r = el('div', 't4-carousel'); r.setAttribute('role', 'list'); b.items.forEach((it, i) => { const c = card(it, 't4-card', i); c.setAttribute('role', 'listitem'); r.append(c); }); root.append(r); }
     else if (b.type === 'card') root.append(card(b, 't4-card t4-card-wide'));
-    else if (b.type === 'buttons') { const r = el('div', 't4-buttons'); for (const a of b.actions) r.append(actionEl(a, 't4-btn')); root.append(r); }
+    else if (b.type === 'buttons') { const r = el('div', 't4-buttons'); b.actions.forEach((a, k) => r.append(actionEl(a, 't4-btn' + (k === 0 ? ' t4-primary' : '')))); root.append(r); }
     else if (b.type === 'chips') { const r = el('div', 't4-chips'); for (const a of b.actions) r.append(actionEl(a, 't4-chip')); root.append(r); }
   }
 }

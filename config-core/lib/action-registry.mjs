@@ -1,4 +1,5 @@
 // TIEN404 Universal Configuration Core — Action Registry + config validator (schema_version 1).
+import { validateCardStyle } from './card-style.mjs';
 // Pure functions, no I/O. The SAME rules are enforced server-side in
 // db/config-core/10_config_core.sql (app_private.t404_cfg_validate); qa/config-core/offline-pg-uat.sh
 // checks both sides accept/reject the same fixtures. The database is the authority; this file is
@@ -131,7 +132,7 @@ export const ACTION_REGISTRY = Object.freeze({
   FAQ: { status: 'released', title: 'Câu hỏi thường gặp', keys: { topic: optStr(60) } },
 });
 
-const ROOT_KEYS = ['schema_version', 'greeting', 'addressing', 'profile', 'menu'];
+const ROOT_KEYS = ['schema_version', 'greeting', 'addressing', 'profile', 'card_style', 'menu'];
 const ITEM_KEYS = ['id', 'action_type', 'label', 'description', 'enabled', 'sort_order', 'action_config', 'channel_overrides'];
 const PROFILE_KEYS = ['display_name', 'bio'];
 
@@ -159,6 +160,7 @@ export function validateConfig(cfg, { mode = 'draft' } = {}) {
       if (cfg.profile.bio !== undefined && !str(cfg.profile.bio, 1, 1000)) err('profile.bio', 'profile_invalid');
     }
   }
+  if (cfg.card_style !== undefined) for (const e of validateCardStyle(cfg.card_style)) errors.push(e);
   if (!Array.isArray(cfg.menu)) { err('menu', 'menu_invalid'); return { ok: false, errors }; }
   if (cfg.menu.length > MAX_MENU_ITEMS) err('menu', 'menu_too_long');
   const ids = new Set();

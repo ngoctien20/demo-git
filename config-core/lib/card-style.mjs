@@ -18,7 +18,7 @@ export const STYLE_OPTIONS = Object.freeze({
 
 export const DEFAULT_STYLE = Object.freeze({
   primary: '#1f6feb', size: 'md', shape: 'rounded', variant: 'solid', layout: 'stack',
-  animation: 'fade', card: 'photo_top', image_ratio: 'horizontal',
+  animation: 'fade', card: 'photo_top', image_ratio: 'square',
   show: Object.freeze({ price: true, stock: true, badge: true }),
 });
 
@@ -109,4 +109,78 @@ export function nativeHints(channel, style) {
   if (channel === 'messenger') return { image_aspect_ratio: style.image_ratio === 'square' ? 'square' : 'horizontal' };
   if (channel === 'telegram') return { buttonsPerRow: style.layout === 'row' ? 3 : 1 };
   return {};
+}
+
+// ---------- Shop config: card_style = { base?: {...}, channels?: { web?: {...}, messenger?: {...}, telegram?: {...} } } ----------
+export const CARD_STYLE_CHANNELS = Object.freeze(['web', 'messenger', 'telegram', 'zalo_bot', 'zalo_oa']);
+const STYLE_KEYS = [...Object.keys(STYLE_OPTIONS), 'primary', 'show'];
+
+function checkStyleObject(o, path, err) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) { err(path, 'card_style_invalid'); return; }
+  for (const k of Object.keys(o)) if (!STYLE_KEYS.includes(k)) err(path + '.' + k, 'unknown_key');
+  for (const [k, allowed] of Object.entries(STYLE_OPTIONS)) if (o[k] !== undefined && !allowed.includes(o[k])) err(path + '.' + k, 'card_style_value_invalid');
+  if (o.primary !== undefined && !HEX.test(String(o.primary))) err(path + '.primary', 'card_style_color_invalid');
+  if (o.show !== undefined) {
+    if (!o.show || typeof o.show !== 'object' || Array.isArray(o.show)) err(path + '.show', 'card_style_invalid');
+    else for (const [k, v] of Object.entries(o.show)) {
+      if (!Object.hasOwn(DEFAULT_STYLE.show, k)) err(path + '.show.' + k, 'unknown_key');
+      else if (typeof v !== 'boolean') err(path + '.show.' + k, 'card_style_value_invalid');
+    }
+  }
+}
+
+/** Strict validation for the stored config (unknown keys are errors, unlike normalizeCardStyle). */
+export function validateCardStyle(cs) {
+  const errors = [];
+  const err = (path, code) => errors.push({ path, code });
+  if (!cs || typeof cs !== 'object' || Array.isArray(cs)) return [{ path: 'card_style', code: 'card_style_invalid' }];
+  for (const k of Object.keys(cs)) if (!['base', 'channels'].includes(k)) err('card_style.' + k, 'unknown_key');
+  if (cs.base !== undefined) checkStyleObject(cs.base, 'card_style.base', err);
+  if (cs.channels !== undefined) {
+    if (!cs.channels || typeof cs.channels !== 'object' || Array.isArray(cs.channels)) err('card_style.channels', 'card_style_invalid');
+    else for (const [ch, o] of Object.entries(cs.channels)) {
+      if (!CARD_STYLE_CHANNELS.includes(ch)) { err('card_style.channels.' + ch, 'channel_unknown'); continue; }
+      checkStyleObject(o, 'card_style.channels.' + ch, err);
+    }
+  }
+  return errors;
+}
+
+/** Effective style for one channel: defaults ← base ← channel override, then normalized. */
+export function resolveCardStyle(config, channel) {
+  const cs = config?.card_style ?? {};
+  const base = cs.base ?? {}, over = cs.channels?.[channel] ?? {};
+  return normalizeCardStyle({ ...base, ...over, show: { ...(base.show ?? {}), ...(over.show ?? {}) } }).style;
+}
+
+// ---------- Sheet/DB product row → planner row ----------
+const SKU = /^[A-Z][0-9]{3}$/;
+const money = (v) => {
+  if (typeof v === 'number') return Number.isSafeInteger(v) && v >= 0 ? v : null;
+  const s = String(v ?? '').replace(/[.\s,]/g, '').replace(/đ|vnd/gi, '');
+  return /^\d{1,12}$/.test(s) ? Number(s) : null;
+};
+// Owner-typed label: short, plain letters/digits/spaces/basic punctuation only.
+const cleanBadge = (v) => {
+  const s = String(v ?? '').trim();
+  return s && [...s].length <= 16 && /^[\p{L}\p{N} %+\-!.]+$/u.test(s) ? s : '';
+};
+
+/**
+ * Validated product → planner row {key,title,subtitle,payload,image_url?,badge?,soldOut}.
+ * Optional Sheet columns: image_url, badge, old_price. Missing columns = old behaviour.
+ * Returns null for any row that cannot be trusted (bad SKU/name/price/stock).
+ */
+export function productRow(r, style = DEFAULT_STYLE) {
+  const sku = String(r?.sku ?? '');
+  const name = typeof r?.name === 'string' ? r.name.trim() : '';
+  const price = money(r?.price_clean ?? r?.price);
+  const stock = money(r?.stock);
+  if (!SKU.test(sku) || !name || [...name].length > 200 || price === null || stock === null) return null;
+  const old = money(r.old_price);
+  const badge = cleanBadge(r.badge);
+  const t = productCardText({ sku, name, price_clean: price, stock, badge, old_price: old !== null && old > price ? old : undefined }, style);
+  return { key: sku, title: t.title, subtitle: t.subtitle, payload: 'TIEN404:VIEW:' + sku, soldOut: t.soldOut,
+    ...(typeof r.image_url === 'string' && r.image_url.trim() ? { image_url: r.image_url.trim() } : {}),
+    ...(badge ? { badge } : {}) };
 }
