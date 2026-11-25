@@ -223,3 +223,30 @@ test('V27-17 card style: show flags hide price/stock/badge; horizontal ratio dro
   const none = renderer(rows, { ...current(), cardStyle: { show: { price: false, stock: false, badge: false } } })[0];
   assert.equal(none.catalogCards[0].subtitle, 'Bấm Xem để biết chi tiết');
 });
+
+// V27.6: product detail shows the verified Sheet photo first, then the detail text + chips.
+const FORMAT = src('messenger-format-product.v27-draft.code.js');
+const FORWARD = src('messenger-forward-product.v27-draft.code.js');
+function detailPipeline(row, sku = 'A004') {
+  const cur = { pageId: DEMO_PAGE, senderId: SENDER, messageId: 'm_d', receivedAt: 'x', mediaType: 'product_detail', selectedSku: sku };
+  const fmt = run(FORMAT, { $: loop(cur), $input: { all: () => (row ? [{ json: row }] : []) } })[0].json;
+  const $ = (name) => (name === 'Format selected product' ? { first: () => ({ json: fmt }) } : loop(cur)(name));
+  const fwd = run(FORWARD, { $, $runIndex: 0 })[0].json;
+  return { fmt, plan: prepare(fwd, cur) };
+}
+test('V27-18 detail with allowlisted photo -> image message then text with Đặt/Xem mẫu khác chips', () => {
+  const { plan } = detailPipeline({ sku: 'A004', name: 'Áo polo nam xanh navy size M', price: 289000, stock: 14, image_url: 'https://lh3.googleusercontent.com/d/abc' });
+  assert.equal(plan.length, 2);
+  assert.deepEqual(plan[0].messengerMessage, { attachment: { type: 'image', payload: { url: 'https://lh3.googleusercontent.com/d/abc', is_reusable: true } } });
+  assert.match(plan[1].messengerMessage.text, /^A004 — Áo polo nam xanh navy size M \| 289\.000đ\/cái\. Còn 14 cái\.$/);
+  assert.deepEqual(plan[1].messengerMessage.quick_replies.map((q) => q.title), ['Đặt A004', 'Xem mẫu khác']);
+  assert.ok(plan.every((p) => p.messageCount === 2));
+});
+test('V27-19 detail photo dropped when host not allowlisted, http, missing, or product invalid', () => {
+  for (const image_url of ['https://evil.example/a.jpg', 'http://i.imgur.com/a.jpg', '', undefined]) {
+    const { plan } = detailPipeline({ sku: 'A004', name: 'Áo', price: 1, stock: 1, image_url });
+    assert.equal(plan.length, 1, String(image_url));
+  }
+  assert.equal(detailPipeline(null).fmt.detailImage, null);
+  assert.equal(detailPipeline({ sku: 'A004', name: 'Áo', price: 'liên hệ', stock: 1, image_url: 'https://i.imgur.com/a.jpg' }).fmt.detailImage, null);
+});

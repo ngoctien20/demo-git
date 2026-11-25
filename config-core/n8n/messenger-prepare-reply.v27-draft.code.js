@@ -113,6 +113,12 @@ if(current.mediaType==='product_detail' && current.selectedSku){
   {content_type:'text',title:'Tra cứu đơn',payload:'TIEN404:QR:3'},{content_type:'text',title:'Gặp nhân viên',payload:'TIEN404:QR:4'}];
 }
 if(quickReplies && messages.length)messages[messages.length-1].quick_replies=quickReplies;
+// V27.6: product detail with a verified photo -> photo first, then the detail text + chips (2 messages).
+const detailImg=typeof incoming.detailImage==='string'?incoming.detailImage:'';
+if(current.mediaType==='product_detail'&&messages.length<MAX_MESSAGES&&detailImg.length<=1000&&
+ /^https:\/\/(lh3\.googleusercontent\.com|i\.imgur\.com|ngoctien20\.github\.io)\/[^\s"'<>]+$/.test(detailImg)){
+ messages.unshift({attachment:{type:'image',payload:{url:detailImg,is_reusable:true}}});
+}
 const capped=messages.slice(0,MAX_MESSAGES);
 return capped.map((messengerMessage,index)=>({json:{messengerMessage,messageIndex:index+1,messageCount:capped.length,pageId:current.pageId,senderId:current.senderId,messageId:current.messageId,receivedAt:current.receivedAt,replyText:reply.slice(0,TEXT_LIMIT)}}));
 
