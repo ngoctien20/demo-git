@@ -219,7 +219,7 @@ table.cap td.y { color: var(--ok); font-weight: 600 } table.cap td.n { color: va
 
 <section class="cfg">
   <h3>Cấu hình sẽ lưu cho shop</h3>
-  <p>Đây là khối <code>card_style</code> trong cấu hình shop. Bot không đọc khối này cho tới khi anh duyệt bật.</p>
+  <p>Đây là khối <code>card_style</code> trong cấu hình shop: <code>base</code> dùng chung, thêm <code>channels.web</code>, <code>channels.messenger</code> hay <code>channels.telegram</code> để chỉnh riêng từng kênh. Bot chưa đọc khối này cho tới khi anh duyệt bật.</p>
   <pre id="json"></pre>
   <div class="row2" style="margin-top:10px"><button class="btnx" id="copy" type="button">Chép cấu hình</button><span id="copied" class="sub" hidden>Đã chép</span></div>
 </section>
@@ -389,7 +389,7 @@ table.cap td.y { color: var(--ok); font-weight: 600 } table.cap td.n { color: va
     try { localStorage.setItem('t404-card-style', JSON.stringify(S)); } catch {}
     if (full) renderControls();
     applyVars(); renderWeb(); renderMsg(); renderTg(); renderZalo();
-    document.getElementById('json').textContent = JSON.stringify({ card_style: S }, null, 2);
+    document.getElementById('json').textContent = JSON.stringify({ card_style: { base: S } }, null, 2);
   }
   for (const k of ['price', 'stock', 'badge']) document.getElementById('sh-' + k).addEventListener('change', (e) => { S.show[k] = e.target.checked; update(false); });
   document.getElementById('replay').addEventListener('click', renderWeb);
