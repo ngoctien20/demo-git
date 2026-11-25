@@ -166,7 +166,8 @@ test('generated n8n nodes behave like the library (vm, fake $)', () => {
   const shop = { json: { shop_name: 'Nail Hoa', bank_bin: '970436', bank_account: '0123456789', bank_name: 'Hoa', booking: { capacity: 1 } } };
   const items = {
     'Shop Settings': [shop], 'Read Services': SERVICES.map((json) => ({ json })), 'Read Bookings': [],
-    'Booking Input': [{ json: { ...base, time: '2026-11-25 14:00' } }],
+    // Real clock inside the node: book 3 days from now at 14:00 Vietnam time (never in the past).
+    'Booking Input': [{ json: { ...base, time: new Date(Date.now() + 3 * 864e5 + 7 * 36e5).toISOString().slice(0, 10) + ' 14:00' } }],
   };
   const $ = (n) => ({ first: () => items[n][0], all: () => items[n] });
   const run = (name) => vm.runInNewContext('(function(){' + buildNode(name) + '})()', { $, Date, Math, JSON, Number, String, Object, Array, Set, URL, URLSearchParams, Error, RegExp });
