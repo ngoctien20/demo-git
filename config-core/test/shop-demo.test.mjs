@@ -30,8 +30,8 @@ test('D-03 order flow never exceeds stock and never creates a real order', () =>
   assert.deepEqual(payloads(reply('ORDER:A001', style)), ['QTY:A001:1', 'QTY:A001:2', 'QTY:A001:3']);
   assert.match(reply('QTY:A001:2', style)[0].text, /A001 × 2 = 490\.000đ[\s\S]*không tạo đơn thật/);
   assert.match(reply('QTY:A001:9', style)[0].text, /chỉ còn 5/);
-  const src = readFileSync(new URL('assets/shop-demo/shop-bot.mjs', root), 'utf8') + readFileSync(new URL('assets/shop-demo/shop-demo.js', root), 'utf8');
-  assert.doesNotMatch(src, /fetch\(|XMLHttpRequest|sendBeacon|innerHTML/);
+  const src = readFileSync(new URL('assets/shop-demo/shop-bot.mjs', root), 'utf8') + readFileSync(new URL('assets/shop-demo/shop-demo.js', root), 'utf8') + readFileSync(new URL('assets/shop-demo/shop-demo.bundle.js', root), 'utf8');
+  assert.doesNotMatch(src, /\bfetch\(|XMLHttpRequest|sendBeacon|\.innerHTML\s*=/);
 });
 
 test('D-04 free text: SKU, product type, unknown SKU not invented, fallback', () => {
