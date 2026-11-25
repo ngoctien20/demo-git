@@ -127,8 +127,16 @@ export function QuickSetup() {
       }
       // 2) Services / courses -> the service assistant DRAFT (not live until Kích hoạt on Menu page).
       const svcs = chosen.filter(r => r.kind !== 'product');
-      if (svcs.length && serviceAssistant) {
-        const v = await supabase.from('assistant_config_versions').select('state, config, config_sha256').eq('assistant_id', serviceAssistant.id).in('state', ['draft', 'published']);
+      let svcAssistantId = serviceAssistant?.id ?? null;
+      if (svcs.length && !svcAssistantId) {
+        // No service assistant yet: create one from the 'service' template (draft only, not live).
+        const c = await supabase.rpc('create_assistant', { p_store: store.id, p_name: ('Trợ lý dịch vụ ' + store.name).slice(0, 80), p_template_key: 'service' });
+        if (c.error) throw c.error;
+        svcAssistantId = c.data as string;
+        done.push('1 trợ lý Dịch vụ mới');
+      }
+      if (svcs.length && svcAssistantId) {
+        const v = await supabase.from('assistant_config_versions').select('state, config, config_sha256').eq('assistant_id', svcAssistantId).in('state', ['draft', 'published']);
         if (v.error) throw v.error;
         const base = (v.data.find(x => x.state === 'draft') ?? v.data.find(x => x.state === 'published'));
         if (!base) throw new Error('Trợ lý dịch vụ chưa có cấu hình.');
@@ -139,7 +147,7 @@ export function QuickSetup() {
         for (const r of svcs) list.push({ name: r.name.trim().slice(0, 80), price_vnd: parseVnd(r.price), ...(r.duration_min ? { note: r.duration_min + ' phút' } : {}) });
         item.action_config = { ...item.action_config, items: list };
         const draftRow = v.data.find(x => x.state === 'draft');
-        const { error } = await supabase.rpc('save_assistant_draft', { p_assistant: serviceAssistant.id, p_config: cfg, p_expected_sha: draftRow?.config_sha256 ?? null });
+        const { error } = await supabase.rpc('save_assistant_draft', { p_assistant: svcAssistantId, p_config: cfg, p_expected_sha: draftRow?.config_sha256 ?? null });
         if (error) throw error;
         done.push(svcs.length + ' dịch vụ (bản nháp, bấm Kích hoạt ở Menu & hành động để khách thấy)');
       }
@@ -152,6 +160,7 @@ export function QuickSetup() {
       if (faqs.length) done.push(faqs.length + ' câu hỏi thường gặp');
       setSaved('Đã lưu: ' + (done.join(', ') || 'không có mục nào') + '.');
       setDraft(null); setRows([]);
+      if (svcs.length && !serviceAssistant) await ws.reload();
     } catch (e) {
       setErr((done.length ? 'Đã lưu ' + done.join(', ') + ', rồi gặp lỗi: ' : '') + (e instanceof Error && !('code' in e) ? e.message : friendlyError(e)));
     } finally { setBusy(false); }
@@ -220,10 +229,10 @@ export function QuickSetup() {
               ))}
             </section>
           )}
-          {needsServiceAssistant && <Notice kind="warn">Có dịch vụ nhưng chưa có trợ lý mẫu Dịch vụ. <a href="#/tro-ly">Tạo trợ lý mẫu Dịch vụ</a> trước, hoặc bỏ tick các dòng dịch vụ.</Notice>}
+          {needsServiceAssistant && <Notice kind="info">Chưa có trợ lý Dịch vụ: khi lưu, App sẽ tự tạo một trợ lý Dịch vụ (bản nháp, khách chưa thấy) để chứa bảng dịch vụ này.</Notice>}
           {err && <Notice kind="err">{err}</Notice>}
           <p className="row-actions">
-            <button type="button" className="btn btn-primary" disabled={sample || !canManage || busy || chosen.length + faqUse.filter(Boolean).length === 0 || problems.some(Boolean) || needsServiceAssistant} onClick={confirm}>{busy ? 'Đang lưu…' : `Xác nhận lưu ${chosen.length} mục`}</button>
+            <button type="button" className="btn btn-primary" disabled={sample || !canManage || busy || chosen.length + faqUse.filter(Boolean).length === 0 || problems.some(Boolean)} onClick={confirm}>{busy ? 'Đang lưu…' : `Xác nhận lưu ${chosen.length} mục`}</button>
             <button type="button" className="btn btn-ghost" onClick={() => { setDraft(null); setRows([]); }}>Làm lại</button>
           </p>
         </>
