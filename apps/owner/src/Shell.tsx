@@ -46,7 +46,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
   }, [store.id]);
   // Platform admin flag comes from the server only (app_private.platform_admins). Missing RPC = not an admin.
   const adm = useLoad(async () => {
-    const r = await supabase.rpc('is_platform_admin');
+    const r = await supabase.rpc('is_platform_admin', {}, { get: true });
     return !r.error && r.data === true;
   }, []);
   const reload = useCallback(async () => { await Promise.all([asst.reload(), prof.reload()]); }, [asst.reload, prof.reload]);

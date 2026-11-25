@@ -108,7 +108,7 @@ const server=http.createServer((req,res)=>{
     return p.get('store_id')==='eq.'+storeId && p.get('tenant_id')==='eq.'+tenantId && p.get('channel')==='eq.messenger';
   }), 'read-only channel connections always tenant/store/channel scoped');
   check(requests.every(r=>['GET','HEAD'].includes(r.method)), 'no backend mutation');
-  check(requests.every(r=>!r.url.includes('reaction')&&!r.url.includes('rpc/')), 'no policy send or publish endpoint');
+  check(requests.every(r=>!r.url.includes('reaction')&&(!r.url.includes('rpc/')||(r.url.endsWith('rpc/is_platform_admin')&&r.method==='GET'))), 'no policy send or publish endpoint');
   check(errors.length===0,'no browser console/page errors');
   console.log('T404_REACTION_OWNER_UI_PASS '+passed+' assertions (mocked Supabase, no send)');
   await browser.close();
