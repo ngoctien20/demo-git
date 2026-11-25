@@ -178,6 +178,16 @@ runfile "$CC/20_channel_menu_read.sql" T404_CC20_CHANNEL_MENU_READ_OK
 ok "$(md5fn 'app_private.t404_qa_tenant_allowed(uuid)')" "$MD5_ALLOW" V20_ALLOWLIST_UNCHANGED
 ok "$(md5fn 'public.save_merchant_product(uuid,text,text,bigint,boolean,integer,timestamptz)')" "$MD5_WRITER" V20_WRITER_UNCHANGED
 
+# ---------------- V27.5 card_style (30 apply → checks → 85 rollback → identical body) ----------------
+MD5_VALIDATE=$(md5fn 'app_private.t404_cfg_validate(jsonb,text)')
+SHOPCFG=$(admin "SELECT config FROM public.industry_templates WHERE template_key='shop' ORDER BY version DESC LIMIT 1")
+runfile "$CC/30_card_style.sql" T404_CARD_STYLE_30_OK
+ok "$(admin "SELECT coalesce(array_length(app_private.t404_cfg_validate('$(q "$SHOPCFG")'::jsonb,'publish'),1),0)")" 0 CARD_STYLE_ABSENT_STILL_VALID
+ok "$(admin "SELECT coalesce(array_length(app_private.t404_cfg_validate(jsonb_set('$(q "$SHOPCFG")'::jsonb,'{card_style}','{\"base\":{\"primary\":\"#e8590c\",\"shape\":\"pill\"},\"channels\":{\"web\":{\"animation\":\"pop\"}}}'),'publish'),1),0)")" 0 CARD_STYLE_VALID_ACCEPTED
+ok "$(admin "SELECT string_agg(e, ',' ORDER BY e) FROM unnest(app_private.t404_cfg_validate(jsonb_set('$(q "$SHOPCFG")'::jsonb,'{card_style}','{\"base\":{\"primary\":\"red\"},\"channels\":{\"tiktok\":{}}}'),'draft')) e")" "card_style.base.primary|card_style_color_invalid,card_style.channels.tiktok|channel_unknown" CARD_STYLE_INVALID_REJECTED
+runfile "$CC/85_card_style_rollback.sql" T404_CARD_STYLE_85_OK
+ok "$(md5fn 'app_private.t404_cfg_validate(jsonb,text)')" "$MD5_VALIDATE" CARD_STYLE_ROLLBACK_BODY_IDENTICAL
+
 # ---------------- rollback 90 + re-apply ----------------
 runfile "$CC/90_config_core_rollback.sql" T404_CC_ROLLBACK_OK
 ok "$(admin "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('assistants','assistant_config_versions','channel_connections','action_types','industry_templates')")" 0 ROLLBACK_NO_TABLES

@@ -1,0 +1,405 @@
+<title>TIEN404 Card Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: studio — sticky control rail on the left, four channel phones on the right; owner colour drives only the web widget. */
+:root {
+  --bg: #f3f5f4; --panel: #ffffff; --ink: #17201d; --muted: #5d6a65; --line: #dde3e0;
+  --chip: #e8eeeb; --lock: #8a5a00; --lockbg: #fff4dc; --ok: #1e7a46;
+  --phone: #ffffff; --phone-edge: #cfd7d3;
+  --m-bubble: #e9ecef; --m-link: #0866ff; --m-card: #ffffff; --m-sep: #e4e6eb;
+  --tg-bg: #dfe8d8; --tg-bubble: #ffffff; --tg-btn: rgba(60,90,70,.28); --tg-btn-ink: #ffffff;
+  --z-bg: #eef3fb; --z-bubble: #ffffff;
+  --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #101513; --panel: #171e1b; --ink: #e6ece9; --muted: #9aa8a2; --line: #2a3430;
+  --chip: #23302b; --lock: #f0c060; --lockbg: #3a2e12; --ok: #5fd08f;
+  --phone: #0b0f0d; --phone-edge: #33403b;
+  --m-bubble: #303235; --m-link: #4e9bff; --m-card: #242526; --m-sep: #3a3b3c;
+  --tg-bg: #1c2a22; --tg-bubble: #22302a; --tg-btn: rgba(120,160,135,.25); --tg-btn-ink: #ffffff;
+  --z-bg: #141b24; --z-bubble: #1f2833; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #101513; --panel: #171e1b; --ink: #e6ece9; --muted: #9aa8a2; --line: #2a3430;
+  --chip: #23302b; --lock: #f0c060; --lockbg: #3a2e12; --ok: #5fd08f;
+  --phone: #0b0f0d; --phone-edge: #33403b;
+  --m-bubble: #303235; --m-link: #4e9bff; --m-card: #242526; --m-sep: #3a3b3c;
+  --tg-bg: #1c2a22; --tg-bubble: #22302a; --tg-btn: rgba(120,160,135,.25); --tg-btn-ink: #ffffff;
+  --z-bg: #141b24; --z-bubble: #1f2833; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+header.top { max-width: 1320px; margin: 0 auto 18px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: end; justify-content: space-between }
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin: 0; text-wrap: balance }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px }
+.legend span { padding: 3px 8px; border-radius: 6px; background: var(--chip) }
+.legend .lk { background: var(--lockbg); color: var(--lock) }
+
+.studio { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start }
+@media (max-width: 900px) { .studio { grid-template-columns: minmax(0, 1fr) } }
+
+.rail { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px) }
+@media (max-width: 900px) { .rail { position: static } }
+.ctl { display: flex; flex-direction: column; gap: 7px }
+.ctl > .lab { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px }
+.where { display: flex; gap: 4px; flex-wrap: wrap }
+.where i { font-style: normal; font-size: 10.5px; letter-spacing: .02em; padding: 1px 6px; border-radius: 5px; background: var(--chip); color: var(--muted) }
+.where i.on { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok) }
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); background: var(--chip); border-radius: 9px; padding: 3px; gap: 3px }
+.seg button { white-space: nowrap; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; padding: 6px 4px; border-radius: 7px; cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600 }
+.seg button:focus-visible, .sw:focus-visible, .btnx:focus-visible { outline: 2px solid var(--m-link); outline-offset: 2px }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.sw { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0 }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink) }
+.swatches input[type=color] { width: 36px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: none; padding: 1px; cursor: pointer }
+.warn { font-size: 12px; color: var(--lock); background: var(--lockbg); padding: 6px 8px; border-radius: 7px }
+.checks { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px }
+.checks label { display: flex; gap: 5px; align-items: center; cursor: pointer }
+.btnx { font: inherit; font-size: 13px; font-weight: 600; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 9px; padding: 8px 12px; cursor: pointer }
+.row2 { display: flex; gap: 8px; flex-wrap: wrap }
+
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; min-width: 0 }
+.phone { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0 }
+.phone h2 { font-size: 14px; margin: 0; padding: 11px 14px; display: flex; justify-content: space-between; gap: 8px; align-items: center; border-bottom: 1px solid var(--line) }
+.phone h2 small { font-weight: 500; font-size: 11px; color: var(--muted) }
+.screen { padding: 14px 12px; min-height: 430px; display: flex; flex-direction: column; gap: 8px; overflow: hidden }
+.note { font-size: 11.5px; color: var(--lock); background: var(--lockbg); padding: 7px 12px; border-top: 1px solid var(--line) }
+.note.good { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent) }
+.cust { font-size: 12px; color: var(--ink); padding: 0 12px }
+.bub { max-width: 85%; padding: 8px 12px; border-radius: 18px; font-size: 13.5px; white-space: pre-line }
+.me { align-self: flex-end; background: #0866ff; color: #fff }
+
+/* product art: drawn, not photos */
+.art { aspect-ratio: 1.91 / 1; display: grid; place-items: center; position: relative; overflow: hidden }
+.art.sq { aspect-ratio: 1 / 1 }
+.art svg { width: 46%; height: auto; max-height: 78%; filter: drop-shadow(0 4px 8px rgba(0,0,0,.18)) }
+.art .tag { position: absolute; left: 8px; top: 8px; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: rgba(255,255,255,.92); color: #17201d }
+
+/* Messenger (Meta draws these; only content + image ratio change) */
+.m .screen { background: var(--phone) }
+.m .bub.bot { background: var(--m-bubble); color: var(--ink) }
+.mcar { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px }
+.mcard { flex: 0 0 72%; scroll-snap-align: start; background: var(--m-card); border: 1px solid var(--m-sep); border-radius: 18px; overflow: hidden; font-size: 13px }
+.mcard .t { font-weight: 700; padding: 8px 12px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.mcard .s { color: var(--muted); padding: 2px 12px 8px; font-size: 12px }
+.mcard .b { border-top: 1px solid var(--m-sep); text-align: center; padding: 9px; color: var(--m-link); font-weight: 600 }
+.mqr { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-top: auto }
+.mqr span { border: 1px solid var(--m-link); color: var(--m-link); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600 }
+
+/* Telegram */
+.tg .screen { background: var(--tg-bg) }
+.tg .bub.bot { background: var(--tg-bubble); color: var(--ink); border-radius: 12px; max-width: 92%; font-size: 13px }
+.tg .bub b { font-weight: 700 }
+.kb { display: grid; gap: 4px; max-width: 92% }
+.kb div { background: var(--tg-btn); color: var(--tg-btn-ink); border-radius: 8px; text-align: center; padding: 8px 6px; font-size: 12.5px; font-weight: 600; backdrop-filter: blur(4px) }
+
+/* Zalo text */
+.z .screen { background: var(--z-bg) }
+.z .bub.bot { background: var(--z-bubble); color: var(--ink); border-radius: 10px; max-width: 94%; font-size: 13px }
+
+/* Web widget: fully owner-styled */
+.w .screen { background: var(--phone) }
+.w .head { display: flex; gap: 10px; align-items: center; padding: 10px 12px; color: var(--t404-on-primary); background: var(--t404-primary) }
+.w .head b { font-size: 14px }
+.w .head small { opacity: .85; font-size: 11.5px; display: block }
+.w .dot { width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--t404-on-primary) 22%, transparent); display: grid; place-items: center; font-weight: 800; font-size: 13px }
+.w .bub.bot { background: var(--m-bubble); color: var(--ink); border-radius: 14px 14px 14px 4px }
+.wcar { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 6px }
+.wcard { flex: 0 0 78%; scroll-snap-align: start; background: var(--m-card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 16px -10px rgba(0,0,0,.35) }
+.wcard.compact { flex-direction: row; flex-basis: 92% }
+.wcard.compact .art { aspect-ratio: auto; width: 38%; flex: none }
+.wbody { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 }
+.wbody .t { font-weight: 700; font-size: 13.5px; line-height: 1.3 }
+.wbody .p { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.wbody .p b { font-size: 16px; color: var(--t404-primary-ink); font-variant-numeric: tabular-nums }
+.stock { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: var(--chip); color: var(--muted) }
+.stock.low { background: var(--lockbg); color: var(--lock) }
+.acts { display: flex; flex-direction: column; gap: 6px; margin-top: 2px }
+.acts.row { flex-direction: row; flex-wrap: wrap }
+.acts.row .wb { flex: 1 1 0 }
+.wb { font: inherit; font-weight: 650; font-size: var(--t404-btn-fs); padding: var(--t404-btn-pad); border-radius: var(--t404-btn-radius);
+  border: 1.5px solid var(--t404-primary); cursor: pointer; position: relative; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease }
+.wb.solid { background: var(--t404-primary); color: var(--t404-on-primary) }
+.wb.outline { background: transparent; color: var(--t404-primary-ink) }
+.wb.soft { background: color-mix(in srgb, var(--t404-primary) 14%, transparent); border-color: transparent; color: var(--t404-primary-ink) }
+.wb.ghost2 { background: transparent; border-color: var(--line); color: var(--ink) }
+.wb:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px var(--t404-primary) }
+.wb:active { transform: scale(.97) }
+.wb:focus-visible { outline: 2px solid var(--t404-primary); outline-offset: 2px }
+.wchips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line) }
+.wchips .wb { font-size: 12.5px; padding: 6px 12px }
+
+/* animations (web only) */
+@keyframes a-fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+@keyframes a-slide { from { opacity: 0; transform: translateX(38px) } to { opacity: 1; transform: none } }
+@keyframes a-pop { 0% { opacity: 0; transform: scale(.86) } 60% { opacity: 1; transform: scale(1.03) } 100% { transform: none } }
+@keyframes a-shine { from { left: -60% } to { left: 130% } }
+.anim-fade .wcard, .anim-fade .wchips, .anim-fade .bub.bot { animation: a-fade .45s ease both }
+.anim-slide .wcard { animation: a-slide .5s cubic-bezier(.2,.8,.2,1) both }
+.anim-slide .bub.bot, .anim-slide .wchips { animation: a-fade .4s ease both }
+.anim-pop .wcard { animation: a-pop .5s cubic-bezier(.3,1.4,.5,1) both }
+.anim-pop .bub.bot, .anim-pop .wchips { animation: a-fade .35s ease both }
+.anim-shine .wcard, .anim-shine .bub.bot, .anim-shine .wchips { animation: a-fade .4s ease both }
+.anim-shine .wb.solid::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); animation: a-shine 2.4s ease-in-out .6s infinite }
+.wcard:nth-child(2) { animation-delay: .08s !important } .wcard:nth-child(3) { animation-delay: .16s !important }
+@media (prefers-reduced-motion: reduce) { .w * { animation: none !important; transition: none !important } }
+
+.cfg { max-width: 1320px; margin: 20px auto 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px }
+.cfg h3 { margin: 0 0 4px; font-size: 14px }
+.cfg p { margin: 0 0 10px; color: var(--muted); font-size: 13px }
+.cfg pre { margin: 0; font-family: var(--mono); font-size: 12px; background: var(--chip); padding: 12px; border-radius: 10px; overflow-x: auto }
+table.cap { border-collapse: collapse; font-size: 12.5px; width: 100%; min-width: 560px }
+table.cap th, table.cap td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left }
+table.cap td.y { color: var(--ok); font-weight: 600 } table.cap td.n { color: var(--muted) }
+.scroll { overflow-x: auto }
+</style>
+
+<header class="top">
+  <div>
+    <h1>Card Studio · thẻ bán hàng 4 kênh</h1>
+    <p class="sub">Chỉnh một lần, mỗi kênh tự dùng phần nó làm được. Dữ liệu là 3 mẫu thật trong Sheet (A001, A003, A006); ảnh là hình vẽ minh hoạ vì Sheet chưa có cột ảnh, nhãn “Bán chạy/Mới” là ví dụ.</p>
+  </div>
+  <div class="legend"><span>Xanh = kênh áp dụng</span><span class="lk">Vàng = nền tảng tự vẽ, không đổi được</span></div>
+</header>
+
+<div class="studio">
+  <aside class="rail" aria-label="Tùy chỉnh thẻ">
+    <div class="ctl">
+      <div class="lab">Màu chính <span class="where" data-k="primary"></span></div>
+      <div class="swatches" id="sw"></div>
+      <div class="warn" id="lowc" hidden>Màu này khó đọc chữ trên nút. Nên chọn đậm hơn.</div>
+    </div>
+    <div class="ctl"><div class="lab">Cỡ nút <span class="where" data-k="size"></span></div><div class="seg" data-k="size"></div></div>
+    <div class="ctl"><div class="lab">Bo góc <span class="where" data-k="shape"></span></div><div class="seg" data-k="shape"></div></div>
+    <div class="ctl"><div class="lab">Kiểu nút <span class="where" data-k="variant"></span></div><div class="seg" data-k="variant"></div></div>
+    <div class="ctl"><div class="lab">Xếp nút <span class="where" data-k="layout"></span></div><div class="seg" data-k="layout"></div></div>
+    <div class="ctl"><div class="lab">Hiệu ứng <span class="where" data-k="animation"></span></div><div class="seg" data-k="animation"></div></div>
+    <div class="ctl"><div class="lab">Bố cục thẻ <span class="where" data-k="card"></span></div><div class="seg" data-k="card"></div></div>
+    <div class="ctl"><div class="lab">Ảnh thẻ <span class="where" data-k="image_ratio"></span></div><div class="seg" data-k="image_ratio"></div></div>
+    <div class="ctl"><div class="lab">Hiện trên thẻ <span class="where" data-k="show"></span></div>
+      <div class="checks">
+        <label><input type="checkbox" id="sh-price" checked> Giá</label>
+        <label><input type="checkbox" id="sh-stock" checked> Tồn kho</label>
+        <label><input type="checkbox" id="sh-badge" checked> Nhãn</label>
+      </div></div>
+    <div class="row2"><button class="btnx" id="replay" type="button">▶ Phát lại hiệu ứng</button><button class="btnx" id="reset" type="button">Mặc định</button></div>
+  </aside>
+
+  <main class="phones">
+    <section class="phone w"><h2>Web widget <small>tùy biến hết</small></h2>
+      <div class="head"><div class="dot">T</div><div><b>Shop TIEN404</b><small>Thường trả lời ngay</small></div></div>
+      <div class="screen" id="web"></div>
+      <div class="note good">Màu, cỡ, bo góc, kiểu nút, xếp nút, hiệu ứng đều áp dụng.</div></section>
+
+    <section class="phone m"><h2>Messenger <small>Meta vẽ nút</small></h2>
+      <div class="screen" id="msg"></div>
+      <div class="note">Đổi được: nội dung thẻ, ảnh ngang/vuông, thứ tự và số nút (≤3). Màu, cỡ, hiệu ứng nút do Meta quyết định.</div></section>
+
+    <section class="phone tg"><h2>Telegram <small>Telegram vẽ nút</small></h2>
+      <div class="screen" id="tg"></div>
+      <div class="note">Đổi được: nội dung, nút dọc hay 3 nút/hàng, ảnh 1 thẻ. Màu và hiệu ứng nút do Telegram quyết định.</div></section>
+
+    <section class="phone z"><h2>Zalo Bot <small>chỉ chữ</small></h2>
+      <div class="screen" id="zalo"></div>
+      <div class="note">Bot Zalo chính thức chỉ gửi chữ: khách gõ số để chọn. Áp dụng phần “Hiện trên thẻ”.</div></section>
+  </main>
+</div>
+
+<section class="cfg">
+  <h3>Kênh nào chỉnh được gì</h3>
+  <div class="scroll"><table class="cap" id="cap"></table></div>
+</section>
+
+<section class="cfg">
+  <h3>Cấu hình sẽ lưu cho shop</h3>
+  <p>Đây là khối <code>card_style</code> trong cấu hình shop: <code>base</code> dùng chung, thêm <code>channels.web</code>, <code>channels.messenger</code> hay <code>channels.telegram</code> để chỉnh riêng từng kênh. Bot chưa đọc khối này cho tới khi anh duyệt bật.</p>
+  <pre id="json"></pre>
+  <div class="row2" style="margin-top:10px"><button class="btnx" id="copy" type="button">Chép cấu hình</button><span id="copied" class="sub" hidden>Đã chép</span></div>
+</section>
+
+<script>
+(() => {
+  const OPTS = {
+    size: [['sm','Nhỏ'],['md','Vừa'],['lg','To']],
+    shape: [['square','Vuông'],['rounded','Bo nhẹ'],['pill','Viên thuốc']],
+    variant: [['solid','Đặc'],['outline','Viền'],['soft','Nhạt']],
+    layout: [['stack','Dọc'],['row','Ngang']],
+    animation: [['none','Không'],['fade','Hiện dần'],['slide','Trượt'],['pop','Nảy'],['shine','Lấp lánh']],
+    card: [['photo_top','Ảnh trên'],['compact','Gọn ngang']],
+    image_ratio: [['horizontal','Ngang'],['square','Vuông']],
+  };
+  const SUPPORT = { web: ['primary','size','shape','variant','layout','animation','card','image_ratio','show'], messenger: ['image_ratio','show'], telegram: ['layout','show'], zalo: ['show'] };
+  const CH = [['web','Web'],['messenger','Messenger'],['telegram','Telegram'],['zalo','Zalo']];
+  const COLORS = ['#1f6feb','#0f7b6c','#e8590c','#c2255c','#7048e8','#1d1d1f'];
+  const DEF = { primary: '#1f6feb', size: 'md', shape: 'rounded', variant: 'solid', layout: 'stack', animation: 'fade', card: 'photo_top', image_ratio: 'square', show: { price: true, stock: true, badge: true } };
+  let S = JSON.parse(JSON.stringify(DEF));
+  try { const saved = JSON.parse(localStorage.getItem('t404-card-style') || 'null'); if (saved) S = Object.assign(S, saved); } catch {}
+
+  const P = [
+    { sku: 'A001', name: 'Áo polo nam xanh navy size S', price: 245000, stock: 5, badge: 'Bán chạy', c1: '#24406b', c2: '#3c6bb0', kind: 'polo' },
+    { sku: 'A003', name: 'Áo thun nam đen basic size L', price: 159000, stock: 18, badge: '', c1: '#2a2d31', c2: '#555b63', kind: 'tee' },
+    { sku: 'A006', name: 'Áo khoác bomber đen size L', price: 599000, stock: 8, badge: 'Mới', c1: '#3b3326', c2: '#7a6a4d', kind: 'jacket' },
+  ];
+  const vnd = (n) => n.toLocaleString('vi-VN').replace(/,/g, '.') + 'đ';
+  const stockTxt = (s) => s <= 0 ? 'Hết hàng' : s <= 5 ? 'Chỉ còn ' + s : 'Còn ' + s;
+  const subtitle = (p) => [S.show.badge && p.badge, S.show.price && vnd(p.price), S.show.stock && stockTxt(p.stock)].filter(Boolean).join(' · ');
+  const h = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else e.setAttribute(k, v); } for (const k of kids) if (k) e.append(k); return e; };
+
+  const SHAPES = {
+    tee: 'M30 18 L45 10 Q50 16 55 10 L70 18 L80 34 L68 40 L66 32 L66 88 L34 88 L34 32 L32 40 L20 34 Z',
+    polo: 'M30 18 L44 10 L50 22 L56 10 L70 18 L80 34 L68 40 L66 32 L66 88 L34 88 L34 32 L32 40 L20 34 Z M47 14 L50 30 L53 14',
+    jacket: 'M28 18 L44 10 Q50 14 56 10 L72 18 L84 60 L72 64 L68 40 L68 88 L32 88 L32 40 L28 64 L16 60 Z M50 14 L50 88',
+  };
+  function art(p, square) {
+    const a = h('div', { class: 'art' + (square ? ' sq' : '') });
+    a.style.background = `radial-gradient(120% 90% at 30% 20%, ${p.c2}, ${p.c1})`;
+    a.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SHAPES[p.kind]}" fill="rgba(255,255,255,.9)" stroke="rgba(0,0,0,.25)" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+    if (S.show.badge && p.badge) a.append(h('span', { class: 'tag', text: p.badge }));
+    return a;
+  }
+
+  function lum(hex) { return [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)/255).map(v => v <= .03928 ? v/12.92 : ((v+.055)/1.055)**2.4).reduce((s,v,i) => s + v*[.2126,.7152,.0722][i], 0); }
+  const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+
+  function applyVars() {
+    const onW = contrast(S.primary, '#ffffff'), onB = contrast(S.primary, '#111418');
+    const on = onW >= onB ? '#ffffff' : '#111418';
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+    const bgPhone = dark ? '#0b0f0d' : '#ffffff';
+    // ink colour for outline/soft/price text must also read on the phone background
+    const ink = contrast(S.primary, bgPhone) >= 3 ? S.primary : (dark ? '#e6ece9' : '#17201d');
+    const v = { '--t404-primary': S.primary, '--t404-on-primary': on, '--t404-primary-ink': ink,
+      '--t404-btn-pad': { sm: '6px 10px', md: '9px 14px', lg: '13px 18px' }[S.size],
+      '--t404-btn-fs': { sm: '12.5px', md: '13.5px', lg: '15.5px' }[S.size],
+      '--t404-btn-radius': { square: '4px', rounded: '10px', pill: '999px' }[S.shape] };
+    const w = document.querySelector('.phone.w');
+    for (const [k, val] of Object.entries(v)) w.style.setProperty(k, val);
+    document.getElementById('lowc').hidden = Math.max(onW, onB) >= 4.5;
+  }
+
+  function renderWeb() {
+    const el = document.getElementById('web');
+    el.className = 'screen anim-' + S.animation;
+    el.replaceChildren();
+    el.append(h('div', { class: 'bub me', text: 'Xem sản phẩm' }));
+    el.append(h('div', { class: 'bub bot', text: 'Đây là 3 mẫu áo đang có, bạn vuốt ngang để xem nhé.' }));
+    const car = h('div', { class: 'wcar' });
+    for (const p of P) {
+      const card = h('div', { class: 'wcard' + (S.card === 'compact' ? ' compact' : '') });
+      card.append(art(p, S.image_ratio === 'square' && S.card !== 'compact'));
+      const body = h('div', { class: 'wbody' });
+      body.append(h('div', { class: 't', text: p.sku + ' · ' + p.name }));
+      const pr = h('div', { class: 'p' });
+      if (S.show.price) pr.append(h('b', { text: vnd(p.price) }));
+      if (S.show.stock) pr.append(h('span', { class: 'stock' + (p.stock <= 5 ? ' low' : ''), text: stockTxt(p.stock) }));
+      if (pr.childElementCount) body.append(pr);
+      const acts = h('div', { class: 'acts' + (S.layout === 'row' ? ' row' : '') });
+      acts.append(h('button', { class: 'wb ' + S.variant, type: 'button', text: 'Đặt ngay' }));
+      acts.append(h('button', { class: 'wb ghost2', type: 'button', text: S.layout === 'row' ? 'Chi tiết' : 'Xem chi tiết' }));
+      body.append(acts); card.append(body); car.append(card);
+    }
+    el.append(car);
+    const chips = h('div', { class: 'wchips' });
+    for (const t of ['Trang tiếp', 'Tra cứu đơn', 'Gặp nhân viên']) chips.append(h('button', { class: 'wb ' + (S.variant === 'solid' ? 'soft' : S.variant), type: 'button', text: t }));
+    el.append(chips);
+  }
+
+  function renderMsg() {
+    const el = document.getElementById('msg'); el.replaceChildren();
+    el.append(h('div', { class: 'bub me', text: 'Xem sản phẩm' }));
+    const car = h('div', { class: 'mcar' });
+    for (const p of P) {
+      const c = h('div', { class: 'mcard' });
+      c.append(art(p, S.image_ratio === 'square'));
+      c.append(h('div', { class: 't', text: p.sku + ' · ' + p.name }));
+      const s = subtitle(p); if (s) c.append(h('div', { class: 's', text: s }));
+      c.append(h('div', { class: 'b', text: 'Xem ' + p.sku }));
+      car.append(c);
+    }
+    el.append(car);
+    el.append(h('div', { class: 'bub bot', text: 'Sản phẩm · trang 1/7 · 21 mẫu' }));
+    const qr = h('div', { class: 'mqr' }); for (const t of ['Trang tiếp', 'Gặp nhân viên']) qr.append(h('span', { text: t })); el.append(qr);
+  }
+
+  function renderTg() {
+    const el = document.getElementById('tg'); el.replaceChildren();
+    el.append(h('div', { class: 'bub me', text: 'Xem sản phẩm' }));
+    const b = h('div', { class: 'bub bot' });
+    P.forEach((p, i) => { const t = h('b', { text: p.sku + ' · ' + p.name }); b.append(t); const s = subtitle(p); if (s) b.append(document.createTextNode('\n' + s)); if (i < P.length - 1) b.append(document.createTextNode('\n\n')); });
+    el.append(b);
+    const kb = h('div', { class: 'kb' });
+    kb.style.gridTemplateColumns = S.layout === 'row' ? 'repeat(3, 1fr)' : '1fr';
+    for (const p of P) kb.append(h('div', { text: 'Xem ' + p.sku }));
+    const nav = h('div', { text: 'Trang tiếp ›' }); nav.style.gridColumn = '1 / -1'; kb.append(nav);
+    el.append(kb);
+  }
+
+  function renderZalo() {
+    const el = document.getElementById('zalo'); el.replaceChildren();
+    el.append(h('div', { class: 'bub me', text: 'Xem sản phẩm' }));
+    const lines = P.map((p) => p.sku + ' · ' + p.name + (subtitle(p) ? '\n   ' + subtitle(p) : ''));
+    const menu = [...P.map((p) => 'Xem ' + p.sku), 'Trang tiếp'].map((t, i) => (i + 1) + '. ' + t);
+    el.append(h('div', { class: 'bub bot', text: lines.join('\n') + '\n\n' + menu.join('\n') + '\n\nBạn gõ số để chọn nhé.' }));
+    el.append(h('div', { class: 'bub me', text: '1' }));
+    const s = subtitle(P[0]);
+    el.append(h('div', { class: 'bub bot', text: P[0].sku + ' · ' + P[0].name + (s ? '\n' + s : '') }));
+  }
+
+  function renderControls() {
+    for (const seg of document.querySelectorAll('.seg')) {
+      const k = seg.dataset.k; seg.replaceChildren();
+      for (const [v, label] of OPTS[k]) {
+        const b = h('button', { type: 'button', 'aria-pressed': String(S[k] === v), text: label });
+        b.addEventListener('click', () => { S[k] = v; update(); });
+        seg.append(b);
+      }
+    }
+    const sw = document.getElementById('sw'); sw.replaceChildren();
+    for (const c of COLORS) {
+      const b = h('button', { class: 'sw', type: 'button', 'aria-label': 'Màu ' + c, 'aria-pressed': String(S.primary === c) });
+      b.style.background = c; b.addEventListener('click', () => { S.primary = c; update(); }); sw.append(b);
+    }
+    const pick = h('input', { type: 'color', id: 'pick', value: S.primary, 'aria-label': 'Chọn màu khác' });
+    pick.addEventListener('input', () => { S.primary = pick.value.toLowerCase(); update(false); });
+    sw.append(pick);
+    for (const w of document.querySelectorAll('.where')) {
+      const k = w.dataset.k; w.replaceChildren();
+      for (const [ch, name] of CH) w.append(h('i', { class: SUPPORT[ch].includes(k) ? 'on' : '', text: name }));
+    }
+    for (const k of ['price', 'stock', 'badge']) document.getElementById('sh-' + k).checked = S.show[k];
+  }
+
+  function renderCap() {
+    const rows = [['Màu chính','primary'],['Cỡ nút','size'],['Bo góc','shape'],['Kiểu nút','variant'],['Xếp nút dọc/ngang','layout'],['Hiệu ứng','animation'],['Bố cục thẻ','card'],['Ảnh ngang/vuông','image_ratio'],['Giá, tồn kho, nhãn','show']];
+    const t = document.getElementById('cap'); t.replaceChildren();
+    const hr = h('tr', {}, h('th', { text: 'Tùy chỉnh' })); for (const [, n] of CH) hr.append(h('th', { text: n })); t.append(h('thead', {}, hr));
+    const tb = h('tbody');
+    for (const [label, k] of rows) { const r = h('tr', {}, h('td', { text: label })); for (const [ch] of CH) { const y = SUPPORT[ch].includes(k); r.append(h('td', { class: y ? 'y' : 'n', text: y ? 'Có' : 'Nền tảng tự vẽ' })); } tb.append(r); }
+    t.append(tb);
+  }
+
+  function update(full = true) {
+    try { localStorage.setItem('t404-card-style', JSON.stringify(S)); } catch {}
+    if (full) renderControls();
+    applyVars(); renderWeb(); renderMsg(); renderTg(); renderZalo();
+    document.getElementById('json').textContent = JSON.stringify({ card_style: { base: S } }, null, 2);
+  }
+  for (const k of ['price', 'stock', 'badge']) document.getElementById('sh-' + k).addEventListener('change', (e) => { S.show[k] = e.target.checked; update(false); });
+  document.getElementById('replay').addEventListener('click', renderWeb);
+  document.getElementById('reset').addEventListener('click', () => { S = JSON.parse(JSON.stringify(DEF)); update(); });
+  document.getElementById('copy').addEventListener('click', () => {
+    const txt = document.getElementById('json').textContent, done = document.getElementById('copied');
+    navigator.clipboard.writeText(txt).then(() => { done.hidden = false; setTimeout(() => done.hidden = true, 1500); }, () => {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('json')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyVars);
+  renderCap(); update();
+})();
+</script>

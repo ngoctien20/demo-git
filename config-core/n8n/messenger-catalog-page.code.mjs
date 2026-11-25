@@ -5,7 +5,7 @@ const current = $('Loop One Message').first(1, $('Loop One Message').context.cur
 const PAGE_SIZE = 3;
 const DEMO_PAGE_ID = '2379295362359912';
 const safeText = (message) => [{ json: { catalogMessage: { text: message } } }];
-const norm = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const norm = (v) => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/đ/gi, 'd').toLowerCase().trim().replace(/\s+/g, ' ');
 const catRaw = norm(current.catalogCategory);
 const cat = ['', 'all', 'tat ca', 'san pham'].includes(catRaw) ? 'all'
@@ -23,9 +23,23 @@ if (current.mediaType !== 'catalog_page' || !cat ||
   !Number.isSafeInteger(version) || version < 1 || version > 999999999) {
   return safeText('Danh mục chưa khả dụng. Bạn hãy mở lại mục Xem sản phẩm nhé.');
 }
+// V27.1: optional product photo only from an https, allowlisted host (Sheet column image_url).
+// Regex instead of URL(): the Code-node sandbox may not expose URL.
+const imageOk = (u) => typeof u === 'string' && u.length <= 1000 &&
+  /^https:\/\/(lh3\.googleusercontent\.com|i\.imgur\.com|ngoctien20\.github\.io)\/[^\s"'<>]+$/.test(u);
+// Clip by code points so emoji are never cut in half.
+const clipCp = (v, n) => { const c = [...String(v)]; return c.length <= n ? c.join('') : c.slice(0, n - 1).join('') + '…'; };
 const validMoney = n => (typeof n === 'number'
   ? Number.isSafeInteger(n) && n >= 0
   : typeof n === 'string' && /^\d+$/.test(n) && Number.isSafeInteger(Number(n)));
+const cleanBadge = (v) => { const t = String(v ?? '').trim();
+  return t && [...t].length <= 16 && /^[\p{L}\p{N} %+\-!.]+$/u.test(t) ? t : ''; };
+// V27.5 owner card style (published config, when the bridge supplies it). Only image_ratio and
+// show flags matter on Messenger: Meta draws the buttons itself.
+const cs = current.cardStyle && typeof current.cardStyle === 'object' ? current.cardStyle : {};
+const imageRatio = cs.image_ratio === 'horizontal' ? 'horizontal' : 'square'; // product photos read best square (V27.1 default)
+const show = { price: cs.show?.price !== false, stock: cs.show?.stock !== false, badge: cs.show?.badge !== false };
+const stockTxt = (n) => n === 0 ? 'Hết hàng' : n <= 5 ? 'Chỉ còn ' + n : 'Còn ' + n;
 const rows = $input.all().map(it => it.json).filter(Boolean);
 const counts = new Map();
 for (const r of rows) {
@@ -41,7 +55,12 @@ const products = rows.filter(r => {
   if (cat === 'quan' && !norm(name).startsWith('quan ')) return false;
   return true;
 }).map(r => ({ sku: String(r.sku), name: r.name.trim(),
-  price: Number(r.price), stock: Number(r.stock) })).sort((a,b) => a.sku.localeCompare(b.sku));
+  price: Number(r.price), stock: Number(r.stock),
+  image: imageOk(r.image_url) ? String(r.image_url) : null,
+  // V27.5 optional Sheet columns: badge (≤16 plain chars) and old_price (> price) — absent = old behaviour.
+  badge: cleanBadge(r.badge),
+  oldPrice: validMoney(r.old_price) && Number(r.old_price) > Number(r.price) ? Number(r.old_price) : null,
+})).sort((a,b) => a.sku.localeCompare(b.sku));
 // Non-cryptographic catalogue snapshot fingerprint: detects visible catalogue drift between page taps.
 // Authorization still comes from the published menu, Page allowlist and current server-side SKU lookup.
 const sourceStamp = JSON.stringify([cat, products.map(p => [p.sku, p.name, p.price, p.stock])]);
@@ -80,6 +99,19 @@ const msg = {
       payload: 'TIEN404:VIEW:' + p.sku })) } },
   ...(qr.length ? { quick_replies: qr } : {}),
 };
-return [{ json: { catalogMessage: msg, catalogPage: page, catalogPages: pages,
+// V27.1 native carousel: clean title, compact subtitle, photo when verified. Same validated rows.
+const catalogCards = shown.map(p => ({
+  title: clipCp(p.sku + ' · ' + p.name, 80),
+  subtitle: clipCp([show.badge && p.badge,
+    show.price && (p.price.toLocaleString('vi-VN') + 'đ' + (p.oldPrice ? ' (giá cũ ' + p.oldPrice.toLocaleString('vi-VN') + 'đ)' : '')),
+    show.stock && stockTxt(p.stock)].filter(Boolean).join(' · ') || 'Bấm Xem để biết chi tiết', 80),
+  ...(p.image ? { image_url: p.image } : {}),
+  buttons: [{type:'postback', title:'Xem '+p.sku, payload:'TIEN404:VIEW:'+p.sku}]
+}));
+const catalogFollowText = names[cat] + ' · trang ' + page + '/' + pages + ' · ' + products.length + ' mẫu\n' +
+  'Bấm "Xem" trên thẻ hoặc nhắn mã mẫu (vd ' + shown[0].sku + ') để xem chi tiết.';
+return [{ json: { catalogMessage: msg, catalogCards, catalogFollowText, catalogImageRatio: imageRatio, catalogPage: page, catalogPages: pages,
   catalogCount: products.length, catalogCategory: cat, configVersion: version,
   catalogDigest } }];
+
+
