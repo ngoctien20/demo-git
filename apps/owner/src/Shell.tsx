@@ -23,6 +23,7 @@ import { Conversations } from './pages/Conversations';
 import { Reports } from './pages/Reports';
 import { Notifications } from './pages/Notifications';
 import { Personality } from './pages/Personality';
+import { Admin } from './pages/Admin';
 
 type NavItem = [string, string, string];
 
@@ -43,6 +44,11 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
     if (r.error) return { ready: false, row: null as Profile | null };
     return { ready: true, row: r.data as Profile | null };
   }, [store.id]);
+  // Platform admin flag comes from the server only (app_private.platform_admins). Missing RPC = not an admin.
+  const adm = useLoad(async () => {
+    const r = await supabase.rpc('is_platform_admin');
+    return !r.error && r.data === true;
+  }, []);
   const reload = useCallback(async () => { await Promise.all([asst.reload(), prof.reload()]); }, [asst.reload, prof.reload]);
   const ws = useMemo<Workspace>(() => {
     const assistants = asst.data ?? [];
@@ -61,8 +67,9 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       ['/khach-hang', ws.people, '♧'], ['/bao-cao', 'Báo cáo', '▥'], ['/thong-bao', 'Thông báo', '◔'],
     ] },
     { group: 'Workspace', items: [
-      ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/goi-dich-vu', 'Gói dịch vụ', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
+      ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/goi-dich-vu', 'Gói và thanh toán', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
     ] },
+    ...(adm.data ? [{ group: 'TIEN404', items: [['/quan-tri', 'Quản trị nền tảng', '⛨'] as NavItem] }] : []),
   ];
 
   const owner = moduleOwner(route.path);
@@ -87,6 +94,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       case '/phong-cach': return <Personality />;
       case '/goi-dich-vu': return <Plan />;
       case '/tai-khoan': return <Account />;
+      case '/quan-tri': return <Admin isAdmin={adm.loading ? null : adm.data === true} />;
       default: return <Overview />;
     }
   })();
