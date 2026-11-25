@@ -10,7 +10,13 @@
 .t4-card { flex: 0 0 78%; scroll-snap-align: start; display: flex; flex-direction: column; background: var(--t4-surface); border: 1px solid var(--t4-line); border-radius: 14px; overflow: hidden; box-shadow: 0 6px 16px -10px rgba(0,0,0,.35) }
 .t4-card-wide { flex-basis: auto }
 .t4-media { aspect-ratio: 1.91 / 1; background: var(--t4-bubble) }
+.t4-media { position: relative }
 .t4-media img { width: 100%; height: 100%; object-fit: cover; display: block }
+.t4-badge { position: absolute; bottom: 8px; left: 8px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; letter-spacing: .01em;
+  background: var(--t404-primary); color: var(--t404-on-primary); box-shadow: 0 4px 10px -4px rgba(0,0,0,.4) }
+.t4-soldout .t4-media img { filter: grayscale(1); opacity: .6 }
+.t4-card-btn:disabled, .t4-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none }
+.t4-bubble.t4-me { align-self: flex-end; border-radius: 14px 14px 4px 14px; background: var(--t404-primary); color: var(--t404-on-primary) }
 [data-t4-image-ratio="square"] .t4-media { aspect-ratio: 1 / 1 }
 [data-t4-card="compact"] .t4-card { flex-direction: row; flex-basis: 92% }
 [data-t4-card="compact"] .t4-media { aspect-ratio: auto; width: 38%; flex: none }

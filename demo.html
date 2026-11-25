@@ -54,6 +54,57 @@
   </aside>
  </div>
 </section>
+<section class="section tight" id="bot-ban-hang">
+ <link rel="stylesheet" href="assets/shop-demo/widget-theme.css?v=27.8">
+ <link rel="stylesheet" href="assets/shop-demo/shop-demo.css?v=27.8">
+ <div class="wrap">
+  <p class="eyebrow">Mô phỏng</p>
+  <h2>Thử trợ lý bán hàng của một shop</h2>
+  <p class="lead">Đây là cách khách của shop thấy sản phẩm trong khung chat trên website: thẻ có ảnh, giá, tồn kho, nhãn và nút đặt hàng. Bạn đổi giao diện thẻ ở bên phải, khung chat đổi theo ngay.</p>
+  <div class="sd-grid">
+   <div class="card sd-chat" data-shop-demo>
+    <div class="chat-head"><b>Shop Mẫu TIEN404</b><button class="btn btn-ghost sd-reset" type="button" data-sd-reset>Bắt đầu lại</button></div>
+    <div class="sd-log t4-root" aria-live="polite"></div>
+    <form class="chat-form sd-form"><label class="sr" for="sd-input">Tin nhắn cho shop mẫu</label><input id="sd-input" maxlength="200" autocomplete="off" placeholder="Thử gõ: A003, áo polo, bán chạy…"><button class="btn btn-primary" type="submit">Gửi</button></form>
+   </div>
+   <form class="card sd-style" data-shop-style aria-label="Tùy chỉnh giao diện thẻ">
+    <h3>Giao diện thẻ</h3>
+    <fieldset><legend>Màu chính</legend><div class="sd-swatches">
+     <label style="--c:#1f6feb"><input type="radio" name="primary" value="#1f6feb" checked><span class="sr">Xanh dương</span></label>
+     <label style="--c:#4f5cf6"><input type="radio" name="primary" value="#4f5cf6"><span class="sr">Tím xanh</span></label>
+     <label style="--c:#0f7b6c"><input type="radio" name="primary" value="#0f7b6c"><span class="sr">Xanh ngọc</span></label>
+     <label style="--c:#e8590c"><input type="radio" name="primary" value="#e8590c"><span class="sr">Cam</span></label>
+     <label style="--c:#c2255c"><input type="radio" name="primary" value="#c2255c"><span class="sr">Hồng đậm</span></label>
+     <label style="--c:#ffd43b"><input type="radio" name="primary" value="#ffd43b"><span class="sr">Vàng</span></label>
+     <label style="--c:#212529"><input type="radio" name="primary" value="#212529"><span class="sr">Đen</span></label>
+    </div></fieldset>
+    <fieldset><legend>Cỡ nút</legend><div class="sd-seg">
+     <label><input type="radio" name="size" value="sm"><span>Nhỏ</span></label><label><input type="radio" name="size" value="md" checked><span>Vừa</span></label><label><input type="radio" name="size" value="lg"><span>Lớn</span></label>
+    </div></fieldset>
+    <fieldset><legend>Bo góc</legend><div class="sd-seg">
+     <label><input type="radio" name="shape" value="square"><span>Vuông</span></label><label><input type="radio" name="shape" value="rounded" checked><span>Bo nhẹ</span></label><label><input type="radio" name="shape" value="pill"><span>Tròn</span></label>
+    </div></fieldset>
+    <fieldset><legend>Kiểu nút</legend><div class="sd-seg">
+     <label><input type="radio" name="variant" value="solid" checked><span>Đặc</span></label><label><input type="radio" name="variant" value="outline"><span>Viền</span></label><label><input type="radio" name="variant" value="soft"><span>Nhạt</span></label>
+    </div></fieldset>
+    <fieldset><legend>Xếp nút</legend><div class="sd-seg">
+     <label><input type="radio" name="layout" value="stack" checked><span>Dọc</span></label><label><input type="radio" name="layout" value="row"><span>Ngang</span></label>
+    </div></fieldset>
+    <fieldset><legend>Hiệu ứng</legend><div class="sd-seg sd-wrap">
+     <label><input type="radio" name="animation" value="none"><span>Không</span></label><label><input type="radio" name="animation" value="fade" checked><span>Hiện dần</span></label><label><input type="radio" name="animation" value="slide"><span>Trượt</span></label><label><input type="radio" name="animation" value="pop"><span>Nảy</span></label><label><input type="radio" name="animation" value="shine"><span>Lấp lánh</span></label>
+    </div></fieldset>
+    <fieldset><legend>Ảnh</legend><div class="sd-seg">
+     <label><input type="radio" name="image_ratio" value="square" checked><span>Vuông</span></label><label><input type="radio" name="image_ratio" value="horizontal"><span>Ngang</span></label>
+    </div></fieldset>
+    <fieldset><legend>Hiện trên thẻ</legend><div class="sd-checks">
+     <label><input type="checkbox" name="show" value="price" checked> Giá</label><label><input type="checkbox" name="show" value="stock" checked> Tồn kho</label><label><input type="checkbox" name="show" value="badge" checked> Nhãn</label>
+    </div></fieldset>
+    <p class="muted sd-note">Ảnh là ảnh minh hoạ. Bản mô phỏng chạy ngay trên trình duyệt, không tạo đơn thật. Trên Messenger, Meta tự vẽ nút nên chỉ đổi được nội dung thẻ và tỉ lệ ảnh.</p>
+   </form>
+  </div>
+ </div>
+ <script type="module" src="assets/shop-demo/shop-demo.js?v=27.8"></script>
+</section>
 </main>
 <footer class="footer">
  <div class="wrap footer-grid">

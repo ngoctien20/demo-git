@@ -1,6 +1,7 @@
 // TIEN404 V27.4/V27.5 web widget block renderer (browser, no deps). Renders toWebWidget() blocks with
 // textContent only (never innerHTML), https links with rel=noopener, and calls onAction(payload)
 // for action buttons — the server re-resolves every payload against the published config.
+// V27.8: optional item.badge (label over photo), item.soldOut, action.disabled.
 // V27.5: optional `theme` from toWebWidget() (owner card_style) → CSS vars + classes, styled by widget-theme.css.
 const VAR_RE = /^--t404-[a-z-]+$/;
 const SAFE_VAL = /^[#0-9a-zA-Z .%-]{1,32}$/;
@@ -25,12 +26,18 @@ export function renderBlocks(root, blocks, { onAction = () => {}, theme } = {}) 
   const card = (it, cls, i = 0) => {
     const c = el('article', cls);
     c.style.setProperty('--t404-i', String(i)); // stagger index for animations
-    if (it.image) { const f = el('div', 't4-media'); const img = el('img'); img.src = it.image; img.alt = it.title; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; f.append(img); c.append(f); }
+    if (it.image) {
+      const f = el('div', 't4-media'); const img = el('img'); img.src = it.image; img.alt = it.title; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; f.append(img);
+      // V27.8: owner label drawn over the photo (web only; Messenger keeps it in the subtitle).
+      if (typeof it.badge === 'string' && it.badge) f.append(el('span', 't4-badge', it.badge.slice(0, 16)));
+      c.append(f);
+    }
+    if (it.soldOut === true) c.classList.add('t4-soldout');
     const body = el('div', 't4-body');
     body.append(el('strong', 't4-title', it.title));
     if (it.subtitle) body.append(el('span', 't4-sub', it.subtitle));
     const acts = el('div', 't4-card-actions');
-    (it.actions ?? []).forEach((a, k) => acts.append(actionEl(a, 't4-card-btn' + (k === 0 ? ' t4-primary' : ''))));
+    (it.actions ?? []).forEach((a, k) => { const n = actionEl(a, 't4-card-btn' + (k === 0 ? ' t4-primary' : '')); if (a.disabled === true && n.tagName === 'BUTTON') n.disabled = true; acts.append(n); });
     body.append(acts); c.append(body);
     return c;
   };
