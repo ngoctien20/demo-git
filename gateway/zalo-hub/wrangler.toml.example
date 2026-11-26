@@ -6,6 +6,7 @@ compatibility_date = "2026-11-01"
 
 [vars]
 ZH_ENABLED = "false"            # whole hub; flip to "true" only after owner approval
+ZH_CARE_PILOT_PLANS = '{}'      # private QA store -> lite/plus/pro; empty by default
 ZH_SEND_ENABLED = "false"       # outbound sends to Zalo
 ZH_PUBLIC_BASE_URL = "https://tien404-zalo-hub-staging.<account>.workers.dev"
 ZH_FORWARD_HOSTS = "ngoctien20.app.n8n.cloud"

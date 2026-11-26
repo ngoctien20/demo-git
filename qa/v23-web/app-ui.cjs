@@ -54,7 +54,7 @@ const server = http.createServer((req, res) => {
 (async () => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}/app/`;
-  const b = await chromium.launch();
+  const b = await chromium.launch(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {});
   let bad = 0;
   const session = { access_token: 'x.' + Buffer.from(JSON.stringify({ sub: UID, exp: 9999999999 })).toString('base64url') + '.y', token_type: 'bearer',
     expires_in: 3600, expires_at: 9999999999, refresh_token: 'r', user: { id: UID, email: 'owner@example.com', aud: 'authenticated', role: 'authenticated' } };
@@ -75,9 +75,24 @@ const server = http.createServer((req, res) => {
     // Zalo Hub owner self-connect (gateway/zalo-hub /v1/owner/*): fixture = store has no Zalo bot yet.
     await ctx.route(/zalo-hub[^/]*\.workers\.dev\//, route => route.fulfill({ status: 200, contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, connection: null }) }));
+    let plan = 'lite';
+    let globalPause = false;
+    const individual = new Map();
+    await ctx.route('**/v1/owner/care/*', async route => {
+      const op = new URL(route.request().url()).pathname.split('/').pop();
+      const body = route.request().postDataJSON();
+      if (op === 'pause') {
+        if (body.chat) individual.set(body.chat, body.paused);
+        else globalPause = body.paused;
+      }
+      const rows = ['A','B'].map(chat => ({conn:'qa',chat,name:'Khách QA',at:Date.now(),paused:individual.get(chat)||false}));
+      const payload = op === 'inbox' ? {plan,contact:{phone:'',zalo:''},paused:globalPause,rows}
+        : op === 'history' ? {messages:[{at:Date.now(),content:'Xin chào '+body.chat,reply:null}]} : {};
+      return route.fulfill({json:{ok:true,...payload}});
+    });
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-    return { p, errs, ctx };
+    return { p, errs, ctx, setPlan: value => { plan = value; } };
   }
   async function check(p, errs, name, tag) {
     await p.waitForTimeout(400);
@@ -93,7 +108,27 @@ const server = http.createServer((req, res) => {
     { const { p, errs, ctx } = await page(w, h, { loggedIn: false }); await p.goto(base + '#/dang-nhap'); await check(p, errs, 'login', tag);
       await p.goto(base + '#/dang-ky'); await check(p, errs, 'signup', tag); await ctx.close(); }
     { const { p, errs, ctx } = await page(w, h, { noStores: true }); await p.goto(base + '#/'); await check(p, errs, 'onboarding', tag); await ctx.close(); }
-    const { p, errs, ctx } = await page(w, h);
+    const { p, errs, ctx, setPlan } = await page(w, h);
+    await p.goto(base + '#/hoi-thoai');
+    const inbox = p.getByRole('region',{name:'Hội thoại Zalo Bot'});
+    await inbox.getByRole('button',{name:'Khách QA · A'}).click();
+    await inbox.getByText('Khách · Xin chào A').waitFor();
+    const pauseShop = inbox.getByRole('button',{name:/Tạm dừng trả lời tự động toàn shop/});
+    const pauseOne = inbox.getByRole('button',{name:'Tạm dừng bot với khách này'});
+    if (await pauseShop.count() || await pauseOne.count()) throw Error('Lite exposed pause controls');
+    setPlan('plus');
+    await inbox.getByRole('button',{name:'Làm mới'}).click();
+    await pauseShop.waitFor();
+    if (await pauseOne.count()) throw Error('Plus exposed individual pause');
+    setPlan('pro');
+    await inbox.getByRole('button',{name:'Làm mới'}).click();
+    p.once('dialog', d => d.accept());
+    await pauseOne.click();
+    await inbox.getByRole('button',{name:'Bật lại bot với khách này'}).waitFor();
+    p.once('dialog', d => d.accept());
+    await inbox.getByRole('button',{name:/Tạm dừng trả lời tự động toàn shop/}).click();
+    await inbox.getByText('Bot Zalo toàn shop · Đang tạm dừng').waitFor();
+    await check(p, errs, 'care-inbox', tag);
     for (const r of routes) { await p.goto(base + '#' + r); await check(p, errs, r === '/' ? 'overview' : r.slice(1), tag); }
     if (tag === 'd') {
       await p.goto(base + '#/san-pham'); await p.waitForTimeout(300);

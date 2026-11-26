@@ -16,7 +16,7 @@ const inp = $('Bridge input').first().json;
 const res = $input.first().json || {};
 const menu = res && Array.isArray(res.menu) && res.schema_version === 1 ? res : null;
 const channel = String(inp.channel || 'messenger');
-const d = res && res.error ? { mode: 'legacy' } : decide(menu, { payload: inp.payload, text: inp.text }, channel);
+const d = res && res.error ? { mode: 'legacy' } : decide(menu, { payload: inp.payload, text: inp.text, shownMenuVersion: inp.shownMenuVersion }, channel);
 return [{ json: { ...d, configVersion: menu ? menu.version_no : null, configSha: menu ? menu.config_sha256 : null,
   configSource: menu ? 'published' : (res && res.error ? 'read_failed' : 'none') } }];`,
 ].join('\n');
@@ -26,7 +26,7 @@ const code = `import { workflow, node, trigger } from '@n8n/workflow-sdk';
 const input = trigger({
   type: 'n8n-nodes-base.executeWorkflowTrigger', version: 1.1,
   config: { name: 'Bridge input', position: [0, 0], parameters: { inputSource: 'workflowInputs',
-    workflowInputs: { values: [{ name: 'channel', type: 'string' }, { name: 'accountId', type: 'string' }, { name: 'payload', type: 'string' }, { name: 'text', type: 'string' }] } } },
+    workflowInputs: { values: [{ name: 'channel', type: 'string' }, { name: 'accountId', type: 'string' }, { name: 'payload', type: 'string' }, { name: 'text', type: 'string' }, { name: 'shownMenuVersion', type: 'string' }] } } },
   output: [{ channel: 'messenger', accountId: '2379295362359912', payload: 'T404:M:catalog', text: '' }]
 });
 const readMenu = node({

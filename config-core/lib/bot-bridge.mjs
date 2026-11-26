@@ -83,6 +83,12 @@ export function decide(menu, event, channel = 'messenger') {
     return { mode: 'catalog', itemId: it.item_id, catalogPage: Number(cursor[4]),
       catalogDigest: cursor[3], catalogCategory: it.action_config?.category ?? null };
   }
+  if (channel === 'zalo_bot' && !payload && menu.version_no != null &&
+      String(event?.shownMenuVersion ?? '') === String(menu.version_no) && /^\s*\d{1,2}\s*$/.test(event?.text || '')) {
+    const numberMap = render(menu, channel).number_map;
+    const choice = resolveInbound({ channel, text: event.text, numberMap }, menu);
+    if (choice.action_type === 'HUMAN_HANDOFF') return { mode: 'handoff', action_type: 'HUMAN_HANDOFF', itemId: choice.item_id };
+  }
   if (!payload || !payload.startsWith(PAYLOAD_PREFIX)) return { mode: 'legacy' };
   const r = resolveInbound({ channel, payload }, menu);
   if (r.kind !== 'menu') return { mode: 'rejected', reason: r.reason || r.kind, message: greetingMessage(menu, channel) };
@@ -98,6 +104,7 @@ export function decide(menu, event, channel = 'messenger') {
     case 'FAQ':
       return { mode: 'ai', itemId: r.item_id, chatInput: c.topic ? 'Cho mình hỏi về ' + c.topic : 'Cho mình hỏi một số câu hỏi thường gặp' };
     case 'HUMAN_HANDOFF':
+      if (channel === 'zalo_bot') return { mode: 'handoff', action_type: 'HUMAN_HANDOFF', itemId: r.item_id };
       // Same sentence the live classifier already treats as an explicit handoff request.
       return { mode: 'handoff', itemId: r.item_id, chatInput: 'Tôi muốn gặp nhân viên tư vấn', team: c.team, ackText: r.ack_text || HANDOFF_DEFAULT_ACK[c.team] };
     default: {

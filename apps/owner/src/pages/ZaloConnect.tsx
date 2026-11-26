@@ -10,6 +10,7 @@ type Conn = { connection_id: string; status: string; bot_name: string | null; to
   owner_paired: boolean; users: number; sent_month: string | null; sent_count: number };
 
 const ERR: Record<string, string> = {
+  SEND_IN_FLIGHT: 'Bot đang gửi một tin. Vui lòng thử tạm dừng lại sau giây lát.',
   TOKEN_NOT_FOUND: 'Không thấy mã bot trong nội dung vừa dán. Hãy dán nguyên tin nhắn Zalo gửi mã bot.',
   TOKEN_REJECTED: 'Zalo báo mã bot không đúng hoặc đã bị đổi. Mở Zalo Bot Creator để lấy mã mới.',
   BOT_OWNED_BY_OTHER_STORE: 'Bot này đang nối với cửa hàng khác.',
@@ -29,7 +30,7 @@ const STATUS: Record<string, [string, string]> = {
   quota_exceeded: ['err', 'Hết lượt tin tháng này'], disabled: ['', 'Đang tạm dừng'],
 };
 
-async function hub(method: 'GET' | 'POST', path: string, body?: object) {
+export async function hub(method: 'GET' | 'POST', path: string, body?: object) {
   const { data } = await supabase.auth.getSession();
   const jwt = data.session?.access_token;
   if (!jwt) throw new Error(ERR.SIGN_IN_AGAIN);
