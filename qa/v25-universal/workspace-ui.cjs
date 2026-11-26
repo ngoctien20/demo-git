@@ -240,7 +240,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     ok(await p.getByText('Chỉ chủ sở hữu và quản lý').count() === 1, 'staff: conversations hidden');
     await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
     ok(await p.getByRole('button', { name: 'Lưu hồ sơ ngành' }).count() === 0 && await p.getByLabel('Tên ngành của bạn').isDisabled(), 'staff: cannot change the workspace profile');
-    ok(!rpcCalls.some(c => c.uid === U.staff && !['is_platform_admin', 'billing_demo_state'].includes(c.fn)), 'staff: no write RPC issued');
+    ok(!rpcCalls.some(c => c.uid === U.staff && !['billing_demo_state', 'platform_catalog'].includes(c.fn)), 'staff: no write RPC issued');
     await ctx.close(); }
 
   // 5b. Server without V25 settings (db/v25-workspace not applied): honest fallbacks, no crash.

@@ -14,22 +14,52 @@ export type Invoice = {
 export type Subscription = { plan: 'trial' | PlanKey; cycle: Cycle; status: 'trial' | 'active' | 'canceled'; renews_at: string | null };
 export type BillingState = { demo: true; subscription: Subscription; invoices: Invoice[]; source: 'server' | 'browser' };
 
-// Sample prices (minh hoạ) — must match app_private.billing_demo_price in db/v28-account/10. Year = 10 months.
-export const PLANS: Record<PlanKey, { name: string; month: number; tagline: string; who: string; features: string[]; best?: boolean }> = {
+// Default plans (minh hoạ). Since db/v28-account/20 the platform Admin edits them on the server
+// (app_private.platform_plans); loadCatalog() copies the server values over these defaults.
+export type PlanInfo = { name: string; month: number; yearMonths: number; tagline: string; who: string; features: string[]; best?: boolean; hidden?: boolean };
+export const PLANS: Record<PlanKey, PlanInfo> = {
   lite: {
-    name: 'LITE', month: 99000, tagline: 'Dễ dùng, không cần rành máy', who: 'Shop nhỏ, chủ shop lớn tuổi',
+    name: 'LITE', month: 99000, yearMonths: 10, tagline: 'Dễ dùng, không cần rành máy', who: 'Shop nhỏ, chủ shop lớn tuổi',
     features: ['1 trợ lý AI trả lời khách 24/7', 'Nối bot Zalo bằng mã 6 số, làm ngay trên Zalo', 'Thẻ sản phẩm Messenger mẫu sẵn', 'Tối đa 100 sản phẩm', 'Báo đơn mới qua email'],
   },
   plus: {
-    name: 'PLUS', month: 299000, tagline: 'Tuỳ chỉnh sâu cho shop đang lớn', who: 'Shop bán đều mỗi ngày', best: true,
+    name: 'PLUS', month: 299000, yearMonths: 10, tagline: 'Tuỳ chỉnh sâu cho shop đang lớn', who: 'Shop bán đều mỗi ngày', best: true,
     features: ['Mọi thứ của LITE', 'Zalo + Messenger + chat trên web', 'Tự chỉnh menu, phong cách, thẻ sản phẩm', 'Kho kiến thức và câu hỏi thường gặp', 'Tối đa 1.000 sản phẩm, 3 nhân viên'],
   },
   pro: {
-    name: 'PRO', month: 699000, tagline: 'Nhiều chi nhánh, nhiều nhân viên', who: 'Chuỗi cửa hàng, thương hiệu',
+    name: 'PRO', month: 699000, yearMonths: 10, tagline: 'Nhiều chi nhánh, nhiều nhân viên', who: 'Chuỗi cửa hàng, thương hiệu',
     features: ['Mọi thứ của PLUS', 'Nhiều chi nhánh trong một tài khoản', 'Báo cáo doanh thu và khách quay lại', 'Không giới hạn sản phẩm, 10 nhân viên', 'Hỗ trợ ưu tiên'],
   },
 };
-export const price = (p: PlanKey, c: Cycle) => PLANS[p].month * (c === 'year' ? 10 : 1);
+export const price = (p: PlanKey, c: Cycle) => PLANS[p].month * (c === 'year' ? PLANS[p].yearMonths : 1);
+export const visiblePlans = () => (Object.keys(PLANS) as PlanKey[]).filter(k => !PLANS[k].hidden);
+
+/** Public platform settings the Admin edits (notice banner, support contacts). */
+export const SETTINGS = { notice: '', support_zalo: '', support_phone: '', support_email: '' };
+type ServerPlan = { key: string; name: string; month_vnd: number; year_months: number; tagline: string; who: string; features: string[]; best: boolean };
+let catalog: Promise<boolean> | null = null;
+/** Reads plans + settings from the server once (platform_catalog). Missing/odd answer = keep the defaults. */
+export function loadCatalog(force = false): Promise<boolean> {
+  if (catalog && !force) return catalog;
+  catalog = (async () => {
+    try {
+      const r = await supabase.rpc('platform_catalog', {}, { get: true });
+      const d = r.data as { plans?: ServerPlan[]; settings?: Partial<typeof SETTINGS> } | null;
+      if (r.error || !d || typeof d !== 'object' || !Array.isArray(d.plans) || d.plans.length === 0) return false;
+      const shown = new Set<string>();
+      for (const p of d.plans) {
+        if (!(p.key in PLANS) || typeof p.month_vnd !== 'number') continue;
+        shown.add(p.key);
+        Object.assign(PLANS[p.key as PlanKey], { name: p.name, month: p.month_vnd, yearMonths: p.year_months, tagline: p.tagline, who: p.who,
+          features: Array.isArray(p.features) ? p.features : [], best: !!p.best, hidden: false });
+      }
+      (Object.keys(PLANS) as PlanKey[]).forEach(k => { if (!shown.has(k)) PLANS[k].hidden = true; });
+      if (d.settings && typeof d.settings === 'object') for (const k of Object.keys(SETTINGS) as (keyof typeof SETTINGS)[]) SETTINGS[k] = String(d.settings[k] ?? '');
+      return true;
+    } catch { return false; }
+  })();
+  return catalog;
+}
 export const planName = (p: Subscription['plan']) => (p === 'trial' ? 'Dùng thử' : PLANS[p].name);
 
 /** Fixed sample receiver. Not a real account; the QR below is NOT a bank transfer QR. */

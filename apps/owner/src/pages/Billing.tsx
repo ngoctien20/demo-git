@@ -4,7 +4,7 @@ import { useLoad } from '../data';
 import { friendlyError } from '../supabase';
 import { dateTime, vnd } from '../format';
 import { Modal, Notice, Spinner } from '../ui';
-import { billing, BillingState, Cycle, DEMO_BANK, demoQrSvg, Invoice, PlanKey, planName, PLANS, price, takePendingPlan } from '../billing';
+import { billing, BillingState, Cycle, DEMO_BANK, demoQrSvg, Invoice, loadCatalog, PlanKey, planName, PLANS, price, SETTINGS, takePendingPlan, visiblePlans } from '../billing';
 
 const STATUS: Record<string, [string, string]> = {
   trial: ['Đang dùng thử', 'soft'], active: ['Đang hoạt động', 'ok'], canceled: ['Đã huỷ gia hạn', 'warn'],
@@ -26,7 +26,7 @@ export function DemoBanner({ source }: { source?: BillingState['source'] }) {
 export function Billing() {
   const { store } = useStore();
   const isOwner = store.role === 'owner';
-  const st = useLoad(() => billing.state(store.id), [store.id]);
+  const st = useLoad(async () => { await loadCatalog(); return billing.state(store.id); }, [store.id]);
   const [cycle, setCycle] = useState<Cycle>('month');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -47,6 +47,9 @@ export function Billing() {
     try { const s = await fn(); st.setData(s); after?.(s); } catch (e) { setErr(friendlyError(e)); } finally { setBusy(false); }
   }
   const choose = (p: PlanKey) => act(() => billing.checkout(store.id, p, cycle), s => { setPay(s.invoices[0]); setSuggest(null); });
+
+  const gifts = visiblePlans().map(k => 12 - PLANS[k].yearMonths);
+  const yearGift = gifts.length && gifts.every(g => g === gifts[0]) ? gifts[0] : 0;
 
   if (st.loading && !data) return <Spinner label="Đang tải gói dịch vụ…" />;
   if (st.error || !data || !sub) return <Notice kind="err">{friendlyError(st.error)} <button className="link-btn" onClick={st.reload}>Thử lại</button></Notice>;
@@ -79,11 +82,11 @@ export function Billing() {
         <h2>Chọn gói</h2>
         <div className="seg" role="radiogroup" aria-label="Chu kỳ thanh toán">
           <button type="button" role="radio" aria-checked={cycle === 'month'} onClick={() => setCycle('month')}>Theo tháng</button>
-          <button type="button" role="radio" aria-checked={cycle === 'year'} onClick={() => setCycle('year')}>Theo năm <em>-2 tháng</em></button>
+          <button type="button" role="radio" aria-checked={cycle === 'year'} onClick={() => setCycle('year')}>Theo năm {yearGift > 0 && <em>-{yearGift} tháng</em>}</button>
         </div>
       </div>
       <div className="plan-grid">
-        {(Object.keys(PLANS) as PlanKey[]).map(k => {
+        {visiblePlans().map(k => {
           const p = PLANS[k];
           const current = sub.status !== 'trial' && sub.plan === k && sub.cycle === cycle && sub.status === 'active';
           return (
@@ -134,6 +137,11 @@ export function Billing() {
             <p className="muted">Đây là mô phỏng. Không có tiền nào được chuyển.</p></div>
           <div className="modal-actions"><button className="btn btn-ghost" onClick={() => { setView(paidNow); setPaidNow(null); }}>Xem hoá đơn mẫu</button><button className="btn btn-primary" onClick={() => setPaidNow(null)}>Xong</button></div>
         </Modal>
+      )}
+      {(SETTINGS.support_zalo || SETTINGS.support_phone || SETTINGS.support_email) && (
+        <p className="muted support-line">Cần hỗ trợ về gói? {SETTINGS.support_zalo && <>Zalo <b>{SETTINGS.support_zalo}</b> </>}
+          {SETTINGS.support_phone && <>· Gọi <a href={`tel:${SETTINGS.support_phone.replace(/\s/g, '')}`}>{SETTINGS.support_phone}</a> </>}
+          {SETTINGS.support_email && <>· Email <a href={`mailto:${SETTINGS.support_email}`}>{SETTINGS.support_email}</a></>}</p>
       )}
       {view && <InvoiceModal inv={view} shop={store.tenant_name || store.name} onClose={() => setView(null)} />}
       {confirmCancel && (

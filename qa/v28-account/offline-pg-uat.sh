@@ -111,11 +111,62 @@ ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE event_type LIKE
 admin "DELETE FROM app_private.platform_admins WHERE user_id='$ADM2'" >/dev/null
 deny REMOVED_ADMIN 'access_denied' as $ADM2 "SELECT public.admin_overview()"
 
+# ---------------- C. V28.2 plans/prices + settings + invoices (db/v28-account/20) ----------------
+runfile "$V28/20_platform_catalog_admin.sql" T404_V28_2_CATALOG_OK
+deny CATALOG_NOT_REAPPLIABLE 'T404_V28_2_ALREADY_APPLIED' "${PSQL[@]}" -d "$PGDATABASE" -f "$V28/20_platform_catalog_admin.sql"
+ok "$(as $U1 "SELECT jsonb_array_length(public.platform_catalog()->'plans')")" 3 OWNER_READS_CATALOG
+deny ANON_CATALOG 'permission denied' as anon "SELECT public.platform_catalog()"
+deny OWNER_CONFIG 'access_denied' as $U1 "SELECT public.admin_platform_config()"
+deny OWNER_SAVE_PLAN 'access_denied' as $U1 "SELECT public.admin_save_plan('plus','{\"name\":\"PLUS\",\"month_vnd\":1000,\"year_months\":10}')"
+deny OWNER_SAVE_SETTINGS 'access_denied' as $U1 "SELECT public.admin_save_settings('{\"notice\":\"x\"}')"
+deny OWNER_INVOICES 'access_denied' as $U1 "SELECT public.admin_invoices(NULL)"
+deny OWNER_SET_PLAN 'access_denied' as $U1 "SELECT public.admin_set_store_plan('$S1','pro','year',now()+interval '1 year')"
+deny OWNER_READS_PLANS_TABLE 'permission denied' as $U1 "SELECT count(*) FROM app_private.platform_plans"
+ok "$(as $ADM "SELECT jsonb_array_length(public.admin_platform_config()->'admins')")" 1 CONFIG_LISTS_ADMINS
+as $ADM "SELECT public.admin_save_plan('plus','{\"name\":\"PLUS\",\"month_vnd\":349000,\"year_months\":11,\"tagline\":\"Mới\",\"who\":\"Shop vừa\",\"features\":[\" A \",\"B\"],\"best\":true,\"visible\":true}')" >/dev/null
+ok "$(as $U1 "SELECT public.billing_demo_checkout('$S1','plus','year')->'invoices'->0->>'amount_vnd'")" 3839000 NEW_PRICE_USED
+ok "$(as $U1 "SELECT (SELECT p->>'features' FROM jsonb_array_elements(public.platform_catalog()->'plans') p WHERE p->>'key'='plus')")" '["A", "B"]' FEATURES_TRIMMED
+ok "$(admin "SELECT count(*) FROM app_private.platform_plans WHERE best")" 1 ONE_BEST_PLAN
+deny BAD_PRICE_ODD 'invalid_price' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\"LITE\",\"month_vnd\":99500,\"year_months\":10}')"
+deny BAD_PRICE_TEXT 'invalid_price' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\"LITE\",\"month_vnd\":\"abc\",\"year_months\":10}')"
+deny BAD_PRICE_HUGE 'invalid_price' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\"LITE\",\"month_vnd\":9000000,\"year_months\":10}')"
+deny BAD_NAME 'invalid_price' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\" \",\"month_vnd\":99000,\"year_months\":10}')"
+deny BAD_FEATURES 'invalid_features' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\"LITE\",\"month_vnd\":99000,\"year_months\":10,\"features\":[1]}')"
+deny BAD_PLAN_KEY 'invalid_plan' as $ADM "SELECT public.admin_save_plan('vip','{}')"
+as $ADM "SELECT public.admin_save_plan('pro','{\"name\":\"PRO\",\"month_vnd\":699000,\"year_months\":10,\"visible\":false}')" >/dev/null
+ok "$(as $U1 "SELECT jsonb_array_length(public.platform_catalog()->'plans')")" 2 HIDDEN_PLAN_NOT_LISTED
+deny HIDDEN_PLAN_NOT_BUYABLE 'invalid_plan' as $U1 "SELECT public.billing_demo_checkout('$S1','pro','month')"
+as $ADM "SELECT public.admin_save_plan('plus','{\"name\":\"PLUS\",\"month_vnd\":349000,\"year_months\":11,\"visible\":false}')" >/dev/null
+deny LAST_VISIBLE 'last_visible_plan' as $ADM "SELECT public.admin_save_plan('lite','{\"name\":\"LITE\",\"month_vnd\":99000,\"year_months\":10,\"visible\":false}')"
+as $ADM "SELECT public.admin_save_settings('{\"notice\":\"Bảo trì 22h\",\"support_zalo\":\"0900000000\",\"support_phone\":\"\",\"support_email\":\"HoTro@Example.com\"}')" >/dev/null
+ok "$(as $U1 "SELECT public.platform_catalog()->'settings'->>'notice' || '|' || (public.platform_catalog()->'settings'->>'support_email')")" "Bảo trì 22h|hotro@example.com" SETTINGS_PUBLISHED
+deny BAD_EMAIL 'invalid_settings' as $ADM "SELECT public.admin_save_settings('{\"support_email\":\"khong-phai-email\"}')"
+deny BAD_ZALO 'invalid_settings' as $ADM "SELECT public.admin_save_settings('{\"support_zalo\":\"abc\"}')"
+IP=$(as $ADM "SELECT x->>'id' FROM jsonb_array_elements(public.admin_invoices('pending')) x WHERE x->>'store_id'='$S1'")
+ok "$(as $ADM "SELECT (SELECT x->>'status' FROM jsonb_array_elements(public.admin_set_invoice('$IP','paid')) x WHERE x->>'id'='$IP')")" paid ADMIN_CONFIRMS_PAYMENT
+ok "$(admin "SELECT plan||' '||cycle||' '||status FROM public.billing_demo_subscriptions WHERE store_id='$S1'")" "plus year active" ADMIN_PAYMENT_ACTIVATES
+deny ADMIN_CONFIRM_TWICE 'invoice_not_pending' as $ADM "SELECT public.admin_set_invoice('$IP','paid')"
+deny ADMIN_BAD_ACTION 'invalid_action' as $ADM "SELECT public.admin_set_invoice('$IP','refund')"
+IV=$(as $ADM "SELECT x->>'id' FROM jsonb_array_elements(public.admin_invoices('pending')) x WHERE x->>'store_id'='$S2'")
+ok "$(as $ADM "SELECT (SELECT x->>'status' FROM jsonb_array_elements(public.admin_set_invoice('$IV','void')) x WHERE x->>'id'='$IV')")" void ADMIN_VOIDS_INVOICE
+ok "$(as $ADM "SELECT public.admin_set_store_plan('$S2','pro','month',now()+interval '45 days')")" t ADMIN_GIFTS_PLAN
+ok "$(admin "SELECT plan||' '||status||' '||(renews_at::date=(now()+interval '45 days')::date) FROM public.billing_demo_subscriptions WHERE store_id='$S2'")" "pro active true" GIFT_STORED
+deny GIFT_PAST 'invalid_until' as $ADM "SELECT public.admin_set_store_plan('$S2','pro','month',now()-interval '1 day')"
+deny GIFT_BAD_PLAN 'invalid_plan' as $ADM "SELECT public.admin_set_store_plan('$S2','vip','month',now()+interval '1 day')"
+ok "$(as $ADM "SELECT public.admin_set_store_plan('$S2','trial','month',NULL)")" t ADMIN_RESETS_TRIAL
+ok "$(admin "SELECT count(*) FROM app_private.audit_events WHERE event_type IN ('admin_save_plan','admin_save_settings','admin_invoice_paid','admin_invoice_void','admin_set_store_plan')")" 8 V28_2_AUDITED
+runfile "$V28/80_platform_catalog_admin_rollback.sql" T404_V28_2_ROLLBACK_OK
+ok "$(admin "SELECT to_regclass('app_private.platform_plans') IS NULL AND to_regprocedure('public.admin_invoices(text)') IS NULL AND app_private.billing_demo_price('plus','year')=2990000")" t V28_2_ROLLBACK_CLEAN
+ok "$(as $U1 "SELECT public.billing_demo_state('$S1')->'subscription'->>'plan'")" plus V28_2_ROLLBACK_KEEPS_BILLING
+runfile "$V28/20_platform_catalog_admin.sql" T404_V28_2_CATALOG_OK
+
 # ---------------- rollback + re-apply ----------------
 as $ADM "SELECT public.admin_set_account_lock('$U1',true,'Kiểm tra rollback')" >/dev/null
+runfile "$V28/80_platform_catalog_admin_rollback.sql" T404_V28_2_ROLLBACK_OK
 runfile "$V28/90_billing_demo_admin_rollback.sql" T404_V28_ROLLBACK_OK
 ok "$(admin "SELECT to_regclass('public.billing_demo_invoices') IS NULL AND to_regclass('app_private.platform_admins') IS NULL AND to_regprocedure('public.admin_overview()') IS NULL")" t ROLLBACK_CLEAN
 ok "$(admin "SELECT count(*) FROM auth.users WHERE banned_until IS NOT NULL")" 0 ROLLBACK_UNLOCKS_ALL
 ok "$(as $U2 "SELECT bot_enabled FROM public.store_bot_settings")" t V23_UNTOUCHED
 runfile "$V28/10_billing_demo_admin.sql" T404_V28_ACCOUNT_OK
+runfile "$V28/20_platform_catalog_admin.sql" T404_V28_2_CATALOG_OK
 echo "V28_ACCOUNT_OFFLINE_UAT_PASS=$PASS"

@@ -42,3 +42,10 @@ Trạng thái: SQL **đã áp** restore-test rồi staging ngày 2026-11-25 (Ti�
 - `qa/v28-account/offline-pg-uat.sh` — PostgreSQL cục bộ, 60/60 PASS (giá do máy chủ tính, chặn nhân viên/shop khác/anon,
   chủ shop không tự thành admin, khoá/mở, rollback sạch, áp lại được).
 - `qa/v28-account/account-ui.cjs` — trình duyệt, Supabase giả lập, máy tính 1280 + điện thoại 390: 66/66 PASS.
+
+## V28.2 — Admin đầy đủ (db/v28-account/20, PROPOSED)
+Trang Quản trị (chỉ bản admin riêng) có 5 mục: Tổng quan, Khách hàng (xem, khoá/mở, đổi/tặng gói), Gói & giá (sửa tên, giá/tháng,
+số tháng tính khi trả năm, mô tả, tính năng, nhãn "Nên chọn", ẩn/hiện), Hoá đơn (xác nhận đã nhận tiền / huỷ — DEMO, không kiểm ngân hàng),
+Cài đặt (thông báo chung trên App mọi shop, Zalo/SĐT/email hỗ trợ). App chủ shop đọc giá/gói/thông báo qua `platform_catalog()`;
+chưa áp SQL thì App dùng giá mặc định trong `apps/owner/src/billing.ts`. Rollback: `80_platform_catalog_admin_rollback.sql`.
+Offline UAT: `qa/v28-account/offline-pg-uat.sh` (103 PASS).

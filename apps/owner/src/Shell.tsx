@@ -6,6 +6,7 @@ import { SITE_HOME } from './config';
 import { isMissingFeature, useLoad } from './data';
 import { resolveWorkspace, INDUSTRY_META, Profile, moduleOwner, ROLE_LABEL, Workspace, WorkspaceCtx } from './workspace';
 import { Notice, PageHead } from './ui';
+import { loadCatalog, SETTINGS } from './billing';
 import { Overview } from './pages/Overview';
 import { Products } from './pages/Products';
 import { Orders } from './pages/Orders';
@@ -42,6 +43,8 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
     if (r.error) return { ready: false, row: null as Profile | null };
     return { ready: true, row: r.data as Profile | null };
   }, [store.id]);
+  // Platform notice + plans edited by TIEN404 Admin (db/v28-account/20). Missing = nothing shown.
+  const cat = useLoad(() => loadCatalog(), []);
   const reload = useCallback(async () => { await Promise.all([asst.reload(), prof.reload()]); }, [asst.reload, prof.reload]);
   const ws = useMemo<Workspace>(() => {
     const assistants = asst.data ?? [];
@@ -124,7 +127,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
           </div>
         </aside>
         {open && <div className="scrim" onClick={() => setOpen(false)} />}
-        <main className="content" id="main" key={store.id}>{page}</main>
+        <main className="content" id="main" key={store.id}>{cat.data && SETTINGS.notice && <div className="platform-notice" role="note"><b>TIEN404</b><span>{SETTINGS.notice}</span></div>}{page}</main>
       </div>
     </WorkspaceCtx.Provider>
   );

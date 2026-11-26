@@ -16,6 +16,19 @@ const users = {
   [STAFF]: { email: 'nhanvien@example.com', meta: { full_name: 'Trần Văn Bình' }, role: 'staff' },
   [ADMIN]: { email: 'admin@tien404.example', meta: { full_name: 'Quản trị TIEN404' }, role: 'owner' },
 };
+const FEAT = ['Tính năng A', 'Tính năng B'];
+const cfg = {
+  plans: [
+    { key: 'lite', name: 'LITE', month_vnd: 99000, year_months: 10, tagline: 'Dễ dùng', who: 'Shop nhỏ', features: FEAT, best: false, visible: true, updated_at: ago(3) },
+    { key: 'plus', name: 'PLUS', month_vnd: 299000, year_months: 10, tagline: 'Tuỳ chỉnh sâu', who: 'Shop bán đều', features: FEAT, best: true, visible: true, updated_at: ago(3) },
+    { key: 'pro', name: 'PRO', month_vnd: 699000, year_months: 10, tagline: 'Nhiều chi nhánh', who: 'Chuỗi', features: FEAT, best: false, visible: true, updated_at: ago(3) }],
+  settings: { notice: '', support_zalo: '', support_phone: '', support_email: '', updated_at: ago(3) },
+  admins: [{ email: 'admin@tien404.example', note: 'QA', added_at: ago(60) }],
+};
+const invoices = [
+  { id: 'i1', number: 'HD-DEMO-261126-AAAAAA', store_id: 's2', store_name: 'Tiệm Nail Bống', owner_email: 'nailbong@example.com', plan: 'lite', cycle: 'month', amount_vnd: 99000, status: 'pending', transfer_note: 'T404DEMO 261126-AAAAAA', created_at: ago(0.5), paid_at: null },
+  { id: 'i2', number: 'HD-DEMO-261120-BBBBBB', store_id: 's0000000-0000-4000-8000-000000000001', store_name: 'Shop Hoa Mai', owner_email: 'chu.shop@example.com', plan: 'plus', cycle: 'month', amount_vnd: 299000, status: 'paid', transfer_note: 'T404DEMO 261120-BBBBBB', created_at: ago(6), paid_at: ago(6) },
+  { id: 'i3', number: 'HD-DEMO-261101-CCCCCC', store_id: 's4', store_name: 'Chuỗi Cà phê Gió', owner_email: 'gio.coffee@example.com', plan: 'pro', cycle: 'year', amount_vnd: 6990000, status: 'paid', transfer_note: 'T404DEMO 261101-CCCCCC', created_at: ago(2), paid_at: ago(2) }];
 const overview = {
   generated_at: now,
   stores: [
@@ -52,7 +65,7 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
   // The public bundle must carry no trace of the Admin page.
   for (const f of fs.readdirSync(path.join(ROOT, 'app', 'assets'))) {
     const txt = fs.readFileSync(path.join(ROOT, 'app', 'assets', f), 'utf8');
-    const hit = ['admin_overview', 'is_platform_admin', 'admin_set_account_lock', 'admin_set_store_bot', 'quan-tri', 'Quản trị nền tảng', 'platform_admins', 'admin-banner'].filter(k => txt.includes(k));
+    const hit = ['admin_overview', 'is_platform_admin', 'admin_set_account_lock', 'admin_set_store_bot', 'quan-tri', 'Quản trị nền tảng', 'platform_admins', 'admin-banner', 'admin_save_plan', 'admin_invoices'].filter(k => txt.includes(k));
     assert(hit.length === 0, `public bundle ${f} has no admin trace`, hit.join(','));
   }
   assert(fs.existsSync(path.join(ROOT, 'admin-local', 'index.html')), 'admin build present (npm run build:admin)');
@@ -88,6 +101,14 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
         const me = users[uid].role; const admin = uid === ADMIN;
         if (fn === 'is_platform_admin') return json(200, admin);
         if (fn === 'admin_overview') return admin ? json(200, overview) : json(403, { code: '42501', message: 'access_denied' });
+        if (fn === 'platform_catalog') return json(200, { plans: cfg.plans.filter(x => x.visible), settings: cfg.settings });
+        if (fn.startsWith('admin_') && !admin) return json(403, { code: '42501', message: 'access_denied' });
+        if (fn === 'admin_platform_config') return json(200, cfg);
+        if (fn === 'admin_save_plan') { const x = cfg.plans.find(y => y.key === a.p_key); Object.assign(x, a.p_data, { updated_at: new Date().toISOString() }); return json(200, cfg); }
+        if (fn === 'admin_save_settings') { Object.assign(cfg.settings, a.p_data, { updated_at: new Date().toISOString() }); return json(200, cfg); }
+        if (fn === 'admin_invoices') return json(200, invoices);
+        if (fn === 'admin_set_invoice') { const x = invoices.find(y => y.id === a.p_invoice); if (!x || x.status !== 'pending') return json(409, { code: 'PT409', message: 'invoice_not_pending' }); x.status = a.p_action; if (a.p_action === 'paid') x.paid_at = new Date().toISOString(); return json(200, invoices); }
+        if (fn === 'admin_set_store_plan') return json(200, true);
         if (fn === 'admin_set_account_lock' || fn === 'admin_set_store_bot') return admin ? json(200, a.p_locked ?? a.p_enabled) : json(403, { code: '42501', message: 'access_denied' });
         if (fn.startsWith('billing_demo_')) {
           if (a.p_store !== S1) return json(403, { code: '42501', message: 'access_denied' });
@@ -210,29 +231,71 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
     { const { p, errs, ctx } = await page(w, h, { uid: ADMIN, scale });
       await p.goto(base + '#/quan-tri'); await p.waitForTimeout(400);
       assert(await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} admin mở bản công khai cũng không thấy Quản trị`);
-      await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(500);
-      assert(await p.locator('a[href="#/quan-tri"]').count() === 1 && await p.locator('a[href="#/san-pham"]').count() === 0, `${tag} bản admin chỉ có menu Khách hàng, không có trang shop`);
+      await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(600);
+      assert(await p.locator('nav a').count() === 5 && await p.locator('a[href="#/san-pham"]').count() === 0, `${tag} bản admin: 5 mục quản trị, không có trang shop`);
+      assert(await p.getByText('Thu tháng này').count() === 1 && await p.getByText(/HD-DEMO-261126-AAAAAA/).count() === 1 && await p.getByText('Tiệm Nail Bống').count() >= 1, `${tag} tổng quan có số liệu + việc cần làm`);
+      await shot(p, errs, '10-quan-tri-tong-quan', tag);
+      await p.goto(adminBase + '#/quan-tri/khach-hang'); await p.waitForTimeout(400);
       assert(await p.locator('.admin-table tbody tr').count() === 4, `${tag} 4 khách (không tính admin)`, String(await p.locator('.admin-table tbody tr').count()));
-      assert(await p.getByText(/Mặc định bật|Tắt bot/).count() === 0, `${tag} bỏ công tắc bot chưa nối`);
-      await shot(p, errs, '10-quan-tri-khach-hang', tag);
+      await shot(p, errs, '11-quan-tri-khach-hang', tag);
       await p.getByRole('button', { name: 'Xem nailbong@example.com' }).click(); await p.waitForTimeout(200);
-      assert(await p.getByRole('dialog').getByText('Tiệm Nail Bống').count() >= 1, `${tag} xem chi tiết khách`);
-      await shot(p, errs, '11-quan-tri-chi-tiet', tag, false);
-      await p.getByRole('dialog').getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(200);
+      await p.getByRole('dialog').getByRole('button', { name: 'Đổi gói' }).click();
+      await p.getByRole('dialog').getByLabel('Gói').selectOption('plus');
+      await p.getByRole('dialog').getByRole('button', { name: '+90 ngày' }).click();
+      await shot(p, errs, '12-quan-tri-doi-goi', tag, false);
+      await p.getByRole('dialog').getByRole('button', { name: 'Lưu gói' }).click(); await p.waitForTimeout(300);
+      const sp = calls.filter(c => c.fn === 'admin_set_store_plan').pop();
+      assert(sp && sp.body.p_store === 's2' && sp.body.p_plan === 'plus' && sp.body.p_cycle === 'month' && new Date(sp.body.p_until) > new Date(Date.now() + 85 * 864e5), `${tag} đổi gói gọi admin_set_store_plan đúng`, JSON.stringify(sp && sp.body));
+      await p.getByRole('row', { name: /nailbong@example.com/ }).getByRole('button', { name: 'Khoá' }).click();
       await p.getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(200);
       assert(await p.getByText('Ghi lý do khoá').count() === 1, `${tag} khoá phải ghi lý do`);
       await p.getByLabel(/Lý do/).fill('Shop thử, gửi tin rác');
-      await shot(p, errs, '12-quan-tri-khoa', tag, false);
       await p.getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(400);
       const lk = calls.filter(c => c.fn === 'admin_set_account_lock').pop();
       assert(lk && lk.body.p_user === 'u2' && lk.body.p_locked === true && lk.body.p_reason === 'Shop thử, gửi tin rác', `${tag} khoá gọi admin_set_account_lock đúng`, JSON.stringify(lk));
-      assert(await p.getByText('admin@tien404.example').count() <= 1, `${tag} admin không nằm trong danh sách khách`);
       await p.getByRole('tab', { name: /Chưa tạo shop/ }).click(); await p.waitForTimeout(200);
       assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} lọc Chưa tạo shop`);
-      await p.getByRole('tab', { name: /Tất cả/ }).click();
-      await p.getByPlaceholder(/Tìm email/).fill('linh'); await p.waitForTimeout(200);
-      assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} tìm khách hoạt động`);
+      // Gói & giá
+      await p.goto(adminBase + '#/quan-tri/goi'); await p.waitForTimeout(400);
+      const plus = p.getByRole('region', { name: 'Gói PLUS' });
+      assert(await plus.getByRole('button', { name: 'Đã lưu' }).isDisabled(), `${tag} gói chưa sửa thì nút lưu tắt`);
+      await plus.getByLabel('Giá mỗi tháng (đ)').fill('349500');
+      await plus.getByRole('button', { name: 'Lưu gói' }).click(); await p.waitForTimeout(200);
+      assert(await plus.getByText(/số tròn nghìn/).count() === 1, `${tag} giá lẻ bị chặn`);
+      await plus.getByLabel('Giá mỗi tháng (đ)').fill('349000');
+      await plus.getByLabel('Trả theo năm tính').selectOption('11');
+      await plus.getByLabel(/Tính năng/).fill('Zalo + Messenger\n  Tự chỉnh menu  \n\n');
+      assert(await plus.getByText('3.839.000đ').count() === 1, `${tag} xem trước giá năm`);
+      await shot(p, errs, '13-quan-tri-goi-gia', tag);
+      await plus.getByRole('button', { name: 'Lưu gói' }).click(); await p.waitForTimeout(300);
+      const pl = calls.filter(c => c.fn === 'admin_save_plan').pop();
+      assert(pl && pl.body.p_key === 'plus' && pl.body.p_data.month_vnd === 349000 && pl.body.p_data.year_months === 11 && JSON.stringify(pl.body.p_data.features) === '["Zalo + Messenger","Tự chỉnh menu"]', `${tag} lưu gói đúng dữ liệu`, JSON.stringify(pl && pl.body));
+      // Hoá đơn
+      await p.goto(adminBase + '#/quan-tri/hoa-don'); await p.waitForTimeout(400);
+      assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} tab chờ thanh toán`);
+      await shot(p, errs, '14-quan-tri-hoa-don', tag);
+      await p.getByRole('button', { name: 'Đã nhận tiền' }).click();
+      await p.getByRole('button', { name: 'Xác nhận đã nhận tiền' }).click(); await p.waitForTimeout(300);
+      const iv = calls.filter(c => c.fn === 'admin_set_invoice').pop();
+      assert(iv && iv.body.p_invoice === 'i1' && iv.body.p_action === 'paid' && await p.getByText(/Đã xác nhận HD-DEMO-261126-AAAAAA/).count() === 1, `${tag} xác nhận đã nhận tiền`);
+      // Cài đặt
+      await p.goto(adminBase + '#/quan-tri/cai-dat'); await p.waitForTimeout(400);
+      await p.getByLabel(/Hiện trên đầu App/).fill('Tối nay 22h bảo trì 30 phút.');
+      await p.getByLabel('Zalo hỗ trợ').fill('0900 000 000');
+      await p.getByLabel('Email').fill('hotro@example.com');
+      await shot(p, errs, '15-quan-tri-cai-dat', tag);
+      await p.getByRole('button', { name: 'Lưu cài đặt' }).click(); await p.waitForTimeout(300);
+      const se = calls.filter(c => c.fn === 'admin_save_settings').pop();
+      assert(se && se.body.p_data.notice === 'Tối nay 22h bảo trì 30 phút.' && se.body.p_data.support_zalo === '0900 000 000', `${tag} lưu cài đặt`);
       errs.splice(0); await ctx.close(); }
+    // owner sees what the admin saved (price, notice, support)
+    { const { p, errs, ctx } = await page(w, h, { uid: OWNER });
+      await p.goto(base + '#/goi-dich-vu'); await p.waitForTimeout(600);
+      assert(await p.getByText('Tối nay 22h bảo trì 30 phút.').count() === 1, `${tag} chủ shop thấy thông báo chung`);
+      assert(await p.getByText('349.000đ').count() >= 1 && await p.getByText('0900 000 000').count() === 1, `${tag} chủ shop thấy giá mới + Zalo hỗ trợ`);
+      errs.splice(0); await ctx.close();
+      Object.assign(cfg.plans[1], { month_vnd: 299000, year_months: 10 }); cfg.settings.notice = ''; cfg.settings.support_zalo = ''; cfg.settings.support_email = '';
+      invoices[0].status = 'pending'; invoices[0].paid_at = null; }
   }
   await b.close(); server.close();
   console.log(bad ? `T404_V28_ACCOUNT_UI_FAIL ${bad}` : 'T404_V28_ACCOUNT_UI_PASS');

@@ -429,3 +429,6 @@ input:disabled{background:var(--bg);color:var(--muted)}
 
 .pw-field{display:grid;gap:6px}
 .pw-field label{font-weight:600;font-size:14px}
+.platform-notice{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:10px 14px;border-radius:12px;margin-bottom:16px;font-size:14px;background:color-mix(in srgb,var(--brand) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--brand) 30%,transparent)}
+.platform-notice b{color:var(--brand-ink)}
+.support-line{margin-top:16px;font-size:14px}
