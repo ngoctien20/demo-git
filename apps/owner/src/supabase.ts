@@ -36,6 +36,15 @@ const MESSAGES: Record<string, string> = {
   'Invalid login credentials': 'Email hoặc mật khẩu không đúng.',
   'Email not confirmed': 'Email chưa được xác nhận. Hãy mở thư xác nhận trong hộp thư của bạn.',
   'User already registered': 'Email này đã có tài khoản. Hãy đăng nhập.',
+  'User is banned': 'Tài khoản này đang bị khoá. Vui lòng liên hệ TIEN404 để được hỗ trợ.',
+  'user_banned': 'Tài khoản này đang bị khoá. Vui lòng liên hệ TIEN404 để được hỗ trợ.',
+  'rate limit': 'Bạn thao tác hơi nhanh. Vui lòng đợi khoảng 1 phút rồi thử lại.',
+  'For security purposes': 'Vì lý do bảo mật, vui lòng đợi khoảng 1 phút rồi thử lại.',
+  'same_password': 'Mật khẩu mới cần khác mật khẩu cũ.',
+  'New password should be different': 'Mật khẩu mới cần khác mật khẩu cũ.',
+  'invalid_plan': 'Gói hoặc chu kỳ thanh toán chưa hợp lệ.',
+  'invoice_not_pending': 'Hoá đơn này không còn chờ thanh toán. Hãy tải lại trang.',
+  'nothing_to_cancel': 'Không có gói đang hoạt động để huỷ gia hạn.',
 };
 
 export function friendlyError(err: unknown): string {

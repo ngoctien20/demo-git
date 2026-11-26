@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { go, useRoute } from './router';
@@ -7,6 +7,12 @@ import { Spinner, Notice } from './ui';
 import { AuthPage } from './pages/Auth';
 import { Onboarding } from './pages/Onboarding';
 import { Shell } from './Shell';
+
+// Platform Admin is NOT part of the public build. It exists only in the separate admin build
+// (`npm run build:admin` → admin-local/, never deployed). Vite replaces the flag at build time, so the public
+// bundle carries no admin page, menu, RPC names or chunk. The admin build shows ONLY the admin app, no shop pages.
+const ADMIN_BUILD = import.meta.env.VITE_T404_ADMIN === '1';
+const AdminApp = ADMIN_BUILD ? lazy(() => import('./pages/Admin').then(m => ({ default: m.AdminApp }))) : null;
 
 const STORE_KEY = 'tien404_current_store';
 const PUBLIC_PATHS = ['/dang-nhap', '/dang-ky', '/quen-mat-khau', '/dat-lai-mat-khau'];
@@ -47,7 +53,7 @@ export function App() {
     })));
   }, []);
 
-  useEffect(() => { if (session) loadStores(); }, [session?.user.id, loadStores]);
+  useEffect(() => { if (session && !ADMIN_BUILD) loadStores(); }, [session?.user.id, loadStores]);
   // Signed-in people who open a login/sign-up link land on the dashboard instead.
   useEffect(() => { if (session && PUBLIC_PATHS.includes(route.path) && route.path !== '/dat-lai-mat-khau') go('/'); }, [session, route.path]);
 
@@ -58,6 +64,8 @@ export function App() {
 
   if (!session) return <AuthPage path={PUBLIC_PATHS.includes(route.path) ? route.path : '/dang-nhap'} />;
   if (route.path === '/dat-lai-mat-khau') return <AuthPage path={route.path} />;
+
+  if (ADMIN_BUILD && AdminApp) return <Suspense fallback={<div className="center-screen"><Spinner /></div>}><AdminApp email={session.user.email ?? ''} /></Suspense>;
 
   if (stores === null) return <div className="center-screen"><Spinner label="Đang tải không gian làm việc…" /></div>;
   if (storesErr) return <div className="center-screen"><Notice kind="err">{storesErr}</Notice><button className="btn btn-primary" onClick={loadStores}>Thử lại</button></div>;

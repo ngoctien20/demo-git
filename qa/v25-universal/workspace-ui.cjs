@@ -142,7 +142,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     await p.goto(base + '#/'); await p.waitForTimeout(400);
     const nav = await p.locator('nav[aria-label="Menu Workspace"]').innerText();
     ok(nav.includes('Sản phẩm & tồn kho') && nav.includes('Đơn hàng') && !nav.includes('Hồ sơ & âm nhạc'), 'shop workspace nav: products/orders, no artist module');
-    ok(nav.includes('Trợ lý AI') && nav.includes('Menu & hành động') && nav.includes('Kho kiến thức') && nav.includes('Kênh kết nối') && nav.includes('Hội thoại & bàn giao') && nav.includes('Báo cáo') && nav.includes('Thông báo') && nav.includes('Gói dịch vụ') && nav.includes('Cài đặt'), 'universal navigation items present');
+    ok(nav.includes('Trợ lý AI') && nav.includes('Menu & hành động') && nav.includes('Kho kiến thức') && nav.includes('Kênh kết nối') && nav.includes('Hội thoại & bàn giao') && nav.includes('Báo cáo') && nav.includes('Thông báo') && nav.includes('Gói và thanh toán') && nav.includes('Cài đặt'), 'universal navigation items present');
     // Regression: V23 product add flow still works (Acceptance 02).
     await p.goto(base + '#/san-pham'); await p.waitForTimeout(300);
     await p.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
@@ -240,7 +240,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     ok(await p.getByText('Chỉ chủ sở hữu và quản lý').count() === 1, 'staff: conversations hidden');
     await p.goto(base + '#/cai-dat-bot'); await p.waitForTimeout(300);
     ok(await p.getByRole('button', { name: 'Lưu hồ sơ ngành' }).count() === 0 && await p.getByLabel('Tên ngành của bạn').isDisabled(), 'staff: cannot change the workspace profile');
-    ok(!rpcCalls.some(c => c.uid === U.staff), 'staff: no write RPC issued');
+    ok(!rpcCalls.some(c => c.uid === U.staff && !['billing_demo_state', 'platform_catalog'].includes(c.fn)), 'staff: no write RPC issued');
     await ctx.close(); }
 
   // 5b. Server without V25 settings (db/v25-workspace not applied): honest fallbacks, no crash.

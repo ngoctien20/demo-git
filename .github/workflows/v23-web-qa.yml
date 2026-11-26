@@ -1,7 +1,7 @@
 name: TIEN404 V23 web + owner App QA
 on:
   pull_request:
-    paths: ['site-src/**', 'assets/site*', '*.html', 'apps/owner/**', 'app/**', 'config-core/lib/**', 'db/v23-web/**', 'qa/v23-web/**', 'qa/v25-universal/**', 'scripts/**', 'tests/**', '_redirects', '.github/workflows/v23-web-qa.yml']
+    paths: ['site-src/**', 'assets/site*', '*.html', 'apps/owner/**', 'app/**', 'config-core/lib/**', 'db/v23-web/**', 'qa/v23-web/**', 'db/v28-account/**', 'qa/v28-account/**', 'qa/v25-universal/**', 'scripts/**', 'tests/**', '_redirects', '.github/workflows/v23-web-qa.yml']
   push:
     branches: [claude/project-thread-4ko028]
   workflow_dispatch:
@@ -32,6 +32,8 @@ jobs:
           node qa/v23-web/screens.cjs shots index.html solutions.html pricing.html demo.html contact.html about.html faq.html terms.html privacy.html refund.html 404.html
           node qa/v23-web/app-ui.cjs shots
           node qa/v25-universal/workspace-ui.cjs shots
+          (cd apps/owner && npm run build:admin)
+          node qa/v28-account/account-ui.cjs shots
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: v23-screens, path: shots, retention-days: 14 }
@@ -49,3 +51,6 @@ jobs:
       - name: Offline UAT of db/v23-web on disposable PG17 (no hosted access)
         env: { PGHOST: 127.0.0.1, PGPORT: '5432', PGUSER: postgres, PGPASSWORD: postgres }
         run: bash qa/v23-web/offline-pg-uat.sh
+      - name: Offline UAT of db/v28-account (DEMO billing + platform Admin)
+        env: { PGHOST: 127.0.0.1, PGPORT: '5432', PGUSER: postgres, PGPASSWORD: postgres }
+        run: bash qa/v28-account/offline-pg-uat.sh
