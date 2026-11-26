@@ -282,6 +282,11 @@ async function handleConnect(env, deps, b, shared = false) {
   } else if (!forwardUrlAllowed(env, b.forward_url)) return json(400, { ok: false, error: 'FORWARD_URL_NOT_ALLOWED' });
   const token = zalo.extractToken(b.token_text);
   if (!token) return json(400, { ok: false, error: 'TOKEN_NOT_FOUND' });
+  // The platform's onboarding bot is never a shop bot. Do not let any connect route replace its webhook.
+  const systemToken = zalo.extractToken(env.ZH_SYSTEM_BOT_TOKEN || '');
+  if (systemToken && await secureEqual(token, systemToken)) {
+    return json(409, { ok: false, error: 'SYSTEM_BOT_RESERVED' });
+  }
   const base = String(env.ZH_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
   if (!/^https:\/\/[^/]+$/.test(base)) return json(500, { ok: false, error: 'PUBLIC_BASE_URL_MISSING' });
 

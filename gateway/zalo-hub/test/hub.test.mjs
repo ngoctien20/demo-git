@@ -454,3 +454,59 @@ test('Lite: Bot TIEN404 AI relays the pasted token → shop keyed by owner Zalo 
   const off = harness({ ...SHARED, ZH_LITE_KEY: LITE });
   assert.equal((await off.req('POST', '/v1/lite/status', { zalo_user_id: 'owner-z1' }, { authorization: 'Bearer ' + LITE })).body.error, 'LITE_CONNECT_DISABLED');
 });
+
+
+test('self-serve UAT: two independent Lite owners, pre-pair silence and isolated recipients', async () => {
+  const LITE = 'l'.repeat(40);
+  const h = harness({ ...SHARED, ZH_LITE_CONNECT_ENABLED: 'true', ZH_LITE_KEY: LITE });
+  const lite = (path, body) => h.req('POST', '/v1/lite/' + path, body, { authorization: 'Bearer ' + LITE });
+  const register = async (owner, token) => {
+    const r = await lite('connect', { zalo_user_id: owner, token_text: token });
+    assert.equal(r.status, 200);
+    assert.equal(r.body.status, 'pending_owner');
+    const wh = h.st.webhooks[token];
+    return { ...r.body, path: new URL(wh.url).pathname, secret: wh.secret_token };
+  };
+  const a = await register('merchant-a', TOKEN_A);
+  const b = await register('merchant-b', TOKEN_B);
+  assert.notEqual(a.store_id, b.store_id);
+  assert.notEqual(a.path, b.path);
+  assert.notEqual(a.secret, b.secret);
+  await hook(h, a, textEvent('customer-a', 'Xin chào', 'before-pair'));
+  assert.equal(h.st.forwards.length, 0);
+  await pairOwner(h, a, 'merchant-a-chat');
+  await pairOwner(h, b, 'merchant-b-chat');
+  assert.equal((await lite('status', { zalo_user_id: 'merchant-a' })).body.connection.status, 'active');
+  assert.equal((await lite('status', { zalo_user_id: 'merchant-b' })).body.connection.status, 'active');
+  assert.equal((await lite('status', { zalo_user_id: 'new-merchant' })).body.connection, null);
+  assert.equal((await hook(h, a, textEvent('customer-a', 'Xin chào', 'cross-secret'), b.secret)).status, 403);
+  await hook(h, a, textEvent('customer-a', 'Xin chào', 'same-id'));
+  await hook(h, b, textEvent('customer-b', 'Xin chào', 'same-id'));
+  await hook(h, a, textEvent('customer-a', 'Xin chào', 'same-id'));
+  assert.equal(h.st.forwards.length, 2);
+  const forwarded = h.st.forwards.map(f => JSON.parse(f.body));
+  assert.deepEqual(forwarded.map(f => f.store_id), [a.store_id, b.store_id]);
+  assert.deepEqual(forwarded.map(f => f.is_owner), [false, false]);
+  const send = (c, chat) => h.req('POST', '/v1/send', { connection_id: c.connection_id, chat_id: chat, text: 'Synthetic UAT only' }, { 'x-tien404-connection': c.connection_id, authorization: 'Bearer ' + SHARED.ZH_SHARED_SEND_KEY });
+  assert.equal((await send(a, 'customer-b')).status, 403);
+  assert.equal((await send(b, 'customer-a')).status, 403);
+  assert.equal((await send(a, 'customer-a')).status, 200);
+  assert.equal(h.st.zalo.at(-1).token, TOKEN_A);
+  assert.equal((await send(b, 'customer-b')).status, 200);
+  assert.equal(h.st.zalo.at(-1).token, TOKEN_B);
+  assert.equal((await lite('disconnect', { zalo_user_id: 'merchant-a' })).body.status, 'revoked');
+  assert.equal((await lite('status', { zalo_user_id: 'merchant-b' })).body.connection.status, 'active');
+});
+
+test('platform system bot cannot be registered as a merchant bot', async () => {
+  const LITE = 'l'.repeat(40);
+  const h = ownerHarness({ ZH_LITE_CONNECT_ENABLED: 'true', ZH_LITE_KEY: LITE, ZH_SYSTEM_BOT_TOKEN: TOKEN_A });
+  const lite = await h.req('POST', '/v1/lite/connect', { zalo_user_id: 'merchant-a', token_text: TOKEN_A }, { authorization: 'Bearer ' + LITE });
+  assert.equal(lite.body.error, 'SYSTEM_BOT_RESERVED');
+  const owner = await h.owner('POST', '/v1/owner/connect', { store_id: STORE_UUID, token_text: TOKEN_A });
+  assert.equal(owner.body.error, 'SYSTEM_BOT_RESERVED');
+  const admin = await h.admin('/v1/admin/connect', { store_id: 'shop-a', token_text: TOKEN_A, forward_url: FWD });
+  assert.equal(admin.body.error, 'SYSTEM_BOT_RESERVED');
+  assert.equal(h.st.zalo.length, 0);
+  assert.equal(h.env.ZH_DB.sqlite.prepare('SELECT COUNT(*) n FROM zh_connections').get().n, 0);
+});
