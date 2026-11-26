@@ -1,0 +1,237 @@
+{
+  "status": "QA_PILOT_DEPLOYED_AWAITING_DEVICE_UAT",
+  "date_jst": "2026-11-26",
+  "worker": "tien404-zalo-hub-staging",
+  "source_commit": "7d94ecb06de4a69fbaf04ce70df0536926149cd3",
+  "source_ci": {
+    "run_id": 45798256419,
+    "conclusion": "success",
+    "url": "https://github.com/ngoctien20/demo-git/actions/runs/45798256419"
+  },
+  "local_tests": {
+    "passed": 85,
+    "failed": 0,
+    "skipped": 0,
+    "private_legacy_parity_tests": 12,
+    "public_scope_tests": 8
+  },
+  "deployment": {
+    "id": "a2693793-24f9-4100-942d-1d961ea9708d",
+    "version_id": "0d6b4b5e-8999-4096-a275-acfb32b4b997",
+    "percentage": 100,
+    "created_on": "2026-11-26T10:08:38.018206Z",
+    "previous_version": "ae2cd33c-03c9-43b1-9403-81f72513f748",
+    "etag": "0bdd4c6ea9f670801e665039c4078d1b99d3c71d666ece9dc9a07804aed9d2b4"
+  },
+  "scope": {
+    "store_id": "qa-zalo-bot",
+    "flow_mode": "own",
+    "source_of_scope": "trusted D1 connection row",
+    "legacy_merchant_handler": "unchanged exact module",
+    "system_bot_registration_handler": "unchanged",
+    "global_merchant_rollout": false,
+    "core_promotion": false
+  },
+  "configuration": {
+    "compatibility_date": "2026-11-01",
+    "pilot_vars": [
+      {
+        "name": "ZH_ENABLED",
+        "text": "true"
+      },
+      {
+        "name": "ZH_LITE_AI_DAILY_CAP",
+        "text": "10"
+      },
+      {
+        "name": "ZH_LITE_AI_ENABLED",
+        "text": "true"
+      },
+      {
+        "name": "ZH_LITE_AI_GLOBAL_DAILY_CAP",
+        "text": "10"
+      },
+      {
+        "name": "ZH_LITE_AI_MODEL",
+        "text": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      },
+      {
+        "name": "ZH_LITE_AI_TIMEOUT_MS",
+        "text": "4000"
+      },
+      {
+        "name": "ZH_LITE_COMMERCE_ENABLED",
+        "text": "true"
+      },
+      {
+        "name": "ZH_LITE_COMMERCE_QA_STORES",
+        "text": "qa-zalo-bot"
+      },
+      {
+        "name": "ZH_LITE_CONNECT_ENABLED",
+        "text": "true"
+      },
+      {
+        "name": "ZH_SEND_ENABLED",
+        "text": "true"
+      }
+    ],
+    "secret_names_preserved": [
+      "ZH_ADMIN_KEY",
+      "ZH_LITE_KEY",
+      "ZH_MASTER_KEY",
+      "ZH_SHARED_INBOUND_KEY",
+      "ZH_SHARED_SEND_KEY",
+      "ZH_SYSTEM_BOT_TOKEN"
+    ],
+    "legacy_binding_names_preserved": [
+      "ZH_ADMIN_KEY",
+      "ZH_DB",
+      "ZH_ENABLED",
+      "ZH_FORWARD_HOSTS",
+      "ZH_LITE_CONNECT_ENABLED",
+      "ZH_LITE_KEY",
+      "ZH_LITE_REPLY_DAILY_CAP",
+      "ZH_MASTER_KEY",
+      "ZH_MONTHLY_CAP",
+      "ZH_OWNER_CONNECT_ENABLED",
+      "ZH_PUBLIC_BASE_URL",
+      "ZH_SEND_ENABLED",
+      "ZH_SHARED_FORWARD_URL",
+      "ZH_SHARED_INBOUND_KEY",
+      "ZH_SHARED_SEND_KEY",
+      "ZH_SYSTEM_BOT_TOKEN",
+      "ZH_USER_WARN"
+    ]
+  },
+  "migration": {
+    "name": "0004_lite_private_catalog.sql",
+    "sha256": "77da2ea7790f22ab7b679b2ea97863a45b4bcb70731120bbc4d1b7949df0755e",
+    "success": true,
+    "pre_apply_time_travel_bookmark": "0000001e-00000000-0000512f-e10d8a9f30f00e0e6a53a9cef0b4bfa1",
+    "statements_succeeded": 7,
+    "existing_business_values_rewritten": false
+  },
+  "database_observations": [
+    {
+      "success": true,
+      "rows": [
+        {
+          "scope": "other_connections",
+          "status": "active",
+          "n": 1
+        },
+        {
+          "scope": "qa_target",
+          "status": "active",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "success": true,
+      "rows": [
+        {
+          "name": "0004_lite_private_catalog.sql"
+        }
+      ]
+    },
+    {
+      "success": true,
+      "rows": [
+        {
+          "name": "zh_lite_ai_usage"
+        },
+        {
+          "name": "zh_lite_catalog"
+        },
+        {
+          "name": "zh_lite_delivery"
+        },
+        {
+          "name": "zh_seen_chats"
+        }
+      ]
+    },
+    {
+      "success": true,
+      "rows": [
+        {
+          "catalog_count": 0
+        }
+      ]
+    },
+    {
+      "success": true,
+      "rows": []
+    }
+  ],
+  "module_sha256": {
+    "pilot/worker.mjs": "3427a2bd9b126c193ec010790d04f80882f3e3200f1db013a636ecdccd8989d2",
+    "pilot/router.mjs": "6ec58d2b12607105a4ff81ad2185a680c87d977bb6d63d2b6edfa0d836fb1979",
+    "src/worker.mjs": "66f255350ab7ade325309fcd28de990b99ae3c4d58cfcba642ba6b2ba3cf71a8",
+    "src/store.mjs": "1ca4d0be0ecd41c3983576785090eb64f5cf6b2b1330b7d842269149ef23adb0",
+    "src/crypto.mjs": "af0f793d4c9f3f9b8effa2a724d55b68c81a9fb63544175d782d8c4a3a806963",
+    "src/zalo-api.mjs": "d47c72681d3e8bd23c3ee13c6899924e4123d240ae3875b26e90fd0abf184d36",
+    "src/lite-commerce.mjs": "7c1016c924b944613a47a6e0a46a5a3c6093502c7dac6ac4d620e86809991445",
+    "src/lite-intent.mjs": "478e8496ea0a973efda7ec96f0507e008bfe4894115eee2b5b79a3021379329d",
+    "pilot/private/legacy.mjs": "4b367bb483f7bd2cbde17d92180b8b0f3574754a98d5a1b7726263e34c57e012"
+  },
+  "privacy": {
+    "private_legacy_source_published_to_github": false,
+    "legacy_module_returned_only_to_its_existing_cloudflare_worker": true,
+    "customer_content_in_report": false
+  },
+  "real_zalo_uat": {
+    "status": "NOT_YET_OBSERVED",
+    "catalog_configured_at_verification": false,
+    "delivery_rows_at_verification": 0,
+    "api_accepted_does_not_prove_device_receipt": true
+  },
+  "rollback": {
+    "preferred": "Disable QA commerce and AI; keep QA router and catalog; do not restore all D1 or delete tables.",
+    "previous_worker_version": "ae2cd33c-03c9-43b1-9403-81f72513f748"
+  },
+  "related_hosted_qa": {
+    "worker": "tien404-zalo-lite-qa",
+    "checks_passed": 22,
+    "checks_failed": 0,
+    "real_workers_ai": true,
+    "zalo_sends": "21 simulated only",
+    "report": "latest-hosted-runtime.json"
+  },
+  "http_verification": {
+    "verified_at": "2026-11-26T10:11:13.031Z",
+    "client": "Node fetch; default client identity",
+    "checks": [
+      {
+        "method": "GET",
+        "path": "/health",
+        "status": 200,
+        "body": {
+          "ok": true,
+          "enabled": true
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/v1/admin/pairing",
+        "status": 401,
+        "body": {
+          "ok": false,
+          "error": "UNAUTHORIZED"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/v1/send",
+        "status": 401,
+        "body": {
+          "ok": false,
+          "error": "UNAUTHORIZED"
+        }
+      }
+    ],
+    "earlier_python_urllib_result": "403 Cloudflare 1010 before Worker; no security settings changed"
+  }
+}

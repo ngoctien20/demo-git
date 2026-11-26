@@ -4,6 +4,8 @@
 
 Hub trước pilot bật nối Lite và gửi tin, có schema 0001/0002; version `ae2cd33c-03c9-43b1-9403-81f72513f748`. Worker QA cách ly đã chạy Workers + D1 và inference AI thật, đạt 22/22 checks; 21 lượt gửi Zalo trong bộ này là mô phỏng. Xem [qa/RESULTS.md](qa/RESULTS.md) để phân biệt bằng chứng source, hosted và thiết bị thật.
 
+Pilot đã triển khai trên Hub bằng version `0d6b4b5e-8999-4096-a275-acfb32b4b997`, chỉ áp cho `qa-zalo-bot`/own. Migration 0004 đã có receipt; health 200, các endpoint quản trị/gửi thiếu khóa trả 401. Cần chủ QA nhắn **Bắt đầu** để nghiệm thu trên Zalo; chưa mở private commerce đại trà.
+
 Nhánh này bổ sung chủ shop tự cài bằng hội thoại, dữ liệu riêng, bật/tạm dừng, hạn mức và AI phân loại ý định có kiểm soát. Xem **[SELF-SERVE-QA.md](SELF-SERVE-QA.md)**. Pilot dùng [entrypoint riêng](pilot/README.md), chỉ chuyển Bot QA vào candidate; merchant và hệ thống đăng ký giữ handler cũ. Hướng dẫn n8n bên dưới áp dụng luồng cũ. **Connection đã chuyển sang commerce không vào DEMO và không nhận trả lời từ `/v1/send`.**
 
 Ghi nhận lịch sử (24/11/2026): bản 0001 đã thử staging với `qa-zalo-bot`; 0002 khi đó mới offline. Mốc lịch sử không phản ánh trạng thái triển khai của thay đổi trong nhánh này.

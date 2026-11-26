@@ -10,7 +10,7 @@ Hub trước pilot: `ae2cd33c-03c9-43b1-9403-81f72513f748`; một connection QA 
 
 - Cục bộ: **85/85 PASS** trên Node v24.22.3 và SQLite, gồm 12 bài parity với bản sao live riêng và 8 bài phạm vi router dùng handler tổng hợp.
 - CI Node 22 của runner `b515b8e01f62026e3f6e7cdcb5797aa51821609a`: **65/65 PASS**, [run 45795640155](https://github.com/ngoctien20/demo-git/actions/runs/45795640155).
-- CI pilot công khai chạy 73 bài; 12 bài phụ thuộc bản sao riêng được ghi rõ SKIP. Trước triển khai phải cấp `ZH_PILOT_LEGACY_MODULE` và chạy đủ 85 bài; không dùng SKIP làm bằng chứng parity.
+- CI pilot source `7d94ecb06de4a69fbaf04ce70df0536926149cd3`: **SUCCESS**, [run 45798256419](https://github.com/ngoctien20/demo-git/actions/runs/45798256419). CI công khai chạy 73 bài và ghi rõ SKIP cho 12 bài phụ thuộc bản sao riêng. Trước triển khai đã cấp `ZH_PILOT_LEGACY_MODULE` và chạy đủ 85/85; không dùng SKIP làm bằng chứng parity.
 - `git diff --check`: PASS.
 
 ## TESTED — Cloudflare thật
@@ -37,7 +37,17 @@ Tạo D1 QA mới trả HTTP 403/code 7406 vì tài khoản đã có 10 database
 
 Automatic approval review từ chối công khai toàn bundle live lên GitHub do nguy cơ lộ mã nội bộ. Cách đóng gói đã đổi: giữ bản sao live ngoài repository, chỉ đưa lại vào chính Worker sở hữu mã; Git chỉ có router mới, entrypoint, test và hash. Không công khai bundle qua đường khác.
 
-Checkpoint D1, hash module và cách chạy parity ở [pilot/README.md](../pilot/README.md). Migration và upload Hub phải có receipt riêng; source đã kiểm thử không có nghĩa pilot đã chạy.
+## VERIFIED — pilot đã chạy trên Hub
+
+- Source: `7d94ecb06de4a69fbaf04ce70df0536926149cd3`.
+- Worker version: `0d6b4b5e-8999-4096-a275-acfb32b4b997`.
+- Deployment: `a2693793-24f9-4100-942d-1d961ea9708d`, tạo lúc 19:08:38 JST ngày 26/11/2026.
+- Migration 0004 đã áp thành công; có receipt trong `d1_migrations`. Không chuyển dữ liệu catalog hoặc sửa dữ liệu nghiệp vụ hiện hữu.
+- Đọc sau triển khai: QA active 1, kết nối khác active 1, catalog mới 0, delivery mới 0. Không tự nạp sản phẩm mẫu vào bot thật.
+- Giữ 6 secret bindings, toàn bộ binding cũ và compatibility date 2026-11-01. Thêm AI, cờ commerce chỉ cho candidate QA, quota AI 10/shop/ngày và 10/toàn pilot/ngày.
+- HTTP Node fetch: health 200; admin pairing và send thiếu khóa đều 401. Python urllib trước đó nhận Cloudflare 1010 trước Worker; không đổi cấu hình bảo mật. Hành vi này phù hợp [tài liệu Cloudflare về 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
+
+Receipt, hash module và kiểm tra HTTP: [latest-pilot-deployment.json](latest-pilot-deployment.json). Checkpoint D1 và cách chạy parity riêng: [pilot/README.md](../pilot/README.md).
 
 ## Chưa được nghiệm thu
 
@@ -48,6 +58,6 @@ Checkpoint D1, hash module và cách chạy parity ở [pilot/README.md](../pilo
 
 ## Bước tiếp theo và rollback
 
-Đọc lại version/schema trước pilot, áp schema cộng thêm, giữ bindings và dùng entrypoint QA hẹp. Sau đó chủ QA nhắn **Bắt đầu**, nhập dữ liệu, **Thử SP01**, **Bật bot**; khách hỏi giá; chủ thử **Tạm dừng**.
+Chủ QA nhắn **Bắt đầu**, nhập dữ liệu, **Thử SP01**, **Bật bot**; tài khoản thử nghiệm khác hỏi giá; chủ thử **Tạm dừng**. Đối chiếu receipt API với tin thực tế trên hai thiết bị trước mở rộng phạm vi.
 
 Rollback ưu tiên tắt commerce/AI QA nhưng giữ router/catalog, merchant tiếp tục legacy. Không DROP, xóa dữ liệu hoặc restore cả DB khi merchant có dữ liệu mới. Xem [SELF-SERVE-QA.md](../SELF-SERVE-QA.md) và [pilot/README.md](../pilot/README.md).

@@ -2,13 +2,15 @@
 
 Entry `pilot/worker.mjs` dùng trên Hub hiện hữu, chỉ chọn candidate khi connection tra từ D1 có `store_id=qa-zalo-bot` và `flow_mode=own`. Merchant, các route Lite và Bot TIEN404 AI dùng nguyên module legacy đã phát hành. Không chuyển credential sang Worker QA riêng và không đổi webhook của bot.
 
+**Đã triển khai pilot ngày 26/11/2026:** source `7d94ecb06de4a69fbaf04ce70df0536926149cd3`, Worker version `0d6b4b5e-8999-4096-a275-acfb32b4b997`, deployment `a2693793-24f9-4100-942d-1d961ea9708d`. CI source SUCCESS; 85/85 bài cục bộ gồm parity riêng. Health HTTP 200, admin pairing và send không có khóa trả 401. Receipt đầy đủ: [latest-pilot-deployment.json](../qa/latest-pilot-deployment.json). Chưa có catalog QA hoặc tin thật được quan sát ở thời điểm kiểm tra; cần chủ QA chạy wizard trên Zalo.
+
 ## Checkpoint và bản gốc
 
 - Worker gốc: `tien404-zalo-hub-staging`.
 - Version trước pilot: `ae2cd33c-03c9-43b1-9403-81f72513f748`.
 - Phần `worker.js` lấy nguyên từ API download Worker của version này và giữ trong bản sao riêng bên ngoài repository, không sửa nội dung và không xuất bản lên GitHub.
 - SHA-256 của module: `4b367bb483f7bd2cbde17d92180b8b0f3574754a98d5a1b7726263e34c57e012`. Kiểm thử trước triển khai phải kiểm tra hash này.
-- D1 Time Travel bookmark trước migration: `0000001b-00000000-0000512f-65e1c703a64f4f73de9b861f61352c90`.
+- D1 Time Travel bookmark ngay trước migration: `0000001e-00000000-0000512f-e10d8a9f30f00e0e6a53a9cef0b4bfa1`.
 - Mốc đọc trước thay đổi: một kết nối QA active, một kết nối khác active; QA đã ghép chủ, owner chat đã xuất hiện trong danh sách người gửi. Không suy diễn/backfill owner_user_id.
 
 ## Phạm vi và cấu hình

@@ -6,6 +6,8 @@ Một chủ shop nối bot qua luồng đăng ký Lite hiện có, nhập mã gh
 
 Trạng thái mã nguồn: **CANDIDATE** sau kiểm thử tự động; không đồng nghĩa với nghiệm thu khách thật. Chưa tích hợp thanh toán, chuyển giao CSKH theo gói của PR #516, hoặc công cụ tạo đơn vào luồng này.
 
+**Phạm vi đang chạy ngày 26/11/2026:** pilot chỉ dành cho kết nối `qa-zalo-bot`/own. Đăng ký Lite vẫn bật nhưng merchant và Bot TIEN404 AI tiếp tục handler cũ. Các bước tự cài dưới đây hiện nghiệm thu trên Bot QA; chưa công bố tính năng private commerce cho mọi shop. Bằng chứng triển khai: [qa/latest-pilot-deployment.json](qa/latest-pilot-deployment.json).
+
 ## Chủ shop thao tác
 
 1. Nối bot qua Bot TIEN404 AI và nhập mã ghép nối vào bot shop như luồng đã có.
