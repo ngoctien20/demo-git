@@ -1,6 +1,12 @@
 # TIEN404 Zalo Hub — cổng chung cho bot Zalo của nhiều shop
 
-Trạng thái (2026-11-24): bản 0001 **đã chạy thật trên staging** với bot QA (`qa-zalo-bot`): Zalo → hub → n8n → lõi AI bán hàng → `/v1/send` → Zalo, PASS. Bản 0002 (tách mã, đổi mã, **chủ shop tự nối bot trong App**, **gói Lite nối hoàn toàn trên Zalo**) **mới offline, 25/25 PASS**, chưa áp D1, chưa deploy.
+## Checkpoint hiện tại — 26/11/2026
+
+Đã đọc lại cấu hình đang chạy: Hub staging bật nối Lite và gửi tin, có schema 0001/0002; chưa có catalog riêng hoặc Workers AI. Phiên bản đang phục vụ trước đợt này là `ae2cd33c-03c9-43b1-9403-81f72513f748`.
+
+Nhánh này bổ sung chủ shop tự cài bằng hội thoại, dữ liệu riêng, bật/tạm dừng, hạn mức và AI phân loại ý định có kiểm soát. Xem **[SELF-SERVE-QA.md](SELF-SERVE-QA.md)** để biết phạm vi, kiểm thử, cấu hình, triển khai QA và rollback. Các hướng dẫn n8n bên dưới chỉ áp dụng kết nối theo luồng cũ. **Lite mới không chuyển sang luồng DEMO và không nhận trả lời từ `/v1/send`.**
+
+Ghi nhận lịch sử (24/11/2026): bản 0001 đã thử staging với `qa-zalo-bot`; 0002 khi đó mới offline. Mốc lịch sử không phản ánh trạng thái triển khai của thay đổi trong nhánh này.
 
 Thiết kế và nguồn tài liệu Zalo: tài liệu "Shop tự nối bot Zalo — kiểm tra và thiết kế" (https://claude.ai/artifact/8xqoRi8zWxrVbsUkhJZrUx).
 

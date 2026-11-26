@@ -19,6 +19,20 @@ ZH_SUPABASE_KEY = "<publishable key, same as apps/owner/src/config.ts>"
 ZH_LITE_CONNECT_ENABLED = "false"   # Lite: connect by pasting the token into Bot TIEN404 AI
 ZH_LITE_REPLY_DAILY_CAP = "30"     # Bot TIEN404 AI replies per owner per day
 ZH_SHARED_FORWARD_URL = "https://ngoctien20.app.n8n.cloud/webhook/tien404-zalo-hub-shared"
+# Private Lite catalog (migration 0004). Missing/false fails closed for Lite, never forwards to DEMO.
+ZH_LITE_COMMERCE_ENABLED = "false"
+# To test the existing QA connection without changing its webhook, set exactly qa-zalo-bot.
+ZH_LITE_COMMERCE_QA_STORES = ""
+# Optional AI classifies intent only. Prices/stock always come from this shop's catalog.
+ZH_LITE_AI_ENABLED = "false"
+ZH_LITE_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+ZH_LITE_AI_DAILY_CAP = "20"
+ZH_LITE_AI_GLOBAL_DAILY_CAP = "100"
+ZH_LITE_AI_TIMEOUT_MS = "4000"
+
+# Add only on an environment intended to run Workers AI:
+# [ai]
+# binding = "AI"
 
 [[d1_databases]]
 binding = "ZH_DB"

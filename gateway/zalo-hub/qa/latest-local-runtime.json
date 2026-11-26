@@ -1,0 +1,298 @@
+{
+  "ok": true,
+  "qa_version": "zalo-lite-self-serve-runtime-v1",
+  "run_id": "874142b656b282dc",
+  "started_at": "2026-11-26T09:31:35.875Z",
+  "completed_at": "2026-11-26T09:31:35.947Z",
+  "data_kind": "SYNTHETIC_ONLY",
+  "outbound_mode": "IN_MEMORY_STUB_ONLY",
+  "totals": {
+    "checks": 20,
+    "passed": 20,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "name": "isolated_database_binding_present",
+      "status": "PASS"
+    },
+    {
+      "name": "two_independent_lite_registrations",
+      "status": "PASS"
+    },
+    {
+      "name": "separate_store_scopes",
+      "status": "PASS"
+    },
+    {
+      "name": "pairing_persists_sender_and_chat_separately",
+      "status": "PASS"
+    },
+    {
+      "name": "guided_setup_reaches_private_review",
+      "status": "PASS"
+    },
+    {
+      "name": "draft_is_not_visible_to_customer",
+      "status": "PASS"
+    },
+    {
+      "name": "owner_can_preview_own_draft",
+      "status": "PASS"
+    },
+    {
+      "name": "guided_save_keeps_replies_off",
+      "status": "PASS"
+    },
+    {
+      "name": "saved_shop_needs_explicit_enable",
+      "status": "PASS"
+    },
+    {
+      "name": "owners_enable_only_their_own_catalogs",
+      "status": "PASS"
+    },
+    {
+      "name": "customer_a_receives_a_price_and_stock",
+      "status": "PASS"
+    },
+    {
+      "name": "customer_b_receives_b_price_and_stock",
+      "status": "PASS"
+    },
+    {
+      "name": "flat_private_event_with_distinct_sender_and_chat_is_supported",
+      "status": "PASS"
+    },
+    {
+      "name": "customer_cannot_change_catalog",
+      "status": "PASS"
+    },
+    {
+      "name": "owner_chat_without_owner_sender_cannot_pause",
+      "status": "PASS"
+    },
+    {
+      "name": "pause_silences_only_shop_a",
+      "status": "PASS"
+    },
+    {
+      "name": "simulated_reply_routes_match_shop_and_chat",
+      "status": "PASS"
+    },
+    {
+      "name": "no_n8n_forwarding",
+      "status": "PASS"
+    },
+    {
+      "name": "no_unexpected_provider_requests",
+      "status": "PASS"
+    },
+    {
+      "name": "no_internal_runtime_errors",
+      "status": "PASS"
+    }
+  ],
+  "observations": {
+    "simulated_zalo_sends": 21,
+    "n8n_forward_attempts": 0,
+    "unexpected_provider_attempts": 0
+  },
+  "ai_smoke": {
+    "requested": false,
+    "binding_present": false,
+    "binding_called": false,
+    "status": "NOT_REQUESTED",
+    "label": null
+  },
+  "transcript": [
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "[Mã ghép nối thử nghiệm]",
+      "replies": [
+        "Đã xác nhận bác là chủ shop. Nhắn “Bắt đầu” để cài tên shop, liên hệ CSKH công khai và sản phẩm. Bác xem thử rồi nhắn “Bật bot” để mở trả lời khách. Bot chưa tự tạo đơn."
+      ]
+    },
+    {
+      "shop": "B",
+      "actor": "owner",
+      "input": "[Mã ghép nối thử nghiệm]",
+      "replies": [
+        "Đã xác nhận bác là chủ shop. Nhắn “Bắt đầu” để cài tên shop, liên hệ CSKH công khai và sản phẩm. Bác xem thử rồi nhắn “Bật bot” để mở trả lời khách. Bot chưa tự tạo đơn."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Bắt đầu",
+      "replies": [
+        "Bước 1: Bác muốn khách thấy tên cửa hàng là gì?\nNhắn tên shop (tối đa 70 ký tự). Có thể nhắn “Hủy” bất kỳ lúc nào."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Shop QA A",
+      "replies": [
+        "Bước 2: Số điện thoại CSKH nào được phép hiển thị công khai cho khách?\nChỉ gửi số khi bác đồng ý công khai. Nhắn “Bỏ qua” nếu chưa muốn cung cấp."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Bỏ qua",
+      "replies": [
+        "Nhập mã cho sản phẩm, ví dụ SP01. Chỉ dùng chữ không dấu, số, dấu - hoặc _ (tối đa 24 ký tự)."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "F01",
+      "replies": [
+        "Tên sản phẩm mà khách sẽ nhìn thấy là gì? (Tối đa 80 ký tự.)"
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Gạo QA A",
+      "replies": [
+        "Giá bán của một sản phẩm là bao nhiêu đồng?\nNhắn số tiền, ví dụ 12000 hoặc 12.000. Không nhập giá ước lượng."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "12.000",
+      "replies": [
+        "Hiện cửa hàng còn bao nhiêu sản phẩm này?\nNhắn số nguyên từ 0; nhập 0 nếu đã hết hàng."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "5",
+      "replies": [
+        "Bản xem trước, chưa áp dụng:\nShop: Shop QA A\nCSKH công khai: chưa có\nSản phẩm: 1\nSản phẩm xem lại: F01 | Gạo QA A | 12.000 đ | tồn 5\n\nNhắn “Thử mã sản phẩm” để xem câu trả lời.\nNhắn “Lưu” để lưu dữ liệu và giữ trạng thái hiện tại, hoặc “Bật bot” để lưu và bật trả lời khách. Nhắn “Hủy” để bỏ bản nháp."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": []
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Thử F01",
+      "replies": [
+        "Bản xem trước:\nShop QA A: Gạo QA A (F01) — 12.000 đ. Theo dữ liệu shop đã cập nhật: còn 5 sản phẩm. Em chưa tạo đơn tự động."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Lưu",
+      "replies": [
+        "Đã lưu dữ liệu riêng của shop. Trợ lý: tắt. Nhắn “Bật bot” khi bác sẵn sàng.\nNhắn “Thêm sản phẩm” để tiếp tục hoặc “Thử câu hỏi” để kiểm tra."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": []
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Bật bot",
+      "replies": [
+        "Đã lưu cấu hình. Trợ lý: bật. Sản phẩm: 1."
+      ]
+    },
+    {
+      "shop": "B",
+      "actor": "owner",
+      "input": "Cài shop | Shop QA B | -",
+      "replies": [
+        "Đã lưu cấu hình. Trợ lý: tắt. Sản phẩm: 0."
+      ]
+    },
+    {
+      "shop": "B",
+      "actor": "owner",
+      "input": "Sản phẩm | F01 | Gạo QA B | 33000 | 0",
+      "replies": [
+        "Đã lưu cấu hình. Trợ lý: tắt. Sản phẩm: 1."
+      ]
+    },
+    {
+      "shop": "B",
+      "actor": "owner",
+      "input": "Bật bot",
+      "replies": [
+        "Đã lưu cấu hình. Trợ lý: bật. Sản phẩm: 1."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": [
+        "Shop QA A: Gạo QA A (F01) — 12.000 đ. Theo dữ liệu shop đã cập nhật: còn 5 sản phẩm. Em chưa tạo đơn tự động."
+      ]
+    },
+    {
+      "shop": "B",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": [
+        "Shop QA B: Gạo QA B (F01) — 33.000 đ. Theo dữ liệu shop đã cập nhật: hết hàng. Em chưa tạo đơn tự động."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "customer",
+      "input": "Sản phẩm | F01 | Không được đổi | 1 | 999",
+      "replies": [
+        "Shop QA A: Gạo QA A (F01) — 12.000 đ. Theo dữ liệu shop đã cập nhật: còn 5 sản phẩm. Em chưa tạo đơn tự động."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "[Người gửi khác thử lệnh Tạm dừng trong chat chủ shop]",
+      "replies": [
+        "Em chưa có thông tin xác nhận cho yêu cầu này. Bác cho em tên hoặc mã sản phẩm cụ thể nhé."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "owner",
+      "input": "Tạm dừng",
+      "replies": [
+        "Đã tạm dừng trả lời khách và bỏ bản nháp đang làm. Dữ liệu đã lưu vẫn được giữ. Nhắn “Bật bot” để hoạt động lại."
+      ]
+    },
+    {
+      "shop": "A",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": []
+    },
+    {
+      "shop": "B",
+      "actor": "customer",
+      "input": "F01 giá bao nhiêu?",
+      "replies": [
+        "Shop QA B: Gạo QA B (F01) — 33.000 đ. Theo dữ liệu shop đã cập nhật: hết hàng. Em chưa tạo đơn tự động."
+      ]
+    }
+  ],
+  "execution_environment": "Node v24.22.3 + SQLite (not Cloudflare)",
+  "source_sha256": "e754b5b2f71fee5de635df069682bca18796ea1e50640aef6d28e96d8a500001"
+}
