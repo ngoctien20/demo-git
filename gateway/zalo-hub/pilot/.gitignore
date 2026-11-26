@@ -1,0 +1,3 @@
+# Deployment-only live module is supplied from a private backup, never Git.
+/private/
+/legacy-*.mjs

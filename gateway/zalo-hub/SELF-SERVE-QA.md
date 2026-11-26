@@ -59,11 +59,13 @@ Bộ kiểm thử bao phủ wizard, công khai liên hệ sau xác nhận, sửa
 
 `qa/runtime-check.mjs` là entrypoint QA riêng. Nó nhận D1 riêng và dùng API Zalo/n8n giả trong bộ nhớ; không có lời gọi mạng tới Zalo. GET `/health` nêu rõ chế độ. POST `/qa/run` cần khóa QA riêng. Không bind token hệ thống, token bot thật, khóa chính D1 hiện hữu hoặc secrets n8n vào Worker QA. Dữ liệu QA được gắn run ID, không sửa bảng của môi trường đang phục vụ khách.
 
+Runner hosted phiên bản v2 chia thành 26 request để phù hợp giới hạn truy vấn D1 Free. Continuation được mã hóa và xác thực, hết hạn sau 30 phút, không đưa vào báo cáo công khai. Client `tools/run-hosted-qa.mjs` đọc khóa từ file riêng và chỉ chấp nhận hostname Worker QA cách ly. Chạy thật trên Cloudflare ngày 26/11/2026 đạt 22/22 checks, bao gồm một inference Workers AI thật. 21 lần gửi Zalo vẫn là mô phỏng; xem `qa/latest-hosted-runtime.json`.
+
 ## Điều kiện đưa vào Bot QA thật và rollback
 
 1. Đạt kiểm thử cục bộ, CI và Worker/D1 QA cách ly. Đọc lại phiên bản Hub, flags, schema trước triển khai để tránh ghi đè thay đổi đồng thời.
 2. Giữ checkpoint phiên bản Worker đang chạy. Áp migration cộng thêm trước khi thay code; dữ liệu hai kết nối hiện có không được chuyển tự động.
-3. Muốn chỉ thử `qa-zalo-bot` trên Hub đang phục vụ Lite, cần cơ chế rollout phạm vi đã kiểm chứng. Không dùng việc bật toàn bộ Lite như một bước QA bot. Không thay webhook Bot TIEN404 AI.
+3. Entrypoint `pilot/worker.mjs` chỉ chọn candidate cho `qa-zalo-bot`/own; phần còn lại thực thi nguyên module đang triển khai. Xem `pilot/README.md` về bản sao riêng, hash kiểm chứng, CI phạm vi và các test parity bắt buộc trước deploy. Không đưa module live lên GitHub. Không thay webhook Bot TIEN404 AI.
 4. Thiết bị thật phải xác nhận pairing, tự cài, khách A/B nhận đúng bot/giá, tạm dừng và API receipt. CI và Worker giả lập không thay thế bước này.
 5. Đối chiếu và hợp nhất có kiểm soát với #516 trước bật điều khiển CSKH/dashboard theo gói. Không ghi đè worker của nhánh song song; ưu tiên một cổng gửi thống nhất.
 

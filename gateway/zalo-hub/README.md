@@ -2,9 +2,9 @@
 
 ## Checkpoint hiện tại — 26/11/2026
 
-Đã đọc lại cấu hình đang chạy: Hub staging bật nối Lite và gửi tin, có schema 0001/0002; chưa có catalog riêng hoặc Workers AI. Phiên bản đang phục vụ trước đợt này là `ae2cd33c-03c9-43b1-9403-81f72513f748`.
+Hub trước pilot bật nối Lite và gửi tin, có schema 0001/0002; version `ae2cd33c-03c9-43b1-9403-81f72513f748`. Worker QA cách ly đã chạy Workers + D1 và inference AI thật, đạt 22/22 checks; 21 lượt gửi Zalo trong bộ này là mô phỏng. Xem [qa/RESULTS.md](qa/RESULTS.md) để phân biệt bằng chứng source, hosted và thiết bị thật.
 
-Nhánh này bổ sung chủ shop tự cài bằng hội thoại, dữ liệu riêng, bật/tạm dừng, hạn mức và AI phân loại ý định có kiểm soát. Xem **[SELF-SERVE-QA.md](SELF-SERVE-QA.md)** để biết phạm vi, kiểm thử, cấu hình, triển khai QA và rollback. Các hướng dẫn n8n bên dưới chỉ áp dụng kết nối theo luồng cũ. **Lite mới không chuyển sang luồng DEMO và không nhận trả lời từ `/v1/send`.**
+Nhánh này bổ sung chủ shop tự cài bằng hội thoại, dữ liệu riêng, bật/tạm dừng, hạn mức và AI phân loại ý định có kiểm soát. Xem **[SELF-SERVE-QA.md](SELF-SERVE-QA.md)**. Pilot dùng [entrypoint riêng](pilot/README.md), chỉ chuyển Bot QA vào candidate; merchant và hệ thống đăng ký giữ handler cũ. Hướng dẫn n8n bên dưới áp dụng luồng cũ. **Connection đã chuyển sang commerce không vào DEMO và không nhận trả lời từ `/v1/send`.**
 
 Ghi nhận lịch sử (24/11/2026): bản 0001 đã thử staging với `qa-zalo-bot`; 0002 khi đó mới offline. Mốc lịch sử không phản ánh trạng thái triển khai của thay đổi trong nhánh này.
 
