@@ -1,0 +1,621 @@
+{
+  "schema_version": "T404_V173_N8N_WEBSITE_SIGNED_SESSION_QA_SNAPSHOT_V1",
+  "checkpoint_date_jst": "2026-11-17",
+  "workflow": {
+    "id": "lN6rKmmu11oIDVFO",
+    "name": "TIEN404_V173_WEBSITE_SIGNED_SESSION_STORE_BOT_QA_NO_SEND",
+    "version_id": "7e6c988f-8b22-4d5d-85ab-4c9a39d6a425",
+    "active": false,
+    "active_version_id": null,
+    "project": "Personal",
+    "folder": "90_QA - DIAGNOSTICS",
+    "nodes": [
+      {
+        "name": "Manual Website Signed Session QA Only",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "parameters": {}
+      },
+      {
+        "name": "Load V17.2 QA Store Bot Profiles",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "parameters": {
+          "resource": "row",
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "AAlsUnaAxbp0BscT",
+            "cachedResultName": "TIEN404_V172_QA_UNIFIED_CHANNEL_CUSTOM_BOT_PROFILES_NO_SEND"
+          },
+          "returnAll": true
+        }
+      },
+      {
+        "name": "Mint QA Server Session and 38 Browser Messages",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst crypto=require('crypto');\nconst rows=$input.all().map(x=>x.json||{});\nif(rows.length!==7)throw Error('QA_CENTRAL_REGISTRY_NOT_SEVEN_ROWS');\nif(rows.some(r=>r.approval_scope!=='SYNTHETIC_ONLY'||r.owner_authority_verified!==false||r.read_only!==true))throw Error('REAL_STORE_AUTHORITY_NOT_ALLOWED');\nconst website=rows.filter(r=>r.channel==='website'&&r.installation_ref==='QA_WEB_WIDGET_A'&&r.status==='QA_APPROVED');\nif(website.length!==1)throw Error('WEBSITE_BINDING_UNKNOWN_OR_DUPLICATED');\nconst b=website[0],origin='https://qa-shop-a.example.invalid';\nif(b.tenant_ref!=='QA_TENANT_1'||b.store_ref!=='QA_STORE_A'||b.bot_ref!=='QA_BOT_A'||b.tool_allowlist!=='catalog_read'||b.subscription_active!==true||b.store_paused!==false)throw Error('QA_WEBSITE_BINDING_NOT_SAFE');\nconst key='QA_ONLY_V173_FAKE_PRIVATE_KEY_NEVER_PRODUCTION_123456789';\nconst kid='qa_v1';\nconst now=Math.floor(Date.now()/1000);\nconst sid=crypto.randomBytes(24).toString('base64url');\nconst base={v:1,iss:'t404-qa-issuer',aud:'t404-website-chat',iat:now,nbf:now,exp:now+300,sid,channel:'website',installation_ref:b.installation_ref,origin,\n  tenant_ref:b.tenant_ref,store_ref:b.store_ref,bot_ref:b.bot_ref,bot_version:b.bot_version,prompt_version:b.prompt_version,\n  knowledge_version:b.knowledge_version,policy_version:b.policy_version,scope:'QA_CATALOG_ONLY'};\nconst sign=(claims,k=kid)=>{\n const body=Buffer.from(JSON.stringify(claims),'utf8').toString('base64url');\n const partial='t404s1.'+k+'.'+body;\n return partial+'.'+crypto.createHmac('sha256',key).update(partial,'utf8').digest('base64url');\n};\nconst token=sign(base);\nfunction make(n,more={}){\n return {case_id:'QA_V173_'+String(n).padStart(2,'0'),expected:'ALLOW',token,origin,installation_ref:b.installation_ref,\n  channel:'website',event_id:'QA_MSG_'+String(n).padStart(2,'0'),text:'QA_SKU_001',requested_tool:'catalog_read',...more};\n}\nconst first=make(1),alterSig=token.slice(0,-1)+(token.endsWith('A')?'B':'A');\nconst cases=[\n first,\n make(2),make(3),\n {...first,case_id:'QA_V173_04',expected:'DUPLICATE'},\n {...first,case_id:'QA_V173_05',expected:'DENY',text:'QA_CONFLICT'},\n make(6,{expected:'DENY',token:alterSig}),\n make(7,{expected:'DENY',token:''}),\n make(8,{expected:'DENY',origin:'https://qa-shop-b.example.invalid'}),\n make(9,{expected:'DENY',installation_ref:'QA_WEB_WIDGET_B'}),\n make(10,{expected:'DENY',installation_ref:'QA_UNKNOWN_WIDGET'}),\n make(11,{expected:'DENY',channel:'messenger'}),\n make(12,{expected:'DENY',token:sign({...base,iat:now-601,nbf:now-601,exp:now-301})}),\n make(13,{expected:'DENY',token:sign({...base,iat:now+301,nbf:now+301,exp:now+601})}),\n make(14,{expected:'DENY',token:token.replace('qa_v1','wrong_kid')}),\n make(15,{expected:'DENY',token:sign({...base,aud:'wrong-audience'})}),\n make(16,{expected:'DENY',token:sign({...base,iss:'wrong-issuer'})}),\n make(17,{expected:'DENY',token:sign({...base,store_ref:'QA_STORE_B'})}),\n make(18,{expected:'DENY',token:sign({...base,bot_ref:'QA_BOT_B'})}),\n make(19,{expected:'DENY',token:sign({...base,prompt_version:'QA_PROMPT_B_V1'})}),\n make(20,{expected:'DENY',token:sign({...base,knowledge_version:'QA_KNOWLEDGE_B_V1'})}),\n make(21,{expected:'DENY',token:sign({...base,scope:'QA_ORDER_WRITE'})}),\n make(22,{expected:'DENY',token:'evil.none.signature'}),\n make(23,{expected:'DENY',requested_tool:'create_order'}),\n make(24,{expected:'DENY',requested_tool:'order_read'}),\n make(25,{expected:'DENY',requested_tool:'update_price'}),\n make(26,{expected:'DENY',event_id:''}),\n make(27,{expected:'DENY',text:''}),\n make(28,{expected:'DENY',text:'X'.repeat(501)}),\n make(29,{expected:'DENY',store_id:'QA_STORE_B'}),\n make(30,{expected:'DENY',tenant_id:'QA_TENANT_2'}),\n make(31,{expected:'DENY',bot_id:'QA_BOT_B'}),\n make(32,{expected:'DENY',verified:true}),\n make(33,{expected:'DENY',customer_identity_linked:true}),\n make(34,{expected:'DENY',message_type:'image'}),\n make(35,{expected:'DENY',token:sign({...base,exp:now+3600})}),\n make(36,{expected:'DENY',token:sign({...base,policy_version:'QA_POLICY_OTHER'})}),\n make(37,{expected:'DENY',origin:'http://qa-shop-a.example.invalid'}),\n make(38,{expected:'DENY',token:sign({...base,installation_ref:'QA_WEB_WIDGET_B'})})\n];\nreturn [{json:{contract:'T404_V173_N8N_WEB_SESSION_QA_V1',trust:'SYNTHETIC_SERVER_MINT_ONLY',created_by:'QA_CENTRAL_DATA_TABLE_BINDING',cases}}];\n"
+        }
+      },
+      {
+        "name": "Validate HMAC Session Origin and Store Bot Policy",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst crypto=require('crypto'),key='QA_ONLY_V173_FAKE_PRIVATE_KEY_NEVER_PRODUCTION_123456789';\nconst batch=$input.first()?.json||{},rows=$('Load V17.2 QA Store Bot Profiles').all().map(x=>x.json||{});\nif(batch.contract!=='T404_V173_N8N_WEB_SESSION_QA_V1'||batch.trust!=='SYNTHETIC_SERVER_MINT_ONLY'||\n !Array.isArray(batch.cases)||batch.cases.length!==38||rows.length!==7)throw Error('V173_SESSION_QA_INPUT_INVALID');\nif(rows.some(r=>r.approval_scope!=='SYNTHETIC_ONLY'||r.owner_authority_verified!==false||r.read_only!==true))throw Error('UNAUTHORIZED_REAL_BINDING_IN_QA');\nconst allowed=new Set(['case_id','expected','token','origin','installation_ref','channel','event_id','text','requested_tool']);\nconst safeEqual=(a,b)=>{const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&crypto.timingSafeEqual(x,y);};\nconst seen=new Map(),results=[];\nfor(const c of batch.cases){\n let status='DENY',reason='QA_DENIED',store=null,bot=null,price=null,stock=null,botVersion=null;\n try{\n  if(Object.keys(c).some(x=>!allowed.has(x)))throw Error('UNTRUSTED_CLIENT_AUTHORITY_CLAIM');\n  if(c.channel!=='website'||c.origin!=='https://qa-shop-a.example.invalid'||c.installation_ref!=='QA_WEB_WIDGET_A')throw Error('UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION');\n  if(typeof c.token!=='string'||c.token.length<150||c.token.length>2300)throw Error('TOKEN_LENGTH_DENIED');\n  const p=c.token.split('.');\n  if(p.length!==4||p[0]!=='t404s1'||p[1]!=='qa_v1'||!/^[A-Za-z0-9_-]+$/.test(p[2])||\n   !/^[A-Za-z0-9_-]+$/.test(p[3]))throw Error('TOKEN_FORMAT_OR_KEY_DENIED');\n  const actual=crypto.createHmac('sha256',key).update(p.slice(0,3).join('.')).digest('base64url');\n  if(!safeEqual(actual,p[3]))throw Error('BAD_SIGNED_SESSION');\n  let claims;try{claims=JSON.parse(Buffer.from(p[2],'base64url').toString('utf8'));}catch{throw Error('BAD_SESSION_PAYLOAD');}\n  const now=Math.floor(Date.now()/1000);\n  if(claims.v!==1||claims.iss!=='t404-qa-issuer'||claims.aud!=='t404-website-chat'||\n  claims.channel!=='website'||claims.installation_ref!==c.installation_ref||claims.origin!==c.origin||\n  claims.scope!=='QA_CATALOG_ONLY'||typeof claims.sid!=='string'||!/^[A-Za-z0-9_-]{32}$/.test(claims.sid)||\n  !Number.isSafeInteger(claims.iat)||!Number.isSafeInteger(claims.nbf)||!Number.isSafeInteger(claims.exp)||\n  claims.exp-claims.iat!==300||claims.nbf!==claims.iat||claims.iat>now+30||claims.nbf>now||claims.exp<=now)throw Error('SESSION_CLAIM_OR_TTL_DENIED');\n  const candidates=rows.filter(r=>r.channel==='website'&&r.installation_ref===claims.installation_ref);\n  if(candidates.length!==1)throw Error('SERVER_WEBSITE_BINDING_NOT_UNIQUE');\n  const r=candidates[0];\n  if(r.status!=='QA_APPROVED'||r.subscription_active!==true||r.store_paused!==false||\n   r.tool_allowlist!=='catalog_read')throw Error('STORE_OR_BOT_PAUSED_REVOKED');\n  for(const field of ['tenant_ref','store_ref','bot_ref','bot_version','prompt_version','knowledge_version','policy_version'])\n   if(r[field]!==claims[field])throw Error('SESSION_BOT_STORE_PROFILE_CHANGED');\n  if(c.requested_tool!=='catalog_read')throw Error('WRITE_OR_ORDER_READ_TOOL_DENIED');\n  if(typeof c.event_id!=='string'||!/^QA_MSG_\\d{2}$/.test(c.event_id)||\n   typeof c.text!=='string'||c.text.length<1||c.text.length>500)throw Error('INVALID_EVENT_ID_OR_TEXT');\n  const replayKey=claims.sid+'|'+c.event_id;\n  const fingerprint=[c.token,c.channel,c.origin,c.installation_ref,c.event_id,c.text,c.requested_tool].join('|');\n  if(seen.has(replayKey)){\n   if(seen.get(replayKey)!==fingerprint)throw Error('CONFLICTING_QA_MESSAGE_REPLAY');\n   status='DUPLICATE';reason='IN_MEMORY_QA_DUPLICATE_NO_ACTION';\n  }else{\n   seen.set(replayKey,fingerprint);\n   status='ALLOW';reason='SERVER_MINTED_QA_SESSION_CATALOG_ONLY';\n   store=r.store_ref;bot=r.bot_ref;price=r.price_vnd;stock=r.stock;botVersion=r.bot_version;\n  }\n }catch(e){status='DENY';reason=String(e?.message||'DENIED').slice(0,70);}\n results.push({case_id:c.case_id,expected:c.expected,status,reason,store,bot,bot_version:botVersion,price_vnd:price,stock,\n  customer_cross_channel_identity_verified:false,real_website_session_issued:false,hosted_store_rls_verified:false,\n  provider_sends:0,model_calls:0,commerce_writes:0,outbound:'MOCK_ONLY_NOT_SENT'});\n}\nreturn [{json:{contract:batch.contract,source_mode:batch.trust,bindings:rows.length,results}}];\n"
+        }
+      },
+      {
+        "name": "V17.3 Fail Closed Website Session QA Acceptance",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "\nconst x=$input.first()?.json||{},rows=x.results||[];\nif(x.contract!=='T404_V173_N8N_WEB_SESSION_QA_V1'||x.source_mode!=='SYNTHETIC_SERVER_MINT_ONLY'||x.bindings!==7||\n rows.length!==38||new Set(rows.map(r=>r.case_id)).size!==38)throw Error('V173_WEBSITE_QA_CONTRACT_INVALID');\nfor(const r of rows){\n if(r.status!==r.expected)throw Error('P0_V173_CASE_FAILED_'+r.case_id+'_'+r.status+'_NEEDS_'+r.expected);\n if(r.provider_sends!==0||r.model_calls!==0||r.commerce_writes!==0||\n r.customer_cross_channel_identity_verified!==false||r.real_website_session_issued!==false||r.hosted_store_rls_verified!==false||\n r.outbound!=='MOCK_ONLY_NOT_SENT')throw Error('V173_UNAUTHORIZED_REAL_ACTION');\n if(r.status==='ALLOW'&&(r.store!=='QA_STORE_A'||r.bot!=='QA_BOT_A'||r.price_vnd!==159000||\n r.bot_version!=='QA_BOT_A_V1'))throw Error('V173_REAL_STORE_OR_BOT_SCOPE_WRONG');\n if(r.status==='DENY'&&(r.store!==null||r.bot!==null))throw Error('V173_DENIED_CONTEXT_EXPOSED');\n}\nconst count=(status)=>rows.filter(r=>r.status===status).length;\nif(count('ALLOW')!==3||count('DENY')!==34||count('DUPLICATE')!==1)throw Error('V173_QA_DISTRIBUTION_CHANGED');\nreturn [{json:{status:'V173_WEBSITE_SESSION_TO_STORE_BOT_QA_PASS',total:rows.length,passed:rows.length,\n allow:count('ALLOW'),deny:count('DENY'),duplicate:count('DUPLICATE'),bindings:7,\n website_qa_session_hmac_verified:true,central_v172_bot_binding_read:true,\n same_session_three_distinct_messages:true,real_website_session_issued:false,\n hosted_store_rls_verified:false,customer_cross_channel_identity_verified:false,\n all_provider_sends:0,all_llm_calls:0,all_commerce_writes:0,\n reply:'MOCK_ONLY_NOT_SENT',cases:rows.map(r=>({id:r.case_id,status:r.status,reason:r.reason,\n  store:r.store,bot:r.bot,price_vnd:r.price_vnd}))}}];\n"
+        }
+      }
+    ],
+    "connections": {
+      "Manual Website Signed Session QA Only": {
+        "main": [
+          [
+            {
+              "node": "Load V17.2 QA Store Bot Profiles",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Load V17.2 QA Store Bot Profiles": {
+        "main": [
+          [
+            {
+              "node": "Mint QA Server Session and 38 Browser Messages",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mint QA Server Session and 38 Browser Messages": {
+        "main": [
+          [
+            {
+              "node": "Validate HMAC Session Origin and Store Bot Policy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate HMAC Session Origin and Store Bot Policy": {
+        "main": [
+          [
+            {
+              "node": "V17.3 Fail Closed Website Session QA Acceptance",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "registry": {
+    "table_id": "AAlsUnaAxbp0BscT",
+    "source_version": "V17.2",
+    "rows": [
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_B",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      },
+      {
+        "channel": "zalo_bot",
+        "installation_ref": "QA_ZALO_BOT_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "zalo_oa",
+        "installation_ref": "QA_ZALO_OA_B",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      },
+      {
+        "channel": "website",
+        "installation_ref": "QA_WEB_WIDGET_A",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_A",
+        "bot_ref": "QA_BOT_A",
+        "bot_version": "QA_BOT_A_V1",
+        "prompt_version": "QA_PROMPT_A_V1",
+        "knowledge_version": "QA_KNOWLEDGE_A_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 159000,
+        "stock": 5,
+        "product_label": "QA_CATALOG_A"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_C",
+        "tenant_ref": "QA_TENANT_2",
+        "store_ref": "QA_STORE_C",
+        "bot_ref": "QA_BOT_C",
+        "bot_version": "QA_BOT_C_V1",
+        "prompt_version": "QA_PROMPT_C_V1",
+        "knowledge_version": "QA_KNOWLEDGE_C_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "QA_APPROVED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "shop",
+        "selling_mode": "RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 309000,
+        "stock": 8,
+        "product_label": "QA_CATALOG_C"
+      },
+      {
+        "channel": "messenger",
+        "installation_ref": "QA_META_PAGE_REVOKED",
+        "tenant_ref": "QA_TENANT_1",
+        "store_ref": "QA_STORE_B",
+        "bot_ref": "QA_BOT_B",
+        "bot_version": "QA_BOT_B_V1",
+        "prompt_version": "QA_PROMPT_B_V1",
+        "knowledge_version": "QA_KNOWLEDGE_B_V1",
+        "policy_version": "QA_POLICY_V172",
+        "status": "REVOKED",
+        "approval_scope": "SYNTHETIC_ONLY",
+        "owner_authority_verified": false,
+        "read_only": true,
+        "tone": "em",
+        "selling_mode": "WHOLESALE_RETAIL",
+        "tool_allowlist": "catalog_read",
+        "subscription_active": true,
+        "store_paused": false,
+        "price_vnd": 259000,
+        "stock": 2,
+        "product_label": "QA_CATALOG_B"
+      }
+    ]
+  },
+  "execution": {
+    "id": "4363",
+    "status": "success",
+    "mode": "manual",
+    "summary": {
+      "status": "V173_WEBSITE_SESSION_TO_STORE_BOT_QA_PASS",
+      "total": 38,
+      "passed": 38,
+      "allow": 3,
+      "deny": 34,
+      "duplicate": 1,
+      "bindings": 7,
+      "website_qa_session_hmac_verified": true,
+      "central_v172_bot_binding_read": true,
+      "same_session_three_distinct_messages": true,
+      "real_website_session_issued": false,
+      "hosted_store_rls_verified": false,
+      "customer_cross_channel_identity_verified": false,
+      "all_provider_sends": 0,
+      "all_llm_calls": 0,
+      "all_commerce_writes": 0,
+      "reply": "MOCK_ONLY_NOT_SENT",
+      "cases": [
+        {
+          "id": "QA_V173_01",
+          "status": "ALLOW",
+          "reason": "SERVER_MINTED_QA_SESSION_CATALOG_ONLY",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V173_02",
+          "status": "ALLOW",
+          "reason": "SERVER_MINTED_QA_SESSION_CATALOG_ONLY",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V173_03",
+          "status": "ALLOW",
+          "reason": "SERVER_MINTED_QA_SESSION_CATALOG_ONLY",
+          "store": "QA_STORE_A",
+          "bot": "QA_BOT_A",
+          "price_vnd": 159000
+        },
+        {
+          "id": "QA_V173_04",
+          "status": "DUPLICATE",
+          "reason": "IN_MEMORY_QA_DUPLICATE_NO_ACTION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_05",
+          "status": "DENY",
+          "reason": "CONFLICTING_QA_MESSAGE_REPLAY",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_06",
+          "status": "DENY",
+          "reason": "BAD_SIGNED_SESSION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_07",
+          "status": "DENY",
+          "reason": "TOKEN_LENGTH_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_08",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_09",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_10",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_11",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_12",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_13",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_14",
+          "status": "DENY",
+          "reason": "TOKEN_FORMAT_OR_KEY_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_15",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_16",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_17",
+          "status": "DENY",
+          "reason": "SESSION_BOT_STORE_PROFILE_CHANGED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_18",
+          "status": "DENY",
+          "reason": "SESSION_BOT_STORE_PROFILE_CHANGED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_19",
+          "status": "DENY",
+          "reason": "SESSION_BOT_STORE_PROFILE_CHANGED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_20",
+          "status": "DENY",
+          "reason": "SESSION_BOT_STORE_PROFILE_CHANGED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_21",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_22",
+          "status": "DENY",
+          "reason": "TOKEN_LENGTH_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_23",
+          "status": "DENY",
+          "reason": "WRITE_OR_ORDER_READ_TOOL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_24",
+          "status": "DENY",
+          "reason": "WRITE_OR_ORDER_READ_TOOL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_25",
+          "status": "DENY",
+          "reason": "WRITE_OR_ORDER_READ_TOOL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_26",
+          "status": "DENY",
+          "reason": "INVALID_EVENT_ID_OR_TEXT",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_27",
+          "status": "DENY",
+          "reason": "INVALID_EVENT_ID_OR_TEXT",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_28",
+          "status": "DENY",
+          "reason": "INVALID_EVENT_ID_OR_TEXT",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_29",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_30",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_31",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_32",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_33",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_34",
+          "status": "DENY",
+          "reason": "UNTRUSTED_CLIENT_AUTHORITY_CLAIM",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_35",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_36",
+          "status": "DENY",
+          "reason": "SESSION_BOT_STORE_PROFILE_CHANGED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_37",
+          "status": "DENY",
+          "reason": "UNAUTHORIZED_WEBSITE_ORIGIN_INSTALLATION",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        },
+        {
+          "id": "QA_V173_38",
+          "status": "DENY",
+          "reason": "SESSION_CLAIM_OR_TTL_DENIED",
+          "store": null,
+          "bot": null,
+          "price_vnd": null
+        }
+      ]
+    }
+  },
+  "release": {
+    "public_website_code_changed": false,
+    "marketing_bot_unchanged": true,
+    "real_server_session_deployed": false,
+    "hosted_store_authority_verified": false,
+    "qa_keys_fake": true,
+    "atomic_cross_worker_claim_proven": false,
+    "provider_sends": 0,
+    "commerce_writes": 0,
+    "model_calls": 0
+  }
+}

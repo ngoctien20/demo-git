@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TIEN404 V17.4 — Private Website Chat QA</title>
+  <link rel="stylesheet" href="/qa.css">
+</head>
+<body>
+  <main>
+    <h1>TIEN404 — Website Chat QA</h1>
+    <p class="warning">CHỈ ĐỂ KIỂM THỬ. Sản phẩm, giá và Shop là dữ liệu giả lập. Không gửi tin Messenger/Zalo, không ghi đơn.</p>
+    <p id="status" role="status">Phiên QA chưa được cấp.</p>
+    <section id="chat" aria-label="Lịch sử chat QA"></section>
+    <form id="composer">
+      <input id="message" aria-label="Nhập tin nhắn QA" maxlength="500" placeholder="Hỏi giá sản phẩm QA" autocomplete="off" required>
+      <button id="send" type="submit">Gửi QA</button>
+    </form>
+  </main>
+  <script type="module" src="/qa-ui.mjs"></script>
+</body>
+</html>

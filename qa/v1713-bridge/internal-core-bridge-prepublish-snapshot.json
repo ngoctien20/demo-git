@@ -1,0 +1,110 @@
+{
+  "date": "2026-11-17 JST",
+  "intent": "Pre-publish internal no-send shadow dependency resolution",
+  "snapshots": [
+    {
+      "id": "iyfGUiEsZlNTBWOR",
+      "name": "TIEN404_COMMERCE_AI_AGENT_SANDBOX",
+      "active": false,
+      "published": null,
+      "draft": "ddc3ce5b-365e-47e2-a06d-08daffceb9a8",
+      "nodeCount": 14,
+      "settings": {
+        "executionOrder": "v1",
+        "availableInMCP": true
+      },
+      "sourceNodes": [
+        "Commerce Demo Chat Input",
+        "Resolve Commerce Tenant",
+        "Known Sandbox Tenant?",
+        "Commerce Sandbox Agent",
+        "Commerce OpenAI Model",
+        "Commerce Session Memory",
+        "Search Tenant Catalog",
+        "Preview Tenant Cart",
+        "Return Safe Chat Reply",
+        "Reject Unknown Shop",
+        "Create Sandbox Ticket",
+        "HUONG DAN - AI SANDBOX",
+        "Check Store Availability",
+        "Preview Smart Pricing"
+      ]
+    },
+    {
+      "id": "dw1JOxWOEY8csTnm",
+      "name": "TIEN404_V1713_SIGNED_MESSENGER_TO_CENTRAL_CORE_SHADOW_NO_SEND",
+      "active": false,
+      "published": null,
+      "draft": "450f2693-aad9-47d8-aaba-ac7a94abe644",
+      "nodeCount": 8,
+      "settings": {
+        "executionOrder": "v1",
+        "availableInMCP": true,
+        "callerPolicy": "workflowsFromAList",
+        "callerIds": "Z7FdV7uDvApfbURQ"
+      },
+      "sourceNodes": [
+        "Private Signed Messenger Receipt - Internal Only",
+        "Fail Closed Page HMAC Context and Drop PII",
+        "Trusted Ingress Technical Envelope?",
+        "Invoke Existing Central Core - Deliberate Deny Only",
+        "Assert Central Core Denied and No-Send",
+        "Return DENY - No External Side Effects",
+        "Manual Private QA Fixture",
+        "Seed Synthetic Internal Receipt - NO PII"
+      ]
+    },
+    {
+      "id": "Z7FdV7uDvApfbURQ",
+      "name": "TIEN404_MESSENGER_TEST",
+      "active": true,
+      "published": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+      "draft": "ff7a57d2-519a-4283-933c-37a854df92d2",
+      "nodeCount": 28,
+      "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": true
+      },
+      "sourceNodes": [
+        "When clicking ‘Execute workflow’",
+        "Webhook",
+        "If",
+        "Respond to Webhook",
+        "Respond to Webhook1",
+        "Webhook1",
+        "Respond to Webhook2",
+        "Crypto",
+        "Verify Meta Signature",
+        "Respond to Webhook3",
+        "Verify Signature Timing-Safe",
+        "Extract Messenger Text",
+        "Skip Duplicate Message ID",
+        "Loop One Message",
+        "Messenger AI Agent",
+        "Messenger OpenAI Chat Model",
+        "Messenger Memory",
+        "Read Products - Messenger Read Only",
+        "Prepare Messenger Reply",
+        "Send Messenger Reply - CONFIGURE TOKEN",
+        "Record Successful Messenger MID",
+        "Verify Messenger Send Result",
+        "create_order",
+        "update_order_address",
+        "manage_order",
+        "get_order_status",
+        "create_support_ticket",
+        "TIEN404 V17.13 Signed Shadow -> Central Core (NO SEND)"
+      ]
+    }
+  ],
+  "scope": {
+    "production_callback_changed": false,
+    "customer_payload_forwarded": false,
+    "old_messenger_version": "d5c96b6b-d790-4270-8b0f-d0ebdd8bbd92",
+    "new_messenger_draft": "ff7a57d2-519a-4283-933c-37a854df92d2",
+    "owner_approved_live_in_chat": true,
+    "do_not_override_store_rls": true,
+    "immutable_versions": "Retrieve from n8n version history before rollback"
+  }
+}

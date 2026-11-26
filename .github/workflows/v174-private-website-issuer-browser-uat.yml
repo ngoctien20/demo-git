@@ -1,0 +1,87 @@
+name: TIEN404 V17.4 Private HTTPS Website Issuer Browser UAT NO SEND
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v174-private-issuer/**'
+      - 'qa/v173-website-session/**'
+      - 'docs/ai-handoff/V17_4_*'
+      - '.github/workflows/v174-private-website-issuer-browser-uat.yml'
+permissions:
+  contents: read
+jobs:
+  private-owner-and-tls-api:
+    name: Owner attestation + real loopback HTTPS API security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ephemeral self-signed loopback QA certificate
+        run: |
+          openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes -keyout /tmp/v174-qa-key.pem -out /tmp/v174-qa-cert.pem -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1"
+          chmod 600 /tmp/v174-qa-key.pem
+      - name: Syntax and real HTTPS issuer tests
+        env:
+          T404_V174_QA_TLS_KEY_FILE: /tmp/v174-qa-key.pem
+          T404_V174_QA_TLS_CERT_FILE: /tmp/v174-qa-cert.pem
+        run: |
+          node --check qa/v174-private-issuer/owner-proof-gate.mjs
+          node --check qa/v174-private-issuer/local-https-issuer.mjs
+          node --check qa/v174-private-issuer/browser-qa-ui.mjs
+          node --test qa/v174-private-issuer/owner-proof-gate.test.mjs qa/v174-private-issuer/local-https-issuer.test.mjs
+      - name: Fail-closed source audit; no public deployment
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('qa/v174-private-issuer/local-https-issuer.mjs').read_text()
+          assert "server.listen(0,'127.0.0.1',resolve)" in src
+          assert 'SYNTHETIC_ONLY' in src and 'OWNER_OR_MODE_NOT_QA' in src
+          assert 'readQaCatalog' in src and 'randomBytes(48)' in src
+          for marker in ('graph.facebook.com','api.openai.com','n8n.cloud/webhook','supabase.co/rest/v1','httpRequest'):
+              assert marker not in src,marker
+          assert re.search(r'\bprocess\.env\b',src) is None
+          print('V17.4 private loopback QA only — no real provider or Commerce access')
+          PY
+  chromium-mobile-browser-uat:
+    name: Real Chromium browser UAT over isolated QA HTTPS loopback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chromium runner only
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Ephemeral self-signed loopback QA certificate
+        run: |
+          openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes -keyout /tmp/v174-qa-key.pem -out /tmp/v174-qa-cert.pem -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1"
+          chmod 600 /tmp/v174-qa-key.pem
+      - name: Browser UAT — Store A/B isolation, multi-turn, replay, no send
+        env:
+          T404_V174_QA_TLS_KEY_FILE: /tmp/v174-qa-key.pem
+          T404_V174_QA_TLS_CERT_FILE: /tmp/v174-qa-cert.pem
+          T404_V174_UAT_SCREENSHOT_PATH: /tmp/v174-browser-uat.png
+        run: node --test qa/v174-private-issuer/browser-uat.test.mjs
+      - name: Preserve only synthetic QA screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v174-private-qa-browser-screenshot
+          path: /tmp/v174-browser-uat.png
+          if-no-files-found: ignore
+          retention-days: 7
+  real-merchant-public-staging-release:
+    name: Real merchant/domain proof, secret manager, hosted Store RLS — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Requires owner proof, approved hostname, signed issuer secrets, durable replay and hosted Store RLS'

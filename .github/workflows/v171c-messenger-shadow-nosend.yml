@@ -1,0 +1,47 @@
+name: TIEN404 V17.1-C Shadow Ingress Persisted QA Registry (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171c-shadow/**'
+      - 'docs/ai-handoff/V17_1C_*'
+      - '.github/workflows/v171c-messenger-shadow-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  offline-shadow-qa:
+    name: Immutable synthetic QA binding snapshot and no-send security gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run 40 persistent registry and security source tests
+        run: python3 -m unittest discover -v -s qa/v171c-shadow -p 'test_*.py'
+      - name: Check structural integrity of real n8n exported QA workflow
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('qa/v171c-shadow/inactive-n8n-shadow-qa-snapshot.json')
+          data=json.loads(p.read_text())
+          w=data['n8n']
+          assert w['active'] is False and w['active_version_id'] is None
+          nodes=w['nodes']
+          assert len(nodes)==6
+          assert all(n['type'] in {'n8n-nodes-base.manualTrigger','n8n-nodes-base.code','n8n-nodes-base.dataTable'} for n in nodes)
+          assert all('credentials' not in n for n in nodes)
+          assert all(not any(x in json.dumps(n) for x in ('httpBearerAuth','n8n-nodes-base.httpRequest','n8n-nodes-base.webhook')) for n in nodes)
+          assert data['release_gate']['provider_owner_verified'] is False
+          assert data['release_gate']['verified_real_event_routed_to_new_bot'] is False
+          assert data['release_gate']['provider_sends']==0
+          assert data['release_gate']['orders_written']==0
+          print('PASS V17.1-C: source only, server QA registry, no real Page/OA authority')
+          PY
+  live-release-blocked:
+    name: Live signed Meta Page → Custom Bot → Output and hosted Store — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Blocked until independent owner proof, approved shadow callback, hosted Store RLS, no-send circuit and privacy approval'

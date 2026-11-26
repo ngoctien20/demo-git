@@ -1,0 +1,59 @@
+name: TIEN404 V17.1-B Native Protocol × Trusted Bot Binding (NO SEND)
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171-channel-first/**'
+      - '.github/workflows/v171b-native-ingress-no-send.yml'
+      - 'docs/ai-handoff/V17_1B_*'
+permissions:
+  contents: read
+jobs:
+  native-protocol-source-qa:
+    name: 60 native-shape protocol QA + 83 V17.1-A legacy synthetic assertions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native raw-body Meta HMAC and Zalo Bot header auth negative tests
+        run: |
+          node --check qa/v171-channel-first/native-ingress-qa.mjs
+          node --check qa/v171-channel-first/native-ingress-qa.test.mjs
+          node --test qa/v171-channel-first/native-ingress-qa.test.mjs
+      - name: Inherited Stage A Store/Custom Bot QA
+        run: |
+          node --test qa/v171-channel-first/vertical-slice.test.mjs
+          node qa/v171-channel-first/smoke.mjs
+      - name: QA only, no real API clients, source secrets, customer data or paid executors
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('qa/v171-channel-first')
+          must={'native-ingress-qa.mjs','native-ingress-qa.test.mjs','vertical-slice.mjs','vertical-slice.test.mjs','smoke.mjs'}
+          files=list(root.glob('*.mjs'))
+          assert must == {p.name for p in files}, 'source module drift'
+          for p in files:
+            s=p.read_text()
+            for rule in [
+              r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+              r'\bprocess\.env\b',r'\bchild_process\b',
+              r'\bhttp\.request\s*\(',r'(?i)sk-[a-z0-9_-]{16,}'
+            ]:
+              assert re.search(rule,s) is None,(p.name,rule)
+          assert 'REAL_SEND_DISABLED' in (root/'native-ingress-qa.mjs').read_text()
+          assert 'ZALO_OA_X_ZEVENT_SIGNATURE_AND_OWNERSHIP_NOT_VERIFIED' in (root/'native-ingress-qa.mjs').read_text()
+          assert not list(root.glob('*.csv'))
+          print('NO SEND guard PASS — no provider API calls, credentials, merchant transcript, Commerce writes')
+          PY
+  live-provider-release:
+    name: Page/OA ownership, provider credentials, hosted Store RLS and live send — NO GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Intentionally blocked until independent provider and Store authority approval'

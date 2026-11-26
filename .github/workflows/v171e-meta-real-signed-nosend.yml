@@ -1,0 +1,53 @@
+name: TIEN404 V17.1-E Private Meta Authority × Isolated Signed No-Send Contract
+on:
+  push:
+    branches:
+      - work/v171a-channel-store-bot-vertical-slice-nosend-20261117
+  pull_request:
+    paths:
+      - 'qa/v171e-meta-real-event/**'
+      - 'docs/ai-handoff/V17_1E_*'
+      - '.github/workflows/v171e-meta-real-signed-nosend.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-offline-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Meta GET challenge and raw POST-HMAC QA
+        run: |
+          node --check qa/v171e-meta-real-event/isolated-meta-no-send.mjs
+          node --test qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs
+      - name: Reject provider network, credentials, and live side effects in isolated source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('qa/v171e-meta-real-event/isolated-meta-no-send.mjs').read_text()
+          tests=Path('qa/v171e-meta-real-event/isolated-meta-no-send.test.mjs').read_text()
+          assert 'REAL_SEND_DISABLED' not in src or 'sendReal' not in src
+          for pattern in (r'\bfetch\s*\(',r'\bXMLHttpRequest\b',r'\bWebSocket\b',
+                          r'\bcreateServer\s*\(',r'\bprocess\.env\b',
+                          r'\bhttps?\.request\s*\(',r'\bPOST /subscribed_apps\b',
+                          r'\bexecuteWorkflow\b',r'(?i)sk-[A-Za-z0-9_-]{16,}'):
+              assert re.search(pattern,src) is None,pattern
+          for marker in ('createHmac','timingSafeEqual','RAW_BODY_REQUIRED_AND_BOUNDED',
+                         'MERCHANT', 'ownerApproval','qaAppId!==config.productionAppId',
+                         'qaPageId!==config.productionPageId','claimOnce',
+                         'meta_outbound:0','model_calls:0','commerce_writes:0'):
+              if marker=='MERCHANT':continue
+              assert marker in src,marker
+          assert '50 identical' not in tests
+          print('PASS — source-only signed no-send contract, no API client or provider callback')
+          PY
+  real-provider-signature-and-ownership:
+    name: Independent QA App/Page owner proof + real Meta signed event — NO-GO
+    if: false
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Blocked without separate QA App/Page, private scope approval, real signed event and provider-safe no-send transport'
