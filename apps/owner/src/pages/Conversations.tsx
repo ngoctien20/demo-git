@@ -1,3 +1,4 @@
+import { CareInbox } from './CareInbox';
 // Conversations & handoff. Reads ONLY what exists: public.conversations (store-scoped, managers),
 // customers in stage needs_human, and the handoff buttons of the PUBLISHED assistant configs.
 import { useStore } from '../store';
@@ -40,6 +41,7 @@ export function Conversations() {
   return (
     <>
       <PageHead title="Hội thoại & bàn giao" sub={`Hội thoại 30 ngày gần nhất và những người cần nhân viên của ${store.name} xử lý.`} />
+      <CareInbox key={store.id} store={store.id} />
       <section className="panel">
         <h2>Hội thoại theo kênh (30 ngày)</h2>
         {data.convs === null ? <Notice kind="warn">Chưa đọc được nguồn hội thoại cho Workspace này.</Notice>

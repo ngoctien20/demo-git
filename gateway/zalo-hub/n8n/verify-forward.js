@@ -18,4 +18,4 @@ if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buff
 
 const evt = JSON.parse(raw);
 if (evt.connection_id !== CONNECTION_ID || evt.channel !== 'zalo_bot') throw new Error('WRONG_CONNECTION');
-return { json: evt };
+return { json: { ...evt, source_message_id: evt.event?.message_id } };

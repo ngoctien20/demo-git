@@ -51,3 +51,13 @@ test('bundle: generated SDK is byte-identical to checked-in bridge.sdk.js', () =
   const generated = execFileSync(process.execPath, [generator], {encoding:'utf8',timeout:10000});
   assert.equal(generated, sdk, 'regenerate bridge.sdk.js from the pure source before release');
 });
+
+test('Zalo: selected handoff or number from the shown menu delegates to the store contact', () => {
+  const m=menu();
+  for (const input of [{payload:'T404:M:handoff'},{text:'3',shownMenuVersion:'7'}]) {
+    const r=run({channel:'zalo_bot',...input},m);
+    assert.equal(r.action_type,'HUMAN_HANDOFF');
+    assert.equal(r.ackText,undefined);
+  }
+  assert.equal(run({channel:'zalo_bot',text:'3',shownMenuVersion:'6'},m).mode,'legacy');
+});

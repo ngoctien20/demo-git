@@ -1,5 +1,9 @@
 // Offline tests: fake Zalo API + fake shop flow; real SQL via node:sqlite. No network, no real token.
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import crypto from 'node:crypto';
+import { decide } from '../../../config-core/lib/bot-bridge.mjs';
+import { templateConfig } from '../../../config-core/lib/templates.mjs';
 import assert from 'node:assert/strict';
 import { route, normalize, forwardUrlAllowed } from '../src/worker.mjs';
 import { extractToken, redact } from '../src/zalo-api.mjs';
@@ -453,4 +457,110 @@ test('Lite: Bot TIEN404 AI relays the pasted token → shop keyed by owner Zalo 
   assert.equal((await lite('/v1/lite/reply', { zalo_user_id: 'owner-z2', text: 'x' })).status, 200, 'cap is per user');
   const off = harness({ ...SHARED, ZH_LITE_KEY: LITE });
   assert.equal((await off.req('POST', '/v1/lite/status', { zalo_user_id: 'owner-z1' }, { authorization: 'Bearer ' + LITE })).body.error, 'LITE_CONNECT_DISABLED');
+});
+
+test('CSKH: store authority, contact menu and text, pause priority and stale retries at provider boundary', async () => {
+  const h = harness({ZH_OWNER_CONNECT_ENABLED:'true',ZH_SUPABASE_URL:'https://fakeproj.supabase.co',
+    ZH_SUPABASE_KEY:'fixture',ZH_CARE_PILOT_PLANS:JSON.stringify({'shop-a':'lite','shop-b':'pro'})});
+  const a = await connect(h,'shop-a'), b = await connect(h,'shop-b',TOKEN_B);
+  await pairOwner(h,a); await pairOwner(h,b);
+  const setPlan = plan => {h.env.ZH_CARE_PILOT_PLANS=JSON.stringify({'shop-a':plan,'shop-b':'pro'});};
+  const uid = '00000000-0000-4000-8000-000000000001';
+  h.st.users['x.y.z']={id:uid};
+  h.st.members=[{user_id:uid,store_id:'shop-a',role:'manager'}];
+  const owner = (path,fields={},store='shop-a') => h.req('POST','/v1/owner/care/'+path,{store_id:store,...fields},{authorization:'Bearer x.y.z'});
+  const ingress = (c,chat,text,id) => hook(h,c,textEvent(chat,text,id));
+  const sent = (c,chat) => h.st.zalo.filter(z=>z.method==='sendMessage' && z.token===c && z.body.chat_id===chat);
+  const reply = (chat,id,more={})=>signedSend(h,a,{chat_id:chat,text:'QA',source_message_id:id,...more});
+  const thread = {conn:a.connection_id,chat:'alice'};
+  assert.equal((await owner('pause',{paused:true,plan:'pro'})).status,403);
+  for (const [index,[phone,zalo]] of [['',''],['0900000001',''],['','Zalo QA'],['0900000001','Zalo QA']].entries()) {
+    assert.equal((await owner('contact',{phone,zalo})).status,200);
+    await ingress(a,'alice','cho mình gặp nhân viên','text-'+index);
+    const textReply = sent(TOKEN_A,'alice').at(-1).body.text;
+    assert.equal(textReply.includes('0900000001'),!!phone);
+    assert.equal(textReply.includes('Zalo QA'),!!zalo);
+    assert.equal(textReply.includes('chưa công bố'),!phone&&!zalo);
+    const menu = {...templateConfig('shop'),version_no:7};
+    const choice = index % 2 ? {payload:'T404:M:handoff'} : {text:'3',shownMenuVersion:'7'};
+    await ingress(a,'alice',choice.text || 'menu','menu-'+index);
+    const event = JSON.parse(h.st.forwards.at(-1).body).event;
+    const selected = decide(menu,choice,'zalo_bot');
+    const code = readFileSync(new URL('../n8n/sign-send.js',import.meta.url),'utf8');
+    const signer = new Function('$json','$env','require','Date',code);
+    const signed = signer({...selected,chat_id:event.chat.id,source_message_id:event.message_id},
+      {TIEN404_ZALO_HUB_FORWARD_KEY_QA:a.forward_key,TIEN404_ZALO_HUB_CONNECTION_QA:a.connection_id},
+      () => crypto,{now:()=>h.st.now}).json;
+    assert.equal((await h.req('POST','/v1/send',signed.body,signed.headers)).status,200);
+    assert.equal(sent(TOKEN_A,'alice').at(-1).body.text,textReply);
+  }
+  await ingress(b,'alice','Gặp chăm sóc khách hàng','other');
+  assert.match(sent(TOKEN_B,'alice').at(-1).body.text,/chưa công bố/);
+  assert.equal((await owner('inbox',{},'shop-b')).status,403);
+  assert.equal((await owner('history',{conn:b.connection_id,chat:'alice'})).status,404);
+  setPlan('plus');
+  assert.equal((await owner('pause',{...thread,paused:true})).status,403);
+  await ingress(a,'bob','giá?','queued');
+  assert.equal((await owner('pause',{paused:true})).status,200);
+  const before = h.st.zalo.length;
+  await Promise.all([ingress(a,'alice','gặp nhân viên','paused-a'),ingress(a,'bob','gặp nhân viên','paused-b')]);
+  assert.equal(h.st.zalo.length,before);
+  await ingress(b,'alice','gặp nhân viên','unaffected');
+  assert.equal(sent(TOKEN_B,'alice').length,2);
+  assert.equal((await owner('inbox')).body.rows.length,2);
+  assert.equal((await owner('history',thread)).body.messages.at(-1).content,'gặp nhân viên');
+  assert.equal((await owner('pause',{paused:false})).status,200);
+  for (const id of ['queued','paused-b']) assert.equal((await reply('bob',id)).status,409);
+  await ingress(a,'bob','chào','fresh'); assert.equal((await reply('bob','fresh')).status,200);
+  setPlan('pro');
+  assert.equal((await owner('pause',{...thread,paused:true})).status,200);
+  const priorA=sent(TOKEN_A,'alice').length, priorB=sent(TOKEN_A,'bob').length;
+  await Promise.all([ingress(a,'alice','gặp nhân viên','pa'),ingress(a,'bob','gặp nhân viên','pb')]);
+  assert.equal(sent(TOKEN_A,'alice').length,priorA);
+  assert.equal(sent(TOKEN_A,'bob').length,priorB+1);
+  await owner('pause',{paused:true}); await owner('pause',{paused:false});
+  await ingress(a,'alice','gặp nhân viên','still'); assert.equal(sent(TOKEN_A,'alice').length,priorA);
+  await owner('pause',{...thread,paused:false});
+  await ingress(a,'alice','gặp nhân viên','again'); await ingress(a,'alice','gặp nhân viên','again');
+  assert.equal(sent(TOKEN_A,'alice').length,priorA+1);
+  assert.equal((await reply('alice','still')).status,409);
+  const audit=h.env.ZH_DB.sqlite.prepare('SELECT * FROM zh_care_controls').all();
+  assert.ok(audit.every(row=>row.actor===uid && row.store==='shop-a' && row.at===h.st.now));
+});
+
+test('CSKH: in-flight dispatch cannot race a successful pause; two retries get one reservation', async () => {
+  const h=harness({ZH_CARE_PILOT_PLANS:'{"shop-a":"pro"}',ZH_OWNER_CONNECT_ENABLED:'true',
+    ZH_SUPABASE_URL:'https://fakeproj.supabase.co',ZH_SUPABASE_KEY:'fixture'});
+  const c=await connect(h,'shop-a'); await pairOwner(h,c);
+  const uid='00000000-0000-4000-8000-000000000002';
+  h.st.users['x.y.z']={id:uid}; h.st.members=[{user_id:uid,store_id:'shop-a',role:'owner'}];
+  const pause=()=>h.req('POST','/v1/owner/care/pause',{store_id:'shop-a',paused:true},{authorization:'Bearer x.y.z'});
+  await hook(h,c,textEvent('alice','xin chào','concurrent'));
+  const d=h.env.ZH_DB.sqlite;
+  d.prepare("UPDATE zh_care_messages SET state='sending' WHERE event='concurrent'").run();
+  assert.equal((await pause()).status,409);
+  assert.equal(d.prepare('SELECT count(*) AS n FROM zh_care_controls').get().n,0);
+  d.prepare("UPDATE zh_care_messages SET state='sent' WHERE event='concurrent'").run();
+  await hook(h,c,textEvent('alice','xin chào','retry'));
+  const body={chat_id:'alice',text:'hello',source_message_id:'retry'};
+  const both=await Promise.all([signedSend(h,c,body),signedSend(h,c,body)]);
+  assert.deepEqual(both.map(r=>r.status).sort(),[200,409]);
+  assert.equal((await pause()).status,200);
+});
+
+test('Lite Zalo-only installation uses a verified web workspace for contact and history', async () => {
+  const installation='zl-'+'1'.repeat(24);
+  const workspace='10000000-0000-4000-8000-000000000001';
+  const h=harness({ZH_CARE_LITE_WORKSPACES:JSON.stringify({[installation]:workspace}),
+    ZH_CARE_PILOT_PLANS:JSON.stringify({[workspace]:'lite'}),ZH_OWNER_CONNECT_ENABLED:'true',
+    ZH_SUPABASE_URL:'https://fakeproj.supabase.co',ZH_SUPABASE_KEY:'fixture'});
+  const c=await connect(h,installation); await pairOwner(h,c);
+  const uid='00000000-0000-4000-8000-000000000003';
+  h.st.users['x.y.z']={id:uid}; h.st.members=[{user_id:uid,store_id:workspace,role:'owner'}];
+  const api=(op,fields)=>h.req('POST','/v1/owner/care/'+op,{store_id:workspace,...fields},{authorization:'Bearer x.y.z'});
+  assert.equal((await api('contact',{zalo:'Zalo QA Lite',phone:''})).status,200);
+  await hook(h,c,textEvent('client','gặp nhân viên','lite-only'));
+  assert.match(h.st.zalo.at(-1).body.text,/Zalo QA Lite/);
+  assert.equal((await api('inbox')).body.rows[0].chat,'client');
+  assert.equal((await api('inbox',{store_id:installation})).status,403);
 });

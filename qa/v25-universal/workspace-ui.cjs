@@ -80,7 +80,7 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
 (async () => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}/app/`;
-  const b = await chromium.launch();
+  const b = await chromium.launch(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {});
 
   async function page(w, h, uid, email, missing = []) {
     const ctx = await b.newContext({ viewport: { width: w, height: h } });
@@ -112,6 +112,9 @@ const ok = (cond, m) => (cond ? console.log('ok  ', m) : fail(m));
     // Zalo Hub owner self-connect (gateway/zalo-hub /v1/owner/*): fixture = store has no Zalo bot yet.
     await ctx.route(/zalo-hub[^/]*\.workers\.dev\//, route => route.fulfill({ status: 200, contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, connection: null }) }));
+    await ctx.route('**/v1/owner/care/inbox', route => route.fulfill({
+      json: {ok:true, plan:'lite', paused:false, rows:[], contact:{phone:'',zalo:''}},
+    }));
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     return { p, errs, ctx };
