@@ -1,0 +1,1419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đơn chắc tiền</title>
+<style>
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#15202b; --muted:#5b6876; --line:#dfe4ea;
+  --me:#1f6feb; --me-ink:#ffffff; --bot:#ffffff; --bot-ink:#15202b; --chip:#e8f0fe; --chip-ink:#0b4fbf;
+  --ok:#0f7b45; --warn:#9a5b00; --money:#0f7b45; --shadow:0 1px 2px rgba(0,0,0,.08),0 6px 24px rgba(0,0,0,.06);
+  --fs:19px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141a; --panel:#161d25; --ink:#e8eef4; --muted:#9fb0c0; --line:#2a3440;
+    --me:#2f81f7; --me-ink:#fff; --bot:#1d2631; --bot-ink:#e8eef4; --chip:#1c2a3d; --chip-ink:#9cc3ff; --money:#4cc38a; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --panel:#161d25; --ink:#e8eef4; --muted:#9fb0c0; --line:#2a3440;
+  --me:#2f81f7; --me-ink:#fff; --bot:#1d2631; --bot-ink:#e8eef4; --chip:#1c2a3d; --chip-ink:#9cc3ff; --money:#4cc38a; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--fs)/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+body.big{--fs:22px}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;align-items:start}
+header.top{max-width:1180px;margin:0 auto;padding:20px 16px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header.top h1{font-size:1.35em;margin:0;letter-spacing:-.01em}
+header.top p{margin:0;color:var(--muted);font-size:.8em;flex:1 1 320px}
+.tog{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:.78em;cursor:pointer}
+.phone{background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;height:min(860px,calc(100vh - 110px));min-height:560px}
+.phone .bar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--me);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.1em;flex:none}
+.bar b{display:block;font-size:.95em}.bar small{color:var(--muted);font-size:.7em}
+.chat{flex:1;overflow:auto;padding:16px 12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.msg{max-width:88%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word;font-size:.92em}
+.me{align-self:flex-end;background:var(--me);color:var(--me-ink);border-bottom-right-radius:6px}
+.bot{align-self:flex-start;background:var(--bot);color:var(--bot-ink);border:1px solid var(--line);border-bottom-left-radius:6px}
+.bot.fwd{border-left:4px solid var(--money)}
+.qrbox{margin-top:10px;background:#fff;border-radius:12px;padding:8px;display:grid;place-items:center}
+.qrbox svg{width:100%;max-width:240px;height:auto;display:block}
+.qrmeta{font-size:.7em;color:var(--muted);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.qrmeta a{color:var(--chip-ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;border-top:1px solid var(--line);scrollbar-width:none}
+.chip{flex:none;border:0;background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:10px 16px;font:inherit;font-size:.8em;font-weight:600;cursor:pointer;min-height:44px}
+form.send{display:flex;gap:8px;padding:10px 12px 14px}
+form.send input{flex:1;min-width:0;font:inherit;font-size:.92em;padding:12px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+form.send button{border:0;background:var(--me);color:#fff;border-radius:999px;padding:0 20px;font:inherit;font-weight:700;min-height:48px;cursor:pointer}
+.side{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.card h2{font-size:.95em;margin:0 0 10px}
+.card p{margin:.3em 0;color:var(--muted);font-size:.78em}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;counter-reset:s}
+.flow div{background:var(--bg);border-radius:12px;padding:10px;font-size:.7em;line-height:1.3;counter-increment:s}
+.flow div::before{content:counter(s);display:block;font-weight:800;color:var(--me);font-size:1.3em}
+.sim{display:flex;gap:8px;flex-wrap:wrap}
+.sim button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 14px;font:inherit;font-size:.75em;cursor:pointer;min-height:44px}
+table{width:100%;border-collapse:collapse;font-size:.72em}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.st{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.92em;background:var(--chip);color:var(--chip-ink);white-space:nowrap}
+.st.da_tra,.st.da_giao{background:rgba(15,123,69,.12);color:var(--money)}
+.st.het_han,.st.huy{background:rgba(120,120,120,.15);color:var(--muted)}
+.st.tra_thieu{background:rgba(154,91,0,.14);color:var(--warn)}
+.note{font-size:.68em;color:var(--muted)}
+@media (max-width:900px){header.top h1{font-size:1.1em}header.top p{font-size:.72em}.wrap{grid-template-columns:1fr}.phone{height:78vh}.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body class="big">
+<header class="top">
+  <h1>Đơn chắc tiền · mô phỏng</h1>
+  <p>Chủ shop nhắn cho bot trên Zalo như nói chuyện. Bot tạo đơn, giữ hàng, làm mã VietQR đúng số tiền, tiền về thì báo. Trang này chạy đúng lõi thật, dữ liệu mẫu, không gửi tin, không có tài khoản thật.</p>
+  <button class="tog" id="size" type="button">Chữ nhỏ hơn</button>
+</header>
+<main class="wrap">
+  <section class="phone" aria-label="Khung chat với bot">
+    <div class="bar"><div class="ava" aria-hidden="true">₫</div><div><b>Bot Shop Hoa</b><small>Trợ lý đơn chắc tiền · chỉ chủ shop thấy</small></div></div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="send" id="send"><input id="box" autocomplete="off" placeholder="Nhắn cho bot… vd: chị Lan 2 cái A003" aria-label="Tin nhắn"><button>Gửi</button></form>
+  </section>
+  <aside class="side">
+    <div class="card">
+      <h2>Vòng tiền của một đơn</h2>
+      <div class="flow"><div>Chủ nhắn: “chị Lan 2 cái A003”</div><div>Bot tạo đơn, giữ 2 cái trong 12 giờ</div><div>Bot gửi tin + mã QR, chủ chuyển tiếp cho khách</div><div>Khách quét, tiền vào thẳng tài khoản shop</div><div>Bot báo “tiền về”, tối tổng kết</div></div>
+    </div>
+    <div class="card">
+      <h2>Giả lập phía ngân hàng</h2>
+      <p>Bình thường SePay/Casso báo tự động. Ở đây bấm để thử.</p>
+      <div class="sim">
+        <button type="button" data-sim="full">Khách chuyển đủ (đơn cũ nhất)</button>
+        <button type="button" data-sim="short">Khách chuyển thiếu 50.000đ</button>
+        <button type="button" data-sim="nocode">Tiền về không ghi nội dung</button>
+        <button type="button" data-sim="night">Sang 22:30 tối (nhả hàng + tổng kết)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sổ đơn</h2>
+      <table><thead><tr><th>Số</th><th>Khách</th><th>Hàng</th><th class="r">Tổng</th><th>Trạng thái</th></tr></thead><tbody id="book"></tbody></table>
+      <p class="note" id="fee"></p>
+    </div>
+    <div class="card">
+      <h2>Kho</h2>
+      <table><thead><tr><th>Mã</th><th>Tên</th><th class="r">Giá</th><th class="r">Tồn</th><th class="r">Bán được</th></tr></thead><tbody id="stock"></tbody></table>
+    </div>
+  </aside>
+</main>
+<script>
+const __m_vn = (() => {
+// Vietnam helpers (pure). Vietnam is UTC+7 all year, so a fixed offset is exact.
+const ICT = 7 * 3600e3;
+
+const fold = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+
+/** 159000 → "159.000đ" */
+const vnd = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ';
+
+/**
+ * One money amount as Vietnamese shop owners type it → safe integer VND, or NaN.
+ * "318k", "318K", "318.000", "318,000đ", "318000", "1tr2", "1,5tr", "2 triệu", "150 nghìn", "1 củ".
+ */
+function parseMoney(raw) {
+  const s = fold(raw).replace(/\s+/g, '').replace(/vnd$|d$|dong$/, '');
+  let m;
+  if ((m = /^(\d+)(?:[.,](\d{1,3}))?(?:tr|trieu|cu|m)(\d{1,3})?$/.exec(s))) {
+    // 1tr2 = 1.200.000; 1,5tr = 1.500.000; 1tr250 = 1.250.000
+    const frac = m[2] ?? m[3] ?? '';
+    const n = Number(m[1]) * 1e6 + (frac ? Math.round(Number(frac.padEnd(3, '0').slice(0, 3)) * 1000) : 0);
+    return Number.isSafeInteger(n) && n > 0 ? n : NaN;
+  }
+  if ((m = /^(\d+)(?:[.,](\d{1,2}))?(?:k|nghin|ngan|ng)$/.exec(s))) {
+    const n = Number(m[1]) * 1000 + (m[2] ? Math.round(Number(m[2].padEnd(3, '0'))) : 0);
+    return Number.isSafeInteger(n) && n > 0 ? n : NaN;
+  }
+  if (/^\d{1,3}(?:[.,]\d{3})+$/.test(s)) return Number(s.replace(/[.,]/g, ''));
+  if (/^\d+$/.test(s)) return Number(s);
+  return NaN;
+}
+
+/** "+84 912 345 678" / "0912.345.678" → "0912345678" */
+function normPhone(p) {
+  let d = String(p ?? '').replace(/\D/g, '');
+  if (d.startsWith('84') && d.length === 11) d = '0' + d.slice(2);
+  if (d.length === 9 && !d.startsWith('0')) d = '0' + d;
+  return d;
+}
+const isVnPhone = (p) => /^0[35789]\d{8}$/.test(p);
+
+/** Text shown to owner/customer: no control chars, links neutralised, capped. */
+// Control chars, zero-width and bidi overrides (built from code points so the source stays plain ASCII).
+const CTRL = new RegExp('[' + [[0, 31], [127, 127], [0x200b, 0x200f], [0x2028, 0x202e], [0x2066, 0x2069]].map(([a, b]) => '\\u' + a.toString(16).padStart(4, '0') + '-\\u' + b.toString(16).padStart(4, '0')).join('') + ']', 'g');
+function clean(v, max = 120) {
+  return String(v ?? '').normalize('NFC').replace(/https?:\/\/\S+|www\.\S+/gi, '[link]')
+    .replace(CTRL, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+/** epoch ms → { day: "2026-11-25", month: "2026-11", hm: "22:15", label: "22:15 hôm nay" | "08:00 26/11" } */
+function local(ms, nowMs = ms) {
+  const t = new Date(ms + ICT); const n = new Date(nowMs + ICT);
+  const p = (x) => String(x).padStart(2, '0');
+  const day = t.getUTCFullYear() + '-' + p(t.getUTCMonth() + 1) + '-' + p(t.getUTCDate());
+  const nday = n.getUTCFullYear() + '-' + p(n.getUTCMonth() + 1) + '-' + p(n.getUTCDate());
+  const hm = p(t.getUTCHours()) + ':' + p(t.getUTCMinutes());
+  const tomorrow = new Date(nowMs + ICT + 86400e3);
+  const tday = tomorrow.getUTCFullYear() + '-' + p(tomorrow.getUTCMonth() + 1) + '-' + p(tomorrow.getUTCDate());
+  const label = day === nday ? hm + ' hôm nay' : day === tday ? hm + (t.getUTCHours() < 12 ? ' sáng mai' : ' mai') : hm + ' ' + p(t.getUTCDate()) + '/' + p(t.getUTCMonth() + 1);
+  return { day, month: day.slice(0, 7), hm, label, hour: t.getUTCHours() };
+}
+
+return { ICT, fold, vnd, parseMoney, normPhone, isVnPhone, clean, local };
+})();
+const __m_vietqr = (() => {
+// TIEN404 Đơn chắc tiền — VietQR payload theo chuẩn EMVCo / NAPAS 247 (chuyển nhanh tới tài khoản).
+// Tạo chuỗi QR ngay tại chỗ (không gọi dịch vụ ngoài), có CRC16 để app ngân hàng kiểm lỗi.
+// Tiền đi thẳng từ khách vào tài khoản của shop. TIEN404 không giữ tiền, không cần mật khẩu ngân hàng.
+
+// Mã BIN NAPAS của các ngân hàng phổ biến (công khai). Bí danh không dấu để người lớn tuổi gõ tự nhiên.
+const BANKS = Object.freeze([
+  { bin: '970436', short: 'Vietcombank', alias: ['vcb', 'vietcombank', 'ngoai thuong', 'vietcom'] },
+  { bin: '970415', short: 'VietinBank', alias: ['ctg', 'vietinbank', 'vietin', 'cong thuong', 'icb'] },
+  { bin: '970418', short: 'BIDV', alias: ['bidv', 'dau tu'] },
+  { bin: '970405', short: 'Agribank', alias: ['agribank', 'agri', 'nong nghiep', 'vba'] },
+  { bin: '970407', short: 'Techcombank', alias: ['tcb', 'techcombank', 'techcom', 'ky thuong'] },
+  { bin: '970422', short: 'MB', alias: ['mb', 'mbbank', 'mb bank', 'quan doi'] },
+  { bin: '970416', short: 'ACB', alias: ['acb', 'a chau'] },
+  { bin: '970432', short: 'VPBank', alias: ['vpb', 'vpbank', 'vp bank', 'thinh vuong'] },
+  { bin: '970423', short: 'TPBank', alias: ['tpb', 'tpbank', 'tp bank', 'tien phong'] },
+  { bin: '970403', short: 'Sacombank', alias: ['stb', 'sacombank', 'sacom'] },
+  { bin: '970441', short: 'VIB', alias: ['vib', 'quoc te'] },
+  { bin: '970437', short: 'HDBank', alias: ['hdb', 'hdbank', 'hd bank'] },
+  { bin: '970443', short: 'SHB', alias: ['shb', 'sai gon ha noi'] },
+  { bin: '970448', short: 'OCB', alias: ['ocb', 'phuong dong'] },
+  { bin: '970426', short: 'MSB', alias: ['msb', 'maritime', 'hang hai'] },
+  { bin: '970440', short: 'SeABank', alias: ['seab', 'seabank', 'dong nam a'] },
+  { bin: '970431', short: 'Eximbank', alias: ['eib', 'eximbank', 'exim'] },
+  { bin: '970449', short: 'LPBank', alias: ['lpb', 'lpbank', 'lienvietpostbank', 'lien viet', 'buu dien lien viet'] },
+  { bin: '970428', short: 'Nam A Bank', alias: ['nab', 'nam a', 'namabank'] },
+  { bin: '970409', short: 'Bac A Bank', alias: ['bab', 'bac a', 'bacabank'] },
+  { bin: '970425', short: 'ABBANK', alias: ['abb', 'abbank', 'an binh'] },
+  { bin: '970412', short: 'PVcomBank', alias: ['pvcombank', 'pvcom'] },
+  { bin: '970454', short: 'Viet Capital Bank', alias: ['vccb', 'ban viet', 'vietcapital'] },
+  { bin: '970452', short: 'KienlongBank', alias: ['klb', 'kienlong', 'kien long'] },
+  { bin: '970438', short: 'BaoViet Bank', alias: ['bvb', 'bao viet', 'baovietbank'] },
+]);
+
+const { fold } = __m_vn;
+
+/** "vietcombank", "VCB", "970436", "ngoại thương" → bank row or null */
+function findBank(text) {
+  const t = fold(text).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  const bin = /\b(9\d{5})\b/.exec(t);
+  if (bin) return BANKS.find((b) => b.bin === bin[1]) || null;
+  const nospace = t.replace(/ /g, '');
+  let best = null;
+  for (const b of BANKS) for (const a of b.alias) {
+    const hit = a.includes(' ') ? (' ' + t + ' ').includes(' ' + a + ' ') : (' ' + t + ' ').includes(' ' + a + ' ') || nospace === a.replace(/ /g, '');
+    if (hit && (!best || a.length > best.len)) best = { bank: b, len: a.length };
+  }
+  return best ? best.bank : null;
+}
+
+/** CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF), 4 chữ HEX in hoa — như EMVCo quy định. */
+function crc16(str) {
+  let crc = 0xffff;
+  for (const b of new TextEncoder().encode(str)) {
+    crc ^= b << 8;
+    for (let i = 0; i < 8; i++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+const tlv = (id, value) => {
+  const v = String(value);
+  if (v.length > 99) throw new Error('TLV_TOO_LONG');
+  return id + String(v.length).padStart(2, '0') + v;
+};
+
+/** Tên chủ tài khoản kiểu ngân hàng: IN HOA, không dấu. */
+function bankName(s) {
+  return fold(s).toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 50);
+}
+
+/**
+ * Chuỗi VietQR. bin: 6 số NAPAS; account: số tài khoản của shop; amount: số nguyên VND (bỏ trống = khách tự nhập);
+ * memo: nội dung chuyển khoản (chữ/số không dấu, ≤ 25 ký tự). Trả về chuỗi để vẽ QR.
+ */
+function vietQrPayload({ bin, account, amount, memo }) {
+  if (!/^\d{6}$/.test(String(bin))) throw new Error('BAD_BANK_BIN');
+  if (!/^[0-9A-Za-z]{4,19}$/.test(String(account))) throw new Error('BAD_ACCOUNT');
+  if (amount != null && (!Number.isSafeInteger(amount) || amount <= 0 || amount > 999999999999)) throw new Error('BAD_AMOUNT');
+  const m = memo == null ? '' : String(memo);
+  if (m && !/^[0-9A-Za-z .-]{1,25}$/.test(m)) throw new Error('BAD_MEMO');
+  const merchant = tlv('00', 'A000000727') + tlv('01', tlv('00', bin) + tlv('01', account)) + tlv('02', 'QRIBFTTA');
+  let s = tlv('00', '01') + tlv('01', amount ? '12' : '11') + tlv('38', merchant) + tlv('53', '704');
+  if (amount) s += tlv('54', String(amount));
+  s += tlv('58', 'VN');
+  if (m) s += tlv('62', tlv('08', m));
+  s += '6304';
+  return s + crc16(s);
+}
+
+/** Đọc lại chuỗi VietQR (để tự kiểm và để test). Trả null nếu sai CRC hoặc sai cấu trúc. */
+function parseVietQr(payload) {
+  const s = String(payload ?? '');
+  if (s.length < 30 || s.slice(-8, -4) !== '6304' || crc16(s.slice(0, -4)) !== s.slice(-4)) return null;
+  const read = (str) => {
+    const out = {};
+    for (let i = 0; i < str.length;) {
+      const id = str.slice(i, i + 2); const len = Number(str.slice(i + 2, i + 4));
+      if (!/^\d{2}$/.test(id) || !Number.isInteger(len) || i + 4 + len > str.length) return null;
+      out[id] = str.slice(i + 4, i + 4 + len); i += 4 + len;
+    }
+    return out;
+  };
+  const top = read(s.slice(0, -8) + '');
+  if (!top || top['00'] !== '01' || !top['38']) return null;
+  const mai = read(top['38']); const ben = mai && mai['01'] ? read(mai['01']) : null;
+  if (!mai || mai['00'] !== 'A000000727' || !ben) return null;
+  const add = top['62'] ? read(top['62']) : {};
+  return {
+    dynamic: top['01'] === '12', bin: ben['00'], account: ben['01'], service: mai['02'],
+    currency: top['53'], amount: top['54'] ? Number(top['54']) : null, country: top['58'], memo: add ? add['08'] ?? null : null,
+  };
+}
+
+return { BANKS, findBank, crc16, bankName, vietQrPayload, parseVietQr };
+})();
+const __m_qr = (() => {
+// TIEN404 Đơn chắc tiền — QR Code encoder (ISO/IEC 18004), byte mode, error correction M.
+// No dependencies so the same file runs in Node, Cloudflare Workers and the browser.
+// Algorithm follows the public reference design by Project Nayuki (MIT); rewritten compactly here.
+
+const ECC_PER_BLOCK_M = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+const BLOCKS_M = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+const FORMAT_M = 0; // ECC level bits: L=1, M=0, Q=3, H=2
+
+function rawModules(ver) {
+  let r = (16 * ver + 128) * ver + 64;
+  if (ver >= 2) {
+    const n = Math.floor(ver / 7) + 2;
+    r -= (25 * n - 10) * n - 55;
+    if (ver >= 7) r -= 36;
+  }
+  return r;
+}
+const dataCodewords = (ver) => Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK_M[ver] * BLOCKS_M[ver];
+
+// GF(256) with polynomial 0x11D
+function gfMul(x, y) {
+  let z = 0;
+  for (let i = 7; i >= 0; i--) {
+    z = (z << 1) ^ ((z >>> 7) * 0x11d);
+    z ^= ((y >>> i) & 1) * x;
+  }
+  return z & 0xff;
+}
+function rsDivisor(degree) {
+  const r = new Array(degree).fill(0);
+  r[degree - 1] = 1;
+  let root = 1;
+  for (let i = 0; i < degree; i++) {
+    for (let j = 0; j < r.length; j++) {
+      r[j] = gfMul(r[j], root);
+      if (j + 1 < r.length) r[j] ^= r[j + 1];
+    }
+    root = gfMul(root, 0x02);
+  }
+  return r;
+}
+function rsRemainder(data, divisor) {
+  const r = divisor.map(() => 0);
+  for (const b of data) {
+    const f = b ^ r.shift();
+    r.push(0);
+    divisor.forEach((c, i) => { r[i] ^= gfMul(c, f); });
+  }
+  return r;
+}
+
+function utf8(text) {
+  return Array.from(new TextEncoder().encode(String(text)));
+}
+
+/** text → { size, get(x, y) → true for a dark module, version, mask } */
+function encodeQr(text, { minVersion = 1, maxVersion = 40 } = {}) {
+  const bytes = utf8(text);
+  let ver = minVersion;
+  for (; ; ver++) {
+    if (ver > maxVersion) throw new Error('QR_TOO_LONG');
+    const cntBits = ver < 10 ? 8 : 16;
+    if (4 + cntBits + bytes.length * 8 <= dataCodewords(ver) * 8) break;
+  }
+  // Bit stream: mode 0100 (byte), count, data, terminator, pad
+  const bits = [];
+  const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  put(4, 4);
+  put(bytes.length, ver < 10 ? 8 : 16);
+  bytes.forEach((b) => put(b, 8));
+  const cap = dataCodewords(ver) * 8;
+  put(0, Math.min(4, cap - bits.length));
+  put(0, (8 - (bits.length % 8)) % 8);
+  for (let pad = 0xec; bits.length < cap; pad ^= 0xec ^ 0x11) put(pad, 8);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) data.push(bits.slice(i, i + 8).reduce((a, b) => (a << 1) | b, 0));
+
+  // Split into blocks, add ECC, interleave
+  const numBlocks = BLOCKS_M[ver];
+  const eccLen = ECC_PER_BLOCK_M[ver];
+  const raw = Math.floor(rawModules(ver) / 8);
+  const numShort = numBlocks - (raw % numBlocks);
+  const shortLen = Math.floor(raw / numBlocks);
+  const div = rsDivisor(eccLen);
+  const blocks = [];
+  for (let i = 0, k = 0; i < numBlocks; i++) {
+    const dat = data.slice(k, k + shortLen - eccLen + (i < numShort ? 0 : 1));
+    k += dat.length;
+    const ecc = rsRemainder(dat, div);
+    if (i < numShort) dat.push(0);
+    blocks.push(dat.concat(ecc));
+  }
+  const codewords = [];
+  for (let i = 0; i < blocks[0].length; i++) {
+    blocks.forEach((blk, j) => { if (i !== shortLen - eccLen || j >= numShort) codewords.push(blk[i]); });
+  }
+
+  const size = ver * 4 + 17;
+  const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+  const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+  const set = (x, y, dark) => { mod[y][x] = dark; fn[y][x] = true; };
+
+  // Timing patterns
+  for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  // Finder patterns
+  const finder = (cx, cy) => {
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const d = Math.max(Math.abs(dx), Math.abs(dy)); const x = cx + dx; const y = cy + dy;
+      if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4);
+    }
+  };
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  // Alignment patterns
+  const align = [];
+  if (ver > 1) {
+    const n = Math.floor(ver / 7) + 2;
+    const step = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2;
+    align.push(6);
+    for (let pos = size - 7; align.length < n; pos -= step) align.splice(1, 0, pos);
+  }
+  align.forEach((ax, i) => align.forEach((ay, j) => {
+    if ((i === 0 && j === 0) || (i === 0 && j === align.length - 1) || (i === align.length - 1 && j === 0)) return;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }));
+  // Format (placeholder) + version info
+  const drawFormat = (mask) => {
+    const d = (FORMAT_M << 3) | mask;
+    let rem = d;
+    for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    const b = ((d << 10) | rem) ^ 0x5412;
+    const bit = (i) => ((b >>> i) & 1) !== 0;
+    for (let i = 0; i <= 5; i++) set(8, i, bit(i));
+    set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8));
+    for (let i = 9; i < 15; i++) set(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(i));
+    set(8, size - 8, true);
+  };
+  drawFormat(0);
+  if (ver >= 7) {
+    let rem = ver;
+    for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25);
+    const b = (ver << 12) | rem;
+    for (let i = 0; i < 18; i++) {
+      const dark = ((b >>> i) & 1) !== 0; const a = size - 11 + (i % 3); const c = Math.floor(i / 3);
+      set(a, c, dark); set(c, a, dark);
+    }
+  }
+  // Data in zigzag
+  let i = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) {
+      for (let j = 0; j < 2; j++) {
+        const x = right - j; const upward = ((right + 1) & 2) === 0; const y = upward ? size - 1 - vert : vert;
+        if (!fn[y][x] && i < codewords.length * 8) { mod[y][x] = ((codewords[i >>> 3] >>> (7 - (i & 7))) & 1) !== 0; i++; }
+      }
+    }
+  }
+  const maskFn = [
+    (x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0, (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
+  ];
+  const applyMask = (m) => {
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && maskFn[m](x, y)) mod[y][x] = !mod[y][x];
+  };
+  let best = 0; let bestScore = Infinity;
+  for (let m = 0; m < 8; m++) {
+    applyMask(m); drawFormat(m);
+    const s = penalty(mod, size);
+    if (s < bestScore) { best = m; bestScore = s; }
+    applyMask(m);
+  }
+  applyMask(best); drawFormat(best);
+  return { size, version: ver, mask: best, get: (x, y) => x >= 0 && y >= 0 && x < size && y < size && mod[y][x] };
+}
+
+function penalty(mod, size) {
+  let r = 0;
+  const lines = (get) => {
+    for (let a = 0; a < size; a++) {
+      let run = 1;
+      for (let b = 1; b <= size; b++) {
+        if (b < size && get(a, b) === get(a, b - 1)) run++;
+        else { if (run >= 5) r += run - 2; run = 1; }
+      }
+      // finder-like 1:1:3:1:1 with 4 light on a side
+      for (let b = 0; b + 11 <= size; b++) {
+        const seq = Array.from({ length: 11 }, (_, k) => get(a, b + k));
+        const p1 = [true, false, true, true, true, false, true, false, false, false, false];
+        const p2 = [false, false, false, false, true, false, true, true, true, false, true];
+        if (seq.every((v, k) => v === p1[k]) || seq.every((v, k) => v === p2[k])) r += 40;
+      }
+    }
+  };
+  lines((a, b) => mod[a][b]);
+  lines((a, b) => mod[b][a]);
+  for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) {
+    const c = mod[y][x];
+    if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) r += 3;
+  }
+  let dark = 0;
+  mod.forEach((row) => row.forEach((v) => { if (v) dark++; }));
+  const total = size * size;
+  r += (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
+  return r;
+}
+
+/** SVG string; quiet zone 4 modules as the standard requires. */
+function qrSvg(qr, { border = 4, dark = '#000', light = '#fff' } = {}) {
+  const n = qr.size + border * 2;
+  let d = '';
+  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.get(x, y)) d += `M${x + border},${y + border}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="${light}"/><path d="${d}" fill="${dark}"/></svg>`;
+}
+
+return { encodeQr, qrSvg };
+})();
+const __m_png = (() => {
+// Minimal PNG writer (8-bit grayscale, stored/uncompressed deflate). No dependencies, runs in Workers.
+// Zalo and banking apps need a real image (PNG), not SVG.
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+const u32 = (n) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+function chunk(type, data) {
+  const td = [...type].map((ch) => ch.charCodeAt(0)).concat(Array.from(data));
+  return [...u32(data.length), ...td, ...u32(crc32(td))];
+}
+
+/** pixels: Uint8Array of width*height gray values (0 = black, 255 = white) → PNG bytes */
+function grayPng(width, height, pixels) {
+  const raw = new Uint8Array((width + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (width + 1)] = 0; // filter: none
+    raw.set(pixels.subarray(y * width, (y + 1) * width), y * (width + 1) + 1);
+  }
+  // zlib stream with stored blocks (max 65535 bytes each)
+  const z = [0x78, 0x01];
+  for (let i = 0; i < raw.length; i += 65535) {
+    const blk = raw.subarray(i, Math.min(i + 65535, raw.length));
+    const last = i + 65535 >= raw.length ? 1 : 0;
+    z.push(last, blk.length & 255, blk.length >>> 8, ~blk.length & 255, (~blk.length >>> 8) & 255);
+    for (const b of blk) z.push(b);
+  }
+  let a = 1; let b = 0;
+  for (const v of raw) { a = (a + v) % 65521; b = (b + a) % 65521; }
+  z.push(...u32(((b << 16) | a) >>> 0));
+  const ihdr = [...u32(width), ...u32(height), 8, 0, 0, 0, 0];
+  return new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, ...chunk('IHDR', ihdr), ...chunk('IDAT', z), ...chunk('IEND', [])]);
+}
+
+/** QR matrix → PNG bytes. scale = pixels per module, border = quiet zone modules. */
+function qrPng(qr, { scale = 8, border = 4 } = {}) {
+  const n = (qr.size + border * 2) * scale;
+  const px = new Uint8Array(n * n).fill(255);
+  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) {
+    if (!qr.get(x, y)) continue;
+    for (let dy = 0; dy < scale; dy++) px.fill(0, ((y + border) * scale + dy) * n + (x + border) * scale, ((y + border) * scale + dy) * n + (x + border + 1) * scale);
+  }
+  return grayPng(n, n, px);
+}
+
+return { grayPng, qrPng };
+})();
+const __m_reconcile = (() => {
+// Đối soát chuyển khoản: chuẩn hoá tin báo từ SePay / Casso, tìm mã đơn T404XXXXXX trong nội dung.
+// TIEN404 chỉ ĐỌC biến động số dư của tài khoản shop (qua dịch vụ shop tự đăng ký), không giữ tiền.
+
+// Mã chuyển khoản: bỏ 0/O/1/I/L để khách khỏi gõ nhầm. 31^6 ≈ 887 triệu tổ hợp.
+const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+const CODE_RE = /T404([2-9A-HJKMNP-Z]{6})/;
+
+function newCode(rand, taken = new Set()) {
+  for (let tries = 0; tries < 50; tries++) {
+    let s = 'T404';
+    for (let i = 0; i < 6; i++) s += CODE_ALPHABET[Math.floor(rand() * CODE_ALPHABET.length) % CODE_ALPHABET.length];
+    if (!taken.has(s)) return s;
+  }
+  throw new Error('CODE_SPACE_EXHAUSTED');
+}
+
+/** Ngân hàng hay chèn chữ, dấu chấm, cắt dòng: "MBVCB.123.T404ABC DEF.CT tu..." → "T404ABCDEF" */
+function findCode(memo) {
+  const up = String(memo ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const m = CODE_RE.exec(up);
+  return m ? 'T404' + m[1] : null;
+}
+
+/**
+ * Webhook body của SePay hoặc Casso → { id, amount, memo, account, at } hoặc null (tiền ra / không hợp lệ).
+ * SePay: { id, gateway, transactionDate, accountNumber, content, transferType: "in"|"out", transferAmount, referenceCode }
+ * Casso v1: { error, data: [{ id, tid, description, amount, when, bank_sub_acc_id }] }
+ * Casso v2: { error, data: { id, reference, description, amount, transactionDateTime, accountNumber } }
+ */
+function readBankWebhook(body) {
+  if (!body || typeof body !== 'object') return [];
+  if ('transferAmount' in body) {
+    if (body.transferType !== 'in') return [];
+    const t = pack('sepay:' + body.id, body.transferAmount, body.content ?? body.description, body.accountNumber, body.transactionDate);
+    return t ? [t] : [];
+  }
+  const list = Array.isArray(body.data) ? body.data : body.data && typeof body.data === 'object' ? [body.data] : [];
+  return list.map((x) => pack('casso:' + (x.id ?? x.tid), x.amount, x.description, x.accountNumber ?? x.bank_sub_acc_id ?? x.subAccId, x.transactionDateTime ?? x.when))
+    .filter(Boolean);
+}
+
+function pack(id, amount, memo, account, at) {
+  const n = Number(amount);
+  if (!Number.isSafeInteger(n) || n <= 0 || /undefined|null/.test(String(id))) return null; // amount ≤ 0 = money out
+  return { id: String(id).slice(0, 80), amount: n, memo: String(memo ?? '').slice(0, 300), account: String(account ?? '').replace(/\s/g, ''), at: String(at ?? '') };
+}
+
+return { CODE_ALPHABET, CODE_RE, newCode, findCode, readBankWebhook };
+})();
+const __m_messages = (() => {
+// Câu chữ gửi chủ shop và khách. Ngắn, mỗi ý một dòng, chữ số rõ, không viết tắt khó hiểu.
+const { vnd, local } = __m_vn;
+
+const HELP = [
+  'Trợ lý đơn chắc tiền. Bác nhắn như nói chuyện:',
+  '',
+  '• Tạo đơn: chị Lan 2 cái A003 giao Q7',
+  '   hoặc chỉ số tiền: cô Hoa 350k',
+  '• Tiền về: đã nhận đơn 12',
+  '• Xem ai chưa trả: ai chưa trả',
+  '• Tổng kết: hôm nay',
+  '• Xem kho: kho',
+  '• Huỷ: huỷ đơn 12   • Đã giao: đã giao 12',
+  '',
+  'Lần đầu: nhắn số tài khoản để bot làm mã QR, ví dụ:',
+  'ngân hàng MB 0123456789 NGUYEN VAN A',
+  'và tên shop: tên shop Thời trang Hoa',
+].join('\n');
+
+const STATUS_VI = {
+  cho_tra: 'chờ chuyển khoản', tra_thieu: 'chuyển thiếu', da_tra: 'đã trả đủ', cod: 'giao thu hộ (COD)',
+  da_giao: 'đã giao', huy: 'đã huỷ', het_han: 'hết giữ hàng',
+};
+
+const itemsLine = (o) => (o.items.length
+  ? o.items.map((i) => i.qty + ' × ' + i.name + ' (' + i.sku + ')').join(', ')
+  : 'Đơn hàng');
+
+function moneyLines(o) {
+  const lines = [];
+  for (const i of o.items) lines.push(i.qty + ' × ' + i.name + ' (' + i.sku + ') = ' + vnd(i.qty * i.price));
+  if (!o.items.length) lines.push('Tiền hàng: ' + vnd(o.total - o.ship + o.discount));
+  if (o.ship) lines.push('Phí giao: ' + vnd(o.ship));
+  if (o.discount) lines.push('Giảm: −' + vnd(o.discount));
+  lines.push('TỔNG: ' + vnd(o.total));
+  const listed = o.items.reduce((s, i) => s + i.qty * i.price, 0) + o.ship - o.discount;
+  if (o.items.length && listed !== o.total) lines.push('(giá bác chốt, kho ghi ' + vnd(listed) + ')');
+  return lines;
+}
+
+function orderCreated(o, shop, now) {
+  const head = '✅ Đã tạo ĐƠN SỐ ' + o.no + (o.name ? ' · ' + o.name : '');
+  const lines = [head, ...moneyLines(o)];
+  if (o.cod && o.due) lines.push('Thu hộ khi giao, cọc trước ' + vnd(o.due) + '.');
+  else if (o.cod) lines.push('Thu hộ khi giao (COD), không cần chuyển khoản.');
+  if (o.items.length) lines.push(o.status === 'cod' ? 'Đã giữ hàng cho đơn này.' : 'Đã giữ hàng tới ' + local(o.hold_until, now).label + '.');
+  if (o.due && shop.bank) lines.push('', '👇 Bác bấm giữ vào tin bên dưới → Chuyển tiếp cho khách.');
+  if (o.due && !shop.bank) lines.push('', '❗ Chưa có số tài khoản nên chưa làm được mã QR.', 'Nhắn: ngân hàng MB 0123456789 NGUYEN VAN A');
+  return lines.join('\n');
+}
+
+/** Tin để chủ chuyển tiếp cho khách. */
+function customerMessage(o, shop) {
+  const b = shop.bank;
+  return [
+    (shop.name || 'Shop') + ' gửi ' + (o.name || 'anh/chị') + ':',
+    itemsLine(o),
+    (o.cod ? 'Tiền cọc: ' : 'Số tiền: ') + vnd(o.due - o.paid),
+    'Chuyển khoản: ' + b.short + ' · ' + b.account + ' · ' + b.holder,
+    'Nội dung: ' + o.code,
+    'Quét mã QR là có sẵn số tiền và nội dung. Cảm ơn anh/chị!',
+  ].join('\n');
+}
+
+function paidNotice(o, r, shop) {
+  const via = r.via === 'bank' ? 'ngân hàng báo' : r.via === 'notice' ? 'tin ngân hàng bác chuyển' : 'bác xác nhận';
+  if (r.result === 'partial') {
+    return '⚠️ ĐƠN ' + o.no + (o.name ? ' · ' + o.name : '') + ': khách mới chuyển ' + vnd(r.amount) + ' (' + via + ').\nCòn thiếu ' + vnd(o.due - o.paid) + '. Chưa giao vội nhé.';
+  }
+  const lines = ['💰 TIỀN VỀ · ĐƠN ' + o.no + (o.name ? ' · ' + o.name : ''), vnd(r.amount) + ' (' + via + ')'];
+  if (o.cod) lines.push('Đã nhận cọc. Khi giao thu thêm ' + vnd(o.total - o.paid) + '.');
+  else lines.push('Đã đủ tiền. Bác giao hàng được rồi.');
+  if (r.extra > 0) lines.push('Khách chuyển dư ' + vnd(r.extra) + ', bác nhớ trả lại.');
+  if (r.late) lines.push(r.restocked ? 'Tiền về trễ nhưng vẫn còn hàng, bot đã giữ lại.' : '❗ Tiền về trễ và hàng đã hết. Bác hoàn tiền hoặc nhập thêm hàng.');
+  lines.push('Giao xong nhắn: đã giao ' + o.no);
+  void shop;
+  return lines.join('\n');
+}
+
+function orderLine(o, now) {
+  const left = o.due - o.paid;
+  let s = 'Đơn ' + o.no + (o.name ? ' · ' + o.name : '') + ' · ';
+  if (o.status === 'cho_tra') s += 'chờ ' + vnd(left) + ', giữ tới ' + local(o.hold_until, now).label;
+  else if (o.status === 'tra_thieu') s += 'còn thiếu ' + vnd(left);
+  else s += STATUS_VI[o.status] + ' ' + vnd(o.total);
+  return s;
+}
+
+return { HELP, STATUS_VI, itemsLine, moneyLines, orderCreated, customerMessage, paidNotice, orderLine };
+})();
+const __m_parse_owner = (() => {
+// TIEN404 Đơn chắc tiền — hiểu tin nhắn của CHỦ SHOP (không phải của khách). Quy tắc cố định, không dùng AI,
+// nên cùng một câu luôn ra cùng một kết quả và test được. Gõ có dấu hay không dấu đều hiểu.
+//
+// parseOwner(text, { skus }) → { kind, ... }
+//   kind: help | unpaid | report | stock | fee | yes | no | bank | product | restock | price | paid | cancel |
+//         shipped | extend | resend | shopqr | shopname | bank_notice | order | unknown
+
+const { fold, parseMoney, normPhone, isVnPhone, clean } = __m_vn;
+const { findBank } = __m_vietqr;
+
+const CODE_RE = /T404([2-9A-HJKMNP-Z]{6})/;
+const MONEY_TOKEN = /(\d+(?:[.,]\d{3})+(?:\s?(?:d|đ|vnd|dong))?|\d+(?:[.,]\d{1,3})?\s?(?:k|nghin|ngan|tr|trieu|cu)(?:\d{1,3})?\b|\d{4,}(?:\s?(?:d|đ|vnd|dong))?)/g;
+const HONORIFIC = /(?:^|\s)(chi|anh|co|chu|bac|em|ban|khach|ong|ba|di|cau|thim|mo|me)\s+/;
+
+const has = (f, re) => re.test(f);
+
+/** Order reference inside a command: "đơn 12", "#12", "12", "T404ABCDEF", or a customer name. */
+function parseRef(rest) {
+  const up = String(rest ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const code = CODE_RE.exec(up);
+  if (code) return { code: 'T404' + code[1] };
+  const f = fold(rest);
+  const no = /(?:^|\s|#|don\s*)(\d{1,5})(?!\d|\s*(?:k|nghin|ngan|tr|trieu|d|đ|vnd)\b)/.exec(f);
+  if (no) return { no: Number(no[1]) };
+  const name = f.replace(/\b(don|cua|cho|khach|chi|anh|co|chu|bac|em|ban|ong|ba)\b/g, ' ').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+  return name ? { name } : {};
+}
+
+function moneyAfter(f, words) {
+  const re = new RegExp('(?:' + words + ')\\s*:?\\s*' + MONEY_TOKEN.source.replace(/\/g$/, ''), '');
+  const m = re.exec(f);
+  return m ? parseMoney(m[1]) : NaN;
+}
+
+/** Text the owner forwarded from their bank app/SMS: "+318,000VND ... ND: T404ABCDEF ..." */
+function parseBankNotice(text) {
+  const raw = String(text ?? '');
+  const f = fold(raw);
+  if (!/(\+\s?\d|so du|sd|bien dong|giao dich|gd|tk\s?\d|tai khoan|nhan duoc|da nhan|credit|\bnd\b|noi dung)/.test(f)) return null;
+  const m = /\+\s?(\d{1,3}(?:[.,]\d{3})+|\d+)(?:\s?(?:vnd|d|đ|dong))?/.exec(f)
+    || /(?:nhan duoc|da nhan|tang|credit)\s*:?\s*(\d{1,3}(?:[.,]\d{3})+|\d{4,})\s?(?:vnd|d|đ|dong)/.exec(f);
+  if (!m) return null;
+  const amount = parseMoney(m[1]);
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null;
+  const code = CODE_RE.exec(raw.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+  return { amount, code: code ? 'T404' + code[1] : null, memo: clean(raw, 300) };
+}
+
+function parseOwner(text, { skus = [] } = {}) {
+  const raw = clean(text, 500);
+  const f = fold(raw).replace(/\s+/g, ' ').trim();
+  if (!f) return { kind: 'unknown' };
+
+  // One-word answers first (the bot asks yes/no questions with numbers so old fingers only press 1 or 2).
+  if (/^(1|ok|oke|okie|dung|dung roi|co|u|uh|uk|vang|da|chot|duoc|yes|y)\.?!?$/.test(f)) return { kind: 'yes' };
+  if (/^(2|khong|ko|k|sai|thoi|huy bo|no|n)\.?!?$/.test(f)) return { kind: 'no' };
+  if (/^(0|\?|menu|help|huong dan|giup|giup do|chi dan|lam sao|cach dung|bat dau|start|hi|alo|xin chao|chao)\b/.test(f) && f.length <= 30) return { kind: 'help' };
+
+  if (has(f, /^(ai chua tra|chua tra|chua chuyen|ai no|con no|no tien|cho tien|don cho|don chua tra|ds no)/)) return { kind: 'unpaid' };
+  if (has(f, /^(hom nay|bao cao|tong ket|tong ngay|doanh thu|thong ke|ket so)/)) return { kind: 'report' };
+  if (has(f, /^(kho|ton kho|con hang|xem kho|hang con|het hang)\b/)) return { kind: 'stock' };
+  if (has(f, /^(phi|cuoc|tien phi|phi thang|goi cuoc)\b/)) return { kind: 'fee' };
+  if (has(f, /^(ten shop|ten cua hang|doi ten shop|shop ten)\s+\S/)) return { kind: 'shopname', name: clean(raw.replace(/^\s*\S+\s+\S+(\s+(shop|hàng|hang))?\s*/i, ''), 40) };
+  if (has(f, /^(in qr|qr shop|qr cua hang|ma qr shop|the qr|qr quay)\b/)) return { kind: 'shopqr' };
+
+  let m;
+  // Forwarded bank notification (checked first: banks write "TK", "đã nhận", "+318,000")
+  const notice = parseBankNotice(raw);
+  if (notice && (notice.code || /\+\s?\d/.test(f))) return { kind: 'bank_notice', ...notice };
+
+  if ((m = /^(gia han|giu them|giu tiep|giu hang)\s*(.*)$/.exec(f))) return { kind: 'extend', ref: parseRef(m[2]) };
+
+  // Bank account setup: "ngân hàng MB 0123456789 NGUYEN VAN A"
+  if (has(f, /^(cai |doi |sua )?(ngan hang|nh |stk|so tai khoan|tai khoan|tk )/)) {
+    const bank = findBank(f.replace(/^(cai |doi |sua )?(ngan hang|nh |stk|so tai khoan|tai khoan|tk )/, ' '));
+    const acc = /(?:^|\s)(\d[\d ]{5,22}\d)(?:\s|$)/.exec(f.replace(/\b9\d{5}\b/, ' '));
+    const account = acc ? acc[1].replace(/\s/g, '') : null;
+    // Tên chủ tài khoản: phần chữ đứng sau số tài khoản ("... 0123456789 Nguyễn Văn A").
+    const digits = account ? raw.search(new RegExp(account.split('').join('\\s?'))) : -1;
+    const tail = digits >= 0 ? raw.slice(digits).replace(/^[\d\s]+/, '') : '';
+    const name = tail.replace(/[^\p{L} ]/gu, ' ').replace(/\s+/g, ' ').trim();
+    return { kind: 'bank', bank, account: account && /^\d{6,19}$/.test(account) ? account : null, holder: name || null };
+  }
+
+  // Product setup: "thêm hàng A003 áo thun đen 159k còn 18"
+  if (has(f, /^(them hang|them sp|them san pham|hang moi|sp moi|san pham moi|them ma)\b/)) {
+    const body = raw.replace(/^\S+\s+\S+(\s+(phẩm|pham))?/i, ' ');
+    const sku = /\b([A-Za-z]{1,3}\d{2,5})\b/.exec(body);
+    const price = moneyAfter(fold(body), 'gia|ban|') ;
+    const stock = /(?:con|ton|sl|so luong|co)\s*:?\s*(\d{1,6})\b(?!\s*(?:k|nghin|ngan|tr|d|đ))/.exec(fold(body)) || /(\d{1,6})\s*(?:cai|chiec|sp|doi|bo|hop|cuon|goi|chai|lo|tui)\b/.exec(fold(body));
+    let name = body;
+    if (sku) name = name.replace(sku[0], ' ');
+    name = name.replace(/\d+(?:[.,]\d+)*\s*(?:k|nghìn|ngàn|tr|triệu|đ|vnd|cái|chiếc|sp)?/gi, ' ').replace(/\b(giá|gia|bán|ban|còn|con|tồn|ton|sl|số lượng|so luong)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+    return { kind: 'product', sku: sku ? sku[1].toUpperCase() : null, name: clean(name, 60) || null, price, stock: stock ? Number(stock[1]) : NaN };
+  }
+  // "nhập 10 A003" / "nhập thêm A003 10"
+  if (has(f, /^(nhap|nhap them|them so luong|ve hang|hang ve)\b/)) {
+    const sku = /\b([a-z]{1,3}\d{2,5})\b/.exec(f);
+    const qty = /\b(\d{1,6})\b/.exec(f.replace(sku ? sku[0] : '\u0000', ' '));
+    return { kind: 'restock', sku: sku ? sku[1].toUpperCase() : null, qty: qty ? Number(qty[1]) : NaN };
+  }
+  if (has(f, /^(gia|doi gia|sua gia)\s/)) {
+    const sku = /\b([a-z]{1,3}\d{2,5})\b/.exec(f);
+    const body = sku ? f.replace(sku[0], ' ') : f;
+    const m = new RegExp(MONEY_TOKEN.source).exec(body.replace(/^(gia|doi gia|sua gia)/, ' '));
+    return { kind: 'price', sku: sku ? sku[1].toUpperCase() : null, price: m ? parseMoney(m[1]) : NaN };
+  }
+
+  if ((m = /^(da nhan tien|da nhan|nhan tien|nhan du|tien ve|da tra|tra roi|da chuyen|chuyen roi|da thanh toan|xong tien)\s*(.*)$/.exec(f))) {
+    const rest = m[2];
+    const money = new RegExp(MONEY_TOKEN.source).exec(rest);
+    const amount = money ? parseMoney(money[1]) : NaN;
+    return { kind: 'paid', ref: parseRef(money ? rest.replace(money[0], ' ') : rest), amount: Number.isSafeInteger(amount) ? amount : null };
+  }
+  if ((m = /^(huy don|huy|bo don|khach huy|khach bom|bom)\s*(.*)$/.exec(f))) return { kind: 'cancel', ref: parseRef(m[2]) };
+  if ((m = /^(da giao|giao roi|da gui|gui roi|da ship|ship roi|xong don)\s*(.*)$/.exec(f))) return { kind: 'shipped', ref: parseRef(m[2]) };
+  if ((m = /^(gui lai|qr|ma qr|lay qr|xem don|don)\s+(.*)$/.exec(f)) && !/\b[a-z]{1,3}\d{2,5}\b.*\d|\d.*\b[a-z]{1,3}\d{2,5}\b/.test(m[2])) {
+    return { kind: 'resend', ref: parseRef(m[2]) };
+  }
+
+  return parseOrder(raw, f, skus);
+}
+
+/** "chị Lan 2 cái A003 giao Q7 0912345678 ship 30k" → order draft */
+function parseOrder(raw, f = fold(raw), skus = []) {
+  const known = new Set(skus.map((s) => String(s).toUpperCase()));
+  let work = ' ' + f + ' ';
+
+  // Phone
+  let phone = null;
+  const ph = /(?:\+?84|\b0)(?:[\s.-]?\d){9}\b/.exec(work);
+  if (ph && isVnPhone(normPhone(ph[0]))) { phone = normPhone(ph[0]); work = work.replace(ph[0], ' '); }
+
+  // Fees / discount / deposit with a keyword before the amount
+  const cut = (words) => {
+    const re = new RegExp('(?:^|\\s)(?:' + words + ')\\s*:?\\s*' + MONEY_TOKEN.source.replace(/\/g$/, ''));
+    const mm = re.exec(work);
+    if (!mm) return NaN;
+    work = work.replace(mm[0], ' ');
+    return parseMoney(mm[1]);
+  };
+  const ship = cut('phi ship|tien ship|ship|phi giao|cuoc|van chuyen');
+  const discount = cut('giam gia|giam|bot|tru|chiet khau|ck');
+  const deposit = cut('coc truoc|dat coc|coc');
+  const cod = /(?:^|\s)(cod|thu ho|ship cod|nhan hang tra tien|tra khi nhan)(?:\s|$)/.test(work);
+  if (cod) work = work.replace(/(?:^|\s)(cod|thu ho|ship cod|nhan hang tra tien|tra khi nhan)(?=\s|$)/g, ' ');
+
+  // Items: "2 cái A003", "A003 x2", "A003 2 cái", "2A003", "A003" (qty 1)
+  const items = [];
+  const unknown = [];
+  const UNIT = '(?:cai|c|chiec|sp|doi|bo|hop|cuon|goi|chai|lo|tui|x)?';
+  const itemRe = new RegExp('(?:(\\d{1,4})\\s*' + UNIT + '\\s*)?(?<![a-z])([a-z]{1,3}\\d{2,5})(?![a-z0-9])(?:\\s*(?:x|\\*|sl|so luong)?\\s*(\\d{1,4})\\s*' + UNIT + '(?=\\s|$|,|;))?', 'g');
+  work = work.replace(itemRe, (all, q1, sku, q2) => {
+    const S = sku.toUpperCase();
+    const isPrice = q2 && /^\s*(k|tr)/.test(all.slice(all.lastIndexOf(q2) + q2.length));
+    const qty = Number(q1 || (!isPrice && q2) || 1);
+    if (!known.has(S)) {
+      // Looks like a product code the shop has not added yet (Q7/P12 are districts/wards, not codes).
+      if (/^[A-Z]{1,3}\d{3,5}$/.test(S) && !/^[QP]\d/.test(S)) { unknown.push(S); return ' '; }
+      return all;
+    } else {
+      const prev = items.find((i) => i.sku === S);
+      if (prev) prev.qty += qty; else items.push({ sku: S, qty });
+    }
+    return ' ';
+  });
+
+  // Remaining amount = total the owner stated (the first money token left)
+  let amount = NaN;
+  const am = new RegExp('(?:^|\\s)(?:tong|tong cong|thu|lay|gia|het|la)?\\s*:?\\s*' + MONEY_TOKEN.source.replace(/\/g$/, '')).exec(work);
+  if (am) { amount = parseMoney(am[1]); work = work.replace(am[0], ' '); }
+
+  // Address: after giao/gửi/ship tới/địa chỉ… — taken from the original text to keep accents.
+  let address = null;
+  const ad = /(?:^|\s)(?:giao(?: toi| den| ve)?|gui(?: toi| den| ve)?|ship toi|ship den|dia chi|dc|d\/c|o)\s*:?\s+(.+)$/.exec(work.replace(/\s+/g, ' '));
+  if (ad) {
+    address = ad[1].trim();
+    work = work.replace(ad[0], ' ');
+  }
+
+  // Name: honorific + up to 3 words, else leading words.
+  let name = null;
+  const hn = HONORIFIC.exec(work);
+  if (hn) {
+    const after = work.slice(hn.index + hn[0].length).trim().split(/\s+/).filter((w) => /^[a-z]+$/.test(w)).slice(0, 2);
+    if (after.length) name = hn[1] + ' ' + after.join(' ');
+  }
+  if (!name) {
+    const words = work.trim().split(/\s+/).filter((w) => /^[a-z]{2,}$/.test(w) && !/^(don|tao|len|moi|cho|khach|mua|lay|dat|ban)$/.test(w)).slice(0, 3);
+    if (words.length) name = words.join(' ');
+  }
+
+  if (!items.length && !unknown.length && !Number.isSafeInteger(amount)) return { kind: 'unknown' };
+  return {
+    kind: 'order',
+    items, unknown, amount: Number.isSafeInteger(amount) ? amount : null,
+    ship: Number.isSafeInteger(ship) ? ship : 0, discount: Number.isSafeInteger(discount) ? discount : 0,
+    deposit: Number.isSafeInteger(deposit) ? deposit : 0, cod,
+    phone, address: address ? restoreAccents(raw, address) : null, name: name ? restoreAccents(raw, name) : null,
+  };
+}
+
+/** Find the folded phrase back in the original text so "chi lan" shows as "chị Lan". */
+function restoreAccents(raw, folded) {
+  const words = raw.split(/\s+/);
+  const target = folded.split(/\s+/);
+  for (let i = 0; i + target.length <= words.length; i++) {
+    const seg = words.slice(i, i + target.length);
+    if (seg.map((w) => fold(w).replace(/[^a-z0-9/]/g, '')).join(' ') === target.map((w) => w.replace(/[^a-z0-9/]/g, '')).join(' ')) {
+      return clean(seg.join(' ').replace(/[,;.]+$/, ''), 80);
+    }
+  }
+  return clean(folded, 80);
+}
+
+return { parseRef, parseBankNotice, parseOwner, parseOrder };
+})();
+const __m_engine = (() => {
+// TIEN404 Đơn chắc tiền — lõi xử lý cho MỘT shop. Hàm thuần: nhận trạng thái + sự kiện, trả trạng thái mới + tin gửi chủ.
+// Không đọc/ghi gì bên ngoài, nên chạy được trong Worker, n8n Code node, trình duyệt (trang mô phỏng) và test.
+//
+//   ownerMessage(state, text, ctx)  chủ shop nhắn bot
+//   bankTransfer(state, tx, ctx)    SePay/Casso báo có tiền vào tài khoản shop
+//   tick(state, ctx)                chạy mỗi 15 phút: nhả hàng hết hạn giữ, báo cáo tối 21:00
+//   monthFee(state, month)          phí TIEN404 tháng đó (chỉ tính đơn ĐÃ THU TIỀN)
+// ctx = { now: epoch ms, rand: () => [0,1) }
+//
+// Tin trả về (out): { text } hoặc { text, qr: { payload, code, order_no } } — nơi gửi tự đổi qr thành ảnh/link.
+
+const { vnd, local, clean, fold } = __m_vn;
+const { vietQrPayload, bankName } = __m_vietqr;
+const { parseOwner } = __m_parse_owner;
+const { newCode, findCode } = __m_reconcile;
+const M = __m_messages;
+
+const DEFAULTS = Object.freeze({
+  hold_hours: 12,      // đơn chờ chuyển khoản giữ hàng 12 giờ rồi tự nhả
+  cod_hold_days: 7,    // đơn COD giữ hàng 7 ngày (nhắc trong báo cáo, không tự huỷ)
+  low_stock: 3,        // còn ≤ 3 thì báo sắp hết
+  report_hour: 21,     // báo cáo tối lúc 21:00 giờ Việt Nam
+  dup_minutes: 30,     // cùng khách + cùng hàng trong 30 phút → hỏi lại trước khi tạo thêm
+  ask_minutes: 30,     // câu hỏi có/không còn hiệu lực 30 phút
+  keep_days: 90,       // đơn đã xong cũ hơn 90 ngày thì xoá khỏi trạng thái (đã tính phí)
+});
+
+// Phí TIEN404 (PROPOSED theo tài liệu hướng đi 25/11, chưa chốt giá): 30 đơn đã thu đầu tiên mỗi tháng miễn phí,
+// sau đó 1.500đ/đơn, tối đa 299.000đ/tháng. Đơn chưa thu được tiền không bao giờ bị tính.
+const FEE = Object.freeze({ free: 30, per_order: 1500, cap: 299000 });
+
+const HELD = new Set(['cho_tra', 'tra_thieu', 'da_tra', 'cod']);
+const OPEN = new Set(['cho_tra', 'tra_thieu']);
+
+function newShop({ name = 'Shop', now = 0, settings = {} } = {}) {
+  return {
+    v: 1, created_at: now, shop: { name: clean(name, 40), bank: null }, settings: { ...DEFAULTS, ...settings },
+    products: {}, orders: [], next_no: 1, seen_tx: [], ask: null, last_report_day: null, paid_log: [],
+  };
+}
+
+/* ---------------- kho ---------------- */
+
+function heldQty(state, sku, now) {
+  let n = 0;
+  for (const o of state.orders) {
+    if (!HELD.has(o.status)) continue;
+    if (o.status === 'cho_tra' && now > o.hold_until) continue; // hết hạn nhưng tick chưa chạy: coi như đã nhả
+    for (const i of o.items) if (i.sku === sku) n += i.qty;
+  }
+  return n;
+}
+const available = (state, sku, now) => Math.max(0, (state.products[sku]?.stock ?? 0) - heldQty(state, sku, now));
+
+/* ---------------- tiện ích ---------------- */
+
+function findOrders(state, ref, statuses) {
+  const pool = state.orders.filter((o) => !statuses || statuses.has(o.status));
+  if (ref?.code) return pool.filter((o) => o.code === ref.code);
+  if (ref?.no) return pool.filter((o) => o.no === ref.no);
+  if (ref?.name) {
+    const q = ref.name;
+    return pool.filter((o) => o.name && fold(o.name).replace(/[^a-z ]/g, ' ').split(/\s+/).some((w) => w && q.split(' ').includes(w)));
+  }
+  return [];
+}
+
+function qrOut(state, o) {
+  const b = state.shop.bank;
+  if (!b || !(o.due - o.paid > 0)) return null;
+  return {
+    text: M.customerMessage(o, state.shop),
+    qr: { payload: vietQrPayload({ bin: b.bin, account: b.account, amount: o.due - o.paid, memo: o.code }), code: o.code, order_no: o.no },
+  };
+}
+
+function notFound(ref) {
+  if (ref?.no) return 'Không thấy đơn số ' + ref.no + '. Nhắn "ai chưa trả" để xem danh sách.';
+  if (ref?.code) return 'Không thấy đơn có mã ' + ref.code + '.';
+  if (ref?.name) return 'Không thấy đơn nào tên "' + ref.name + '". Bác nhắn số đơn, ví dụ: đơn 12.';
+  return 'Bác nhắn thêm số đơn, ví dụ: đơn 12.';
+}
+function pickOne(list, ref, verb) {
+  if (list.length === 1) return { o: list[0] };
+  if (!list.length) return { err: notFound(ref) };
+  return { err: 'Có ' + list.length + ' đơn khớp: ' + list.slice(0, 5).map((o) => 'đơn ' + o.no + (o.name ? ' (' + o.name + ')' : '')).join(', ') + '.\nBác nhắn lại kèm số đơn, ví dụ: ' + verb + ' ' + list[0].no };
+}
+
+/* ---------------- tiền về ---------------- */
+
+/** Ghi nhận một khoản tiền cho một đơn. via: bank | notice | owner */
+function applyPayment(state, o, amount, via, txId, now) {
+  const r = { amount, via, extra: 0, late: false, restocked: false };
+  o.payments.push({ id: txId || null, amount, via, at: now });
+  const wasExpired = o.status === 'het_han' || o.status === 'huy';
+  o.paid += amount;
+  if (o.paid < o.due) {
+    r.result = 'partial';
+    if (o.status === 'cho_tra' || wasExpired) o.status = 'tra_thieu';
+    return r;
+  }
+  r.result = 'paid';
+  r.extra = o.paid - o.due;
+  if (wasExpired) {
+    r.late = true;
+    r.restocked = o.items.every((i) => available(state, i.sku, now) >= i.qty);
+  }
+  o.status = o.cod ? 'cod' : 'da_tra';
+  if (o.cod) o.hold_until = now + state.settings.cod_hold_days * 86400e3;
+  if (!o.paid_at) {
+    o.paid_at = now; o.paid_via = via;
+    state.paid_log.push({ no: o.no, at: now, via, amount: o.due });
+  }
+  if (r.late && !r.restocked) o.notes.push('Tiền về khi đã hết hàng: cần hoàn tiền hoặc nhập thêm.');
+  return r;
+}
+
+function bankTransfer(state0, tx, ctx) {
+  const state = structuredClone(state0);
+  const out = [];
+  if (!tx || !(tx.amount > 0)) return { state, out, result: 'ignored' };
+  if (tx.id && state.seen_tx.includes(tx.id)) return { state, out, result: 'duplicate' };
+  const b = state.shop.bank;
+  if (b && tx.account && tx.account !== b.account) return { state, out, result: 'not_our_account' };
+  if (tx.id) { state.seen_tx.push(tx.id); if (state.seen_tx.length > 500) state.seen_tx.splice(0, state.seen_tx.length - 500); }
+  return settle(state, { amount: tx.amount, code: findCode(tx.memo), memo: tx.memo, id: tx.id }, tx.via || 'bank', ctx, out);
+}
+
+function settle(state, t, via, ctx, out) {
+  const now = ctx.now;
+  if (t.code) {
+    const o = state.orders.find((x) => x.code === t.code);
+    if (!o) { out.push({ text: '❓ Có ' + vnd(t.amount) + ' về với mã ' + t.code + ' nhưng không thấy đơn này. Bác kiểm tra lại.' }); return { state, out, result: 'unknown_code' }; }
+    if (o.status === 'da_tra' || o.status === 'da_giao' || (o.status === 'cod' && o.paid >= o.due)) {
+      o.payments.push({ id: t.id || null, amount: t.amount, via, at: now });
+      o.paid += t.amount;
+      out.push({ text: '❗ Đơn ' + o.no + ' đã trả đủ từ trước, khách chuyển thêm ' + vnd(t.amount) + '. Bác nhớ trả lại nếu khách chuyển nhầm.' });
+      return { state, out, result: 'overpaid_again' };
+    }
+    const r = applyPayment(state, o, t.amount, via, t.id, now);
+    out.push({ text: M.paidNotice(o, r, state.shop) });
+    return { state, out, result: r.result, order_no: o.no };
+  }
+  // Không có mã: chỉ GỢI Ý khi đúng 1 đơn đang chờ đúng số tiền đó; không tự ghi.
+  const cands = state.orders.filter((o) => OPEN.has(o.status) && o.due - o.paid === t.amount);
+  if (cands.length === 1) {
+    const o = cands[0];
+    state.ask = { kind: 'match', order_no: o.no, amount: t.amount, id: t.id || null, via, until: now + state.settings.ask_minutes * 60e3 };
+    out.push({ text: '❓ Có ' + vnd(t.amount) + ' về nhưng nội dung không có mã đơn.\nCó phải tiền ĐƠN ' + o.no + (o.name ? ' · ' + o.name : '') + ' không?\nNhắn 1 = đúng, 2 = không phải.' });
+    return { state, out, result: 'ask_match' };
+  }
+  out.push({ text: '❓ Có ' + vnd(t.amount) + ' về nhưng không khớp đơn nào' + (cands.length > 1 ? ' (có ' + cands.length + ' đơn cùng số tiền)' : '') + '.\nNếu là của đơn nào, bác nhắn: đã nhận đơn <số>.' });
+  return { state, out, result: 'unmatched' };
+}
+
+/* ---------------- chủ shop nhắn ---------------- */
+
+function ownerMessage(state0, text, ctx) {
+  const state = structuredClone(state0);
+  const out = [];
+  const now = ctx.now;
+  const say = (t) => out.push({ text: t });
+  const cmd = parseOwner(text, { skus: Object.keys(state.products) });
+  const ask = state.ask && now <= state.ask.until ? state.ask : null;
+  if (cmd.kind !== 'yes' && cmd.kind !== 'no') state.ask = null;
+
+  switch (cmd.kind) {
+    case 'yes':
+    case 'no': {
+      state.ask = null;
+      if (!ask) { say(M.HELP); break; }
+      if (cmd.kind === 'no') { say(ask.kind === 'match' ? 'Dạ, bot không ghi khoản đó vào đơn nào.' : 'Dạ, đã bỏ qua.'); break; }
+      if (ask.kind === 'bank') {
+        state.shop.bank = ask.bank;
+        say('✅ Đã lưu tài khoản ' + ask.bank.short + ' · ' + ask.bank.account + ' · ' + ask.bank.holder + '.\nTừ giờ mỗi đơn có mã QR đúng số tiền. Bác thử: cô Hoa 350k');
+      } else if (ask.kind === 'match') {
+        const o = state.orders.find((x) => x.no === ask.order_no);
+        if (o && OPEN.has(o.status)) out.push({ text: M.paidNotice(o, applyPayment(state, o, ask.amount, ask.via, ask.id, now), state.shop) });
+        else say('Đơn ' + ask.order_no + ' không còn chờ tiền nữa.');
+      } else if (ask.kind === 'order') {
+        createOrder(state, ask.draft, ctx, out, { skipDup: true, total: ask.choice_yes });
+      }
+      break;
+    }
+    case 'help': say(M.HELP); break;
+    case 'shopname': {
+      if (!cmd.name) { say('Ví dụ: tên shop Thời trang Hoa'); break; }
+      state.shop.name = cmd.name;
+      say('✅ Tên shop: ' + cmd.name + '. Tin gửi khách sẽ ghi tên này.');
+      break;
+    }
+    case 'bank': {
+      if (!cmd.bank || !cmd.account || !cmd.holder) {
+        say('Bác nhắn đủ 3 thứ: tên ngân hàng, số tài khoản, tên chủ tài khoản (IN HOA không dấu).\nVí dụ: ngân hàng MB 0123456789 NGUYEN VAN A');
+        break;
+      }
+      const bank = { bin: cmd.bank.bin, short: cmd.bank.short, account: cmd.account, holder: bankName(cmd.holder) };
+      state.ask = { kind: 'bank', bank, until: now + state.settings.ask_minutes * 60e3 };
+      say('Bot sẽ làm mã QR vào tài khoản:\n' + bank.short + '\nSố: ' + bank.account + '\nTên: ' + bank.holder + '\nĐúng chưa? Nhắn 1 = đúng, 2 = sai.');
+      break;
+    }
+    case 'product': {
+      if (!cmd.sku || !(cmd.price > 0)) { say('Ví dụ thêm hàng: thêm hàng A020 áo khoác 250k còn 10'); break; }
+      const prev = state.products[cmd.sku];
+      state.products[cmd.sku] = { sku: cmd.sku, name: cmd.name ? cmd.name.charAt(0).toUpperCase() + cmd.name.slice(1) : prev?.name || cmd.sku, price: cmd.price, stock: Number.isSafeInteger(cmd.stock) ? cmd.stock : prev?.stock ?? 0 };
+      const p = state.products[cmd.sku];
+      say('✅ ' + (prev ? 'Đã sửa ' : 'Đã thêm ') + p.sku + ' · ' + p.name + ' · ' + vnd(p.price) + ' · còn ' + p.stock + '.');
+      break;
+    }
+    case 'restock': {
+      const p = state.products[cmd.sku];
+      if (!p || !(cmd.qty > 0)) { say(p ? 'Ví dụ: nhập 10 ' + p.sku : 'Chưa có mã ' + (cmd.sku || '') + '. Thêm bằng: thêm hàng A020 áo khoác 250k còn 10'); break; }
+      p.stock += cmd.qty;
+      say('✅ ' + p.sku + ' nhập thêm ' + cmd.qty + '. Tồn ' + p.stock + ', còn bán được ' + available(state, p.sku, now) + '.');
+      break;
+    }
+    case 'price': {
+      const p = state.products[cmd.sku];
+      if (!p || !(cmd.price > 0)) { say('Ví dụ đổi giá: giá A003 165k'); break; }
+      p.price = cmd.price;
+      say('✅ Giá mới ' + p.sku + ': ' + vnd(p.price) + '. Đơn đã tạo giữ giá cũ.');
+      break;
+    }
+    case 'stock': {
+      const rows = Object.values(state.products);
+      if (!rows.length) { say('Kho chưa có hàng. Thêm: thêm hàng A020 áo khoác 250k còn 10\nKhông cần kho cũng được: nhắn tên khách + số tiền.'); break; }
+      say('📦 KHO\n' + rows.map((p) => {
+        const a = available(state, p.sku, now); const h = heldQty(state, p.sku, now);
+        return (a <= state.settings.low_stock ? '❗ ' : '') + p.sku + ' ' + p.name + ': bán được ' + a + (h ? ' (đang giữ ' + h + ')' : '');
+      }).join('\n'));
+      break;
+    }
+    case 'unpaid': {
+      const list = state.orders.filter((o) => OPEN.has(o.status) || (o.status === 'cod' && o.paid < o.total));
+      if (!list.length) { say('🎉 Không có đơn nào đang chờ tiền.'); break; }
+      const sum = list.reduce((s, o) => s + (OPEN.has(o.status) ? o.due - o.paid : o.total - o.paid), 0);
+      say('⏳ CHƯA TRẢ: ' + list.length + ' đơn · ' + vnd(sum) + '\n' + list.slice(0, 15).map((o) => M.orderLine(o, now)).join('\n') + '\n\nGửi lại mã QR: qr <số đơn>');
+      break;
+    }
+    case 'report': say(report(state, now)); break;
+    case 'fee': {
+      const f = monthFee(state, local(now).month);
+      say('Phí TIEN404 tháng ' + f.month.slice(5) + '/' + f.month.slice(0, 4) + ':\nĐơn đã thu tiền: ' + f.paid_orders + '\nMiễn phí ' + FEE.free + ' đơn đầu.\nPhí tạm tính: ' + vnd(f.fee) + (f.capped ? ' (đã chạm mức tối đa)' : '') + '\nĐơn chưa thu được tiền không tính phí.');
+      break;
+    }
+    case 'shopqr': {
+      const b = state.shop.bank;
+      if (!b) { say('Chưa có số tài khoản. Nhắn: ngân hàng MB 0123456789 NGUYEN VAN A'); break; }
+      out.push({ text: 'Mã QR của shop (khách tự nhập số tiền). In ra dán ở quầy được.', qr: { payload: vietQrPayload({ bin: b.bin, account: b.account }), code: 'SHOP', order_no: 0 } });
+      break;
+    }
+    case 'bank_notice': {
+      settle(state, { amount: cmd.amount, code: cmd.code, memo: cmd.memo, id: null }, 'notice', ctx, out);
+      break;
+    }
+    case 'paid': {
+      const { o, err } = pickOne(findOrders(state, cmd.ref, new Set(['cho_tra', 'tra_thieu', 'het_han', 'huy'])), cmd.ref, 'đã nhận đơn');
+      if (err) { say(err); break; }
+      const amount = Number.isSafeInteger(cmd.amount) && cmd.amount > 0 ? cmd.amount : o.due - o.paid;
+      out.push({ text: M.paidNotice(o, applyPayment(state, o, amount, 'owner', null, now), state.shop) });
+      break;
+    }
+    case 'cancel': {
+      const { o, err } = pickOne(findOrders(state, cmd.ref, new Set(['cho_tra', 'tra_thieu', 'da_tra', 'cod'])), cmd.ref, 'huỷ đơn');
+      if (err) { say(err); break; }
+      o.status = 'huy'; o.done_at = now;
+      say('Đã huỷ đơn ' + o.no + (o.name ? ' · ' + o.name : '') + '. Hàng đã trả lại kho.' + (o.paid ? '\n❗ Khách đã chuyển ' + vnd(o.paid) + ', bác nhớ hoàn lại.' : ''));
+      break;
+    }
+    case 'shipped': {
+      const { o, err } = pickOne(findOrders(state, cmd.ref, new Set(['cho_tra', 'tra_thieu', 'da_tra', 'cod'])), cmd.ref, 'đã giao');
+      if (err) { say(err); break; }
+      for (const i of o.items) if (state.products[i.sku]) state.products[i.sku].stock = Math.max(0, state.products[i.sku].stock - i.qty);
+      const unpaid = o.status !== 'da_tra' && !(o.status === 'cod');
+      o.status = 'da_giao'; o.done_at = now;
+      say('🚚 Đơn ' + o.no + ' đã giao. Đã trừ kho.' + (unpaid ? '\n❗ Đơn này chưa trả đủ tiền (còn ' + vnd(o.due - o.paid) + ').' : ''));
+      break;
+    }
+    case 'extend': {
+      const { o, err } = pickOne(findOrders(state, cmd.ref, new Set(['cho_tra', 'het_han'])), cmd.ref, 'gia hạn');
+      if (err) { say(err); break; }
+      if (o.status === 'het_han' && !o.items.every((i) => available(state, i.sku, now) >= i.qty)) { say('Hàng của đơn ' + o.no + ' đã bán cho người khác, không giữ lại được.'); break; }
+      o.status = 'cho_tra'; o.hold_until = now + state.settings.hold_hours * 3600e3;
+      say('✅ Giữ hàng đơn ' + o.no + ' tới ' + local(o.hold_until, now).label + '.');
+      break;
+    }
+    case 'resend': {
+      const { o, err } = pickOne(findOrders(state, cmd.ref), cmd.ref, 'qr');
+      if (err) { say(err); break; }
+      const q = qrOut(state, o);
+      if (q) out.push(q); else say('Đơn ' + o.no + ': ' + M.STATUS_VI[o.status] + '. ' + (state.shop.bank ? 'Không còn tiền phải chuyển.' : 'Chưa có số tài khoản.'));
+      break;
+    }
+    case 'order': createOrder(state, cmd, ctx, out, {}); break;
+    default:
+      say('Bot chưa hiểu ạ. Bác nhắn theo mẫu:\nchị Lan 2 cái A003 giao Q7\nhoặc: cô Hoa 350k\nNhắn "giúp" để xem hết các lệnh.');
+  }
+  return { state, out };
+}
+
+function createOrder(state, d, ctx, out, { skipDup = false, total: forcedTotal } = {}) {
+  const now = ctx.now;
+  const say = (t) => out.push({ text: t });
+  if (d.unknown?.length) {
+    say('Kho chưa có mã ' + d.unknown.join(', ') + '.\nThêm trước: thêm hàng ' + d.unknown[0] + ' <tên> <giá> còn <số lượng>\nHoặc tạo đơn bằng số tiền: chị Lan 350k');
+    return;
+  }
+  const items = d.items.map((i) => ({ sku: i.sku, name: state.products[i.sku].name, qty: i.qty, price: state.products[i.sku].price }));
+  for (const i of items) {
+    if (!(i.qty > 0 && i.qty <= 999)) { say('Số lượng ' + i.sku + ' không hợp lệ.'); return; }
+    const a = available(state, i.sku, now);
+    if (a < i.qty) { say('❌ ' + i.sku + ' ' + i.name + ' chỉ còn ' + a + ' cái bán được. Chưa tạo đơn.\n' + (a ? 'Nhắn lại với số lượng ≤ ' + a + '.' : 'Nhập thêm: nhập 10 ' + i.sku)); return; }
+  }
+  const goods = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const catalogTotal = goods + d.ship - d.discount;
+  let total;
+  if (forcedTotal) total = forcedTotal;
+  else if (items.length && d.amount && d.amount !== catalogTotal && d.amount !== goods) {
+    // Bác nhắn số tiền khác giá trong kho: hỏi, không tự chọn.
+    state.ask = { kind: 'order', draft: d, choice_yes: d.amount, until: now + state.settings.ask_minutes * 60e3 };
+    say('Giá trong kho: ' + vnd(catalogTotal) + ', bác nhắn ' + vnd(d.amount) + '.\nDùng số bác nhắn (' + vnd(d.amount) + ')?\nNhắn 1 = dùng ' + vnd(d.amount) + ', 2 = huỷ để nhắn lại.');
+    return;
+  } else if (items.length) total = d.amount === goods ? goods + d.ship - d.discount : catalogTotal;
+  else total = (d.amount || 0) + d.ship - d.discount;
+  if (!Number.isSafeInteger(total) || total <= 0) { say('Tổng tiền không hợp lệ. Bác nhắn lại số tiền, ví dụ: cô Hoa 350k'); return; }
+  if (d.deposit && d.deposit > total) { say('Tiền cọc lớn hơn tổng đơn. Bác kiểm tra lại.'); return; }
+
+  if (!skipDup) {
+    const key = JSON.stringify(items.map((i) => [i.sku, i.qty])) + '|' + total;
+    const dup = state.orders.find((o) => now - o.created_at < state.settings.dup_minutes * 60e3 && o.status !== 'huy'
+      && fold(o.name || '') === fold(d.name || '') && JSON.stringify(o.items.map((i) => [i.sku, i.qty])) + '|' + o.total === key);
+    if (dup) {
+      state.ask = { kind: 'order', draft: d, choice_yes: total, until: now + state.settings.ask_minutes * 60e3 };
+      say('Vừa có ĐƠN ' + dup.no + ' giống hệt (' + (dup.name || 'khách') + ', ' + vnd(dup.total) + ').\nTạo thêm 1 đơn nữa? Nhắn 1 = tạo thêm, 2 = không.');
+      return;
+    }
+  }
+
+  const cod = !!d.cod;
+  const due = cod ? d.deposit || 0 : total;
+  const o = {
+    no: state.next_no++, code: newCode(ctx.rand, new Set(state.orders.map((x) => x.code))),
+    name: d.name || null, phone: d.phone || null, address: d.address || null,
+    items, ship: d.ship || 0, discount: d.discount || 0, total, due, paid: 0, cod,
+    status: due > 0 ? 'cho_tra' : 'cod', created_at: now,
+    hold_until: now + (due > 0 ? state.settings.hold_hours * 3600e3 : state.settings.cod_hold_days * 86400e3),
+    paid_at: null, paid_via: null, done_at: null, payments: [], notes: [],
+  };
+  state.orders.push(o);
+  say(M.orderCreated(o, state.shop, now));
+  const q = qrOut(state, o);
+  if (q) out.push(q);
+}
+
+/* ---------------- định kỳ ---------------- */
+
+function tick(state0, ctx) {
+  const state = structuredClone(state0);
+  const now = ctx.now;
+  const out = [];
+  const expired = [];
+  for (const o of state.orders) {
+    if (o.status === 'cho_tra' && now > o.hold_until) { o.status = 'het_han'; o.done_at = now; expired.push(o); }
+  }
+  if (expired.length) {
+    out.push({ text: '⌛ Hết giờ giữ hàng, khách chưa chuyển:\n' + expired.map((o) => 'Đơn ' + o.no + (o.name ? ' · ' + o.name : '') + ' · ' + vnd(o.due)).join('\n') + '\nHàng đã trả lại kho. Muốn giữ tiếp nhắn: gia hạn ' + expired[0].no });
+  }
+  const t = local(now);
+  if (t.hour >= state.settings.report_hour && state.last_report_day !== t.day && state.orders.some((o) => local(o.created_at).day === t.day || (o.paid_at && local(o.paid_at).day === t.day) || OPEN.has(o.status))) {
+    state.last_report_day = t.day;
+    out.push({ text: report(state, now) });
+  }
+  // Dọn đơn đã xong quá lâu (phí đã nằm trong paid_log).
+  const cutoff = now - state.settings.keep_days * 86400e3;
+  state.orders = state.orders.filter((o) => !(o.done_at && o.done_at < cutoff && !HELD.has(o.status)));
+  state.paid_log = state.paid_log.filter((p) => p.at >= now - 400 * 86400e3);
+  return { state, out };
+}
+
+function report(state, now) {
+  const day = local(now).day;
+  const today = state.orders.filter((o) => local(o.created_at).day === day);
+  const paidToday = state.orders.filter((o) => o.paid_at && local(o.paid_at).day === day);
+  const open = state.orders.filter((o) => OPEN.has(o.status));
+  const cod = state.orders.filter((o) => o.status === 'cod');
+  const low = Object.values(state.products).filter((p) => available(state, p.sku, now) <= state.settings.low_stock);
+  const L = ['📊 TỔNG KẾT ' + day.slice(8) + '/' + day.slice(5, 7),
+    'Đơn mới: ' + today.length,
+    'Đã thu: ' + paidToday.length + ' đơn · ' + vnd(paidToday.reduce((s, o) => s + o.due, 0)),
+    'Chưa trả: ' + open.length + ' đơn · ' + vnd(open.reduce((s, o) => s + o.due - o.paid, 0))];
+  if (open.length) L.push(...open.slice(0, 8).map((o) => '  ' + M.orderLine(o, now)));
+  if (cod.length) L.push('Chờ giao thu hộ: ' + cod.length + ' đơn');
+  if (low.length) L.push('Sắp hết: ' + low.map((p) => p.sku + ' (còn ' + available(state, p.sku, now) + ')').join(', '));
+  return L.join('\n');
+}
+
+function monthFee(state, month) {
+  const paid = state.paid_log.filter((p) => local(p.at).month === month).length;
+  const raw = Math.max(0, paid - FEE.free) * FEE.per_order;
+  return { month, paid_orders: paid, fee: Math.min(raw, FEE.cap), capped: raw > FEE.cap };
+}
+
+return { DEFAULTS, FEE, newShop, heldQty, available, bankTransfer, ownerMessage, tick, report, monthFee };
+})();
+const { newShop, ownerMessage, bankTransfer, tick, available, monthFee } = __m_engine;
+const { encodeQr, qrSvg } = __m_qr; const { qrPng } = __m_png; const { parseVietQr } = __m_vietqr;
+const { vnd, local } = __m_vn; const { HELP } = __m_messages;
+
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let now = Date.UTC(2026, 10, 25, 3, 0); // 10:00 giờ Việt Nam
+  const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+  let st = newShop({ name: 'Shop Hoa', now });
+  let txn = 0;
+  const ctx = () => ({ now, rand });
+  const seed = ['tên shop Shop Hoa', 'ngân hàng MB 0123456789 NGUYEN THI HOA', '1', 'thêm hàng A003 áo thun đen 159k còn 18', 'thêm hàng A006 váy hoa nhí 599k còn 5', 'thêm hàng A011 áo len cổ lọ 289k còn 1'];
+  for (const t of seed) st = ownerMessage(st, t, ctx()).state;
+
+  const chat = $('chat');
+  function bubble(cls, text, qr) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + cls;
+    d.textContent = text;
+    if (qr) {
+      const box = document.createElement('div'); box.className = 'qrbox';
+      const q = encodeQr(qr.payload);
+      box.innerHTML = qrSvg(q);
+      d.appendChild(box);
+      const meta = document.createElement('div'); meta.className = 'qrmeta';
+      const p = parseVietQr(qr.payload);
+      const a = document.createElement('a');
+      a.textContent = 'Tải ảnh QR';
+      a.download = 'QR-' + qr.code + '.png';
+      a.href = URL.createObjectURL(new Blob([qrPng(q, { scale: 10 })], { type: 'image/png' }));
+      const s = document.createElement('span'); s.textContent = 'Mã chuẩn VietQR · ' + (p.amount ? vnd(p.amount) : 'khách tự nhập tiền');
+      meta.append(s, a); d.appendChild(meta);
+      d.classList.add('fwd');
+    }
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function show(out) { for (const m of out) bubble('bot', m.text, m.qr); render(); }
+  function send(text) { bubble('me', text); const r = ownerMessage(st, text, ctx()); st = r.state; show(r.out); }
+
+  const STV = { cho_tra: 'chờ tiền', tra_thieu: 'chuyển thiếu', da_tra: 'đã trả', cod: 'COD', da_giao: 'đã giao', huy: 'huỷ', het_han: 'hết giữ' };
+  function render() {
+    const book = $('book'); book.textContent = '';
+    for (const o of st.orders.slice().reverse()) {
+      const tr = document.createElement('tr');
+      const cells = [String(o.no), o.name || '—', o.items.length ? o.items.map((i) => i.qty + '×' + i.sku).join(', ') : 'theo số tiền', vnd(o.total)];
+      cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i === 3) td.className = 'r'; tr.appendChild(td); });
+      const td = document.createElement('td'); const sp = document.createElement('span'); sp.className = 'st ' + o.status; sp.textContent = STV[o.status]; td.appendChild(sp); tr.appendChild(td);
+      book.appendChild(tr);
+    }
+    if (!st.orders.length) book.innerHTML = '<tr><td colspan="5" class="note">Chưa có đơn. Bấm “Tạo đơn mẫu” bên trái.</td></tr>';
+    const stock = $('stock'); stock.textContent = '';
+    for (const p of Object.values(st.products)) {
+      const tr = document.createElement('tr');
+      [p.sku, p.name, vnd(p.price), String(p.stock), String(available(st, p.sku, now))].forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i >= 2) td.className = 'r'; tr.appendChild(td); });
+      stock.appendChild(tr);
+    }
+    const f = monthFee(st, local(now).month);
+    $('fee').textContent = 'Phí TIEN404 tháng này (đề xuất): ' + f.paid_orders + ' đơn đã thu → ' + vnd(f.fee) + '. 30 đơn đầu miễn phí, đơn chưa thu tiền không tính.';
+  }
+
+  const chips = [['Tạo đơn mẫu', 'chị Lan 2 cái A003 giao Q7 0912345678'], ['Đơn theo số tiền', 'cô Hoa 350k'], ['Ai chưa trả', 'ai chưa trả'], ['Hôm nay', 'hôm nay'], ['Kho', 'kho'], ['Đã nhận đơn 1', 'đã nhận đơn 1'], ['Đã giao 1', 'đã giao 1'], ['QR quầy', 'in qr'], ['Hướng dẫn', 'giúp']];
+  for (const [label, text] of chips) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = label; b.onclick = () => send(text); $('chips').appendChild(b);
+  }
+  $('send').onsubmit = (e) => { e.preventDefault(); const t = $('box').value.trim(); if (t) { send(t); $('box').value = ''; } };
+  $('size').onclick = () => { document.body.classList.toggle('big'); $('size').textContent = document.body.classList.contains('big') ? 'Chữ nhỏ hơn' : 'Chữ to hơn'; };
+
+  document.querySelectorAll('[data-sim]').forEach((b) => { b.onclick = () => {
+    const kind = b.dataset.sim;
+    if (kind === 'night') { now = Date.UTC(2026, 10, 25, 15, 30) > now ? Date.UTC(2026, 10, 25, 15, 30) : now + 86400e3; const r = tick(st, ctx()); st = r.state; show(r.out.length ? r.out : [{ text: '(Tối nay không có gì cần báo)' }]); return; }
+    const o = st.orders.find((x) => x.status === 'cho_tra' || x.status === 'tra_thieu');
+    if (!o) { show([{ text: '(Không có đơn nào đang chờ tiền. Tạo đơn trước nhé.)' }]); return; }
+    const left = o.due - o.paid;
+    const amount = kind === 'short' ? Math.max(1000, left - 50000) : left;
+    const memo = kind === 'nocode' ? 'CHUYEN TIEN' : 'MBVCB.' + (++txn) + '.' + o.code + '.CT tu NGUYEN VAN KHACH';
+    const r = bankTransfer(st, { id: 'demo:' + (++txn), amount, memo, account: st.shop.bank.account, via: 'bank' }, ctx());
+    st = r.state; show(r.out);
+  }; });
+
+  bubble('bot', 'Chào bác! Shop mẫu đã có số tài khoản (MB, số giả) và 3 mặt hàng.\n\n' + HELP);
+  render();
+})();
+</script>
+</body>
+</html>

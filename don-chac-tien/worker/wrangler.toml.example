@@ -1,0 +1,22 @@
+# Mẫu cấu hình. Chép thành wrangler.toml trên máy Tiến (KHÔNG commit wrangler.toml thật).
+name = "tien404-don-chac-tien-staging"
+main = "worker.mjs"
+compatibility_date = "2026-11-01"
+
+[vars]
+DCT_ENABLED = "false"          # bật thử: "true" (cần Tiến duyệt)
+DCT_PUBLIC_BASE = "https://tien404-don-chac-tien-staging.<subdomain>.workers.dev"
+HUB_BASE = "https://tien404-zalo-hub-staging.<subdomain>.workers.dev"
+
+[[d1_databases]]
+binding = "DCT_DB"
+database_name = "tien404-don-chac-tien"
+database_id = "<điền sau khi: wrangler d1 create tien404-don-chac-tien>"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Secret (đặt bằng: wrangler secret put <TÊN>), không ghi vào file:
+#   DCT_HUB_INBOUND_KEY  = giá trị ZH_SHARED_INBOUND_KEY của hub (hub ký tin chuyển tới)
+#   DCT_HUB_SEND_KEY     = giá trị ZH_SHARED_SEND_KEY của hub (Worker này gọi hub /v1/send)
+#   DCT_QR_SIGN_KEY      = chuỗi ngẫu nhiên ≥ 32 ký tự (ký link ảnh QR)

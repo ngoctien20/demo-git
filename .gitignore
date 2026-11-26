@@ -1,2 +1,4 @@
 apps/owner/node_modules/
 tests/__pycache__/
+don-chac-tien/node_modules/
+don-chac-tien/worker/wrangler.toml
