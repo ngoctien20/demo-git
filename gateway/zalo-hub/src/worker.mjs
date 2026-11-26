@@ -32,6 +32,7 @@
 import { seal, open, sha256Hex, secureEqual, randomId, randomSecret, randomCode, signBody, verifyBody } from './crypto.mjs';
 import * as zalo from './zalo-api.mjs';
 import * as db from './store.mjs';
+import { isLiteConnection, liteReply } from './lite-commerce.mjs';
 
 export const MAX_BODY = 16 * 1024;
 const PAIRING_TTL_MS = 30 * 60 * 1000;
@@ -153,6 +154,26 @@ async function handleWebhook(request, env, deps, pathId) {
   }
 
   if (ev.user.id) await db.rememberUser(env.ZH_DB, c.id, ev.user.id, now);
+  // Lite pilot is exclusive: never fall through to the shared DEMO workflow.
+  if (env.ZH_LITE_COMMERCE_ENABLED === 'true' && isLiteConnection(c)) {
+    deps.waitUntil((async () => {
+      try {
+        if (env.ZH_SEND_ENABLED !== 'true' || c.status !== 'active') return;
+        const fresh = await db.byId(env.ZH_DB, c.id);
+        if (!fresh || fresh.status !== 'active' || fresh.owner_chat_id !== c.owner_chat_id) return;
+        if (fresh.sent_month === monthOf(now) && Number(fresh.sent_count) >= intEnv(env.ZH_MONTHLY_CAP, DEFAULT_MONTHLY_CAP)) return;
+        const text = await liteReply(env, fresh, ev, now);
+        if (!text) return;
+        const latest = await db.byId(env.ZH_DB, c.id);
+        if (!latest || latest.status !== 'active' || latest.owner_chat_id !== fresh.owner_chat_id) return;
+        const sent = await zalo.sendMessage(deps.fetch, await tokenOf(env, latest), ev.chat.id, text.slice(0, 1500));
+        if (sent.ok) await db.countSend(env.ZH_DB, latest.id, monthOf(now), now);
+        else if (sent.error_code === 401) await db.setStatus(env.ZH_DB, latest.id, 'needs_reconnect', now);
+        else if (sent.error_code === 429) await db.setStatus(env.ZH_DB, latest.id, 'quota_exceeded', now);
+      } catch { deps.log('LITE_COMMERCE_FAILED'); }
+    })());
+    return json(200, { ok: true, accepted: 'LITE_COMMERCE' });
+  }
   deps.waitUntil(forward(env, deps, c, ev, now));
   if (Math.random() < 0.02) deps.waitUntil(db.pruneInbound(env.ZH_DB, now - DEDUPE_KEEP_MS));
   return json(200, { ok: true, accepted: 'FORWARDED' });
