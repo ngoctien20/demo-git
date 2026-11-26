@@ -1,3 +1,13 @@
+// Only an operator-verified Lite installation may be associated with a web workspace.
+export function careConnection(env, connection) {
+  if (!/^zl-[0-9a-f]{24}$/.test(connection.store_id)) return connection;
+  const bindings = JSON.parse(env.ZH_CARE_LITE_WORKSPACES || '{}');
+  if (!Object.hasOwn(bindings,connection.store_id)) return connection;
+  const workspace = bindings[connection.store_id];
+  if (typeof workspace !== 'string' || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(workspace))
+    throw new Error('INVALID_LITE_WORKSPACE_BINDING');
+  return {...connection,store_id:workspace};
+}
 // Isolated pilot enrolment. Operator-owned plan map, never a plan supplied by the dashboard.
 export function tier(env, store) {
   const plans = JSON.parse(env.ZH_CARE_PILOT_PLANS || '{}');

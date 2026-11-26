@@ -146,14 +146,15 @@ async function handleWebhook(request, env, deps, pathId) {
   if (ev.user.is_bot) return json(200, { ok: true, ignored: 'FROM_BOT' });
 
   const now = deps.now();
-  if (c.status === 'active' && ev.chat.id !== c.owner_chat_id && care.tier(env,c.store_id)) {
+  const inboxConnection = care.careConnection(env,c);
+  if (c.status === 'active' && ev.chat.id !== c.owner_chat_id && care.tier(env,inboxConnection.store_id)) {
     if (ev.chat.type !== 'PRIVATE') return json(200,{ok:true,ignored:'PRIVATE_CHAT_ONLY'});
-    const state = await care.record(env.ZH_DB,c,ev,now);
+    const state = await care.record(env.ZH_DB,inboxConnection,ev,now);
     if (state !== 'pending') return json(200,{ok:true,ignored:state});
     if (ev.user.id) await db.rememberUser(env.ZH_DB,c.id,ev.user.id,now);
     if (care.contactRequest(ev.text)) {
       const reply = {chat_id:ev.chat.id, source_message_id:ev.message_id, action_type:'HUMAN_HANDOFF'};
-      deps.waitUntil(sendReply(env,deps,c,reply,now,true));
+      deps.waitUntil(sendReply(env,deps,c,reply,now,inboxConnection));
     } else {
       deps.waitUntil(forward(env,deps,c,ev,now));
     }
@@ -251,13 +252,14 @@ async function handleSend(request, env, deps) {
 
   if (c.status !== 'active') return json(409, { ok: false, error: 'CONNECTION_' + String(c.status).toUpperCase() });
   if (typeof b.chat_id !== 'string' || !CHAT_ID_RE.test(b.chat_id)) return json(400, { ok: false, error: 'BAD_CHAT_ID' });
-  const managed = !!care.tier(env,c.store_id) && b.chat_id !== c.owner_chat_id;
-  return sendReply(env,deps,c,b,now,managed);
+  const inboxConnection = care.careConnection(env,c);
+  const managed = care.tier(env,inboxConnection.store_id) && b.chat_id !== c.owner_chat_id;
+  return sendReply(env,deps,c,b,now,managed ? inboxConnection : null);
 }
 
 async function sendReply(env,deps,c,b,now,managed) {
   if (env.ZH_SEND_ENABLED !== 'true' || env.ZH_ENABLED !== 'true') return json(503,{ok:false,error:'SEND_DISABLED'});
-  if (managed && b.action_type === 'HUMAN_HANDOFF') b.text = care.answer(await care.contact(env.ZH_DB,c.store_id));
+  if (managed && b.action_type === 'HUMAN_HANDOFF') b.text = care.answer(await care.contact(env.ZH_DB,managed.store_id));
   if (typeof b.text !== 'string' || b.text.length < 1 || b.text.length > 2000) return json(400, { ok: false, error: 'BAD_TEXT' });
   if (!managed && b.chat_id !== c.owner_chat_id && !(await db.isKnownUser(env.ZH_DB, c.id, b.chat_id))) return json(403, { ok: false, error: 'UNKNOWN_CHAT' });
 
@@ -265,13 +267,13 @@ async function sendReply(env,deps,c,b,now,managed) {
   if (c.sent_month === monthOf(now) && Number(c.sent_count) >= cap) return json(429, { ok: false, error: 'MONTHLY_CAP' });
 
   const token = await tokenOf(env, c);
-  if (managed && !await care.reserve(env.ZH_DB,c,b)) return json(409,{ok:false,error:'REPLY_INELIGIBLE'});
+  if (managed && !await care.reserve(env.ZH_DB,managed,b)) return json(409,{ok:false,error:'REPLY_INELIGIBLE'});
   if (!managed && b.typing === true) await zalo.sendChatAction(deps.fetch, token, b.chat_id, 'typing');
   const styles = Array.isArray(b.text_styles) ? b.text_styles.slice(0, 50) : undefined;
   let res = await zalo.sendMessage(deps.fetch, token, b.chat_id, b.text, styles);
   if (!managed && !res.ok && styles && res.error_code === 400) res = await zalo.sendMessage(deps.fetch, token, b.chat_id, b.text);
 
-  if (managed) await care.finish(env.ZH_DB,c,b,res.ok);
+  if (managed) await care.finish(env.ZH_DB,managed,b,res.ok);
   if (res.ok) {
     const n = await db.countSend(env.ZH_DB, c.id, monthOf(now), now);
     return json(200, { ok: true, message_id: res.result && res.result.message_id, sent_count: n, cap_warn: n >= Math.floor(cap * 0.8) });

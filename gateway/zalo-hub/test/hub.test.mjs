@@ -547,3 +547,20 @@ test('CSKH: in-flight dispatch cannot race a successful pause; two retries get o
   assert.deepEqual(both.map(r=>r.status).sort(),[200,409]);
   assert.equal((await pause()).status,200);
 });
+
+test('Lite Zalo-only installation uses a verified web workspace for contact and history', async () => {
+  const installation='zl-'+'1'.repeat(24);
+  const workspace='10000000-0000-4000-8000-000000000001';
+  const h=harness({ZH_CARE_LITE_WORKSPACES:JSON.stringify({[installation]:workspace}),
+    ZH_CARE_PILOT_PLANS:JSON.stringify({[workspace]:'lite'}),ZH_OWNER_CONNECT_ENABLED:'true',
+    ZH_SUPABASE_URL:'https://fakeproj.supabase.co',ZH_SUPABASE_KEY:'fixture'});
+  const c=await connect(h,installation); await pairOwner(h,c);
+  const uid='00000000-0000-4000-8000-000000000003';
+  h.st.users['x.y.z']={id:uid}; h.st.members=[{user_id:uid,store_id:workspace,role:'owner'}];
+  const api=(op,fields)=>h.req('POST','/v1/owner/care/'+op,{store_id:workspace,...fields},{authorization:'Bearer x.y.z'});
+  assert.equal((await api('contact',{zalo:'Zalo QA Lite',phone:''})).status,200);
+  await hook(h,c,textEvent('client','gặp nhân viên','lite-only'));
+  assert.match(h.st.zalo.at(-1).body.text,/Zalo QA Lite/);
+  assert.equal((await api('inbox')).body.rows[0].chat,'client');
+  assert.equal((await api('inbox',{store_id:installation})).status,403);
+});

@@ -17,3 +17,8 @@ Rollback bản nháp bằng cách đóng PR. Khi đã thử trên staging riêng
 các lượt đang chờ và đối chiếu các yêu cầu đang gửi trước khi phục hồi bản trước.
 Giữ lịch sử cho việc đối chiếu. Một yêu cầu gửi chưa rõ kết quả cần kiểm tra biên
 nhận trước khi xử lý tiếp.
+
+Shop Lite được tạo trực tiếp từ Zalo có định danh cài đặt riêng. Với pilot,
+ZH_CARE_LITE_WORKSPACES ánh xạ định danh cài đặt đã xác minh sang UUID workspace.
+Chỉ cấp ánh xạ sau khi đối chiếu quyền sở hữu hai phía. Dashboard kiểm tra thành
+viên trên workspace đó. Không suy ra liên kết từ tên khách hoặc số điện thoại.
