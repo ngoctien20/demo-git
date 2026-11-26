@@ -10,7 +10,10 @@ Trạng thái: SQL **đã áp** restore-test rồi staging ngày 2026-11-25 (Ti�
 - `#/tai-khoan?tab=ho-so|bao-mat|goi|workspace`: hồ sơ, đổi email (có thư xác nhận), đổi mật khẩu (kiểm mật khẩu hiện tại),
   đăng xuất thiết bị này / mọi thiết bị, Gói và thanh toán, danh sách workspace.
 - `#/goi-dich-vu` = cùng mục Gói và thanh toán.
-- `#/quan-tri`: chỉ hiện khi máy chủ trả `is_platform_admin() = true`.
+- Trang Quản trị **không có trong bản web công khai** (app/ trên gh-pages): không route, không menu, không tên RPC admin trong JS
+  (test `account-ui.cjs` quét bundle). Nó chỉ nằm trong bản build riêng chạy trên máy chủ nền tảng:
+  `cd apps/owner && npm ci && npm run dev:admin` rồi mở `http://localhost:5173/#/quan-tri` (hoặc `npm run build:admin` → thư mục
+  `admin-local/`, đã gitignore, không bao giờ deploy). Quyền thật vẫn do máy chủ kiểm (`is_platform_admin()` + mỗi RPC admin_*).
 
 ## Gói và thanh toán — DEMO
 - Không thu tiền, không lưu ngân hàng. Mã QR là **chữ thường** ("TIEN404 DEMO - KHONG CHUYEN KHOAN…"), không phải chuỗi VietQR,

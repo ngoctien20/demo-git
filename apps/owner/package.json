@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "build:admin": "tsc && vite build --mode admin --outDir ../../admin-local --emptyOutDir",
+    "dev:admin": "vite --mode admin"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

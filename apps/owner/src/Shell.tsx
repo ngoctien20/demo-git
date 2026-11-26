@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import { Route } from './router';
 import { useStore } from './store';
@@ -23,7 +23,11 @@ import { Conversations } from './pages/Conversations';
 import { Reports } from './pages/Reports';
 import { Notifications } from './pages/Notifications';
 import { Personality } from './pages/Personality';
-import { Admin } from './pages/Admin';
+// Platform Admin is NOT part of the public build. It exists only in the separate admin build
+// (`npm run build:admin` → admin-local/, never deployed). Vite replaces the flag at build time, so in the
+// public bundle the branch, the route, the menu entry, the RPC names and the Admin chunk are all removed.
+const ADMIN_BUILD = import.meta.env.VITE_T404_ADMIN === '1';
+const Admin = ADMIN_BUILD ? lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin }))) : null;
 
 type NavItem = [string, string, string];
 
@@ -46,6 +50,7 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
   }, [store.id]);
   // Platform admin flag comes from the server only (app_private.platform_admins). Missing RPC = not an admin.
   const adm = useLoad(async () => {
+    if (!ADMIN_BUILD) return false;
     const r = await supabase.rpc('is_platform_admin', {}, { get: true });
     return !r.error && r.data === true;
   }, []);
@@ -69,11 +74,12 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
     { group: 'Workspace', items: [
       ['/cai-dat-bot', 'Cài đặt', '⚙'], ['/phong-cach', 'Phong cách & biểu cảm', '☺'], ['/bieu-cam-fanpage', 'Biểu cảm Fanpage', '♡'], ['/goi-dich-vu', 'Gói và thanh toán', '◈'], ['/tai-khoan', 'Tài khoản', '◐'],
     ] },
-    ...(adm.data ? [{ group: 'TIEN404', items: [['/quan-tri', 'Quản trị nền tảng', '⛨'] as NavItem] }] : []),
+    ...(ADMIN_BUILD && adm.data ? [{ group: 'TIEN404', items: [['/quan-tri', 'Quản trị nền tảng', '⛨'] as NavItem] }] : []),
   ];
 
   const owner = moduleOwner(route.path);
   const page = (() => {
+    if (ADMIN_BUILD && Admin && route.path === ['', 'quan-tri'].join('/')) return <Suspense fallback={null}><Admin isAdmin={adm.loading ? null : adm.data === true} /></Suspense>;
     if (owner && !ws.industries.includes(owner)) return <ModuleOff owner={owner} />;
     switch (route.path) {
       case '/san-pham': return <Products />;
@@ -94,7 +100,6 @@ export function Shell({ route, onSwitch }: { route: Route; onSwitch: (id: string
       case '/phong-cach': return <Personality />;
       case '/goi-dich-vu': return <Plan />;
       case '/tai-khoan': return <Account />;
-      case '/quan-tri': return <Admin isAdmin={adm.loading ? null : adm.data === true} />;
       default: return <Overview />;
     }
   })();

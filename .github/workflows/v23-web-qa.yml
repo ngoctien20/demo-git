@@ -32,6 +32,7 @@ jobs:
           node qa/v23-web/screens.cjs shots index.html solutions.html pricing.html demo.html contact.html about.html faq.html terms.html privacy.html refund.html 404.html
           node qa/v23-web/app-ui.cjs shots
           node qa/v25-universal/workspace-ui.cjs shots
+          (cd apps/owner && npm run build:admin)
           node qa/v28-account/account-ui.cjs shots
       - uses: actions/upload-artifact@v4
         if: always()

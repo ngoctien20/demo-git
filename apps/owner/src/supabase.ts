@@ -45,10 +45,6 @@ const MESSAGES: Record<string, string> = {
   'invalid_plan': 'Gói hoặc chu kỳ thanh toán chưa hợp lệ.',
   'invoice_not_pending': 'Hoá đơn này không còn chờ thanh toán. Hãy tải lại trang.',
   'nothing_to_cancel': 'Không có gói đang hoạt động để huỷ gia hạn.',
-  'cannot_lock_self': 'Bạn không thể tự khoá tài khoản của mình.',
-  'cannot_lock_admin': 'Không thể khoá tài khoản quản trị viên khác.',
-  'invalid_reason': 'Lý do khoá cần từ 3 đến 300 ký tự.',
-  'invalid_account': 'Không tìm thấy tài khoản này.',
 };
 
 export function friendlyError(err: unknown): string {

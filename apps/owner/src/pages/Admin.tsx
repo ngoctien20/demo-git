@@ -6,6 +6,19 @@ import { isMissingFeature, useLoad } from '../data';
 import { dateTime, vnd } from '../format';
 import { Modal, Notice, PageHead, Spinner } from '../ui';
 import { PLANS, PlanKey } from '../billing';
+import './admin.css';
+
+const ADMIN_ERRORS: Record<string, string> = {
+  cannot_lock_self: 'Bạn không thể tự khoá tài khoản của mình.',
+  cannot_lock_admin: 'Không thể khoá tài khoản quản trị viên khác.',
+  invalid_reason: 'Lý do khoá cần từ 3 đến 300 ký tự.',
+  invalid_account: 'Không tìm thấy tài khoản này.',
+};
+const adminError = (e: unknown) => {
+  const m = String((e as { message?: string })?.message ?? e);
+  for (const [k, v] of Object.entries(ADMIN_ERRORS)) if (m.includes(k)) return v;
+  return friendlyError(e);
+};
 
 export type AdminStore = {
   store_id: string; store_name: string; tenant_name: string; active: boolean; created_at: string;
@@ -141,7 +154,7 @@ function LockModal({ acc, onClose, onDone }: { acc: AdminAccount; onClose: () =>
     setBusy(true);
     const r = await supabase.rpc('admin_set_account_lock', { p_user: acc.user_id, p_locked: locking, p_reason: locking ? reason.trim() : null });
     setBusy(false);
-    if (r.error) return setErr(friendlyError(r.error));
+    if (r.error) return setErr(adminError(r.error));
     onDone(locking ? `Đã khoá ${acc.email}.` : `Đã mở khoá ${acc.email}.`);
   }
   return (
@@ -166,7 +179,7 @@ function BotModal({ s, onClose, onDone }: { s: AdminStore; onClose: () => void; 
     setBusy(true); setErr('');
     const r = await supabase.rpc('admin_set_store_bot', { p_store: s.store_id, p_enabled: turnOn });
     setBusy(false);
-    if (r.error) return setErr(friendlyError(r.error));
+    if (r.error) return setErr(adminError(r.error));
     onDone(`Đã ${turnOn ? 'bật' : 'tắt'} bot của ${s.store_name}.`);
   }
   return (

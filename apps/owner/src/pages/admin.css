@@ -1,0 +1,23 @@
+/* Platform Admin styles: only bundled in the separate admin build. */
+.admin-banner{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:10px 14px;border-radius:12px;margin-bottom:16px;font-size:14px;background:var(--ink);color:var(--surface)}
+.admin-banner span{opacity:.8}
+.admin-kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.admin-kpis .kpi.wide{grid-column:span 2}
+.admin-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:none}
+.admin-tools .tabs{margin:0}
+.admin-tools input,.admin-tools select{font:inherit;font-size:14px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);min-height:38px}
+.admin-tools input{flex:1;min-width:180px}
+.pill.err{background:var(--danger-bg);color:var(--danger);border-color:transparent;margin-left:6px}
+.pill.brand{background:var(--ink);color:var(--surface);border-color:transparent;margin-left:6px}
+.switch-btn{font:inherit;font-size:12px;font-weight:700;border-radius:999px;padding:4px 12px;cursor:pointer;border:1px solid transparent}
+.switch-btn.on{background:var(--ok-bg);color:var(--ok)}
+.switch-btn.off{background:var(--danger-bg);color:var(--danger)}
+@media (max-width:760px){
+  .admin-kpis .kpi.wide{grid-column:auto}
+  .admin-table thead{display:none}
+  .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
+  .admin-table tr{border-bottom:1px solid var(--line);padding:8px 0}
+  .admin-table td{border:0;padding:4px 14px;text-align:left}
+  .admin-table td.num{text-align:left}
+  .admin-table td[data-label]:before{content:attr(data-label);display:inline-block;min-width:96px;font-size:12px;color:var(--muted);font-weight:600}
+}

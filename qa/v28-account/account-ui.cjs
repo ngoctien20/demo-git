@@ -47,6 +47,15 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
 (async () => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}/app/`;
+  // Platform Admin only exists in the separate admin build (npm run build:admin → admin-local/, never deployed).
+  const adminBase = `http://127.0.0.1:${server.address().port}/admin-local/`;
+  // The public bundle must carry no trace of the Admin page.
+  for (const f of fs.readdirSync(path.join(ROOT, 'app', 'assets'))) {
+    const txt = fs.readFileSync(path.join(ROOT, 'app', 'assets', f), 'utf8');
+    const hit = ['admin_overview', 'is_platform_admin', 'admin_set_account_lock', 'admin_set_store_bot', 'quan-tri', 'Quản trị nền tảng', 'platform_admins', 'admin-banner'].filter(k => txt.includes(k));
+    assert(hit.length === 0, `public bundle ${f} has no admin trace`, hit.join(','));
+  }
+  assert(fs.existsSync(path.join(ROOT, 'admin-local', 'index.html')), 'admin build present (npm run build:admin)');
   const b = await chromium.launch();
   const userObj = uid => ({ id: uid, email: users[uid].email, aud: 'authenticated', role: 'authenticated', created_at: ago(20), email_confirmed_at: ago(20), last_sign_in_at: ago(0.2), user_metadata: users[uid].meta, identities: [{ id: uid }] });
   const sessionFor = uid => ({ access_token: 'x.' + Buffer.from(JSON.stringify({ sub: uid, exp: 9999999999 })).toString('base64url') + '.y', token_type: 'bearer',
@@ -155,7 +164,7 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
       await ctx.close(); }
 
     // ---------- Account + DEMO billing (owner) ----------
-    { const { p, errs, ctx } = await page(w, h, { scale });
+    { const { p, errs, ctx } = await page(w, h, { scale }); const mark = calls.length;
       await p.goto(base + '#/tai-khoan'); await shot(p, errs, '04-tai-khoan-ho-so', tag);
       await p.getByLabel('Số điện thoại').fill('0987 654 321'); await p.getByRole('button', { name: 'Lưu hồ sơ' }).click(); await p.waitForTimeout(300);
       const pu = calls.filter(c => c.fn === 'auth:user' && c.method === 'PUT').pop();
@@ -182,8 +191,8 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
       assert(await p.locator('.plan-current').getByText('Đang hoạt động').count() === 1, `${tag} gói hiện tại = PLUS đang hoạt động`);
       await shot(p, errs, '09-goi-dang-hoat-dong', tag);
       await p.goto(base + '#/quan-tri'); await p.waitForTimeout(400);
-      assert(await p.getByText('Bạn không có quyền quản trị nền tảng').count() === 1 && await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} chủ shop KHÔNG vào được Quản trị, không thấy menu`);
-      assert(!calls.some(c => c.fn === 'admin_overview' && c.uid === OWNER), `${tag} chủ shop không gọi admin_overview`);
+      assert(await p.getByText(/Quản trị/).count() === 0 && await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} bản công khai: không có trang/menu Quản trị`);
+      assert(!calls.slice(mark).some(c => ['admin_overview', 'is_platform_admin'].includes(c.fn)), `${tag} bản công khai không gọi RPC admin`);
       await ctx.close(); }
 
     // ---------- staff: read only ----------
@@ -192,9 +201,16 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
       assert(await p.getByText(/chế độ chỉ đọc/).count() === 1 && await p.getByRole('button', { name: 'Chọn PLUS' }).isDisabled(), `${tag} nhân viên chỉ xem, không đổi gói`);
       errs.splice(0); await ctx.close(); }
 
-    // ---------- platform Admin ----------
+    // ---------- platform Admin (admin build only) ----------
+    { const { p, errs, ctx } = await page(w, h, { uid: OWNER });
+      await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(500);
+      assert(await p.getByText('Bạn không có quyền quản trị nền tảng').count() === 1 && await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} bản admin: chủ shop vẫn bị chặn`);
+      assert(!calls.some(c => c.fn === 'admin_overview' && c.uid === OWNER), `${tag} chủ shop không gọi admin_overview`);
+      errs.splice(0); await ctx.close(); }
     { const { p, errs, ctx } = await page(w, h, { uid: ADMIN, scale });
-      await p.goto(base + '#/quan-tri'); await p.waitForTimeout(500);
+      await p.goto(base + '#/quan-tri'); await p.waitForTimeout(400);
+      assert(await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} admin mở bản công khai cũng không thấy Quản trị`);
+      await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(500);
       assert(await p.locator('a[href="#/quan-tri"]').count() === 1, `${tag} admin thấy menu Quản trị`);
       await shot(p, errs, '10-quan-tri-shop', tag);
       await p.getByRole('tab', { name: /Tài khoản/ }).click(); await shot(p, errs, '11-quan-tri-tai-khoan', tag);
