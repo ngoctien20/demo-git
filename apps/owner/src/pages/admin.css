@@ -21,3 +21,11 @@
   .admin-table td.num{text-align:left}
   .admin-table td[data-label]:before{content:attr(data-label);display:inline-block;min-width:96px;font-size:12px;color:var(--muted);font-weight:600}
 }
+.admin-tools{margin-bottom:10px}
+.admin-dl{display:grid;grid-template-columns:minmax(96px,140px) 1fr;gap:6px 12px;margin:8px 0 14px;font-size:14px}
+.admin-dl dt{color:var(--muted)}
+.admin-dl dd{margin:0}
+.admin-shop{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px}
+.admin-shop .admin-dl{margin-bottom:0}
+.admin-acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:760px){.admin-acts{justify-content:flex-start}}

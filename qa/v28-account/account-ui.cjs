@@ -204,17 +204,21 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
     // ---------- platform Admin (admin build only) ----------
     { const { p, errs, ctx } = await page(w, h, { uid: OWNER });
       await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(500);
-      assert(await p.getByText('Bạn không có quyền quản trị nền tảng').count() === 1 && await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} bản admin: chủ shop vẫn bị chặn`);
+      assert(await p.getByText('Bạn không có quyền quản trị nền tảng').count() === 1, `${tag} bản admin: chủ shop vẫn bị chặn`);
       assert(!calls.some(c => c.fn === 'admin_overview' && c.uid === OWNER), `${tag} chủ shop không gọi admin_overview`);
       errs.splice(0); await ctx.close(); }
     { const { p, errs, ctx } = await page(w, h, { uid: ADMIN, scale });
       await p.goto(base + '#/quan-tri'); await p.waitForTimeout(400);
       assert(await p.locator('a[href="#/quan-tri"]').count() === 0, `${tag} admin mở bản công khai cũng không thấy Quản trị`);
       await p.goto(adminBase + '#/quan-tri'); await p.waitForTimeout(500);
-      assert(await p.locator('a[href="#/quan-tri"]').count() === 1, `${tag} admin thấy menu Quản trị`);
-      await shot(p, errs, '10-quan-tri-shop', tag);
-      await p.getByRole('tab', { name: /Tài khoản/ }).click(); await shot(p, errs, '11-quan-tri-tai-khoan', tag);
-      await p.getByRole('row', { name: /nailbong@example.com/ }).getByRole('button', { name: 'Khoá' }).click();
+      assert(await p.locator('a[href="#/quan-tri"]').count() === 1 && await p.locator('a[href="#/san-pham"]').count() === 0, `${tag} bản admin chỉ có menu Khách hàng, không có trang shop`);
+      assert(await p.locator('.admin-table tbody tr').count() === 4, `${tag} 4 khách (không tính admin)`, String(await p.locator('.admin-table tbody tr').count()));
+      assert(await p.getByText(/Mặc định bật|Tắt bot/).count() === 0, `${tag} bỏ công tắc bot chưa nối`);
+      await shot(p, errs, '10-quan-tri-khach-hang', tag);
+      await p.getByRole('button', { name: 'Xem nailbong@example.com' }).click(); await p.waitForTimeout(200);
+      assert(await p.getByRole('dialog').getByText('Tiệm Nail Bống').count() >= 1, `${tag} xem chi tiết khách`);
+      await shot(p, errs, '11-quan-tri-chi-tiet', tag, false);
+      await p.getByRole('dialog').getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(200);
       await p.getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(200);
       assert(await p.getByText('Ghi lý do khoá').count() === 1, `${tag} khoá phải ghi lý do`);
       await p.getByLabel(/Lý do/).fill('Shop thử, gửi tin rác');
@@ -222,13 +226,12 @@ const assert = (cond, label, extra = '') => { console.log((cond ? 'PASS ' : 'FAI
       await p.getByRole('button', { name: 'Khoá tài khoản' }).click(); await p.waitForTimeout(400);
       const lk = calls.filter(c => c.fn === 'admin_set_account_lock').pop();
       assert(lk && lk.body.p_user === 'u2' && lk.body.p_locked === true && lk.body.p_reason === 'Shop thử, gửi tin rác', `${tag} khoá gọi admin_set_account_lock đúng`, JSON.stringify(lk));
-      assert(await p.getByRole('row', { name: /admin@tien404/ }).getByRole('button').count() === 0, `${tag} không có nút khoá admin`);
-      await p.getByRole('tab', { name: /Shop/ }).click();
-      await p.getByRole('button', { name: /Bot của Tiệm Nail Bống/ }).click(); await p.getByRole('button', { name: 'Tắt bot' }).click(); await p.waitForTimeout(300);
-      const bt = calls.filter(c => c.fn === 'admin_set_store_bot').pop();
-      assert(bt && bt.body.p_store === 's2' && bt.body.p_enabled === false, `${tag} tắt bot gọi admin_set_store_bot đúng`);
-      await p.getByPlaceholder(/Tìm shop/).fill('linh'); await p.waitForTimeout(200);
-      assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} tìm shop hoạt động`);
+      assert(await p.getByText('admin@tien404.example').count() <= 1, `${tag} admin không nằm trong danh sách khách`);
+      await p.getByRole('tab', { name: /Chưa tạo shop/ }).click(); await p.waitForTimeout(200);
+      assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} lọc Chưa tạo shop`);
+      await p.getByRole('tab', { name: /Tất cả/ }).click();
+      await p.getByPlaceholder(/Tìm email/).fill('linh'); await p.waitForTimeout(200);
+      assert(await p.locator('.admin-table tbody tr').count() === 1, `${tag} tìm khách hoạt động`);
       errs.splice(0); await ctx.close(); }
   }
   await b.close(); server.close();
