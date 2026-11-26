@@ -32,6 +32,7 @@
 import { seal, open, sha256Hex, secureEqual, randomId, randomSecret, randomCode, signBody, verifyBody } from './crypto.mjs';
 import * as zalo from './zalo-api.mjs';
 import * as db from './store.mjs';
+import { isLiteConnection, isCommerceConnection, liteReply } from './lite-commerce.mjs';
 
 export const MAX_BODY = 16 * 1024;
 const PAIRING_TTL_MS = 30 * 60 * 1000;
@@ -49,6 +50,7 @@ const intEnv = (v, d) => (Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Num
 const STORE_ID_RE = /^[a-z0-9][a-z0-9_-]{1,63}$/;
 const ID_RE = /^[0-9a-f]{32}$/;
 const CHAT_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
+const isOwnerEvent = (c, ev) => ev.chat.type === 'PRIVATE' && ev.chat.id === c.owner_chat_id && ev.user.id === (c.owner_user_id || c.owner_chat_id);
 
 async function readJson(request) {
   const len = Number(request.headers.get('content-length') || 0);
@@ -141,7 +143,7 @@ async function handleWebhook(request, env, deps, pathId) {
   if (r.error) return json(200, { ok: true, ignored: r.error });
   const ev = normalize(r.body);
   if (!ev) return json(200, { ok: true, ignored: 'NO_MESSAGE' }); // e.g. setWebhook / testWebhook verification ping
-  if (!ev.message_id || !ev.chat.id || !CHAT_ID_RE.test(ev.chat.id)) return json(200, { ok: true, ignored: 'BAD_EVENT' });
+  if (!ev.message_id || !ev.chat.id || !CHAT_ID_RE.test(ev.chat.id) || !ev.user.id || !CHAT_ID_RE.test(ev.user.id)) return json(200, { ok: true, ignored: 'BAD_EVENT' });
   if (ev.user.is_bot) return json(200, { ok: true, ignored: 'FROM_BOT' });
 
   const now = deps.now();
@@ -152,27 +154,70 @@ async function handleWebhook(request, env, deps, pathId) {
     return json(200, { ok: true, accepted: 'PAIRING' });
   }
 
-  if (ev.user.id) await db.rememberUser(env.ZH_DB, c.id, ev.user.id, now);
+  await db.rememberUser(env.ZH_DB, c.id, ev.user.id, now);
+  await db.rememberChat(env.ZH_DB, c.id, ev.chat.id, now);
+  if (!deps.skipMaintenance && Math.random() < 0.02) deps.waitUntil(db.pruneInbound(env.ZH_DB, now - DEDUPE_KEEP_MS));
+  // A disabled/misconfigured Lite feature must never send a merchant to a DEMO flow.
+  if (isCommerceConnection(env, c)) {
+    if (env.ZH_LITE_COMMERCE_ENABLED !== 'true') return json(200, { ok: true, ignored: 'LITE_COMMERCE_DISABLED' });
+    deps.waitUntil(deliverLite(env, deps, c, ev, now));
+    return json(200, { ok: true, accepted: 'LITE_COMMERCE' });
+  }
   deps.waitUntil(forward(env, deps, c, ev, now));
-  if (Math.random() < 0.02) deps.waitUntil(db.pruneInbound(env.ZH_DB, now - DEDUPE_KEEP_MS));
   return json(200, { ok: true, accepted: 'FORWARDED' });
 }
 
+async function deliverLite(env, deps, c, ev, now) {
+  const record = (outcome) => db.recordLiteDelivery(env.ZH_DB,c.id,ev.message_id,outcome,deps.now());
+  try {
+    const fresh = await db.byId(env.ZH_DB,c.id);
+    if (!fresh || fresh.status !== 'active' || fresh.owner_epoch !== c.owner_epoch) return;
+    const owner = isOwnerEvent(fresh,ev);
+    // Let the owner pause/configure even when sending is disabled or the quota is exhausted.
+    if (!owner && env.ZH_SEND_ENABLED !== 'true') { await record('SEND_DISABLED'); return; }
+    const cap = intEnv(env.ZH_MONTHLY_CAP,DEFAULT_MONTHLY_CAP);
+    if (!owner && fresh.sent_month === monthOf(now) && Number(fresh.sent_count) >= cap) { await record('MONTHLY_CAP'); return; }
+    const revision = owner ? null : await db.liteCatalogRevision(env.ZH_DB,fresh);
+    const text = await liteReply(env,fresh,ev,now);
+    if (!text) { await record('NO_REPLY'); return; }
+    if (env.ZH_SEND_ENABLED !== 'true') { await record('SEND_DISABLED'); return; }
+    // Decrypt before the final atomic check: no slow operation between reservation and dispatch.
+    const token = await tokenOf(env,fresh);
+    if (!(await db.reserveLiteSend(env.ZH_DB,fresh,monthOf(now),cap,deps.now(),revision))) { await record('STATE_CHANGED_OR_CAP'); return; }
+    const sent = await zalo.sendMessage(deps.fetch,token,ev.chat.id,text.slice(0,2000));
+    await record(sent.ok ? 'API_ACCEPTED' : (sent.error_code === 0 ? 'DELIVERY_UNKNOWN' : 'PROVIDER_REJECTED'));
+    if (sent.ok) await env.ZH_DB.prepare('UPDATE zh_connections SET last_ok_at = ? WHERE id = ? AND owner_epoch = ?').bind(deps.now(),fresh.id,fresh.owner_epoch).run();
+    else if (sent.error_code === 401) await db.setStatus(env.ZH_DB,fresh.id,'needs_reconnect',deps.now());
+    else if (sent.error_code === 429) await db.setStatus(env.ZH_DB,fresh.id,'quota_exceeded',deps.now());
+  } catch {
+    deps.log('LITE_COMMERCE_FAILED');
+    try { await record('FAILED'); } catch { /* No private content in diagnostics. */ }
+  }
+}
+
 async function pairOwner(env, deps, c, ev, now) {
+  if (ev.type !== 'text' || ev.chat.type !== 'PRIVATE' || !CHAT_ID_RE.test(ev.user.id || '')) return;
   const code = typeof ev.text === 'string' ? ev.text.replace(/\s+/g, '') : '';
   if (!/^\d{6}$/.test(code)) return; // stay silent to strangers while pairing
   if (!c.pairing_code_hash || !c.pairing_expires_at || now > Number(c.pairing_expires_at)) return;
   if (Number(c.pairing_attempts) >= PAIRING_MAX_ATTEMPTS) return;
   if (!(await secureEqual(await sha256Hex(code), c.pairing_code_hash))) {
-    await db.bumpPairingAttempts(env.ZH_DB, c.id, now);
+    await db.bumpPairingAttempts(env.ZH_DB, c.id, c.pairing_code_hash, now);
     return;
   }
-  const res = await db.activateOwner(env.ZH_DB, c.id, ev.chat.id, now);
+  const res = await db.activateOwner(env.ZH_DB, c.id, ev.chat.id, ev.user.id, c.pairing_code_hash, now);
   if (!res || !res.meta || res.meta.changes !== 1) return;
   if (ev.user.id) await db.rememberUser(env.ZH_DB, c.id, ev.user.id, now);
+  await db.rememberChat(env.ZH_DB, c.id, ev.chat.id, now);
+  if (env.ZH_SEND_ENABLED !== 'true') return;
+  const fresh = await db.byId(env.ZH_DB,c.id);
+  if (!fresh || !isOwnerEvent(fresh,ev)) return;
   const token = await tokenOf(env, c);
-  const r = await zalo.sendMessage(deps.fetch, token, ev.chat.id, 'Đã nối xong. Từ giờ trợ lý TIEN404 sẽ trả lời khách nhắn vào bot này, và báo đơn cho bác ở đây.');
-  if (r.ok) await db.countSend(env.ZH_DB, c.id, monthOf(now), now);
+  if (!(await db.reserveLiteSend(env.ZH_DB,fresh,monthOf(now),intEnv(env.ZH_MONTHLY_CAP,DEFAULT_MONTHLY_CAP),now))) return;
+  const greeting = isCommerceConnection(env,c)
+    ? 'Đã xác nhận bác là chủ shop. Nhắn “Bắt đầu” để cài tên shop, liên hệ CSKH công khai và sản phẩm. Bác xem thử rồi nhắn “Bật bot” để mở trả lời khách. Bot chưa tự tạo đơn.'
+    : 'Đã xác nhận chủ bot. Kết nối đã sẵn sàng theo cấu hình của cửa hàng.';
+  await zalo.sendMessage(deps.fetch, token, ev.chat.id, greeting);
 }
 
 const sharedKey = (k) => typeof k === 'string' && k.length >= 32;
@@ -188,7 +233,7 @@ async function forward(env, deps, c, ev, now) {
     channel: 'zalo_bot',
     connection_id: c.id,
     store_id: c.store_id,
-    is_owner: !!c.owner_chat_id && ev.chat.id === c.owner_chat_id,
+    is_owner: isOwnerEvent(c,ev),
     usage: { users, user_warn: users >= intEnv(env.ZH_USER_WARN, DEFAULT_USER_WARN), sent_month: c.sent_month, sent_count: Number(c.sent_count || 0) },
     event: ev,
   });
@@ -235,10 +280,13 @@ async function handleSend(request, env, deps) {
     : auth.startsWith('Bearer ') && (await secureEqual(auth.slice(7), fk));
   if (!ok) return json(401, { ok: false, error: 'UNAUTHORIZED' });
 
+  // Retired shared/n8n replies must not bypass the private catalog or a pause.
+  if (isCommerceConnection(env,c)) return json(409, { ok: false, error: 'LITE_REPLY_MANAGED' });
+
   if (c.status !== 'active') return json(409, { ok: false, error: 'CONNECTION_' + String(c.status).toUpperCase() });
   if (typeof b.chat_id !== 'string' || !CHAT_ID_RE.test(b.chat_id)) return json(400, { ok: false, error: 'BAD_CHAT_ID' });
   if (typeof b.text !== 'string' || b.text.length < 1 || b.text.length > 2000) return json(400, { ok: false, error: 'BAD_TEXT' });
-  if (b.chat_id !== c.owner_chat_id && !(await db.isKnownUser(env.ZH_DB, c.id, b.chat_id))) return json(403, { ok: false, error: 'UNKNOWN_CHAT' });
+  if (b.chat_id !== c.owner_chat_id && !(await db.isKnownChat(env.ZH_DB, c.id, b.chat_id))) return json(403, { ok: false, error: 'UNKNOWN_CHAT' });
 
   const cap = intEnv(env.ZH_MONTHLY_CAP, DEFAULT_MONTHLY_CAP);
   if (c.sent_month === monthOf(now) && Number(c.sent_count) >= cap) return json(429, { ok: false, error: 'MONTHLY_CAP' });
@@ -498,7 +546,10 @@ async function handleLite(request, env, deps, path) {
   const storeId = await liteStoreId(b.zalo_user_id);
   const live = await db.liveByStore(env.ZH_DB, storeId);
   const now = deps.now();
-  if (path === '/v1/lite/status') return json(200, { ok: true, store_id: storeId, connection: live ? publicView(live, await db.countUsers(env.ZH_DB, live.id)) : null });
+  if (path === '/v1/lite/status') return json(200, {
+    ok: true, store_id: storeId, connection: live ? publicView(live, await db.countUsers(env.ZH_DB, live.id)) : null,
+    last_reply: live ? await db.lastLiteDelivery(env.ZH_DB, live.id) : null,
+  });
   if (path === '/v1/lite/reply') {
     // Bot TIEN404 AI answers the same Zalo user who wrote to it. Text comes from the Lite flow (n8n).
     const sys = env.ZH_SYSTEM_BOT_TOKEN;

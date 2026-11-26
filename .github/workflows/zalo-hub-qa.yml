@@ -24,6 +24,12 @@ jobs:
           node --check gateway/zalo-hub/src/crypto.mjs
           node --check gateway/zalo-hub/src/zalo-api.mjs
           node --check gateway/zalo-hub/src/store.mjs
+          node --check gateway/zalo-hub/src/lite-commerce.mjs
+          node --check gateway/zalo-hub/src/lite-intent.mjs
+          node --check gateway/zalo-hub/qa/runtime-check.mjs
+          node --check gateway/zalo-hub/tools/run-hosted-qa.mjs
+          node --check gateway/zalo-hub/pilot/worker.mjs
+          node --check gateway/zalo-hub/pilot/router.mjs
           node --check gateway/zalo-hub/tools/connect-qa.mjs
           node --check gateway/zalo-hub/tools/rotate-qa.mjs
       - name: Offline tests (fake Zalo, real migration SQL via node:sqlite)
