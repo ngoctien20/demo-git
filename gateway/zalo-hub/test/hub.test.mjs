@@ -695,14 +695,22 @@ test('QA allowlist routes only the exact designated bot into private commerce', 
 
 test('web link: both owners confirm, two stores keep independent prices for the same SKU', async () => {
   const h = ownerHarness({ZH_WEB_STORE_LINK:'true', ZH_LITE_COMMERCE_ENABLED:'true', ZH_LITE_COMMERCE_QA_STORES:'qa-a,qa-b'});
-  h.st.members.push({user_id:UID_OWNER,store_id:OTHER_UUID,role:'owner'});
+  // The second test account owns B and only has staff access to A.
+  h.st.members.push({user_id:UID_STAFF,store_id:OTHER_UUID,role:'owner'});
+  const session=store=>store===STORE_UUID ? JWT_OWNER : JWT_STAFF;
   const prefix = '/v1/owner/web-store/';
-  const status = store => h.owner('GET',prefix+'status?store_id='+store);
-  const post = (store,action,extra={}) => h.owner('POST',prefix+action,{store_id:store,...extra});
+  const status = store => h.owner('GET',prefix+'status?store_id='+store,undefined,session(store));
+  const post = (store,action,extra={}) => h.owner('POST',prefix+action,{store_id:store,...extra},session(store));
   let sequence=0;
   const say = async (connection,user,text) => {
+    const before=h.st.zalo.length;
     await hook(h,connection,textEvent(user,text,'web-link-'+(++sequence)));
-    return h.st.zalo.at(-1).body.text;
+    const sends=h.st.zalo.slice(before).filter(x=>x.method==='sendMessage');
+    for (const reply of sends) {
+      assert.equal(reply.body.chat_id,user);
+      assert.equal(reply.token,connection===a ? TOKEN_A : TOKEN_B);
+    }
+    return sends.at(-1)?.body.text;
   };
   const a=await connect(h,'qa-a',TOKEN_A), b=await connect(h,'qa-b',TOKEN_B);
   const codes = [];
@@ -726,6 +734,16 @@ test('web link: both owners confirm, two stores keep independent prices for the 
     assert.ok((await say(connection,owner,'Thông tin cửa hàng')).includes(start.body.code));
   }
   assert.notEqual(...codes);
+  assert.equal((await h.owner('GET',prefix+'status?store_id='+OTHER_UUID,undefined,JWT_OWNER)).status,403);
+  for (const [c,owner,store,basePrice] of [[a,'ownerA',STORE_UUID,12000],[b,'ownerB',OTHER_UUID,23000]]) {
+    for(let i=2;i<=5;i++) await say(c,owner,'Sản phẩm | SP0'+i+' | Mẫu QA '+i+' | '+(basePrice+i)+' | '+i);
+    assert.equal((await status(store)).body.products.length,5);
+  }
+  await say(a,'ownerA','Tạm dừng');
+  assert.equal(await say(a,'buyer','SP01'),undefined);
+  assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  await say(a,'ownerA','Bật bot');
+  assert.match(await say(a,'buyer','SP01'),/12\.000 đ/);
   const revision=(await status(STORE_UUID)).body.revision;
   assert.equal((await h.owner('POST',prefix+'price',{store_id:STORE_UUID,sku:'SP01',price:1,revision},JWT_STAFF)).status,403);
   assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:18000,revision})).status,200);
@@ -749,12 +767,12 @@ test('web link: both owners confirm, two stores keep independent prices for the 
   assert.equal((await sync(STORE_UUID,'SP01','zalo','v1')).status,200);
   assert.equal(h.st.products[0].price_vnd,21000);
   assert.equal(h.st.products[0].stock_on_hand,12);
-  h.st.products.push({...h.st.products[0],sku:'SP02',updated_at:'v2'});
-  assert.equal((await sync(STORE_UUID,'SP02','web','v2')).status,200);
-  assert.equal((await status(STORE_UUID)).body.products.find(p=>p.sku==='SP02').stock,12);
+  h.st.products.push({...h.st.products[0],sku:'SP06',updated_at:'v2'});
+  assert.equal((await sync(STORE_UUID,'SP06','web','v2')).status,200);
+  assert.equal((await status(STORE_UUID)).body.products.find(p=>p.sku==='SP06').stock,12);
   h.st.products[1].is_active=false;
   assert.equal((await sync(OTHER_UUID,'SP01','web','changed')).status,200);
-  assert.equal((await status(OTHER_UUID)).body.products.length,0);
+  assert.deepEqual((await status(OTHER_UUID)).body.products.map(p=>p.sku).sort(),['SP02','SP03','SP04','SP05']);
   await say(a,'ownerA','Bắt đầu');
   const open=(await status(STORE_UUID)).body;
   assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:1,revision:open.revision})).body.error,'BOT_DRAFT_OPEN');
