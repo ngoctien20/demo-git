@@ -9,6 +9,7 @@ import { SITE_HOME } from '../config';
 import { CAPS, TEAM_LABEL, Version } from '../assistant';
 import { useWorkspace } from '../workspace';
 import { Notice, PageHead, Spinner } from '../ui';
+import { ZaloHubPanel } from './ZaloHubPanel';
 import { ZaloConnect } from './ZaloConnect';
 
 type Conn = { id: string; channel: string; display_name: string | null; environment: string; status: string; assistant_id: string | null; updated_at: string };
@@ -61,16 +62,20 @@ export function Channels() {
     <>
       <PageHead title="Kênh kết nối" sub={`Nơi khách nhắn với trợ lý của ${store.name}. Mỗi kênh có khả năng khác nhau.`} />
       <Notice>Trong giai đoạn thử nghiệm, đội TIEN404 gắn từng Fanpage/tài khoản vào đúng Workspace sau khi kiểm tra quyền sở hữu. App chỉ hiển thị trạng thái, không tự gắn hay chuyển kênh. Riêng Zalo Bot: chủ shop tự nối bằng mã bot ngay bên dưới.</Notice>
-      {error && <Notice kind="err">Không tải được trạng thái kết nối. Các kênh dưới đây hiển thị như chưa kết nối.</Notice>}
+      {error && <Notice kind="err">Không tải được trạng thái kết nối. Hãy tải lại để xem trạng thái.</Notice>}
       {data?.conns === null && <Notice kind="warn">Trạng thái kết nối chưa được bật trên máy chủ.</Notice>}
+      <p>Mã cửa hàng · {store.id}</p>
+      <ZaloHubPanel key={store.id} canManage={canManage} bot={<ZaloConnect storeId={store.id} canManage={canManage} />}
+        oaStatus={error || data?.conns === null ? 'Chưa đọc được trạng thái OA.' :
+          conns.filter(c => c.channel === 'zalo_oa').map(c => (c.display_name ?? 'OA') + ' · ' + (STATUS[c.status]?.[1] ?? c.status)).join(', ') || 'Chưa kết nối · Đang chờ cấu hình ứng dụng OA thử nghiệm.'} />
       <div className="channel-grid">
-        {CHANNELS.map(c => {
+        {CHANNELS.filter(c => c.key !== 'zalo_bot').map(c => {
           const mine = conns.filter(x => x.channel === c.key);
           const caps = c.capsKey ? CAPS[c.capsKey] : undefined;
           return (
             <section key={c.key} className="panel channel">
               <header className="channel-head"><h2>{c.name}</h2><span className={`pill ${c.label === 'Dự kiến' ? '' : 'soft'}`}>{c.label}</span></header>
-              {c.key === 'zalo_bot' ? <ZaloConnect key={store.id} storeId={store.id} canManage={canManage} /> : mine.length ? (
+              {mine.length ? (
                 <ul className="plain conn-list">
                   {mine.map(m => (
                     <li key={m.id}>
@@ -81,7 +86,7 @@ export function Channels() {
                     </li>
                   ))}
                 </ul>
-              ) : <p><span className="pill">Chưa kết nối</span></p>}
+              ) : <p><span className="pill">{error || data?.conns === null ? 'Chưa xác định' : 'Chưa kết nối'}</span></p>}
               {c.can.length > 0 && <><h3>Làm được</h3><ul className="ticks">{c.can.map(x => <li key={x}>{x}</li>)}</ul></>}
               <dl className="facts">
                 <dt>Giới hạn</dt><dd>{c.limits}</dd>

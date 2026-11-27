@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { appUrl, friendlyError, supabase } from '../supabase';
+import { returnRoute } from '../loginFlow.mjs';
 import { go } from '../router';
 import { Notice } from '../ui';
 import { SITE_HOME } from '../config';
@@ -8,12 +9,28 @@ function Brand() {
   return <a className="auth-brand" href={SITE_HOME}><span className="logo" aria-hidden="true">T</span>TIEN404<b>AI</b></a>;
 }
 
-export function AuthPage({ path }: { path: string }) {
+export function AuthPage({ path, callbackError = '' }: { path: string; callbackError?: string }) {
   const mode = path === '/dang-ky' ? 'signup' : path === '/quen-mat-khau' ? 'forgot' : path === '/dat-lai-mat-khau' ? 'reset' : 'login';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
+  async function google() {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      sessionStorage.setItem('t404_google_return', returnRoute(location.hash));
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google', options: { redirectTo: appUrl() },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setMsg({ kind: 'err', text: friendlyError(error) });
+      setBusy(false);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -60,6 +77,8 @@ export function AuthPage({ path }: { path: string }) {
         <Brand />
         <h1>{title}</h1>
         <p className="muted">{sub}</p>
+        {callbackError && <Notice kind="warn">{callbackError}</Notice>}
+        {(mode === 'login' || mode === 'signup') && <button className="btn btn-ghost btn-block" disabled={busy} type="button" onClick={google}>Tiếp tục với Google</button>}
         <form onSubmit={submit} className="form" noValidate>
           {mode !== 'reset' && (
             <label>Email<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>

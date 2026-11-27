@@ -1,12 +1,27 @@
+import { callbackUrl } from './loginFlow.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_KEY, SUPABASE_URL } from './config';
 
+const query = new URLSearchParams(location.search);
+const fragment = new URLSearchParams(location.hash.slice(1));
+const denied = query.has('error') || fragment.has('error');
+const hasCallback = denied || query.has('code');
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
 /** Where Supabase should send people back after e-mail confirmation / password reset. */
-export const appUrl = () => `${location.origin}${location.pathname}`;
+export const appUrl = () => callbackUrl(location.href);
+export const callbackStatus = supabase.auth.initialize().then(async ({ error }) => {
+  if (!hasCallback) return '';
+  const url = new URL(location.href);
+  for (const key of ['code','error','error_code','error_description','state']) url.searchParams.delete(key);
+  if (denied) url.hash = '/dang-nhap';
+  history.replaceState(null, '', url.pathname + url.search + url.hash);
+  const { data } = await supabase.auth.getSession();
+  if (denied || error || !data.session) return 'Phiên đăng nhập bị hủy hoặc đã hết hạn. Hãy đăng nhập lại.';
+  return '';
+});
 
 const MESSAGES: Record<string, string> = {
   access_denied: 'Bạn không có quyền làm việc này ở cửa hàng này.',
