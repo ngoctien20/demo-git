@@ -9,9 +9,9 @@ export function createQaShopBook({ shops, variants }) {
     CREATE TABLE variants(page TEXT, sku TEXT, size TEXT, color TEXT, price INTEGER CHECK(price>=0),
       stock INTEGER CHECK(stock>=0), PRIMARY KEY(page,sku,size,color));
     CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
-      revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
+      checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
     CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
-      size TEXT, color TEXT, qty INTEGER, price INTEGER, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
     CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, PRIMARY KEY(page,sender,event));
   `);
   for (const sh of shops) db.prepare('INSERT INTO shops(page,owner,public_contact) VALUES(?,?,?)')
@@ -40,25 +40,54 @@ export function createQaShopBook({ shops, variants }) {
       return {status:'catalog',rows};
     }
     if (action.type==='human') return {status:'contact',text:shop.public_contact || 'Shop chưa công khai liên hệ.'};
+    if (action.type==='hold') {
+      write('UPDATE conversations SET quoted_price=NULL WHERE page=? AND sender=?',page,sender);
+      return {status:'on_hold'};
+    }
+    if (action.type==='contact') {
+      if (!state.checkout) return {status:'ask_clarification'};
+      const summary=summarize(page,state.sku,state.size,state.color,state.qty);
+      if (summary.status!=='summary') return summary;
+      write('UPDATE conversations SET contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
+        action.contact,summary.price,page,sender);
+      return summary;
+    }
     if (action.type==='edit') {
       const newSku = action.sku ?? state.sku;
       const changedModel = newSku !== state.sku;
-      const size = action.size ?? (changedModel ? null : state.size);
-      const color = action.color ?? (changedModel ? null : state.color);
+      const choices=action.checkout ? db.prepare('SELECT size,color FROM variants WHERE page=? AND sku=?').all(page,newSku) : [];
+      const only=choices.length===1 ? choices[0] : null;
+      const size = action.size ?? only?.size ?? (changedModel ? null : state.size);
+      const color = action.color ?? only?.color ?? (changedModel ? null : state.color);
       const qty = action.qty ?? (changedModel ? 1 : state.qty);
       if (!Number.isSafeInteger(qty) || qty<1) return {status:'ask_quantity'};
-      write('UPDATE conversations SET sku=?,size=?,color=?,qty=?,revision=revision+1 WHERE page=? AND sender=?',
-        newSku,size,color,qty,page,sender);
-      return summarize(page,newSku,size,color,qty);
+      const summary = summarize(page,newSku,size,color,qty);
+      write('UPDATE conversations SET sku=?,size=?,color=?,qty=?,checkout=?,contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
+        newSku,size,color,qty,action.checkout ? 1 : state.checkout,action.checkout ? null : state.contact,
+        summary.price ?? null,page,sender);
+      if (summary.status==='summary' && (action.checkout || (state.checkout && !state.contact))) return {status:'ask_contact'};
+      return summary;
     }
     if (action.type==='submit') {
+      if (action.checkoutOnly && !state.checkout) return {status:'ask_clarification'};
+      const existing=one('SELECT id,approved FROM drafts WHERE page=? AND sender=? AND revision=?',page,sender,state.revision);
+      if (existing?.approved) return {status:'approved',id:existing.id};
       const summary=summarize(page,state.sku,state.size,state.color,state.qty);
       if (summary.status!=='summary') return summary;
-      write('INSERT OR IGNORE INTO drafts(page,sender,revision,sku,size,color,qty,price) VALUES(?,?,?,?,?,?,?,?)',
-        page,sender,state.revision,state.sku,state.size,state.color,state.qty,summary.price);
+      if (state.checkout && !state.contact) return {status:'ask_contact'};
+      if (action.qty!==undefined && action.qty!==state.qty) return {status:'ask_quantity'};
+      if (existing && summary.price===state.quoted_price) return {status:'pending_owner',id:existing.id};
+      if (summary.price!==state.quoted_price) {
+        write('UPDATE conversations SET quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
+          summary.price,page,sender);
+        return {...summary,status:'reconfirm_price'};
+      }
+      write('INSERT OR IGNORE INTO drafts(page,sender,revision,sku,size,color,qty,price,contact) VALUES(?,?,?,?,?,?,?,?,?)',
+        page,sender,state.revision,state.sku,state.size,state.color,state.qty,summary.price,state.contact);
       const draft=one('SELECT id FROM drafts WHERE page=? AND sender=? AND revision=?',page,sender,state.revision);
       return {status:'pending_owner',id:draft.id};
     }
+    if (state.checkout && !state.contact) return {status:'ask_contact'};
     return {status:'ask_clarification'};
   }
   function summarize(page,sku,size,color,qty) {
@@ -86,7 +115,17 @@ export function createQaShopBook({ shops, variants }) {
         const size=/^(?:đổi sang |đổi |lấy )?size (xs|s|m|l|xl|xxl)$/.exec(text);
         const color=/^màu (.+)$/.exec(text);
         const qty=/^(?:lấy|chỉ lấy) ([1-9][0-9]*) (?:chiếc|cái)$/.exec(text);
-        if (size) action={type:'edit',size:size[1].toUpperCase()};
+        const buy=/^lấy ([a-z0-9]+(?:-[a-z0-9]+)*) x([1-9][0-9]*)$/.exec(text);
+        const change=/^(?:khoan, )?chỉ lấy ([1-9][0-9]*)$/.exec(text);
+        const confirm=/^đúng, chốt ([1-9][0-9]*) (?:cái|chiếc)$/.exec(text);
+        const contact=/^tên [^,]+, (?:sđt|số điện thoại) 0[0-9]{9}, địa chỉ .+$/i.test(text);
+        if (buy) action={type:'edit',checkout:true,sku:buy[1].toUpperCase(),qty:Number(buy[2])};
+        else if (change) action={type:'edit',qty:Number(change[1])};
+        else if (contact) action={type:'contact',contact:message.text.trim()};
+        else if (text==='để mình suy nghĩ') action={type:'hold'};
+        else if (text==='đồng ý' || text==='đúng, chốt đơn như shop vừa tóm tắt') action={type:'submit',checkoutOnly:true};
+        else if (confirm) action={type:'submit',checkoutOnly:true,qty:Number(confirm[1])};
+        else if (size) action={type:'edit',size:size[1].toUpperCase()};
         else if (color) action={type:'edit',color:color[1]};
         else if (qty) action={type:'edit',qty:Number(qty[1])};
       }
@@ -122,6 +161,12 @@ export function createQaShopBook({ shops, variants }) {
         write('UPDATE drafts SET approved=1 WHERE id=?',id);
         return {status:'approved',id};
       });
+    },
+    changePrice(owner,{sku,size,color},price) {
+      if (!Number.isSafeInteger(price) || price<0) throw Error('INVALID_PRICE');
+      const result=write('UPDATE variants SET price=? WHERE page=? AND sku=? AND size=? AND color=?',
+        price,ownerPage(owner),sku,size,color);
+      if (!result.changes) throw Error('VARIANT_NOT_FOUND');
     },
     pause(owner,paused) { write('UPDATE shops SET paused=? WHERE page=?',Number(Boolean(paused)),ownerPage(owner)); },
     takeOver(owner,sender) {

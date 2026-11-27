@@ -69,3 +69,22 @@ test('hành trình qua payload Messenger và tin nhắn tiếng Việt trên cat
   assert.equal(book.inbox('ownerA')[0].qty,2);
   assert.equal(book.approve('ownerA',req.id).status,'approved');
 });
+test('báo tổng mới và đợi khách xác nhận lại khi giá đổi trước lúc gửi', t=>{
+  const {book,send}=setup(t);
+  assert.equal(send('A','x',{...select,qty:2}).total,200000);
+  book.changePrice('ownerA',select,110000);
+  const quote=send('A','x',submit,'confirm');
+  assert.equal(quote.status,'reconfirm_price');
+  assert.equal(quote.total,220000);
+  assert.equal(send('A','x',submit,'confirm').status,'duplicate');
+  assert.equal(book.inbox('ownerA').length,0);
+  const draft=send('A','x',submit);
+  assert.equal(book.inbox('ownerA')[0].price,110000);
+  book.changePrice('ownerA',select,90000);
+  assert.equal(book.approve('ownerA',draft.id).status,'reconfirm_price');
+  assert.equal(send('A','x',submit).total,180000);
+  assert.equal(book.approve('ownerA',draft.id).status,'superseded');
+  const updated=send('A','x',submit);
+  assert.equal(book.approve('ownerA',updated.id).status,'approved');
+  assert.equal(send('B','x',select).price,130000);
+});
