@@ -1,5 +1,6 @@
 // Lite only: trusted Hub webhook determines identity. Never use customer text as authority.
 // Draft setup is private to the paired owner; only explicit confirmation changes live data.
+import { botLink } from './web-store.mjs';
 import { classifyIntent } from './lite-intent.mjs';
 
 const SETUP_TTL_MS = 30 * 60 * 1000;
@@ -176,6 +177,9 @@ export async function liteReply(env, c, ev, now) {
   const text = ev.text.trim();
   if (!text || tokenLike.test(text)) return null;
   const owner = ev.chat.id === c.owner_chat_id && ev.user.id === (c.owner_user_id || c.owner_chat_id);
+  if (env.ZH_WEB_STORE_LINK === 'true' && /^(?:Liên kết\s|Thông tin cửa hàng$)/iu.test(text)) {
+    return owner ? botLink(env,c,text,now) : null;
+  }
   const state = await load(env.ZH_DB, c), data = state.data;
   if (!owner) return answer(env, c, data, text, now);
   const fields = text.split('|').map(x => x.trim()), cmd = normalize(fields[0]);

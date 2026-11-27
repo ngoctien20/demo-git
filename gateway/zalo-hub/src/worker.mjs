@@ -32,6 +32,7 @@
 import { seal, open, sha256Hex, secureEqual, randomId, randomSecret, randomCode, signBody, verifyBody } from './crypto.mjs';
 import * as zalo from './zalo-api.mjs';
 import * as db from './store.mjs';
+import { ownerLink } from './web-store.mjs';
 import { isLiteConnection, isCommerceConnection, liteReply } from './lite-commerce.mjs';
 
 export const MAX_BODY = 16 * 1024;
@@ -504,6 +505,13 @@ async function handleOwner(request, env, deps, path) {
     } else return json(405, { ok: false });
     const who = await ownerOf(request, env, deps, b.store_id);
     if (who.error) return json(who.error, { ok: false, error: { 400: 'BAD_STORE_ID', 401: 'SIGN_IN_AGAIN', 403: 'NOT_STORE_MANAGER', 503: 'AUTH_NOT_CONFIGURED' }[who.error] });
+    if (path.startsWith('/v1/owner/web-store/')) {
+      if (env.ZH_WEB_STORE_LINK !== 'true' || env.ZH_ENABLED !== 'true') return json(404,{ok:false});
+      const action=path.slice('/v1/owner/web-store/'.length);
+      if ((action==='status') !== (request.method==='GET')) return json(405,{ok:false});
+      const result=await ownerLink(env.ZH_DB,action,b.store_id,who.uid,b,deps.now());
+      return json(result.status,result.body);
+    }
     const live = await db.liveByStore(env.ZH_DB, b.store_id);
     const now = deps.now();
     if (request.method === 'GET' && path === '/v1/owner/status') {

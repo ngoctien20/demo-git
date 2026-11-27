@@ -678,3 +678,50 @@ test('QA allowlist routes only the exact designated bot into private commerce', 
   assert.equal(JSON.parse(h.st.forwards[0].body).store_id,'qa-other');
   assert.equal((await signedSend(h,qa,{chat_id:'qa-owner',text:'Legacy response'})).body.error,'LITE_REPLY_MANAGED');
 });
+
+test('web link: both owners confirm, two stores keep independent prices for the same SKU', async () => {
+  const h = ownerHarness({ZH_WEB_STORE_LINK:'true', ZH_LITE_COMMERCE_ENABLED:'true', ZH_LITE_COMMERCE_QA_STORES:'qa-a,qa-b'});
+  h.st.members.push({user_id:UID_OWNER,store_id:OTHER_UUID,role:'owner'});
+  const prefix = '/v1/owner/web-store/';
+  const status = store => h.owner('GET',prefix+'status?store_id='+store);
+  const post = (store,action,extra={}) => h.owner('POST',prefix+action,{store_id:store,...extra});
+  let sequence=0;
+  const say = async (connection,user,text) => {
+    await hook(h,connection,textEvent(user,text,'web-link-'+(++sequence)));
+    return h.st.zalo.at(-1).body.text;
+  };
+  const a=await connect(h,'qa-a',TOKEN_A), b=await connect(h,'qa-b',TOKEN_B);
+  const codes = [];
+  for(const [connection,store,owner,price] of [[a,STORE_UUID,'ownerA',12000],[b,OTHER_UUID,'ownerB',23000]]) {
+    await pairOwner(h,connection,owner);
+    await say(connection,owner,'Cài shop | Shop QA | -');
+    await say(connection,owner,'Sản phẩm | SP01 | Mẫu QA | '+price+' | 4');
+    await say(connection,owner,'Bật bot');
+    const start=await post(store,'start');
+    assert.equal(start.status,200);
+    codes.push(start.body.code);
+    await say(connection,'buyer',start.body.command);
+    assert.equal((await status(store)).body.state,'idle');
+    await say(connection,owner,start.body.command);
+    const preview=(await status(store)).body;
+    assert.equal(preview.state,'confirm');
+    assert.deepEqual(preview.products,[]);
+    assert.equal((await post(store,'confirm',{confirmation:'stale'})).status,409);
+    assert.equal((await post(store,'confirm',{confirmation:preview.confirmation})).status,200);
+    assert.equal((await status(store)).body.products[0].price,price);
+    assert.ok((await say(connection,owner,'Thông tin cửa hàng')).includes(start.body.code));
+  }
+  assert.notEqual(...codes);
+  const revision=(await status(STORE_UUID)).body.revision;
+  assert.equal((await h.owner('POST',prefix+'price',{store_id:STORE_UUID,sku:'SP01',price:1,revision},JWT_STAFF)).status,403);
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:18000,revision})).status,200);
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:500,revision})).status,409);
+  assert.match(await say(a,'buyer','SP01'),/18\.000 đ/);
+  assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  await say(a,'ownerA','Bắt đầu');
+  const open=(await status(STORE_UUID)).body;
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:1,revision:open.revision})).body.error,'BOT_DRAFT_OPEN');
+  await h.admin('/v1/admin/pairing',{connection_id:a.connection_id});
+  assert.deepEqual((await status(STORE_UUID)).body.products,[]);
+  assert.equal((await post(STORE_UUID,'start')).body.code,codes[0]);
+});

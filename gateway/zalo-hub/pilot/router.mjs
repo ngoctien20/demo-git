@@ -36,6 +36,7 @@ export function createPilot(legacy, candidate) {
   }
 
   async function selectedHandler(request, env) {
+    if (env.ZH_WEB_STORE_LINK==='true' && new URL(request.url).pathname.startsWith('/v1/owner/web-store/')) return {handler:candidate,env};
     if (request.method !== 'POST') return { handler: legacy, env };
     const path = new URL(request.url).pathname;
     let row;

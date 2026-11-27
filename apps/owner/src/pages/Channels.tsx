@@ -70,7 +70,7 @@ export function Channels() {
           return (
             <section key={c.key} className="panel channel">
               <header className="channel-head"><h2>{c.name}</h2><span className={`pill ${c.label === 'Dự kiến' ? '' : 'soft'}`}>{c.label}</span></header>
-              {c.key === 'zalo_bot' ? <ZaloConnect storeId={store.id} canManage={canManage} /> : mine.length ? (
+              {c.key === 'zalo_bot' ? <ZaloConnect key={store.id} storeId={store.id} canManage={canManage} /> : mine.length ? (
                 <ul className="plain conn-list">
                   {mine.map(m => (
                     <li key={m.id}>
