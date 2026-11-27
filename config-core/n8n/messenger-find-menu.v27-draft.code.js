@@ -6,6 +6,12 @@ for(const en of (Array.isArray(body.entry)?body.entry:[]))for(const e of (Array.
  const id=String(m.mid??e.postback?.mid??'').trim()||(e.postback?'pb_'+sid+'_'+String(ts||0):e.message?'attachment_'+sid+'_'+String(ts||0):'');
  let p=e.postback?String(e.postback.payload??''):String(m.quick_reply?.payload??'');
  // V27.2: the Page's old ☰ "Xem sản phẩm" / ice-breaker payload opens the same published catalog item.
+ // A typed label on the pinned Shop demo follows the published catalog button.
+ // Explicit button payloads and free-form purchase edits keep their existing route.
+ if(!p&&!e.postback&&!m.quick_reply&&page==='2379295362359912'&&typeof m.text==='string'){
+  const label=m.text.normalize('NFD').replace(/\p{M}/gu,'').trim().toLowerCase().replace(/\s+/g,' ');
+  if(label==='xem san pham')p='T404:M:catalog';
+ }
  if(p==='TIEN404:ASK:catalog')p='T404:M:catalog';
  if(id&&page&&sid&&p.length<=100&&(p.startsWith('T404:M:')||p.startsWith('T404:C:')||p==='TIEN404:START')){
   const key=JSON.stringify([page,sid,id]);

@@ -1,3 +1,4 @@
+import { QaOwnerInbox } from './QaOwnerInbox';
 import { useState } from 'react';
 import { friendlyError, supabase } from '../supabase';
 import { useStore } from '../store';
@@ -30,6 +31,8 @@ export function Orders() {
     <>
       <PageHead title="Đơn hàng" sub="Đơn do trợ lý AI ghi nhận trên các kênh hoặc nhập tay. Tối đa 200 đơn gần nhất." />
       <Notice>Đơn từ bot Messenger đang được chuyển dần vào App. Trong lúc chuyển, đơn của shop thử nghiệm có thể vẫn nằm ở bảng tính cũ.</Notice>
+      {import.meta.env.VITE_QA_OWNER_INBOX === 'true' && store.role === 'owner' &&
+        <QaOwnerInbox key={store.id} storeId={store.id} />}
       <div className="tabs" role="tablist" aria-label="Lọc theo trạng thái">
         {[['', 'Tất cả'], ...Object.entries(ORDER_STATUS)].map(([v, l]) => (
           <button key={v} role="tab" aria-selected={status === v} className={status === v ? 'on' : ''} onClick={() => setStatus(v)}>{l}</button>

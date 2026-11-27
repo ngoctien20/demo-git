@@ -250,3 +250,27 @@ test('V27-19 detail photo dropped when host not allowlisted, http, missing, or p
   assert.equal(detailPipeline(null).fmt.detailImage, null);
   assert.equal(detailPipeline({ sku: 'A004', name: 'Áo', price: 'liên hệ', stock: 1, image_url: 'https://i.imgur.com/a.jpg' }).fmt.detailImage, null);
 });
+
+test('typed catalog request follows the same demo menu path as the catalog chip', () => {
+  const input = { pageId: DEMO_PAGE, senderId: SENDER, messageId: 'mid.text', mediaType: 'text' };
+  function route(text, extra = {}, page = DEMO_PAGE) {
+    const event = { sender: { id: SENDER }, message: { mid: input.messageId, text, ...extra } };
+    return findMenu(event, { ...input, pageId: page })[0].menuPayload;
+  }
+  assert.equal(route('  XEM   SẢN PHẨM  '), 'T404:M:catalog');
+  assert.equal(route('xem san pham'), 'T404:M:catalog');
+  assert.equal(route('xem sản phẩm A001'), undefined);
+  assert.equal(route('đổi sang size L, lấy 2 cái'), undefined);
+  assert.equal(route('xem sản phẩm', { quick_reply: { payload: 'T404:M:music' } }), 'T404:M:music');
+  assert.equal(route('xem sản phẩm', {}, '123450001'), undefined);
+});
+
+test('demo product details cannot expose Sheet rows to an unbound Page', () => {
+  for (const pageId of ['123450001', undefined]) {
+    const current = { pageId, selectedSku: 'A001' };
+    const result = run(FORMAT, { $: loop(current), $input: {
+      all: () => { throw new Error('demo rows must not be accessed'); }
+    } });
+    assert.deepEqual(result, []);
+  }
+});
