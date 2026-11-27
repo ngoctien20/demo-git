@@ -1,0 +1,92 @@
+{
+  "trace": [
+    {
+      "input": "Xem sản phẩm",
+      "status": "catalog",
+      "reply": "catalog"
+    },
+    {
+      "input": "Chọn A001",
+      "status": "ask_variant",
+      "reply": "ask_variant"
+    },
+    {
+      "input": "lấy áo đen size M",
+      "status": "summary",
+      "reply": "A001 · đen · M · × 1 · 159.000đ"
+    },
+    {
+      "input": "à đổi sang L",
+      "status": "summary",
+      "reply": "A001 · đen · L · × 1 · 159.000đ"
+    },
+    {
+      "input": "lấy thêm hai cái",
+      "status": "ask_quantity",
+      "reply": "Bạn muốn tổng cộng bao nhiêu cái?"
+    },
+    {
+      "input": "xác nhận yêu cầu mua",
+      "status": "ask_quantity",
+      "reply": "Bạn muốn tổng cộng bao nhiêu cái?"
+    },
+    {
+      "input": "thôi lấy 2 cái",
+      "status": "summary",
+      "reply": "A001 · đen · L · × 2 · 318.000đ"
+    },
+    {
+      "input": "xác nhận yêu cầu mua",
+      "status": "pending_owner",
+      "reply": "pending_owner"
+    },
+    {
+      "input": "xác nhận yêu cầu mua",
+      "status": "duplicate",
+      "reply": "duplicate"
+    },
+    {
+      "input": "để mình suy nghĩ",
+      "status": "on_hold",
+      "reply": "on_hold"
+    },
+    {
+      "input": "thôi lấy 2 cái",
+      "status": "summary",
+      "reply": "A001 · đen · L · × 2 · 318.000đ"
+    },
+    {
+      "input": "xác nhận yêu cầu mua",
+      "status": "pending_owner",
+      "reply": "pending_owner"
+    },
+    {
+      "input": "Xem sản phẩm",
+      "status": "catalog",
+      "reply": "catalog"
+    },
+    {
+      "input": "gặp nhân viên",
+      "status": "contact",
+      "reply": "Liên hệ QA"
+    },
+    {
+      "input": "gửi yêu cầu hỗ trợ",
+      "status": "staff_requested",
+      "reply": "Đã ghi yêu cầu hỗ trợ vào hộp QA của shop."
+    },
+    {
+      "input": "Xem sản phẩm",
+      "status": "silent",
+      "reply": "silent"
+    }
+  ],
+  "owner": {
+    "sku": "A001",
+    "color": "đen",
+    "size": "L",
+    "qty": 2,
+    "total": 318000
+  },
+  "shopBPending": 0
+}

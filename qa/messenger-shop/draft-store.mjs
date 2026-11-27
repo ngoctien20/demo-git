@@ -13,11 +13,12 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
       CREATE TABLE variants(page TEXT, sku TEXT, size TEXT, color TEXT, price INTEGER CHECK(price>=0),
         stock INTEGER CHECK(stock>=0), PRIMARY KEY(page,sku,size,color));
       CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
-        inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
+        quantity_unclear INTEGER DEFAULT 0, inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
       CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
         size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, catalog_price_at_edit INTEGER, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
       CREATE TABLE line_edits(page TEXT,sender TEXT,draft_id INTEGER,version INTEGER,sku TEXT,size TEXT,color TEXT,qty INTEGER,expected_total INTEGER NOT NULL,PRIMARY KEY(page,sender));
       CREATE TABLE contact_edits(page TEXT,sender TEXT,draft_id INTEGER,field TEXT,value TEXT,snapshot TEXT,version INTEGER,PRIMARY KEY(page,sender));
+      CREATE TABLE support_requests(page TEXT,sender TEXT,accepted INTEGER DEFAULT 0,PRIMARY KEY(page,sender));
       CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, draft_id INTEGER, PRIMARY KEY(page,sender,event));
     `);
     for (const sh of shops) db.prepare('INSERT INTO shops(page,owner,public_contact) VALUES(?,?,?)')
@@ -59,6 +60,15 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
     }
     if (state.inquiry_variant) write('UPDATE conversations SET inquiry_variant=NULL WHERE page=? AND sender=?',page,sender);
     if (action.type==='external_email') return {status:'external_unavailable',text:'Shop cần tự gửi email này.'};
+    if (action.type==='request_staff') {
+      write('INSERT OR IGNORE INTO support_requests(page,sender) VALUES(?,?)',page,sender);
+      return {status:'staff_requested',text:'Đã ghi yêu cầu hỗ trợ vào hộp QA của shop.'};
+    }
+    if (action.type==='ambiguous_qty') {
+      write('UPDATE conversations SET quantity_unclear=1,revision=revision+1 WHERE page=? AND sender=?',page,sender);
+      return {status:'ask_quantity',text:'Bạn muốn tổng cộng bao nhiêu cái?'};
+    }
+    if (state.quantity_unclear && action.type==='submit') return {status:'ask_quantity',text:'Bạn muốn tổng cộng bao nhiêu cái?'};
     if (action.type==='human') return {status:'contact',text:shop.public_contact || 'Shop chưa công khai liên hệ.'};
     if (action.type==='hold') {
       write('UPDATE conversations SET quoted_price=NULL,revision=revision+1 WHERE page=? AND sender=?',page,sender);
@@ -86,8 +96,8 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
       const qty = action.qty ?? (changedModel ? 1 : state.qty);
       if (!Number.isSafeInteger(qty) || qty<1) return {status:'ask_quantity'};
       const summary = summarize(page,newSku,size,color,qty);
-      write('UPDATE conversations SET browsing=0,sku=?,size=?,color=?,qty=?,checkout=?,contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
-        newSku,size,color,qty,action.checkout ? 1 : (state.browsing ? 0 : state.checkout),action.checkout || state.browsing ? null : state.contact,
+      write('UPDATE conversations SET quantity_unclear=?,browsing=0,sku=?,size=?,color=?,qty=?,checkout=?,contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
+        action.qty || changedModel ? 0 : state.quantity_unclear,newSku,size,color,qty,action.checkout ? 1 : (state.browsing ? 0 : state.checkout),action.checkout || state.browsing ? null : state.contact,
         summary.price ?? null,page,sender);
       if (summary.status==='summary' && (action.checkout || (!state.browsing && state.checkout && !state.contact))) return {status:'ask_contact'};
       return summary;
@@ -145,11 +155,20 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
         const confirm=/^đúng, chốt ([1-9][0-9]*) (?:cái|chiếc)$/.exec(text);
         const contact=/^tên [^,]+, (?:sđt|số điện thoại) 0[0-9]{9}, địa chỉ .+$/i.test(text);
         const query=parseInquiry(text);
-        if (query) action={type:'inquiry',query};
+        const outfit=/^lấy áo (.+?) size (xs|s|m|l|xl|xxl)$/.exec(text);
+        const resize=/^(?:à )?đổi sang (xs|s|m|l|xl|xxl)$/.exec(text);
+        const finalQty=/^(?:thôi lấy|tổng cộng|tổng) ([1-9]\d*) (?:cái|chiếc)$/.exec(text);
+        if (outfit) action={type:'edit',color:outfit[1],size:outfit[2].toUpperCase()};
+        else if (resize) action={type:'edit',size:resize[1].toUpperCase()};
+        else if (finalQty) action={type:'edit',qty:Number(finalQty[1])};
+        else if (/^lấy thêm (?:hai|\d+) (?:cái|chiếc)$/.test(text)) action={type:'ambiguous_qty'};
+        else if (text==='gửi yêu cầu hỗ trợ') action={type:'request_staff'};
+        else if (query) action={type:'inquiry',query};
         else if (buy) action={type:'edit',checkout:true,sku:buy[1].toUpperCase(),qty:Number(buy[2])};
         else if (change) action={type:'edit',qty:Number(change[1])};
         else if (contact) action={type:'contact',contact:message.text.trim()};
         else if (text==='để mình suy nghĩ') action={type:'hold'};
+        else if (text==='xác nhận yêu cầu mua') action={type:'submit'};
         else if (text==='đồng ý' || text==='đúng, chốt đơn như shop vừa tóm tắt') action={type:'submit',checkoutOnly:true};
         else if (confirm) action={type:'submit',checkoutOnly:true,qty:Number(confirm[1])};
         else if (size) action={type:'edit',size:size[1].toUpperCase()};
@@ -215,7 +234,11 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
       if (paused) write('DELETE FROM line_edits WHERE page=?',ownerPage(owner));
       if (paused) write('DELETE FROM contact_edits WHERE page=?',ownerPage(owner));
       write('UPDATE shops SET paused=? WHERE page=?',Number(Boolean(paused)),ownerPage(owner)); },
+    supportInbox(owner) {
+      return db.prepare('SELECT sender,accepted FROM support_requests WHERE page=?').all(ownerPage(owner));
+    },
     takeOver(owner,sender) {
+      write('UPDATE support_requests SET accepted=1 WHERE page=? AND sender=?',ownerPage(owner),sender);
       write('INSERT INTO conversations(page,sender,handed) VALUES(?,?,1) ON CONFLICT(page,sender) DO UPDATE SET handed=1',ownerPage(owner),sender);
     },
     close() { db.close(); }

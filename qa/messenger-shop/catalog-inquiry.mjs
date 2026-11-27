@@ -2,6 +2,10 @@ const fold = text => text.normalize('NFD').replace(/\p{M}/gu,'').replaceAll('đ'
 
 export function parseInquiry(text) {
   const words=fold(text).replace(/[?!]+$/,'').trim();
+  const variant=/^ma (.+?) mau (.+?) size (.+?) (?:gia bao nhieu|con khong)$/.exec(words);
+  if (variant) return {kind:'variant',sku:variant[1],color:variant[2],size:variant[3]};
+  const available=/^ma (.+?) con size nao$/.exec(words);
+  if (available) return {kind:'sizes',sku:available[1]};
   const budget=/^(?:shop oi )?ao duoi (\d{1,7})k(?: con (?:k|khong))?$/.exec(words);
   if (budget) return {kind:'budget',limit:Number(budget[1])*1000};
   const compare=/^so (?:sanh )?mau (.+?) (?:va|voi) (.+)$/.exec(words);
@@ -30,10 +34,13 @@ export function answerInquiry(query,rows,previous) {
     return {status:'estimate',total,text:query.qty+' cái có tổng giá '+total.toLocaleString('vi-VN')+'đ.',rows:[row]};
   }
   let matches;
+  if (query.kind==='variant') matches=rows.filter(r=>fold(r.sku.toLowerCase())===query.sku &&
+    fold(r.color.toLowerCase())===query.color && fold(r.size.toLowerCase())===query.size);
+  if (query.kind==='sizes') matches=rows.filter(r=>fold(r.sku.toLowerCase())===query.sku && r.stock>0);
   if (query.kind==='budget') matches=rows.filter(r=>r.price<query.limit && r.stock>0);
   if (query.kind==='sku') matches=rows.filter(r=>r.sku===query.sku);
   if (query.kind==='colors') matches=rows.filter(r=>query.colors.includes(fold(r.color.toLowerCase())));
   if (!matches?.length) return {status:'no_match',text:'Shop chưa tìm thấy mẫu phù hợp trong danh mục.'};
-  const text=matches.map(r=>r.sku+' · '+r.color+' · size '+r.size+' · '+r.price.toLocaleString('vi-VN')+'đ · còn '+r.stock+' cái').join('\n');
+  const text=matches.map(r=>r.sku+(r.color?' · '+r.color:'')+(r.size?' · size '+r.size:'')+' · '+r.price.toLocaleString('vi-VN')+'đ · còn '+r.stock+' cái').join('\n');
   return {status:'catalog_answer',rows:matches,text};
 }
