@@ -1,3 +1,4 @@
+import {writeContact} from './edit-writer.mjs';
 // Contact amendments for pending QA drafts. Runs inside the same transaction as the event receipt.
 const fields={'số':'phone','tên':'name','địa chỉ':'address'};
 export const normPhone=value=>/^\+84\d{9}$/.test(value) ? '0'+value.slice(3) : value;
@@ -48,10 +49,9 @@ export function contactEdit(db,page,sender,message) {
       const contact=parseContact(row.contact);
       contact[field]=pending.value;
       const next='Tên '+contact.name+', SĐT '+contact.phone+', địa chỉ '+contact.address;
-      db.prepare('UPDATE drafts SET contact=?,edit_version=edit_version+1 WHERE id=?').run(next,row.id);
-      db.prepare('UPDATE conversations SET contact=? WHERE page=? AND sender=? AND revision=?')
-        .run(next,page,sender,row.revision);
-      const saved=parseContact(read(row.id).contact);
+      const applied=writeContact(db,row,next,confirm);
+      if (applied.status!=='change_saved') return applied;
+      const saved=parseContact(applied.contact);
       return {status:'change_saved',order:'QA-ORDER-'+row.id,field,value:saved[field]};
     }
     value=amend[1];

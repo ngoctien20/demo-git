@@ -1,28 +1,30 @@
-// Offline staging adapter. Only a disposable in-memory catalog and order book are supported.
+// Offline QA adapter. The default is in-memory; parallel QA uses a disposable SQLite file.
 // The caller supplies the verified Page/sender envelope (or authenticated owner), never a store from chat.
 import {lineEdit} from './line-edit.mjs';
 import {contactEdit} from './contact-edit.mjs';
 import {parseInquiry,answerInquiry} from './catalog-inquiry.mjs';
 import { DatabaseSync } from 'node:sqlite';
 
-export function createQaShopBook({ shops, variants }) {
-  const db = new DatabaseSync(':memory:');
-  db.exec(`
-    CREATE TABLE shops(page TEXT PRIMARY KEY, owner TEXT UNIQUE NOT NULL, paused INTEGER DEFAULT 0, public_contact TEXT);
-    CREATE TABLE variants(page TEXT, sku TEXT, size TEXT, color TEXT, price INTEGER CHECK(price>=0),
-      stock INTEGER CHECK(stock>=0), PRIMARY KEY(page,sku,size,color));
-    CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
-      inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
-    CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
-      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, catalog_price_at_edit INTEGER, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
-    CREATE TABLE line_edits(page TEXT,sender TEXT,draft_id INTEGER,version INTEGER,sku TEXT,size TEXT,color TEXT,qty INTEGER,expected_total INTEGER NOT NULL,PRIMARY KEY(page,sender));
-    CREATE TABLE contact_edits(page TEXT,sender TEXT,draft_id INTEGER,field TEXT,value TEXT,snapshot TEXT,version INTEGER,PRIMARY KEY(page,sender));
-    CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, PRIMARY KEY(page,sender,event));
-  `);
-  for (const sh of shops) db.prepare('INSERT INTO shops(page,owner,public_contact) VALUES(?,?,?)')
-    .run(sh.page,sh.owner,sh.publicContact ?? null);
-  for (const v of variants) db.prepare('INSERT INTO variants VALUES(?,?,?,?,?,?)')
-    .run(v.page,v.sku,v.size,v.color,v.price,v.stock);
+export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memory:')) {
+  db.exec('PRAGMA busy_timeout=5000');
+  if (shops) {
+    db.exec(`
+      CREATE TABLE shops(page TEXT PRIMARY KEY, owner TEXT UNIQUE NOT NULL, paused INTEGER DEFAULT 0, public_contact TEXT);
+      CREATE TABLE variants(page TEXT, sku TEXT, size TEXT, color TEXT, price INTEGER CHECK(price>=0),
+        stock INTEGER CHECK(stock>=0), PRIMARY KEY(page,sku,size,color));
+      CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
+        inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
+      CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
+        size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, catalog_price_at_edit INTEGER, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+      CREATE TABLE line_edits(page TEXT,sender TEXT,draft_id INTEGER,version INTEGER,sku TEXT,size TEXT,color TEXT,qty INTEGER,expected_total INTEGER NOT NULL,PRIMARY KEY(page,sender));
+      CREATE TABLE contact_edits(page TEXT,sender TEXT,draft_id INTEGER,field TEXT,value TEXT,snapshot TEXT,version INTEGER,PRIMARY KEY(page,sender));
+      CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, draft_id INTEGER, PRIMARY KEY(page,sender,event));
+    `);
+    for (const sh of shops) db.prepare('INSERT INTO shops(page,owner,public_contact) VALUES(?,?,?)')
+      .run(sh.page,sh.owner,sh.publicContact ?? null);
+    for (const v of variants) db.prepare('INSERT INTO variants VALUES(?,?,?,?,?,?)')
+      .run(v.page,v.sku,v.size,v.color,v.price,v.stock);
+  }
   const one = (sql,...args) => db.prepare(sql).get(...args);
   const write = (sql,...args) => db.prepare(sql).run(...args);
   function transaction(fn) {
@@ -56,6 +58,7 @@ export function createQaShopBook({ shops, variants }) {
       return {status:'catalog',rows};
     }
     if (state.inquiry_variant) write('UPDATE conversations SET inquiry_variant=NULL WHERE page=? AND sender=?',page,sender);
+    if (action.type==='external_email') return {status:'external_unavailable',text:'Shop cần tự gửi email này.'};
     if (action.type==='human') return {status:'contact',text:shop.public_contact || 'Shop chưa công khai liên hệ.'};
     if (action.type==='hold') {
       write('UPDATE conversations SET quoted_price=NULL,revision=revision+1 WHERE page=? AND sender=?',page,sender);
@@ -131,6 +134,7 @@ export function createQaShopBook({ shops, variants }) {
         const sku=message.payload.slice('TIEN404:VIEW:'.length);
         if (/^[A-Z][0-9]{3}$/.test(sku)) action={type:'edit',sku};
       } else if (text==='gặp nhân viên') action={type:'human'};
+      else if (/^có thể gửi email cho khách giúp mình không[?]?$/u.test(text)) action={type:'external_email'};
       else if (text==='gửi yêu cầu mua') action={type:'submit'};
       else {
         const size=/^(?:đổi sang |đổi |lấy )?size (xs|s|m|l|xl|xxl)$/.exec(text);
@@ -159,10 +163,15 @@ export function createQaShopBook({ shops, variants }) {
       return transaction(()=>{
         const shop=one('SELECT * FROM shops WHERE page=?',page);
         if (!shop) return {status:'unbound_page'};
-        const prior=one('SELECT 1 FROM receipts WHERE page=? AND sender=? AND event=?',page,sender,event);
-        if (prior) return {status:'duplicate'};
+        const prior=one('SELECT draft_id FROM receipts WHERE page=? AND sender=? AND event=?',page,sender,event);
+        if (prior) {
+          const saved=prior.draft_id && one('SELECT id,edit_version FROM drafts WHERE id=? AND page=? AND sender=?',prior.draft_id,page,sender);
+          return saved ? {status:'duplicate',id:saved.id,current_version:saved.edit_version} : {status:'duplicate'};
+        }
         const result=process(shop,sender,action);
-        write('INSERT INTO receipts VALUES(?,?,?)',page,sender,event);
+        const draftId=result.id ?? (result.status==='change_saved' || result.status==='line_saved' ?
+          Number(result.order.slice('QA-ORDER-'.length)) : null);
+        write('INSERT INTO receipts VALUES(?,?,?,?)',page,sender,event,draftId);
         return result;
       });
     },

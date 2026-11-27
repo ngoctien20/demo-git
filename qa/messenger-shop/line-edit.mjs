@@ -1,3 +1,4 @@
+import {writeLine} from './edit-writer.mjs';
 import {normPhone,parseContact} from './contact-edit.mjs';
 
 // Called only inside the receipt transaction. The preview is private to the Page and sender.
@@ -32,9 +33,5 @@ export function lineEdit(db,page,sender,message) {
       .run(page,sender,id,row.edit_version,sku,variant.size,variant.color,qty,total);
     return {...result,status:request ? 'line_preview' : 'reconfirm_price'};
   }
-  db.prepare(`UPDATE drafts SET sku=?,size=?,color=?,qty=?,price=?,catalog_price_at_edit=?,
-    edit_version=edit_version+1 WHERE id=?`).run(sku,variant.size,variant.color,qty,price,variant.price,id);
-  db.prepare('UPDATE conversations SET sku=?,size=?,color=?,qty=?,quoted_price=?,browsing=0,inquiry_variant=NULL WHERE page=? AND sender=?')
-    .run(sku,variant.size,variant.color,qty,variant.price,page,sender);
-  return {...result,status:'line_saved',expected_total:pending.expected_total};
+  return {...result,...writeLine(db,row,variant,qty,pending.expected_total,true)};
 }

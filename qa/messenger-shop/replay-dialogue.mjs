@@ -1,4 +1,5 @@
 // Replays source dialogues through the candidate. Only supported scenarios have an acceptance oracle.
+import {writerCases,replayWriter} from './replay-writer.mjs';
 import {isDeepStrictEqual} from 'node:util';
 import {execFileSync} from 'node:child_process';
 import {createQaShopBook} from './draft-store.mjs';
@@ -31,6 +32,10 @@ console.log('case_id,turn,status,drafts,stock,assertion,scope,reply_total,expect
 for (const {case_id:id,mode,turns_json} of rows) {
   if (seen.has(id)) throw Error('duplicate case '+id);
   seen.add(id);
+  if (writerCases.has(id)) {
+    for (const line of await replayWriter(id,JSON.parse(turns_json))) console.log(line);
+    continue;
+  }
   const book=createQaShopBook({shops:[{page:'A',owner:'owner'}],
     variants:[{page:'A',sku:'T-A',size:'M',color:'trắng',price:159000,stock:8},
       {page:'A',sku:'T-B',size:'M',color:'đen',price:179000,stock:3},
