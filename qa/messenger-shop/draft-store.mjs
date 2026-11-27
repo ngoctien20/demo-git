@@ -1,5 +1,6 @@
 // Offline staging adapter. Only a disposable in-memory catalog and order book are supported.
 // The caller supplies the verified Page/sender envelope (or authenticated owner), never a store from chat.
+import {parseInquiry,answerInquiry} from './catalog-inquiry.mjs';
 import { DatabaseSync } from 'node:sqlite';
 
 export function createQaShopBook({ shops, variants }) {
@@ -9,7 +10,7 @@ export function createQaShopBook({ shops, variants }) {
     CREATE TABLE variants(page TEXT, sku TEXT, size TEXT, color TEXT, price INTEGER CHECK(price>=0),
       stock INTEGER CHECK(stock>=0), PRIMARY KEY(page,sku,size,color));
     CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
-      checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
+      inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
     CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
       size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
     CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, PRIMARY KEY(page,sender,event));
@@ -35,14 +36,27 @@ export function createQaShopBook({ shops, variants }) {
     write('INSERT OR IGNORE INTO conversations(page,sender) VALUES(?,?)',page,sender);
     const state = one('SELECT * FROM conversations WHERE page=? AND sender=?',page,sender);
     if (shop.paused || state.handed) return { status:'silent' };
-    if (action.type==='catalog') {
+    if (action.type==='inquiry' || action.type==='catalog') {
       const rows=db.prepare('SELECT sku,size,color,price,stock FROM variants WHERE page=? ORDER BY sku,color,size').all(page);
+      if (action.type==='inquiry') {
+        const reply=answerInquiry(action.query,rows,JSON.parse(state.inquiry_variant));
+        const row=reply.rows?.length===1 ? reply.rows[0] : null;
+        const variant=row ? JSON.stringify([row.sku,row.color,row.size]) : null;
+        write('UPDATE conversations SET inquiry_variant=?,browsing=1 WHERE page=? AND sender=?',variant,page,sender);
+        return reply;
+      }
+      write('UPDATE conversations SET inquiry_variant=NULL WHERE page=? AND sender=?',page,sender);
       return {status:'catalog',rows};
     }
+    if (state.inquiry_variant) write('UPDATE conversations SET inquiry_variant=NULL WHERE page=? AND sender=?',page,sender);
     if (action.type==='human') return {status:'contact',text:shop.public_contact || 'Shop chưa công khai liên hệ.'};
     if (action.type==='hold') {
       write('UPDATE conversations SET quoted_price=NULL,revision=revision+1 WHERE page=? AND sender=?',page,sender);
       return {status:'on_hold'};
+    }
+    if (state.browsing && (action.type==='submit' || action.type==='contact' ||
+        (action.type==='edit' && !action.sku))) {
+      return {status:'ask_variant',text:'Bạn chọn lại mã mẫu muốn đặt nhé.'};
     }
     if (action.type==='contact') {
       if (!state.checkout) return {status:'ask_clarification'};
@@ -54,7 +68,7 @@ export function createQaShopBook({ shops, variants }) {
     }
     if (action.type==='edit') {
       const newSku = action.sku ?? state.sku;
-      const changedModel = newSku !== state.sku;
+      const changedModel = newSku !== state.sku || Boolean(state.browsing);
       const choices=action.checkout ? db.prepare('SELECT size,color FROM variants WHERE page=? AND sku=?').all(page,newSku) : [];
       const only=choices.length===1 ? choices[0] : null;
       const size = action.size ?? only?.size ?? (changedModel ? null : state.size);
@@ -62,10 +76,10 @@ export function createQaShopBook({ shops, variants }) {
       const qty = action.qty ?? (changedModel ? 1 : state.qty);
       if (!Number.isSafeInteger(qty) || qty<1) return {status:'ask_quantity'};
       const summary = summarize(page,newSku,size,color,qty);
-      write('UPDATE conversations SET sku=?,size=?,color=?,qty=?,checkout=?,contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
-        newSku,size,color,qty,action.checkout ? 1 : state.checkout,action.checkout ? null : state.contact,
+      write('UPDATE conversations SET browsing=0,sku=?,size=?,color=?,qty=?,checkout=?,contact=?,quoted_price=?,revision=revision+1 WHERE page=? AND sender=?',
+        newSku,size,color,qty,action.checkout ? 1 : (state.browsing ? 0 : state.checkout),action.checkout || state.browsing ? null : state.contact,
         summary.price ?? null,page,sender);
-      if (summary.status==='summary' && (action.checkout || (state.checkout && !state.contact))) return {status:'ask_contact'};
+      if (summary.status==='summary' && (action.checkout || (!state.browsing && state.checkout && !state.contact))) return {status:'ask_contact'};
       return summary;
     }
     if (action.type==='submit') {
@@ -119,7 +133,9 @@ export function createQaShopBook({ shops, variants }) {
         const change=/^(?:khoan, )?chỉ lấy ([1-9][0-9]*)$/.exec(text);
         const confirm=/^đúng, chốt ([1-9][0-9]*) (?:cái|chiếc)$/.exec(text);
         const contact=/^tên [^,]+, (?:sđt|số điện thoại) 0[0-9]{9}, địa chỉ .+$/i.test(text);
-        if (buy) action={type:'edit',checkout:true,sku:buy[1].toUpperCase(),qty:Number(buy[2])};
+        const query=parseInquiry(text);
+        if (query) action={type:'inquiry',query};
+        else if (buy) action={type:'edit',checkout:true,sku:buy[1].toUpperCase(),qty:Number(buy[2])};
         else if (change) action={type:'edit',qty:Number(change[1])};
         else if (contact) action={type:'contact',contact:message.text.trim()};
         else if (text==='để mình suy nghĩ') action={type:'hold'};

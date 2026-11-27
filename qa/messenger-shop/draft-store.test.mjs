@@ -111,3 +111,34 @@ test('hộp chờ chỉ hiện bản khách vừa chốt, rút lại trước kh
   assert.equal(book.approve('ownerA',second.id).status,'approved');
   assert.equal(chat('Xem sản phẩm').rows.find(row=>row.size==='L').stock,1);
 });
+test('ước tính giá đọc theo Page và khách, cập nhật khi chủ sửa giá',t=>{
+  const {book}=setup(t);
+  let mid=0;
+  const chat=(page,sender,text)=>book.customerMessage({page,sender,event:String(++mid)},{text});
+  // Both sizes are black: a color alone is insufficient to quote a specific variant.
+  assert.equal(chat('A','x','Mẫu đen bao nhiêu?').rows.length,2);
+  assert.equal(chat('A','x','lấy 2 cái thì sao?').status,'ask_variant');
+  const single=createQaShopBook({shops:[{page:'A',owner:'a'},{page:'B',owner:'b'}],
+    variants:[{page:'A',sku:'A001',size:'M',color:'đen',price:100000,stock:2},
+      {page:'B',sku:'A001',size:'M',color:'đen',price:120000,stock:4}]});
+  t.after(()=>single.close());
+  const ask=(page,sender,text)=>single.customerMessage({page,sender,event:String(++mid)},{text});
+  assert.equal(ask('A','x','Mẫu đen bao nhiêu?').rows[0].price,100000);
+  assert.equal(ask('B','x','lấy 2 cái thì sao?').status,'ask_variant');
+  assert.equal(ask('A','y','lấy 2 cái thì sao?').status,'ask_variant');
+  single.changePrice('a',{sku:'A001',size:'M',color:'đen'},99000);
+  assert.equal(ask('A','x','lấy 2 cái thì sao?').total,198000);
+  assert.equal(ask('A','x','lấy 3 cái thì sao?').status,'reconfirm_stock');
+  assert.equal(ask('B','x','Mẫu đen bao nhiêu?').rows[0].price,120000);
+  assert.deepEqual(single.inbox('a'),[]);
+});
+test('không gửi nhầm mẫu đã chọn từ trước sau lượt tư vấn',t=>{
+  const {book,send}=setup(t);
+  send('A','x',select);
+  book.customerMessage({page:'A',sender:'x',event:'inquiry'},{text:'Mẫu trắng bao nhiêu?'});
+  assert.equal(send('A','x',submit).status,'ask_variant');
+  assert.equal(send('A','x',{type:'edit',qty:2}).status,'ask_variant');
+  assert.deepEqual(book.inbox('ownerA'),[]);
+  assert.equal(send('A','x',select).status,'summary');
+  assert.equal(send('A','x',submit).status,'pending_owner');
+});
