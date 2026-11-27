@@ -4,7 +4,7 @@ import { botLink } from './web-store.mjs';
 import { classifyIntent } from './lite-intent.mjs';
 
 const SETUP_TTL_MS = 30 * 60 * 1000;
-const MAX_PRODUCTS = 50;
+export const MAX_PRODUCTS = 50;
 const empty = () => ({ name: '', phone: '', enabled: false, products: [] });
 const normalize = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
 const skuRE = /^[A-Z0-9_-]{1,24}$/;
@@ -22,7 +22,7 @@ const conflict = 'Cấu hình chưa được lưu vì trạng thái vừa thay �
 export const isLiteConnection = c => c?.flow_mode === 'shared' && /^zl-[0-9a-f]{24}$/.test(c.store_id);
 export const isCommerceConnection = (env, c) => isLiteConnection(c) || (c?.flow_mode === 'own' && /^qa-/.test(c.store_id) && String(env.ZH_LITE_COMMERCE_QA_STORES || '').split(',').map(s => s.trim()).includes(c.store_id));
 
-function validProduct(p) {
+export function validProduct(p) {
   return p && typeof p.sku === 'string' && skuRE.test(p.sku) && publicText(p.name, 80) && integer(p.price, 1000000000) && integer(p.stock, 1000000);
 }
 

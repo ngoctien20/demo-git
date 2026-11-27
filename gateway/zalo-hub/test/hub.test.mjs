@@ -16,7 +16,7 @@ function harness(over = {}) {
     ZH_DB: makeD1(), ZH_ADMIN_KEY: ADMIN, ZH_MASTER_KEY: b64(randomBytes(32)), ZH_ENABLED: 'true', ZH_SEND_ENABLED: 'true',
     ZH_PUBLIC_BASE_URL: 'https://hub.example.test', ZH_FORWARD_HOSTS: 'flow.example.test', ...over,
   };
-  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {}, users: {}, members: [], sb: [] };
+  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {}, users: {}, members: [], sb: [], products: [] };
   const bots = { [TOKEN_A]: { id: 'bot-a', account_name: 'bot.ShopA' }, [TOKEN_B]: { id: 'bot-b', account_name: 'bot.ShopB' } };
   const fetchImpl = async (url, init) => {
     const u = String(url);
@@ -38,6 +38,20 @@ function harness(over = {}) {
       const user = st.users[jwt];
       if (u.endsWith('/auth/v1/user')) return user ? new Response(JSON.stringify({ id: user.id })) : new Response('{}', { status: 401 });
       const q = new URL(u).searchParams;
+      const path = new URL(u).pathname;
+      if (path==='/rest/v1/products') {
+        const matches=st.products.filter(p=>q.get('store_id')==='eq.'+p.store_id && q.get('sku')==='eq.'+p.sku);
+        return Response.json(matches);
+      }
+      if (path==='/rest/v1/rpc/save_merchant_product_in_store') {
+        const args=JSON.parse(init.body);
+        const existing=st.products.find(p=>p.store_id===args.p_store && p.sku===args.p_sku);
+        if ((existing?.updated_at ?? null)!==args.p_expected_updated_at) return new Response('{}',{status:409});
+        const target=existing || {store_id:args.p_store,sku:args.p_sku,stock_on_hand:args.p_initial_stock};
+        Object.assign(target,{price_vnd:args.p_price,name:args.p_name,is_active:args.p_active,updated_at:'changed'});
+        if (!existing) st.products.push(target);
+        return Response.json('changed');
+      }
       const rows = (st.members || []).filter((m) => 'eq.' + m.user_id === q.get('user_id') && 'eq.' + m.store_id === q.get('store_id'));
       st.sb.push(u);
       return new Response(JSON.stringify(rows.map((m) => ({ role: m.role }))));
@@ -718,6 +732,29 @@ test('web link: both owners confirm, two stores keep independent prices for the 
   assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:500,revision})).status,409);
   assert.match(await say(a,'buyer','SP01'),/18\.000 đ/);
   assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  h.st.products.push({store_id:STORE_UUID,sku:'SP01',name:'Web A',price_vnd:19000,stock_on_hand:12,is_active:true,updated_at:'v1'});
+  const sync=async(store,sku,source,webVersion,over={})=>{
+    const view=(await status(store)).body;
+    return post(store,'reconcile',{sku,source,webVersion,revision:view.revision,binding:view.binding,...over});
+  };
+  assert.equal((await sync(STORE_UUID,'SP01','web','stale')).status,409);
+  assert.equal((await sync(STORE_UUID,'SP01','web','v1',{binding:(await status(OTHER_UUID)).body.binding})).status,409);
+  assert.equal((await sync(STORE_UUID,'SP01','web','v1')).status,200);
+  assert.match(await say(a,'buyer','SP01'),/19\.000 đ/);
+  assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  assert.equal((await status(STORE_UUID)).body.products[0].stock,4);
+  assert.equal((await sync(OTHER_UUID,'SP01','zalo',null)).status,200);
+  assert.equal(h.st.products.find(p=>p.store_id===OTHER_UUID).price_vnd,23000);
+  await say(a,'ownerA','Sản phẩm | SP01 | Mẫu QA | 21000 | 4');
+  assert.equal((await sync(STORE_UUID,'SP01','zalo','v1')).status,200);
+  assert.equal(h.st.products[0].price_vnd,21000);
+  assert.equal(h.st.products[0].stock_on_hand,12);
+  h.st.products.push({...h.st.products[0],sku:'SP02',updated_at:'v2'});
+  assert.equal((await sync(STORE_UUID,'SP02','web','v2')).status,200);
+  assert.equal((await status(STORE_UUID)).body.products.find(p=>p.sku==='SP02').stock,12);
+  h.st.products[1].is_active=false;
+  assert.equal((await sync(OTHER_UUID,'SP01','web','changed')).status,200);
+  assert.equal((await status(OTHER_UUID)).body.products.length,0);
   await say(a,'ownerA','Bắt đầu');
   const open=(await status(STORE_UUID)).body;
   assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:1,revision:open.revision})).body.error,'BOT_DRAFT_OPEN');

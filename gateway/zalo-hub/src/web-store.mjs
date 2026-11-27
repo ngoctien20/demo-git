@@ -17,14 +17,15 @@ export async function ownerLink(db, action, store, actor, body, now) {
     const row = await query('SELECT code FROM zh_web_stores WHERE store_id=?',store).first();
     return ok({ code:row.code, command:'Liên kết '+row.code+' '+secret });
   }
-  const row = await query(`SELECT w.*, c.bot_name, k.revision, k.snapshot FROM zh_web_stores w
+  const row = await query(`SELECT w.*, c.id AS active_id, c.bot_name, k.revision, k.snapshot FROM zh_web_stores w
     LEFT JOIN zh_connections c ON c.id=w.connection_id AND c.owner_epoch=w.epoch AND c.status='active'
     LEFT JOIN zh_lite_catalog k ON k.connection_id=c.id AND k.owner_epoch=c.owner_epoch AND k.store_id=c.store_id
     WHERE w.store_id=?`,store).first();
   if (action === 'status') {
-    const ready = row?.connection_id && (row.confirmed || (row.expires_at>now && row.requested_by===actor));
+    const ready = row?.active_id && (row.confirmed || (row.expires_at>now && row.requested_by===actor));
     return ok({code:row?.code ?? null, state:ready ? (row.confirmed?'linked':'confirm'):'idle',
       bot:ready ? row.bot_name : null, confirmation:ready && !row.confirmed ? row.challenge_hash : null, revision:row?.confirmed ? row.revision : null,
+      binding:ready && row.confirmed ? row.connection_id+'.'+row.epoch : null,
       products:row?.confirmed && row.snapshot ? JSON.parse(row.snapshot).products : []});
   }
   if (action === 'confirm') {

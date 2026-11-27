@@ -2,51 +2,17 @@
 // The bot token goes straight from this form to the hub, which checks the owner's Supabase session and
 // store role, seals the token and sets the bot's webhook. The App never stores the token; no key is shown.
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '../supabase';
-import { ZALO_HUB_URL } from '../config';
+import { hub } from '../zaloHub';
 import { ZaloStoreLink } from './ZaloStoreLink';
 import { Notice } from '../ui';
 
 type Conn = { connection_id: string; status: string; bot_name: string | null; token_last4: string | null; flow_mode: string;
   owner_paired: boolean; users: number; sent_month: string | null; sent_count: number };
 
-const ERR: Record<string, string> = {
-  LINK_CHANGED: 'Liên kết hoặc danh mục đã thay đổi. Tải lại trang để xem dữ liệu mới.',
-  BOT_DRAFT_OPEN: 'Chủ bot đang nhập sản phẩm trên Zalo. Hãy lưu hoặc hủy bản nháp trước khi sửa giá.',
-  TOKEN_NOT_FOUND: 'Không thấy mã bot trong nội dung vừa dán. Hãy dán nguyên tin nhắn Zalo gửi mã bot.',
-  TOKEN_REJECTED: 'Zalo báo mã bot không đúng hoặc đã bị đổi. Mở Zalo Bot Creator để lấy mã mới.',
-  BOT_OWNED_BY_OTHER_STORE: 'Bot này đang nối với cửa hàng khác.',
-  BOT_ALREADY_CONNECTED: 'Bot này đã nối với cửa hàng của bạn.',
-  STORE_HAS_LIVE_BOT: 'Cửa hàng đã có một bot Zalo. Ngắt bot cũ trước khi nối bot khác.',
-  STORE_MANAGED_BY_TIEN404: 'Bot Zalo của cửa hàng này do đội TIEN404 nối hộ. Liên hệ TIEN404 nếu muốn đổi.',
-  SET_WEBHOOK_FAILED: 'Zalo chưa nhận kết nối. Thử lại sau ít phút.',
-  NOT_STORE_MANAGER: 'Chỉ chủ shop hoặc quản lý mới nối được bot.',
-  SIGN_IN_AGAIN: 'Phiên đăng nhập đã hết. Hãy đăng nhập lại.',
-  OWNER_CONNECT_DISABLED: 'Tính năng tự nối bot Zalo chưa được bật.',
-  HUB_DISABLED: 'Cổng Zalo đang tạm dừng.',
-  SHARED_FLOW_NOT_CONFIGURED: 'Cổng Zalo chưa sẵn sàng nhận shop mới.',
-  AUTH_NOT_CONFIGURED: 'Cổng Zalo chưa sẵn sàng nhận shop mới.',
-};
 const STATUS: Record<string, [string, string]> = {
   active: ['ok', 'Đang chạy'], pending_owner: ['warn', 'Chờ nhắn mã 6 số'], needs_reconnect: ['err', 'Cần nối lại (mã bot đã đổi)'],
   quota_exceeded: ['err', 'Hết lượt tin tháng này'], disabled: ['', 'Đang tạm dừng'],
 };
-
-async function hub(method: 'GET' | 'POST', path: string, body?: object) {
-  const { data } = await supabase.auth.getSession();
-  const jwt = data.session?.access_token;
-  if (!jwt) throw new Error(ERR.SIGN_IN_AGAIN);
-  let res: Response;
-  try {
-    res = await fetch(ZALO_HUB_URL + path, {
-      method, headers: { authorization: 'Bearer ' + jwt, ...(body ? { 'content-type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  } catch { throw new Error('Không kết nối được cổng Zalo. Kiểm tra mạng rồi thử lại.'); }
-  const j = await res.json().catch(() => ({}));
-  if (!res.ok || !j.ok) throw new Error(ERR[j.error] ?? 'Có lỗi xảy ra. Vui lòng thử lại.');
-  return j;
-}
 
 export function ZaloConnect({ storeId, canManage }: { storeId: string; canManage: boolean }) {
   const [conn, setConn] = useState<Conn | null | undefined>(undefined);

@@ -32,6 +32,7 @@
 import { seal, open, sha256Hex, secureEqual, randomId, randomSecret, randomCode, signBody, verifyBody } from './crypto.mjs';
 import * as zalo from './zalo-api.mjs';
 import * as db from './store.mjs';
+import { reconcileProduct } from './product-sync.mjs';
 import { ownerLink } from './web-store.mjs';
 import { isLiteConnection, isCommerceConnection, liteReply } from './lite-commerce.mjs';
 
@@ -509,6 +510,10 @@ async function handleOwner(request, env, deps, path) {
       if (env.ZH_WEB_STORE_LINK !== 'true' || env.ZH_ENABLED !== 'true') return json(404,{ok:false});
       const action=path.slice('/v1/owner/web-store/'.length);
       if ((action==='status') !== (request.method==='GET')) return json(405,{ok:false});
+      if (action==='reconcile') {
+        const result=await reconcileProduct(env,deps,request,b);
+        return json(result.status,result.body);
+      }
       const result=await ownerLink(env.ZH_DB,action,b.store_id,who.uid,b,deps.now());
       return json(result.status,result.body);
     }
