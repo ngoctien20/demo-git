@@ -41,7 +41,7 @@ export function createQaShopBook({ shops, variants }) {
     }
     if (action.type==='human') return {status:'contact',text:shop.public_contact || 'Shop chưa công khai liên hệ.'};
     if (action.type==='hold') {
-      write('UPDATE conversations SET quoted_price=NULL WHERE page=? AND sender=?',page,sender);
+      write('UPDATE conversations SET quoted_price=NULL,revision=revision+1 WHERE page=? AND sender=?',page,sender);
       return {status:'on_hold'};
     }
     if (action.type==='contact') {
@@ -145,6 +145,11 @@ export function createQaShopBook({ shops, variants }) {
     },
     inbox(owner) {
       return db.prepare('SELECT * FROM drafts WHERE page=? ORDER BY id').all(ownerPage(owner));
+    },
+    pendingInbox(owner) {
+      return db.prepare(`SELECT d.*, d.qty*d.price AS total FROM drafts d
+        JOIN conversations c ON c.page=d.page AND c.sender=d.sender AND c.revision=d.revision
+        WHERE d.page=? AND d.approved=0 ORDER BY d.id`).all(ownerPage(owner));
     },
     approve(owner,id) {
       return transaction(()=>{

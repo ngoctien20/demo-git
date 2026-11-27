@@ -88,3 +88,26 @@ test('báo tổng mới và đợi khách xác nhận lại khi giá đổi trư
   assert.equal(book.approve('ownerA',updated.id).status,'approved');
   assert.equal(send('B','x',select).price,130000);
 });
+test('hộp chờ chỉ hiện bản khách vừa chốt, rút lại trước khi chủ duyệt',t=>{
+  const {book}=setup(t);
+  let seq=0;
+  const chat=text=>book.customerMessage({page:'A',sender:'guest',event:String(++seq)},{text});
+  chat('Xem sản phẩm');
+  book.customerMessage({page:'A',sender:'guest',event:String(++seq)},{payload:'TIEN404:VIEW:A001'});
+  chat('màu đen'); chat('size M'); chat('đổi sang size L'); chat('lấy 2 chiếc');
+  const first=chat('gửi yêu cầu mua');
+  const pending=book.pendingInbox('ownerA');
+  assert.deepEqual(pending.map(d=>[d.id,d.sku,d.size,d.qty,d.total]),[[first.id,'A001','L',2,200000]]);
+  assert.equal(book.pendingInbox('ownerB').length,0);
+  chat('để mình suy nghĩ');
+  assert.equal(book.approve('ownerA',first.id).status,'superseded');
+  assert.equal(book.pendingInbox('ownerA').length,0);
+  chat('chỉ lấy 1 cái');
+  const second=chat('gửi yêu cầu mua');
+  assert.notEqual(second.id,first.id);
+  assert.equal(book.pendingInbox('ownerA')[0].total,100000);
+  assert.equal(book.approve('ownerA',second.id).status,'approved');
+  assert.equal(book.pendingInbox('ownerA').length,0);
+  assert.equal(book.approve('ownerA',second.id).status,'approved');
+  assert.equal(chat('Xem sản phẩm').rows.find(row=>row.size==='L').stock,1);
+});
