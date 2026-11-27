@@ -1,3 +1,4 @@
+import {CatalogTrial} from './CatalogTrial';
 import { FormEvent, useMemo, useState } from 'react';
 import { friendlyError, supabase } from '../supabase';
 import { useStore } from '../store';
@@ -8,7 +9,13 @@ import { Empty, Modal, Notice, PageHead, Spinner } from '../ui';
 type Edit = { mode: 'new' } | { mode: 'edit'; p: Product } | { mode: 'stock'; p: Product };
 
 export function Products() {
+  const {store}=useStore();
+  return <StoreProducts key={store.id}/>;
+}
+
+function StoreProducts() {
   const { store, canManage } = useStore();
+  const [trial,setTrial]=useState<string|null>(null);
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState<Edit | null>(null);
   const [flash, setFlash] = useState('');
@@ -20,6 +27,10 @@ export function Products() {
     return (data ?? []).filter(p => !t || p.sku.toLowerCase().includes(t) || p.name.toLowerCase().includes(t));
   }, [data, q]);
 
+  const active=(data??[]).filter(p=>p.is_active);
+  const rows=active.map(p=>({sku:p.sku,price:p.price_vnd,stock:p.stock_on_hand,color:'',size:''}));
+  const target=active.find(p=>p.id===trial);
+  const selected=rows.find(p=>p.sku===target?.sku);
   const done = async (text: string) => { setEdit(null); setFlash(text); await reload(); };
 
   return (
@@ -44,6 +55,7 @@ export function Products() {
                   <td data-label="Tồn kho" className="num">{p.stock_on_hand <= 3 && p.is_active ? <span className="pill warn">{p.stock_on_hand}</span> : p.stock_on_hand}</td>
                   <td data-label="Trạng thái">{p.is_active ? <span className="pill ok">Đang bán</span> : <span className="pill">Ngừng bán</span>}</td>
                   {canManage && <td className="row-actions">
+                    {p.is_active && <button className="btn btn-sm btn-ghost" onClick={()=>setTrial(p.id)}>Thử làm khách</button>}
                     <button className="btn btn-sm btn-ghost" onClick={() => { setFlash(''); setEdit({ mode: 'edit', p }); }}>Sửa</button>
                     <button className="btn btn-sm btn-ghost" onClick={() => { setFlash(''); setEdit({ mode: 'stock', p }); }}>Tồn kho</button>
                   </td>}
@@ -53,6 +65,9 @@ export function Products() {
           </table>
         </div>
       )}
+      {target && selected && !edit && <Modal title={'Thử làm khách · '+target.sku} onClose={()=>setTrial(null)}>
+        <CatalogTrial key={store.id+target.id+target.updated_at} row={selected} rows={rows}
+          onEdit={()=>setEdit({mode:'edit',p:target})}/></Modal>}
       {edit?.mode === 'stock' && <StockForm storeId={store.id} p={edit.p} onClose={() => setEdit(null)} onDone={done} />}
       {edit && edit.mode !== 'stock' && <ProductForm storeId={store.id} p={edit.mode === 'edit' ? edit.p : null} onClose={() => setEdit(null)} onDone={done} />}
     </>
