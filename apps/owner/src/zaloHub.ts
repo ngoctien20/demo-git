@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { ZALO_HUB_URL } from './config';
 
 const ERR: Record<string, string> = {
+  OUTSIDE_QA_STORE: 'Cửa hàng đang chọn chưa được mở thử nghiệm Bot QA.',
   INVALID_SYNC: 'Hai danh mục chưa đủ dữ liệu để áp dụng lựa chọn này.',
   BOT_PRODUCT_LIMIT: 'Sản phẩm vượt giới hạn mã, tên, giá, tồn hoặc dung lượng của Bot Lite.',
   WEB_CATALOG_UNAVAILABLE: 'Chưa đọc được danh mục web. Hãy tải lại.',

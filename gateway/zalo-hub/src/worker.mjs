@@ -508,6 +508,7 @@ async function handleOwner(request, env, deps, path) {
     if (who.error) return json(who.error, { ok: false, error: { 400: 'BAD_STORE_ID', 401: 'SIGN_IN_AGAIN', 403: 'NOT_STORE_MANAGER', 503: 'AUTH_NOT_CONFIGURED' }[who.error] });
     if (path.startsWith('/v1/owner/web-store/')) {
       if (env.ZH_WEB_STORE_LINK !== 'true' || env.ZH_ENABLED !== 'true') return json(404,{ok:false});
+      if (env.ZH_WEB_STORE_SCOPE && b.store_id!==env.ZH_WEB_STORE_SCOPE) return json(403,{ok:false,error:'OUTSIDE_QA_STORE'});
       const action=path.slice('/v1/owner/web-store/'.length);
       if ((action==='status') !== (request.method==='GET')) return json(405,{ok:false});
       if (action==='reconcile') {

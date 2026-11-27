@@ -160,3 +160,16 @@ test('deployment fetch dispatch passes the original request and context to the s
   assert.equal(h.calls[1].ctx, ctx);
 });
 
+
+test('web pilot uses its own workspace scope without enabling ordinary owner connect', async()=>{
+  const h=harness();
+  Object.assign(h.env,{ZH_WEB_STORE_LINK:'true',ZH_OWNER_CONNECT_ENABLED:'false'});
+  await h.send('/v1/owner/web-store/status',undefined,{},'GET');
+  assert.equal(h.calls.at(-1).env.ZH_WEB_STORE_SCOPE,'unassigned');
+  h.env.ZH_QA_WEB_STORE_ID='workspace-qa';
+  await h.send('/v1/owner/web-store/start');
+  assert.equal(h.calls.at(-1).env.ZH_WEB_STORE_SCOPE,'workspace-qa');
+  await h.send('/v1/owner/connect');
+  assert.equal(h.calls.at(-1).handler,'legacy');
+  assert.equal(h.calls.at(-1).env.ZH_OWNER_CONNECT_ENABLED,'false');
+});

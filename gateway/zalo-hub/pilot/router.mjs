@@ -36,7 +36,12 @@ export function createPilot(legacy, candidate) {
   }
 
   async function selectedHandler(request, env) {
-    if (env.ZH_WEB_STORE_LINK==='true' && new URL(request.url).pathname.startsWith('/v1/owner/web-store/')) return {handler:candidate,env};
+    if (env.ZH_WEB_STORE_LINK==='true' && new URL(request.url).pathname.startsWith('/v1/owner/web-store/')) {
+      return { handler:candidate, env:{...env, ZH_OWNER_CONNECT_ENABLED:'true',
+        ZH_WEB_STORE_SCOPE:env.ZH_QA_WEB_STORE_ID || 'unassigned',
+        ZH_SUPABASE_URL:env.ZH_QA_SUPABASE_URL, ZH_SUPABASE_KEY:env.ZH_QA_SUPABASE_KEY,
+        ZH_APP_ORIGINS:env.ZH_QA_WEB_ORIGIN} };
+    }
     if (request.method !== 'POST') return { handler: legacy, env };
     const path = new URL(request.url).pathname;
     let row;

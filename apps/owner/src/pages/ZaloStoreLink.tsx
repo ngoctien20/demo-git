@@ -14,7 +14,7 @@ export function ZaloStoreLink({storeId, request, onLinked}:{storeId:string; requ
   const load=()=>request('GET',base+'status?store_id='+encodeURIComponent(storeId));
   useEffect(()=>{
     let current=true;
-    load().then(r=>{if(current)setData(r);}).catch(()=>{});
+    load().then(r=>{if(current)setData(r);}).catch(e=>{if(current)setError((e as Error).message);});
     return ()=>{current=false;};
   },[storeId,request]);
   useEffect(()=>{onLinked(data?.state==='linked');},[data,onLinked]);
@@ -25,7 +25,7 @@ export function ZaloStoreLink({storeId, request, onLinked}:{storeId:string; requ
     finally {setBusy(false);}
   }
   const post=(action:string,fields:object={})=>request('POST',base+action,{store_id:storeId,...fields});
-  if(!data)return null;
+  if(!data)return error && location.pathname.startsWith('/qa-store/') ? <p role="status">{error}</p> : null;
   return <section className="panel soft">
     {data.code && <p>Mã cửa hàng <strong>{data.code}</strong></p>}
     {data.state==='idle' && <>

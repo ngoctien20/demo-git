@@ -5,7 +5,11 @@ import * as legacy from './private/legacy.mjs';
 import * as candidate from '../src/worker.mjs';
 import { createPilot } from './router.mjs';
 
+import { dashboardResponse } from './dashboard.mjs';
+import assets from './private/dashboard.mjs';
 const pilot = createPilot(legacy, candidate);
 export const route = pilot.route;
-export default { fetch: pilot.fetch };
+export default { fetch(request,env,ctx) {
+  return dashboardResponse(request,assets) ?? pilot.fetch(request,env,ctx);
+} };
 
