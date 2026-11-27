@@ -1,5 +1,6 @@
 // Offline staging adapter. Only a disposable in-memory catalog and order book are supported.
 // The caller supplies the verified Page/sender envelope (or authenticated owner), never a store from chat.
+import {contactEdit} from './contact-edit.mjs';
 import {parseInquiry,answerInquiry} from './catalog-inquiry.mjs';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -12,7 +13,8 @@ export function createQaShopBook({ shops, variants }) {
     CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
       inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
     CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
-      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+    CREATE TABLE contact_edits(page TEXT,sender TEXT,draft_id INTEGER,field TEXT,value TEXT,snapshot TEXT,version INTEGER,PRIMARY KEY(page,sender));
     CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, PRIMARY KEY(page,sender,event));
   `);
   for (const sh of shops) db.prepare('INSERT INTO shops(page,owner,public_contact) VALUES(?,?,?)')
@@ -36,6 +38,8 @@ export function createQaShopBook({ shops, variants }) {
     write('INSERT OR IGNORE INTO conversations(page,sender) VALUES(?,?)',page,sender);
     const state = one('SELECT * FROM conversations WHERE page=? AND sender=?',page,sender);
     if (shop.paused || state.handed) return { status:'silent' };
+    const amendment=contactEdit(db,page,sender,action.message);
+    if (amendment) return amendment;
     if (action.type==='inquiry' || action.type==='catalog') {
       const rows=db.prepare('SELECT sku,size,color,price,stock FROM variants WHERE page=? ORDER BY sku,color,size').all(page);
       if (action.type==='inquiry') {
@@ -145,7 +149,7 @@ export function createQaShopBook({ shops, variants }) {
         else if (color) action={type:'edit',color:color[1]};
         else if (qty) action={type:'edit',qty:Number(qty[1])};
       }
-      return this.customer(envelope,action);
+      return this.customer(envelope,{...action,message:message.payload ? null : message.text});
     },
     customer({page,sender,event},action) {
       if (![page,sender,event].every(v=>typeof v==='string' && v.trim())) throw Error('MISSING_ENVELOPE');
@@ -189,7 +193,9 @@ export function createQaShopBook({ shops, variants }) {
         price,ownerPage(owner),sku,size,color);
       if (!result.changes) throw Error('VARIANT_NOT_FOUND');
     },
-    pause(owner,paused) { write('UPDATE shops SET paused=? WHERE page=?',Number(Boolean(paused)),ownerPage(owner)); },
+    pause(owner,paused) {
+      if (paused) write('DELETE FROM contact_edits WHERE page=?',ownerPage(owner));
+      write('UPDATE shops SET paused=? WHERE page=?',Number(Boolean(paused)),ownerPage(owner)); },
     takeOver(owner,sender) {
       write('INSERT INTO conversations(page,sender,handed) VALUES(?,?,1) ON CONFLICT(page,sender) DO UPDATE SET handed=1',ownerPage(owner),sender);
     },

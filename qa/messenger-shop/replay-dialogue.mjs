@@ -1,4 +1,5 @@
 // Replays source dialogues through the candidate. Only supported scenarios have an acceptance oracle.
+import {isDeepStrictEqual} from 'node:util';
 import {execFileSync} from 'node:child_process';
 import {createQaShopBook} from './draft-store.mjs';
 const source=process.argv[2];
@@ -17,6 +18,11 @@ const expected={
   QA08:['ask_contact','summary','pending_owner','pending_owner'],
   QA09:['reconfirm_stock','reconfirm_stock'],
   QA10:['ask_contact','ask_contact'],
+  QA11:['change_preview','change_saved'], QA12:['change_preview','change_saved'],
+  QA13:['ask_valid_phone','ask_clarification'], QA14:['change_preview','change_cancelled'],
+  QA15:['change_preview','change_saved'], QA16:['change_preview','change_saved'],
+  QA17:['ask_valid_address'], QA18:['unverified_order'], QA19:['change_preview','change_preview','change_saved'],
+  QA31:['ask_valid_name','ask_clarification'], QA32:['ask_valid_address','ask_clarification'],
 };
 const seen=new Set();
 console.log('case_id,turn,status,drafts,stock,assertion,scope');
@@ -28,6 +34,12 @@ for (const {case_id:id,mode,turns_json} of rows) {
       {page:'A',sku:'T-B',size:'M',color:'đen',price:179000,stock:3},
       {page:'A',sku:'T-C',size:'L',color:'đỏ',price:180000,stock:6},
       {page:'A',sku:'T-D',size:'L',color:'xanh',price:79000,stock:0}]});
+  const editing=(id>='QA11' && id<='QA19') || ['QA31','QA32'].includes(id);
+  if (editing) {
+    for (const [i,text] of ['Lấy T-A x2',contact,'đồng ý'].entries())
+      book.customerMessage({page:'A',sender:'customer',event:'setup-'+i},{text});
+  }
+  const baseline=book.inbox('owner')[0];
   let draftId;
   for (const [i,raw] of JSON.parse(turns_json).entries()) {
     if(mode!=='dialogue') {
@@ -44,7 +56,19 @@ for (const {case_id:id,mode,turns_json} of rows) {
     if(expected[id]) {
       const status=expected[id][i];
       const qty=id==='QA05' || ((id==='QA06' || id==='QA07') && i<2) ? 2 : 1;
-      let ok=reply.status===status && stock===8 && drafts.length===Number(status==='pending_owner');
+      let ok=reply.status===status && stock===8 && drafts.length===(editing ? 1 : Number(status==='pending_owner'));
+      if (editing) {
+        const saved=status==='change_saved';
+        const field=['QA11','QA12','QA14'].includes(id) ? 'phone' : id==='QA15' ? 'name' : 'address';
+        const value=field==='phone' ? '0987654321' : field==='name' ? 'Khách Mới' :
+          (id==='QA19' && i>0 ? '19' : '18')+' Đường Mẫu, Xã Thử';
+        const updated=field==='phone' ? contact.replace('0000000000',value) :
+          field==='name' ? contact.replace('Khách QA',value) : contact.replace('18 Đường Mẫu',value);
+        ok &&= isDeepStrictEqual({...drafts[0]}, {...baseline,edit_version:Number(saved),contact:saved ? updated : contact})
+          && stocks.join(',')==='8,3,6,0';
+        if (saved || status==='change_preview') ok &&= reply.order==='QA-ORDER-1' && reply.field===field && reply.value===value;
+        if (status==='unverified_order') ok &&= Object.keys(reply).length===1;
+      }
       if (id<='QA04') {
         ok &&= stocks.join(',')==='8,3,6,0' && typeof reply.text==='string' && reply.text.length>0;
         if(status==='catalog_answer') {

@@ -142,3 +142,25 @@ test('không gửi nhầm mẫu đã chọn từ trước sau lượt tư vấn'
   assert.equal(send('A','x',select).status,'summary');
   assert.equal(send('A','x',submit).status,'pending_owner');
 });
+test('đổi liên hệ đúng khách và Page, phát lại chỉ sửa một lần, giữ khi đổi số lượng',t=>{
+  const book=createQaShopBook({shops:[{page:'A',owner:'a'},{page:'B',owner:'b'}],
+    variants:[{page:'A',sku:'T-A',size:'M',color:'đen',price:100,stock:5}]});
+  t.after(()=>book.close());
+  let seq=0;
+  const chat=(text,page='A',sender='guest',event=String(++seq))=>book.customerMessage({page,sender,event},{text});
+  for (const text of ['Lấy T-A x1','Tên QA, SĐT 0000000000, địa chỉ 12 Đường Mẫu','đồng ý']) chat(text);
+  const request='Đổi tên đơn QA-ORDER-1, số 0000000000, thành Khách Mới';
+  assert.equal(chat(request,'B').status,'unverified_order');
+  assert.equal(chat(request,'A','other').status,'unverified_order');
+  assert.equal(chat(request).status,'change_preview');
+  assert.equal(chat('tôi xác nhận','A','guest','confirm').status,'change_saved');
+  assert.equal(chat('tôi xác nhận','A','guest','confirm').status,'duplicate');
+  assert.equal(book.inbox('a')[0].edit_version,1);
+  chat('chỉ lấy 2');chat('đồng ý');
+  const current=book.pendingInbox('a')[0];
+  assert.equal(current.qty,2);
+  assert.match(current.contact,/Khách Mới/);
+  assert.equal(chat(request.replace('ORDER-1','ORDER-'+current.id)).status,'change_preview');
+  assert.equal(book.approve('a',current.id).status,'approved');
+  assert.equal(chat('tôi xác nhận').status,'change_stale');
+});
