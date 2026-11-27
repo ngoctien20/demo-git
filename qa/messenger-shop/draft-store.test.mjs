@@ -164,3 +164,24 @@ test('đổi liên hệ đúng khách và Page, phát lại chỉ sửa một l�
   assert.equal(book.approve('a',current.id).status,'approved');
   assert.equal(chat('tôi xác nhận').status,'change_stale');
 });
+test('đổi số lượng giữ giá đơn, gửi lại và duyệt lại chỉ trừ kho một lần',t=>{
+  const variant={sku:'T-A',size:'M',color:'trắng'};
+  const book=createQaShopBook({shops:[{page:'A',owner:'a'},{page:'B',owner:'b'}],
+    variants:[{...variant,page:'A',price:159000,stock:5}]});
+  t.after(()=>book.close());
+  let seq=0;
+  const chat=(text,page='A',sender='x',event=String(++seq))=>book.customerMessage({page,sender,event},{text});
+  for (const text of ['Lấy T-A x2','Tên QA, SĐT 0000000000, địa chỉ 12 Đường Mẫu','đồng ý']) chat(text);
+  book.changePrice('a',variant,200000);
+  const edit='Đơn QA-ORDER-1, số 0000000000, tăng lên 3';
+  assert.equal(chat(edit,'B').status,'unverified_order');
+  assert.equal(chat(edit,'A','y').status,'unverified_order');
+  assert.equal(chat(edit).total,477000);
+  assert.equal(chat('tôi xác nhận','A','x','ok').expected_total,477000);
+  assert.equal(chat('tôi xác nhận','A','x','ok').status,'duplicate');
+  assert.equal(chat('đồng ý').id,1);
+  assert.equal(book.pendingInbox('a')[0].total,477000);
+  assert.equal(book.approve('a',1).status,'approved');
+  assert.equal(book.approve('a',1).status,'approved');
+  assert.equal(chat('Xem sản phẩm').rows[0].stock,2);
+});

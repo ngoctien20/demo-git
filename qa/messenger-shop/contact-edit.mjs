@@ -1,8 +1,8 @@
 // Contact amendments for pending QA drafts. Runs inside the same transaction as the event receipt.
 const fields={'số':'phone','tên':'name','địa chỉ':'address'};
-const normPhone=value=>/^\+84\d{9}$/.test(value) ? '0'+value.slice(3) : value;
+export const normPhone=value=>/^\+84\d{9}$/.test(value) ? '0'+value.slice(3) : value;
 
-function parseContact(text) {
+export function parseContact(text) {
   const match=/^tên (.+?), (?:sđt|số điện thoại) (0\d{9}), địa chỉ (.+)$/iu.exec(text || '');
   return match && {name:match[1],phone:match[2],address:match[3]};
 }

@@ -1,5 +1,6 @@
 // Offline staging adapter. Only a disposable in-memory catalog and order book are supported.
 // The caller supplies the verified Page/sender envelope (or authenticated owner), never a store from chat.
+import {lineEdit} from './line-edit.mjs';
 import {contactEdit} from './contact-edit.mjs';
 import {parseInquiry,answerInquiry} from './catalog-inquiry.mjs';
 import { DatabaseSync } from 'node:sqlite';
@@ -13,7 +14,8 @@ export function createQaShopBook({ shops, variants }) {
     CREATE TABLE conversations(page TEXT, sender TEXT, sku TEXT, size TEXT, color TEXT, qty INTEGER DEFAULT 1,
       inquiry_variant TEXT, browsing INTEGER DEFAULT 0, checkout INTEGER DEFAULT 0, contact TEXT, quoted_price INTEGER, revision INTEGER DEFAULT 0, handed INTEGER DEFAULT 0, PRIMARY KEY(page,sender));
     CREATE TABLE drafts(id INTEGER PRIMARY KEY, page TEXT, sender TEXT, revision INTEGER, sku TEXT,
-      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+      size TEXT, color TEXT, qty INTEGER, price INTEGER, contact TEXT, catalog_price_at_edit INTEGER, edit_version INTEGER DEFAULT 0, approved INTEGER DEFAULT 0, UNIQUE(page,sender,revision));
+    CREATE TABLE line_edits(page TEXT,sender TEXT,draft_id INTEGER,version INTEGER,sku TEXT,size TEXT,color TEXT,qty INTEGER,expected_total INTEGER NOT NULL,PRIMARY KEY(page,sender));
     CREATE TABLE contact_edits(page TEXT,sender TEXT,draft_id INTEGER,field TEXT,value TEXT,snapshot TEXT,version INTEGER,PRIMARY KEY(page,sender));
     CREATE TABLE receipts(page TEXT,sender TEXT,event TEXT, PRIMARY KEY(page,sender,event));
   `);
@@ -39,7 +41,8 @@ export function createQaShopBook({ shops, variants }) {
     const state = one('SELECT * FROM conversations WHERE page=? AND sender=?',page,sender);
     if (shop.paused || state.handed) return { status:'silent' };
     const amendment=contactEdit(db,page,sender,action.message);
-    if (amendment) return amendment;
+    const line=lineEdit(db,page,sender,action.message);
+    if (amendment || line) return amendment ?? line;
     if (action.type==='inquiry' || action.type==='catalog') {
       const rows=db.prepare('SELECT sku,size,color,price,stock FROM variants WHERE page=? ORDER BY sku,color,size').all(page);
       if (action.type==='inquiry') {
@@ -181,11 +184,17 @@ export function createQaShopBook({ shops, variants }) {
         if (session.revision!==d.revision) return {status:'superseded'};
         const s=summarize(page,d.sku,d.size,d.color,d.qty);
         if (s.status!=='summary') return s;
-        if (s.price!==d.price) return {status:'reconfirm_price'};
+        if (s.price!==(d.catalog_price_at_edit ?? d.price)) return {status:'reconfirm_price'};
         write('UPDATE variants SET stock=stock-? WHERE page=? AND sku=? AND size=? AND color=?',d.qty,page,d.sku,d.size,d.color);
         write('UPDATE drafts SET approved=1 WHERE id=?',id);
         return {status:'approved',id};
       });
+    },
+    changeStock(owner,{sku,size,color},stock) {
+      if (!Number.isSafeInteger(stock) || stock<0) throw Error('INVALID_STOCK');
+      const result=write('UPDATE variants SET stock=? WHERE page=? AND sku=? AND size=? AND color=?',
+        stock,ownerPage(owner),sku,size,color);
+      if (!result.changes) throw Error('VARIANT_NOT_FOUND');
     },
     changePrice(owner,{sku,size,color},price) {
       if (!Number.isSafeInteger(price) || price<0) throw Error('INVALID_PRICE');
@@ -194,6 +203,7 @@ export function createQaShopBook({ shops, variants }) {
       if (!result.changes) throw Error('VARIANT_NOT_FOUND');
     },
     pause(owner,paused) {
+      if (paused) write('DELETE FROM line_edits WHERE page=?',ownerPage(owner));
       if (paused) write('DELETE FROM contact_edits WHERE page=?',ownerPage(owner));
       write('UPDATE shops SET paused=? WHERE page=?',Number(Boolean(paused)),ownerPage(owner)); },
     takeOver(owner,sender) {
