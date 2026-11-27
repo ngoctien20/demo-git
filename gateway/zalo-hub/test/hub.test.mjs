@@ -16,7 +16,7 @@ function harness(over = {}) {
     ZH_DB: makeD1(), ZH_ADMIN_KEY: ADMIN, ZH_MASTER_KEY: b64(randomBytes(32)), ZH_ENABLED: 'true', ZH_SEND_ENABLED: 'true',
     ZH_PUBLIC_BASE_URL: 'https://hub.example.test', ZH_FORWARD_HOSTS: 'flow.example.test', ...over,
   };
-  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {}, users: {}, members: [], sb: [] };
+  const st = { now: Date.parse('2026-11-23T15:00:00Z'), zalo: [], forwards: [], pending: [], logs: [], webhooks: {}, zaloFail: {}, users: {}, members: [], sb: [], products: [] };
   const bots = { [TOKEN_A]: { id: 'bot-a', account_name: 'bot.ShopA' }, [TOKEN_B]: { id: 'bot-b', account_name: 'bot.ShopB' } };
   const fetchImpl = async (url, init) => {
     const u = String(url);
@@ -38,6 +38,20 @@ function harness(over = {}) {
       const user = st.users[jwt];
       if (u.endsWith('/auth/v1/user')) return user ? new Response(JSON.stringify({ id: user.id })) : new Response('{}', { status: 401 });
       const q = new URL(u).searchParams;
+      const path = new URL(u).pathname;
+      if (path==='/rest/v1/products') {
+        const matches=st.products.filter(p=>q.get('store_id')==='eq.'+p.store_id && q.get('sku')==='eq.'+p.sku);
+        return Response.json(matches);
+      }
+      if (path==='/rest/v1/rpc/save_merchant_product_in_store') {
+        const args=JSON.parse(init.body);
+        const existing=st.products.find(p=>p.store_id===args.p_store && p.sku===args.p_sku);
+        if ((existing?.updated_at ?? null)!==args.p_expected_updated_at) return new Response('{}',{status:409});
+        const target=existing || {store_id:args.p_store,sku:args.p_sku,stock_on_hand:args.p_initial_stock};
+        Object.assign(target,{price_vnd:args.p_price,name:args.p_name,is_active:args.p_active,updated_at:'changed'});
+        if (!existing) st.products.push(target);
+        return Response.json('changed');
+      }
       const rows = (st.members || []).filter((m) => 'eq.' + m.user_id === q.get('user_id') && 'eq.' + m.store_id === q.get('store_id'));
       st.sb.push(u);
       return new Response(JSON.stringify(rows.map((m) => ({ role: m.role }))));
@@ -677,4 +691,74 @@ test('QA allowlist routes only the exact designated bot into private commerce', 
   assert.equal(h.st.forwards.length,1);
   assert.equal(JSON.parse(h.st.forwards[0].body).store_id,'qa-other');
   assert.equal((await signedSend(h,qa,{chat_id:'qa-owner',text:'Legacy response'})).body.error,'LITE_REPLY_MANAGED');
+});
+
+test('web link: both owners confirm, two stores keep independent prices for the same SKU', async () => {
+  const h = ownerHarness({ZH_WEB_STORE_LINK:'true', ZH_LITE_COMMERCE_ENABLED:'true', ZH_LITE_COMMERCE_QA_STORES:'qa-a,qa-b'});
+  h.st.members.push({user_id:UID_OWNER,store_id:OTHER_UUID,role:'owner'});
+  const prefix = '/v1/owner/web-store/';
+  const status = store => h.owner('GET',prefix+'status?store_id='+store);
+  const post = (store,action,extra={}) => h.owner('POST',prefix+action,{store_id:store,...extra});
+  let sequence=0;
+  const say = async (connection,user,text) => {
+    await hook(h,connection,textEvent(user,text,'web-link-'+(++sequence)));
+    return h.st.zalo.at(-1).body.text;
+  };
+  const a=await connect(h,'qa-a',TOKEN_A), b=await connect(h,'qa-b',TOKEN_B);
+  const codes = [];
+  for(const [connection,store,owner,price] of [[a,STORE_UUID,'ownerA',12000],[b,OTHER_UUID,'ownerB',23000]]) {
+    await pairOwner(h,connection,owner);
+    await say(connection,owner,'Cài shop | Shop QA | -');
+    await say(connection,owner,'Sản phẩm | SP01 | Mẫu QA | '+price+' | 4');
+    await say(connection,owner,'Bật bot');
+    const start=await post(store,'start');
+    assert.equal(start.status,200);
+    codes.push(start.body.code);
+    await say(connection,'buyer',start.body.command);
+    assert.equal((await status(store)).body.state,'idle');
+    await say(connection,owner,start.body.command);
+    const preview=(await status(store)).body;
+    assert.equal(preview.state,'confirm');
+    assert.deepEqual(preview.products,[]);
+    assert.equal((await post(store,'confirm',{confirmation:'stale'})).status,409);
+    assert.equal((await post(store,'confirm',{confirmation:preview.confirmation})).status,200);
+    assert.equal((await status(store)).body.products[0].price,price);
+    assert.ok((await say(connection,owner,'Thông tin cửa hàng')).includes(start.body.code));
+  }
+  assert.notEqual(...codes);
+  const revision=(await status(STORE_UUID)).body.revision;
+  assert.equal((await h.owner('POST',prefix+'price',{store_id:STORE_UUID,sku:'SP01',price:1,revision},JWT_STAFF)).status,403);
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:18000,revision})).status,200);
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:500,revision})).status,409);
+  assert.match(await say(a,'buyer','SP01'),/18\.000 đ/);
+  assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  h.st.products.push({store_id:STORE_UUID,sku:'SP01',name:'Web A',price_vnd:19000,stock_on_hand:12,is_active:true,updated_at:'v1'});
+  const sync=async(store,sku,source,webVersion,over={})=>{
+    const view=(await status(store)).body;
+    return post(store,'reconcile',{sku,source,webVersion,revision:view.revision,binding:view.binding,...over});
+  };
+  assert.equal((await sync(STORE_UUID,'SP01','web','stale')).status,409);
+  assert.equal((await sync(STORE_UUID,'SP01','web','v1',{binding:(await status(OTHER_UUID)).body.binding})).status,409);
+  assert.equal((await sync(STORE_UUID,'SP01','web','v1')).status,200);
+  assert.match(await say(a,'buyer','SP01'),/19\.000 đ/);
+  assert.match(await say(b,'buyer','SP01'),/23\.000 đ/);
+  assert.equal((await status(STORE_UUID)).body.products[0].stock,4);
+  assert.equal((await sync(OTHER_UUID,'SP01','zalo',null)).status,200);
+  assert.equal(h.st.products.find(p=>p.store_id===OTHER_UUID).price_vnd,23000);
+  await say(a,'ownerA','Sản phẩm | SP01 | Mẫu QA | 21000 | 4');
+  assert.equal((await sync(STORE_UUID,'SP01','zalo','v1')).status,200);
+  assert.equal(h.st.products[0].price_vnd,21000);
+  assert.equal(h.st.products[0].stock_on_hand,12);
+  h.st.products.push({...h.st.products[0],sku:'SP02',updated_at:'v2'});
+  assert.equal((await sync(STORE_UUID,'SP02','web','v2')).status,200);
+  assert.equal((await status(STORE_UUID)).body.products.find(p=>p.sku==='SP02').stock,12);
+  h.st.products[1].is_active=false;
+  assert.equal((await sync(OTHER_UUID,'SP01','web','changed')).status,200);
+  assert.equal((await status(OTHER_UUID)).body.products.length,0);
+  await say(a,'ownerA','Bắt đầu');
+  const open=(await status(STORE_UUID)).body;
+  assert.equal((await post(STORE_UUID,'price',{sku:'SP01',price:1,revision:open.revision})).body.error,'BOT_DRAFT_OPEN');
+  await h.admin('/v1/admin/pairing',{connection_id:a.connection_id});
+  assert.deepEqual((await status(STORE_UUID)).body.products,[]);
+  assert.equal((await post(STORE_UUID,'start')).body.code,codes[0]);
 });

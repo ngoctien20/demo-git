@@ -5,9 +5,16 @@ import { must, Product, useLoad } from '../data';
 import { parseVnd, vnd } from '../format';
 import { Empty, Modal, Notice, PageHead, Spinner } from '../ui';
 
+import { ProductSync } from './ProductSync';
+
 type Edit = { mode: 'new' } | { mode: 'edit'; p: Product } | { mode: 'stock'; p: Product };
 
 export function Products() {
+  const { store } = useStore();
+  return <StoreProducts key={store.id} />;
+}
+
+function StoreProducts() {
   const { store, canManage } = useStore();
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState<Edit | null>(null);
@@ -26,6 +33,7 @@ export function Products() {
     <>
       <PageHead title="Sản phẩm & tồn kho" sub="Trợ lý AI chỉ tư vấn sản phẩm đang bán, theo đúng giá và tồn kho ở đây."
         actions={canManage && <button className="btn btn-primary" onClick={() => { setFlash(''); setEdit({ mode: 'new' }); }}>+ Thêm sản phẩm</button>} />
+      {canManage && data && !error && <ProductSync storeId={store.id} products={data} reloadWeb={reload} />}
       {flash && <Notice kind="ok">{flash}</Notice>}
       {!canManage && <Notice>Bạn đang ở vai trò nhân viên nên chỉ xem được danh sách.</Notice>}
       <div className="toolbar"><input type="search" placeholder="Tìm theo SKU hoặc tên…" value={q} onChange={e => setQ(e.target.value)} aria-label="Tìm sản phẩm" /></div>
