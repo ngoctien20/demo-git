@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { appUrl, friendlyError, supabase } from '../supabase';
+import { returnRoute } from '../loginFlow.mjs';
 import { go, useRoute } from '../router';
 import { Notice } from '../ui';
 import { SITE_HOME } from '../config';
@@ -49,7 +50,7 @@ function useCooldown() {
   return { left, start: () => setLeft(60) };
 }
 
-export function AuthPage({ path }: { path: string }) {
+export function AuthPage({ path, callbackError = '' }: { path: string; callbackError?: string }) {
   const { query } = useRoute();
   const mode: Mode = path === '/dang-ky' ? 'signup' : path === '/quen-mat-khau' ? 'forgot' : path === '/dat-lai-mat-khau' ? 'reset' : 'login';
   const plan = (query.get('goi') && query.get('goi')! in PLANS ? query.get('goi') : null) as PlanKey | null;
@@ -80,6 +81,23 @@ export function AuthPage({ path }: { path: string }) {
       if (error) throw error;
       cd.start(); setMsg({ kind: 'ok', text: 'Đã gửi lại thư. Kiểm tra cả mục Thư rác / Quảng cáo.' });
     } catch (err) { setMsg({ kind: 'err', text: friendlyError(err) }); } finally { setBusy(false); }
+  }
+
+  async function google() {
+    if (busy) return;
+    if (mode === 'signup' && !agree) return setMsg({kind:'err', text:'Hãy xác nhận Điều khoản và Chính sách quyền riêng tư trước khi tiếp tục.'});
+    setBusy(true);
+    setMsg(null);
+    try {
+      sessionStorage.setItem('t404_google_return', returnRoute(location.hash));
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google', options: { redirectTo: appUrl() },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setMsg({ kind: 'err', text: friendlyError(error) });
+      setBusy(false);
+    }
   }
 
   async function submit(e: FormEvent) {
@@ -174,6 +192,8 @@ export function AuthPage({ path }: { path: string }) {
       {mode === 'signup' && plan && (
         <div className="plan-chip"><span>Gói bạn chọn</span><b>{PLANS[plan].name}</b><small>Thanh toán (bản DEMO) sau khi vào App, mục Tài khoản › Gói và thanh toán.</small></div>
       )}
+      {callbackError && <Notice kind="warn">{callbackError}</Notice>}
+      {(mode === 'login' || mode === 'signup') && <button type="button" className="btn btn-ghost btn-block" onClick={google} disabled={busy}>Tiếp tục với Google</button>}
       <form onSubmit={submit} className="form" noValidate>
         {mode === 'signup' && <>
           <label>Họ và tên<input autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="Nguyễn Văn An" required /></label>
