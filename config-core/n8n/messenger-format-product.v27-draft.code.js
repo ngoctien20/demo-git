@@ -1,4 +1,6 @@
 const current=$('Loop One Message').first(1,$('Loop One Message').context.currentRunIndex).json;
+// The upstream Products sheet is the demo catalog. Match the catalog pager's Page boundary.
+if (current.pageId !== '2379295362359912') return [];
 const sku=current.selectedSku;
 const rows=$input.all().map(item=>item.json).filter(row=>row.sku===sku);
 let detailImage=null;
