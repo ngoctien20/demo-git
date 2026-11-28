@@ -1,5 +1,6 @@
 // Offline QA adapter. The default is in-memory; parallel QA uses a disposable SQLite file.
 // The caller supplies the verified Page/sender envelope (or authenticated owner), never a store from chat.
+import {shopScopeReply} from './shop-scope.mjs';
 import {lineEdit} from './line-edit.mjs';
 import {contactEdit} from './contact-edit.mjs';
 import {parseInquiry,answerInquiry} from './catalog-inquiry.mjs';
@@ -43,6 +44,7 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
     write('INSERT OR IGNORE INTO conversations(page,sender) VALUES(?,?)',page,sender);
     const state = one('SELECT * FROM conversations WHERE page=? AND sender=?',page,sender);
     if (shop.paused || state.handed) return { status:'silent' };
+    if (action.type === 'outside_shop') return {status:'outside_shop',text:action.reply};
     const amendment=contactEdit(db,page,sender,action.message);
     const line=lineEdit(db,page,sender,action.message);
     if (amendment || line) return amendment ?? line;
@@ -139,7 +141,9 @@ export function createQaShopBook({ shops, variants }, db=new DatabaseSync(':memo
       // Unsupported or ambiguous text is sent back for clarification.
       const text=String(message.text ?? '').trim().toLocaleLowerCase('vi');
       let action={type:'unknown'};
-      if (message.payload==='T404:M:catalog' || text==='xem sản phẩm') action={type:'catalog'};
+      const reply = !message.payload && shopScopeReply(text);
+      if (reply) action = {type:'outside_shop',reply};
+      else if (message.payload==='T404:M:catalog' || text==='xem sản phẩm') action={type:'catalog'};
       else if (message.payload?.startsWith('TIEN404:VIEW:')) {
         const sku=message.payload.slice('TIEN404:VIEW:'.length);
         if (/^[A-Z][0-9]{3}$/.test(sku)) action={type:'edit',sku};

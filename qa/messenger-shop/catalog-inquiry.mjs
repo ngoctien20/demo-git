@@ -2,6 +2,8 @@ const fold = text => text.normalize('NFD').replace(/\p{M}/gu,'').replaceAll('đ'
 
 export function parseInquiry(text) {
   const words=fold(text).replace(/[?!]+$/,'').trim();
+  const bySize=/^([a-z][0-9]{3}) con size (xs|s|m|l|xl|xxl) khong$/.exec(words);
+  if (bySize) return {kind:'sku_size',sku:bySize[1].toUpperCase(),size:bySize[2].toUpperCase()};
   const variant=/^ma (.+?) mau (.+?) size (.+?) (?:gia bao nhieu|con khong)$/.exec(words);
   if (variant) return {kind:'variant',sku:variant[1],color:variant[2],size:variant[3]};
   const available=/^ma (.+?) con size nao$/.exec(words);
@@ -36,6 +38,7 @@ export function answerInquiry(query,rows,previous) {
   let matches;
   if (query.kind==='variant') matches=rows.filter(r=>fold(r.sku.toLowerCase())===query.sku &&
     fold(r.color.toLowerCase())===query.color && fold(r.size.toLowerCase())===query.size);
+  if (query.kind==='sku_size') matches=rows.filter(r=>r.sku===query.sku && r.size===query.size);
   if (query.kind==='sizes') matches=rows.filter(r=>fold(r.sku.toLowerCase())===query.sku && r.stock>0);
   if (query.kind==='budget') matches=rows.filter(r=>r.price<query.limit && r.stock>0);
   if (query.kind==='sku') matches=rows.filter(r=>r.sku===query.sku);
